@@ -11,8 +11,10 @@ const exportUrl = 'http://127.0.0.1:9080/api/v2/spans';
 
 
 if (!document.cookie.includes("rumSessionID")) {
-    // FIXME obviously just a placeholder, probably just use 128-bit random as hex?
-    document.cookie = "rumSessionID=" + ((Math.random() * 100000000) | 0) + "; path=/";
+    var id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx".replace(/x/g, function (c) {
+        return ((Math.random() * 16) | 0).toString(16);
+    });
+    document.cookie = "rumSessionID=" + id + "; path=/";
 }
 var rumSessionId = function () {
     console.log("doc.cookie is " + document.cookie);
