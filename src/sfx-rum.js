@@ -5,18 +5,39 @@ import {XMLHttpRequestPlugin} from '@opentelemetry/plugin-xml-http-request';
 import * as api from '@opentelemetry/api';
 import { hrTimeToMicroseconds } from '@opentelemetry/core';
 
+
+// Plug in your beacon URL here.  Obviously this needs an API like init( { beaconUrl: '' })...
+const exportUrl = 'http://127.0.0.1:9080/api/v2/spans';
+
+
+if (!document.cookie.includes("rumSessionID")) {
+  // FIXME obviously just a placeholder, probably just use 128-bit random as hex?
+  document.cookie = "rumSessionID=" + ((Math.random() * 100000000) | 0)+"; path=/";
+}
+var rumSessionId = function() {
+  console.log("doc.cookie is "+document.cookie);
+  var decodedCookie = decodeURIComponent(document.cookie);
+  var cookies = decodedCookie.split(';');
+  for(var i=0; i < cookies.length; i++) {
+   var c = cookies[i].trim();
+   if (c.indexOf("rumSessionID=") === 0) {
+     return c.substring("rumSessionID=".length, c.length);
+   }
+  }
+  return undefined;
+}();
+
 const provider = new WebTracerProvider({
   plugins: [
     new DocumentLoad(),
     new XMLHttpRequestPlugin(),
-  ]
+  ],
+  defaultAttributes: {
+    'sfx.rumSessionId': rumSessionId
+  }
 });
-if (!document.cookie.includes("rumSessionID")) {
-  // FIXME obviously just a placeholder
-  document.cookie = "rumSessionID=" + ((Math.random() * 100000000) | 0);
-}
-// Plug in your beacon URL here.  Obviously this needs an API like init( { beaconUrl: '' })...
-const exportUrl = 'http://127.0.0.1:9080/api/v2/spans';
+
+
 
 // FIXME this is a nasty copy+paste hack to get the zipkin exporter able to work in a browser context.
 class MySpanExporter {
@@ -54,6 +75,7 @@ class MySpanExporter {
     Object.keys(resource.labels).forEach(
 	name => (tags[name] = resource.labels[name])
     );
+    tags['sfx.rumSessionId'] = rumSessionId;
     return tags;
   }
 
