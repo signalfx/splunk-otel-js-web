@@ -6,6 +6,7 @@ Build as so:
 
 ```
 $ npm install
+$ npm test (optional)
 $ npx webpack
 ```
 
