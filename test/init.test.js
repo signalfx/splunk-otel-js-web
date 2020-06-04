@@ -24,3 +24,16 @@ describe('test init', () => {
     });
   });
 });
+
+describe('creating spans is possible', () => {
+  // FIXME figure out ways to validate zipkin 'export', sendBeacon, etc. etc.
+  it('should have extra fields added', () => {
+    let tracer = api.trace.getTracer('test');
+    let span = tracer.startSpan('testSpan');
+    tracer.withSpan(span, () => {
+      assert.ok(tracer.getCurrentSpan() === span);
+      assert.ok(!!span.attributes['sfx.rumSessionId']);
+    });
+    span.end();
+  });
+});
