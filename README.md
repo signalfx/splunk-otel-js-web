@@ -13,4 +13,8 @@ Then use dist/sfx-rum.js as your single minified js file.  Place it in your page
 
 ```
 <script src="whatever/sfx-rum.js"></script>
+<script>
+  window.SfxRum && window.SfxRum.init(
+    { beaconUrl: 'http://127.0.0.1:9080/api/v2/spans' });
+</script>
 ```
