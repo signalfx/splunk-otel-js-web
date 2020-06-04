@@ -8,8 +8,8 @@ import {hrTimeToMicroseconds} from '@opentelemetry/core';
 console.log('hi');
 if (!window.SfxRum) {
     window.SfxRum = {};
-// FIXME learn how to produce docs for 'exported' items (init and its options)
-// options.beaconUrl (example format: 'http://127.0.0.1:9080/api/v2/spans'
+    // FIXME learn how to produce docs for 'exported' items (init and its options)
+    // options.beaconUrl (example format: 'http://127.0.0.1:9080/api/v2/spans'
     window.SfxRum.init = function (options) {
         if (!options.beaconUrl) {
             // FIXME error handling
@@ -18,7 +18,6 @@ if (!window.SfxRum) {
         }
         console.log('SfxRum.init() starting');
 
-// Plug in your beacon URL here.  Obviously this needs an API like init( { beaconUrl: '' })...
         const exportUrl = options.beaconUrl;
 
 
