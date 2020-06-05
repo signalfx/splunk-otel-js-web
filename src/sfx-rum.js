@@ -2,6 +2,7 @@ import {ConsoleSpanExporter, SimpleSpanProcessor} from '@opentelemetry/tracing';
 import {WebTracerProvider} from '@opentelemetry/web';
 import {DocumentLoad} from '@opentelemetry/plugin-document-load';
 import {XMLHttpRequestPlugin} from '@opentelemetry/plugin-xml-http-request';
+import {UserInteractionPlugin} from '@opentelemetry/plugin-user-interaction';
 import * as api from '@opentelemetry/api';
 import {hrTimeToMicroseconds} from '@opentelemetry/core';
 
@@ -46,10 +47,18 @@ if (!window.SfxRum) {
       return undefined;
     }();
 
+    class PatchedUIP extends UserInteractionPlugin {
+      getZoneWithPrototype() {
+        // FIXME work out ngZone issues with Angular
+        return undefined;
+      }
+    }
+
     const provider = new WebTracerProvider({
       plugins: [
         new DocumentLoad(),
         new XMLHttpRequestPlugin(),
+        new PatchedUIP(),
       ],
       defaultAttributes: {
         'sfx.rumSessionId': rumSessionId
