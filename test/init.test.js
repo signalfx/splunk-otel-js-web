@@ -33,6 +33,7 @@ describe('creating spans is possible', () => {
     tracer.withSpan(span, () => {
       assert.ok(tracer.getCurrentSpan() === span);
       assert.ok(!!span.attributes['sfx.rumSessionId']);
+      assert.ok(!!span.attributes['location.href']);
     });
     span.end();
   });

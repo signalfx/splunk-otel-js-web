@@ -63,6 +63,19 @@ if (!window.SfxRum) {
         'sfx.rumSessionId': rumSessionId
       }
     });
+    // FIXME cleaner way to do this
+    const origGetTracer = provider.getTracer;
+    provider.getTracer = function() {
+      const tracer =  origGetTracer.apply(provider, arguments);
+      const origStartSpan = tracer.startSpan;
+      tracer.startSpan = function() {
+        const span = origStartSpan.apply(tracer, arguments);
+        console.log("adding to span")
+        span.setAttribute('location.href', location.href);
+        return span;
+      };
+      return tracer;
+    };
 
     provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
     provider.addSpanProcessor(new SimpleSpanProcessor(new PatchedZipkinExporter(exportUrl)));
