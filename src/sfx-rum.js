@@ -1,4 +1,4 @@
-import {ConsoleSpanExporter, SimpleSpanProcessor} from '@opentelemetry/tracing';
+import {ConsoleSpanExporter, SimpleSpanProcessor, Tracer} from '@opentelemetry/tracing';
 import {WebTracerProvider} from '@opentelemetry/web';
 import {DocumentLoad} from '@opentelemetry/plugin-document-load';
 import {XMLHttpRequestPlugin} from '@opentelemetry/plugin-xml-http-request';
@@ -52,8 +52,25 @@ if (!window.SfxRum) {
         return undefined;
       }
     }
+    // FIXME this is still not the cleanest way to add an attribute to all created spans..,
+    class PatchedWTP extends WebTracerProvider {
+      constructor(config) {
+        super(config);
+      }
+      getTracer(name, version, config) {
+        const tracer = super.getTracer(name, version, config);
+        const origStartSpan = tracer.startSpan;
+        tracer.startSpan = function() {
+          const span = origStartSpan.apply(tracer, arguments);
+          span.setAttribute('location.href', location.href);
+          return span;
+        }
+        return tracer;
+      }
+    }
 
-    const provider = new WebTracerProvider({
+
+    const provider = new PatchedWTP({
       plugins: [
         new DocumentLoad(),
         new XMLHttpRequestPlugin(),
@@ -63,19 +80,7 @@ if (!window.SfxRum) {
         'sfx.rumSessionId': rumSessionId
       }
     });
-    // FIXME cleaner way to do this
-    const origGetTracer = provider.getTracer;
-    provider.getTracer = function() {
-      const tracer =  origGetTracer.apply(provider, arguments);
-      const origStartSpan = tracer.startSpan;
-      tracer.startSpan = function() {
-        const span = origStartSpan.apply(tracer, arguments);
-        console.log("adding to span")
-        span.setAttribute('location.href', location.href);
-        return span;
-      };
-      return tracer;
-    };
+
 
     provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
     provider.addSpanProcessor(new SimpleSpanProcessor(new PatchedZipkinExporter(exportUrl)));
