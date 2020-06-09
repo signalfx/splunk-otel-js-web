@@ -26,21 +26,21 @@ if (!window.SfxRum) {
 
     const exportUrl = options.beaconUrl;
 
+    const cookieName = "_sfx_rum_sid";
 
-    if (!document.cookie.includes("rumSessionID")) {
+    if (!document.cookie.includes(cookieName)) {
       var id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx".replace(/x/g, function (c) {
         return ((Math.random() * 16) | 0).toString(16);
       });
-      document.cookie = "rumSessionID=" + id + "; path=/";
+      document.cookie = cookieName + '=' + id + "; path=/";
     }
     var rumSessionId = function () {
-      console.log("doc.cookie is " + document.cookie);
       var decodedCookie = decodeURIComponent(document.cookie);
       var cookies = decodedCookie.split(';');
       for (var i = 0; i < cookies.length; i++) {
         var c = cookies[i].trim();
-        if (c.indexOf("rumSessionID=") === 0) {
-          return c.substring("rumSessionID=".length, c.length);
+        if (c.indexOf(cookieName + '=') === 0) {
+          return c.substring((cookieName + '=').length, c.length);
         }
       }
       return undefined;

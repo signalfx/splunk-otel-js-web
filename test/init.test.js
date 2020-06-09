@@ -14,7 +14,7 @@ describe('test init', () => {
     it('should have been inited and created a session cookie', () => {
       window.SfxRum.init({beaconUrl: 'http://127.0.0.1:9999/foo'});
       assert.ok(window.SfxRum.inited);
-      assert.ok(document.cookie.includes("rumSessionID"));
+      assert.ok(document.cookie.includes("_sfx_rum_sid"));
     });
   });
   describe('double-init has no effect', () => {
