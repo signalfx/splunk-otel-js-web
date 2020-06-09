@@ -12,6 +12,7 @@ if (!window.SfxRum) {
   };
   // FIXME learn how to produce docs for 'exported' items (init and its options)
   // options.beaconUrl (example format: 'http://127.0.0.1:9080/api/v2/spans'
+  // options.app
   window.SfxRum.init = function (options) {
     if (this.inited) {
       console.log("already init()ed.");
@@ -22,6 +23,7 @@ if (!window.SfxRum) {
       console.log("init( {beaconUrl: 'https://something'} ) is required.");
       return;
     }
+    const app = options.app || 'unknown-browser-app';
     console.log('SfxRum.init() starting');
 
     const exportUrl = options.beaconUrl;
@@ -77,7 +79,8 @@ if (!window.SfxRum) {
         new PatchedUIP(),
       ],
       defaultAttributes: {
-        'sfx.rumSessionId': rumSessionId
+        'sfx.rumSessionId': rumSessionId,
+        'app': app
       }
     });
 
