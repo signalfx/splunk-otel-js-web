@@ -1,6 +1,4 @@
-Very hacky placeholder showing how to integrate all the otel web pieces into one js file.
-
-First, edit the export url in src/sfx-rum.js to whatever you need for your beacon.  Yes, an init() API will be added eventually.
+Hacky placeholder showing how to integrate all the otel web pieces into one js file.
 
 Build as so:
 
