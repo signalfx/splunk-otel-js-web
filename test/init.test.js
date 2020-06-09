@@ -12,7 +12,10 @@ describe('test init', () => {
   });
   describe('successful', () => {
     it('should have been inited and created a session cookie', () => {
-      window.SfxRum.init({beaconUrl: 'http://127.0.0.1:9999/foo'});
+      window.SfxRum.init({
+        beaconUrl: 'http://127.0.0.1:9999/foo',
+        app: 'my-app'
+      });
       assert.ok(window.SfxRum.inited);
       assert.ok(document.cookie.includes("_sfx_rum_sid"));
     });
@@ -34,6 +37,7 @@ describe('creating spans is possible', () => {
       assert.ok(tracer.getCurrentSpan() === span);
       assert.ok(!!span.attributes['sfx.rumSessionId']);
       assert.ok(!!span.attributes['location.href']);
+      assert.equal(span.attributes['app'], 'my-app');
     });
     span.end();
   });
