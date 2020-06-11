@@ -27,7 +27,7 @@
     "karma-spec-reporter": "^0.0.32",
     "karma-webpack": "^4.0.2",
     "webpack-merge": "^4.2.2",
-    "mocha": "^7.1.2",
+    "mocha": "^8.0.1",
     "nyc": "^15.0.0"
   }
 }
