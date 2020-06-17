@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import {captureTraceParent} from '../src/servertiming';
+import {captureTraceParent, captureTraceParentFromPerformanceEntries} from '../src/servertiming';
 
 describe('test captureTraceParent', () => {
   it('should deal with simple value', () => {
@@ -13,5 +13,27 @@ describe('test captureTraceParent', () => {
     captureTraceParent('other;dur=1234, traceparent;desc="00-000000000000000078499d3266d75d5f-7e1c10b3c482edbe-01",misc;desc="stuff"',span);
     assert.ok('000000000000000078499d3266d75d5f' === span['link.traceId']);
     assert.ok('7e1c10b3c482edbe' === span['link.spanId']);
+  });
+});
+
+describe('test captureTraceParentFromPerformanceEntries', () => {
+  it('should handle absence of serverTiming', () => {
+    const entries = {};
+    const span = { setAttribute: function(k,v){this[k] = v}};
+    captureTraceParentFromPerformanceEntries(entries, span);
+    assert.ok(span['link.traceId'] === undefined);
+  });
+  it('should deal with multiple entries', () => {
+    const entries = {
+      serverTiming: [
+        {name: 'nomatch'},
+        {name: 'traceparent', description: '00-000000000000000078499d3266d75d5f-7e1c10b3c482edbe-01'}
+      ]
+    };
+    const span = { setAttribute: function(k,v){this[k] = v}};
+    captureTraceParentFromPerformanceEntries(entries, span);
+    assert.ok('000000000000000078499d3266d75d5f' === span['link.traceId']);
+    assert.ok('7e1c10b3c482edbe' === span['link.spanId']);
+
   });
 });
