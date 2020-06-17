@@ -4,6 +4,7 @@ import {DocumentLoad} from '@opentelemetry/plugin-document-load';
 import {XMLHttpRequestPlugin} from '@opentelemetry/plugin-xml-http-request';
 import {UserInteractionPlugin} from '@opentelemetry/plugin-user-interaction';
 import {PatchedZipkinExporter} from './zipkin';
+import {captureTraceParent} from './servertiming';
 
 console.log('hi');
 if (!window.SfxRum) {
@@ -83,15 +84,7 @@ if (!window.SfxRum) {
       xhr.addEventListener('loadend', function() {
         const st = xhr.getResponseHeader('server-timing');
         if (st) {
-          // getResponseHeader returns multiple Server-Timing headers concat with ', '
-          const regex = new RegExp('traceparent;desc="00-([0-9a-f]{32})-([0-9a-f]{16})-01"');
-          for(const header of st.split(', ')) {
-            const match = header.match(regex);
-            const traceId = match[1];
-            const spanId = match[2];
-            span.setAttribute('link.traceId', traceId);
-            span.setAttribute('link.spanId', spanId);
-          }
+          captureTraceParent(st, span);
         }
       });
       return span;
