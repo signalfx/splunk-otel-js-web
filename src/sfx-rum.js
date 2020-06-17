@@ -71,11 +71,37 @@ if (!window.SfxRum) {
       }
     }
 
+    const xhrplugin = new XMLHttpRequestPlugin();
+
+    // FIXME another thing to figure out how to patch more cleanly
+    // FIXME also start augmenting test suites for this stuff
+    const origCreateSpan = xhrplugin._createSpan;
+    xhrplugin._createSpan = function() {
+      const xhr = arguments[0];
+      const span = origCreateSpan.apply(xhrplugin, arguments);
+      // don't care about success/failure, just want to see response headers if they exist
+      xhr.addEventListener('loadend', function() {
+        const st = xhr.getResponseHeader('server-timing');
+        if (st) {
+          // getResponseHeader returns multiple Server-Timing headers concat with ', '
+          const regex = new RegExp('traceparent;desc="00-([0-9a-f]{32})-([0-9a-f]{16})-01"');
+          for(const header of st.split(', ')) {
+            const match = header.match(regex);
+            const traceId = match[1];
+            const spanId = match[2];
+            span.setAttribute('link.traceId', traceId);
+            span.setAttribute('link.spanId', spanId);
+          }
+        }
+      });
+      return span;
+    }
+
 
     const provider = new PatchedWTP({
       plugins: [
         new DocumentLoad(),
-        new XMLHttpRequestPlugin(),
+        xhrplugin,
         new PatchedUIP(),
       ],
       defaultAttributes: {
