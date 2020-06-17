@@ -4,7 +4,7 @@ import {DocumentLoad} from '@opentelemetry/plugin-document-load';
 import {XMLHttpRequestPlugin} from '@opentelemetry/plugin-xml-http-request';
 import {UserInteractionPlugin} from '@opentelemetry/plugin-user-interaction';
 import {PatchedZipkinExporter} from './zipkin';
-import {captureTraceParent} from './servertiming';
+import {captureTraceParent, captureTraceParentFromPerformanceEntries} from './servertiming';
 
 console.log('hi');
 if (!window.SfxRum) {
@@ -90,10 +90,41 @@ if (!window.SfxRum) {
       return span;
     }
 
+    // And now for patching in docload to look for Server-Timing
+    const docLoad = new DocumentLoad();
+    const origEndSpan = docLoad._endSpan;
+    docLoad._endSpan = function(span, performanceName, entries) {
+      if (span && span.name !== 'documentLoad') { // only apply link to document fetch
+        captureTraceParentFromPerformanceEntries(entries, span);
+      }
+      return origEndSpan.apply(docLoad, arguments);
+    };
+    // To maintain compatibility, getEntries copies out select items from
+    // different versions of the performance API into its own structure for the
+    // intitial document load (but leaves the entries undisturbed for resource loads).
+    const origGetEntries = docLoad._getEntries;
+    docLoad._getEntries = function() {
+      const answer = origGetEntries.apply(docLoad, arguments);
+      const navEntries = performance.getEntriesByType('navigation');
+      if (navEntries && navEntries[0] && navEntries[0].serverTiming) {
+        answer.serverTiming = navEntries[0].serverTiming;
+      }
+      return answer;
+    };
+
+    // A random place to list a bunch of items that are unresolved
+    // FIXME is there any way to tell that a resource load failed from its performance entry?
+    // FIXME is there any way to get sizes of transfer everywhere? (xhr/fetch result, resource load, initial doc)
+    // FIXME longtask
+    // FIXME repo/licensing issues
+    // FIXME strip http.user_agent from spans as redundant
+    // FIXME rumKey
+    // FIXME add in fetch plugin and give it a spin once a version is published
+
 
     const provider = new PatchedWTP({
       plugins: [
-        new DocumentLoad(),
+        docLoad,
         xhrplugin,
         new PatchedUIP(),
       ],
