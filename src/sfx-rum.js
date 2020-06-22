@@ -81,10 +81,12 @@ if (!window.SfxRum) {
       const xhr = arguments[0];
       const span = origCreateSpan.apply(xhrplugin, arguments);
       // don't care about success/failure, just want to see response headers if they exist
-      xhr.addEventListener('loadend', function() {
-        const st = xhr.getResponseHeader('server-timing');
-        if (st) {
-          captureTraceParent(st, span);
+      xhr.addEventListener('readystatechange', function() {
+        if (xhr.readyState == xhr.HEADERS_RECEIVED) {
+          const st = xhr.getResponseHeader('server-timing');
+          if (st) {
+            captureTraceParent(st, span);
+          }
         }
       });
       return span;
