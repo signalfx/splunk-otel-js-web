@@ -124,7 +124,17 @@ if (!window.SfxRum) {
     // FIXME rumKey
 
     const fetch = new FetchPlugin();
-    
+    const origAFSA = fetch._addFinalSpanAttributes;
+    fetch._addFinalSpanAttributes = function() {
+      const span = arguments[0];
+      const fetchResponse = arguments[1];
+      const st = fetchResponse.headers.get('Server-Timing');
+      if (st) {
+        captureTraceParent(st, span);
+      }
+      origAFSA.apply(fetch, arguments);
+    };
+
     const provider = new PatchedWTP({
       plugins: [
         docLoad,
