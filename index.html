@@ -20,6 +20,10 @@ function go() {
   oReq.open("GET", "page2.html", true);
   oReq.setRequestHeader('Cache-Control', 'no-cache');
   oReq.send();
+
+  fetch('page2.html').then(function(response) {
+   console.log('fetch finished');
+  });
 }
 
 
