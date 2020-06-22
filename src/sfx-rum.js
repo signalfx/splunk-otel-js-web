@@ -3,6 +3,7 @@ import {WebTracerProvider} from '@opentelemetry/web';
 import {DocumentLoad} from '@opentelemetry/plugin-document-load';
 import {XMLHttpRequestPlugin} from '@opentelemetry/plugin-xml-http-request';
 import {UserInteractionPlugin} from '@opentelemetry/plugin-user-interaction';
+import {FetchPlugin} from "@opentelemetry/plugin-fetch";
 import {PatchedZipkinExporter} from './zipkin';
 import {captureTraceParent, captureTraceParentFromPerformanceEntries} from './servertiming';
 
@@ -121,13 +122,14 @@ if (!window.SfxRum) {
     // FIXME repo/licensing issues
     // FIXME strip http.user_agent from spans as redundant
     // FIXME rumKey
-    // FIXME add in fetch plugin and give it a spin once a version is published
 
-
+    const fetch = new FetchPlugin();
+    
     const provider = new PatchedWTP({
       plugins: [
         docLoad,
         xhrplugin,
+        fetch,
         new PatchedUIP(),
       ],
       defaultAttributes: {
