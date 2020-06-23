@@ -2,6 +2,21 @@ import * as assert from 'assert';
 import * as api from '@opentelemetry/api';
 
 require('../src/sfx-rum.js');
+class SpanCapturer {
+  constructor() {
+    this.spans = [];
+  }
+  forceFlush() {}
+  onStart(span) {}
+  shutdown() {}
+  onEnd(span) {
+    this.spans.push(span)
+  }
+  clear() {
+    this.spans = [];
+  }
+}
+const capturer = new SpanCapturer();
 
 describe('test init', () => {
   describe('not specifying beaconUrl', () => {
@@ -18,6 +33,7 @@ describe('test init', () => {
       });
       assert.ok(window.SfxRum.inited);
       assert.ok(document.cookie.includes("_sfx_rum_sid"));
+      window.SfxRum._provider.addSpanProcessor(capturer);
     });
   });
   describe('double-init has no effect', () => {
@@ -40,5 +56,35 @@ describe('creating spans is possible', () => {
       assert.equal(span.attributes['app'], 'my-app');
     });
     span.end();
+  });
+});
+
+// Doesn't actually test the xhr additions we've made (with Server-Timing), but just that
+// we didn't mess up the basic flow/behavior of the plugin
+describe('test xhr', () => {
+  it('should capture an xhr span', (done) => {
+    capturer.clear();
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', 'client.html');
+    xhr.addEventListener('loadend', () => {
+      setTimeout(() => {
+        assert.ok(capturer.spans[capturer.spans.length-1].attributes.component === 'xml-http-request');
+        done();
+      }, 1000);
+    });
+    xhr.send();
+  });
+});
+
+// See above comment on xhr test
+describe('test fetch', () => {
+  it('should capture a fetch span', (done) => {
+    capturer.clear();
+    window.fetch('client.html').then(() => {
+      setTimeout(() => {
+        assert.ok(capturer.spans[capturer.spans.length-1].attributes.component === 'fetch');
+        done();
+      }, 1000);
+    });
   });
 });

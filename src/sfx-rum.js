@@ -7,7 +7,6 @@ import {FetchPlugin} from "@opentelemetry/plugin-fetch";
 import {PatchedZipkinExporter} from './zipkin';
 import {captureTraceParent, captureTraceParentFromPerformanceEntries} from './servertiming';
 
-console.log('hi');
 if (!window.SfxRum) {
   window.SfxRum = {
     inited: false
@@ -126,11 +125,15 @@ if (!window.SfxRum) {
     const fetch = new FetchPlugin();
     const origAFSA = fetch._addFinalSpanAttributes;
     fetch._addFinalSpanAttributes = function() {
-      const span = arguments[0];
-      const fetchResponse = arguments[1];
-      const st = fetchResponse.headers.get('Server-Timing');
-      if (st) {
-        captureTraceParent(st, span);
+      if (arguments.length >= 2) {
+        const span = arguments[0];
+        const fetchResponse = arguments[1];
+        if (span && fetchResponse && fetchResponse.headers) {
+          const st = fetchResponse.headers.get('Server-Timing');
+          if (st) {
+            captureTraceParent(st, span);
+          }
+        }
       }
       origAFSA.apply(fetch, arguments);
     };
@@ -152,6 +155,7 @@ if (!window.SfxRum) {
     provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
     provider.addSpanProcessor(new SimpleSpanProcessor(new PatchedZipkinExporter(exportUrl)));
     provider.register();
+    this._provider = provider; // for tests
     this.inited = true;
     console.log('SfxRum.init() complete');
 
