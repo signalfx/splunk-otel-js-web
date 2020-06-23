@@ -1,4 +1,4 @@
-import {ConsoleSpanExporter, SimpleSpanProcessor, Tracer} from '@opentelemetry/tracing';
+import {ConsoleSpanExporter, SimpleSpanProcessor} from '@opentelemetry/tracing';
 import {WebTracerProvider} from '@opentelemetry/web';
 import {DocumentLoad} from '@opentelemetry/plugin-document-load';
 import {XMLHttpRequestPlugin} from '@opentelemetry/plugin-xml-http-request';
@@ -32,7 +32,7 @@ if (!window.SfxRum) {
     const cookieName = "_sfx_rum_sid";
 
     if (!document.cookie.includes(cookieName)) {
-      var id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx".replace(/x/g, function (c) {
+      var id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx".replace(/x/g, function () {
         return ((Math.random() * 16) | 0).toString(16);
       });
       document.cookie = cookieName + '=' + id + "; path=/";
