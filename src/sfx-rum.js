@@ -55,15 +55,62 @@ if (!window.SfxRum) {
         return undefined;
       }
     }
+
+    const whitelistEventTypes = {
+      click: true,
+      dblclick: true,
+      submit: true,
+      reset: true,
+      dragend: true,
+      drop: true,
+      ended: true,
+      pause: true,
+      play: true,
+      change: true,
+      mousedown: true,
+      mouseup: true,
+    };
+    // FIXME more ugly copy+paste to patch in functionality.  In this case limiting the
+    // types of events we care to listen to (too many mousemove events => too many spans)
+    const uip = new PatchedUIP();
+    uip._patchElement = function () {
+      const plugin = this;
+      return (original) => {
+        return function addEventListenerPatched(type, listener, useCapture) {
+          const patchedListener = (...args) => {
+            const target = this;
+            if (whitelistEventTypes[type]) {
+              const span = plugin._createSpan(target, type);
+              if (span) {
+                return plugin._tracer.withSpan(span, () => {
+                  const result = listener.apply(target, args);
+                  // no zone so end span immediately
+                  span.end();
+                  return result;
+                });
+              } else {
+                return listener.apply(target, args);
+              }
+            } else {
+              return listener.apply(target, args);
+            }
+          };
+          return original.call(this, type, patchedListener, useCapture);
+        };
+      };
+    }
+
+
     // FIXME this is still not the cleanest way to add an attribute to all created spans..,
     class PatchedWTP extends WebTracerProvider {
       constructor(config) {
         super(config);
       }
+
       getTracer(name, version, config) {
         const tracer = super.getTracer(name, version, config);
         const origStartSpan = tracer.startSpan;
-        tracer.startSpan = function() {
+        tracer.startSpan = function () {
           const span = origStartSpan.apply(tracer, arguments);
           span.setAttribute('location.href', location.href);
           return span;
@@ -77,11 +124,11 @@ if (!window.SfxRum) {
     // FIXME another thing to figure out how to patch more cleanly
     // FIXME also start augmenting test suites for this stuff
     const origCreateSpan = xhrplugin._createSpan;
-    xhrplugin._createSpan = function() {
+    xhrplugin._createSpan = function () {
       const xhr = arguments[0];
       const span = origCreateSpan.apply(xhrplugin, arguments);
       // don't care about success/failure, just want to see response headers if they exist
-      xhr.addEventListener('readystatechange', function() {
+      xhr.addEventListener('readystatechange', function () {
         if (xhr.readyState == xhr.HEADERS_RECEIVED && xhr.getAllResponseHeaders().includes('server-timing')) {
           const st = xhr.getResponseHeader('server-timing');
           if (st) {
@@ -95,7 +142,7 @@ if (!window.SfxRum) {
     // And now for patching in docload to look for Server-Timing
     const docLoad = new DocumentLoad();
     const origEndSpan = docLoad._endSpan;
-    docLoad._endSpan = function(span, performanceName, entries) {
+    docLoad._endSpan = function (span, performanceName, entries) {
       if (span && span.name !== 'documentLoad') { // only apply link to document fetch
         captureTraceParentFromPerformanceEntries(entries, span);
       }
@@ -105,7 +152,7 @@ if (!window.SfxRum) {
     // different versions of the performance API into its own structure for the
     // intitial document load (but leaves the entries undisturbed for resource loads).
     const origGetEntries = docLoad._getEntries;
-    docLoad._getEntries = function() {
+    docLoad._getEntries = function () {
       const answer = origGetEntries.apply(docLoad, arguments);
       const navEntries = performance.getEntriesByType('navigation');
       if (navEntries && navEntries[0] && navEntries[0].serverTiming) {
@@ -124,7 +171,7 @@ if (!window.SfxRum) {
 
     const fetch = new FetchPlugin();
     const origAFSA = fetch._addFinalSpanAttributes;
-    fetch._addFinalSpanAttributes = function() {
+    fetch._addFinalSpanAttributes = function () {
       if (arguments.length >= 2) {
         const span = arguments[0];
         const fetchResponse = arguments[1];
@@ -143,7 +190,7 @@ if (!window.SfxRum) {
         docLoad,
         xhrplugin,
         fetch,
-        new PatchedUIP(),
+        uip,
       ],
       defaultAttributes: {
         'sfx.rumSessionId': rumSessionId,
