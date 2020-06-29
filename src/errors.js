@@ -55,19 +55,20 @@ function stringifyArgs(...args) {
   return args.map(o => o.toString()).join(' ');
 }
 
-function handleConsoleErrorMessage(tracer, msg) {
+// FIXME clean up some of the repetition in here.. one unified 'string or string array or error object' input
+function handleErrorMessage(tracer, type, msg) {
   if (!useful(msg)) {
     return;
   }
   const span = tracer.startSpan(name);
   span.setAttribute('component', 'error');
-  span.setAttribute('error.type', 'console.error');
+  span.setAttribute('error.type', type);
   span.setAttribute('error.message', msg);
   // FIXME compute and send stack trace?
   span.end(span.startTime);
 }
 
-function handleConsoleErrorError(tracer, err) {
+function handleErrorError(tracer, type, err) {
   const report = Tracekit.computeStackTrace(err);
   const msg = err.message || err.toString();
   if (!useful(msg) && (!report || !report.stack)) {
@@ -75,7 +76,7 @@ function handleConsoleErrorError(tracer, err) {
   }
   const span = tracer.startSpan(name);
   span.setAttribute('component', 'error');
-  span.setAttribute('error.type', typeof err);
+  span.setAttribute('error.type', type);
   span.setAttribute('error.message', msg);
   addStackIfUseful(span, report);
   span.end(span.startTime);
@@ -85,23 +86,33 @@ function captureConsoleError(tracer) {
   shimmer.wrap(console, 'error', function(original) {
     return function () {
       if (arguments.length === 1 && arguments[0] instanceof Error) {
-        handleConsoleErrorError(tracer, arguments[0]);
+        handleErrorError(tracer, 'console.error', arguments[0]);
       } else {
         const message = stringifyArgs(Array.from(arguments));
-        handleConsoleErrorMessage(tracer, message);
+        handleErrorMessage(tracer, 'console.error', message);
       }
-
       return original.apply(this, arguments);
     };
   });
 }
 
+function registerUnhandledRejectionListener(tracer) {
+  window.addEventListener('unhandledrejection', function (event) {
+    if (event.reason instanceof Error) {
+      handleErrorError(tracer, 'unhandledrejection', event.reason);
+    } else {
+      const msg = event.reason.toString(); // FIXME should be using JSON.stringify here and elsewhere?
+      handleErrorMessage(tracer, 'unhandledrejection', msg);
+    }
+  });
+}
 
 export function captureErrors(provider) {
   const tracer = provider.getTracer('error');
   registerTracekitListener(tracer);
   captureConsoleError(tracer);
-  // FIXME https://developer.mozilla.org/en-US/docs/Web/Events/unhandledrejection
-  // FIXME https://www.w3.org/TR/reporting/#reporting-observer
+  registerUnhandledRejectionListener(tracer);
+
+  // Future possibility is https://www.w3.org/TR/reporting/#reporting-observer
   // FIXME expose SfxRum.report(err)
 }
