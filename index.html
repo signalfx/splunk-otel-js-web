@@ -29,6 +29,10 @@ function go() {
    console.log('fetch finished');
   });
 
+  // causes unhandledrejection
+  Promise.resolve('ok').then(() => { throw new Error('pancakes!'); });
+
+  // 'normal' error chain
   throwit();
 }
 
