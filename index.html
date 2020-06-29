@@ -13,6 +13,10 @@ function whenDone() {
   console.log("whenDone");
 }
 
+function throwit() {
+  throw new Error('oh no');
+}
+
 function go() {
   console.log("go");
   var oReq = new XMLHttpRequest();
@@ -24,6 +28,8 @@ function go() {
   fetch('page2.html').then(function(response) {
    console.log('fetch finished');
   });
+
+  throwit();
 }
 
 
