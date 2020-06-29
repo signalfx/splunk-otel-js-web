@@ -6,7 +6,9 @@ import {UserInteractionPlugin} from '@opentelemetry/plugin-user-interaction';
 import {FetchPlugin} from "@opentelemetry/plugin-fetch";
 import {PatchedZipkinExporter} from './zipkin';
 import {captureTraceParent, captureTraceParentFromPerformanceEntries} from './servertiming';
+import {captureErrors} from "./errors";
 
+// FIXME caps on things - in particular on sendBeacon frequency and size.
 if (!window.SfxRum) {
   window.SfxRum = {
     inited: false
@@ -202,7 +204,9 @@ if (!window.SfxRum) {
     provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
     provider.addSpanProcessor(new SimpleSpanProcessor(new PatchedZipkinExporter(exportUrl)));
     provider.register();
-    this._provider = provider; // for tests
+    Object.defineProperty(this, '_provider', {value:provider});
+    // FIXME feature flag for errors
+    captureErrors(provider);
     this.inited = true;
     console.log('SfxRum.init() complete');
 
