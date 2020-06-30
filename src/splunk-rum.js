@@ -9,16 +9,16 @@ import {captureTraceParent, captureTraceParentFromPerformanceEntries} from './se
 import {captureErrors} from "./errors";
 
 // FIXME caps on things - in particular on sendBeacon frequency and size.
-if (!window.SfxRum) {
-  window.SfxRum = {
+if (!window.SplunkRum) {
+  window.SplunkRum = {
     inited: false
   };
   // FIXME learn how to produce docs for 'exported' items (init and its options)
   // options.beaconUrl (example format: 'http://127.0.0.1:9080/api/v2/spans'
   // options.app
-  window.SfxRum.init = function (options) {
+  window.SplunkRum.init = function (options) {
     if (this.inited) {
-      console.log("already init()ed.");
+      console.log("SplunkRum already init()ed.");
       return;
     }
     if (!options.beaconUrl) {
@@ -27,11 +27,11 @@ if (!window.SfxRum) {
       return;
     }
     const app = options.app || 'unknown-browser-app';
-    console.log('SfxRum.init() starting');
+    console.log('SplunkRum.init() starting');
 
     const exportUrl = options.beaconUrl;
 
-    const cookieName = "_sfx_rum_sid";
+    const cookieName = "_splunk_rum_sid";
 
     if (!document.cookie.includes(cookieName)) {
       var id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx".replace(/x/g, function () {
@@ -195,7 +195,7 @@ if (!window.SfxRum) {
         uip,
       ],
       defaultAttributes: {
-        'sfx.rumSessionId': rumSessionId,
+        'splunk.rumSessionId': rumSessionId,
         'app': app
       }
     });
@@ -206,9 +206,9 @@ if (!window.SfxRum) {
     provider.register();
     Object.defineProperty(this, '_provider', {value:provider});
     // FIXME feature flag for errors
-    captureErrors(this, provider); // also registers SfxRum.error
+    captureErrors(this, provider); // also registers SplunkRum.error
     this.inited = true;
-    console.log('SfxRum.init() complete');
+    console.log('SplunkRum.init() complete');
 
   };
 }

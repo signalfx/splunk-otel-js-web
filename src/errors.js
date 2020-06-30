@@ -102,13 +102,13 @@ class ErrorReporter {
 }
 
 
-export function captureErrors(sfxRum, provider) {
+export function captureErrors(splunkRum, provider) {
   const tracer = provider.getTracer('error');
   const reporter = new ErrorReporter(tracer);
   captureError(reporter);
   captureConsoleError(reporter);
   registerUnhandledRejectionListener(reporter);
-  sfxRum.error = function() {
+  splunkRum.error = function() {
     reporter.report('SfxRum.error', Array.from(arguments));
   }
 

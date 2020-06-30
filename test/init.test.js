@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 import * as api from '@opentelemetry/api';
 
-require('../src/sfx-rum.js');
+require('../src/splunk-rum.js');
 class SpanCapturer {
   constructor() {
     this.spans = [];
@@ -21,24 +21,24 @@ const capturer = new SpanCapturer();
 describe('test init', () => {
   describe('not specifying beaconUrl', () => {
     it('should not be inited', () => {
-      window.SfxRum.init({noBeaconUrl: true});
-      assert.ok(window.SfxRum.inited === false);
+      window.SplunkRum.init({noBeaconUrl: true});
+      assert.ok(window.SplunkRum.inited === false);
     });
   });
   describe('successful', () => {
     it('should have been inited and created a session cookie', () => {
-      window.SfxRum.init({
+      window.SplunkRum.init({
         beaconUrl: 'http://127.0.0.1:9999/foo',
         app: 'my-app'
       });
-      assert.ok(window.SfxRum.inited);
-      assert.ok(document.cookie.includes("_sfx_rum_sid"));
-      window.SfxRum._provider.addSpanProcessor(capturer);
+      assert.ok(window.SplunkRum.inited);
+      assert.ok(document.cookie.includes("_splunk_rum_sid"));
+      window.SplunkRum._provider.addSpanProcessor(capturer);
     });
   });
   describe('double-init has no effect', () => {
     it('should have been inited only once', () => {
-      window.SfxRum.init({beaconUrl: 'http://127.0.0.1:8888/bar'});
+      window.SplunkRum.init({beaconUrl: 'http://127.0.0.1:8888/bar'});
       // FIXME way to check this state (e.g., capture beaconUrl and ensure it hasn't changed
     });
   });
@@ -51,7 +51,7 @@ describe('creating spans is possible', () => {
     let span = tracer.startSpan('testSpan');
     tracer.withSpan(span, () => {
       assert.ok(tracer.getCurrentSpan() === span);
-      assert.ok(!!span.attributes['sfx.rumSessionId']);
+      assert.ok(!!span.attributes['splunk.rumSessionId']);
       assert.ok(!!span.attributes['location.href']);
       assert.equal(span.attributes['app'], 'my-app');
     });
@@ -93,7 +93,7 @@ function reportError() {
   // Note that a simple "throw new Error" here will fail the test.  Several hours were
   // spent trying to find ways around this involving mocha's allowUncaught and
   // Mocha.process.removeListener("uncaughtException").  Nothing worked.
-  window.SfxRum.error(new Error('You can\'t fight in here; this is the war room!'));
+  window.SplunkRum.error(new Error('You can\'t fight in here; this is the war room!'));
 }
 
 function callChain() {
@@ -132,7 +132,7 @@ describe('test stack length', () => {
       recurAndThrow(50);
     } catch (e) {
       try {
-        window.SfxRum.error(e);
+        window.SplunkRum.error(e);
       } catch (e2) {
         // swallow
       }
