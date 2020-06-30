@@ -1,6 +1,5 @@
 import * as assert from 'assert';
 import * as api from '@opentelemetry/api';
-import Tracekit from 'tracekit';
 
 require('../src/sfx-rum.js');
 class SpanCapturer {
@@ -90,15 +89,15 @@ describe('test fetch', () => {
   });
 });
 
-function throwError() {
+function reportError() {
   // Note that a simple "throw new Error" here will fail the test.  Several hours were
   // spent trying to find ways around this involving mocha's allowUncaught and
   // Mocha.process.removeListener("uncaughtException").  Nothing worked.
-  Tracekit.report(new Error('You can\'t fight in here; this is the war room!'));
+  window.SfxRum.error(new Error('You can\'t fight in here; this is the war room!'));
 }
 
 function callChain() {
-  throwError();
+  reportError();
 }
 
 
@@ -106,42 +105,16 @@ describe('test error', () => {
   it('should capture an error span', (done) => {
     capturer.clear();
     // cause the error
-    try {
-      callChain();
-      assert.ok(false); // shouldn't get here
-    } catch (e) {
-      // swallow
-    }
+    callChain();
     // and later look for it
     setTimeout(() => {
       const span = capturer.spans[capturer.spans.length - 1];
       assert.ok(span.attributes.component === 'error');
       assert.ok(span.attributes['error.stack'].includes('callChain'));
-      assert.ok(span.attributes['error.stack'].includes('throwError'));
+      assert.ok(span.attributes['error.stack'].includes('reportError'));
       assert.ok(span.attributes['error.message'].includes('war room'));
       done();
     }, 100);
-  });
-});
-
-// very uncommon case that would produce a useless span;
-// logic added to not emit in that case.
-describe('test TraceKit.report(string)', () => {
-  it('should not make a useless span', (done) => {
-    capturer.clear();
-    try {
-      throw 'stringy';
-    } catch (e) {
-      try {
-        Tracekit.report(e);
-      } catch (e2) {
-        // swallow
-      }
-    }
-    setTimeout(() => {
-      assert.ok(capturer.spans.length === 0);
-      done();
-    }, 3000); // TraceKit has a goofy 2000 timeout to see if more data comes in...
   });
 });
 
@@ -152,14 +125,14 @@ function recurAndThrow(i) {
   recurAndThrow(i-1);
 }
 
-describe('test length of stack traces', () => {
-  it('should be limited', (done) => {
+describe('test stack length', () => {
+  it('should limit length of stack', (done) => {
     capturer.clear();
     try {
       recurAndThrow(50);
     } catch (e) {
       try {
-        Tracekit.report(e);
+        window.SfxRum.error(e);
       } catch (e2) {
         // swallow
       }
@@ -180,7 +153,8 @@ function throwBacon() {
   throw new Error('bacon');
 }
 describe('test unhandled promise rejection', () => {
-  if ('should report a span', () => {
+  it ('should report a span', (done) => {
+    capturer.clear();
     Promise.resolve('ok').then(()=>{
       throwBacon();
     });
@@ -191,6 +165,18 @@ describe('test unhandled promise rejection', () => {
       assert.ok(span.attributes['error.message'].includes('bacon'));
       done();
     }, 100);
+  });
+});
 
+describe('test console.error', () => {
+  it ('should report a span', (done) => {
+    capturer.clear();
+    console.error('has', 'some', 'args');
+    setTimeout(() => {
+      const span = capturer.spans[capturer.spans.length - 1];
+      assert.ok(span.attributes.component === 'error');
+      assert.ok(span.attributes['error.message'] === 'has some args');
+      done();
+    }, 100);
   });
 });

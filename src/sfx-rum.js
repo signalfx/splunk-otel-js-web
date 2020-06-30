@@ -206,7 +206,7 @@ if (!window.SfxRum) {
     provider.register();
     Object.defineProperty(this, '_provider', {value:provider});
     // FIXME feature flag for errors
-    captureErrors(provider);
+    captureErrors(this, provider); // also registers SfxRum.error
     this.inited = true;
     console.log('SfxRum.init() complete');
 
