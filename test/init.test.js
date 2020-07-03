@@ -90,10 +90,7 @@ describe('test fetch', () => {
 });
 
 function reportError() {
-  // Note that a simple "throw new Error" here will fail the test.  Several hours were
-  // spent trying to find ways around this involving mocha's allowUncaught and
-  // Mocha.process.removeListener("uncaughtException").  Nothing worked.
-  window.SplunkRum.error(new Error('You can\'t fight in here; this is the war room!'));
+  throw new Error('You can\'t fight in here; this is the war room!');
 }
 
 function callChain() {
@@ -103,11 +100,18 @@ function callChain() {
 
 describe('test error', () => {
   it('should capture an error span', (done) => {
+    const origOnError = window.onerror;
+    window.onerror = function() {
+      // nop to prevent failing the test
+    };
     capturer.clear();
     // cause the error
-    callChain();
+    setTimeout(() => {
+      callChain();
+    }, 10);
     // and later look for it
     setTimeout(() => {
+      window.onerror = origOnError; // restore proper error handling
       const span = capturer.spans[capturer.spans.length - 1];
       assert.ok(span.attributes.component === 'error');
       assert.ok(span.attributes['error.stack'].includes('callChain'));
@@ -132,7 +136,7 @@ describe('test stack length', () => {
       recurAndThrow(50);
     } catch (e) {
       try {
-        window.SplunkRum.error(e);
+        window.SplunkRum.error(e); // try out the API
       } catch (e2) {
         // swallow
       }
