@@ -55,6 +55,7 @@ class ErrorReporter {
     }
     const span = this.tracer.startSpan(source);
     span.setAttribute('component', 'error');
+    span.setAttribute('error', true);
     span.setAttribute('error.object', useful(err.name) ? err.name : (err.constructor && err.constructor.name ? err.constructor.name : 'Error'));
     span.setAttribute('error.message', limit(msg, MESSAGE_LIMIT));
     addStackIfUseful(span, err);
@@ -67,6 +68,7 @@ class ErrorReporter {
     }
     const span = this.tracer.startSpan(source);
     span.setAttribute('component', 'error');
+    span.setAttribute('error', true);
     span.setAttribute('error.object', 'String');
     span.setAttribute('error.message', limit(s, MESSAGE_LIMIT));
     // FIXME compute and send stack trace?
@@ -109,7 +111,7 @@ export function captureErrors(splunkRum, provider) {
   captureConsoleError(reporter);
   registerUnhandledRejectionListener(reporter);
   splunkRum.error = function() {
-    reporter.report('SfxRum.error', Array.from(arguments));
+    reporter.report('SplunkRum.error', Array.from(arguments));
   }
 
   // Future possibility is https://www.w3.org/TR/reporting/#reporting-observer
