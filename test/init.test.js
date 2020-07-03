@@ -161,6 +161,7 @@ describe('test unhandled promise rejection', () => {
     setTimeout(() => {
       const span = capturer.spans[capturer.spans.length - 1];
       assert.ok(span.attributes.component === 'error');
+      assert.ok(span.attributes.error);
       assert.ok(span.attributes['error.stack'].includes('throwBacon'));
       assert.ok(span.attributes['error.message'].includes('bacon'));
       done();
