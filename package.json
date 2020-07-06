@@ -32,7 +32,6 @@
     "mocha": "^8.0.1",
     "nyc": "^15.0.0",
     "webpack": "^4.43.0",
-    "webpack-cli": "^3.3.12",
-    "webpack-merge": "^5.0.4"
+    "webpack-cli": "^3.3.12"
   }
 }
