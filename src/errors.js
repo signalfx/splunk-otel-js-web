@@ -48,6 +48,7 @@ class ErrorReporter {
   constructor(tracer) {
     this.tracer = tracer;
   }
+
   reportError(source, err) {
     const msg = err.message || err.toString();
     if (!useful(msg) && (!err.stack)) {
@@ -60,9 +61,9 @@ class ErrorReporter {
     span.setAttribute('error.message', limit(msg, MESSAGE_LIMIT));
     addStackIfUseful(span, err);
     span.end(span.startTime);
-
   }
-  reportString(source, s) {
+
+  reportString(source, s, firstError) {
     if (!useful(s)) {
       return;
     }
@@ -71,9 +72,12 @@ class ErrorReporter {
     span.setAttribute('error', true);
     span.setAttribute('error.object', 'String');
     span.setAttribute('error.message', limit(s, MESSAGE_LIMIT));
-    // FIXME compute and send stack trace?
+    if (firstError) {
+      addStackIfUseful(span, firstError)
+    }
     span.end(span.startTime);
   }
+
   reportErrorEvent(source, ev) {
     if (ev.error) {
       this.report(source, ev.error);
@@ -83,7 +87,7 @@ class ErrorReporter {
   }
 
   report(source, arg) {
-    if (!arg) {
+    if (!arg || arg.length === 0) {
       return;
     }
     if (arg instanceof Array && arg.length == 1) {
@@ -93,10 +97,12 @@ class ErrorReporter {
       this.reportError(source, arg);
     } else if (arg instanceof ErrorEvent) {
       this.reportErrorEvent(source, arg);
-    } else if (arg instanceof String) {
+    } else if (typeof arg === 'string') {
       this.reportString(source, arg);
     } else if (arg instanceof Array) {
-      this.reportString(source, arg.map(x => x.toString()).join(' '));
+      // if any arguments are Errors then add the stack trace even though the message is handled differently
+      const firstError = arg.find(x => x instanceof Error);
+      this.reportString(source, arg.map(x => x.toString()).join(' '), firstError);
     } else {
       this.reportString(source, arg.toString()); // FIXME or JSON.stringify?
     }

@@ -124,7 +124,7 @@ describe('test error', () => {
 
 function recurAndThrow(i) {
   if (i == 0) {
-    throw new Error('pancakes');
+    throw new Error('bad thing');
   }
   recurAndThrow(i-1);
 }
@@ -136,7 +136,7 @@ describe('test stack length', () => {
       recurAndThrow(50);
     } catch (e) {
       try {
-        window.SplunkRum.error(e); // try out the API
+        window.SplunkRum.error('something happened: ', e); // try out the API
       } catch (e2) {
         // swallow
       }
@@ -146,7 +146,8 @@ describe('test stack length', () => {
       assert.ok(span.attributes.component === 'error');
       assert.ok(span.attributes['error.stack'].includes('recurAndThrow'));
       assert.ok(span.attributes['error.stack'].length <= 4096);
-      assert.ok(span.attributes['error.message'].includes('pancakes'));
+      assert.ok(span.attributes['error.message'].includes('something'));
+      assert.ok(span.attributes['error.message'].includes('bad thing'));
       done();
     }, 100);
 
@@ -183,5 +184,16 @@ describe('test console.error', () => {
       assert.ok(span.attributes['error.message'] === 'has some args');
       done();
     }, 100);
+  });
+});
+
+describe('test manual report', () => {
+  it('should not report useless items', () => {
+    capturer.clear();
+    window.SplunkRum.error('');
+    window.SplunkRum.error();
+    window.SplunkRum.error([]);
+    window.SplunkRum.error({});
+    assert.ok(capturer.spans.length === 0);
   });
 });
