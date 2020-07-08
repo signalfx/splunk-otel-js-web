@@ -8,7 +8,7 @@
     "lint": "eslint src/*.js"
   },
   "author": "",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "dependencies": {
     "@opentelemetry/plugin-document-load": "^0.8.0",
     "@opentelemetry/plugin-fetch": "^0.9.0",
