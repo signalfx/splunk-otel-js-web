@@ -39,9 +39,29 @@ function go() {
 
 setTimeout(go, 2000);
 
+function clicky() {
+	console.log('clicky');
+}
+
 </script>
 
 <a href="javascript:go()">Go again</a>
+<a id="route" href="javascript:clicky()">Change name</a>
+<a id="routeAfterFetch" href="javascript:clicky()">Change name after fetch</a>
+
+<script>
+document.getElementById("route").addEventListener('click', function() {
+  history.pushState({}, 'title', '/thisIsArtificiallySet');
+});
+</script>
+
+<script>
+document.getElementById("routeAfterFetch").addEventListener('click', function() {
+  fetch('page2.html').then(function(response) {
+    history.pushState({}, 'title', '/thisIsSetAfterFetch');
+  });
+});
+</script>
 
 <img src="./doesnotexist.jpg">
 
