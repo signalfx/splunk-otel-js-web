@@ -197,3 +197,15 @@ describe('test manual report', () => {
     assert.ok(capturer.spans.length === 0);
   });
 });
+
+describe('test route change', () => {
+  it('should report a span', () => {
+    capturer.clear();
+    history.pushState({}, 'title', '/thisIsAChange');
+    const span = capturer.spans[capturer.spans.length - 1];
+    console.log(span);
+    assert.ok(span.name === 'route change');
+    assert.ok(span.attributes['location.href'].includes('/thisIsAChange'));
+    assert.ok(span.attributes['prev.href'].length > 0);
+  });
+});
