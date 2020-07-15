@@ -29,6 +29,10 @@ if (!window.SplunkRum) {
     const app = options.app || 'unknown-browser-app';
     console.log('SplunkRum.init() starting');
 
+    const instanceId = "xxxxxxxxxxxxxxxx".replace(/x/g, function () {
+      return ((Math.random() * 16) | 0).toString(16);
+    });
+
     const exportUrl = options.beaconUrl;
 
     const cookieName = "_splunk_rum_sid";
@@ -217,7 +221,8 @@ if (!window.SplunkRum) {
       ],
       defaultAttributes: {
         'splunk.rumSessionId': rumSessionId,
-        'app': app
+        'app': app,
+        'scriptInstance': instanceId,
       }
     });
 

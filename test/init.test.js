@@ -53,6 +53,7 @@ describe('creating spans is possible', () => {
       assert.ok(tracer.getCurrentSpan() === span);
       assert.ok(!!span.attributes['splunk.rumSessionId']);
       assert.ok(!!span.attributes['location.href']);
+      assert.ok(!!span.attributes['scriptInstance']);
       assert.equal(span.attributes['app'], 'my-app');
     });
     span.end();
@@ -203,7 +204,6 @@ describe('test route change', () => {
     capturer.clear();
     history.pushState({}, 'title', '/thisIsAChange');
     const span = capturer.spans[capturer.spans.length - 1];
-    console.log(span);
     assert.ok(span.name === 'route change');
     assert.ok(span.attributes['location.href'].includes('/thisIsAChange'));
     assert.ok(span.attributes['prev.href'].length > 0);
