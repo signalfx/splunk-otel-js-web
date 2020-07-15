@@ -56,6 +56,27 @@ if (!window.SplunkRum) {
         // FIXME work out ngZone issues with Angular
         return undefined;
       }
+
+      // FIXME copy+paste job here
+      _patchHistoryMethod() {
+        return (original) => {
+          return function patchHistoryMethod(...args) {
+            const oldHref = location.href;
+            const result = original.apply(this, args);
+            const newHref = location.href;
+            if (oldHref !== newHref) {
+              // FIXME sequencing of access to tracer
+              // FIXME names of attributes/span/component
+              const tracer = window.SplunkRum._provider.getTracer('route');
+              const span = tracer.startSpan('route change');
+              span.setAttribute('prev.href', oldHref)
+              // location.href set with new value by default
+              span.end(span.startTime);
+            }
+            return result;
+          };
+        };
+      }
     }
 
     const whitelistEventTypes = {
