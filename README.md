@@ -22,7 +22,13 @@ Then use dist/splunk-rum.js as your single minified js file.  Place it in your p
 </script>
 ```
 
-(app is optional and defaults to 'unknown-browser-app')
+## `SplunkRum.init({ })` options
+| Option | Type | Notes | Required? | Default |
+|--------|------|-------|-----------|---------|
+| beaconUrl | string | Destination for the captured data | Yes | (No default) |
+| app | string | Application name | No | 'unknown-browser-app' | 
+| captureErrors | boolean | Turns on/off error reporting feature | No | true |
+
 
 ## Errors
 
@@ -36,3 +42,4 @@ If you would like to report an error manually, you can use:
 ```
   window.SplunkRum && window.SplunkRum.error(errorObjectOrMessageString);
 ```
+

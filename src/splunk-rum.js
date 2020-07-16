@@ -13,9 +13,7 @@ if (!window.SplunkRum) {
   window.SplunkRum = {
     inited: false
   };
-  // FIXME learn how to produce docs for 'exported' items (init and its options)
-  // options.beaconUrl (example format: 'http://127.0.0.1:9080/api/v2/spans'
-  // options.app
+
   window.SplunkRum.init = function (options) {
     if (this.inited) {
       console.log("SplunkRum already init()ed.");
@@ -231,10 +229,13 @@ if (!window.SplunkRum) {
     provider.addSpanProcessor(new SimpleSpanProcessor(new PatchedZipkinExporter(exportUrl)));
     provider.register();
     Object.defineProperty(this, '_provider', {value:provider});
-    // FIXME feature flag for errors
-    captureErrors(this, provider); // also registers SplunkRum.error
+    if (!!options.captureErrors) {
+      captureErrors(this, provider); // also registers SplunkRum.error
+    } else {
+      // stub out error reporting method to not break apps that call it
+      this.error = function() { }
+    }
     this.inited = true;
     console.log('SplunkRum.init() complete');
-
   };
 }
