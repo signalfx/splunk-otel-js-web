@@ -1,0 +1,18 @@
+version: 2.1
+
+browsers_unit_tests: &browsers_unit_tests
+  steps:
+    - checkout
+    - run: npm install
+    - run: npm test
+
+jobs:
+  node14-browsers:
+    docker:
+      - image: circleci/node:14-browsers
+    <<: *browsers_unit_tests
+
+workflows:
+  build-and-test:
+    jobs:
+      - node14-browsers
