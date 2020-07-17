@@ -4,7 +4,10 @@ browsers_unit_tests: &browsers_unit_tests
   steps:
     - checkout
     - run: npm install
+    - run: npm run lint
     - run: npm test
+    - run: npx webpack
+    - run: npx webpack --config webpack.dev.js
 
 jobs:
   node14-browsers:
