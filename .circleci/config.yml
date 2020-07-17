@@ -3,10 +3,8 @@ version: 2.1
 browsers_unit_tests: &browsers_unit_tests
   steps:
     - checkout
-    - node/with-cache:
-      steps:
-        - run: npm install
-        - run: npm test
+    - run: npm install
+    - run: npm test
 
 jobs:
   node12-browsers:
