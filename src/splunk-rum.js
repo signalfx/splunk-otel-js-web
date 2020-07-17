@@ -229,7 +229,7 @@ if (!window.SplunkRum) {
     provider.addSpanProcessor(new SimpleSpanProcessor(new PatchedZipkinExporter(exportUrl)));
     provider.register();
     Object.defineProperty(this, '_provider', {value:provider});
-    if (options.captureErrors) {
+    if (options.captureErrors === undefined || options.captureErrors === true) {
       captureErrors(this, provider); // also registers SplunkRum.error
     } else {
       // stub out error reporting method to not break apps that call it
