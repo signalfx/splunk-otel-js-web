@@ -7,12 +7,12 @@ browsers_unit_tests: &browsers_unit_tests
     - run: npm test
 
 jobs:
-  node12-browsers:
+  node14-browsers:
     docker:
-      - image: circleci/node:12-browsers
+      - image: circleci/node:14-browsers
     <<: *browsers_unit_tests
 
 workflows:
   build-and-test:
     jobs:
-      - node12-browsers
+      - node14-browsers
