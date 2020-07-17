@@ -8,6 +8,12 @@ browsers_unit_tests: &browsers_unit_tests
     - run: npm test
     - run: npx webpack
     - run: npx webpack --config webpack.dev.js
+    - store_artifacts:
+        path: dist/splunk-rum.js
+        destination: splunk-rum.js
+    - store_artifacts:
+        path: dist/splunk-rum.debug.js
+        destination: splunk-rum.debug.js
 
 jobs:
   node14-browsers:
