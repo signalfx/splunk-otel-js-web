@@ -1,6 +1,6 @@
 version: 2.1
 
-browsers_unit_tests:
+browsers_unit_tests: &browsers_unit_tests
   steps:
     - checkout
     - node/with-cache:
@@ -12,9 +12,9 @@ jobs:
   node12-browsers:
     docker:
       - image: circleci/node:12-browsers
-      <<: *browsers_unit_tests
+    <<: *browsers_unit_tests
 
 workflows:
-    build-and-test:
-      jobs:
-        - node12-browsers
+  build-and-test:
+    jobs:
+      - node12-browsers
