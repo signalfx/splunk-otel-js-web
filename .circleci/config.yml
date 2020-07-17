@@ -1,17 +1,20 @@
 version: 2.1
+
+browsers_unit_tests:
+  steps:
+    - checkout
+    - node/with-cache:
+      steps:
+        - run: npm install
+        - run: npm test
+
 jobs:
-  docker:
-    - image: circleci/node:12-browsers
-  build-and-test:
-    executor:
-      name: node/default
-    steps:
-      - checkout
-      - node/with-cache:
-          steps:
-            - run: npm install
-            - run: npm test
+  node12-browsers:
+    docker:
+      - image: circleci/node:12-browsers
+      <<: *browsers_unit_tests
+
 workflows:
     build-and-test:
       jobs:
-        - build-and-test
+        - node12-browsers
