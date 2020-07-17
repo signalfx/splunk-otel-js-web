@@ -19,7 +19,7 @@
     "shimmer": "^1.2.1"
   },
   "devDependencies": {
-    "codecov": "^3.1.0",
+    "codecov": "^3.7.1",
     "eslint": "^7.4.0",
     "istanbul-instrumenter-loader": "^3.0.1",
     "karma": "^5.1.0",
