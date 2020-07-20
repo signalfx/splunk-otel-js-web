@@ -7,6 +7,7 @@ import {FetchPlugin} from "@opentelemetry/plugin-fetch";
 import {PatchedZipkinExporter} from './zipkin';
 import {captureTraceParent, captureTraceParentFromPerformanceEntries} from './servertiming';
 import {captureErrors} from "./errors";
+import {generateId} from "./utils";
 
 // FIXME caps on things - in particular on sendBeacon frequency and size.
 if (!window.SplunkRum) {
@@ -27,19 +28,15 @@ if (!window.SplunkRum) {
     const app = options.app || 'unknown-browser-app';
     console.log('SplunkRum.init() starting');
 
-    const instanceId = "xxxxxxxxxxxxxxxx".replace(/x/g, function () {
-      return ((Math.random() * 16) | 0).toString(16);
-    });
+    const instanceId = generateId(64);
 
     const exportUrl = options.beaconUrl;
 
     const cookieName = "_splunk_rum_sid";
 
     if (!document.cookie.includes(cookieName)) {
-      var id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx".replace(/x/g, function () {
-        return ((Math.random() * 16) | 0).toString(16);
-      });
-      document.cookie = cookieName + '=' + id + "; path=/";
+      var sessionId = generateId(128);
+      document.cookie = cookieName + '=' + sessionId + "; path=/";
     }
     var rumSessionId = function () {
       var decodedCookie = decodeURIComponent(document.cookie);
