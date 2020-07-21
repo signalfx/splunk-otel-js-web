@@ -16,9 +16,8 @@ function limit(s, limit) {
 }
 
 function addStackIfUseful(span, err) {
-  // FIXME handle Map<> form of err.stack
   if (err && err.stack && useful(err.stack)) {
-    span.setAttribute('error.stack', limit(err.stack, STACK_LIMIT));
+    span.setAttribute('error.stack', limit(err.stack.toString(), STACK_LIMIT));
   }
 }
 
@@ -43,7 +42,6 @@ function captureError(reporter) {
   });
 }
 
-// FIXME limit length of error.message
 class ErrorReporter {
   constructor(tracer) {
     this.tracer = tracer;

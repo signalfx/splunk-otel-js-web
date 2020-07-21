@@ -63,7 +63,6 @@ if (!window.SplunkRum) {
             const result = original.apply(this, args);
             const newHref = location.href;
             if (oldHref !== newHref) {
-              // FIXME sequencing of access to tracer
               // FIXME names of attributes/span/component
               const tracer = window.SplunkRum._provider.getTracer('route');
               const span = tracer.startSpan('route change');
@@ -184,7 +183,7 @@ if (!window.SplunkRum) {
 
     // A random place to list a bunch of items that are unresolved
     // FIXME is there any way to tell that a resource load failed from its performance entry?
-    // FIXME is there any way to get sizes of transfer everywhere? (xhr/fetch result, resource load, initial doc)
+    // FIXME pull in latest plugins with my added request size for xhr/fetch/load
     // FIXME longtask
     // FIXME repo/licensing issues
     // FIXME strip http.user_agent from spans as redundant

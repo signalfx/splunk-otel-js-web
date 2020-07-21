@@ -39,7 +39,8 @@ describe('test init', () => {
   describe('double-init has no effect', () => {
     it('should have been inited only once', () => {
       window.SplunkRum.init({beaconUrl: 'http://127.0.0.1:8888/bar'});
-      // FIXME way to check this state (e.g., capture beaconUrl and ensure it hasn't changed
+      const sps = window.SplunkRum._provider.getActiveSpanProcessor()._spanProcessors;
+      assert.ok(sps[0]._exporter.beaconUrl.endsWith('/foo'));
     });
   });
 });
