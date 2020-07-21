@@ -1,16 +1,7 @@
-## Building
-Build as so:
-
-```
-$ npm install
-$ npm run lint (optional)
-$ npm test (optional)
-$ npx webpack
-```
-
 ## Installing into your app
-Then use dist/splunk-rum.js as your single minified js file.  Place it in your page as
+You'll need to either build the final splunk-rum.js file or obtain it from a release.
 
+Place it in your page as
 ```
 <script src="whatever/splunk-rum.js"></script>
 <script>

@@ -2,7 +2,7 @@ const TerserPlugin = require('terser-webpack-plugin');
 const path = require('path');
 
 module.exports = {
-  entry: './src/splunk-rum.js',
+  entry: './src/main.js',
   mode: 'production',
   optimization: {
     minimize: true,
