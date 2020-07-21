@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 import * as api from '@opentelemetry/api';
 
-require('../src/splunk-rum.js');
+require('../src/main.js');
 class SpanCapturer {
   constructor() {
     this.spans = [];

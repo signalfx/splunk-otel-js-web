@@ -1,7 +1,7 @@
 const path = require('path');
 
 module.exports = {
-  entry: './src/splunk-rum.js',
+  entry: './src/main.js',
   mode: 'development',
   optimization: {
     minimize: false,
