@@ -1,4 +1,4 @@
-import {ConsoleSpanExporter, SimpleSpanProcessor} from '@opentelemetry/tracing';
+import {SimpleSpanProcessor} from '@opentelemetry/tracing';
 import {WebTracerProvider} from '@opentelemetry/web';
 import {DocumentLoad} from '@opentelemetry/plugin-document-load';
 import {XMLHttpRequestPlugin} from '@opentelemetry/plugin-xml-http-request';
@@ -26,7 +26,6 @@ if (!window.SplunkRum) {
       return;
     }
     const app = options.app || 'unknown-browser-app';
-    console.log('SplunkRum.init() starting');
 
     const instanceId = generateId(64);
 
@@ -221,8 +220,6 @@ if (!window.SplunkRum) {
       }
     });
 
-
-    provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
     provider.addSpanProcessor(new SimpleSpanProcessor(new PatchedZipkinExporter(exportUrl)));
     provider.register();
     Object.defineProperty(this, '_provider', {value:provider});
