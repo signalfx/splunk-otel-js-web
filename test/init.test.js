@@ -210,3 +210,19 @@ describe('test route change', () => {
     assert.ok(span.attributes['prev.href'].length > 0);
   });
 });
+
+describe('can remove wrapped event listeners', () => {
+  it('does not break behavior', () => {
+    var called = false;
+    const listener = function() {
+      called = true;
+    };
+    document.body.addEventListener('testy', listener)
+    document.body.dispatchEvent(new Event('testy'));
+    assert.ok(called === true);
+    called = false;
+    document.body.removeEventListener('testy', listener)
+    document.body.dispatchEvent(new Event('testy'));
+    assert.ok(called === false);
+  });
+});
