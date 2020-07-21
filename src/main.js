@@ -92,6 +92,8 @@ if (!window.SplunkRum) {
     };
     // FIXME more ugly copy+paste to patch in functionality.  In this case limiting the
     // types of events we care to listen to (too many mousemove events => too many spans)
+
+    const wrappedListeners = new WeakMap();
     const uip = new PatchedUIP();
     uip._patchElement = function () {
       const plugin = this;
@@ -115,10 +117,26 @@ if (!window.SplunkRum) {
               return listener.apply(target, args);
             }
           };
+          wrappedListeners.set(listener, patchedListener);
           return original.call(this, type, patchedListener, useCapture);
         };
       };
     }
+    // FIXME upstream this stuff - behavior is broken in original
+    const origRemoveEventListener = HTMLElement.prototype.removeEventListener;
+    HTMLElement.prototype.removeEventListener = function(type, listener) {
+      if (arguments.length < 2) {
+        return origRemoveEventListener.apply(this, arguments);
+      }
+      const wrapped = wrappedListeners.get(listener);
+      if (wrapped) {
+        const argCopy = Array.from(arguments);
+        argCopy[1] = wrapped;
+        return origRemoveEventListener.apply(this, argCopy);
+      } else {
+        return origRemoveEventListener.apply(this, arguments);
+      }
+    };
 
 
     // FIXME this is still not the cleanest way to add an attribute to all created spans..,
