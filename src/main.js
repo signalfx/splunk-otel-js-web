@@ -8,6 +8,7 @@ import {PatchedZipkinExporter} from './zipkin';
 import {captureTraceParent, captureTraceParentFromPerformanceEntries} from './servertiming';
 import {captureErrors} from "./errors";
 import {generateId} from "./utils";
+import {version} from "../package.json";
 
 // FIXME caps on things - in particular on sendBeacon frequency and size.
 if (!window.SplunkRum) {
@@ -22,7 +23,7 @@ if (!window.SplunkRum) {
     }
     if (!options.beaconUrl) {
       // FIXME error handling
-      console.log("init( {beaconUrl: 'https://something'} ) is required.");
+      console.log("SplunkRum.init( {beaconUrl: 'https://something'} ) is required.");
       return;
     }
     const app = options.app || 'unknown-browser-app';
@@ -232,6 +233,7 @@ if (!window.SplunkRum) {
       ],
       defaultAttributes: {
         'splunk.rumSessionId': rumSessionId,
+        "splunk.rumVersion": version,
         'app': app,
         'scriptInstance': instanceId,
       }
