@@ -55,7 +55,7 @@ describe('creating spans is possible', () => {
       assert.ok(!!span.attributes['splunk.rumSessionId']);
       assert.ok(!!span.attributes['splunk.rumVersion']);
       assert.ok(!!span.attributes['location.href']);
-      assert.ok(!!span.attributes['scriptInstance']);
+      assert.ok(!!span.attributes['splunk.scriptInstance']);
       assert.equal(span.attributes['app'], 'my-app');
     });
     span.end();
