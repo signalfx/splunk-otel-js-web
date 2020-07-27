@@ -140,6 +140,10 @@ if (!window.SplunkRum) {
       }
     };
 
+    // suppress behavior of renaming spans as 'Navigation {new href}'
+    uip._updateInteractionName = function() {}
+
+
 
     // FIXME this is still not the cleanest way to add an attribute to all created spans..,
     class PatchedWTP extends WebTracerProvider {
