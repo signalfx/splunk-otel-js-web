@@ -227,3 +227,14 @@ describe('can remove wrapped event listeners', () => {
     assert.ok(called === false);
   });
 });
+
+describe('can produce click events', () => {
+  it('creates a span for them', () => {
+    capturer.clear();
+    document.body.addEventListener('dblclick', function() { /* nop */});
+    document.body.dispatchEvent(new Event('dblclick'));
+    assert.ok(capturer.spans.length === 1);
+    assert.ok(capturer.spans[0].name === 'dblclick');
+  });
+});
+

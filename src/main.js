@@ -105,6 +105,7 @@ if (!window.SplunkRum) {
             if (whitelistEventTypes[type]) {
               const span = plugin._createSpan(target, type);
               if (span) {
+                span.name = type; // override high cardinality name (FIXME: upstream pending hopefully)
                 return plugin._tracer.withSpan(span, () => {
                   const result = listener.apply(target, args);
                   // no zone so end span immediately
