@@ -235,7 +235,7 @@ if (!window.SplunkRum) {
         'splunk.rumSessionId': rumSessionId,
         "splunk.rumVersion": version,
         'app': app,
-        'scriptInstance': instanceId,
+        'splunk.scriptInstance': instanceId,
       }
     });
 
