@@ -10,7 +10,6 @@ import {captureErrors} from "./errors";
 import {generateId} from "./utils";
 import {version} from "../package.json";
 
-// FIXME caps on things - in particular on sendBeacon frequency and size.
 if (!window.SplunkRum) {
   window.SplunkRum = {
     inited: false
@@ -52,7 +51,7 @@ if (!window.SplunkRum) {
 
     class PatchedUIP extends UserInteractionPlugin {
       getZoneWithPrototype() {
-        // FIXME work out ngZone issues with Angular
+        // FIXME work out ngZone issues with Angular  PENDING
         return undefined;
       }
 
@@ -167,7 +166,6 @@ if (!window.SplunkRum) {
     const xhrplugin = new XMLHttpRequestPlugin();
 
     // FIXME another thing to figure out how to patch more cleanly
-    // FIXME also start augmenting test suites for this stuff
     const origCreateSpan = xhrplugin._createSpan;
     xhrplugin._createSpan = function () {
       const xhr = arguments[0];
@@ -208,7 +206,7 @@ if (!window.SplunkRum) {
 
     // A random place to list a bunch of items that are unresolved
     // FIXME is there any way to tell that a resource load failed from its performance entry?
-    // FIXME pull in latest plugins with my added request size for xhr/fetch/load
+    // FIXME pull in latest plugins with my added request size for xhr/fetch/load  PENDING
     // FIXME longtask
     // FIXME repo/licensing issues
     // FIXME strip http.user_agent from spans as redundant
