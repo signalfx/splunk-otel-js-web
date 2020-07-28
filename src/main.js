@@ -56,7 +56,7 @@ if (!window.SplunkRum) {
         return undefined;
       }
 
-      // FIXME copy+paste job here
+      // FIXME find cleaner way to patch
       _patchHistoryMethod() {
         return (original) => {
           return function patchHistoryMethod(...args) {
@@ -93,6 +93,7 @@ if (!window.SplunkRum) {
     };
     // FIXME more ugly copy+paste to patch in functionality.  In this case limiting the
     // types of events we care to listen to (too many mousemove events => too many spans)
+    // (PENDING upstream)
 
     const wrappedListeners = new WeakMap();
     const uip = new PatchedUIP();
@@ -124,7 +125,7 @@ if (!window.SplunkRum) {
         };
       };
     }
-    // FIXME upstream this stuff - behavior is broken in original
+    // FIXME downstream the improved version of this from otel / PENDING
     const origRemoveEventListener = HTMLElement.prototype.removeEventListener;
     HTMLElement.prototype.removeEventListener = function(type, listener) {
       if (arguments.length < 2) {
