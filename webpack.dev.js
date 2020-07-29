@@ -2,7 +2,8 @@ const path = require('path');
 
 module.exports = {
   entry: './src/main.js',
-  mode: 'development',
+  // don't mess with source maps, etc.; just don't minimize the code
+  mode: 'production',
   optimization: {
     minimize: false,
   },
