@@ -8,7 +8,7 @@ import {PatchedZipkinExporter} from './zipkin';
 import {captureTraceParent, captureTraceParentFromPerformanceEntries} from './servertiming';
 import {captureErrors} from "./errors";
 import {generateId} from "./utils";
-import {version} from "../package.json";
+import {version as SplunkRumVersion} from "../package.json";
 
 if (!window.SplunkRum) {
   window.SplunkRum = {
@@ -157,6 +157,11 @@ if (!window.SplunkRum) {
         tracer.startSpan = function () {
           const span = origStartSpan.apply(tracer, arguments);
           span.setAttribute('location.href', location.href);
+          // FIXME does otel want this stuff in Resource?
+          span.setAttribute('splunk.rumSessionId', rumSessionId);
+          span.setAttribute('splunk.rumVersion', SplunkRumVersion);
+          span.setAttribute('app', app);
+          span.setAttribute('splunk.scriptInstance', instanceId)
           return span;
         }
         return tracer;
@@ -179,6 +184,8 @@ if (!window.SplunkRum) {
           }
         }
       });
+      // FIXME long-term answer for depcreating attributes.component?
+      span.setAttribute('component', xhrplugin.moduleName);
       return span;
     }
 
@@ -235,12 +242,6 @@ if (!window.SplunkRum) {
         fetch,
         uip,
       ],
-      defaultAttributes: {
-        'splunk.rumSessionId': rumSessionId,
-        "splunk.rumVersion": version,
-        'app': app,
-        'splunk.scriptInstance': instanceId,
-      }
     });
 
     provider.addSpanProcessor(new SimpleSpanProcessor(new PatchedZipkinExporter(exportUrl)));

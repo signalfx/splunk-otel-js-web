@@ -48,7 +48,7 @@ describe('test init', () => {
 describe('creating spans is possible', () => {
   // FIXME figure out ways to validate zipkin 'export', sendBeacon, etc. etc.
   it('should have extra fields added', () => {
-    let tracer = api.trace.getTracer('test');
+    let tracer = window.SplunkRum._provider.getTracer('test');
     let span = tracer.startSpan('testSpan');
     tracer.withSpan(span, () => {
       assert.ok(tracer.getCurrentSpan() === span);
@@ -66,15 +66,16 @@ describe('creating spans is possible', () => {
 // we didn't mess up the basic flow/behavior of the plugin
 describe('test xhr', () => {
   it('should capture an xhr span', (done) => {
-    capturer.clear();
     const xhr = new XMLHttpRequest();
-    xhr.open('GET', 'client.html');
+    xhr.open('GET', 'context.html');
     xhr.addEventListener('loadend', () => {
       setTimeout(() => {
         assert.ok(capturer.spans[capturer.spans.length-1].attributes.component === 'xml-http-request');
+        // assert.ok(capturer.spans[capturer.spans.length-1].attributes.encodedBodySize > 0);
         done();
       }, 3000);
     });
+    capturer.clear();
     xhr.send();
   });
 });
@@ -83,7 +84,7 @@ describe('test xhr', () => {
 describe('test fetch', () => {
   it('should capture a fetch span', (done) => {
     capturer.clear();
-    window.fetch('client.html').then(() => {
+    window.fetch('context.html').then(() => {
       setTimeout(() => {
         assert.ok(capturer.spans[capturer.spans.length-1].attributes.component === 'fetch');
         done();
