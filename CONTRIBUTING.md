@@ -26,6 +26,5 @@ $ npx webpack
        release from the tag.  Doing this and publishing will change/overwrite the automatically
        generated one.
     1. Fill out release title, release notes
-    1. Check "This is a pre-release"
     1. Attach splunk-rum.js
     1. "Publish" the release.
