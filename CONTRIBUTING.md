@@ -21,7 +21,11 @@ $ npx webpack
 1. `git tag v0.0.7`
 1. `git push origin v0.0.7`
 1. Release on github: https://github.com/signalfx/rum-browser-js/releases/
-    1. "Create a new release"
-    1. Fill out the tag version, release title, release notes
+    1. "Draft a new release"
+    1. Fill out the tag version.  This is confusing as github has automatically created a 
+       release from the tag.  Doing this and publishing will change/overwrite the automatically
+       generated one.
+    1. Fill out release title, release notes
+    1. Check "This is a pre-release"
     1. Attach splunk-rum.js
-    1. Check "This is a pre-release "
+    1. "Publish" the release.
