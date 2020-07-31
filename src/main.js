@@ -71,7 +71,7 @@ if (!window.SplunkRum) {
       }
 
       _allowEventType(eventType) {
-      	return whitelistEventTypes[eventType];
+        return whitelistEventTypes[eventType];
       }
 
       // FIXME find cleaner way to patch
