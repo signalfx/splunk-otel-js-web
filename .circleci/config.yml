@@ -3,6 +3,10 @@ version: 2.1
 browsers_unit_tests: &browsers_unit_tests
   steps:
     - checkout
+    - run: git submodule init
+    - run: git submodule update
+    - run: cd deps/opentelemetry-js && npm install && npm run compile && cd ../..
+    - run: cd deps/opentelemetry-js-contrib && npm install && npm run compile && cd ../..
     - run: npm install
     - run: npm run lint
     - run: npm test
