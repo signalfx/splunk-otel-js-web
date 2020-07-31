@@ -20,12 +20,12 @@ browsers_unit_tests: &browsers_unit_tests
         destination: splunk-rum.debug.js
 
 jobs:
-  node14-browsers:
+  node-browsers:
     docker:
-      - image: circleci/node:14-browsers
+      - image: circleci/node:12-browsers
     <<: *browsers_unit_tests
 
 workflows:
   build-and-test:
     jobs:
-      - node14-browsers
+      - node-browsers
