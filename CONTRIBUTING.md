@@ -1,4 +1,24 @@
-## Building
+## Building, preamble
+This repo makes use of git submodules to pull in the latest otel-js and otel-js-contrib code.  In time we may move to only using
+published versions.  Meanwhile, do not modify anything in the deps/ directory once you've updated the submodules.  We want to make
+direct contributions to otel upstream.
+
+```
+$ git submodule init   (one-time)
+$ git submodule update  (every time you update this repo)
+$ cd deps/opentelemetry-js
+$ npm install
+$ npm run compile
+cd ../opentelemetry-js-contrib
+$ npm install
+$ npm run compile
+$ cd ../..
+```
+
+If these instructions do not seem to work, Follow the instructions in each repo's CONTRBUTING.md; perhaps they've been updated.
+Yes, this takes a while.
+
+## Building, for real
 Build as so:
 
 ```
@@ -9,12 +29,32 @@ $ npx webpack
 # npx webpack -config webpack.dev.js (optional)
 ```
 
+
+## Updating deps from upstream
+
+Periodically this repo needs to pull in the latest from upstream (otel-js and otel-js-contrib).  I recommend doing one at a time
+and testing in between to isolate things that affect us more directly.
+
+```
+$ cd deps/
+$ git submodule status (review output, note the commit hash of each upstream HEAD, compare to actual remote HEAD)
+$ git submodule update --remote opentelemetry-js (or -contrib)
+(run tests, automated and manual sanity; adjust our code as necessary).
+$ git diff
+(You should see a diff showing the commit hashes changing for the submodules)
+```
+
+From here, you can commit+push like normal.
+
+
 ## Releasing (During alpha/beta/preview)
 
+1. `git pull`, generally clean up the workspace.
 1. Bump version in package.json: e.g., `version: "0.0.7",`
 1. Run build + tests:
     ```
-   ./fullbuild.sh
+    $ git submodule update
+    $ ./fullbuild.sh
     ```
 1. Manual sanity test
 1. commit + push change to package.json

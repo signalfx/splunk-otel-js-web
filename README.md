@@ -1,5 +1,6 @@
 ## Installing into your app
 You'll need to either build the final splunk-rum.js file or obtain it from a release.
+To build from scratch, please see the notes in CONTRIBUTING.md.
 
 Place it in your page as
 ```

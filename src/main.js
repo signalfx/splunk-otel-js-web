@@ -49,10 +49,29 @@ if (!window.SplunkRum) {
       return undefined;
     }();
 
+    const whitelistEventTypes = {
+      click: true,
+      dblclick: true,
+      submit: true,
+      reset: true,
+      dragend: true,
+      drop: true,
+      ended: true,
+      pause: true,
+      play: true,
+      change: true,
+      mousedown: true,
+      mouseup: true,
+    };
+
     class PatchedUIP extends UserInteractionPlugin {
       getZoneWithPrototype() {
         // FIXME work out ngZone issues with Angular  PENDING
         return undefined;
+      }
+
+      _allowEventType(eventType) {
+      	return whitelistEventTypes[eventType];
       }
 
       // FIXME find cleaner way to patch
@@ -75,74 +94,10 @@ if (!window.SplunkRum) {
         };
       }
     }
-
-    const whitelistEventTypes = {
-      click: true,
-      dblclick: true,
-      submit: true,
-      reset: true,
-      dragend: true,
-      drop: true,
-      ended: true,
-      pause: true,
-      play: true,
-      change: true,
-      mousedown: true,
-      mouseup: true,
-    };
-    // FIXME more ugly copy+paste to patch in functionality.  In this case limiting the
-    // types of events we care to listen to (too many mousemove events => too many spans)
-    // (PENDING upstream)
-
-    const wrappedListeners = new WeakMap();
     const uip = new PatchedUIP();
-    uip._patchElement = function () {
-      const plugin = this;
-      return (original) => {
-        return function addEventListenerPatched(type, listener, useCapture) {
-          const patchedListener = (...args) => {
-            const target = this;
-            if (whitelistEventTypes[type]) {
-              const span = plugin._createSpan(target, type);
-              if (span) {
-                span.name = type; // override high cardinality name (FIXME: upstream pending hopefully)
-                return plugin._tracer.withSpan(span, () => {
-                  const result = listener.apply(target, args);
-                  // no zone so end span immediately
-                  span.end();
-                  return result;
-                });
-              } else {
-                return listener.apply(target, args);
-              }
-            } else {
-              return listener.apply(target, args);
-            }
-          };
-          wrappedListeners.set(listener, patchedListener);
-          return original.call(this, type, patchedListener, useCapture);
-        };
-      };
-    }
-    // FIXME downstream the improved version of this from otel / PENDING
-    const origRemoveEventListener = HTMLElement.prototype.removeEventListener;
-    HTMLElement.prototype.removeEventListener = function(type, listener) {
-      if (arguments.length < 2) {
-        return origRemoveEventListener.apply(this, arguments);
-      }
-      const wrapped = wrappedListeners.get(listener);
-      if (wrapped) {
-        const argCopy = Array.from(arguments);
-        argCopy[1] = wrapped;
-        return origRemoveEventListener.apply(this, argCopy);
-      } else {
-        return origRemoveEventListener.apply(this, arguments);
-      }
-    };
 
     // suppress behavior of renaming spans as 'Navigation {new href}'
     uip._updateInteractionName = function() {}
-
 
 
     // FIXME this is still not the cleanest way to add an attribute to all created spans..,

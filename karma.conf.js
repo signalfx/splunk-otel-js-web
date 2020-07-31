@@ -1,5 +1,6 @@
 // Karma configuration
 // Generated on Thu Jun 04 2020 09:56:24 GMT-0400 (Eastern Daylight Time)
+const aliases = require('./webpack.alias.js');
 
 module.exports = function (config) {
     config.set({
@@ -59,6 +60,7 @@ module.exports = function (config) {
         // start these browsers
         // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
         browsers: ['Chrome', 'Firefox'],
+//        browsers: ['Chrome'], // useful to speed up edit+test cycle
 
 
         // Continuous Integration mode
@@ -73,14 +75,14 @@ module.exports = function (config) {
             mode: 'development',
             target: 'web',
             output: {filename: 'bundle.js'},
-            resolve: {extensions: ['.ts', '.js']},
+            resolve: { alias: aliases },
             devtool: 'inline-source-map',
             module: {
                 rules: [
                     {test: /\.js$/},
                     {
                         enforce: 'post',
-                        exclude: /(node_modules|\.test\.[tj]sx?$)/,
+                        exclude: /(deps|node_modules|\.test\.[tj]sx?$)/,
                         test: /\.js$/,
                         use: {
                             loader: 'istanbul-instrumenter-loader',
