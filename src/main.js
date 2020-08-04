@@ -1,11 +1,11 @@
 import {SimpleSpanProcessor} from '@opentelemetry/tracing';
 import {WebTracerProvider} from '@opentelemetry/web';
 import {DocumentLoad} from '@opentelemetry/plugin-document-load';
-import {XMLHttpRequestPlugin} from '@opentelemetry/plugin-xml-http-request';
+import {SplunkXhrPlugin} from './xhrfetch';
+import {SplunkFetchPlugin} from './xhrfetch';
+import {captureTraceParentFromPerformanceEntries} from './servertiming';
 import {UserInteractionPlugin} from '@opentelemetry/plugin-user-interaction';
-import {FetchPlugin} from "@opentelemetry/plugin-fetch";
 import {PatchedZipkinExporter} from './zipkin';
-import {captureTraceParent, captureTraceParentFromPerformanceEntries} from './servertiming';
 import {captureErrors} from "./errors";
 import {generateId} from "./utils";
 import {version as SplunkRumVersion} from "../package.json";
@@ -123,27 +123,6 @@ if (!window.SplunkRum) {
       }
     }
 
-    const xhrplugin = new XMLHttpRequestPlugin();
-
-    // FIXME another thing to figure out how to patch more cleanly
-    const origCreateSpan = xhrplugin._createSpan;
-    xhrplugin._createSpan = function () {
-      const xhr = arguments[0];
-      const span = origCreateSpan.apply(xhrplugin, arguments);
-      // don't care about success/failure, just want to see response headers if they exist
-      xhr.addEventListener('readystatechange', function () {
-        if (xhr.readyState == xhr.HEADERS_RECEIVED && xhr.getAllResponseHeaders().includes('server-timing')) {
-          const st = xhr.getResponseHeader('server-timing');
-          if (st) {
-            captureTraceParent(st, span);
-          }
-        }
-      });
-      // FIXME long-term answer for depcreating attributes.component?
-      span.setAttribute('component', xhrplugin.moduleName);
-      return span;
-    }
-
     // And now for patching in docload to look for Server-Timing
     const docLoad = new DocumentLoad();
     const origEndSpan = docLoad._endSpan;
@@ -174,27 +153,12 @@ if (!window.SplunkRum) {
     // FIXME strip http.user_agent from spans as redundant
     // FIXME rumKey
 
-    const fetch = new FetchPlugin();
-    const origAFSA = fetch._addFinalSpanAttributes;
-    fetch._addFinalSpanAttributes = function () {
-      if (arguments.length >= 2) {
-        const span = arguments[0];
-        const fetchResponse = arguments[1];
-        if (span && fetchResponse && fetchResponse.headers) {
-          const st = fetchResponse.headers.get('Server-Timing');
-          if (st) {
-            captureTraceParent(st, span);
-          }
-        }
-      }
-      origAFSA.apply(fetch, arguments);
-    };
 
     const provider = new PatchedWTP({
       plugins: [
         docLoad,
-        xhrplugin,
-        fetch,
+        new SplunkXhrPlugin(),
+        new SplunkFetchPlugin(),
         uip,
       ],
     });
