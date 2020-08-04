@@ -1,6 +1,7 @@
 version: 2.1
 
 browsers_unit_tests: &browsers_unit_tests
+  resource_class: large
   steps:
     - checkout
     - run: git submodule init
