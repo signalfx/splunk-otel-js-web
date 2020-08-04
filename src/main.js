@@ -6,7 +6,7 @@ import {SplunkFetchPlugin} from './xhrfetch';
 import {SplunkUserInteractionPlugin} from "./interaction";
 import {PatchedZipkinExporter} from './zipkin';
 import {captureErrors} from "./errors";
-import {generateId} from "./utils";
+import {findCookieValue, generateId} from "./utils";
 import {version as SplunkRumVersion} from "../package.json";
 
 if (!window.SplunkRum) {
@@ -34,18 +34,7 @@ if (!window.SplunkRum) {
       var sessionId = generateId(128);
       document.cookie = cookieName + '=' + sessionId + "; path=/";
     }
-    var rumSessionId = function () {
-      var decodedCookie = decodeURIComponent(document.cookie);
-      var cookies = decodedCookie.split(';');
-      for (var i = 0; i < cookies.length; i++) {
-        var c = cookies[i].trim();
-        if (c.indexOf(cookieName + '=') === 0) {
-          return c.substring((cookieName + '=').length, c.length);
-        }
-      }
-      return undefined;
-    }();
-
+    const rumSessionId = findCookieValue(cookieName);
 
     // FIXME this is still not the cleanest way to add an attribute to all created spans..,
     class PatchedWTP extends WebTracerProvider {
