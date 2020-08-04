@@ -5,7 +5,8 @@ browsers_unit_tests: &browsers_unit_tests
     - checkout
     - run: git submodule init
     - run: git submodule update
-    - run: cd deps/opentelemetry-js && npm install --ignore-scripts && npx lerna bootstrap --no-ci --loglevel=silly && cd ../..
+    - run: cd deps/opentelemetry-js && npm install --ignore-scripts
+    - run: cd deps/opentelemetry-js && npx lerna bootstrap --no-ci --loglevel=silly
     - run: cd deps/opentelemetry-js-contrib && npm install && npm run compile && cd ../..
     - run: npm install
     - run: npm run lint
