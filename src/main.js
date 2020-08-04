@@ -3,7 +3,7 @@ import {WebTracerProvider} from '@opentelemetry/web';
 import {SplunkDocumentLoad} from './docload';
 import {SplunkXhrPlugin} from './xhrfetch';
 import {SplunkFetchPlugin} from './xhrfetch';
-import {UserInteractionPlugin} from '@opentelemetry/plugin-user-interaction';
+import {SplunkUserInteractionPlugin} from "./interaction";
 import {PatchedZipkinExporter} from './zipkin';
 import {captureErrors} from "./errors";
 import {generateId} from "./utils";
@@ -28,8 +28,6 @@ if (!window.SplunkRum) {
 
     const instanceId = generateId(64);
 
-    const exportUrl = options.beaconUrl;
-
     const cookieName = "_splunk_rum_sid";
 
     if (!document.cookie.includes(cookieName)) {
@@ -48,57 +46,6 @@ if (!window.SplunkRum) {
       return undefined;
     }();
 
-    const whitelistEventTypes = {
-      click: true,
-      dblclick: true,
-      submit: true,
-      reset: true,
-      dragend: true,
-      drop: true,
-      ended: true,
-      pause: true,
-      play: true,
-      change: true,
-      mousedown: true,
-      mouseup: true,
-    };
-
-    class PatchedUIP extends UserInteractionPlugin {
-      getZoneWithPrototype() {
-        // FIXME work out ngZone issues with Angular  PENDING
-        return undefined;
-      }
-
-      _allowEventType(eventType) {
-        return whitelistEventTypes[eventType];
-      }
-
-      // FIXME find cleaner way to patch
-      _patchHistoryMethod() {
-        return (original) => {
-          return function patchHistoryMethod(...args) {
-            const oldHref = location.href;
-            const result = original.apply(this, args);
-            const newHref = location.href;
-            if (oldHref !== newHref) {
-              // FIXME names of attributes/span/component
-              const tracer = window.SplunkRum._provider.getTracer('route');
-              const span = tracer.startSpan('route change');
-              span.setAttribute('prev.href', oldHref)
-              // location.href set with new value by default
-              span.end(span.startTime);
-            }
-            return result;
-          };
-        };
-      }
-      // suppress behavior of renaming spans as 'Navigation {new href}'
-      // eslint-disable-next-line no-unused-vars
-      _updateInteractionName(url) {
-        // deliberate nop
-      }
-    }
-    const uip = new PatchedUIP();
 
     // FIXME this is still not the cleanest way to add an attribute to all created spans..,
     class PatchedWTP extends WebTracerProvider {
@@ -138,11 +85,11 @@ if (!window.SplunkRum) {
         new SplunkDocumentLoad(),
         new SplunkXhrPlugin(),
         new SplunkFetchPlugin(),
-        uip,
+        new SplunkUserInteractionPlugin(),
       ],
     });
 
-    provider.addSpanProcessor(new SimpleSpanProcessor(new PatchedZipkinExporter(exportUrl)));
+    provider.addSpanProcessor(new SimpleSpanProcessor(new PatchedZipkinExporter(options.beaconUrl)));
     provider.register();
     Object.defineProperty(this, '_provider', {value:provider});
     if (options.captureErrors === undefined || options.captureErrors === true) {
