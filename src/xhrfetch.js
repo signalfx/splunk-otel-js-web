@@ -33,6 +33,6 @@ export class SplunkFetchPlugin extends FetchPlugin {
         captureTraceParent(st, span);
       }
     }
-    super._addFinalSpanAttributes(span, fetchResponse);
+    return super._addFinalSpanAttributes(span, fetchResponse);
   }
 }

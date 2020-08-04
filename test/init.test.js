@@ -26,7 +26,7 @@ describe('test init', () => {
     });
   });
   describe('successful', () => {
-    it('should have been inited and created a session cookie', () => {
+    it('should have been inited properly with doc load spans', (done) => {
       window.SplunkRum.init({
         beaconUrl: 'http://127.0.0.1:9999/foo',
         app: 'my-app'
@@ -34,6 +34,22 @@ describe('test init', () => {
       assert.ok(window.SplunkRum.inited);
       assert.ok(document.cookie.includes("_splunk_rum_sid"));
       window.SplunkRum._provider.addSpanProcessor(capturer);
+      setTimeout(()=> {
+        if (navigator.userAgent.includes('Firefox')) {
+          done(); // Firefox produces doc load spans; why aren't they visible in this test in this way?
+          return;
+        }
+        assert.ok(capturer.spans.length !== 0);
+        var foundFetch = false;
+        capturer.spans.forEach( span => {
+          if (span.name === 'documentFetch') {
+            foundFetch = true;
+            assert.ok(span.attributes['link.spanId'] === '0000000000000002');
+          }
+        });
+        assert.ok(foundFetch);
+        done();
+      }, 1000);
     });
   });
   describe('double-init has no effect', () => {

@@ -1,9 +1,8 @@
 import {SimpleSpanProcessor} from '@opentelemetry/tracing';
 import {WebTracerProvider} from '@opentelemetry/web';
-import {DocumentLoad} from '@opentelemetry/plugin-document-load';
+import {SplunkDocumentLoad} from './docload';
 import {SplunkXhrPlugin} from './xhrfetch';
 import {SplunkFetchPlugin} from './xhrfetch';
-import {captureTraceParentFromPerformanceEntries} from './servertiming';
 import {UserInteractionPlugin} from '@opentelemetry/plugin-user-interaction';
 import {PatchedZipkinExporter} from './zipkin';
 import {captureErrors} from "./errors";
@@ -93,12 +92,13 @@ if (!window.SplunkRum) {
           };
         };
       }
+      // suppress behavior of renaming spans as 'Navigation {new href}'
+      // eslint-disable-next-line no-unused-vars
+      _updateInteractionName(url) {
+        // deliberate nop
+      }
     }
     const uip = new PatchedUIP();
-
-    // suppress behavior of renaming spans as 'Navigation {new href}'
-    uip._updateInteractionName = function() {}
-
 
     // FIXME this is still not the cleanest way to add an attribute to all created spans..,
     class PatchedWTP extends WebTracerProvider {
@@ -123,40 +123,19 @@ if (!window.SplunkRum) {
       }
     }
 
-    // And now for patching in docload to look for Server-Timing
-    const docLoad = new DocumentLoad();
-    const origEndSpan = docLoad._endSpan;
-    docLoad._endSpan = function (span, performanceName, entries) {
-      if (span && span.name !== 'documentLoad') { // only apply link to document fetch
-        captureTraceParentFromPerformanceEntries(entries, span);
-      }
-      return origEndSpan.apply(docLoad, arguments);
-    };
-    // To maintain compatibility, getEntries copies out select items from
-    // different versions of the performance API into its own structure for the
-    // intitial document load (but leaves the entries undisturbed for resource loads).
-    const origGetEntries = docLoad._getEntries;
-    docLoad._getEntries = function () {
-      const answer = origGetEntries.apply(docLoad, arguments);
-      const navEntries = performance.getEntriesByType('navigation');
-      if (navEntries && navEntries[0] && navEntries[0].serverTiming) {
-        answer.serverTiming = navEntries[0].serverTiming;
-      }
-      return answer;
-    };
 
     // A random place to list a bunch of items that are unresolved
     // FIXME is there any way to tell that a resource load failed from its performance entry?
-    // FIXME pull in latest plugins with my added request size for xhr/fetch/load  PENDING
     // FIXME longtask
     // FIXME repo/licensing issues
     // FIXME strip http.user_agent from spans as redundant
     // FIXME rumKey
+    // FIXME circleci build still broken
 
 
     const provider = new PatchedWTP({
       plugins: [
-        docLoad,
+        new SplunkDocumentLoad(),
         new SplunkXhrPlugin(),
         new SplunkFetchPlugin(),
         uip,
