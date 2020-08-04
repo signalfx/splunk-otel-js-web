@@ -67,11 +67,12 @@ describe('creating spans is possible', () => {
 describe('test xhr', () => {
   it('should capture an xhr span', (done) => {
     const xhr = new XMLHttpRequest();
-    xhr.open('GET', 'context.html');
+    // FIXME when the URL is partial/context-sensitive like 'content.html' then the otel resource finding doesn't work.  Figure out why and fix it
+    xhr.open('GET', location.href);
     xhr.addEventListener('loadend', () => {
       setTimeout(() => {
         assert.ok(capturer.spans[capturer.spans.length-1].attributes.component === 'xml-http-request');
-        // assert.ok(capturer.spans[capturer.spans.length-1].attributes.encodedBodySize > 0);
+        assert.ok(capturer.spans[capturer.spans.length-1].attributes['http.response_content_length'] > 0);
         done();
       }, 3000);
     });
@@ -84,9 +85,10 @@ describe('test xhr', () => {
 describe('test fetch', () => {
   it('should capture a fetch span', (done) => {
     capturer.clear();
-    window.fetch('context.html').then(() => {
+    window.fetch(location.href).then(() => {
       setTimeout(() => {
         assert.ok(capturer.spans[capturer.spans.length-1].attributes.component === 'fetch');
+        assert.ok(capturer.spans[capturer.spans.length-1].attributes['http.response_content_length'] > 0);
         done();
       }, 3000);
     });
