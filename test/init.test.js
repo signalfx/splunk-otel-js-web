@@ -71,8 +71,10 @@ describe('test xhr', () => {
     xhr.open('GET', location.href);
     xhr.addEventListener('loadend', () => {
       setTimeout(() => {
-        assert.ok(capturer.spans[capturer.spans.length-1].attributes.component === 'xml-http-request');
-        assert.ok(capturer.spans[capturer.spans.length-1].attributes['http.response_content_length'] > 0);
+        const span = capturer.spans[capturer.spans.length-1];
+        assert.ok(span.attributes.component === 'xml-http-request');
+        assert.ok(span.attributes['http.response_content_length'] > 0);
+        assert.ok(span.attributes['link.spanId'] === '0000000000000002');
         done();
       }, 3000);
     });
@@ -87,8 +89,10 @@ describe('test fetch', () => {
     capturer.clear();
     window.fetch(location.href).then(() => {
       setTimeout(() => {
-        assert.ok(capturer.spans[capturer.spans.length-1].attributes.component === 'fetch');
-        assert.ok(capturer.spans[capturer.spans.length-1].attributes['http.response_content_length'] > 0);
+        const span = capturer.spans[capturer.spans.length-1];
+        assert.ok(span.attributes.component === 'fetch');
+        assert.ok(span.attributes['http.response_content_length'] > 0);
+        assert.ok(span.attributes['link.spanId'] === '0000000000000002');
         done();
       }, 3000);
     });

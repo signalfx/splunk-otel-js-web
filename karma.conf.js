@@ -18,6 +18,16 @@ module.exports = function (config) {
             }
         },
 
+        // These custom headers allow us to test the Server-Timing trace linkage code
+        customHeaders: [{
+            match: '.*',
+            name: 'Server-Timing',
+            value: 'traceparent;desc="00-00000000000000000000000000000001-0000000000000002-01"'
+          }, {
+            match: '.*',
+            name: 'Access-Control-Expose-Headers',
+            value: 'Server-Timing'
+        }],
 
         // list of files / patterns to load in the browser
         files: [
