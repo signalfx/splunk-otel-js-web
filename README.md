@@ -20,7 +20,7 @@ Place it in your page as
 | beaconUrl | string | Destination for the captured data | Yes | (No default) |
 | app | string | Application name | No | 'unknown-browser-app' | 
 | captureErrors | boolean | Turns on/off error reporting feature | No | true |
-
+| debug | boolean | Turns on/off internal debug logging | No | false |
 
 ## Errors
 

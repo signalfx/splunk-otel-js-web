@@ -1,4 +1,4 @@
-import {SimpleSpanProcessor} from '@opentelemetry/tracing';
+import {ConsoleSpanExporter, SimpleSpanProcessor} from '@opentelemetry/tracing';
 import {WebTracerProvider} from '@opentelemetry/web';
 import {SplunkDocumentLoad} from './docload';
 import {SplunkXhrPlugin} from './xhrfetch';
@@ -66,7 +66,6 @@ if (!window.SplunkRum) {
     // FIXME repo/licensing issues
     // FIXME strip http.user_agent from spans as redundant
     // FIXME rumKey
-    // FIXME circleci build still broken
 
 
     const provider = new PatchedWTP({
@@ -79,6 +78,9 @@ if (!window.SplunkRum) {
     });
 
     provider.addSpanProcessor(new SimpleSpanProcessor(new PatchedZipkinExporter(options.beaconUrl)));
+    if (options.debug) {
+      provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
+    }
     provider.register();
     Object.defineProperty(this, '_provider', {value:provider});
     if (options.captureErrors === undefined || options.captureErrors === true) {
