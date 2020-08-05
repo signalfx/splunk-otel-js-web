@@ -40,15 +40,28 @@ describe('test init', () => {
           done(); // Firefox produces doc load spans; why aren't they visible in this test in this way?
           return;
         }
-        assert.ok(capturer.spans.length !== 0);
+        assert.ok(capturer.spans.length >= 3);
+        const docLoadTraceId = capturer.spans[0].traceId;
         var foundFetch = false;
+        var foundDocLoad = false;
+        var foundResource = false;
         capturer.spans.forEach( span => {
+          // all spans so far should be from the same component and have the same traceId
+          assert.ok(span.attributes['component'] === 'document-load');
+          assert.ok(span.traceId === docLoadTraceId);
           if (span.name === 'documentFetch') {
             foundFetch = true;
             assert.ok(span.attributes['link.spanId'] === '0000000000000002');
+          } else if (span.name == 'documentLoad') {
+            foundDocLoad = true;
+          } else {
+            foundResource = true;
+            assert.ok(span.name.startsWith("http://localhost"))
           }
         });
         assert.ok(foundFetch);
+        assert.ok(foundResource);
+        assert.ok(foundDocLoad);
         done();
       }, 1000);
     });
@@ -89,6 +102,7 @@ describe('test xhr', () => {
     xhr.addEventListener('loadend', () => {
       setTimeout(() => {
         const span = capturer.spans[capturer.spans.length-1];
+        assert.ok(span.name.endsWith('context.html')); // FIXME fix high cardinality naming
         assert.ok(span.attributes.component === 'xml-http-request');
         assert.ok(span.attributes['http.response_content_length'] > 0);
         assert.ok(span.attributes['link.spanId'] === '0000000000000002');
@@ -107,6 +121,7 @@ describe('test fetch', () => {
     window.fetch(location.href).then(() => {
       setTimeout(() => {
         const span = capturer.spans[capturer.spans.length-1];
+        assert.ok(span.name === 'HTTP GET');
         assert.ok(span.attributes.component === 'fetch');
         assert.ok(span.attributes['http.response_content_length'] > 0);
         assert.ok(span.attributes['link.spanId'] === '0000000000000002');
@@ -141,6 +156,7 @@ describe('test error', () => {
       window.onerror = origOnError; // restore proper error handling
       const span = capturer.spans[capturer.spans.length - 1];
       assert.ok(span.attributes.component === 'error');
+      assert.ok(span.name === 'onerror');
       assert.ok(span.attributes['error.stack'].includes('callChain'));
       assert.ok(span.attributes['error.stack'].includes('reportError'));
       assert.ok(span.attributes['error.message'].includes('war room'));
@@ -233,6 +249,7 @@ describe('test route change', () => {
     assert.ok(span.name === 'route change');
     assert.ok(span.attributes['location.href'].includes('/thisIsAChange'));
     assert.ok(span.attributes['prev.href'].length > 0);
+    assert.ok(span.attributes['component'] === 'user-interaction');
   });
 });
 
@@ -259,6 +276,7 @@ describe('can produce click events', () => {
     document.body.dispatchEvent(new Event('dblclick'));
     assert.ok(capturer.spans.length === 1);
     assert.ok(capturer.spans[0].name === 'dblclick');
+    assert.ok(capturer.spans[0].attributes.component === 'user-interaction');
   });
 });
 
