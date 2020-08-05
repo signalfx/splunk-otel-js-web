@@ -18,7 +18,8 @@ Place it in your page as
 | Option | Type | Notes | Required? | Default |
 |--------|------|-------|-----------|---------|
 | beaconUrl | string | Destination for the captured data | Yes | (No default) |
-| app | string | Application name | No | 'unknown-browser-app' | 
+| app | string | Application name | No | 'unknown-browser-app' |
+| globalAttributes | object | Extra attributes to add to each reported span | No | {} | 
 | captureErrors | boolean | Turns on/off error reporting feature | No | true |
 | debug | boolean | Turns on/off internal debug logging | No | false |
 

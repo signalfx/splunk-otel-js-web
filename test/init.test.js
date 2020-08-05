@@ -31,6 +31,7 @@ describe('test init', () => {
         beaconUrl: 'http://127.0.0.1:9999/foo',
         app: 'my-app',
         debug: true,
+        globalAttributes: {customerType: 'GOLD'},
       });
       assert.ok(window.SplunkRum.inited);
       assert.ok(document.cookie.includes("_splunk_rum_sid"));
@@ -87,6 +88,7 @@ describe('creating spans is possible', () => {
       assert.ok(!!span.attributes['location.href']);
       assert.ok(!!span.attributes['splunk.scriptInstance']);
       assert.equal(span.attributes['app'], 'my-app');
+      assert.equal(span.attributes.customerType, 'GOLD');
     });
     span.end();
   });
