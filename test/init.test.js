@@ -29,7 +29,8 @@ describe('test init', () => {
     it('should have been inited properly with doc load spans', (done) => {
       window.SplunkRum.init({
         beaconUrl: 'http://127.0.0.1:9999/foo',
-        app: 'my-app'
+        app: 'my-app',
+        debug: true,
       });
       assert.ok(window.SplunkRum.inited);
       assert.ok(document.cookie.includes("_splunk_rum_sid"));
