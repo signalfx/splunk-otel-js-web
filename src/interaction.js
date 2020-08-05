@@ -27,6 +27,7 @@ export class SplunkUserInteractionPlugin extends UserInteractionPlugin {
 
   // FIXME find cleaner way to patch
   _patchHistoryMethod() {
+    const plugin = this;
     return (original) => {
       return function patchHistoryMethod(...args) {
         const oldHref = location.href;
@@ -36,6 +37,7 @@ export class SplunkUserInteractionPlugin extends UserInteractionPlugin {
           // FIXME names of attributes/span/component
           const tracer = window.SplunkRum._provider.getTracer('route');
           const span = tracer.startSpan('route change');
+          span.setAttribute('component', plugin.moduleName);
           span.setAttribute('prev.href', oldHref)
           // location.href set with new value by default
           span.end(span.startTime);
