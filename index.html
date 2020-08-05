@@ -21,11 +21,11 @@ function go() {
   console.log("go");
   var oReq = new XMLHttpRequest();
   oReq.addEventListener("load", whenDone);
-  oReq.open("GET", "page2.html", true);
+  oReq.open("GET", location.href, true);
   oReq.setRequestHeader('Cache-Control', 'no-cache');
   oReq.send();
 
-  fetch('page2.html').then(function(response) {
+  fetch(location.href).then(function(response) {
    console.log('fetch finished');
   });
 
