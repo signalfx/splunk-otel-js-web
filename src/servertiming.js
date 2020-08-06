@@ -8,18 +8,20 @@ function addMatchToSpan(match, span) {
 }
 
 
-const regex = new RegExp('traceparent;desc="00-([0-9a-f]{32})-([0-9a-f]{16})-01"');
+const HeaderRegex = new RegExp('traceparent;desc="00-([0-9a-f]{32})-([0-9a-f]{16})-01"');
 
 export function captureTraceParent(serverTimingValues, span) {
-  // getResponseHeader returns multiple Server-Timing headers concat with ', '
+  // getResponseHeader returns multiple Server-Timing headers concat with ', ' (note space)
   // fetch returns concat with ','.
   // split the difference
   for(var header of serverTimingValues.split(',')) {
     header = header.trim();
-    const match = header.match(regex);
+    const match = header.match(HeaderRegex);
     addMatchToSpan(match, span);
   }
 }
+
+const ValueRegex = new RegExp('00-([0-9a-f]{32})-([0-9a-f]{16})-01');
 
 export function captureTraceParentFromPerformanceEntries(entries, span) {
   if (!entries.serverTiming) {
@@ -27,11 +29,8 @@ export function captureTraceParentFromPerformanceEntries(entries, span) {
   }
   for(const st of entries.serverTiming) {
     if (st.name === 'traceparent' && st.description) {
-      // Note slightly different regex as above
-      const regex = new RegExp('00-([0-9a-f]{32})-([0-9a-f]{16})-01');
-      const match = st.description.match(regex);
+      const match = st.description.match(ValueRegex);
       addMatchToSpan(match, span);
     }
   }
 }
-
