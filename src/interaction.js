@@ -1,4 +1,4 @@
-import {UserInteractionPlugin} from "../deps/opentelemetry-js-contrib/plugins/web/opentelemetry-plugin-user-interaction/build/src";
+import {UserInteractionPlugin} from '../deps/opentelemetry-js-contrib/plugins/web/opentelemetry-plugin-user-interaction/build/src';
 
 const whitelistEventTypes = {
   click: true,
@@ -38,7 +38,7 @@ export class SplunkUserInteractionPlugin extends UserInteractionPlugin {
           const tracer = window.SplunkRum._provider.getTracer('route');
           const span = tracer.startSpan('route change');
           span.setAttribute('component', plugin.moduleName);
-          span.setAttribute('prev.href', oldHref)
+          span.setAttribute('prev.href', oldHref);
           // location.href set with new value by default
           span.end(span.startTime);
         }

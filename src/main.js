@@ -1,13 +1,12 @@
 import {ConsoleSpanExporter, SimpleSpanProcessor} from '@opentelemetry/tracing';
 import {WebTracerProvider} from '@opentelemetry/web';
 import {SplunkDocumentLoad} from './docload';
-import {SplunkXhrPlugin} from './xhrfetch';
-import {SplunkFetchPlugin} from './xhrfetch';
-import {SplunkUserInteractionPlugin} from "./interaction";
+import {SplunkXhrPlugin, SplunkFetchPlugin} from './xhrfetch';
+import {SplunkUserInteractionPlugin} from './interaction';
 import {PatchedZipkinExporter} from './zipkin';
-import {captureErrors} from "./errors";
-import {findCookieValue, generateId} from "./utils";
-import {version as SplunkRumVersion} from "../package.json";
+import {captureErrors} from './errors';
+import {findCookieValue, generateId} from './utils';
+import {version as SplunkRumVersion} from '../package.json';
 
 if (!window.SplunkRum) {
   window.SplunkRum = {
@@ -16,33 +15,29 @@ if (!window.SplunkRum) {
 
   window.SplunkRum.init = function (options) {
     if (this.inited) {
-      console.log("SplunkRum already init()ed.");
+      console.log('SplunkRum already init()ed.');
       return;
     }
     if (!options.beaconUrl) {
       // FIXME error handling
-      console.log("SplunkRum.init( {beaconUrl: 'https://something'} ) is required.");
+      console.log('SplunkRum.init( {beaconUrl: \'https://something\'} ) is required.');
       return;
     }
     const app = options.app || 'unknown-browser-app';
 
     const instanceId = generateId(64);
 
-    const cookieName = "_splunk_rum_sid";
+    const cookieName = '_splunk_rum_sid';
 
     if (!document.cookie.includes(cookieName)) {
       var sessionId = generateId(128);
-      document.cookie = cookieName + '=' + sessionId + "; path=/";
+      document.cookie = cookieName + '=' + sessionId + '; path=/';
     }
     const rumSessionId = findCookieValue(cookieName);
     const globalAttributes = (options.globalAttributes && typeof(options.globalAttributes) === 'object') ? options.globalAttributes : undefined;
 
     // FIXME this is still not the cleanest way to add an attribute to all created spans..,
     class PatchedWTP extends WebTracerProvider {
-      constructor(config) {
-        super(config);
-      }
-
       getTracer(name, version, config) {
         const tracer = super.getTracer(name, version, config);
         const origStartSpan = tracer.startSpan;
@@ -58,7 +53,7 @@ if (!window.SplunkRum) {
             span.setAttributes(globalAttributes);
           }
           return span;
-        }
+        };
         return tracer;
       }
     }
@@ -91,7 +86,7 @@ if (!window.SplunkRum) {
       captureErrors(this, provider); // also registers SplunkRum.error
     } else {
       // stub out error reporting method to not break apps that call it
-      this.error = function() { }
+      this.error = function() { };
     }
     this.inited = true;
     console.log('SplunkRum.init() complete');

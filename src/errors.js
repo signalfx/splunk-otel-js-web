@@ -7,9 +7,9 @@ function useful(s) {
   return s && s.trim() !== '' && !s.startsWith('[object');
 }
 
-function limit(s, limit) {
-  if (s.length > limit) {
-    return s.substring(0, limit);
+function limit(s, cap) {
+  if (s.length > cap) {
+    return s.substring(0, cap);
   } else {
     return s;
   }
@@ -71,7 +71,7 @@ class ErrorReporter {
     span.setAttribute('error.object', 'String');
     span.setAttribute('error.message', limit(s, MESSAGE_LIMIT));
     if (firstError) {
-      addStackIfUseful(span, firstError)
+      addStackIfUseful(span, firstError);
     }
     span.end(span.startTime);
   }
@@ -88,7 +88,7 @@ class ErrorReporter {
     if (!arg || arg.length === 0) {
       return;
     }
-    if (arg instanceof Array && arg.length == 1) {
+    if (arg instanceof Array && arg.length === 1) {
       arg = arg[0];
     }
     if (arg instanceof Error) {
@@ -116,7 +116,7 @@ export function captureErrors(splunkRum, provider) {
   registerUnhandledRejectionListener(reporter);
   splunkRum.error = function() {
     reporter.report('SplunkRum.error', Array.from(arguments));
-  }
+  };
 
   // Future possibility is https://www.w3.org/TR/reporting/#reporting-observer
 }

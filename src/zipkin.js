@@ -1,6 +1,6 @@
 // FIXME this is a nasty copy+paste hack to get the zipkin exporter able to work in a browser context.
-import * as api from "@opentelemetry/api";
-import {hrTimeToMicroseconds} from "@opentelemetry/core";
+import * as api from '@opentelemetry/api';
+import {hrTimeToMicroseconds} from '@opentelemetry/core';
 
 export class PatchedZipkinExporter {
   constructor(beaconUrl) {
@@ -22,7 +22,7 @@ export class PatchedZipkinExporter {
       xhr.send(zJson);
       // don't bother waiting for answer
     }
-    resultCallback("SUCCESS");
+    resultCallback('SUCCESS');
   }
 
   shutdown() {
