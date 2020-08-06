@@ -108,11 +108,18 @@ module.exports = function (config) {
         coverageIstanbulReporter: {
             reports: ['json'],
             dir: '.nyc_output',
-            fixWebpackSourcePaths: true
+            fixWebpackSourcePaths: true,
+            thresholds: {
+                emitWarning: false,
+                global: {
+                    statements: 90,
+                },
+            },
         },
+
         reporters: ['spec', 'coverage-istanbul'],
         webpackMiddleware: {noInfo: true},
         preprocessors: {'test/index-webpack.js': ['webpack']}
 
-    })
-}
+    });
+};
