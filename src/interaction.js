@@ -46,9 +46,4 @@ export class SplunkUserInteractionPlugin extends UserInteractionPlugin {
       };
     };
   }
-  // suppress behavior of renaming spans as 'Navigation {new href}'
-  // eslint-disable-next-line no-unused-vars
-  _updateInteractionName(url) {
-    // deliberate nop
-  }
 }
