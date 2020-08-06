@@ -56,12 +56,12 @@ describe('test init', () => {
           assert.ok(span.traceId === docLoadTraceId);
           if (span.name === 'documentFetch') {
             foundFetch = true;
-            assert.ok(span.attributes['link.spanId'] === '0000000000000002');
-          } else if (span.name == 'documentLoad') {
+            assert.equal(span.attributes['link.spanId'], '0000000000000002');
+          } else if (span.name === 'documentLoad') {
             foundDocLoad = true;
           } else {
             foundResource = true;
-            assert.ok(span.name.startsWith("http://localhost"))
+            assert.ok(span.name.startsWith('http://localhost'));
           }
         });
         assert.ok(foundFetch);
@@ -108,9 +108,9 @@ describe('test xhr', () => {
       setTimeout(() => {
         const span = capturer.spans[capturer.spans.length-1];
         assert.ok(span.name.endsWith('context.html')); // FIXME fix high cardinality naming
-        assert.ok(span.attributes.component === 'xml-http-request');
+        assert.equal(span.attributes.component, 'xml-http-request');
         assert.ok(span.attributes['http.response_content_length'] > 0);
-        assert.ok(span.attributes['link.spanId'] === '0000000000000002');
+        assert.equal(span.attributes['link.spanId'], '0000000000000002');
         done();
       }, 3000);
     });
@@ -126,10 +126,10 @@ describe('test fetch', () => {
     window.fetch(location.href).then(() => {
       setTimeout(() => {
         const span = capturer.spans[capturer.spans.length-1];
-        assert.ok(span.name === 'HTTP GET');
-        assert.ok(span.attributes.component === 'fetch');
+        assert.equal(span.name, 'HTTP GET');
+        assert.equal(span.attributes.component, 'fetch');
         assert.ok(span.attributes['http.response_content_length'] > 0);
-        assert.ok(span.attributes['link.spanId'] === '0000000000000002');
+        assert.equal(span.attributes['link.spanId'], '0000000000000002');
         done();
       }, 3000);
     });
@@ -160,8 +160,8 @@ describe('test error', () => {
     setTimeout(() => {
       window.onerror = origOnError; // restore proper error handling
       const span = capturer.spans[capturer.spans.length - 1];
-      assert.ok(span.attributes.component === 'error');
-      assert.ok(span.name === 'onerror');
+      assert.equal(span.attributes.component, 'error');
+      assert.equal(span.name, 'onerror');
       assert.ok(span.attributes['error.stack'].includes('callChain'));
       assert.ok(span.attributes['error.stack'].includes('reportError'));
       assert.ok(span.attributes['error.message'].includes('war room'));
@@ -191,7 +191,7 @@ describe('test stack length', () => {
     }
     setTimeout(() => {
       const span = capturer.spans[capturer.spans.length - 1];
-      assert.ok(span.attributes.component === 'error');
+      assert.equal(span.attributes.component, 'error');
       assert.ok(span.attributes['error.stack'].includes('recurAndThrow'));
       assert.ok(span.attributes['error.stack'].length <= 4096);
       assert.ok(span.attributes['error.message'].includes('something'));
@@ -213,7 +213,7 @@ describe('test unhandled promise rejection', () => {
     });
     setTimeout(() => {
       const span = capturer.spans[capturer.spans.length - 1];
-      assert.ok(span.attributes.component === 'error');
+      assert.equal(span.attributes.component, 'error');
       assert.ok(span.attributes.error);
       assert.ok(span.attributes['error.stack'].includes('throwBacon'));
       assert.ok(span.attributes['error.message'].includes('bacon'));
@@ -228,8 +228,8 @@ describe('test console.error', () => {
     console.error('has', 'some', 'args');
     setTimeout(() => {
       const span = capturer.spans[capturer.spans.length - 1];
-      assert.ok(span.attributes.component === 'error');
-      assert.ok(span.attributes['error.message'] === 'has some args');
+      assert.equal(span.attributes.component, 'error');
+      assert.equal(span.attributes['error.message'], 'has some args');
       done();
     }, 100);
   });
@@ -242,7 +242,7 @@ describe('test manual report', () => {
     window.SplunkRum.error();
     window.SplunkRum.error([]);
     window.SplunkRum.error({});
-    assert.ok(capturer.spans.length === 0);
+    assert.equal(capturer.spans.length, 0);
   });
 });
 
@@ -251,10 +251,10 @@ describe('test route change', () => {
     capturer.clear();
     history.pushState({}, 'title', '/thisIsAChange');
     const span = capturer.spans[capturer.spans.length - 1];
-    assert.ok(span.name === 'route change');
+    assert.equal(span.name, 'route change');
     assert.ok(span.attributes['location.href'].includes('/thisIsAChange'));
     assert.ok(span.attributes['prev.href'].length > 0);
-    assert.ok(span.attributes['component'] === 'user-interaction');
+    assert.equal(span.attributes['component'], 'user-interaction');
   });
 });
 
@@ -264,13 +264,13 @@ describe('can remove wrapped event listeners', () => {
     const listener = function() {
       called = true;
     };
-    document.body.addEventListener('testy', listener)
+    document.body.addEventListener('testy', listener);
     document.body.dispatchEvent(new Event('testy'));
-    assert.ok(called === true);
+    assert.equal(called, true);
     called = false;
-    document.body.removeEventListener('testy', listener)
+    document.body.removeEventListener('testy', listener);
     document.body.dispatchEvent(new Event('testy'));
-    assert.ok(called === false);
+    assert.equal(called, false);
   });
 });
 
@@ -279,9 +279,9 @@ describe('can produce click events', () => {
     capturer.clear();
     document.body.addEventListener('dblclick', function() { /* nop */});
     document.body.dispatchEvent(new Event('dblclick'));
-    assert.ok(capturer.spans.length === 1);
-    assert.ok(capturer.spans[0].name === 'dblclick');
-    assert.ok(capturer.spans[0].attributes.component === 'user-interaction');
+    assert.equal(capturer.spans.length, 1);
+    assert.equal(capturer.spans[0].name, 'dblclick');
+    assert.equal(capturer.spans[0].attributes.component, 'user-interaction');
   });
 });
 
