@@ -19,9 +19,7 @@ if (!window.SplunkRum) {
       return;
     }
     if (!options.beaconUrl) {
-      // FIXME error handling
-      console.log('SplunkRum.init( {beaconUrl: \'https://something\'} ) is required.');
-      return;
+      throw new Error('SplunkRum.init( {beaconUrl: \'https://something\'} ) is required.');
     }
     const app = options.app || 'unknown-browser-app';
 
@@ -57,15 +55,6 @@ if (!window.SplunkRum) {
         return tracer;
       }
     }
-
-
-    // A random place to list a bunch of items that are unresolved
-    // FIXME is there any way to tell that a resource load failed from its performance entry?
-    // FIXME longtask
-    // FIXME repo/licensing issues
-    // FIXME strip http.user_agent from spans as redundant
-    // FIXME rumKey
-
 
     const provider = new PatchedWTP({
       plugins: [

@@ -21,8 +21,12 @@ const capturer = new SpanCapturer();
 describe('test init', () => {
   describe('not specifying beaconUrl', () => {
     it('should not be inited', () => {
-      window.SplunkRum.init({noBeaconUrl: true});
-      assert.ok(window.SplunkRum.inited === false);
+      try {
+        window.SplunkRum.init({noBeaconUrl: true});
+        assert.ok(false); // should not get here
+      } catch (expected) {
+        assert.ok(window.SplunkRum.inited === false);
+      }
     });
   });
   describe('successful', () => {
@@ -99,7 +103,6 @@ describe('creating spans is possible', () => {
 describe('test xhr', () => {
   it('should capture an xhr span', (done) => {
     const xhr = new XMLHttpRequest();
-    // FIXME when the URL is partial/context-sensitive like 'content.html' then the otel resource finding doesn't work.  Figure out why and fix it
     xhr.open('GET', location.href);
     xhr.addEventListener('loadend', () => {
       setTimeout(() => {
