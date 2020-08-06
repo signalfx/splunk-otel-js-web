@@ -1,17 +1,13 @@
 import {XMLHttpRequestPlugin} from '@opentelemetry/plugin-xml-http-request';
-import {FetchPlugin} from "@opentelemetry/plugin-fetch";
-import {captureTraceParent} from "./servertiming";
+import {FetchPlugin} from '@opentelemetry/plugin-fetch';
+import {captureTraceParent} from './servertiming';
 
 export class SplunkXhrPlugin extends XMLHttpRequestPlugin {
-  constructor() {
-    super();
-  }
-
   _createSpan(xhr, url, method) {
     const span = super._createSpan(xhr, url, method);
     // don't care about success/failure, just want to see response headers if they exist
     xhr.addEventListener('readystatechange', function () {
-      if (xhr.readyState == xhr.HEADERS_RECEIVED && xhr.getAllResponseHeaders().includes('server-timing')) {
+      if (xhr.readyState === xhr.HEADERS_RECEIVED && xhr.getAllResponseHeaders().includes('server-timing')) {
         const st = xhr.getResponseHeader('server-timing');
         if (st) {
           captureTraceParent(st, span);

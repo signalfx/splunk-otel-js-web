@@ -4,7 +4,6 @@ function addMatchToSpan(match, span) {
     const spanId = match[2];
     span.setAttribute('link.traceId', traceId);
     span.setAttribute('link.spanId', spanId);
-    return;
   }
 }
 

@@ -1,6 +1,6 @@
 // And now for patching in docload to look for Server-Timing
-import {DocumentLoad} from "../deps/opentelemetry-js-contrib/plugins/web/opentelemetry-plugin-document-load/build/src";
-import {captureTraceParentFromPerformanceEntries} from "./servertiming";
+import {DocumentLoad} from '../deps/opentelemetry-js-contrib/plugins/web/opentelemetry-plugin-document-load/build/src';
+import {captureTraceParentFromPerformanceEntries} from './servertiming';
 
 export class SplunkDocumentLoad extends DocumentLoad {
   _endSpan(span, perforanceNames, entries) {
