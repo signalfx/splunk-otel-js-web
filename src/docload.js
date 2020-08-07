@@ -4,7 +4,7 @@ import {captureTraceParentFromPerformanceEntries} from './servertiming';
 
 export class SplunkDocumentLoad extends DocumentLoad {
   _endSpan(span, perforanceNames, entries) {
-    if (span && span.name !== 'documentLoad') { // only apply link to document fetch
+    if (span && span.name !== 'documentLoad') { // only apply links to document/resource fetch
       captureTraceParentFromPerformanceEntries(entries, span);
     }
     return super._endSpan(span, perforanceNames, entries);
