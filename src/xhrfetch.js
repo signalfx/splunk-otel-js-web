@@ -14,7 +14,7 @@ export class SplunkXhrPlugin extends XMLHttpRequestPlugin {
         }
       }
     });
-    // FIXME long-term answer for depcreating attributes.component?
+    // FIXME long-term answer for deprecating attributes.component?
     span.setAttribute('component', this.moduleName);
     return span;
   }
