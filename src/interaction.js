@@ -1,4 +1,4 @@
-import {UserInteractionPlugin} from '../deps/opentelemetry-js-contrib/plugins/web/opentelemetry-plugin-user-interaction/build/src';
+import {UserInteractionPlugin} from '@opentelemetry/plugin-user-interaction';
 
 const whitelistEventTypes = {
   click: true,
