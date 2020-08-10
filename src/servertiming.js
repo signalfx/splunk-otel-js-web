@@ -14,7 +14,7 @@ export function captureTraceParent(serverTimingValues, span) {
   // getResponseHeader returns multiple Server-Timing headers concat with ', ' (note space)
   // fetch returns concat with ','.
   // split the difference
-  for(var header of serverTimingValues.split(',')) {
+  for(let header of serverTimingValues.split(',')) {
     header = header.trim();
     const match = header.match(HeaderRegex);
     addMatchToSpan(match, span);
