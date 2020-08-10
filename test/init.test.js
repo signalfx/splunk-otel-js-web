@@ -249,10 +249,10 @@ describe('test manual report', () => {
 describe('test route change', () => {
   it('should report a span', () => {
     capturer.clear();
-    history.pushState({}, 'title', '/thisIsAChange');
+    history.pushState({}, 'title', '/thisIsAChange#WithAHash');
     const span = capturer.spans[capturer.spans.length - 1];
     assert.equal(span.name, 'route change');
-    assert.ok(span.attributes['location.href'].includes('/thisIsAChange'));
+    assert.ok(span.attributes['location.href'].includes('/thisIsAChange#WithAHash'));
     assert.ok(span.attributes['prev.href'].length > 0);
     assert.equal(span.attributes['component'], 'user-interaction');
   });
