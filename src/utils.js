@@ -6,10 +6,10 @@ export function generateId(bits) {
 }
 
 export function findCookieValue(cookieName) {
-  var decodedCookie = decodeURIComponent(document.cookie);
-  var cookies = decodedCookie.split(';');
-  for (var i = 0; i < cookies.length; i++) {
-    var c = cookies[i].trim();
+  const decodedCookie = decodeURIComponent(document.cookie);
+  const cookies = decodedCookie.split(';');
+  for (let i = 0; i < cookies.length; i++) {
+    const c = cookies[i].trim();
     if (c.indexOf(cookieName + '=') === 0) {
       return c.substring((cookieName + '=').length, c.length);
     }

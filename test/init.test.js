@@ -1,5 +1,4 @@
 import * as assert from 'assert';
-import * as api from '@opentelemetry/api';
 
 require('../src/main.js');
 class SpanCapturer {
@@ -7,10 +6,10 @@ class SpanCapturer {
     this.spans = [];
   }
   forceFlush() {}
-  onStart(span) {}
+  onStart() {}
   shutdown() {}
   onEnd(span) {
-    this.spans.push(span)
+    this.spans.push(span);
   }
   clear() {
     this.spans = [];
@@ -38,7 +37,7 @@ describe('test init', () => {
         globalAttributes: {customerType: 'GOLD'},
       });
       assert.ok(window.SplunkRum.inited);
-      assert.ok(document.cookie.includes("_splunk_rum_sid"));
+      assert.ok(document.cookie.includes('_splunk_rum_sid'));
       window.SplunkRum._provider.addSpanProcessor(capturer);
       setTimeout(()=> {
         if (navigator.userAgent.includes('Firefox')) {
@@ -47,9 +46,9 @@ describe('test init', () => {
         }
         assert.ok(capturer.spans.length >= 3);
         const docLoadTraceId = capturer.spans[0].traceId;
-        var foundFetch = false;
-        var foundDocLoad = false;
-        var foundResource = false;
+        let foundFetch = false;
+        let foundDocLoad = false;
+        let foundResource = false;
         capturer.spans.forEach( span => {
           // all spans so far should be from the same component and have the same traceId
           assert.ok(span.attributes['component'] === 'document-load');
@@ -83,8 +82,8 @@ describe('test init', () => {
 describe('creating spans is possible', () => {
   // FIXME figure out ways to validate zipkin 'export', sendBeacon, etc. etc.
   it('should have extra fields added', () => {
-    let tracer = window.SplunkRum._provider.getTracer('test');
-    let span = tracer.startSpan('testSpan');
+    const tracer = window.SplunkRum._provider.getTracer('test');
+    const span = tracer.startSpan('testSpan');
     tracer.withSpan(span, () => {
       assert.ok(tracer.getCurrentSpan() === span);
       assert.ok(!!span.attributes['splunk.rumSessionId']);
@@ -171,7 +170,7 @@ describe('test error', () => {
 });
 
 function recurAndThrow(i) {
-  if (i == 0) {
+  if (i === 0) {
     throw new Error('bad thing');
   }
   recurAndThrow(i-1);
@@ -260,7 +259,7 @@ describe('test route change', () => {
 
 describe('can remove wrapped event listeners', () => {
   it('does not break behavior', () => {
-    var called = false;
+    let called = false;
     const listener = function() {
       called = true;
     };

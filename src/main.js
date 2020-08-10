@@ -28,7 +28,7 @@ if (!window.SplunkRum) {
     const cookieName = '_splunk_rum_sid';
 
     if (!document.cookie.includes(cookieName)) {
-      var sessionId = generateId(128);
+      const sessionId = generateId(128);
       document.cookie = cookieName + '=' + sessionId + '; path=/';
     }
     const rumSessionId = findCookieValue(cookieName);
