@@ -3,15 +3,15 @@ import {DocumentLoad} from '../deps/opentelemetry-js-contrib/plugins/web/opentel
 import {captureTraceParentFromPerformanceEntries} from './servertiming';
 
 export class SplunkDocumentLoad extends DocumentLoad {
-  _endSpan(span, perforanceNames, entries) {
+  _endSpan(span, performanceName, entries) {
     if (span && span.name !== 'documentLoad') { // only apply links to document/resource fetch
       captureTraceParentFromPerformanceEntries(entries, span);
     }
-    return super._endSpan(span, perforanceNames, entries);
+    return super._endSpan(span, performanceName, entries);
   }
   // To maintain compatibility, getEntries copies out select items from
   // different versions of the performance API into its own structure for the
-  // intitial document load (but leaves the entries undisturbed for resource loads).
+  // initial document load (but leaves the entries undisturbed for resource loads).
   _getEntries() {
     const answer = super._getEntries();
     if (answer) {

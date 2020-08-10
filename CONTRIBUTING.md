@@ -1,5 +1,5 @@
 ## Building, preamble
-This repo makes use of git submodules to pull in the latest otel-js and otel-js-contrib code.  In time we may move to only using
+This repo makes use of git submodules to pull in the latest otel-js and otel-js-contrib code.  In time, we may move to only using
 published versions.  Meanwhile, do not modify anything in the deps/ directory once you've updated the submodules.  We want to make
 direct contributions to otel upstream.
 
@@ -15,7 +15,7 @@ $ npm run compile
 $ cd ../..
 ```
 
-If these instructions do not seem to work, Follow the instructions in each repo's CONTRBUTING.md; perhaps they've been updated.
+If these instructions do not seem to work, Follow the instructions in each repo's CONTRIBUTING.md; perhaps they've been updated.
 Yes, this takes a while.
 
 ## Building, for real

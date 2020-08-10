@@ -25,7 +25,7 @@ Place it in your page as
 
 ## Errors
 
-By default we capture from the following sources of errors:
+By default, we capture from the following sources of errors:
 
 - `addEventListener('error')` which reports unhandled errors (e.g., from setInterval callbacks)
 - `addEventListener('unhandledrejection')` which reports unhandled Promise rejections
