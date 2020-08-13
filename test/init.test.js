@@ -60,7 +60,7 @@ describe('test init', () => {
             foundDocLoad = true;
           } else {
             foundResource = true;
-            assert.ok(span.name.startsWith('http://localhost'));
+            assert.ok(span.name.startsWith('http://localhost')); // FIXME again, otel spec/cardinality issue here
           }
         });
         assert.ok(foundFetch);
@@ -110,6 +110,7 @@ describe('test xhr', () => {
         assert.equal(span.attributes.component, 'xml-http-request');
         assert.ok(span.attributes['http.response_content_length'] > 0);
         assert.equal(span.attributes['link.spanId'], '0000000000000002');
+        assert.equal(span.attributes['http.url'], location.href);
         done();
       }, 3000);
     });
@@ -129,6 +130,7 @@ describe('test fetch', () => {
         assert.equal(span.attributes.component, 'fetch');
         assert.ok(span.attributes['http.response_content_length'] > 0);
         assert.equal(span.attributes['link.spanId'], '0000000000000002');
+        assert.equal(span.attributes['http.url'], location.href);
         done();
       }, 3000);
     });
