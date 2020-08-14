@@ -5,6 +5,29 @@ import resolve from '@rollup/plugin-node-resolve';
 const path = require('path');
 import typescript from 'rollup-plugin-typescript2';
 import { terser } from 'rollup-plugin-terser';
+const fs = require('fs');
+
+export function nodeToBrowser() {
+  return {
+    name: 'node-to-browser resolver',
+    resolveId(source) {
+      console.log('resolve '+source);
+      if (source === './node') {
+        //return './browser';
+      }
+      return null;
+    },
+    load( id ) {
+      console.log('load '+id);
+      if (id.includes('platform/node')) {
+        const b = id.replace('platform/node', 'platform/browser');
+        console.log('   -> ' + b);
+        return fs.readFileSync(b, 'utf8');
+      }
+      return null;
+    }
+  };
+}
 
 const customResolver = resolve({
   extensions: ['.js']
@@ -18,6 +41,7 @@ export default {
   },
   plugins: [
     json(),
+    nodeToBrowser(),
     alias({
       entries: [
         { find: '@opentelemetry/api', replacement: path.resolve(__dirname, 'deps/opentelemetry-js/packages/opentelemetry-api/src/index.ts') },
@@ -46,8 +70,8 @@ export default {
     commonjs({
       include: /node_modules/,
     }),
-//    terser({
-//      output: { comments: false, },
-//    }),
+    terser({
+      output: { comments: false, },
+    }),
   ],
 };
