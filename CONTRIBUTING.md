@@ -20,6 +20,7 @@ $ npm install
 $ npm run lint (optional)
 $ npm test (optional)
 $ npx rollup -c (this produces dist/splunk-rum.js)
+$ DEBUG_BUILD=1 npx rollup -c (optional; this produces dist/splunk-rum.debug.js)
 ```
 
 
