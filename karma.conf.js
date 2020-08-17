@@ -1,125 +1,197 @@
 // Karma configuration
 // Generated on Thu Jun 04 2020 09:56:24 GMT-0400 (Eastern Daylight Time)
-const aliases = require('./webpack.alias.js');
+const json = require('@rollup/plugin-json');
+const alias = require('@rollup/plugin-alias');
+const fs = require('fs');
+const path = require('path');
+const commonjs = require('@rollup/plugin-commonjs');
+const typescript = require('rollup-plugin-typescript2');
+const resolve = require('@rollup/plugin-node-resolve');
+const requireContext = require('rollup-plugin-require-context');
+const istanbulrollup = require('rollup-plugin-istanbul');
+const rollupPolyfills = require('rollup-plugin-node-polyfills');
+
+function nodeToBrowser() {
+  return {
+    name: 'node-to-browser resolver',
+    load(id) {
+      if (id.includes('platform/node')) {
+        const b = id.replace('platform/node', 'platform/browser');
+        return fs.readFileSync(b, 'utf8');
+      }
+      return null;
+    }
+  };
+}
 
 module.exports = function (config) {
-    config.set({
+  config.set({
 
-        // base path that will be used to resolve all patterns (eg. files, exclude)
-        basePath: '',
-
-
-        // frameworks to use
-        // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-        frameworks: ['mocha'],
-        client: {
-            mocha: {
-                timeout: 6000
-            }
-        },
-
-        // These custom headers allow us to test the Server-Timing trace linkage code
-        customHeaders: [{
-            match: '.*',
-            name: 'Server-Timing',
-            value: 'traceparent;desc="00-00000000000000000000000000000001-0000000000000002-01"'
-          }, {
-            match: '.*',
-            name: 'Access-Control-Expose-Headers',
-            value: 'Server-Timing'
-        }],
-
-        // list of files / patterns to load in the browser
-        files: [
-            'test/index-webpack.js'
-        ],
+    // base path that will be used to resolve all patterns (eg. files, exclude)
+    basePath: '',
 
 
-        // list of files / patterns to exclude
-        exclude: [],
+    // frameworks to use
+    // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
+    frameworks: ['mocha'],
+    client: {
+      mocha: {
+        timeout: 6000
+      }
+    },
+
+    // These custom headers allow us to test the Server-Timing trace linkage code
+    customHeaders: [{
+      match: '.*',
+      name: 'Server-Timing',
+      value: 'traceparent;desc="00-00000000000000000000000000000001-0000000000000002-01"'
+    }, {
+      match: '.*',
+      name: 'Access-Control-Expose-Headers',
+      value: 'Server-Timing'
+    }],
+
+    // list of files / patterns to load in the browser
+    files: [
+      'test/index-webpack.js'
+    ],
 
 
-        // preprocess matching files before serving them to the browser
-        // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
-        preprocessors: {},
+    // list of files / patterns to exclude
+    exclude: [],
 
 
-        // test results reporter to use
-        // possible values: 'dots', 'progress'
-        // available reporters: https://npmjs.org/browse/keyword/karma-reporter
-        reporters: ['progress'],
+    // preprocess matching files before serving them to the browser
+    // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
+    preprocessors: {},
 
 
-        // web server port
-        port: 9876,
+    // test results reporter to use
+    // possible values: 'dots', 'progress'
+    // available reporters: https://npmjs.org/browse/keyword/karma-reporter
+    reporters: ['progress'],
 
 
-        // enable / disable colors in the output (reporters and logs)
-        colors: true,
+    // web server port
+    port: 9876,
 
 
-        // level of logging
-        // possible values: config.LOG_DISABLE || config.LOG_ERROR || config.LOG_WARN || config.LOG_INFO || config.LOG_DEBUG
-        logLevel: config.LOG_INFO,
+    // enable / disable colors in the output (reporters and logs)
+    colors: true,
 
 
-        // enable / disable watching file and executing tests whenever any file changes
-        autoWatch: false,
+    // level of logging
+    // possible values: config.LOG_DISABLE || config.LOG_ERROR || config.LOG_WARN || config.LOG_INFO || config.LOG_DEBUG
+    logLevel: config.LOG_INFO,
 
 
-        // start these browsers
-        // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-        browsers: ['Chrome', 'Firefox'],
-//        browsers: ['Chrome'], // useful to speed up edit+test cycle
+    // enable / disable watching file and executing tests whenever any file changes
+    autoWatch: false,
 
 
-        // Continuous Integration mode
-        // if true, Karma captures browsers, runs the tests and exits
-        singleRun: true,
+    // start these browsers
+    // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
+    //        browsers: ['Chrome', 'Firefox'],
+    browsers: ['Chrome'], // useful to speed up edit+test cycle
 
-        // Concurrency level
-        // how many browser should be started simultaneous
-        concurrency: 1,
 
-        webpack: {
-            mode: 'development',
-            target: 'web',
-            output: {filename: 'bundle.js'},
-            resolve: { alias: aliases },
-            devtool: 'inline-source-map',
-            module: {
-                rules: [
-                    {test: /\.js$/},
-                    {
-                        enforce: 'post',
-                        exclude: /(deps|node_modules|\.test\.[tj]sx?$)/,
-                        test: /\.js$/,
-                        use: {
-                            loader: 'istanbul-instrumenter-loader',
-                            options: {esModules: true}
-                        }
-                    },
-                    // This setting configures Node polyfills for the browser that will be
-                    // added to the webpack bundle for Karma tests.
-                    {parser: {node: require('./webpack.node-polyfills.js')}}
-                ]
-            }
-        },
-        coverageIstanbulReporter: {
-            reports: ['json'],
-            dir: '.nyc_output',
-            fixWebpackSourcePaths: true,
-            thresholds: {
-                emitWarning: false,
-                global: {
-                    statements: 90,
-                },
+    // Continuous Integration mode
+    // if true, Karma captures browsers, runs the tests and exits
+    singleRun: true,
+
+    // Concurrency level
+    // how many browser should be started simultaneous
+    concurrency: 1,
+
+    rollupPreprocessor: {
+      plugins: [
+        json(),
+        alias({
+          entries: [
+            {
+              find: '@opentelemetry/api',
+              replacement: path.resolve(__dirname, 'deps/opentelemetry-js/packages/opentelemetry-api/src/index.ts')
             },
+            {
+              find: '@opentelemetry/web',
+              replacement: path.resolve(__dirname, 'deps/opentelemetry-js/packages/opentelemetry-web/src/index.ts')
+            },
+            {
+              find: '@opentelemetry/core',
+              replacement: path.resolve(__dirname, 'deps/opentelemetry-js/packages/opentelemetry-core/src/index.ts')
+            },
+            {
+              find: '@opentelemetry/resources',
+              replacement: path.resolve(__dirname, 'deps/opentelemetry-js/packages/opentelemetry-resources/src/index.ts')
+            },
+            {
+              find: '@opentelemetry/semantic-conventions',
+              replacement: path.resolve(__dirname, 'deps/opentelemetry-js/packages/opentelemetry-semantic-conventions/src/index.ts')
+            },
+            {
+              find: '@opentelemetry/tracing',
+              replacement: path.resolve(__dirname, 'deps/opentelemetry-js/packages/opentelemetry-tracing/src/index.ts')
+            },
+            {
+              find: '@opentelemetry/context-base',
+              replacement: path.resolve(__dirname, 'deps/opentelemetry-js/packages/opentelemetry-context-base/src/index.ts')
+            },
+            {
+              find: '@opentelemetry/plugin-xml-http-request',
+              replacement: path.resolve(__dirname, 'deps/opentelemetry-js/packages/opentelemetry-plugin-xml-http-request/src/index.ts')
+            },
+            {
+              find: '@opentelemetry/plugin-fetch',
+              replacement: path.resolve(__dirname, 'deps/opentelemetry-js/packages/opentelemetry-plugin-fetch/src/index.ts')
+            },
+            {
+              find: '@opentelemetry/plugin-document-load',
+              replacement: path.resolve(__dirname, 'deps/opentelemetry-js-contrib/plugins/web/opentelemetry-plugin-document-load/src/index.ts')
+            },
+            {
+              find: '@opentelemetry/plugin-user-interaction',
+              replacement: path.resolve(__dirname, 'deps/opentelemetry-js-contrib/plugins/web/opentelemetry-plugin-user-interaction/src/index.ts')
+            },
+          ],
+        }),
+        nodeToBrowser(),
+        requireContext(),
+        commonjs(),
+        resolve.nodeResolve({
+          browser: true,
+          preferBuiltins: false,
+        }),
+        rollupPolyfills(),
+        typescript({
+          typescript: require('typescript'),
+          useTsConfigDeclarationDir: true,
+          clean: true,
+          check: false,
+        }),
+        istanbulrollup({
+          exclude: ['deps/**', 'node_modules/**'],
+        }),
+      ],
+      input: 'test/index-webpack.js',
+      output: {
+        file: 'bundle.js',
+        format: 'iife'
+      }
+    },
+    coverageIstanbulReporter: {
+      reports: ['json'],
+      dir: '.nyc_output',
+      fixWebpackSourcePaths: true,
+      thresholds: {
+        emitWarning: false,
+        global: {
+          statements: 90,
         },
+      },
+    },
 
-        reporters: ['spec', 'coverage-istanbul'],
-        webpackMiddleware: {noInfo: true},
-        preprocessors: {'test/index-webpack.js': ['webpack']}
+    reporters: ['spec', 'coverage-istanbul'],
+    preprocessors: {'test/index-webpack.js': ['rollup']}
 
-    });
+  });
 };
