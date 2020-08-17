@@ -39,7 +39,7 @@ module.exports = function (config) {
 
     // list of files / patterns to load in the browser
     files: [
-      'test/index-webpack.js'
+      'test/index.js'
     ],
 
 
@@ -113,7 +113,7 @@ module.exports = function (config) {
           exclude: ['deps/**', 'node_modules/**'],
         }),
       ],
-      input: 'test/index-webpack.js',
+      input: 'test/index.js',
       output: {
         file: 'bundle.js',
         format: 'iife'
@@ -132,7 +132,7 @@ module.exports = function (config) {
     },
 
     reporters: ['spec', 'coverage-istanbul'],
-    preprocessors: {'test/index-webpack.js': ['rollup']}
+    preprocessors: {'test/index.js': ['rollup']}
 
   });
 };
