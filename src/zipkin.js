@@ -29,7 +29,7 @@ export class PatchedZipkinExporter {
   }
 
 
-  toZipkinTags(attrs, status, statusCodeTagName, statusDescriptionTagName, resource) {
+  toZipkinTags(attrs, status, statusCodeTagName, statusDescriptionTagName) {
     const tags = {};
     for (const key of Object.keys(attrs)) {
       tags[key] = String(attrs[key]);
@@ -38,9 +38,7 @@ export class PatchedZipkinExporter {
     if (status.message) {
       tags[statusDescriptionTagName] = status.message;
     }
-    Object.keys(resource.labels).forEach(
-      name => (tags[name] = resource.labels[name])
-    );
+    // FIXME figure out what to do with resources when zipkin-for-web is integrated
     return tags;
   }
 
@@ -73,8 +71,7 @@ export class PatchedZipkinExporter {
         span.attributes,
         span.status,
         'ot.status_code',
-        'ot.status_description',
-        span.resource
+        'ot.status_description'
       ),
       annotations: span.events.length
         ? this.toZipkinAnnotations(span.events)
