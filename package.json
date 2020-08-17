@@ -21,7 +21,6 @@
     "codecov": "^3.7.2",
     "eslint": "^7.7.0",
     "generate-source-map": "0.0.5",
-    "istanbul-instrumenter-loader": "^3.0.1",
     "karma": "^5.1.1",
     "karma-chrome-launcher": "^3.1.0",
     "karma-coverage-istanbul-reporter": "^3.0.2",
