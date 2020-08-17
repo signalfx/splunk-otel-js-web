@@ -13,14 +13,10 @@ browsers_unit_tests: &browsers_unit_tests
     - run: npm install
     - run: npm run lint
     - run: npm test
-    - run: npx webpack
-    - run: npx webpack --config webpack.dev.js
+    - run: npx rollup -c
     - store_artifacts:
         path: dist/splunk-rum.js
         destination: splunk-rum.js
-    - store_artifacts:
-        path: dist/splunk-rum.debug.js
-        destination: splunk-rum.debug.js
 
 jobs:
   node-browsers:

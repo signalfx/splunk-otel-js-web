@@ -6,13 +6,6 @@ direct contributions to otel upstream.
 ```
 $ git submodule init   (one-time)
 $ git submodule update  (every time you update this repo)
-$ cd deps/opentelemetry-js
-$ npm install
-$ npm run compile
-cd ../opentelemetry-js-contrib
-$ npm install
-$ npm run compile
-$ cd ../..
 ```
 
 If these instructions do not seem to work, Follow the instructions in each repo's CONTRIBUTING.md; perhaps they've been updated.
@@ -22,11 +15,11 @@ Yes, this takes a while.
 Build as so:
 
 ```
+$ git submodule update
 $ npm install
 $ npm run lint (optional)
 $ npm test (optional)
-$ npx webpack
-# npx webpack -config webpack.dev.js (optional)
+$ npx rollup -c (this produces dist/splunk-rum.js)
 ```
 
 
