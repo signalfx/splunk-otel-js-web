@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 
-require('../src/main.js');
+import '../src/main.js';
 class SpanCapturer {
   constructor() {
     this.spans = [];
