@@ -9,7 +9,7 @@ const helpers = require('./rollup.helpers');
 export default {
   input: 'src/main.js',
   output: {
-    file: 'dist/splunk-rum.js',
+    file: process.env.DEBUG_BUILD ? 'dist/splunk-rum.debug.js' : 'dist/splunk-rum.js',
     format: 'iife'
   },
   plugins: [
@@ -30,6 +30,7 @@ export default {
     commonjs({
       include: /node_modules/,
     }),
+    process.env.DEBUG_BUILD ? {} :
     terser({
       output: { comments: false, },
     }),
