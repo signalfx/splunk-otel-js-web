@@ -34,7 +34,6 @@
     "rollup": "^2.26.3",
     "rollup-plugin-istanbul": "^2.0.1",
     "rollup-plugin-node-polyfills": "^0.2.1",
-    "rollup-plugin-require-context": "^1.0.1",
     "rollup-plugin-terser": "^7.0.0",
     "rollup-plugin-typescript2": "^0.27.2",
     "typescript": "^3.9.7"
