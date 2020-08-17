@@ -5,7 +5,6 @@ const alias = require('@rollup/plugin-alias');
 const commonjs = require('@rollup/plugin-commonjs');
 const typescript = require('rollup-plugin-typescript2');
 const resolve = require('@rollup/plugin-node-resolve');
-const requireContext = require('rollup-plugin-require-context');
 const istanbulrollup = require('rollup-plugin-istanbul');
 const rollupPolyfills = require('rollup-plugin-node-polyfills');
 const rollupHelpers = require('./rollup.helpers');
@@ -96,7 +95,6 @@ module.exports = function (config) {
           entries: rollupHelpers.aliases,
         }),
         rollupHelpers.nodeToBrowser(),
-        requireContext(),
         commonjs(),
         resolve.nodeResolve({
           browser: true,
