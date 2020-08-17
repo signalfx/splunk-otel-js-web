@@ -6,10 +6,6 @@ import typescript from 'rollup-plugin-typescript2';
 import { terser } from 'rollup-plugin-terser';
 const helpers = require('./rollup.helpers');
 
-const customResolver = resolve({
-  extensions: ['.js']
-});
-
 export default {
   input: 'src/main.js',
   output: {
@@ -21,7 +17,6 @@ export default {
     helpers.nodeToBrowser(),
     alias({
       entries: helpers.aliases,
-      customResolver
     }),
     typescript({
       typescript: require('typescript'),
