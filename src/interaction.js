@@ -36,7 +36,7 @@ export class SplunkUserInteractionPlugin extends UserInteractionPlugin {
         if (oldHref !== newHref) {
           // FIXME names of attributes/span/component
           const tracer = window.SplunkRum._provider.getTracer('route');
-          const span = tracer.startSpan('route change');
+          const span = tracer.startSpan('routeChange');
           span.setAttribute('component', plugin.moduleName);
           span.setAttribute('prev.href', oldHref);
           // location.href set with new value by default
