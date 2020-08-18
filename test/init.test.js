@@ -55,7 +55,7 @@ describe('test init', () => {
           assert.ok(span.traceId === docLoadTraceId);
           if (span.name === 'documentFetch') {
             foundFetch = true;
-            assert.equal(span.attributes['link.spanId'], '0000000000000002');
+            assert.strictEqual(span.attributes['link.spanId'], '0000000000000002');
           } else if (span.name === 'documentLoad') {
             foundDocLoad = true;
           } else {
@@ -90,8 +90,8 @@ describe('creating spans is possible', () => {
       assert.ok(!!span.attributes['splunk.rumVersion']);
       assert.ok(!!span.attributes['location.href']);
       assert.ok(!!span.attributes['splunk.scriptInstance']);
-      assert.equal(span.attributes['app'], 'my-app');
-      assert.equal(span.attributes.customerType, 'GOLD');
+      assert.strictEqual(span.attributes['app'], 'my-app');
+      assert.strictEqual(span.attributes.customerType, 'GOLD');
     });
     span.end();
   });
@@ -107,10 +107,10 @@ describe('test xhr', () => {
       setTimeout(() => {
         const span = capturer.spans[capturer.spans.length-1];
         assert.ok(span.name.endsWith('context.html')); // FIXME fix high cardinality naming
-        assert.equal(span.attributes.component, 'xml-http-request');
+        assert.strictEqual(span.attributes.component, 'xml-http-request');
         assert.ok(span.attributes['http.response_content_length'] > 0);
-        assert.equal(span.attributes['link.spanId'], '0000000000000002');
-        assert.equal(span.attributes['http.url'], location.href);
+        assert.strictEqual(span.attributes['link.spanId'], '0000000000000002');
+        assert.strictEqual(span.attributes['http.url'], location.href);
         done();
       }, 3000);
     });
@@ -126,11 +126,11 @@ describe('test fetch', () => {
     window.fetch(location.href).then(() => {
       setTimeout(() => {
         const span = capturer.spans[capturer.spans.length-1];
-        assert.equal(span.name, 'HTTP GET');
-        assert.equal(span.attributes.component, 'fetch');
+        assert.strictEqual(span.name, 'HTTP GET');
+        assert.strictEqual(span.attributes.component, 'fetch');
         assert.ok(span.attributes['http.response_content_length'] > 0);
-        assert.equal(span.attributes['link.spanId'], '0000000000000002');
-        assert.equal(span.attributes['http.url'], location.href);
+        assert.strictEqual(span.attributes['link.spanId'], '0000000000000002');
+        assert.strictEqual(span.attributes['http.url'], location.href);
         done();
       }, 3000);
     });
@@ -161,8 +161,8 @@ describe('test error', () => {
     setTimeout(() => {
       window.onerror = origOnError; // restore proper error handling
       const span = capturer.spans[capturer.spans.length - 1];
-      assert.equal(span.attributes.component, 'error');
-      assert.equal(span.name, 'onerror');
+      assert.strictEqual(span.attributes.component, 'error');
+      assert.strictEqual(span.name, 'onerror');
       assert.ok(span.attributes['error.stack'].includes('callChain'));
       assert.ok(span.attributes['error.stack'].includes('reportError'));
       assert.ok(span.attributes['error.message'].includes('war room'));
@@ -192,7 +192,7 @@ describe('test stack length', () => {
     }
     setTimeout(() => {
       const span = capturer.spans[capturer.spans.length - 1];
-      assert.equal(span.attributes.component, 'error');
+      assert.strictEqual(span.attributes.component, 'error');
       assert.ok(span.attributes['error.stack'].includes('recurAndThrow'));
       assert.ok(span.attributes['error.stack'].length <= 4096);
       assert.ok(span.attributes['error.message'].includes('something'));
@@ -214,7 +214,7 @@ describe('test unhandled promise rejection', () => {
     });
     setTimeout(() => {
       const span = capturer.spans[capturer.spans.length - 1];
-      assert.equal(span.attributes.component, 'error');
+      assert.strictEqual(span.attributes.component, 'error');
       assert.ok(span.attributes.error);
       assert.ok(span.attributes['error.stack'].includes('throwBacon'));
       assert.ok(span.attributes['error.message'].includes('bacon'));
@@ -229,8 +229,8 @@ describe('test console.error', () => {
     console.error('has', 'some', 'args');
     setTimeout(() => {
       const span = capturer.spans[capturer.spans.length - 1];
-      assert.equal(span.attributes.component, 'error');
-      assert.equal(span.attributes['error.message'], 'has some args');
+      assert.strictEqual(span.attributes.component, 'error');
+      assert.strictEqual(span.attributes['error.message'], 'has some args');
       done();
     }, 100);
   });
@@ -243,7 +243,7 @@ describe('test manual report', () => {
     window.SplunkRum.error();
     window.SplunkRum.error([]);
     window.SplunkRum.error({});
-    assert.equal(capturer.spans.length, 0);
+    assert.strictEqual(capturer.spans.length, 0);
   });
 });
 
@@ -252,10 +252,10 @@ describe('test route change', () => {
     capturer.clear();
     history.pushState({}, 'title', '/thisIsAChange#WithAHash');
     const span = capturer.spans[capturer.spans.length - 1];
-    assert.equal(span.name, 'routeChange');
+    assert.strictEqual(span.name, 'routeChange');
     assert.ok(span.attributes['location.href'].includes('/thisIsAChange#WithAHash'));
     assert.ok(span.attributes['prev.href'].length > 0);
-    assert.equal(span.attributes['component'], 'user-interaction');
+    assert.strictEqual(span.attributes['component'], 'user-interaction');
   });
 });
 
@@ -267,11 +267,11 @@ describe('can remove wrapped event listeners', () => {
     };
     document.body.addEventListener('testy', listener);
     document.body.dispatchEvent(new Event('testy'));
-    assert.equal(called, true);
+    assert.strictEqual(called, true);
     called = false;
     document.body.removeEventListener('testy', listener);
     document.body.dispatchEvent(new Event('testy'));
-    assert.equal(called, false);
+    assert.strictEqual(called, false);
   });
 });
 
@@ -280,9 +280,9 @@ describe('can produce click events', () => {
     capturer.clear();
     document.body.addEventListener('dblclick', function() { /* nop */});
     document.body.dispatchEvent(new Event('dblclick'));
-    assert.equal(capturer.spans.length, 1);
-    assert.equal(capturer.spans[0].name, 'dblclick');
-    assert.equal(capturer.spans[0].attributes.component, 'user-interaction');
+    assert.strictEqual(capturer.spans.length, 1);
+    assert.strictEqual(capturer.spans[0].name, 'dblclick');
+    assert.strictEqual(capturer.spans[0].attributes.component, 'user-interaction');
   });
 });
 
