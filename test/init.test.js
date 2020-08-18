@@ -252,7 +252,7 @@ describe('test route change', () => {
     capturer.clear();
     history.pushState({}, 'title', '/thisIsAChange#WithAHash');
     const span = capturer.spans[capturer.spans.length - 1];
-    assert.equal(span.name, 'route change');
+    assert.equal(span.name, 'routeChange');
     assert.ok(span.attributes['location.href'].includes('/thisIsAChange#WithAHash'));
     assert.ok(span.attributes['prev.href'].length > 0);
     assert.equal(span.attributes['component'], 'user-interaction');
