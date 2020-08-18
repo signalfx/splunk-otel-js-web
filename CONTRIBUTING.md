@@ -8,9 +8,6 @@ $ git submodule init   (one-time)
 $ git submodule update  (every time you update this repo)
 ```
 
-If these instructions do not seem to work, Follow the instructions in each repo's CONTRIBUTING.md; perhaps they've been updated.
-Yes, this takes a while.
-
 ## Building, for real
 Build as so:
 
@@ -22,7 +19,7 @@ $ npm test (optional)
 $ npx rollup -c (this produces dist/splunk-rum.js)
 $ DEBUG_BUILD=1 npx rollup -c (optional; this produces dist/splunk-rum.debug.js)
 ```
-
+For your convenience, the script `fullbuild.sh` runs all these steps.
 
 ## Updating deps from upstream
 
