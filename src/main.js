@@ -1,5 +1,6 @@
 import {ConsoleSpanExporter, SimpleSpanProcessor} from '@opentelemetry/tracing';
 import {WebTracerProvider} from '@opentelemetry/web';
+import {LogLevel} from '@opentelemetry/core';
 import {SplunkDocumentLoad} from './docload';
 import {SplunkXhrPlugin, SplunkFetchPlugin} from './xhrfetch';
 import {SplunkUserInteractionPlugin} from './interaction';
@@ -63,6 +64,7 @@ if (!window.SplunkRum) {
         new SplunkFetchPlugin(),
         new SplunkUserInteractionPlugin(),
       ],
+      logLevel: options.debug ? LogLevel.DEBUG : LogLevel.ERROR,
     });
 
     provider.addSpanProcessor(new SimpleSpanProcessor(new PatchedZipkinExporter(options.beaconUrl)));
