@@ -1,10 +1,13 @@
 import shimmer from 'shimmer';
+import { getElementXPath } from '@opentelemetry/web';
+
+// FIXME take timestamps from events?
 
 const STACK_LIMIT = 4096;
 const MESSAGE_LIMIT = 1024;
 
 function useful(s) {
-  return s && s.trim() !== '' && !s.startsWith('[object');
+  return s && s.trim() !== '' && !s.startsWith('[object') && s !== 'error';
 }
 
 function limit(s, cap) {
@@ -41,6 +44,13 @@ function captureError(reporter) {
     reporter.report('onerror', event);
   });
 }
+
+function addTopLevelDocumentErrorListener(reporter) {
+  document.documentElement.addEventListener('error', function(event) {
+    reporter.report('eventListener.error', event);
+  }, {capture: true});
+}
+
 
 class ErrorReporter {
   constructor(tracer) {
@@ -84,6 +94,22 @@ class ErrorReporter {
     }
   }
 
+  reportEvent(source, ev) {
+    // FIXME consider other sources of global 'error' DOM callback - what else can be captured here?
+    if (!ev.target && !useful(ev.type)) {
+      return;
+    }
+    const span = this.tracer.startSpan(source);
+    span.setAttribute('component', 'error');
+    span.setAttribute('error.type', ev.type);
+    if (ev.target) {
+      span.setAttribute('target_element', ev.target.tagName);
+      span.setAttribute('target_xpath', getElementXPath(ev.target, true));
+      span.setAttribute('target_src', ev.target.src);
+    }
+    span.end(span.startTime);
+  }
+
   report(source, arg) {
     if (!arg || arg.length === 0) {
       return;
@@ -95,6 +121,8 @@ class ErrorReporter {
       this.reportError(source, arg);
     } else if (arg instanceof ErrorEvent) {
       this.reportErrorEvent(source, arg);
+    } else if (arg instanceof Event) {
+      this.reportEvent(source, arg);
     } else if (typeof arg === 'string') {
       this.reportString(source, arg);
     } else if (arg instanceof Array) {
@@ -114,6 +142,7 @@ export function captureErrors(splunkRum, provider) {
   captureError(reporter);
   captureConsoleError(reporter);
   registerUnhandledRejectionListener(reporter);
+  addTopLevelDocumentErrorListener(reporter);
   splunkRum.error = function() {
     reporter.report('SplunkRum.error', Array.from(arguments));
   };

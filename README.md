@@ -31,6 +31,7 @@ By default, we capture from the following sources of errors:
 - `addEventListener('error')` which reports unhandled errors (e.g., from setInterval callbacks)
 - `addEventListener('unhandledrejection')` which reports unhandled Promise rejections
 - instrumenting usage of `console.error`
+- `document.documentElement.addEventListener('error', ... {capture:true});` which reports errors on DOM elements (e.g., image loading issue)
 
 If you would like to report an error manually, you can use:
 ```
