@@ -3,13 +3,14 @@ You'll need to either build the final splunk-rum.js file or obtain it from a rel
 To build from scratch, please see the notes in CONTRIBUTING.md.
 
 Place it in your page as
-```
-<script src="whatever/splunk-rum.js"></script>
+```html
+<script src="http://something-not-yet-known.domain/path/tosplunk-rum.js"></script>
 <script>
   window.SplunkRum && window.SplunkRum.init(
     {
+      // Splunk will tell you what value to use here
       beaconUrl: 'http://127.0.0.1:9080/api/v2/spans',
-      app: 'my-awesome-app
+      app: 'my-awesome-app'
     });
 </script>
 ```
