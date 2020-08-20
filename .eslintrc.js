@@ -37,6 +37,22 @@ module.exports = {
       "indent": ["error", 2],
       "no-tabs": "error",
       "no-unneeded-ternary": "error",
-
+      "no-extra-parens": "error",
+      "no-template-curly-in-string": "error",
+      "no-unreachable-loop": "error",
+      "block-scoped-var": "error",
+      "array-callback-return": "error",
+      "no-extend-native": "error",
+      "no-extra-bind": "error",
+      "no-extra-label": "error",
+      "no-implicit-globals": "error",
+      "no-octal-escape": "error",
+      "no-return-assign": "error",
+      "no-self-compare": "error",
+      "no-useless-call": "error",
+      "wrap-iife": "error",
+      "yoda": "error",
+      "no-use-before-define": "error",
+      "no-mixed-operators": "error",
     }
 };
