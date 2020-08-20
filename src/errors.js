@@ -59,13 +59,13 @@ class ErrorReporter {
 
   reportError(source, err) {
     const msg = err.message || err.toString();
-    if (!useful(msg) && (!err.stack)) {
+    if (!useful(msg) && !err.stack) {
       return;
     }
     const span = this.tracer.startSpan(source);
     span.setAttribute('component', 'error');
     span.setAttribute('error', true);
-    span.setAttribute('error.object', useful(err.name) ? err.name : (err.constructor && err.constructor.name ? err.constructor.name : 'Error'));
+    span.setAttribute('error.object', useful(err.name) ? err.name : err.constructor && err.constructor.name ? err.constructor.name : 'Error');
     span.setAttribute('error.message', limit(msg, MESSAGE_LIMIT));
     addStackIfUseful(span, err);
     span.end(span.startTime);

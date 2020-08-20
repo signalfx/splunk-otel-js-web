@@ -6,7 +6,7 @@
   "scripts": {
     "test": "nyc karma start --single-run",
     "lint": "eslint src/*.js test/*.js",
-    "lint:fix": "eslint --fix src/*.js"
+    "lint:fix": "eslint --fix src/*.js test/*.js"
   },
   "author": "",
   "license": "Apache-2.0",
