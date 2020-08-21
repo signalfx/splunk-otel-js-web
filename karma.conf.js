@@ -120,6 +120,7 @@ module.exports = function (config) {
     coverageIstanbulReporter: {
       reports: ['json'],
       dir: '.nyc_output',
+      combineBrowserReports: true,
       fixWebpackSourcePaths: true,
       thresholds: {
         emitWarning: false,
