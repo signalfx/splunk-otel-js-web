@@ -4,6 +4,7 @@
   "description": "",
   "private": true,
   "scripts": {
+    "dist": "rollup -c",
     "test": "nyc karma start --single-run",
     "lint": "eslint src/*.js test/*.js",
     "lint:fix": "eslint --fix src/*.js test/*.js"
