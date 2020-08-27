@@ -15,6 +15,10 @@ if (!window.SplunkRum) {
   };
 
   window.SplunkRum.init = function (options) {
+    // Check more frequently in the case of SPA/long-lived document
+    const SessionTimeoutSeconds = 24 * 60 * 60;
+    const SessionTimeoutCheckSeconds = 60 * 60;
+
     if (this.inited) {
       console.log('SplunkRum already init()ed.');
       return;
@@ -28,11 +32,17 @@ if (!window.SplunkRum) {
 
     const cookieName = '_splunk_rum_sid';
 
-    if (!document.cookie.includes(cookieName)) {
-      const sessionId = generateId(128);
-      document.cookie = cookieName + '=' + sessionId + '; path=/';
-    }
-    const rumSessionId = findCookieValue(cookieName);
+    let rumSessionId = undefined;
+    const cookieSetter = function() {
+      if (!document.cookie.includes(cookieName)) {
+        const sessionId = generateId(128);
+        document.cookie = cookieName + '=' + sessionId + '; path=/; max-age=' + SessionTimeoutSeconds ;
+        setTimeout(cookieSetter, 1000*SessionTimeoutCheckSeconds);
+      }
+      rumSessionId = findCookieValue(cookieName);
+    };
+    cookieSetter();
+
     const globalAttributes = options.globalAttributes && typeof options.globalAttributes === 'object' ? options.globalAttributes : undefined;
 
     // FIXME this is still not the cleanest way to add an attribute to all created spans..,
