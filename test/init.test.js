@@ -58,6 +58,7 @@ describe('test init', () => {
             assert.strictEqual(span.attributes['link.spanId'], '0000000000000002');
           } else if (span.name === 'documentLoad') {
             foundDocLoad = true;
+            assert.ok(/^[0-9]+x[0-9]+$/.test(span.attributes['screen.xy']));
           } else {
             foundResource = true;
             assert.ok(span.name.startsWith('http://localhost')); // FIXME again, otel spec/cardinality issue here
