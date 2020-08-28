@@ -1,7 +1,6 @@
 #!/bin/bash
 set -e
 rm -f dist/*
-git submodule update
 npm install
 npm run lint
 npm test
