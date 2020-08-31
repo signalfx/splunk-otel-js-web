@@ -18,8 +18,9 @@ $ npm run lint (optional)
 $ npm test (optional)
 $ npx rollup -c (this produces dist/splunk-rum.js)
 $ DEBUG_BUILD=1 npx rollup -c (optional; this produces dist/splunk-rum.debug.js)
+$ npx eslint --no-eslintrc --env es2015 dist/splunk-rum.js (pure syntax check of dist script; optional)
 ```
-For your convenience, the script `fullbuild.sh` runs all these steps.
+For your convenience, the script `fullbuild.sh` runs all these steps except for the submodule update.
 
 ## Updating deps from upstream
 
