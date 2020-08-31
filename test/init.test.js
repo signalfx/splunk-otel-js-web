@@ -107,7 +107,7 @@ describe('test xhr', () => {
     xhr.addEventListener('loadend', () => {
       setTimeout(() => {
         const span = capturer.spans[capturer.spans.length-1];
-        assert.ok(span.name.endsWith('context.html')); // FIXME fix high cardinality naming
+        assert.strictEqual(span.name, 'HTTP GET');
         assert.strictEqual(span.attributes.component, 'xml-http-request');
         assert.ok(span.attributes['http.response_content_length'] > 0);
         assert.strictEqual(span.attributes['link.spanId'], '0000000000000002');
