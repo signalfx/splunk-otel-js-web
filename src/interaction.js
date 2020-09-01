@@ -1,6 +1,6 @@
 import {UserInteractionPlugin} from '@opentelemetry/plugin-user-interaction';
 
-const whitelistEventTypes = {
+const allowedEventTypes = {
   click: true,
   dblclick: true,
   submit: true,
@@ -22,7 +22,7 @@ export class SplunkUserInteractionPlugin extends UserInteractionPlugin {
   }
 
   _allowEventType(eventType) {
-    return whitelistEventTypes[eventType];
+    return allowedEventTypes[eventType];
   }
 
   // FIXME find cleaner way to patch
