@@ -26,4 +26,6 @@ module.exports.aliases = [
   { find: '@opentelemetry/plugin-fetch', replacement: path.resolve(__dirname, 'deps/opentelemetry-js/packages/opentelemetry-plugin-fetch/src/index.ts') },
   { find: '@opentelemetry/plugin-document-load', replacement: path.resolve(__dirname, 'deps/opentelemetry-js-contrib/plugins/web/opentelemetry-plugin-document-load/src/index.ts') },
   { find: '@opentelemetry/plugin-user-interaction', replacement: path.resolve(__dirname, 'deps/opentelemetry-js-contrib/plugins/web/opentelemetry-plugin-user-interaction/src/index.ts') },
+  // Reaching in and borrowing specific zipkin source rather than the whole thing
+  { find: '../deps/opentelemetry-js/packages/opentelemetry-exporter-zipkin/src/transform', replacement: path.resolve(__dirname, 'deps/opentelemetry-js/packages/opentelemetry-exporter-zipkin/src/transform.ts') },
 ];
