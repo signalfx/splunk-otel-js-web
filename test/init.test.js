@@ -61,7 +61,7 @@ describe('test init', () => {
             assert.ok(/^[0-9]+x[0-9]+$/.test(span.attributes['screen.xy']));
           } else {
             foundResource = true;
-            assert.ok(span.name.startsWith('http://localhost')); // FIXME again, otel spec/cardinality issue here
+            assert.strictEqual(span.name, 'resourceFetch');
           }
         });
         assert.ok(foundFetch);
