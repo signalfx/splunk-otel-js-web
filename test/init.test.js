@@ -40,10 +40,6 @@ describe('test init', () => {
       assert.ok(document.cookie.includes('_splunk_rum_sid'));
       window.SplunkRum._provider.addSpanProcessor(capturer);
       setTimeout(()=> {
-        if (navigator.userAgent.includes('Firefox')) {
-          done(); // Firefox produces doc load spans; why aren't they visible in this test in this way?
-          return;
-        }
         assert.ok(capturer.spans.length >= 3);
         const docLoadTraceId = capturer.spans[0].traceId;
         let foundFetch = false;
@@ -55,7 +51,10 @@ describe('test init', () => {
           assert.ok(span.traceId === docLoadTraceId);
           if (span.name === 'documentFetch') {
             foundFetch = true;
-            assert.strictEqual(span.attributes['link.spanId'], '0000000000000002');
+            // FireFox doesn't export Server-Timing to scripts at this time
+            if (!navigator.userAgent.includes('Firefox')) {
+              assert.strictEqual(span.attributes['link.spanId'], '0000000000000002');
+            }
           } else if (span.name === 'documentLoad') {
             foundDocLoad = true;
             assert.ok(/^[0-9]+x[0-9]+$/.test(span.attributes['screen.xy']));
