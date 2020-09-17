@@ -27,6 +27,9 @@ if (!window.SplunkRum) {
       if (!options.beaconUrl) {
         throw new Error('SplunkRum.init( {beaconUrl: \'https://something\'} ) is required.');
       }
+      if (!options.rumAuth) {
+        console.log('rumAuth will be required in the future');
+      }
     }
     const app = options.app || 'unknown-browser-app';
 
@@ -83,7 +86,8 @@ if (!window.SplunkRum) {
     });
 
     if (options.beaconUrl) {
-      provider.addSpanProcessor(new SimpleSpanProcessor(new PatchedZipkinExporter(options.beaconUrl)));
+      const completeUrl = options.beaconUrl + (options.rumAuth ? '?auth='+options.rumAuth : '');
+      provider.addSpanProcessor(new SimpleSpanProcessor(new PatchedZipkinExporter(completeUrl)));
     }
     if (options.debug) {
       provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
