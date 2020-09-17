@@ -10,6 +10,8 @@ Place it in your page as
     {
       // Splunk will tell you what value to use here
       beaconUrl: 'http://127.0.0.1:9080/api/v2/spans',
+      // You can generate or get your rumAuth token at FIXME link/docs when implemented
+      rumAuth: 'ABC123...789',
       app: 'my-awesome-app'
     });
 </script>
@@ -19,11 +21,11 @@ Place it in your page as
 | Option | Type | Notes | Required? | Default |
 |--------|------|-------|-----------|---------|
 | beaconUrl | string | Destination for the captured data | Yes | (No default) |
+| rumAuth | string | Publicly-visible `rumAuth` value.  Find or generate one in your FIXME (doc/link needed). | Temporarily no, until ingest/validation is set up | (No default) |
 | app | string | Application name | No | 'unknown-browser-app' |
 | globalAttributes | object | Extra attributes to add to each reported span.  See also `setGlobalAttributes` | No | {} |
 | captureErrors | boolean | Turns on/off error reporting feature | No | true |
 | debug | boolean | Turns on/off internal debug logging | No | false |
-
 
 ## SplunkRum.setGlobalAttributes(attributes)
 You can (re)set the entirety of `globalAttributes` at any time with this method.  Any spans reported from
