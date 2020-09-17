@@ -23,8 +23,10 @@ if (!window.SplunkRum) {
       console.log('SplunkRum already init()ed.');
       return;
     }
-    if (!options.beaconUrl) {
-      throw new Error('SplunkRum.init( {beaconUrl: \'https://something\'} ) is required.');
+    if (!options.debug) {
+      if (!options.beaconUrl) {
+        throw new Error('SplunkRum.init( {beaconUrl: \'https://something\'} ) is required.');
+      }
     }
     const app = options.app || 'unknown-browser-app';
 
@@ -80,7 +82,9 @@ if (!window.SplunkRum) {
       logLevel: options.debug ? LogLevel.DEBUG : LogLevel.ERROR,
     });
 
-    provider.addSpanProcessor(new SimpleSpanProcessor(new PatchedZipkinExporter(options.beaconUrl)));
+    if (options.beaconUrl) {
+      provider.addSpanProcessor(new SimpleSpanProcessor(new PatchedZipkinExporter(options.beaconUrl)));
+    }
     if (options.debug) {
       provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
     }
