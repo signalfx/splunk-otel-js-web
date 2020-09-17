@@ -96,6 +96,18 @@ describe('creating spans is possible', () => {
     span.end();
   });
 });
+describe('setGlobalAttributes', () => {
+  it('should have extra fields added', () => {
+    const tracer = window.SplunkRum._provider.getTracer('test');
+    window.SplunkRum.setGlobalAttributes({newKey: 'newVal'});
+    const span = tracer.startSpan('testSpan');
+    tracer.withSpan(span, () => {
+      assert.strictEqual(span.attributes.newKey, 'newVal');
+      assert.ok(!span.attributes.customerType); // old key from init() not there anymore
+    });
+    span.end();
+  });
+});
 
 // Doesn't actually test the xhr additions we've made (with Server-Timing), but just that
 // we didn't mess up the basic flow/behavior of the plugin

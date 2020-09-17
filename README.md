@@ -20,9 +20,14 @@ Place it in your page as
 |--------|------|-------|-----------|---------|
 | beaconUrl | string | Destination for the captured data | Yes | (No default) |
 | app | string | Application name | No | 'unknown-browser-app' |
-| globalAttributes | object | Extra attributes to add to each reported span | No | {} | 
+| globalAttributes | object | Extra attributes to add to each reported span.  See also `setGlobalAttributes` | No | {} |
 | captureErrors | boolean | Turns on/off error reporting feature | No | true |
 | debug | boolean | Turns on/off internal debug logging | No | false |
+
+
+## SplunkRum.setGlobalAttributes(attributes)
+You can (re)set the entirety of `globalAttributes` at any time with this method.  Any spans reported from
+this point on will have your new attributes set.  You can pass `{}` or `undefined` to clear your global attributes.
 
 ## Errors
 

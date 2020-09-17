@@ -43,7 +43,10 @@ if (!window.SplunkRum) {
     };
     cookieSetter();
 
-    const globalAttributes = options.globalAttributes && typeof options.globalAttributes === 'object' ? options.globalAttributes : undefined;
+    let globalAttributes = options.globalAttributes && typeof options.globalAttributes === 'object' ? options.globalAttributes : undefined;
+    this.setGlobalAttributes = function(attributes) {
+      globalAttributes = typeof attributes === 'object' ? attributes : undefined;
+    };
 
     // FIXME this is still not the cleanest way to add an attribute to all created spans..,
     class PatchedWTP extends WebTracerProvider {
