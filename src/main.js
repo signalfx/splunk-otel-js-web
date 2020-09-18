@@ -1,4 +1,4 @@
-import {ConsoleSpanExporter, SimpleSpanProcessor} from '@opentelemetry/tracing';
+import {ConsoleSpanExporter, SimpleSpanProcessor, BatchSpanProcessor} from '@opentelemetry/tracing';
 import {WebTracerProvider} from '@opentelemetry/web';
 import {LogLevel} from '@opentelemetry/core';
 import {SplunkDocumentLoad} from './docload';
@@ -84,10 +84,16 @@ if (!window.SplunkRum) {
       ],
       logLevel: options.debug ? LogLevel.DEBUG : LogLevel.ERROR,
     });
-
     if (options.beaconUrl) {
       const completeUrl = options.beaconUrl + (options.rumAuth ? '?auth='+options.rumAuth : '');
-      provider.addSpanProcessor(new SimpleSpanProcessor(new PatchedZipkinExporter(completeUrl)));
+      const batchSpanProcessor = new BatchSpanProcessor(new PatchedZipkinExporter(completeUrl), {
+        bufferTimeout: 100, //millis, tradeoff between batching and loss of spans by not sending before page close
+        bufferSize: 20, // spans, traceoff between batching and hitting sendBeacon invididual limits
+      });
+      window.addEventListener('beforeunload', function() {
+        batchSpanProcessor.forceFlush();
+      });
+      provider.addSpanProcessor(batchSpanProcessor);
     }
     if (options.debug) {
       provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
