@@ -8,6 +8,7 @@ import {PatchedZipkinExporter} from './zipkin';
 import {captureErrors} from './errors';
 import {findCookieValue, generateId} from './utils';
 import {version as SplunkRumVersion} from '../package.json';
+import {WebSocketInstrumentation} from './websocket';
 
 if (!window.SplunkRum) {
   window.SplunkRum = {
@@ -84,6 +85,7 @@ if (!window.SplunkRum) {
       ],
       logLevel: options.debug ? LogLevel.DEBUG : LogLevel.ERROR,
     });
+    new WebSocketInstrumentation(provider).patch();
     if (options.beaconUrl) {
       const completeUrl = options.beaconUrl + (options.rumAuth ? '?auth='+options.rumAuth : '');
       const batchSpanProcessor = new BatchSpanProcessor(new PatchedZipkinExporter(completeUrl), {
