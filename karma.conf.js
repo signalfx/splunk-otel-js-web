@@ -18,11 +18,27 @@ module.exports = function (config) {
 
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['mocha'],
+    frameworks: ['mocha', 'websocket-server'],
     client: {
       mocha: {
         timeout: 6000
       }
+    },
+    websocketServer: {
+      port:8979,
+      beforeStart: (server) => {
+        server.on('request', (request) => {
+          const cx = request.accept(null, request.origin);
+          cx.on('message', function(msg) {
+            // allow client to terminate the connection from the server to expand unit testing possibilities
+            if(msg.utf8Data === 'close') {
+              console.log('closing ws connection');
+              cx.close();
+            }
+            cx.sendUTF('Response');
+          });
+        });
+      },
     },
 
     // These custom headers allow us to test the Server-Timing trace linkage code
