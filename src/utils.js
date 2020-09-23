@@ -16,3 +16,11 @@ export function findCookieValue(cookieName) {
   }
   return undefined;
 }
+
+export function limitLen(s, cap) {
+  if (s.length > cap) {
+    return s.substring(0, cap);
+  } else {
+    return s;
+  }
+}

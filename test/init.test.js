@@ -2,6 +2,7 @@ import * as assert from 'assert';
 import {SpanKind} from '@opentelemetry/api';
 
 import '../src/main.js';
+import {PatchedZipkinExporter} from '../src/zipkin';
 class SpanCapturer {
   constructor() {
     this.spans = [];
@@ -95,6 +96,14 @@ describe('creating spans is possible', () => {
       assert.strictEqual(span.attributes.customerType, 'GOLD');
     });
     span.end();
+  });
+  it('should truncate long values when sent through zipkin', () => {
+    const tracer = window.SplunkRum._provider.getTracer('test');
+    const span = tracer.startSpan('testSpan');
+    span.setAttribute('somekey', 'a'.repeat(10000));
+    const zspan = new PatchedZipkinExporter('no_beacon').modZipkinSpan(span);
+    console.log(zspan);
+    assert.strictEqual(4096, zspan.tags.somekey.length);
   });
 });
 describe('setGlobalAttributes', () => {
