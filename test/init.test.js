@@ -329,7 +329,7 @@ describe('can produce click events', () => {
 describe('can produce websocket events', () => {
   it ('can produce a series of spans from basic usage', (done) => {
     capturer.clear();
-    const socket = new WebSocket('ws://127.0.0.1:8979/');
+    const socket = new WebSocket('ws://127.0.0.1:8979/', 'foo');
     const openListener = function() {
       socket.send('Hello server');
       socket.removeEventListener('open', openListener);
@@ -345,12 +345,15 @@ describe('can produce websocket events', () => {
         });
         assert.strictEqual('connect', capturer.spans[0].name);
         assert.strictEqual(SpanKind.CLIENT, capturer.spans[0].kind);
+        assert.strictEqual('foo', capturer.spans[0].attributes.protocols);
         assert.strictEqual('send', capturer.spans[1].name);
         assert.strictEqual(SpanKind.PRODUCER, capturer.spans[1].kind);
         assert.strictEqual(12, capturer.spans[1].attributes['http.request_content_length']);
+        assert.strictEqual('foo', capturer.spans[1].attributes.protocol);
         assert.strictEqual('onmessage', capturer.spans[2].name);
         assert.strictEqual(SpanKind.CONSUMER, capturer.spans[2].kind);
         assert.strictEqual(8, capturer.spans[2].attributes['http.response_content_length']);
+        assert.strictEqual('foo', capturer.spans[2].attributes.protocol);
         socket.close();
         done();
       }, 100);
@@ -364,7 +367,7 @@ describe('can produce websocket events', () => {
 
   it ('can handle EventListener', (done) => {
     capturer.clear();
-    const socket = new WebSocket('ws://127.0.0.1:8979/');
+    const socket = new WebSocket('ws://127.0.0.1:8979/', ['foo', 'bar']);
     socket.addEventListener('open', () => {
       socket.send('Hello server');
     });
@@ -372,6 +375,8 @@ describe('can produce websocket events', () => {
       handleEvent() {
         setTimeout(() => {
           assert.strictEqual(3, capturer.spans.length);
+          assert.strictEqual('["foo","bar"]', capturer.spans[0].attributes.protocols);
+          assert.strictEqual('foo', capturer.spans[1].attributes.protocol);
           socket.close();
           done();
         }, 100);
@@ -383,7 +388,7 @@ describe('can produce websocket events', () => {
 
   it ('can report failed connect to non-listening port', (done) => {
     capturer.clear();
-    const socket = new WebSocket('ws://127.0.0.1:31874/'); // assuming no ws server running there...
+    const socket = new WebSocket('ws://127.0.0.1:31874/', ['foo', 'bar']); // assuming no ws server running there...
     socket.addEventListener('error', () => {
       setTimeout(() => {
         assert.strictEqual(1, capturer.spans.length);

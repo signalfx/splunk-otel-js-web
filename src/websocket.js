@@ -14,6 +14,7 @@ export class WebSocketInstrumentation {
   startSpan(ws, name, spanKind) {
     const span = this._tracer.startSpan(name, {kind: spanKind});
     span.setAttribute('component', 'websocket');
+    span.setAttribute('protocol', ws.protocol);
     span.setAttribute('http.url', ws.url);
     // FIXME anything else?
     return span;
@@ -142,6 +143,13 @@ export class WebSocketInstrumentation {
         connectSpan.setAttribute('component', 'websocket');
         if (url) {
           connectSpan.setAttribute('http.url', arguments[0]);
+        }
+        if (protocols) {
+          if (typeof protocols === 'string') {
+            connectSpan.setAttribute('protocols', protocols);
+          } else {
+            connectSpan.setAttribute('protocols', JSON.stringify(protocols));
+          }
         }
         let retVal = undefined;
         let constructorException = undefined;
