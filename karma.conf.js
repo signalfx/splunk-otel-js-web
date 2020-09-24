@@ -28,7 +28,7 @@ module.exports = function (config) {
       port:8979,
       beforeStart: (server) => {
         server.on('request', (request) => {
-          const cx = request.accept(null, request.origin);
+          const cx = request.accept(request.requestedProtocols ? request.requestedProtocols[0] : null, request.origin);
           cx.on('message', function(msg) {
             // allow client to terminate the connection from the server to expand unit testing possibilities
             if(msg.utf8Data === 'close') {
