@@ -8,9 +8,9 @@ Place it in your page as
 <script>
   window.SplunkRum && window.SplunkRum.init(
     {
-      // Splunk will tell you what value to use here
-      beaconUrl: 'http://127.0.0.1:9080/api/v2/spans',
-      // You can generate or get your rumAuth token at FIXME link/docs when implemented
+      // Your beaconUrl should be provided by your friendly Splunk representative
+      beaconUrl: 'http://example.com/v1/rum',
+      // You can generate or get your rumAuth token from your friendly Splunk representative
       rumAuth: 'ABC123...789',
       app: 'my-awesome-app'
     });
@@ -21,7 +21,7 @@ Place it in your page as
 | Option | Type | Notes | Required? | Default |
 |--------|------|-------|-----------|---------|
 | beaconUrl | string | Destination for the captured data | Yes | (No default) |
-| rumAuth | string | Publicly-visible `rumAuth` value.  Find or generate one in your FIXME (doc/link needed). | Temporarily no, until ingest/validation is set up | (No default) |
+| rumAuth | string | Publicly-visible `rumAuth` value.  Please do not paste any other access token or auth value into here, as this will be visible to every user of your app | Temporarily no | (No default) |
 | app | string | Application name | No | 'unknown-browser-app' |
 | globalAttributes | object | Extra attributes to add to each reported span.  See also `setGlobalAttributes` | No | {} |
 | captureErrors | boolean | Turns on/off error reporting feature | No | true |
