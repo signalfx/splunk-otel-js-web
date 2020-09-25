@@ -4,7 +4,7 @@ To build from scratch, please see the notes in CONTRIBUTING.md.
 
 Place it in your page as
 ```html
-<script src="http://something-not-yet-known.domain/path/tosplunk-rum.js"></script>
+<script src="http://something-not-yet-known.domain/path/to/splunk-rum.js"></script>
 <script>
   window.SplunkRum && window.SplunkRum.init(
     {
@@ -30,6 +30,14 @@ Place it in your page as
 ## SplunkRum.setGlobalAttributes(attributes)
 You can (re)set the entirety of `globalAttributes` at any time with this method.  Any spans reported from
 this point on will have your new attributes set.  You can pass `{}` or `undefined` to clear your global attributes.
+
+## Features / data captured
+
+- Document load information, including resource fetching
+- User interactions (clicks)
+- XmlHttpRequest (XHR) and fetch calls, including the full URL but not including any body/payload
+- WebSocket activity
+- Errors (see below for more details)
 
 ## Errors
 
