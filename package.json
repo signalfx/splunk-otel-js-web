@@ -19,7 +19,7 @@
     "@rollup/plugin-commonjs": "^15.1.0",
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "^9.0.0",
-    "codecov": "^3.7.2",
+    "codecov": "^3.8.0",
     "eslint": "^7.10.0",
     "generate-source-map": "0.0.5",
     "karma": "^5.2.2",
