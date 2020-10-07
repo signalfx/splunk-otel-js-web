@@ -15,6 +15,7 @@ const allowedEventTypes = {
   mouseup: true,
 };
 
+
 export class SplunkUserInteractionPlugin extends UserInteractionPlugin {
   getZoneWithPrototype() {
     // FIXME work out ngZone issues with Angular  PENDING
@@ -25,6 +26,25 @@ export class SplunkUserInteractionPlugin extends UserInteractionPlugin {
     return allowedEventTypes[eventType];
   }
 
+  emitRouteChangeSpan(oldHref) {
+    const tracer = window.SplunkRum._provider.getTracer('route');
+    const span = tracer.startSpan('routeChange');
+    span.setAttribute('component', this.moduleName);
+    span.setAttribute('prev.href', oldHref);
+    // location.href set with new value by default
+    span.end(span.startTime);
+  }
+
+  patch() {
+    const plugin = this;
+    // Hash can be changed with location.hash = '#newThing', no way to hook that directly...
+    window.addEventListener('hashchange', function(event) {
+      plugin.emitRouteChangeSpan(event.oldURL);
+    });
+    return super.patch();
+  }
+
+
   // FIXME find cleaner way to patch
   _patchHistoryMethod() {
     const plugin = this;
@@ -34,13 +54,7 @@ export class SplunkUserInteractionPlugin extends UserInteractionPlugin {
         const result = original.apply(this, args);
         const newHref = location.href;
         if (oldHref !== newHref) {
-          // FIXME names of attributes/span/component
-          const tracer = window.SplunkRum._provider.getTracer('route');
-          const span = tracer.startSpan('routeChange');
-          span.setAttribute('component', plugin.moduleName);
-          span.setAttribute('prev.href', oldHref);
-          // location.href set with new value by default
-          span.end(span.startTime);
+          plugin.emitRouteChangeSpan(oldHref);
         }
         return result;
       };
