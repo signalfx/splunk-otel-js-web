@@ -12,6 +12,7 @@ describe('check patching assumptions', () => {
     assert.ok(typeof new DocumentLoad()._getEntries === 'function');
   });
   it('userinteraction', () => {
+    assert.ok(typeof new UserInteractionPlugin().patch === 'function');
     assert.ok(typeof new UserInteractionPlugin()._allowEventType === 'function');
     assert.ok(typeof new UserInteractionPlugin()._patchHistoryMethod === 'function');
   });
