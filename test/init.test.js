@@ -289,13 +289,27 @@ describe('test manual report', () => {
 
 describe('test route change', () => {
   it('should report a span', () => {
+    const oldUrl = location.href;
     capturer.clear();
     history.pushState({}, 'title', '/thisIsAChange#WithAHash');
     const span = capturer.spans[capturer.spans.length - 1];
     assert.strictEqual(span.name, 'routeChange');
     assert.ok(span.attributes['location.href'].includes('/thisIsAChange#WithAHash'));
-    assert.ok(span.attributes['prev.href'].length > 0);
+    assert.strictEqual(oldUrl, span.attributes['prev.href']);
     assert.strictEqual(span.attributes['component'], 'user-interaction');
+  });
+  it('should capture location.hash changes', (done) => {
+    capturer.clear();
+    const oldUrl = location.href;
+    location.hash = '#hashChange';
+    setTimeout(()=>{
+      const span = capturer.spans[capturer.spans.length - 1];
+      assert.strictEqual(span.name, 'routeChange');
+      assert.ok(span.attributes['location.href'].includes('#hashChange'));
+      assert.strictEqual(oldUrl, span.attributes['prev.href']);
+      assert.strictEqual(span.attributes['component'], 'user-interaction');
+      done();
+    }, 0);
   });
 });
 
