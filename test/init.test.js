@@ -309,7 +309,7 @@ describe('test route change', () => {
       assert.strictEqual(oldUrl, span.attributes['prev.href']);
       assert.strictEqual(span.attributes['component'], 'user-interaction');
       done();
-    }, 100);
+    }, 0);
   });
 });
 
