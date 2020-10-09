@@ -92,8 +92,12 @@ if (!window.SplunkRum) {
         bufferTimeout: 100, //millis, tradeoff between batching and loss of spans by not sending before page close
         bufferSize: 20, // spans, traceoff between batching and hitting sendBeacon invididual limits
       });
-      window.addEventListener('beforeunload', function() {
-        batchSpanProcessor.forceFlush();
+      window.addEventListener('visibilitychange', function() {
+        // this condition applies when the page is hidden or when it's closed
+        // see for more details: https://developers.google.com/web/updates/2018/07/page-lifecycle-api#developer-recommendations-for-each-state
+        if (document.visibilityState === 'hidden') {
+          batchSpanProcessor.forceFlush();
+        }
       });
       provider.addSpanProcessor(batchSpanProcessor);
     }

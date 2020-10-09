@@ -7,12 +7,12 @@ browsers_unit_tests: &browsers_unit_tests
     - run: git submodule init
     - run: git submodule update
     - run: npm install
-    - run: npm run lint
-    - run: npm test
-    - run: npx rollup -c
-    - run: DEBUG_BUILD=1 npx rollup -c
+    - run: npm run build:release
     - run: npx eslint --no-eslintrc --env es2015 dist/splunk-rum.js
     - run: npx eslint --no-eslintrc --no-inline-config --env es2015 dist/splunk-rum.debug.js
+    - run: npm run test:integration:local:_execute
+    - run: npm run test:integration:local:firefox:_execute
+    - run: npm run test:integration:_execute
     - store_artifacts:
         path: dist/splunk-rum.js
         destination: splunk-rum.js
