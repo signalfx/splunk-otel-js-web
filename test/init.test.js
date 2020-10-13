@@ -97,15 +97,32 @@ describe('creating spans is possible', () => {
     });
     span.end();
   });
+
   it('should truncate long values when sent through zipkin', () => {
     const tracer = window.SplunkRum._provider.getTracer('test');
+    
     const span = tracer.startSpan('testSpan');
-    span.setAttribute('somekey', 'a'.repeat(10000));
+    span.setAttribute('longValue', 'a'.repeat(101));
+    span.setAttribute('shortValue', 'a'.repeat(100));
+
+    const zspan = new PatchedZipkinExporter('no_beacon', {recordedValueMaxLength: 100}).modZipkinSpan(span);
+    assert.strictEqual('a'.repeat(97) + '...', zspan.tags.longValue);
+    assert.strictEqual('a'.repeat(100), zspan.tags.shortValue);
+  });
+
+  it('should not truncate long values when no limit is set when sent through zipkin', () => {
+    const tracer = window.SplunkRum._provider.getTracer('test');
+
+    const span = tracer.startSpan('testSpan');
+    span.setAttribute('longValue', 'a'.repeat(101));
+    span.setAttribute('shortValue', 'a'.repeat(100));
+
     const zspan = new PatchedZipkinExporter('no_beacon').modZipkinSpan(span);
-    console.log(zspan);
-    assert.strictEqual(4096, zspan.tags.somekey.length);
+    assert.strictEqual('a'.repeat(101), zspan.tags.longValue);
+    assert.strictEqual('a'.repeat(100), zspan.tags.shortValue);
   });
 });
+
 describe('setGlobalAttributes', () => {
   it('should have extra fields added', () => {
     const tracer = window.SplunkRum._provider.getTracer('test');
@@ -190,38 +207,6 @@ describe('test error', () => {
       assert.ok(span.attributes['error.message'].includes('war room'));
       done();
     }, 100);
-  });
-});
-
-function recurAndThrow(i) {
-  if (i === 0) {
-    throw new Error('bad thing');
-  }
-  recurAndThrow(i-1);
-}
-
-describe('test stack length', () => {
-  it('should limit length of stack', (done) => {
-    capturer.clear();
-    try {
-      recurAndThrow(50);
-    } catch (e) {
-      try {
-        window.SplunkRum.error('something happened: ', e); // try out the API
-      } catch (e2) {
-        // swallow
-      }
-    }
-    setTimeout(() => {
-      const span = capturer.spans[capturer.spans.length - 1];
-      assert.strictEqual(span.attributes.component, 'error');
-      assert.ok(span.attributes['error.stack'].includes('recurAndThrow'));
-      assert.ok(span.attributes['error.stack'].length <= 4096);
-      assert.ok(span.attributes['error.message'].includes('something'));
-      assert.ok(span.attributes['error.message'].includes('bad thing'));
-      done();
-    }, 100);
-
   });
 });
 

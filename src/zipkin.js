@@ -3,18 +3,17 @@ import {toZipkinSpan, statusCodeTagName, statusDescriptionTagName} from '../deps
 import {ExportResult} from '@opentelemetry/core';
 import {limitLen} from './utils';
 
-const MAX_VALUE_LIMIT = 4096;
-
-export function truncate(zspan) {
-  zspan.name = limitLen(zspan.name, MAX_VALUE_LIMIT);
+export function truncate(zspan, lengthLimit) {
+  zspan.name = limitLen(zspan.name, lengthLimit);
   for (const [key, value] of Object.entries(zspan.tags)) {
-    zspan.tags[key] = limitLen(value, MAX_VALUE_LIMIT);
+    zspan.tags[key] = limitLen(value, lengthLimit);
   }
 }
 
 export class PatchedZipkinExporter {
-  constructor(beaconUrl) {
+  constructor(beaconUrl, options) {
     this.beaconUrl = beaconUrl;
+    this.recordedValueMaxLength = (options || {}).recordedValueMaxLength;
   }
 
   export(spans, resultCallback) {
@@ -34,7 +33,7 @@ export class PatchedZipkinExporter {
     span.resource = {attributes:{}};
     const zspan = toZipkinSpan(span, 'browser', statusCodeTagName, statusDescriptionTagName);
     delete zspan.localEndpoint;
-    truncate(zspan);
+    truncate(zspan, this.recordedValueMaxLength);
     return zspan;
   }
 

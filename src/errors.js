@@ -1,11 +1,7 @@
 import shimmer from 'shimmer';
 import { getElementXPath } from '@opentelemetry/web';
-import {limitLen} from './utils';
 
 // FIXME take timestamps from events?
-
-const STACK_LIMIT = 4096;
-const MESSAGE_LIMIT = 1024;
 
 function useful(s) {
   return s && s.trim() !== '' && !s.startsWith('[object') && s !== 'error';
@@ -13,7 +9,7 @@ function useful(s) {
 
 function addStackIfUseful(span, err) {
   if (err && err.stack && useful(err.stack)) {
-    span.setAttribute('error.stack', limitLen(err.stack.toString(), STACK_LIMIT));
+    span.setAttribute('error.stack', err.stack.toString());
   }
 }
 
@@ -59,7 +55,7 @@ class ErrorReporter {
     span.setAttribute('component', 'error');
     span.setAttribute('error', true);
     span.setAttribute('error.object', useful(err.name) ? err.name : err.constructor && err.constructor.name ? err.constructor.name : 'Error');
-    span.setAttribute('error.message', limitLen(msg, MESSAGE_LIMIT));
+    span.setAttribute('error.message', msg);
     addStackIfUseful(span, err);
     span.end(span.startTime);
   }
@@ -72,7 +68,7 @@ class ErrorReporter {
     span.setAttribute('component', 'error');
     span.setAttribute('error', true);
     span.setAttribute('error.object', 'String');
-    span.setAttribute('error.message', limitLen(s, MESSAGE_LIMIT));
+    span.setAttribute('error.message', s);
     if (firstError) {
       addStackIfUseful(span, firstError);
     }

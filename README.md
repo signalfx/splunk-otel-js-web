@@ -26,6 +26,7 @@ Place it in your page as
 | globalAttributes | object | Extra attributes to add to each reported span.  See also `setGlobalAttributes` | No | {} |
 | captureErrors | boolean | Turns on/off error reporting feature | No | true |
 | debug | boolean | Turns on/off internal debug logging | No | false |
+| recordedValueMaxLength | number | Maximum length an attribute value can have. Values longer than this limit are truncated. Any negative value turns off truncation. | No | 1200 |
 
 ## SplunkRum.setGlobalAttributes(attributes)
 You can (re)set the entirety of `globalAttributes` at any time with this method.  Any spans reported from

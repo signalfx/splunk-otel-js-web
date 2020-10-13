@@ -10,6 +10,8 @@ import {findCookieValue, generateId} from './utils';
 import {version as SplunkRumVersion} from '../package.json';
 import {WebSocketInstrumentation} from './websocket';
 
+const DEFAULT_RECORDED_VALUE_MAX_LENGTH = 1200;
+
 if (!window.SplunkRum) {
   window.SplunkRum = {
     inited: false
@@ -86,9 +88,26 @@ if (!window.SplunkRum) {
       logLevel: options.debug ? LogLevel.DEBUG : LogLevel.ERROR,
     });
     new WebSocketInstrumentation(provider).patch();
+
+    if (typeof options.recordedValueMaxLength === 'number') {
+      this.recordedValueMaxLength = parseInt(options.recordedValueMaxLength);
+    } else if (typeof options.recordedValueMaxLength === 'string') {
+      const value = parseInt(options.recordedValueMaxLength);
+      if (isNaN(value)) {
+        this.recordedValueMaxLength = DEFAULT_RECORDED_VALUE_MAX_LENGTH;
+      } else {
+        this.recordedValueMaxLength = value;
+      }
+    } else {
+      this.recordedValueMaxLength = DEFAULT_RECORDED_VALUE_MAX_LENGTH;
+    }
+
     if (options.beaconUrl) {
       const completeUrl = options.beaconUrl + (options.rumAuth ? '?auth='+options.rumAuth : '');
-      const batchSpanProcessor = new BatchSpanProcessor(new PatchedZipkinExporter(completeUrl), {
+      const exporter = new PatchedZipkinExporter(completeUrl, { 
+        recordedValueMaxLength: this.recordedValueMaxLength 
+      });
+      const batchSpanProcessor = new BatchSpanProcessor(exporter, {
         bufferTimeout: 100, //millis, tradeoff between batching and loss of spans by not sending before page close
         bufferSize: 20, // spans, traceoff between batching and hitting sendBeacon invididual limits
       });

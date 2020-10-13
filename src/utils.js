@@ -17,10 +17,14 @@ export function findCookieValue(cookieName) {
   return undefined;
 }
 
-export function limitLen(s, cap) {
-  if (s.length > cap) {
-    return s.substring(0, cap);
-  } else {
-    return s;
+const ELLIPSIS = '...';
+export function limitLen(value, lengthLimit) {
+  if (typeof lengthLimit === 'number' && lengthLimit >= 0 && value.length > lengthLimit) {
+    if (lengthLimit > ELLIPSIS.length) {
+      return value.substring(0, lengthLimit - ELLIPSIS.length) + ELLIPSIS;
+    }
+    return value.substring(0, lengthLimit);
   }
+    
+  return value;
 }
