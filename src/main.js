@@ -27,6 +27,8 @@ if (!window.SplunkRum) {
     if (!options.debug) {
       if (!options.beaconUrl) {
         throw new Error('SplunkRum.init( {beaconUrl: \'https://something\'} ) is required.');
+      } else if(!options.beaconUrl.startsWith('https') && !options.allowInsecureBeacon) {
+        throw new Error('Not using https is unsafe, if you want to force it use allowInsecureBeacon option.');
       }
       if (!options.rumAuth) {
         console.log('rumAuth will be required in the future');
@@ -101,7 +103,7 @@ if (!window.SplunkRum) {
       provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
     }
     provider.register();
-    Object.defineProperty(this, '_provider', {value:provider});
+    Object.defineProperty(this, '_provider', {value:provider, configurable: true});
     if (options.captureErrors === undefined || options.captureErrors === true) {
       captureErrors(this, provider); // also registers SplunkRum.error
     } else {
