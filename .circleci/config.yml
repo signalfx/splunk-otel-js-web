@@ -10,6 +10,7 @@ browsers_unit_tests: &browsers_unit_tests
     - run: npm run build:release
     - run: npx eslint --no-eslintrc --env es2015 dist/splunk-rum.js
     - run: npx eslint --no-eslintrc --no-inline-config --env es2015 dist/splunk-rum.debug.js
+    - run: npm run test
     - run: npm run test:integration:local:_execute
     - run: npm run test:integration:local:firefox:_execute
     - run: npm run test:integration:_execute
