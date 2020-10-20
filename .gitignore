@@ -5,3 +5,9 @@ node_modules/
 .nyc_output/
 .DS_Store
 
+# integration tests
+*.log
+tests_output/
+
+# contains secrets
+.env

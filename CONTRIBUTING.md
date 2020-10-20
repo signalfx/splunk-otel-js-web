@@ -22,6 +22,24 @@ $ npx eslint --no-eslintrc --env es2015 dist/splunk-rum.js (pure syntax check of
 ```
 For your convenience, the script `fullbuild.sh` runs all these steps except for the submodule update.
 
+## Functional tests
+2 nightwatch configurations are present in this repository:
+1. local Selenium-based, non-parallel, multi-browser
+1. remote browserstack-based, Selenium-based, semi-parallel (BrowserStack provides parallelization), multi-browser
+
+To explore all options see `package.json`. The easiest way to start is with `npm run test:integration:local` (you need Google Chrome for this).
+
+### Executing integration tests from your own machine
+1. Copy `.env.example` as `.env`
+1. Fill in `BROWSERSTACK_USER` and `BROWSERSTACK_KEY`
+1. `npm run test:integration`
+
+### SSL certs
+Some of the features, we're testing for, require safe context, which means that `http://localhost` is not sufficient for these features to be enabled, and HTTPS is required. For your convenience dummy self-signed certs are provided out of the box and Selenium is configured to disable SSL verification.
+
+### Local tunnel/proxy
+By running BrowserStack-based tests you are exposing your local network to the test runner. Please see `integration-tests/utils/browserstack.runner.js` for more details.
+
 ## Updating deps from upstream
 
 Periodically this repo needs to pull in the latest from upstream (otel-js and otel-js-contrib).  I recommend doing one at a time
@@ -37,7 +55,6 @@ $ git diff
 ```
 
 From here, you can commit+push like normal.
-
 
 ## Releasing (During alpha/beta/preview)
 
