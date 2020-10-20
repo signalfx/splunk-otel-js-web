@@ -6,24 +6,20 @@
   "scripts": {
     "start": "npm-run-all -s build:development start:_execute",
     "start:_execute": "node utils/runDevServer.js",
-
     "dist": "rollup -c",
     "test": "nyc karma start --single-run",
     "lint": "eslint src/*.js test/*.js",
     "lint:fix": "eslint --fix src/*.js test/*.js",
-
     "test:integration": "npm-run-all -s build:development test:integration:_execute",
     "test:integration:local": "npm-run-all -s build:development test:integration:local:_execute",
     "test:integration:local:firefox": "npm-run-all -s build:development test:integration:local:firefox:_execute",
     "test:integration:local:chrome": "npm-run-all -s build:development test:integration:local:chrome:_execute",
-
     "test:integration:_execute": "./integration-tests/utils/browserstack.runner.js -c ./integration-tests/utils/browserstack.conf.js",
     "test:integration:local:_execute": "nightwatch -c ./integration-tests/utils/local.conf.js -e headlessChrome",
     "test:integration:local:firefox:_execute": "nightwatch -c ./integration-tests/utils/local.conf.js -e firefox",
     "test:integration:local:chrome:_execute": "nightwatch -c ./integration-tests/utils/local.conf.js -e chrome",
     "test:integration:_selfSignCerts": "(cd utils && cd certs && openssl req -nodes -new -x509 -keyout server.key -out server.cert)",
     "test:integration:_build": "npm-run-all -s build:*",
-    
     "build:debug": "DEBUG_BUILD=1 npx rollup -c",
     "build:prod": "npx rollup -c",
     "build:development": "npm-run-all -s build:debug build:prod",
@@ -45,6 +41,7 @@
     "codecov": "^3.8.0",
     "dotenv": "^8.2.0",
     "eslint": "^7.10.0",
+    "eslint-plugin-header": "^3.1.0",
     "express": "^4.17.1",
     "geckodriver": "^1.20.0",
     "generate-source-map": "0.0.5",
