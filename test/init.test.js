@@ -35,6 +35,11 @@ class SpanCapturer {
 }
 const capturer = new SpanCapturer();
 
+function doesBeaconUrlEndWith(path) {
+  const sps = window.SplunkRum._provider.getActiveSpanProcessor()._spanProcessors;
+  assert.ok(sps[0]._exporter.beaconUrl.endsWith(path));
+}
+
 describe('test init', () => {
   describe('not specifying beaconUrl', () => {
     it('should not be inited', () => {
@@ -46,12 +51,39 @@ describe('test init', () => {
       }
     });
   });
+  describe('should enforce secure beacon url', () => {
+    afterEach(() => {
+      // Ugly way to create a "clean" state in order to test consecutive successful init calls
+      Object.defineProperty(window.SplunkRum, '_provider', {value:undefined, configurable: true});  
+      window.SplunkRum.inited = false;
+    });
+    it('should not be inited with http', () => {
+      try {        
+        window.SplunkRum.init({beaconUrl: 'http://127.0.0.1:8888/insecure'});
+        assert.ok(false);
+      } catch(e) {
+        assert.ok(window.SplunkRum.inited === false);
+      }
+    });
+    it('should init with https', () => {
+      const path = '/secure';
+      window.SplunkRum.init({beaconUrl: `https://127.0.0.1:8888/${path}`});
+      assert.ok(window.SplunkRum.inited);
+      doesBeaconUrlEndWith(path);
+    });
+    it('can be forced via allowInsecureBeacon option', () => {
+      const path = '/insecure';
+      window.SplunkRum.init({beaconUrl: `http://127.0.0.1:8888/${path}`, allowInsecureBeacon: true});
+      assert.ok(window.SplunkRum.inited);      
+      doesBeaconUrlEndWith(path);
+    });
+  });
   describe('successful', () => {
     it('should have been inited properly with doc load spans', (done) => {
       window.SplunkRum.init({
-        beaconUrl: 'http://127.0.0.1:9999/foo',
+        beaconUrl: 'https://127.0.0.1:9999/foo',
         app: 'my-app',
-        debug: true,
+        debug: true, //FIXME I don't think tests should use debug: true
         globalAttributes: {customerType: 'GOLD'},
       });
       assert.ok(window.SplunkRum.inited);
@@ -90,11 +122,11 @@ describe('test init', () => {
   });
   describe('double-init has no effect', () => {
     it('should have been inited only once', () => {
-      window.SplunkRum.init({beaconUrl: 'http://127.0.0.1:8888/bar'});
-      const sps = window.SplunkRum._provider.getActiveSpanProcessor()._spanProcessors;
-      assert.ok(sps[0]._exporter.beaconUrl.endsWith('/foo'));
+      window.SplunkRum.init({beaconUrl: 'https://127.0.0.1:8888/bar'});
+      doesBeaconUrlEndWith('/foo');
     });
   });
+
 });
 
 describe('creating spans is possible', () => {

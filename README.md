@@ -25,6 +25,7 @@ Place it in your page as
 | app | string | Application name | No | 'unknown-browser-app' |
 | globalAttributes | object | Extra attributes to add to each reported span.  See also `setGlobalAttributes` | No | {} |
 | captureErrors | boolean | Turns on/off error reporting feature | No | true |
+| allowInsecureBeacon | boolean | Allows http beacon urls | No | false |
 | debug | boolean | Turns on/off internal debug logging | No | false |
 
 ## SplunkRum.setGlobalAttributes(attributes)
