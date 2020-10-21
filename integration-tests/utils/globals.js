@@ -39,7 +39,8 @@ module.exports = {
     });
 
     const wsProtocol = browser.globals.enableHttps ? 'wss' : 'ws';
-    browser.globals.defaultUrl = `${browser.globals.host}:${browser.globals._backend.port}/?wsProtocol=${wsProtocol}&wsPort=${browser.globals._backend.websocketsPort}`;
+    browser.globals.baseUrl = `${browser.globals.host}:${browser.globals._backend.port}/`;
+    browser.globals.defaultUrl = `${browser.globals.baseUrl}?wsProtocol=${wsProtocol}&wsPort=${browser.globals._backend.websocketsPort}`;
     console.log('Started dev server.');
 
     // note: at the time this was written util.promisify breaks nightwatch here

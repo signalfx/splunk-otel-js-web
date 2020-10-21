@@ -5,7 +5,7 @@ module.exports = {
     await browser.click('#connectWebsocketsBtn');
     const wsConnectionSpan = await browser.globals.findSpan(span => span.name === 'connect');    
     
-    await browser.url(`${browser.globals.defaultUrl}empty-page`);
+    await browser.url(`${browser.globals.baseUrl}empty-page`);
     
     await browser.assert.strictEqual(wsConnectionSpan.tags['location.href'], browser.globals.defaultUrl);
     await browser.assert.strictEqual(wsConnectionSpan.tags['app'], 'splunk-otel-js-dummy-app');
