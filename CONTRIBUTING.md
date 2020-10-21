@@ -58,17 +58,17 @@ From here, you can commit+push like normal.
 
 ## Releasing (During alpha/beta/preview)
 
-1. `git pull`, generally clean up the workspace.
-1. Bump version in package.json: e.g., `version: "0.0.7",`
+1. `git checkout main && git pull`, generally clean up the workspace.
 1. Run build + tests:
     ```
     $ git submodule update
     $ ./fullbuild.sh
     ```
 1. Manual sanity test
-1. commit + push change to package.json
-1. `git tag v0.0.7`
-1. `git push origin v0.0.7`
+1. `npm version patch`
+1. `git push` to publish the version bump commit
+1. `git push origin --tags` to publish the version tag, if you haven't created any local tags manually
+1. `git push origin <release tag>` if you have local tags, which shouldn't be published
 1. Release on github: https://github.com/signalfx/rum-browser-js/releases/
     1. "Draft a new release"
     1. Fill out the tag version.  This is confusing as github has automatically created a 
