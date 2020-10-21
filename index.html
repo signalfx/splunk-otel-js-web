@@ -2,7 +2,7 @@
 <script src="./dist/splunk-rum.js"></script>
 <script>
     window.SplunkRum && window.SplunkRum.init(
-        { beaconUrl: 'http://127.0.0.1:9080/api/v2/spans', debug:true });
+        { beaconUrl: 'http://127.0.0.1:9080/api/v2/spans', debug:true, allowInsecureBeacon: true, });
 </script>
 <p>Hi!</p>
 
