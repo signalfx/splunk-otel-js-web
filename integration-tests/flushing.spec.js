@@ -8,7 +8,7 @@ module.exports = {
     await new Promise(resolve => setTimeout(resolve, 10));
 
     // trigger unload, but don't kill the window just yet
-    await browser.url(`${browser.globals.defaultUrl}empty-page`);
+    await browser.url(`${browser.globals.baseUrl}empty-page`);
     
     await new Promise(resolve => setTimeout(resolve, 200));
     
