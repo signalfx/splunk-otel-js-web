@@ -1,4 +1,4 @@
-const devServer = require('../../utils/devServer');
+const devServer = require('../devServer/devServer');
 
 const SPAN_WAIT_TIMEOUT = 5 * 1000; // 5 seconds
 const SPAN_WAIT_ITERATION_TIME = 50;
@@ -29,6 +29,7 @@ module.exports = {
     const spans = [];
     const handleSpanReceived = (spanName) => { spans.push(spanName); };
     browser.globals.receivedSpans = spans;
+    browser.globals.rumVersion = require('../../package.json').version;
     browser.globals.clearReceivedSpans = () => { spans.length = 0; };
     browser.globals.findSpan = (testFn) => findSpan(spans, testFn);
 

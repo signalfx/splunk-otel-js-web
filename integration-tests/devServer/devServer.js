@@ -1,3 +1,4 @@
+/* eslint-disable no-use-before-define */
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
@@ -15,15 +16,53 @@ const INJECT_TEMPLATE = `<script src="<%= file -%>"></script>
 
 exports.run = async function run({onSpanReceived, enableHttps}) {
   enableHttps = enableHttps || false;
+  let lastServerTiming;
+  function addHeaders(res) {
+    lastServerTiming = generateServerTiming();
+    res.set('Access-Control-Expose-Headers', 'Server-Timing');
+    res.set('Server-Timing', lastServerTiming.header);
+  }
 
   if (!onSpanReceived) {
     onSpanReceived = () => {};
   }
 
   const app = express();
-  app.use(bodyParser.json({ type: 'text/plain' }));
+  app.engine('html', renderFile);
+  app.engine('ejs', renderFile);
+
+  app.use(bodyParser.json({ type: 'text/plain' }));  
   app.use(bodyParser.json({ type: 'application/json' }));
-  app.use(express.static(path.join(__dirname, '..', 'dist')));
+  app.get('/', function(_, res) {
+    addHeaders(res);
+    return res.render(path.resolve(__dirname, 'index.html'));
+  });
+  app.get('/empty-page', (_, res) => { res.send('<html><head></head><body></body></html>'); });
+
+  app.use(function(req, res, next) {  
+    const filepath = path.resolve(__dirname, '../tests', req.path.substring(1));
+    if (fs.existsSync(filepath)) {
+      const host = `${enableHttps ? 'https' : 'http'}://${req.headers.host}`;
+      addHeaders(res);
+      return res.render(filepath, {
+        renderAgent(userOpts = {}, file = '/dist/splunk-rum.js') {
+          const options = {
+            beaconUrl: `${host}/api/v2/spans`, 
+            app: 'splunk-otel-js-dummy-app',
+            debug: true,
+            ...userOpts
+          };  
+    
+          return render(INJECT_TEMPLATE, {
+            file,
+            options: JSON.stringify(options)
+          });
+        },
+      });
+    } 
+    return next();
+  });
+  app.use(express.static(path.join(__dirname, '../../')));
 
   app.post('/*', (req, res) => {
     getSpans(req.body).forEach(onSpanReceived);
@@ -38,61 +77,6 @@ exports.run = async function run({onSpanReceived, enableHttps}) {
       key3: 'value3',
     });
   });
-
-  app.get('/empty-page', (_, res) => { res.send(`<html><head></head><body></body></html>`); });
-  // app.get('/', handleIndexHtml);
-  // function handleIndexHtml(_, res, next) {
-  //   const serverTiming = lastServerTiming = generateServerTiming();
-  //   fs.readFile(path.join(__dirname, 'index.html'), 'utf-8', (err, fileContents) => {
-  //     if (err) {
-  //       return next(err);
-  //     }
-  //     res.set('Access-Control-Expose-Headers', 'Server-Timing');
-  //     res.set('Server-Timing', serverTiming.header);
-  //     res.send(fileContents);
-  //     next();
-  //   });
-  // }
-  
-  app.engine('html', renderFile)
-  app.engine('ejs', renderFile)
-  
-  function addHeaders(res) {
-    const serverTiming = lastServerTiming = generateServerTiming();
-    res.set('Access-Control-Expose-Headers', 'Server-Timing');
-    res.set('Server-Timing', serverTiming.header);
-  }
-
-  app.use(function (req, res, next) {
-    if (req.path === '/') {
-      addHeaders(res);
-      return res.render(path.resolve(__dirname, 'index.html'))
-    }
-    
-    const filepath = path.resolve(__dirname, '../integration-tests', req.path.substring(1));
-    if (fs.existsSync(filepath)) {
-      addHeaders(res);
-      return res.render(filepath, {
-        renderAgent(userOpts = {}, file = '/splunk-rum.js') {
-          const options = {
-            beaconUrl: '/api/v2/spans', 
-            app: 'splunk-otel-js-dummy-app',
-            debug: true,
-            ...userOpts
-          }  
-    
-          return render(INJECT_TEMPLATE, {
-            file,
-            options: JSON.stringify(options)
-          })
-        },
-      });
-    } 
-    next()
-  })
-
-
-  let lastServerTiming;
 
   const { 
     close: closeHttpServer, 
