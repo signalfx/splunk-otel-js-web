@@ -15,11 +15,15 @@ limitations under the License.
 */
 
 module.exports = {
-  'init test': async function(browser) {
+  'init fails when no beacon url set': async function(browser) {
     await browser.url(`${browser.globals.baseUrl}init/init.ejs`);
-    const spans = await browser.globals.findSpan(() => {return true;});
+    try {
+      await browser.globals.findSpan(() => {return true;});
+      await browser.assert.ok(false);
+    } catch (e) {
+      await browser.assert.ok(true);
+    }
 
-    await browser.assert.ok(spans.length !== 0);
     await browser.end();
-  },
+  }
 };
