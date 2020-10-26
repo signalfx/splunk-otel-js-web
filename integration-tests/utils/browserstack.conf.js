@@ -10,9 +10,9 @@ const commitId = process.env.CIRCLE_SHA1 || execSync('git rev-parse HEAD').toStr
 const author = process.env.CIRCLE_PR_USERNAME || 'unknown';
 
 const nightwatch_config = {
-  src_folders: ['integration-tests'],
+  src_folders: ['integration-tests/tests'],
   globals_path: path.join(__dirname, 'globals.js'),
-  filter: '*.spec.js',
+  filter: '**/*.spec.js',
 
   selenium : {
     'start_process': false,
