@@ -4,9 +4,9 @@ const geckoDriver = require('geckodriver');
 const seleniumServer = require('selenium-server');
 
 const nightwatch_config = {
-  src_folders: ['integration-tests'],
+  src_folders: ['integration-tests/tests'],
   globals_path: path.join(__dirname, 'globals.js'),
-  filter: '*.spec.js',
+  filter: '**/*.spec.js',
 
   selenium: {
     start_process: true,
