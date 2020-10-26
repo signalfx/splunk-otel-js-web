@@ -35,9 +35,6 @@ function createTunnel() {
     const tunnelHandle = await createTunnel();
     console.log('Tunnel started.');
 
-    // const commitId = process.env.CIRCLE_SHA1 || 'local-commit';
-    // const author = process.env.CIRCLE_PR_USERNAME || 'unknown';
-
     // TODO: restructure so that we don't have to rely on a path to the config file
     await Nightwatch.runTests(
       {
