@@ -43,7 +43,7 @@ export class SplunkUserInteractionPlugin extends UserInteractionPlugin {
   }
 
   emitRouteChangeSpan(oldHref) {
-    const tracer = window.SplunkRum._provider.getTracer('route');
+    const tracer = window.SplunkRum.provider.getTracer('route');
     const span = tracer.startSpan('routeChange');
     span.setAttribute('component', this.moduleName);
     span.setAttribute('prev.href', oldHref);

@@ -36,7 +36,7 @@ class SpanCapturer {
 const capturer = new SpanCapturer();
 
 function doesBeaconUrlEndWith(path) {
-  const sps = window.SplunkRum._provider.getActiveSpanProcessor()._spanProcessors;
+  const sps = window.SplunkRum.provider.getActiveSpanProcessor()._spanProcessors;
   assert.ok(sps[0]._exporter.beaconUrl.endsWith(path));
 }
 
@@ -54,7 +54,7 @@ describe('test init', () => {
   describe('should enforce secure beacon url', () => {
     afterEach(() => {
       // Ugly way to create a "clean" state in order to test consecutive successful init calls
-      Object.defineProperty(window.SplunkRum, '_provider', {value:undefined, configurable: true});  
+      Object.defineProperty(window.SplunkRum, 'provider', {value:undefined, configurable: true});  
       window.SplunkRum.inited = false;
     });
     it('should not be inited with http', () => {
@@ -88,7 +88,7 @@ describe('test init', () => {
       });
       assert.ok(window.SplunkRum.inited);
       assert.ok(document.cookie.includes('_splunk_rum_sid'));
-      window.SplunkRum._provider.addSpanProcessor(capturer);
+      window.SplunkRum.provider.addSpanProcessor(capturer);
       setTimeout(()=> {
         assert.ok(capturer.spans.length >= 3);
         const docLoadTraceId = capturer.spans[0].traceId;
@@ -132,7 +132,7 @@ describe('test init', () => {
 describe('creating spans is possible', () => {
   // FIXME figure out ways to validate zipkin 'export', sendBeacon, etc. etc.
   it('should have extra fields added', () => {
-    const tracer = window.SplunkRum._provider.getTracer('test');
+    const tracer = window.SplunkRum.provider.getTracer('test');
     const span = tracer.startSpan('testSpan');
     tracer.withSpan(span, () => {
       assert.ok(tracer.getCurrentSpan() === span);
@@ -146,7 +146,7 @@ describe('creating spans is possible', () => {
     span.end();
   });
   it('should truncate long values when sent through zipkin', () => {
-    const tracer = window.SplunkRum._provider.getTracer('test');
+    const tracer = window.SplunkRum.provider.getTracer('test');
     const span = tracer.startSpan('testSpan');
     span.setAttribute('somekey', 'a'.repeat(10000));
     const zspan = new PatchedZipkinExporter('no_beacon').modZipkinSpan(span);
@@ -156,7 +156,7 @@ describe('creating spans is possible', () => {
 });
 describe('setGlobalAttributes', () => {
   it('should have extra fields added', () => {
-    const tracer = window.SplunkRum._provider.getTracer('test');
+    const tracer = window.SplunkRum.provider.getTracer('test');
     window.SplunkRum.setGlobalAttributes({newKey: 'newVal'});
     const span = tracer.startSpan('testSpan');
     tracer.withSpan(span, () => {
