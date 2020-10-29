@@ -123,7 +123,7 @@ if (!window.SplunkRum) {
       provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
     }
     provider.register();
-    Object.defineProperty(this, '_provider', {value:provider, configurable: true});
+    Object.defineProperty(this, 'provider', {value:provider, configurable: true});
     if (options.captureErrors === undefined || options.captureErrors === true) {
       captureErrors(this, provider); // also registers SplunkRum.error
     } else {
