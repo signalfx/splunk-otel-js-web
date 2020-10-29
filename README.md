@@ -56,7 +56,7 @@ If you would like to report an error manually, you can use:
 
 ## Manual OpenTelemetry instrumentation
 
-If you would like to manually instrumentat your application (for example, to report timings for key events),
+If you would like to manually instrument your application (for example, to report timings for key events),
  you can use the [OpenTelemetry](https://github.com/open-telemetry/opentelemetry-js/tree/master/packages/opentelemetry-tracing) 
 API.  Our `TracingProvider` is in `SplunkRum.provider`.  Here is an example of how to use it:
 ```javascript
