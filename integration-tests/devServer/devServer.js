@@ -9,7 +9,11 @@ const {render, renderFile} = require('ejs');
 
 const INJECT_TEMPLATE = `<script src="<%= file -%>"></script>
   <script>
-    window.SplunkRum && window.SplunkRum.init(<%- options -%>)
+    <%if (noInit) { %>
+      window.SplunkRumOptions = <%- options -%>
+    <% } else { %>  
+      window.SplunkRum && window.SplunkRum.init(<%- options -%>)
+    <% } %> 
   </script>
 `;
 
@@ -58,7 +62,7 @@ function startHttpServer({ enableHttps, listener }) {
 
     // 0 acquires a random available port
     // 127.0.0.1 has been found to work with Circle CI and Browserstack well
-    server.listen(0, '127.0.0.1');
+    server.listen(59665, '127.0.0.1');
   });
 }
 
@@ -151,16 +155,17 @@ exports.run = async function run({onSpanReceived, enableHttps}) {
       const host = `${enableHttps ? 'https' : 'http'}://${req.headers.host}`;
       addHeaders(res);
       return res.render(filepath, {
-        renderAgent(userOpts = {}, file = '/dist/splunk-rum.js') {
+        renderAgent(userOpts = {}, noInit = false, file = '/dist/splunk-rum.js') {
           const options = {
             beaconUrl: `${host}/api/v2/spans`, 
             app: 'splunk-otel-js-dummy-app',
-            debug: true,
+            debug: false,
             ...userOpts
           };  
     
           return render(INJECT_TEMPLATE, {
             file,
+            noInit,
             options: JSON.stringify(options)
           });
         },
@@ -183,6 +188,8 @@ exports.run = async function run({onSpanReceived, enableHttps}) {
       key3: 'value3',
     });
   });
+
+  app.get('/no-server-timings', (_, res) => { res.sendStatus(200); });
 
   const { 
     close: closeHttpServer, 

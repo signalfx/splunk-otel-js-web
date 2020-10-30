@@ -94,11 +94,12 @@ if (!window.SplunkRum) {
       }
     }
 
+    const xhrFetchPluginConf = options.ignoreUrls ? {ignoreUrls: options.ignoreUrls} : {};
     const provider = new PatchedWTP({
       plugins: [
         new SplunkDocumentLoad(),
-        new SplunkXhrPlugin(),
-        new SplunkFetchPlugin(),
+        new SplunkXhrPlugin(xhrFetchPluginConf),
+        new SplunkFetchPlugin(xhrFetchPluginConf),
         new SplunkUserInteractionPlugin(),
       ],
       logLevel: options.debug ? LogLevel.DEBUG : LogLevel.ERROR,

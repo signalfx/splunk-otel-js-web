@@ -8,7 +8,7 @@ async function findSpan(spans, testFn, accruedTime) {
   if (accruedTime > SPAN_WAIT_TIMEOUT) {
     console.error('Listing recorded spans for your convenience.');
     console.error(spans);
-    throw new Error('Exceeded max time allowed waiting for span.');
+    return false;
   }
 
   const foundSpan = spans.find(testFn);
