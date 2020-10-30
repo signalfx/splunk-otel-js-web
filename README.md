@@ -52,7 +52,19 @@ By default, we capture from the following sources of errors:
 - `document.documentElement.addEventListener('error', ... {capture:true});` which reports errors on DOM elements (e.g., image loading issue)
 
 If you would like to report an error manually, you can use:
-```
+```javascript
   window.SplunkRum && window.SplunkRum.error(errorObjectOrMessageString);
 ```
 
+## Manual OpenTelemetry instrumentation
+
+If you would like to manually instrument your application (for example, to report timings for key events),
+ you can use the [OpenTelemetry](https://github.com/open-telemetry/opentelemetry-js/tree/master/packages/opentelemetry-tracing) 
+API.  Our `TracingProvider` is in `SplunkRum.provider`.  Here is an example of how to use it:
+```javascript
+  const provider = window.SplunkRum.provider;
+  const span = provider.getTracer('searchbox').startSpan('search');
+  span.setAttribute('searchLength', searchString.length);
+  // time passes
+  span.end();
+```
