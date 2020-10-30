@@ -52,7 +52,7 @@ const nightwatch_config = {
         'browserstack.selenium_version': '3.14.0',
 
         // note: some tests may rely on viewport size
-        'resolution': '1366x768',
+        // 'resolution': '1366x768',
 
         acceptSslCerts: true,
         acceptInsecureCerts: true,
