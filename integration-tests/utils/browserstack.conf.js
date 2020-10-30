@@ -112,6 +112,7 @@ const nightwatch_config = {
     },
     iphone: {
       desiredCapabilities: {
+        'browser': 'safari',
         'os_version': '14',
         'device': 'iPhone 11',
         'real_mobile': 'true',
@@ -120,6 +121,7 @@ const nightwatch_config = {
     },
     android: {
       desiredCapabilities: {
+        'browser': 'chrome',
         'os_version': '11.0',
         'device': 'Google Pixel 4',
         'real_mobile': 'true',
