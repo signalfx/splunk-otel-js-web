@@ -74,8 +74,8 @@ const nightwatch_config = {
         browser_version: 'latest',
       }
     },
-/*
-// FIXME firefox broken (-3)
+    /*
+    // FIXME firefox broken (-3)
     firefox: {
       desiredCapabilities: {
         os: 'Windows',
@@ -84,7 +84,7 @@ const nightwatch_config = {
         browser_version: 'latest',
       }
     },
-*/
+    */
     safari: {
       desiredCapabilities: {
         os: 'OS X',
