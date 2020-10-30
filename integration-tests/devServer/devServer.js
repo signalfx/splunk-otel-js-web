@@ -62,7 +62,7 @@ function startHttpServer({ enableHttps, listener }) {
 
     // 0 acquires a random available port
     // 127.0.0.1 has been found to work with Circle CI and Browserstack well
-    server.listen(59665, '127.0.0.1');
+    server.listen(0, '127.0.0.1');
   });
 }
 
