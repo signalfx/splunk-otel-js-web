@@ -54,7 +54,7 @@ function createTunnel() {
     // TODO: restructure so that we don't have to rely on a path to the config file
     await Nightwatch.runTests(
       {
-        'env': 'chrome,firefox,safari,edge,iphone,android',
+        'env': 'chrome,safari,edge,iphone,android',
         'config': './integration-tests/utils/browserstack.conf.js',
       },
       {},
