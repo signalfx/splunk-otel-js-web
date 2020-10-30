@@ -77,3 +77,9 @@ From here, you can commit+push like normal.
     1. Fill out release title, release notes
     1. Attach splunk-rum.js
     1. "Publish" the release.
+
+## Community Contributions
+
+If you are not a Splunk employee and would like to contribute code to this project, please read and fill out the
+[Splunk CLA](https://www.splunk.com/en_us/form/contributions.html).
+
