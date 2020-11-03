@@ -52,7 +52,7 @@ const nightwatch_config = {
         'browserstack.selenium_version': '3.14.0',
 
         // note: some tests may rely on viewport size
-        'resolution': '1366x768',
+        // 'resolution': '1366x768',
 
         acceptSslCerts: true,
         acceptInsecureCerts: true,
@@ -74,6 +74,8 @@ const nightwatch_config = {
         browser_version: 'latest',
       }
     },
+    /*
+    // FIXME firefox broken (-3)
     firefox: {
       desiredCapabilities: {
         os: 'Windows',
@@ -82,6 +84,7 @@ const nightwatch_config = {
         browser_version: 'latest',
       }
     },
+    */
     safari: {
       desiredCapabilities: {
         os: 'OS X',
@@ -109,6 +112,7 @@ const nightwatch_config = {
     },
     iphone: {
       desiredCapabilities: {
+        'browser': 'safari',
         'os_version': '14',
         'device': 'iPhone 11',
         'real_mobile': 'true',
@@ -117,6 +121,7 @@ const nightwatch_config = {
     },
     android: {
       desiredCapabilities: {
+        'browser': 'chrome',
         'os_version': '11.0',
         'device': 'Google Pixel 4',
         'real_mobile': 'true',
