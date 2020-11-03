@@ -64,12 +64,15 @@ const nightwatch_config = {
         }
       }
     },
+    /*
+    // FIXME firefox not working yet (-3)
     firefox: {
       desiredCapabilities: {
         browserName: 'firefox',
         marionette: true,
       }
     },
+    */
   }
 };
 
