@@ -27,7 +27,7 @@ Place it in your page as
 | captureErrors | boolean | Turns on/off error reporting feature | No | true |
 | allowInsecureBeacon | boolean | Allows http beacon urls | No | false |
 | debug | boolean | Turns on/off internal debug logging | No | false |
-| ignoreUrls | array | URLs that partially match any regex in ignoreUrls will not be traced. In addition, URLs that are _exact matches_ of strings in ignoreUrls will also not be traced. | No | (No default) |
+| ignoreUrls | array | Applies for XHR,Fetch and Websocket URLs. URLs that partially match any regex in ignoreUrls will not be traced. In addition, URLs that are _exact matches_ of strings in ignoreUrls will also not be traced. | No | (No default) |
 
 
 ## SplunkRum.setGlobalAttributes(attributes)
