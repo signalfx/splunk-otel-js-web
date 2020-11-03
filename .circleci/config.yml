@@ -16,8 +16,7 @@ browsers_unit_tests: &browsers_unit_tests
     # Firefox keeps having an issue where it reports negative fetchStart in performance API
     # - run: npm run test:integration:local:firefox:_execute
 
-    # BrowserStack license is temporarily expired, so unblock builds
-    # - run: npm run test:integration:_execute
+    - run: npm run test:integration:_execute
     
     - store_artifacts:
         path: dist/splunk-rum.js

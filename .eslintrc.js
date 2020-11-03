@@ -56,13 +56,8 @@ module.exports = {
     'wrap-iife': 'error',
     'yoda': 'error',
     'no-use-before-define': 'error',
-    'no-mixed-operators': 'error'  
-  },
-  'overrides': [
-    {
-      'files': ['src/*.js', 'test/*.js', 'integration-tests/**/*.spec.js'],
-      'rules': {
-        'header/header': [2, 'block', [
+    'no-mixed-operators': 'error',
+    'header/header': [2, 'block', [
           '',
           'Copyright 2020 Splunk Inc.',
           '',
@@ -78,9 +73,9 @@ module.exports = {
           'See the License for the specific language governing permissions and',
           'limitations under the License.',
           '',
-        ], 2],
-      }
-    },
+       ], 2],
+  },
+  'overrides': [
     {
       'files': ['integration-tests/**/*.js'],
       'env': {
@@ -89,6 +84,6 @@ module.exports = {
       'parserOptions': {
         'ecmaVersion': 2018
       },
-    }
+    },
   ]
 };
