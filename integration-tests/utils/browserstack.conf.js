@@ -26,7 +26,7 @@ const commitId = process.env.CIRCLE_SHA1 || execSync('git rev-parse HEAD').toStr
 const author = process.env.CIRCLE_PR_USERNAME || 'unknown';
 
 const nightwatch_config = {
-  src_folders: ['integration-tests/tests/websocket'],
+  src_folders: ['integration-tests/tests'],
   globals_path: path.join(__dirname, 'globals.js'),
   filter: '**/*.spec.js',
 
@@ -49,6 +49,7 @@ const nightwatch_config = {
 
         'browserstack.console': 'errors',
         'browserstack.networkLogs': true,
+        'browserstack.wsLocalSupport': 'true',
         'browserstack.selenium_version': '3.14.0',
 
         // note: some tests may rely on viewport size
