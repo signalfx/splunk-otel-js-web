@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>FETCH</title>
+
+	<%- renderAgent({debug: true}) %>
+</head>
+<body>
+	<h1>FETCH</h1>
+	<script>
+		fetch('/some-data').then(response => response.json()).then(console.log);
+	</script>
+	</body>
+</html>

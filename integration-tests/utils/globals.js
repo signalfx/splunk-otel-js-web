@@ -24,7 +24,7 @@ async function findSpan(spans, testFn, accruedTime) {
   if (accruedTime > SPAN_WAIT_TIMEOUT) {
     console.error('Listing recorded spans for your convenience.');
     console.error(spans);
-    throw new Error('Exceeded max time allowed waiting for span.');
+    return false;
   }
 
   const foundSpan = spans.find(testFn);
@@ -56,7 +56,30 @@ module.exports = {
     });
 
     const wsProtocol = browser.globals.enableHttps ? 'wss' : 'ws';
-    browser.globals.baseUrl = `${browser.globals.host}:${browser.globals._backend.port}/`;
+    const base = `${browser.globals.host}:${browser.globals._backend.port}`;
+    const AVAILABLE_SEARCH_PARAMS = {
+      wsProtocol: wsProtocol,
+      wsPort: browser.globals._backend.websocketsPort  
+    };
+
+    browser.globals.getUrl = function(path = '', includedParams = Object.keys(AVAILABLE_SEARCH_PARAMS) ) {
+      let url = base;
+      if (path) {
+        url += path;
+      }  
+
+      includedParams.forEach( (name, index) => {
+        if (index === 0) {
+          url += '?';
+        }
+        url += `&${name}=${AVAILABLE_SEARCH_PARAMS[name]}`;
+      });
+
+      return url;
+    };
+
+    // left here for old tests
+    browser.globals.baseUrl = base + '/';
     browser.globals.defaultUrl = `${browser.globals.baseUrl}?wsProtocol=${wsProtocol}&wsPort=${browser.globals._backend.websocketsPort}`;
     console.log('Started dev server.');
 

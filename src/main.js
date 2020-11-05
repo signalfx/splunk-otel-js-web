@@ -94,16 +94,17 @@ if (!window.SplunkRum) {
       }
     }
 
+    const pluginConf = options.ignoreUrls ? {ignoreUrls: options.ignoreUrls} : {};
     const provider = new PatchedWTP({
       plugins: [
         new SplunkDocumentLoad(),
-        new SplunkXhrPlugin(),
-        new SplunkFetchPlugin(),
+        new SplunkXhrPlugin(pluginConf),
+        new SplunkFetchPlugin(pluginConf),
         new SplunkUserInteractionPlugin(),
       ],
       logLevel: options.debug ? LogLevel.DEBUG : LogLevel.ERROR,
     });
-    new WebSocketInstrumentation(provider).patch();
+    new WebSocketInstrumentation(provider, pluginConf).patch();
     if (options.beaconUrl) {
       const completeUrl = options.beaconUrl + (options.rumAuth ? '?auth='+options.rumAuth : '');
       const batchSpanProcessor = new BatchSpanProcessor(new PatchedZipkinExporter(completeUrl), {

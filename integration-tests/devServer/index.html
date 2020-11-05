@@ -63,7 +63,7 @@
     let socket;
     document.getElementById('connectWebsocketsBtn').addEventListener('click', () => {
       const params = new URLSearchParams(window.location.search);
-      socket = new WebSocket(`${params.get('wsProtocol')}://${document.location.host}:${params.get('wsPort')}/`);
+      socket = new WebSocket(`${params.get('wsProtocol')}://${document.location.hostname}:${params.get('wsPort')}/`);
     });
   </script>
 

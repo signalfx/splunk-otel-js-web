@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Websocket</title>
+
+	<%- renderAgent({}, true) %>
+
+	<script>
+		const params = new URLSearchParams(window.location.search);
+		window.wsUrl = `${params.get('wsProtocol')}://${document.location.hostname}:${params.get('wsPort')}/`;
+	</script>
+
+	<script>
+			window.SplunkRumOptions.ignoreUrls = [window.wsUrl];
+			window.SplunkRum && window.SplunkRum.init(window.SplunkRumOptions);
+	</script>
+</head>
+<body>
+	<h1>Websocket</h1>
+	<button id="connectWebsocketsBtn" type="button">Connect to a websockets server</button>
+	<script>
+			let socket;
+			document.getElementById('connectWebsocketsBtn').addEventListener('click', () => {
+				socket = new WebSocket(window.wsUrl);
+			});
+	</script>
+</body>
+</html>
