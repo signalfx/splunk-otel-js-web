@@ -21,17 +21,20 @@ import {captureTraceParent} from './servertiming';
 export class SplunkXhrPlugin extends XMLHttpRequestPlugin {
   _createSpan(xhr, url, method) {
     const span = super._createSpan(xhr, url, method);
-    // don't care about success/failure, just want to see response headers if they exist
-    xhr.addEventListener('readystatechange', function () {
-      if (xhr.readyState === xhr.HEADERS_RECEIVED && xhr.getAllResponseHeaders().includes('server-timing')) {
-        const st = xhr.getResponseHeader('server-timing');
-        if (st) {
-          captureTraceParent(st, span);
+    // if this url is ignored then there is no span
+    if (span) {
+      // don't care about success/failure, just want to see response headers if they exist
+      xhr.addEventListener('readystatechange', function () {
+        if (xhr.readyState === xhr.HEADERS_RECEIVED && xhr.getAllResponseHeaders().includes('server-timing')) {
+          const st = xhr.getResponseHeader('server-timing');
+          if (st) {
+            captureTraceParent(st, span);
+          }
         }
-      }
-    });
-    // FIXME long-term answer for deprecating attributes.component?
-    span.setAttribute('component', this.moduleName);
+      });
+      // FIXME long-term answer for deprecating attributes.component?
+      span.setAttribute('component', this.moduleName);
+    }
     return span;
   }
 

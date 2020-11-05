@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Websocket</title>
+
+	<%- renderAgent({debug: true}) %>
+</head>
+<body>
+	<h1>Websocket</h1>
+	<button id="connectWebsocketsBtn" type="button">Connect to a websockets server</button>
+	<script>
+			let socket;
+			document.getElementById('connectWebsocketsBtn').addEventListener('click', () => {
+				const params = new URLSearchParams(window.location.search);
+				socket = new WebSocket(`${params.get('wsProtocol')}://${document.location.hostname}:${params.get('wsPort')}/`);
+			});
+	</script>
+</body>
+</html>

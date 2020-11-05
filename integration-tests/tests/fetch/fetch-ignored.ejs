@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Ignore urls</title>
+
+	<%- renderAgent({}, true) %>
+	<script>
+			//this is done because you can't inject RegExp to template via JSON.stringify
+			window.SplunkRumOptions.ignoreUrls = ['/some-data', /server/];
+			window.SplunkRum && window.SplunkRum.init(window.SplunkRumOptions);
+	</script>
+</head>
+<body>
+	<h1>Ignore urls test</h1>
+	<script>
+		fetch('/some-data');
+		fetch('/no-server-timings');
+	</script>
+</body>
+</html>

@@ -15,7 +15,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-require.main.filename = './node_modules/.bin/nightwatch';
+
+// require.main.filename = './node_modules/.bin/nightwatch';
+require.main.filename = './node_modules/nightwatch/bin/nightwatch';
 // note: shebang and process filename attribution are necessarry
 // otherwise nightwatch doesn't understand that we're the test runner
 

@@ -17,15 +17,17 @@ limitations under the License.
 // FIXME convert into otel-js-contrib Plugin and upstream
 import shimmer from 'shimmer';
 import {SpanKind} from '@opentelemetry/api';
+import {isUrlIgnored} from '@opentelemetry/core';
 
 function size(o) {
   return o.byteLength || o.size || o.length || undefined;
 }
 
 export class WebSocketInstrumentation {
-  constructor(provider) {
+  constructor(provider, _config = {}) {
     this._tracer = provider.getTracer('websocket');
     this.listener2ws2patched = new WeakMap();
+    this._config = _config;
   }
   startSpan(ws, name, spanKind) {
     const span = this._tracer.startSpan(name, {kind: spanKind});
@@ -147,6 +149,7 @@ export class WebSocketInstrumentation {
     span.setAttribute('error', true);
     span.setAttribute('error.message', err.message);
     span.setAttribute('error.object', err.name ?  err.name : err.constructor && err.constructor.name ? err.constructor.name : 'Error');
+    //TODO Should we do span.setStatus( someErroCode ) ? Currently all failed spans are CanonicalCode.OK
     span.end();
   }
 
@@ -154,6 +157,10 @@ export class WebSocketInstrumentation {
     const plugin = this;
     shimmer.wrap(window, 'WebSocket', function (original) {
       return function (url, protocols) {
+        if (isUrlIgnored(url, plugin._config.ignoreUrls)) {
+          return new original(url, protocols);
+        }
+
         let connectSpan = plugin._tracer.startSpan('connect');
         connectSpan.kind = SpanKind.CLIENT;
         connectSpan.setAttribute('component', 'websocket');

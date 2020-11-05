@@ -49,6 +49,7 @@ const nightwatch_config = {
 
         'browserstack.console': 'errors',
         'browserstack.networkLogs': true,
+        'browserstack.wsLocalSupport': 'true',
         'browserstack.selenium_version': '3.14.0',
 
         // note: some tests may rely on viewport size
