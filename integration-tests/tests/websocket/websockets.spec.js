@@ -16,6 +16,12 @@ limitations under the License.
 
 module.exports = {
   'can produce websocket events': async function(browser) {
+    const UNSUPPORTED_BROWSERS = ['Safari'];
+    const currentBrowser = browser.options.desiredCapabilities.browserName;
+    if (UNSUPPORTED_BROWSERS.includes(currentBrowser)) {
+      return;
+    }
+
     const url = browser.globals.getUrl('/websocket/websocket.ejs');
     await browser.url(url);
 
@@ -31,6 +37,12 @@ module.exports = {
     await browser.end();
   },
   'websocket url can be ignored ': async function(browser) {
+    const UNSUPPORTED_BROWSERS = ['Safari'];
+    const currentBrowser = browser.options.desiredCapabilities.browserName;
+    if (UNSUPPORTED_BROWSERS.includes(currentBrowser)) {
+      return;
+    }
+    
     browser.globals.clearReceivedSpans();
     await browser.url(browser.globals.getUrl('/websocket/websocket-ignored.ejs'));
     await browser.click('#connectWebsocketsBtn');
