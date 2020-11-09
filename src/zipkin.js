@@ -38,7 +38,7 @@ export class PatchedZipkinExporter {
     if (navigator.sendBeacon) {
       navigator.sendBeacon(this.beaconUrl, zJson);
     }
-    resultCallback(ExportResultCode.SUCCESS);
+    resultCallback({code: ExportResultCode.SUCCESS});
   }
 
   shutdown() {
