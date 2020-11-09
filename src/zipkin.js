@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import {toZipkinSpan, statusCodeTagName, statusDescriptionTagName} from '../deps/opentelemetry-js/packages/opentelemetry-exporter-zipkin/src/transform';
-import {ExportResult} from '@opentelemetry/core';
+import {ExportResultCode} from '@opentelemetry/core';
 import {limitLen} from './utils';
 
 const MAX_VALUE_LIMIT = 4096;
@@ -38,7 +38,7 @@ export class PatchedZipkinExporter {
     if (navigator.sendBeacon) {
       navigator.sendBeacon(this.beaconUrl, zJson);
     }
-    resultCallback(ExportResult.SUCCESS);
+    resultCallback({code: ExportResultCode.SUCCESS});
   }
 
   shutdown() {

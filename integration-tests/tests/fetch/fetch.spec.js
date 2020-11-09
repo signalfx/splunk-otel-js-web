@@ -23,7 +23,7 @@ module.exports = {
 
     const fetchSpan = await browser.globals.findSpan(span => span.tags['http.url'] === '/some-data');
     await browser.assert.ok(fetchSpan.tags['component'], 'fetch');
-    await browser.assert.ok(fetchSpan.tags['ot.status_code'], 'OK');
+    await browser.assert.ok(fetchSpan.tags['ot.status_code'], 'UNSET');
     await browser.assert.ok(fetchSpan.tags['http.status_code'], '200');
     await browser.assert.ok(fetchSpan.tags['http.status_text'], 'OK');
     await browser.assert.ok(fetchSpan.tags['http.method'], 'GET');
