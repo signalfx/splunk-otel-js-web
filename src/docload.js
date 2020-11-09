@@ -43,8 +43,8 @@ export class SplunkDocumentLoad extends DocumentLoad {
   // initial document load (but leaves the entries undisturbed for resource loads).
   _getEntries() {
     const answer = super._getEntries();
-    if (answer) {
-      const navEntries = performance.getEntriesByType('navigation');
+    if (answer) { //this is always empty object and truthy iirc
+      const navEntries = performance.getEntriesByType && performance.getEntriesByType('navigation');
       if (navEntries && navEntries[0] && navEntries[0].serverTiming) {
         answer.serverTiming = navEntries[0].serverTiming;
       }
