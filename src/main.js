@@ -95,13 +95,16 @@ if (!window.SplunkRum) {
     }
 
     const pluginConf = options.ignoreUrls ? {ignoreUrls: options.ignoreUrls} : {};
+    const plugins = [
+      new SplunkDocumentLoad(),
+      new SplunkXhrPlugin(pluginConf),
+      new SplunkUserInteractionPlugin(),
+    ];
+    if (window.PerformanceObserver) {
+      plugins.push(new SplunkFetchPlugin(pluginConf));
+    }
     const provider = new PatchedWTP({
-      plugins: [
-        new SplunkDocumentLoad(),
-        new SplunkXhrPlugin(pluginConf),
-        new SplunkFetchPlugin(pluginConf),
-        new SplunkUserInteractionPlugin(),
-      ],
+      plugins: plugins,
       logLevel: options.debug ? LogLevel.DEBUG : LogLevel.ERROR,
     });
     new WebSocketInstrumentation(provider, pluginConf).patch();
