@@ -16,6 +16,11 @@ limitations under the License.
 
 module.exports = {
   'cache should be flushed when window is de-focused': async function(browser) {
+    if (browser.options.desiredCapabilities.browserName === 'Safari' &&
+        browser.options.desiredCapabilities.os_version === 'Sierra') {
+      return;
+    }
+
     await browser.url(browser.globals.defaultUrl);
     // TODO: try opening 2 tabs
 
