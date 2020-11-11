@@ -98,7 +98,7 @@ const nightwatch_config = {
     safari10: {
       desiredCapabilities: {
         os: 'OS X',
-        os_version: 'Catalina',
+        os_version: 'Sierra',
         browserName: 'Safari',
         browser_version: '10.1',
         resolution: '1024x768',
