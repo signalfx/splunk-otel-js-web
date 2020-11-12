@@ -27,6 +27,11 @@ import {findCookieValue, generateId} from './utils';
 import {version as SplunkRumVersion} from '../package.json';
 import {WebSocketInstrumentation} from './websocket';
 
+function browserSupported() {
+  // FIXME very short-term patch for Safari 10.1 -> upstream fixes pending
+  return window.PerformanceObserver && performance.getEntriesByType;
+}
+
 if (!window.SplunkRum) {
   window.SplunkRum = {
     inited: false
@@ -42,8 +47,8 @@ if (!window.SplunkRum) {
       return;
     }
 
-    // FIXME very short-term patch for Safari 10.1 -> upstream fixes pending
-    if (!window.PerformanceObserver || !performance.getEntriesByType) {
+    if (!browserSupported()) {
+      console.log('SplunkRum: browser not supported, disabling instrumentation.');
       window.SplunkRum.error = function() {};
       window.SplunkRum.provider = new NoopTracerProvider();
       return;
