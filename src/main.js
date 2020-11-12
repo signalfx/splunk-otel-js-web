@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import {ConsoleSpanExporter, SimpleSpanProcessor, BatchSpanProcessor} from '@opentelemetry/tracing';
+import {NoopTracerProvider} from '@opentelemetry/api';
 import {WebTracerProvider} from '@opentelemetry/web';
 import {LogLevel} from '@opentelemetry/core';
 import {SplunkDocumentLoad} from './docload';
@@ -25,6 +26,11 @@ import {captureErrors} from './errors';
 import {findCookieValue, generateId} from './utils';
 import {version as SplunkRumVersion} from '../package.json';
 import {WebSocketInstrumentation} from './websocket';
+
+function browserSupported() {
+  // FIXME very short-term patch for Safari 10.1 -> upstream fixes pending
+  return window.PerformanceObserver && performance.getEntriesByType;
+}
 
 if (!window.SplunkRum) {
   window.SplunkRum = {
@@ -40,6 +46,14 @@ if (!window.SplunkRum) {
       console.log('SplunkRum already init()ed.');
       return;
     }
+
+    if (!browserSupported()) {
+      console.log('SplunkRum: browser not supported, disabling instrumentation.');
+      window.SplunkRum.error = function() {};
+      window.SplunkRum.provider = new NoopTracerProvider();
+      return;
+    }
+
     if (!options.debug) {
       if (!options.beaconUrl) {
         throw new Error('SplunkRum.init( {beaconUrl: \'https://something\'} ) is required.');
