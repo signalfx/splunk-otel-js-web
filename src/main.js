@@ -68,6 +68,12 @@ if (!window.SplunkRum) {
 
     const instanceId = generateId(64);
 
+    if (window.self !== window.top) {
+      // is in iframe  
+      // same-site None; secure
+    } else {
+      // same-site: strict ?
+    }
     const cookieName = '_splunk_rum_sid';
 
     let rumSessionId = undefined;
