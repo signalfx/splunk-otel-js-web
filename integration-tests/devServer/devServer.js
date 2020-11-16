@@ -137,6 +137,7 @@ function getSpans(spanOrSpans) {
   return [{
     name: spanOrSpans.name,
     tags: spanOrSpans.tags,
+    annotations: spanOrSpans.annotations,
   }];
 }
 
