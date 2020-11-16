@@ -17,7 +17,7 @@ limitations under the License.
 module.exports = {
   'documentFetch, resourceFetch, and documentLoad spans': async function(browser) {
 
-    events2hash = function(eventsArr) {
+    const events2hash = function(eventsArr) {
       const answer = {};
       if (!eventsArr) {
         return answer;
@@ -26,7 +26,7 @@ module.exports = {
         answer[event.value] = event;
       });
       return answer;
-    }
+    };
 
     const url = browser.globals.getUrl('/docload/docload.ejs');
     await browser.url(url);
