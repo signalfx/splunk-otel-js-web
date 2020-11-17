@@ -16,39 +16,36 @@ limitations under the License.
 
 module.exports = {
   'can produce websocket events': async function(browser) {
-    const UNSUPPORTED_BROWSERS = ['Safari'];
-    const currentBrowser = browser.options.desiredCapabilities.browserName;
-    if (UNSUPPORTED_BROWSERS.includes(currentBrowser)) {
-      return;
-    }
-
     const url = browser.globals.getUrl('/websocket/websocket.ejs');
     await browser.url(url);
 
-    await browser.click('#connectWebsocketsBtn');
-    const wsConnectionSpan = await browser.globals.findSpan(span => span.name === 'connect');          
-    await browser.url(`${browser.globals.baseUrl}empty-page`);
+    if (['safari'].includes(browser.options.desiredCapabilities.browserName)) {
+      browser.execute('browserstack_executor: {"action": "acceptSsl"}');
+    }
 
+    await browser.click('#connectWebsocketsBtn');
+    const wsConnectionSpan = await browser.globals.findSpan(span => span.name === 'connect');
+    
+    // await browser.verify.ok(wsConnectionSpan);
     await browser.assert.strictEqual(wsConnectionSpan.tags['location.href'], url);
     await browser.assert.strictEqual(wsConnectionSpan.tags['app'], 'splunk-otel-js-dummy-app');
     await browser.assert.strictEqual(wsConnectionSpan.tags['component'], 'websocket');
-    await browser.assert.strictEqual(wsConnectionSpan.tags['ot.status_code'], 'UNSET'); //pointless check, always OK
+    await browser.assert.strictEqual(wsConnectionSpan.tags['ot.status_code'], 'UNSET'); //pointless check, always UNSET
     await browser.assert.strictEqual(wsConnectionSpan.tags['error'], undefined);
+
     await browser.end();
   },
-  'websocket url can be ignored ': async function(browser) {
-    const UNSUPPORTED_BROWSERS = ['Safari'];
-    const currentBrowser = browser.options.desiredCapabilities.browserName;
-    if (UNSUPPORTED_BROWSERS.includes(currentBrowser)) {
-      return;
-    }
-    
-    browser.globals.clearReceivedSpans();
-    await browser.url(browser.globals.getUrl('/websocket/websocket-ignored.ejs'));
-    await browser.click('#connectWebsocketsBtn');
+  // 'websocket url can be ignored ': async function(browser) {    
+  //   browser.globals.clearReceivedSpans();
+  //   await browser.url(browser.globals.getUrl('/websocket/websocket-ignored.ejs'));
+  //   if (['safari'].includes(browser.options.desiredCapabilities.browserName)) {
+  //     browser.execute('browserstack_executor: {"action": "acceptSsl"}');
+  //   }
 
-    const wsConnectionSpan = await browser.globals.findSpan(span => span.name === 'connect');   
-    await browser.assert.not.ok(wsConnectionSpan);
-    await browser.end();
-  }
+  //   await browser.click('#connectWebsocketsBtn');
+
+  //   const wsConnectionSpan = await browser.globals.findSpan(span => span.name === 'connect');   
+  //   await browser.verify.not.ok(wsConnectionSpan);
+  //   await browser.end();
+  // }
 };

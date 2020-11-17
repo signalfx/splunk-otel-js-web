@@ -9,11 +9,39 @@
 <body>
 	<h1>Websocket</h1>
 	<button id="connectWebsocketsBtn" type="button">Connect to a websockets server</button>
-	<script>
+	<pre id="log"></pre>
+	<!-- <script>
 			let socket;
 			document.getElementById('connectWebsocketsBtn').addEventListener('click', () => {
 				const params = new URLSearchParams(window.location.search);
 				socket = new WebSocket(`${params.get('wsProtocol')}://${document.location.hostname}:${params.get('wsPort')}/`);
+			});
+	</script> -->
+		<script>
+			let socket;
+			document.getElementById('connectWebsocketsBtn').addEventListener('click', () => {
+				const params = new URLSearchParams(window.location.search);
+				let pre = document.getElementById('log');
+
+				try {
+					var url = `${params.get('wsProtocol')}://${document.location.hostname}:${params.get('wsPort')}/`;
+					pre.innerHTML += 'connect url: ' + url;
+					socket = new WebSocket(url);
+					socket.addEventListener('open', function (event) {
+						pre.innerHTML += ' url: ' + socket.url + ' readyState: ' + socket.readyState;
+					});
+	
+					socket.addEventListener('error', function (event) {
+						pre.innerHTML += ' error ' + JSON.stringify(event, Object.getOwnPropertyNames(event));
+					});
+	
+					socket.addEventListener('close', function(event) {
+						pre.innerHTML += ' close ' + event.code;
+					});
+				} catch(e) {
+					pre.innerHTML += ' init error: ' + e.message;
+				}
+
 			});
 	</script>
 </body>

@@ -22,8 +22,8 @@ const SPAN_WAIT_ITERATION_TIME = 50;
 async function findSpan(spans, testFn, accruedTime) {
   accruedTime = accruedTime || 0;
   if (accruedTime > SPAN_WAIT_TIMEOUT) {
-    console.error('Listing recorded spans for your convenience.');
-    console.error(spans);
+    console.log('Listing recorded spans for your convenience.');
+    console.log(spans);
     return false;
   }
 
