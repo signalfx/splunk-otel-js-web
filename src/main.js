@@ -23,7 +23,7 @@ import {SplunkXhrPlugin, SplunkFetchPlugin} from './xhrfetch';
 import {SplunkUserInteractionPlugin} from './interaction';
 import {PatchedZipkinExporter} from './zipkin';
 import {captureErrors} from './errors';
-import {findCookieValue, generateId} from './utils';
+import {findCookieValue, generateId, isIframe} from './utils';
 import {version as SplunkRumVersion} from '../package.json';
 import {WebSocketInstrumentation} from './websocket';
 
@@ -68,19 +68,21 @@ if (!window.SplunkRum) {
 
     const instanceId = generateId(64);
 
-    if (window.self !== window.top) {
-      // is in iframe  
-      // same-site None; secure
-    } else {
-      // same-site: strict ?
-    }
+
     const cookieName = '_splunk_rum_sid';
 
-    let rumSessionId = undefined;
+    let rumSessionId = instanceId;
     const cookieSetter = function() {
       if (!document.cookie.includes(cookieName)) {
         const sessionId = generateId(128);
-        document.cookie = cookieName + '=' + sessionId + '; path=/; max-age=' + SessionTimeoutSeconds ;
+        let cookie = cookieName + '=' + sessionId + '; path=/; max-age=' + SessionTimeoutSeconds ;
+
+        if (isIframe()) {
+          cookie += ';SameSite=None; Secure';
+        } else {
+          cookie += ';SameSite=Strict';
+        }
+        document.cookie = cookie;
         setTimeout(cookieSetter, 1000*SessionTimeoutCheckSeconds);
       }
       rumSessionId = findCookieValue(cookieName);

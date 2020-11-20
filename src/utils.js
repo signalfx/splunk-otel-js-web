@@ -40,3 +40,7 @@ export function limitLen(s, cap) {
     return s;
   }
 }
+
+export function isIframe() {
+  return window.self !== window.top;
+}
