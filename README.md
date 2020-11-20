@@ -6,7 +6,7 @@ Place it in your page as
 ```html
 <script src="http://something-not-yet-known.domain/path/to/splunk-rum.js"></script>
 <script>
-  window.SplunkRum && window.SplunkRum.init(
+  window.SplunkRum.init(
     {
       // Your beaconUrl should be provided by your friendly Splunk representative
       beaconUrl: 'http://example.com/v1/rum',
@@ -16,6 +16,10 @@ Place it in your page as
     });
 </script>
 ```
+
+## Installation options
+
+Please read [INSTALLING.md](./INSTALLING.md) for more advanced installation scenarios.
 
 ## `SplunkRum.init({ })` options
 | Option | Type | Notes | Required? | Default |
