@@ -1,8 +1,38 @@
-## Installing into your app
-You'll need to either build the final splunk-rum.js file or obtain it from a release.
-To build from scratch, please see the notes in CONTRIBUTING.md.
+# Splunk distribution of OpenTelemetry JavaScript Browser
 
-Place it in your page as
+The Splunk distribution of [OpenTelemetry JavaScript
+Browser](https://github.com/open-telemetry/opentelemetry-js)
+provides a JavaScript file that can be added into a page
+that automatically captures:
+
+- Document load information, including resource fetching
+- User interactions (clicks)
+- XmlHttpRequest (XHR) and fetch calls, including the full URL but not
+  including any body/payload
+- WebSocket activity
+- Errors
+
+By default, the following error sources are captured:
+
+- `addEventListener('error')` which reports unhandled errors (e.g., from
+  setInterval callbacks)
+- `addEventListener('unhandledrejection')` which reports unhandled Promise
+  rejections
+- instrumenting usage of `console.error`
+- `document.documentElement.addEventListener('error', ... {capture:true});`
+  which reports errors on DOM elements (e.g., image loading issue)
+
+All data and errors captured are reported to Splunk RUM.
+
+> :construction: This project is currently in **BETA**.
+
+## Getting Started
+
+To get started, download the JS file from the latest release and add its path
+to your page.
+
+For example:
+
 ```html
 <script src="http://something-not-yet-known.domain/path/to/splunk-rum.js"></script>
 <script>
@@ -21,7 +51,10 @@ Place it in your page as
 
 Please read [INSTALLING.md](./INSTALLING.md) for more advanced installation scenarios.
 
-## `SplunkRum.init({ })` options
+## All configuration options
+
+### `SplunkRum.init({ })`
+
 | Option | Type | Notes | Required? | Default |
 |--------|------|-------|-----------|---------|
 | beaconUrl | string | Destination for the captured data | Yes | (No default) |
@@ -34,37 +67,23 @@ Please read [INSTALLING.md](./INSTALLING.md) for more advanced installation scen
 | ignoreUrls | array | Applies for XHR,Fetch and Websocket URLs. URLs that partially match any regex in ignoreUrls will not be traced. In addition, URLs that are _exact matches_ of strings in ignoreUrls will also not be traced. | No | (No default) |
 
 
-## SplunkRum.setGlobalAttributes(attributes)
-You can (re)set the entirety of `globalAttributes` at any time with this method.  Any spans reported from
-this point on will have your new attributes set.  You can pass `{}` or `undefined` to clear your global attributes.
+### `SplunkRum.setGlobalAttributes(attributes)`
 
-## Features / data captured
-
-- Document load information, including resource fetching
-- User interactions (clicks)
-- XmlHttpRequest (XHR) and fetch calls, including the full URL but not including any body/payload
-- WebSocket activity
-- Errors (see below for more details)
-
-## Errors
-
-By default, we capture from the following sources of errors:
-
-- `addEventListener('error')` which reports unhandled errors (e.g., from setInterval callbacks)
-- `addEventListener('unhandledrejection')` which reports unhandled Promise rejections
-- instrumenting usage of `console.error`
-- `document.documentElement.addEventListener('error', ... {capture:true});` which reports errors on DOM elements (e.g., image loading issue)
-
-If you would like to report an error manually, you can use:
-```javascript
-  window.SplunkRum && window.SplunkRum.error(errorObjectOrMessageString);
-```
+You can (re)set the entirety of `globalAttributes` at any time with this
+method.  Any spans reported from this point on will have your new attributes
+set.  You can pass `{}` or `undefined` to clear your global attributes.
 
 ## Manual OpenTelemetry instrumentation
 
-If you would like to manually instrument your application (for example, to report timings for key events),
- you can use the [OpenTelemetry](https://github.com/open-telemetry/opentelemetry-js/tree/master/packages/opentelemetry-tracing) 
-API.  Our `TracingProvider` is in `SplunkRum.provider`.  Here is an example of how to use it:
+### Tracing Provider
+
+If you would like to manually instrument your application (for example, to
+report timings for key events), you can use the
+[OpenTelemetry](https://github.com/open-telemetry/opentelemetry-js/tree/master/packages/opentelemetry-tracing)
+API.  Our `TracingProvider` is in `SplunkRum.provider`.
+
+Example on how to manually instrument:
+
 ```javascript
   const provider = window.SplunkRum.provider;
   const span = provider.getTracer('searchbox').startSpan('search');
@@ -72,3 +91,20 @@ API.  Our `TracingProvider` is in `SplunkRum.provider`.  Here is an example of h
   // time passes
   span.end();
 ```
+
+### Errors
+
+While many errors are captured by default, manual errors can be reported by
+using:
+
+```javascript
+  window.SplunkRum && window.SplunkRum.error(errorObjectOrMessageString);
+```
+
+## License and versioning
+
+The Splunk distribution of OpenTelemetry JavaScript Browser is a distribution
+of the [OpenTelemetry JavaScript
+Browser](https://github.com/open-telemetry/opentelemetry-js) project. It is
+released under the terms of the Apache Software License version 2.0. See [the
+license file](./LICENSE) for more details.
