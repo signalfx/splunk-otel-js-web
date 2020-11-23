@@ -12,12 +12,12 @@ Our recommendation for getting started is simple: host `splunk-rum.js` as your o
 your `<head>`:
 
 ```html
-<script src="http://your-site.com/whatever/splunk-rum.js"></script>
+<script src="/whatever/splunk-rum.js"></script>
 <script>
   window.SplunkRum.init(
     {
       // Your beaconUrl should be provided by your friendly Splunk representative
-      beaconUrl: 'http://example.com/v1/rum',
+      beaconUrl: 'https://example.com/v1/rum',
       // You can generate or get your rumAuth token from your friendly Splunk representative
       rumAuth: 'ABC123...789',
       app: 'my-awesome-app'
@@ -59,5 +59,5 @@ function initializeSplunkRum() {
   window.SplunkRum.init( ... );   
 }
 </script>
-<script src="http://your-site.com/whatever/splunk-rum.js" async onload="initializeSplunkRum()"></script>
+<script src="/whatever/splunk-rum.js" async onload="initializeSplunkRum()"></script>
 ```

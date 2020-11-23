@@ -34,12 +34,12 @@ to your page.
 For example:
 
 ```html
-<script src="http://something-not-yet-known.domain/path/to/splunk-rum.js"></script>
+<script src="http://your-site.com/path/to/splunk-rum.js"></script>
 <script>
   window.SplunkRum.init(
     {
       // Your beaconUrl should be provided by your friendly Splunk representative
-      beaconUrl: 'http://example.com/v1/rum',
+      beaconUrl: 'https://example.com/v1/rum',
       // You can generate or get your rumAuth token from your friendly Splunk representative
       rumAuth: 'ABC123...789',
       app: 'my-awesome-app'
