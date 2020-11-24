@@ -17,10 +17,10 @@ limitations under the License.
 import * as assert from 'assert';
 import {PatchedZipkinExporter} from '../src/zipkin';
 
-describe('zipkin exporter, () => {
+describe('zipkin exporter', () => {
   it('should rate limit', () => {
     const zipkin = new PatchedZipkinExporter();
-    var exported = [];
+    let exported = [];
     const origSendBeacon = navigator.sendBeacon;
     try {
       navigator.sendBeacon = function(url, data) {

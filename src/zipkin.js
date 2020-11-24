@@ -40,7 +40,7 @@ export class PatchedZipkinExporter {
   }
 
   filter(span) {
-    const component = span.attributes ? (span.attributes.component || 'unknown') : 'unknown';
+    const component = span.attributes ? span.attributes.component || 'unknown' : 'unknown';
     if (!this.spanCounts[component]) {
       this.spanCounts[component] = 0;
     }
