@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Test init</title>
+	<script src="/dist/splunk-rum.js"></script>
+	<script>
+		class MySpanProcessor {
+			onEnd(span) {
+				console.log('MSP onend');
+				if (span.attributes && span.attributes['http.url']) {
+					span.attributes['http.url'] = 'redacted';
+				}
+			}
+			onStart(span, cts) {
+			}
+			forceFlush() {
+				return Promise.resolve();
+			}
+			shutdown() {
+				return Promise.resolve();
+			}
+		};
+		SplunkRum.init( {
+			beaconUrl: '/api/v2/spans',
+			app: 'splunk-otel-js-dummy-app',
+			debug: true,
+			spanProcessor: new MySpanProcessor(),
+		});
+	</script>
+</head>
+<body>
+	<p>Redacting URLs with spanProcessor</p>
+</body>
+</html>
