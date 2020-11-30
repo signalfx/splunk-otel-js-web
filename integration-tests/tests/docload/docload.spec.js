@@ -58,12 +58,12 @@ module.exports = {
     await timesMakeSense(docFetch.annotations, 'responseStart', 'responseEnd');
     await timesMakeSense(docFetch.annotations, 'fetchStart', 'responseEnd');
     // FIXME good way to know when this should be available?
-    await browser.assert.ok(span.tags['http.response_content_length'] >= 0);
+    await browser.assert.ok(docFetch.tags['http.response_content_length'] >= 0);
 
     // scriptFetch
     await browser.assert.strictEqual(scriptFetch.tags['component'], 'document-load');
     await browser.assert.strictEqual(scriptFetch.tags['location.href'], url);
-    await browser.assert.ok(span.tags['http.response_content_length'] >= 0);
+    await browser.assert.ok(scriptFetch.tags['http.response_content_length'] >= 0);
     // http.url has already been checked by the findSpan
     
     // documentLoad
