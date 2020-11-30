@@ -33,14 +33,13 @@ export class PatchedZipkinExporter {
   constructor(beaconUrl) {
     this.beaconUrl = beaconUrl;
     this.spanCounts = {};
-    const exporter = this;
     setInterval(() => {
-      exporter.spanCounts = {};
+      this.spanCounts = {};
     }, SPAN_RATE_LIMIT_PERIOD);
   }
 
   filter(span) {
-    const component = span.attributes ? span.attributes.component || 'unknown' : 'unknown';
+    const component = span.attributes && span.attributes.component ? span.attributes.component : 'unknown';
     if (!this.spanCounts[component]) {
       this.spanCounts[component] = 0;
     }
