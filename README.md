@@ -58,14 +58,14 @@ Please read [INSTALLING.md](./INSTALLING.md) for more advanced installation scen
 | Option | Type | Notes | Required? | Default |
 |--------|------|-------|-----------|---------|
 | beaconUrl | string | Destination for the captured data | Yes | (No default) |
-| rumAuth | string | Publicly-visible `rumAuth` value.  Please do not paste any other access token or auth value into here, as this will be visible to every user of your app | Temporarily no | (No default) |
+| rumAuth | string | Publicly-visible `rumAuth` value.  Please do not paste any other access token or auth value into here, as this will be visible to every user of your app | Yes | (No default) |
 | app | string | Application name | No | 'unknown-browser-app' |
 | globalAttributes | object | Extra attributes to add to each reported span.  See also `setGlobalAttributes` | No | {} |
 | captureErrors | boolean | Turns on/off error reporting feature | No | true |
 | allowInsecureBeacon | boolean | Allows http beacon urls | No | false |
 | debug | boolean | Turns on/off internal debug logging | No | false |
 | ignoreUrls | array | Applies for XHR,Fetch and Websocket URLs. URLs that partially match any regex in ignoreUrls will not be traced. In addition, URLs that are _exact matches_ of strings in ignoreUrls will also not be traced. | No | (No default) |
-
+| spanProcessor | SpanProcessor | Offers ability to alter/remove data in-browser.  See below for more details | (undefined) |
 
 ### `SplunkRum.setGlobalAttributes(attributes)`
 
@@ -99,6 +99,29 @@ using:
 
 ```javascript
   window.SplunkRum && window.SplunkRum.error(errorObjectOrMessageString);
+```
+
+### spanProcessor
+
+Passing an OpenTelemetry `SpanProcessor` as a `spanProcessor:` option to `init()` adds the provided
+processor to our tracing provider.  This processor can modify/create/remove attributes of
+spans before they leave the browser.  A trivial example of this might be:
+
+```javascript
+class MySpanProcessor {
+  onEnd(span) {
+    if (span.attributes['http.url']) {
+      span.attributes['http.url'] = '(redacted)';
+    }
+  }
+  onStart(span, cts) { }
+  forceFlush() { return Promise.resolve(); }
+  shutdown() { return Promise.resolve(); }
+};
+SplunkRum.init({
+  ...
+  spanProcessor: new UrlRedactor(),
+});
 ```
 
 ## License and versioning
