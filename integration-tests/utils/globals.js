@@ -50,6 +50,7 @@ module.exports = {
     browser.globals.rumVersion = require('../../package.json').version;
     browser.globals.clearReceivedSpans = () => { spans.length = 0; };
     browser.globals.findSpan = (testFn) => findSpan(spans, testFn);
+    //    browser.globals.spansSoFar = () => spans.slice();
 
     console.log('Starting dev server (dummy page and traces receiver).');
     browser.globals._backend = await devServer.run({

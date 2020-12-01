@@ -118,6 +118,12 @@ if (!window.SplunkRum) {
       ],
       logLevel: options.debug ? LogLevel.DEBUG : LogLevel.ERROR,
     });
+    if (options.spanProcessor) {
+      const sp = options.spanProcessor;
+      if (typeof sp.onStart === 'function' && typeof sp.onEnd === 'function') {
+        provider.addSpanProcessor(sp);
+      }
+    }
     new WebSocketInstrumentation(provider, pluginConf).patch();
     if (options.beaconUrl) {
       const completeUrl = options.beaconUrl + (options.rumAuth ? '?auth='+options.rumAuth : '');
