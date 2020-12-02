@@ -19,7 +19,7 @@ module.exports = {
     // the google webvitals library only works on chrome (and chrome-based edge) at the moment
     const SUPPORTED_BROWSERS = ['Chrome', 'chrome', 'Edge'];
     const currentBrowser = browser.options.desiredCapabilities.browserName;
-    if (!SUPPORTED_BROWSERS.includes(currentBrowser) && !currentBrowser) {
+    if (!SUPPORTED_BROWSERS.includes(currentBrowser)) {
       return;
     }
 
