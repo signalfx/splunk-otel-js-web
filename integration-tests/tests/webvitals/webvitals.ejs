@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Webvitals</title>
+
+	<%- renderAgent({debug: true}) %>
+</head>
+<body>
+	<p>Webvitals</p>
+	<script>
+		let id = 1;
+		function clicky() {
+			const p = document.createElement('p');
+			p.setAttribute('id', 'p'+id);
+			id++;
+			p.innerText = 'Very long paragraph to force a visual change.  '.repeat(30);
+			document.body.firstElementChild.appendChild(p);
+		}
+		window.addEventListener('load', clicky);
+	</script>
+	<!-- a dummy "interactive" link in order to compute FID -->
+	<a href="javascript:clicky()" id="clicky">Click me</a>
+</body>
+</html>
