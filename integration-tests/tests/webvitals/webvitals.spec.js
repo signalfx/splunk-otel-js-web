@@ -28,7 +28,8 @@ module.exports = {
     // fid won't happen unless there is interaction, so simulate a bit of that
     await browser.click('#clicky');
     await browser.waitForElementPresent('#p2');
-
+    // webvitals library won't send the cls unless a visibility change happens, so
+    // force a fake one
     await browser.execute(function() {
       Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
       document.dispatchEvent(new Event('visibilitychange'));

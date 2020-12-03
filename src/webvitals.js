@@ -15,8 +15,9 @@ limitations under the License.
 */
 
 import {getCLS,getLCP,getFID} from 'web-vitals';
+const reported = {};
 
-function report(tracer, name, metric, reported) {
+function report(tracer, name, metric) {
   if (reported[name]) {
     return;
   }
@@ -30,14 +31,13 @@ function report(tracer, name, metric, reported) {
 export function initWebVitals(provider) {
   const tracer = provider.getTracer('webvitals');
   // CLS is defined as being sent more than once, easier to just ensure that everything is sent just on the first occurence.
-  const reported = {};
   getFID((metric) => {
-    report(tracer, 'fid', metric, reported);
+    report(tracer, 'fid', metric);
   });
   getCLS((metric) => {
-    report(tracer, 'cls', metric, reported);
+    report(tracer, 'cls', metric);
   });
   getLCP((metric) => {
-    report(tracer, 'lcp', metric, reported);
+    report(tracer, 'lcp', metric);
   });
 }
