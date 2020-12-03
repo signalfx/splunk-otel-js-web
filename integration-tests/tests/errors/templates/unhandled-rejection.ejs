@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Errors test</title>
+  <%- renderAgent() %>
+  <script>
+    setTimeout(() => {
+      Promise.reject('rejection-value');
+    });
+  </script>
+</head>
+<body>
+</body>
+</html>
