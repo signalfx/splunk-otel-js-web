@@ -59,6 +59,8 @@ module.exports = {
     await timesMakeSense(docFetch.annotations, 'fetchStart', 'responseEnd');
     if (browser.options.desiredCapabilities.browserName !== 'Safari') {
       await browser.assert.ok(docFetch.tags['http.response_content_length'] >= 0);
+      await browser.assert.ok(docFetch.tags['link.traceId']);
+      await browser.assert.ok(docFetch.tags['link.spanId']);
     }
 
     // scriptFetch
@@ -66,6 +68,8 @@ module.exports = {
     await browser.assert.strictEqual(scriptFetch.tags['location.href'], url);
     if (browser.options.desiredCapabilities.browserName !== 'Safari') {
       await browser.assert.ok(scriptFetch.tags['http.response_content_length'] >= 0);
+      await browser.assert.ok(docFetch.tags['link.traceId']);
+      await browser.assert.ok(docFetch.tags['link.spanId']);
     }
     // http.url has already been checked by the findSpan
     
