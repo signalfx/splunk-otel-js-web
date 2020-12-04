@@ -177,11 +177,12 @@ exports.run = async function run({onSpanReceived, enableHttps}) {
       return res.render(filepath, {
         renderAgent(userOpts = {}, noInit = false, file = '/dist/splunk-rum.js') {
           const options = {
-            beaconUrl: `${host}/api/v2/spans`, 
+            beaconUrl: `${host}/api/v2/spans`,
             app: 'splunk-otel-js-dummy-app',
             debug: false,
+            bufferTimeout: require('../utils/globals').GLOBAL_TEST_BUFFER_TIMEOUT,
             ...userOpts
-          };  
+          };
     
           return render(INJECT_TEMPLATE, {
             file,
