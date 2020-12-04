@@ -27,12 +27,10 @@ module.exports = {
   'XHR request can be ignored': async function(browser) {
     await browser.url(`${browser.globals.baseUrl}xhr/xhr-ignored.ejs`);
     
-    const xhrSpanIgnoredViaString = await browser.globals.findSpan(span => span.tags['http.url'] === '/some-data');
-    await browser.assert.not.ok(xhrSpanIgnoredViaString);
+    await browser.globals.findSpan(span => span.name === 'guard-span');
 
-    const xhrSpanIgnoredViaRegExp = await browser.globals.findSpan(span => span.tags['http.url'] === '/no-server-timings');
-    await browser.assert.not.ok(xhrSpanIgnoredViaRegExp);
-
+    await browser.assert.not.ok(browser.globals.receivedSpans.find(span => span.tags['http.url'] === '/some-data'));
+    await browser.assert.not.ok(browser.globals.receivedSpans.find(span => span.tags['http.url'] === '/no-server-timings'));
     await browser.end();
   }
 };

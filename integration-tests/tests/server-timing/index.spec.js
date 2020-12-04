@@ -27,12 +27,14 @@ module.exports = {
     // in some cases firefox will report negative fetchStart for localhost pages
     // in that case opentelemetry-plugin-document-load will not report any spans
     await browser.url(browser.globals.baseUrl);
-    await browser.url(browser.globals.defaultUrl);
+
+    browser.globals.clearReceivedSpans();    
+    await browser.url(browser.globals.getUrl('/server-timing/index.ejs'));
     const expectedTraceId = browser.globals._backend.getLastServerTiming().traceId;  
     const docFetchSpan = await browser.globals.findSpan(span => span.name === 'documentFetch' && span.tags['link.traceId'] === expectedTraceId);
 
     await browser.assert.strictEqual(docFetchSpan.tags['link.traceId'], expectedTraceId);
-    await browser.assert.strictEqual(docFetchSpan.tags['location.href'], browser.globals.defaultUrl);
+    await browser.assert.strictEqual(docFetchSpan.tags['location.href'], browser.globals.getUrl('/server-timing/index.ejs'));
     await browser.assert.strictEqual(docFetchSpan.tags['app'], 'splunk-otel-js-dummy-app');
     await browser.assert.strictEqual(docFetchSpan.tags['component'], 'document-load');
     await browser.assert.strictEqual(docFetchSpan.tags['splunk.rumVersion'], browser.globals.rumVersion);
