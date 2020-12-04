@@ -41,16 +41,27 @@ module.exports = {
 
     const url = browser.globals.getUrl('/docload/docload.ejs');
     await browser.url(url);
+
     const docFetch = await browser.globals.findSpan(span => span.name === 'documentFetch');
     const scriptFetch = await browser.globals.findSpan(span => span.name === 'resourceFetch' && span.tags['http.url'].includes('splunk-rum.js'));
     const docLoad = await browser.globals.findSpan(span => span.name === 'documentLoad');
-
     const brokenImgFetch = await browser.globals.findSpan(span => span.name === 'resourceFetch' && span.tags['http.url'].includes('/nosuchimage.jpg'));
     
     await browser.assert.ok(docFetch);
     await browser.assert.ok(scriptFetch);
     await browser.assert.ok(docLoad);
     await browser.assert.ok(brokenImgFetch);
+
+    await browser.assert.ok(docLoad.traceId.match(/[a-f0-9]+/));
+    await browser.assert.ok(docLoad.id.match(/[a-f0-9]+/));
+    await browser.assert.strictEqual(docFetch.traceId, docLoad.traceId);
+    await browser.assert.strictEqual(docFetch.parentId, docLoad.id);
+
+    // FIXME otel is broken at the moment - need to fix up their code that makes this all the same trace
+    // await browser.assert.strictEqual(scriptFetch.traceId, docLoad.traceId);
+    // await browser.assert.strictEqual(scriptFetch.parentId, docLoad.id);
+    // await browser.assert.strictEqual(brokenImgFetch.traceId, docLoad.traceId);
+    // await browser.assert.strictEqual(brokenImgFetch.parentId, docLoad.id);
 
     // docFetch
     await browser.assert.strictEqual(docFetch.tags['component'], 'document-load');
