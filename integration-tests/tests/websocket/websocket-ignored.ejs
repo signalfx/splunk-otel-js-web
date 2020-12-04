@@ -23,6 +23,9 @@
 			let socket;
 			document.getElementById('connectWebsocketsBtn').addEventListener('click', () => {
 				socket = new WebSocket(window.wsUrl);
+				socket.onopen = () => {
+					SplunkRum.provider.getTracer('default').startSpan('websocket-guard-span').end();
+				};
 			});
 	</script>
 </body>

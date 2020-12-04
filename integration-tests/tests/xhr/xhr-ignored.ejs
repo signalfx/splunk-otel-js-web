@@ -20,11 +20,14 @@
 			oReq.setRequestHeader('Content-Type', 'text/plain');
 			oReq.send();
 
-			return oReq;
+			return new Promise(resolve => {
+				oReq.addEventListener('load', resolve);
+			});
 		}
 
-		makeHXR('/some-data');
-		makeHXR('/no-server-timings');
+		Promise.all([makeHXR('/some-data'), makeHXR('/no-server-timings')]).then(() => {
+			SplunkRum.provider.getTracer('default').startSpan('guard-span').end();
+		});
 	</script>
 </body>
 </html>

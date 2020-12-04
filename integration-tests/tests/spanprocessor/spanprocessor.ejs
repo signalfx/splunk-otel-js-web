@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<title>Test init</title>
-	<script src="/dist/splunk-rum.js"></script>
+	<%- renderAgent({}, true) %>
 	<script>
 		class MySpanProcessor {
 			onEnd(span) {
@@ -21,12 +21,8 @@
 				return Promise.resolve();
 			}
 		};
-		SplunkRum.init( {
-			beaconUrl: '/api/v2/spans',
-			app: 'splunk-otel-js-dummy-app',
-			debug: true,
-			spanProcessor: new MySpanProcessor(),
-		});
+		SplunkRumOptions.spanProcessor = new MySpanProcessor();
+		SplunkRum.init(SplunkRumOptions);
 	</script>
 </head>
 <body>
