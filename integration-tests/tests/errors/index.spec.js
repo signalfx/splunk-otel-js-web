@@ -21,7 +21,6 @@ module.exports = {
 
     const errorSpan = await browser.globals.findSpan(s => s.name === 'eventListener.error');
     await browser.assert.ok(!!errorSpan, 'Checking if error span was found.');
-    console.log('error span', errorSpan);
 
     const tags = errorSpan.tags;
     await browser.assert.strictEqual(tags['component'], 'error');
@@ -29,7 +28,6 @@ module.exports = {
     await browser.assert.strictEqual(tags['target_element'], 'IMG');
     await browser.assert.strictEqual(tags['target_xpath'], '//html/body/img');
     await browser.assert.ok(tags['target_src'].endsWith('/nonexistent.png'), `Checking target_src: ${tags['target_src']}`);
-    await browser.assert.strictEqual(tags['ot.status_code'], 'UNSET');
 
     await browser.end();
   },
@@ -57,8 +55,6 @@ module.exports = {
       break;
     }
 
-    await browser.assert.strictEqual(tags['ot.status_code'], 'UNSET');
-
     await browser.end();
   },
   'JS unhandled error': async function(browser) {
@@ -85,8 +81,6 @@ module.exports = {
       break;
     }
 
-    await browser.assert.strictEqual(tags['ot.status_code'], 'UNSET');
-
     await browser.end();
   },
   'unhandled promise rejection': async function(browser) {
@@ -101,7 +95,72 @@ module.exports = {
     await browser.assert.strictEqual(tags['error'], 'true');
     await browser.assert.strictEqual(tags['error.object'], 'String');
     await browser.assert.strictEqual(tags['error.message'], 'rejection-value');
-    await browser.assert.strictEqual(tags['ot.status_code'], 'UNSET');
+
+    await browser.end();
+  },
+  'manual console.error': async function(browser) {
+    const browserName = browser.options.desiredCapabilities.browserName.toLowerCase();
+    browser.globals.clearReceivedSpans();
+    
+    const url = browser.globals.getUrl('/errors/views/console-error.ejs');
+    await browser.url(url);
+
+    const errorSpan = await browser.globals.findSpan(s => s.name === 'console.error');
+    await browser.assert.ok(!!errorSpan, 'Checking presence of error span.');
+
+    const tags = errorSpan.tags;
+    await browser.assert.strictEqual(tags['component'], 'error');
+    await browser.assert.strictEqual(tags['error'], 'true');
+    await browser.assert.strictEqual(tags['error.object'], 'TypeError');
+
+    const ERROR_MESSAGE_MAP = {
+      safari: 'null is not an object (evaluating \'someNull.anyField = \'value\'\')',
+      chrome: 'Cannot set property \'anyField\' of null',
+      edge: 'Cannot set property \'anyField\' of null',
+      firefox: 'someNull is null',
+    };
+    await browser.assert.strictEqual(tags['error.message'], ERROR_MESSAGE_MAP[browserName]);
+
+    const ERROR_STACK_MAP = {
+      safari: `global code@${url}:16:15`,
+      chrome: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:16:25`,
+      edge: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:16:25`,
+      firefox: `@${url}:16:7\n`,
+    };
+    await browser.assert.strictEqual(tags['error.stack'], ERROR_STACK_MAP[browserName]);
+
+    await browser.end();
+  },
+  'SplunkRum.error': async function(browser) {
+    const browserName = browser.options.desiredCapabilities.browserName.toLowerCase();
+    browser.globals.clearReceivedSpans();
+    
+    const url = browser.globals.getUrl('/errors/views/splunkrum-error.ejs');
+    await browser.url(url);
+
+    const errorSpan = await browser.globals.findSpan(s => s.name === 'SplunkRum.error');
+    await browser.assert.ok(!!errorSpan, 'Checking presence of error span.');
+
+    const tags = errorSpan.tags;
+    await browser.assert.strictEqual(tags['component'], 'error');
+    await browser.assert.strictEqual(tags['error'], 'true');
+    await browser.assert.strictEqual(tags['error.object'], 'TypeError');
+
+    const ERROR_MESSAGE_MAP = {
+      safari: 'null is not an object (evaluating \'someNull.anyField = \'value\'\')',
+      chrome: 'Cannot set property \'anyField\' of null',
+      edge: 'Cannot set property \'anyField\' of null',
+      firefox: 'someNull is null',
+    };
+    await browser.assert.strictEqual(tags['error.message'], ERROR_MESSAGE_MAP[browserName]);
+
+    const ERROR_STACK_MAP = {
+      safari: `global code@${url}:16:15`,
+      chrome: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:16:25`,
+      edge: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:16:25`,
+      firefox: `@${url}:16:7\n`,
+    };
+    await browser.assert.strictEqual(tags['error.stack'], ERROR_STACK_MAP[browserName]);
 
     await browser.end();
   }
