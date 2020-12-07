@@ -26,6 +26,7 @@ import {captureErrors} from './errors';
 import {findCookieValue, generateId} from './utils';
 import {version as SplunkRumVersion} from '../package.json';
 import {WebSocketInstrumentation} from './websocket';
+import { initWebVitals } from './webvitals';
 
 function browserSupported() {
   // FIXME very short-term patch for Safari 10.1 -> upstream fixes pending
@@ -152,6 +153,7 @@ if (!window.SplunkRum) {
       // stub out error reporting method to not break apps that call it
       this.error = function() { };
     }
+    initWebVitals(provider);
     this.inited = true;
     console.log('SplunkRum.init() complete');
   };
