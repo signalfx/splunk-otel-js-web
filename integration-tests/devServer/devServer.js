@@ -138,6 +138,9 @@ function getSpans(spanOrSpans) {
     name: spanOrSpans.name,
     tags: spanOrSpans.tags,
     annotations: spanOrSpans.annotations,
+    traceId: spanOrSpans.traceId,
+    id: spanOrSpans.id,
+    parentId: spanOrSpans.parentId,
   }];
 }
 
