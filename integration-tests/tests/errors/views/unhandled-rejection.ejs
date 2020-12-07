@@ -3,10 +3,13 @@
 <head>
 	<meta charset="UTF-8">
 	<title>Errors test</title>
-  <%- renderAgent({bufferTimeout: 1}) %>
+  <%- renderAgent({}) %>
+  <script>
+    setTimeout(() => {
+      Promise.reject('rejection-value');
+    });
+  </script>
 </head>
 <body>
-	<h1>Dom parsing error simulation</h1>
-	<img src="/nonexistent.png" />
 </body>
 </html>

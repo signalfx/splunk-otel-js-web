@@ -3,11 +3,9 @@
 <head>
 	<meta charset="UTF-8">
 	<title>Errors test</title>
-  <%- renderAgent() %>
+  <%- renderAgent({}) %>
   <script>
-    setTimeout(() => {
-      Promise.reject('rejection-value');
-    });
+    var abc=;
   </script>
 </head>
 <body>

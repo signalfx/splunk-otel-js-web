@@ -14,20 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-const path = require('path');
-
 module.exports = {
   'DOM resource 4xx': async function(browser) {
     browser.globals.clearReceivedSpans();
-    const url = browser.globals.getUrl('/errors/templates/resource-4xx.ejs');
-    await browser.url(url);
+    await browser.url(browser.globals.getUrl('/errors/views/resource-4xx.ejs'));
 
     const errorSpan = await browser.globals.findSpan(s => s.name === 'eventListener.error');
-    await browser.assert.ok(!!errorSpan);
+    await browser.assert.ok(!!errorSpan, 'Checking if error span was found.');
+    console.log('error span', errorSpan);
 
     const tags = errorSpan.tags;
-    await browser.assert.ok(tags['location.href'].includes('/errors/templates/resource-4xx.ejs'), `Checking location.href: ${tags['location.href']}`);
-    await browser.assert.strictEqual(tags['app'], 'splunk-otel-js-dummy-app');
     await browser.assert.strictEqual(tags['component'], 'error');
     await browser.assert.strictEqual(tags['error.type'], 'error');
     await browser.assert.strictEqual(tags['target_element'], 'IMG');
@@ -39,16 +35,12 @@ module.exports = {
   },
   'JS syntax error': async function(browser) {
     browser.globals.clearReceivedSpans();
-    const url = browser.globals.getUrl('/errors/templates/js-syntax-error.ejs');
-    await browser.url(url);
+    await browser.url(browser.globals.getUrl('/errors/views/js-syntax-error.ejs'));
 
     const errorSpan = await browser.globals.findSpan(s => s.name === 'onerror');
     await browser.assert.ok(!!errorSpan, 'Checking presence of error span.');
 
     const tags = errorSpan.tags;
-    await browser.assert.strictEqual(tags['location.href'], browser.globals.getUrl('/errors/templates/js-syntax-error.ejs'));
-    await browser.assert.strictEqual(tags['splunk.rumVersion'], require(path.join(__dirname, '..', '..', '..', 'package.json')).version);
-    await browser.assert.strictEqual(tags['app'], 'splunk-otel-js-dummy-app');
     await browser.assert.strictEqual(tags['component'], 'error');
     await browser.assert.strictEqual(tags['error'], 'true');
     await browser.assert.strictEqual(tags['error.object'], 'SyntaxError');
@@ -71,16 +63,12 @@ module.exports = {
   },
   'JS unhandled error': async function(browser) {
     browser.globals.clearReceivedSpans();
-    const url = browser.globals.getUrl('/errors/templates/unhandled-error.ejs');
-    await browser.url(url);
+    await browser.url(browser.globals.getUrl('/errors/views/unhandled-error.ejs'));
 
     const errorSpan = await browser.globals.findSpan(s => s.name === 'onerror');
     await browser.assert.ok(!!errorSpan, 'Checking presence of error span.');
 
     const tags = errorSpan.tags;
-    await browser.assert.strictEqual(tags['location.href'], browser.globals.getUrl('/errors/templates/unhandled-error.ejs'));
-    await browser.assert.strictEqual(tags['splunk.rumVersion'], require(path.join(__dirname, '..', '..', '..', 'package.json')).version);
-    await browser.assert.strictEqual(tags['app'], 'splunk-otel-js-dummy-app');
     await browser.assert.strictEqual(tags['component'], 'error');
     await browser.assert.strictEqual(tags['error'], 'true');
     await browser.assert.strictEqual(tags['error.object'], 'TypeError');
@@ -103,16 +91,12 @@ module.exports = {
   },
   'unhandled promise rejection': async function(browser) {
     browser.globals.clearReceivedSpans();
-    const url = browser.globals.getUrl('/errors/templates/unhandled-rejection.ejs');
-    await browser.url(url);
+    await browser.url(browser.globals.getUrl('/errors/views/unhandled-rejection.ejs'));
 
     const errorSpan = await browser.globals.findSpan(s => s.name === 'unhandledrejection');
     await browser.assert.ok(!!errorSpan, 'Checking presence of error span.');
 
     const tags = errorSpan.tags;
-    await browser.assert.strictEqual(tags['location.href'], browser.globals.getUrl('/errors/templates/unhandled-rejection.ejs'));
-    await browser.assert.strictEqual(tags['splunk.rumVersion'], require(path.join(__dirname, '..', '..', '..', 'package.json')).version);
-    await browser.assert.strictEqual(tags['app'], 'splunk-otel-js-dummy-app');
     await browser.assert.strictEqual(tags['component'], 'error');
     await browser.assert.strictEqual(tags['error'], 'true');
     await browser.assert.strictEqual(tags['error.object'], 'String');

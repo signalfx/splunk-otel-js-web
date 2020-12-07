@@ -15,4 +15,4 @@ limitations under the License.
 */
 
 const { run } = require('./devServer');
-run({ enableHttps: true, onSpanReceived: (span) => console.log(span) });
+run({ enableHttps: false, onSpanReceived: (span) => console.log(span) });
