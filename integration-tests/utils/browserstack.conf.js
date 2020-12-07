@@ -63,7 +63,7 @@ const nightwatch_config = {
         build: `${commitId.substring(0, 16)} by ${author}`,
       },
       globals: {
-        host: 'https://bs-local.com',
+        host: 'bs-local.com',
         enableHttps: true, // this is for our server
       }
     },

@@ -17,7 +17,7 @@ limitations under the License.
 const devServer = require('../devServer/devServer');
 
 const GLOBAL_TEST_BUFFER_TIMEOUT = 20;
-const NETWORK_LATENCY_MARGIN = 500;
+const NETWORK_LATENCY_MARGIN = 1000;
 
 // Allow two buffer timeout cycles to pass, and allow an additional small grace period
 const TWO_BUFFER_CYCLES = 2 * GLOBAL_TEST_BUFFER_TIMEOUT;
