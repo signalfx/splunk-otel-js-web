@@ -5,14 +5,16 @@
 	<title>Errors test</title>
   <%- renderAgent({}) %>
   <script id="scenario">
-    var test = null;
-    setTimeout(() => {
-      test.prop1 = true;
-    });
+    let someNull = null;
+    try {
+      someNull.anyField = 'value';
+    } catch(e) {
+      console.error(e);
+    }
   </script>
 </head>
 <body>
-  <h1>Unhandled error</h1>
+  <h1>Manual console.error</h1>
   <pre id="scenarioDisplay"></pre>
   <script>scenarioDisplay.innerHTML = scenario.innerHTML;</script>
 </body>

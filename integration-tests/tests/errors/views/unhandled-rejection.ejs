@@ -4,12 +4,15 @@
 	<meta charset="UTF-8">
 	<title>Errors test</title>
   <%- renderAgent({}) %>
-  <script>
+  <script id="scenario">
     setTimeout(() => {
       Promise.reject('rejection-value');
     });
   </script>
 </head>
 <body>
+  <h1>Unhandled rejection</h1>
+  <pre id="scenarioDisplay"></pre>
+  <script>scenarioDisplay.innerHTML = scenario.innerHTML;</script>
 </body>
 </html>
