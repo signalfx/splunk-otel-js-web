@@ -69,7 +69,8 @@ module.exports = {
     });
 
     const wsProtocol = browser.globals.enableHttps ? 'wss' : 'ws';
-    const base = `${browser.globals.host}:${browser.globals._backend.port}`;
+    const httpProtocol = browser.globals.enableHttps ? 'https' : 'http';
+    const base = `${httpProtocol}://${browser.globals.host}:${browser.globals._backend.port}`;
     const AVAILABLE_SEARCH_PARAMS = {
       wsProtocol: wsProtocol,
       wsPort: browser.globals._backend.websocketsPort  
