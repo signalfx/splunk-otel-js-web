@@ -15,22 +15,13 @@ limitations under the License.
 */
 
 module.exports = {
-  afterEach : function(browser) {
-    browser.globals.clearReceivedSpans();  
-  },
-  'XHR request is registered': async function(browser) {
-    await browser.url(`${browser.globals.baseUrl}xhr/xhr.ejs`);
-    const xhrSpan = await browser.globals.findSpan(span => span.tags['http.url'] === '/some-data');
-    await browser.assert.ok(xhrSpan);
-    await browser.end();
-  },
   'XHR request can be ignored': async function(browser) {
-    await browser.url(`${browser.globals.baseUrl}xhr/xhr-ignored.ejs`);
+    await browser.url(browser.globals.getUrl('/xhr/views/xhr-ignored.ejs'));
     
     await browser.globals.findSpan(span => span.name === 'guard-span');
 
     await browser.assert.not.ok(browser.globals.receivedSpans.find(span => span.tags['http.url'] === '/some-data'));
     await browser.assert.not.ok(browser.globals.receivedSpans.find(span => span.tags['http.url'] === '/no-server-timings'));
     await browser.end();
-  }
+  },
 };
