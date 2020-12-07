@@ -179,7 +179,7 @@ exports.run = async function run({onSpanReceived, enableHttps}) {
           const options = {
             beaconUrl: `${host}/api/v2/spans`,
             app: 'splunk-otel-js-dummy-app',
-            debug: false,
+            debug: true,
             bufferTimeout: require('../utils/globals').GLOBAL_TEST_BUFFER_TIMEOUT,
             ...userOpts
           };
