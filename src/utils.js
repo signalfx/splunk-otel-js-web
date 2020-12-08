@@ -42,5 +42,9 @@ export function limitLen(s, cap) {
 }
 
 export function isIframe() {
-  return window.self !== window.top;
+  try {
+    return window.self !== window.top;
+  } catch (e) {
+    return true;
+  }
 }

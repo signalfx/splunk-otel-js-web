@@ -85,7 +85,10 @@ if (!window.SplunkRum) {
         document.cookie = cookie;
         setTimeout(cookieSetter, 1000*SessionTimeoutCheckSeconds);
       }
-      rumSessionId = findCookieValue(cookieName);
+      const sessionIdFromCookie = findCookieValue(cookieName);
+      if (sessionIdFromCookie) {
+        rumSessionId = sessionIdFromCookie;
+      }
     };
     cookieSetter();
 
