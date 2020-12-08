@@ -23,10 +23,13 @@ module.exports = {
 
     const fetchSpan = await browser.globals.findSpan(span => span.name === 'documentFetch');
     const cookie = await browser.getCookie('_splunk_rum_sid');
-
     await browser.assert.ok(fetchSpan.tags['splunk.rumSessionId']);
     await browser.assert.notEqual(fetchSpan.tags['splunk.scriptInstance'], fetchSpan.tags['splunk.rumSessionId']);
-    await browser.assert.equal(cookie.sameSite, 'Strict');
+    await browser.assert.ok(cookie);
+
+    if (browser.options.desiredCapabilities.browserName.toLowerCase() !==  'safari') {
+      await browser.assert.equal(cookie.sameSite, 'Strict');
+    }
 
     await browser.end();
   },
@@ -35,9 +38,12 @@ module.exports = {
 
     const fetchSpan = await browser.globals.findSpan(span => span.name === 'documentFetch' && span.tags.app === 'iframe');
     const cookie = await browser.getCookie('_splunk_rum_sid');
+    await browser.assert.ok(cookie);
     await browser.assert.ok(fetchSpan);
     await browser.assert.ok(cookie.secure);
-    await browser.assert.equal(cookie.sameSite, 'None');
+    if (browser.options.desiredCapabilities.browserName.toLowerCase() !==  'safari') {
+      await browser.assert.equal(cookie.sameSite, 'None');
+    }
 
     await browser.end();
   }

@@ -26,7 +26,7 @@ const commitId = process.env.CIRCLE_SHA1 || execSync('git rev-parse HEAD').toStr
 const author = process.env.CIRCLE_PR_USERNAME || 'unknown';
 
 const nightwatch_config = {
-  src_folders: ['integration-tests/tests'],
+  src_folders: ['integration-tests/tests/cookies'],
   globals_path: path.join(__dirname, 'globals.js'),
   filter: '**/*.spec.js',
 
