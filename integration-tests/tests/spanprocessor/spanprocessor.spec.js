@@ -26,7 +26,5 @@ module.exports = {
 
     await browser.assert.strictEqual(resourceFetch.tags['http.url'], 'redacted');
     //    const allSpans = await browser.globals.
-
-    await browser.end();
   }
 };

@@ -22,6 +22,5 @@ module.exports = {
 
     await browser.assert.not.ok(browser.globals.receivedSpans.find(span => span.tags['http.url'] === '/some-data'));
     await browser.assert.not.ok(browser.globals.receivedSpans.find(span => span.tags['http.url'] === '/no-server-timings'));
-    await browser.end();
   },
 };

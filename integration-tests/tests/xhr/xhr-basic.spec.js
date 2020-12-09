@@ -19,6 +19,5 @@ module.exports = {
     await browser.url(browser.globals.getUrl('/xhr/views/xhr-basic.ejs'));
     const xhrSpan = await browser.globals.findSpan(span => span.tags['http.url'] === '/some-data');
     await browser.assert.ok(xhrSpan);
-    await browser.end();
   },
 };

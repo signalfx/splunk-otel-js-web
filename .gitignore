@@ -8,6 +8,7 @@ node_modules/
 # integration tests
 *.log
 tests_output/
+/.nightwatch_build_id
 
 # contains secrets
 .env
