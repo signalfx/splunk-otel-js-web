@@ -19,6 +19,5 @@ module.exports = {
     await browser.url(browser.globals.getUrl('/init/init.ejs'));
     const span = await browser.globals.findSpan(() => {return true;});
     await browser.assert.not.ok(span);
-    await browser.end();
   }
 };

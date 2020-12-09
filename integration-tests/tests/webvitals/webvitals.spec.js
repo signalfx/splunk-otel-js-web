@@ -50,7 +50,5 @@ module.exports = {
     await browser.assert.ok(lcp.tags.lcp >= 0);
     await browser.assert.ok(cls.tags.cls >= 0);
     await browser.assert.ok(fid.tags.fid >= 0);
-
-    await browser.end();
   }
 };
