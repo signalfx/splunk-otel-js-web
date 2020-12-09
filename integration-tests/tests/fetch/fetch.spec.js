@@ -29,7 +29,6 @@ module.exports = {
     await browser.assert.ok(fetchSpan.tags['http.method'], 'GET');
     await browser.assert.ok(fetchSpan.tags['http.url'], '/some-data1');
     await browser.assert.ok(fetchSpan.tags['location.href'], browser.globals.defaultUrl);
-    await browser.end();
   },
   'fetch request can be ignored': async function(browser) {
     await browser.url(`${browser.globals.baseUrl}fetch/fetch-ignored.ejs`);
@@ -38,6 +37,5 @@ module.exports = {
 
     await browser.assert.not.ok(browser.globals.receivedSpans.find(span => span.tags['http.url'] === '/some-data'));
     await browser.assert.not.ok(browser.globals.receivedSpans.find(span => span.tags['http.url'] === '/no-server-timings'));
-    await browser.end();
   }
 };
