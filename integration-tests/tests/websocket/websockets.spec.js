@@ -35,7 +35,6 @@ module.exports = {
     await browser.assert.strictEqual(wsConnectionSpan.tags['component'], 'websocket');
     await browser.assert.strictEqual(wsConnectionSpan.tags['ot.status_code'], 'UNSET'); //pointless check, always OK
     await browser.assert.strictEqual(wsConnectionSpan.tags['error'], undefined);
-    await browser.end();
   },
   'websocket url can be ignored': async function(browser) {
     const UNSUPPORTED_BROWSERS = ['Safari'];
@@ -50,6 +49,5 @@ module.exports = {
 
     await browser.globals.findSpan(span => span.name === 'websocket-guard-span');   
     await browser.assert.not.ok(browser.globals.receivedSpans.find(span => span.name === 'connect'));
-    await browser.end();
   }
 };

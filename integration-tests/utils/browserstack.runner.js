@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /*
 Copyright 2020 Splunk Inc.
 
@@ -15,16 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-
-// require.main.filename = './node_modules/.bin/nightwatch';
-require.main.filename = './node_modules/nightwatch/bin/nightwatch';
-// note: shebang and process filename attribution are necessarry
-// otherwise nightwatch doesn't understand that we're the test runner
-
 require('dotenv').config();
 
 const Nightwatch = require('nightwatch');
 const browserstack = require('browserstack-local');
+const { clearBuildId, generateBuildId } = require('./buildApi');
+const path = require('path');
 
 let browserstackLocal;
 
@@ -32,10 +27,12 @@ function createTunnel() {
   return new Promise((resolve, reject) => {
     Nightwatch.browserstackLocal = browserstackLocal = new browserstack.Local();
 
-    if (!process.env.BROWSERSTACK_KEY) {
+    const key = process.env.BROWSERSTACK_KEY;
+    if (!key) {
       throw new Error('You need to provide environment variable: BROWSERSTACK_KEY.');
     }
-    browserstackLocal.start({'key': process.env.BROWSERSTACK_KEY }, function(error) {
+
+    browserstackLocal.start({ key }, function(error) {
       if (error) {
         reject(error);
       } else {
@@ -48,25 +45,49 @@ function createTunnel() {
 }
 
 (async function() {
+  let buildId;
   try {
+    buildId = generateBuildId();
+    console.log(`Starting build ${buildId}`);
+
     console.log('Starting tunnel.');
     const tunnelHandle = await createTunnel();
     console.log('Tunnel started.');
 
     // TODO: restructure so that we don't have to rely on a path to the config file
-    await Nightwatch.runTests(
-      {
-        'env': 'chrome,safari,edge',
-        'config': './integration-tests/utils/browserstack.conf.js',
-      },
-      {},
-    );
-    console.log('Tests finished.');
+    const configPath = path.join(__dirname, 'browserstack.conf.js'); 
+    console.log(`Loading config from ${configPath}`);
+
+    const envs = ['chrome', 'safari', 'edge'];
+    const reporters = [];
+    for (const env of envs) {
+      const runner = new Nightwatch.CliRunner({
+        config: configPath, 
+        env, 
+
+        // note: this can be used to scope down tests, leaving here so I don't need to search for this in the future
+        // test: path.join(__dirname, '..', 'tests', 'websocket', 'websockets.spec.js')
+      });
+      runner.setup();
+      await runner.runTests();
+
+      reporters.push(runner.testRunner);
+    }
+
+    if (reporters.some(r => r.hasTestFailures)) {
+      console.warn('Tests failed.');
+      process.exitCode = 1;
+    } else {
+      console.log('Tests finished.');
+    }
 
     await tunnelHandle.close();
   } catch(e) {
     console.log('There was an error while starting the test runner:\n\n');
     process.stderr.write(e.stack + '\n');
     process.exit(2);
+  } finally {
+    clearBuildId();
+    console.log(`Finished build ${buildId}`);
   }
 }());

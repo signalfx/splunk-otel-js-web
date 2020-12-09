@@ -15,15 +15,12 @@ limitations under the License.
 */
 
 const path = require('path');
-const { execSync } = require('child_process');
+const { getCurrentBuildId } = require('./buildApi');
 
 console.log('Loading config.');
 if (!process.env.BROWSERSTACK_USER || !process.env.BROWSERSTACK_KEY) {
   throw new Error('You need to provide environment variables: BROWSERSTACK_USER and BROWSERSTACK_KEY.');
 }
-
-const commitId = process.env.CIRCLE_SHA1 || execSync('git rev-parse HEAD').toString();
-const author = process.env.CIRCLE_PR_USERNAME || 'unknown';
 
 const nightwatch_config = {
   src_folders: ['integration-tests/tests'],
@@ -60,7 +57,7 @@ const nightwatch_config = {
 
         // metadata for grouping sessions in browserstack
         project: require('../../package.json').name,
-        build: `${commitId.substring(0, 16)} by ${author}`,
+        build: getCurrentBuildId(),
       },
       globals: {
         host: 'bs-local.com',
