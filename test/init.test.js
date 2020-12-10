@@ -87,7 +87,6 @@ describe('test init', () => {
         globalAttributes: {customerType: 'GOLD'},
       });
       assert.ok(window.SplunkRum.inited);
-      assert.ok(document.cookie.includes('_splunk_rum_sid'));
       window.SplunkRum.provider.addSpanProcessor(capturer);
       setTimeout(()=> {
         assert.ok(capturer.spans.length >= 3);
