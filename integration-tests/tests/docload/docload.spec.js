@@ -22,21 +22,21 @@ module.exports = {
       eventsArr.forEach(event => {
         name2time[event.value] = event.timestamp;
       });
-      await browser.assert.ok(name2time[startName]);
-      await browser.assert.ok(name2time[endName]);
-      await browser.assert.ok(name2time[startName] <= name2time[endName]);
+      await browser.assert.ok(name2time[startName], `Checking presence of ${startName}`);
+      await browser.assert.ok(name2time[endName], `Checking presence of ${endName}`);
+      await browser.assert.ok(name2time[startName] <= name2time[endName], `Checking sanity of ${startName} vs ${endName}`);
       const diff = name2time[endName] - name2time[startName];
       // times reported in zipkin as micros
       // looking for egregiously incorrect response times here, not a tight bound
       const fiveMinutes = 5 * 60 * 1000 * 1000;
-      await browser.assert.ok(diff < fiveMinutes); 
+      await browser.assert.ok(diff < fiveMinutes, 'Sanity check for time difference.'); 
       // Also looking for rough synchronization with reality (at least from our CI systems/laptops...)
       const nowMicros = new Date().getTime() * 1000;
       let clockSkew = name2time[startName] - nowMicros;
       if (clockSkew < 0) {
         clockSkew = -clockSkew;
       }
-      await browser.assert.ok(clockSkew <= fiveMinutes);
+      await browser.assert.ok(clockSkew <= fiveMinutes, 'Sanity check for clock skew');
     };
 
     const url = browser.globals.getUrl('/docload/docload.ejs');
@@ -47,13 +47,13 @@ module.exports = {
     const docLoad = await browser.globals.findSpan(span => span.name === 'documentLoad');
     const brokenImgFetch = await browser.globals.findSpan(span => span.name === 'resourceFetch' && span.tags['http.url'].includes('/nosuchimage.jpg'));
     
-    await browser.assert.ok(docFetch);
-    await browser.assert.ok(scriptFetch);
-    await browser.assert.ok(docLoad);
-    await browser.assert.ok(brokenImgFetch);
+    await browser.assert.ok(docFetch, 'Checking docFetch span');
+    await browser.assert.ok(scriptFetch, 'Checking scriptFetch span');
+    await browser.assert.ok(docLoad, 'Checking docLoad span');
+    await browser.assert.ok(brokenImgFetch, 'Checking brokenImgFetch span');
 
-    await browser.assert.ok(docLoad.traceId.match(/[a-f0-9]+/));
-    await browser.assert.ok(docLoad.id.match(/[a-f0-9]+/));
+    await browser.assert.ok(docLoad.traceId.match(/[a-f0-9]+/), 'Checking sanity of traceId');
+    await browser.assert.ok(docLoad.id.match(/[a-f0-9]+/), 'Checking sanity of id');
     await browser.assert.strictEqual(docFetch.traceId, docLoad.traceId);
     await browser.assert.strictEqual(docFetch.parentId, docLoad.id);
 
@@ -70,27 +70,29 @@ module.exports = {
     await timesMakeSense(docFetch.annotations, 'connectStart', 'connectEnd');
     await timesMakeSense(docFetch.annotations, 'requestStart', 'responseStart');
     await timesMakeSense(docFetch.annotations, 'responseStart', 'responseEnd');
+    console.log('--------------------------------------');
+    console.log(docFetch.annotations);
     await timesMakeSense(docFetch.annotations, 'fetchStart', 'responseEnd');
     if (browser.options.desiredCapabilities.browserName !== 'Safari') {
-      await browser.assert.ok(docFetch.tags['http.response_content_length'] >= 0);
-      await browser.assert.ok(docFetch.tags['link.traceId']);
-      await browser.assert.ok(docFetch.tags['link.spanId']);
+      await browser.assert.ok(docFetch.tags['http.response_content_length'] >= 0, 'Checking response_content_length');
+      await browser.assert.ok(docFetch.tags['link.traceId'], 'Checking presence of link.traceId');
+      await browser.assert.ok(docFetch.tags['link.spanId'], 'Checking presence of link.spanId');
     }
 
     // scriptFetch
     await browser.assert.strictEqual(scriptFetch.tags['component'], 'document-load');
     await browser.assert.strictEqual(scriptFetch.tags['location.href'], url);
     if (browser.options.desiredCapabilities.browserName !== 'Safari') {
-      await browser.assert.ok(scriptFetch.tags['http.response_content_length'] >= 0);
-      await browser.assert.ok(docFetch.tags['link.traceId']);
-      await browser.assert.ok(docFetch.tags['link.spanId']);
+      await browser.assert.ok(scriptFetch.tags['http.response_content_length'] >= 0, 'Checking response_content_length');
+      await browser.assert.ok(docFetch.tags['link.traceId'], 'Checking presence of link.traceId');
+      await browser.assert.ok(docFetch.tags['link.spanId'], 'Checking presence of link.spanId');
     }
     // http.url has already been checked by the findSpan
     
     // documentLoad
     await browser.assert.strictEqual(docLoad.tags['component'], 'document-load');
     await browser.assert.strictEqual(docLoad.tags['location.href'], url);
-    await browser.assert.ok(docLoad.tags['screen.xy'].match(/[0-9]+x[0-9]+/));
+    await browser.assert.ok(docLoad.tags['screen.xy'].match(/[0-9]+x[0-9]+/), 'Checking sanity of screen.xy');
     await timesMakeSense(docLoad.annotations, 'domContentLoadedEventStart', 'domContentLoadedEventEnd');
     await timesMakeSense(docLoad.annotations, 'loadEventStart', 'loadEventEnd');
     await timesMakeSense(docLoad.annotations, 'fetchStart', 'domInteractive');

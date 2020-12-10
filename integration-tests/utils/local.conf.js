@@ -35,7 +35,7 @@ const nightwatch_config = {
     }
   },
 
-  detailed_output: false,
+  // detailed_output: false,
   test_settings: {
     default: {
       desiredCapabilities: {
@@ -65,13 +65,12 @@ const nightwatch_config = {
         }
       }
     },
-    // FIXME firefox not working yet (-3)
-    // firefox: {
-    //   desiredCapabilities: {
-    //     browserName: 'firefox',
-    //     marionette: true,
-    //   }
-    // },
+    firefox: {
+      desiredCapabilities: {
+        browserName: 'firefox',
+        marionette: true,
+      }
+    },
     safari: {
       webdriver: {
         use_legacy_jsonwire: false,
