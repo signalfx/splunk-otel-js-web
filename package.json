@@ -1,11 +1,11 @@
 {
   "name": "splunk-rum",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "description": "",
   "private": true,
   "scripts": {
     "start": "npm-run-all -s build:development start:_execute",
-    "start:_execute": "node utils/runDevServer.js",
+    "start:_execute": "node integration-tests/devServer/runDevServer.js",
     "dist": "rollup -c",
     "test": "nyc karma start --single-run",
     "lint": "eslint src/*.js test/*.js integration-tests/**/*.js integration-tests/**/**/*.js",
@@ -28,7 +28,8 @@
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
-    "shimmer": "^1.2.1"
+    "shimmer": "^1.2.1",
+    "web-vitals": "^1.0.1"
   },
   "devDependencies": {
     "@rollup/plugin-alias": "^3.1.1",

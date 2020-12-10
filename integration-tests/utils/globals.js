@@ -16,8 +16,10 @@ limitations under the License.
 
 const devServer = require('../devServer/devServer');
 
-const SPAN_WAIT_TIMEOUT = 5 * 1000; // 5 seconds
-const SPAN_WAIT_ITERATION_TIME = 50;
+// Batch millis is currently 5000, so allow two cycles (in case the span happened
+// just as the last one was sent), plus a small grace period -> 11 seconds
+const SPAN_WAIT_TIMEOUT = 11 * 1000;
+const SPAN_WAIT_ITERATION_TIME = 1000;
 
 async function findSpan(spans, testFn, accruedTime) {
   accruedTime = accruedTime || 0;
@@ -48,6 +50,7 @@ module.exports = {
     browser.globals.rumVersion = require('../../package.json').version;
     browser.globals.clearReceivedSpans = () => { spans.length = 0; };
     browser.globals.findSpan = (testFn) => findSpan(spans, testFn);
+    //    browser.globals.spansSoFar = () => spans.slice();
 
     console.log('Starting dev server (dummy page and traces receiver).');
     browser.globals._backend = await devServer.run({

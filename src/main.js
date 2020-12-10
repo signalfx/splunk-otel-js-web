@@ -26,6 +26,7 @@ import {captureErrors} from './errors';
 import {findCookieValue, generateId, isIframe} from './utils';
 import {version as SplunkRumVersion} from '../package.json';
 import {WebSocketInstrumentation} from './websocket';
+import { initWebVitals } from './webvitals';
 
 function browserSupported() {
   // FIXME very short-term patch for Safari 10.1 -> upstream fixes pending
@@ -129,12 +130,19 @@ if (!window.SplunkRum) {
       ],
       logLevel: options.debug ? LogLevel.DEBUG : LogLevel.ERROR,
     });
+    if (options.spanProcessor) {
+      const sp = options.spanProcessor;
+      if (typeof sp.onStart === 'function' && typeof sp.onEnd === 'function') {
+        provider.addSpanProcessor(sp);
+      }
+    }
     new WebSocketInstrumentation(provider, pluginConf).patch();
     if (options.beaconUrl) {
       const completeUrl = options.beaconUrl + (options.rumAuth ? '?auth='+options.rumAuth : '');
       const batchSpanProcessor = new BatchSpanProcessor(new PatchedZipkinExporter(completeUrl), {
-        bufferTimeout: 100, //millis, tradeoff between batching and loss of spans by not sending before page close
-        bufferSize: 20, // spans, traceoff between batching and hitting sendBeacon invididual limits
+        // This number is still an experiment, probably not the final number yet.
+        bufferTimeout: 5000, //millis, tradeoff between batching and loss of spans by not sending before page close
+        bufferSize: 20, // spans, tradeoff between batching and hitting sendBeacon invididual limits
       });
       window.addEventListener('visibilitychange', function() {
         // this condition applies when the page is hidden or when it's closed
@@ -156,6 +164,7 @@ if (!window.SplunkRum) {
       // stub out error reporting method to not break apps that call it
       this.error = function() { };
     }
+    initWebVitals(provider);
     this.inited = true;
     console.log('SplunkRum.init() complete');
   };

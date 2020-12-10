@@ -19,6 +19,8 @@ import {ExportResultCode} from '@opentelemetry/core';
 import {limitLen} from './utils';
 
 const MAX_VALUE_LIMIT = 4096;
+const SPAN_RATE_LIMIT_PERIOD = 30000; // millis, sweep to clear out span counts
+const MAX_SPANS_PER_PERIOD_PER_COMPONENT = 100;
 
 export function truncate(zspan) {
   zspan.name = limitLen(zspan.name, MAX_VALUE_LIMIT);
@@ -30,9 +32,23 @@ export function truncate(zspan) {
 export class PatchedZipkinExporter {
   constructor(beaconUrl) {
     this.beaconUrl = beaconUrl;
+    this.spanCounts = {};
+    setInterval(() => {
+      this.spanCounts = {};
+    }, SPAN_RATE_LIMIT_PERIOD);
+  }
+
+  filter(span) {
+    const component = span.attributes && span.attributes.component ? span.attributes.component : 'unknown';
+    if (!this.spanCounts[component]) {
+      this.spanCounts[component] = 0;
+    }
+    return this.spanCounts[component]++ < MAX_SPANS_PER_PERIOD_PER_COMPONENT;
   }
 
   export(spans, resultCallback) {
+    const exporter = this;
+    spans = spans.filter(span => exporter.filter(span));
     const zspans = spans.map(span => this.modZipkinSpan(span));
     const zJson = JSON.stringify(zspans);
     if (navigator.sendBeacon) {
