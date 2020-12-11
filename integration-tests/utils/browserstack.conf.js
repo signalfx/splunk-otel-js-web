@@ -72,7 +72,6 @@ const nightwatch_config = {
         browser_version: 'latest',
       }
     },
-    // FIXME firefox broken (-3)
     firefox: {
       desiredCapabilities: {
         os: 'Windows',
