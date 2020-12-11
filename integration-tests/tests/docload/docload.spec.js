@@ -95,9 +95,5 @@ module.exports = {
     await timesMakeSense(docLoad.annotations, 'loadEventStart', 'loadEventEnd');
     await timesMakeSense(docLoad.annotations, 'fetchStart', 'domInteractive');
     await timesMakeSense(docLoad.annotations, 'fetchStart', 'domComplete');
-
-
-
-    await browser.end();
   }
 };

@@ -15,9 +15,12 @@ limitations under the License.
 */
 
 module.exports = {
-  'No spans sent when no beacon url set': async function(browser) {
-    await browser.url(browser.globals.getUrl('/init/init.ejs'));
-    const span = await browser.globals.findSpan(() => {return true;});
-    await browser.assert.not.ok(span);
-  }
+  'XHR request can be ignored': async function(browser) {
+    await browser.url(browser.globals.getUrl('/xhr/views/xhr-ignored.ejs'));
+    
+    await browser.globals.findSpan(span => span.name === 'guard-span');
+
+    await browser.assert.not.ok(browser.globals.receivedSpans.find(span => span.tags['http.url'] === '/some-data'));
+    await browser.assert.not.ok(browser.globals.receivedSpans.find(span => span.tags['http.url'] === '/no-server-timings'));
+  },
 };

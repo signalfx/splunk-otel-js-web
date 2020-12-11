@@ -22,6 +22,7 @@ module.exports = {
       return;
     }
 
+    browser.globals.clearReceivedSpans();
     const url = browser.globals.getUrl('/websocket/websocket.ejs');
     await browser.url(url);
 
@@ -34,9 +35,8 @@ module.exports = {
     await browser.assert.strictEqual(wsConnectionSpan.tags['component'], 'websocket');
     await browser.assert.strictEqual(wsConnectionSpan.tags['ot.status_code'], 'UNSET'); //pointless check, always OK
     await browser.assert.strictEqual(wsConnectionSpan.tags['error'], undefined);
-    await browser.end();
   },
-  'websocket url can be ignored ': async function(browser) {
+  'websocket url can be ignored': async function(browser) {
     const UNSUPPORTED_BROWSERS = ['Safari'];
     const currentBrowser = browser.options.desiredCapabilities.browserName;
     if (UNSUPPORTED_BROWSERS.includes(currentBrowser)) {
@@ -47,16 +47,13 @@ module.exports = {
     await browser.url(browser.globals.getUrl('/websocket/websocket-ignored.ejs'));
     await browser.click('#connectWs');
 
-    const wsConnectionSpan = await browser.globals.findSpan(span => span.name === 'connect');   
-    await browser.assert.not.ok(wsConnectionSpan);
-    await browser.end();
+    await browser.globals.findSpan(span => span.name === 'websocket-guard-span');   
+    await browser.assert.not.ok(browser.globals.receivedSpans.find(span => span.name === 'connect'));
   },
   'sending via ws.send creates a span': async function(browser) {
     await browser.url(browser.globals.getUrl('/websocket/websocket.ejs'));
     await browser.click('#connectWs');
     await browser.click('#sendtWs');
-
-
 
 
   },

@@ -35,6 +35,7 @@ const nightwatch_config = {
     }
   },
 
+  detailed_output: false,
   test_settings: {
     default: {
       desiredCapabilities: {
@@ -42,7 +43,7 @@ const nightwatch_config = {
         acceptInsecureCerts: true,
       },
       globals: {
-        host: 'https://localhost',
+        host: 'localhost',
         enableHttps: true,
       },
     },
@@ -64,15 +65,29 @@ const nightwatch_config = {
         }
       }
     },
-    /*
     // FIXME firefox not working yet (-3)
-    firefox: {
+    // firefox: {
+    //   desiredCapabilities: {
+    //     browserName: 'firefox',
+    //     marionette: true,
+    //   }
+    // },
+    safari: {
+      webdriver: {
+        use_legacy_jsonwire: false,
+        start_process: true,
+        server_path: '/usr/bin/safaridriver',
+        port: 4445,
+      },
       desiredCapabilities: {
-        browserName: 'firefox',
-        marionette: true,
-      }
+        browserName: 'safari',
+        acceptSslCerts: false,
+        acceptInsecureCerts: false,
+      },
+      globals: {
+        enableHttps: false,
+      },
     },
-    */
   }
 };
 

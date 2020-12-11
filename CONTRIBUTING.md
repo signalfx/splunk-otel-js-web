@@ -40,6 +40,12 @@ Some of the features, we're testing for, require safe context, which means that 
 ### Local tunnel/proxy
 By running BrowserStack-based tests you are exposing your local network to the test runner. Please see `integration-tests/utils/browserstack.runner.js` for more details.
 
+### Safari
+Requires the code below to be run once, to enable running integration tests in Safari locally.
+```
+/usr/bin/safaridriver --enable
+```
+
 ## Updating deps from upstream
 
 Periodically this repo needs to pull in the latest from upstream (otel-js and otel-js-contrib).  I recommend doing one at a time

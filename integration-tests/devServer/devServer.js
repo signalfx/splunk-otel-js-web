@@ -41,31 +41,42 @@ function buildServer({ enableHttps, listener }) {
   };
 
   const server = (enableHttps ? https : http).createServer(serverOptions, listener);
-  return { server, serverOptions };
-}
 
-function buildPromisifiedClose(server) {
-  return () => new Promise((resolve, reject) => {
-    const address = server.address();
-    server.close((err) => {
-      if (err) {
-        console.error(err);
-        reject(err);
-      } else {
-        console.debug(`Closed server at port ${address.port}`);
-        resolve();
-      }
-    });
+  const sockets = {};
+  let nextSocketId = 0;
+  server.on('connection', function (socket) {
+    const socketId = nextSocketId++;
+    sockets[socketId] = socket;
+    socket.on('close', () => { delete sockets[socketId]; });
   });
+
+  function close() {
+    return new Promise((resolve, reject) => {
+      for (const socketId in sockets) { sockets[socketId].destroy(); }
+
+      const address = server.address();
+      server.close((err) => {
+        if (err) {
+          console.error(`Unable to close server at port ${address.port}`, err);
+          reject(err);
+        } else {
+          console.debug(`Closed server at port ${address.port}`);
+          resolve();
+        }
+      });
+    });
+  }
+
+  return { server, serverOptions, close };
 }
 
 function startHttpServer({ enableHttps, listener }) {
-  const { server, serverOptions } = buildServer({ enableHttps, listener });
+  const { server, serverOptions, close } = buildServer({ enableHttps, listener });
   return new Promise((resolve, reject) => {
     server.on('listening', () => {
       console.info('Listening now at: ', server.address());
       resolve({
-        close: buildPromisifiedClose(server),
+        close,
         address: server.address(),
         serverOptions,
       });
@@ -83,14 +94,14 @@ function startHttpServer({ enableHttps, listener }) {
 }
 
 function startWebsocketServer({ enableHttps, listener }) {
-  const { server, serverOptions } = buildServer({ enableHttps, listener });
+  const { server, serverOptions, close } = buildServer({ enableHttps, listener });
   return new Promise((resolve, reject) => {
     const websocketServer = new WebSocket.Server({ server });    
     
     server.on('listening', () => {
       console.info('Listening now at: ', server.address());
       resolve({
-        close: buildPromisifiedClose(server),
+        close,
         address: server.address(),
         serverOptions,
         websocketServer,
@@ -107,8 +118,6 @@ function startWebsocketServer({ enableHttps, listener }) {
     server.listen(57352, '127.0.0.1');
   });
 }
-
-
 
 function generateHex(length) {
   return [...Array(length).keys()].map(() => parseInt(Math.random() * 16).toString(16)).join('');
@@ -177,11 +186,12 @@ exports.run = async function run({onSpanReceived, enableHttps}) {
       return res.render(filepath, {
         renderAgent(userOpts = {}, noInit = false, file = '/dist/splunk-rum.js') {
           const options = {
-            beaconUrl: `${host}/api/v2/spans`, 
+            beaconUrl: `${host}/api/v2/spans`,
             app: 'splunk-otel-js-dummy-app',
-            debug: false,
+            debug: true,
+            bufferTimeout: require('../utils/globals').GLOBAL_TEST_BUFFER_TIMEOUT,
             ...userOpts
-          };  
+          };
     
           return render(INJECT_TEMPLATE, {
             file,
@@ -243,6 +253,4 @@ exports.run = async function run({onSpanReceived, enableHttps}) {
     websocketsPort: wsPort,
     getLastServerTiming: () => lastServerTiming,
   };
-
-
 };

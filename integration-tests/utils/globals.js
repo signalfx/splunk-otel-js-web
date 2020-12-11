@@ -16,10 +16,13 @@ limitations under the License.
 
 const devServer = require('../devServer/devServer');
 
-// Batch millis is currently 5000, so allow two cycles (in case the span happened
-// just as the last one was sent), plus a small grace period -> 11 seconds
-const SPAN_WAIT_TIMEOUT = 11 * 1000;
-const SPAN_WAIT_ITERATION_TIME = 1000;
+const GLOBAL_TEST_BUFFER_TIMEOUT = 20;
+const NETWORK_LATENCY_MARGIN = 1000;
+
+// Allow two buffer timeout cycles to pass, and allow an additional small grace period
+const TWO_BUFFER_CYCLES = 2 * GLOBAL_TEST_BUFFER_TIMEOUT;
+const SPAN_WAIT_TIMEOUT = TWO_BUFFER_CYCLES + NETWORK_LATENCY_MARGIN;
+const SPAN_WAIT_ITERATION_TIME = Math.round(SPAN_WAIT_TIMEOUT / 10);
 
 async function findSpan(spans, testFn, accruedTime) {
   accruedTime = accruedTime || 0;
@@ -50,6 +53,13 @@ module.exports = {
     browser.globals.rumVersion = require('../../package.json').version;
     browser.globals.clearReceivedSpans = () => { spans.length = 0; };
     browser.globals.findSpan = (testFn) => findSpan(spans, testFn);
+    browser.globals.emulateTabSwitchingAway = async () => {
+      await browser.execute(() => {
+        Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+        document.dispatchEvent(new Event('visibilitychange'));
+      });
+    };
+    // browser.globals.delay = (time) => new Promise(resolve => setTimeout(resolve, time));
     //    browser.globals.spansSoFar = () => spans.slice();
 
     console.log('Starting dev server (dummy page and traces receiver).');
@@ -59,7 +69,8 @@ module.exports = {
     });
 
     const wsProtocol = browser.globals.enableHttps ? 'wss' : 'ws';
-    const base = `${browser.globals.host}:${browser.globals._backend.port}`;
+    const httpProtocol = browser.globals.enableHttps ? 'https' : 'http';
+    const base = `${httpProtocol}://${browser.globals.host}:${browser.globals._backend.port}`;
     const AVAILABLE_SEARCH_PARAMS = {
       wsProtocol: wsProtocol,
       wsPort: browser.globals._backend.websocketsPort  
@@ -100,5 +111,7 @@ module.exports = {
     }
     console.log('Closed dev server.');
     done();
-  }
+  },
+
+  GLOBAL_TEST_BUFFER_TIMEOUT,
 };
