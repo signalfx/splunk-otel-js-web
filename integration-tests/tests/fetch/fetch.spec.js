@@ -22,6 +22,7 @@ module.exports = {
     await browser.url(`${browser.globals.baseUrl}fetch/fetch.ejs`);
 
     const fetchSpan = await browser.globals.findSpan(span => span.tags['http.url'] === '/some-data');
+    await browser.assert.ok(!!fetchSpan, 'Fetch span found.');
     await browser.assert.ok(fetchSpan.tags['component'], 'fetch');
     await browser.assert.ok(fetchSpan.tags['ot.status_code'], 'UNSET');
     await browser.assert.ok(fetchSpan.tags['http.status_code'], '200');
