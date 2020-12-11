@@ -8,12 +8,21 @@
 </head>
 <body>
 	<h1>Websocket</h1>
-	<button id="connectWebsocketsBtn" type="button">Connect to a websockets server</button>
+	<button id="connectWs" type="button">Connect to a websockets server</button>
+	<button id="sendWs" type="button">Connect to a websockets server</button>
 	<script>
 			let socket;
-			document.getElementById('connectWebsocketsBtn').addEventListener('click', () => {
+			connectWs.addEventListener('click', () => {
 				const params = new URLSearchParams(window.location.search);
 				socket = new WebSocket(`${params.get('wsProtocol')}://${document.location.hostname}:${params.get('wsPort')}/`);
+
+				socket.addEventListener('message', function (event) {
+					console.log('Message from server ', event.data);
+				});
+			});
+
+			sendWs.addEventListener('click', function() {
+				socket.send('hello world!');
 			});
 	</script>
 </body>

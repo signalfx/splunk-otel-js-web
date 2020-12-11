@@ -78,7 +78,7 @@ function startHttpServer({ enableHttps, listener }) {
 
     // 0 acquires a random available port
     // 127.0.0.1 has been found to work with Circle CI and Browserstack well
-    server.listen(0, '127.0.0.1');
+    server.listen(57351, '127.0.0.1');
   });
 }
 
@@ -104,7 +104,7 @@ function startWebsocketServer({ enableHttps, listener }) {
 
     // 0 acquires a random available port
     // 127.0.0.1 has been found to work with Circle CI and Browserstack well
-    server.listen(0, '127.0.0.1');
+    server.listen(57352, '127.0.0.1');
   });
 }
 
@@ -223,12 +223,14 @@ exports.run = async function run({onSpanReceived, enableHttps}) {
     serverOptions: wsOptions,
     websocketServer,
   } = await startWebsocketServer({ enableHttps });
+
   websocketServer.on('connection', function connection(ws) {
+    console.log('websocket connected');
     ws.on('message', function incoming(message) {
-      console.log('received: %s', message);
-      ws.send(message);
+      console.log('received: ', Date.now(), message);
+      ws.send('something');
     });
-  
+    
     ws.send('connected');
   });
 

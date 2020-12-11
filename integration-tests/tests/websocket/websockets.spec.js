@@ -25,9 +25,9 @@ module.exports = {
     const url = browser.globals.getUrl('/websocket/websocket.ejs');
     await browser.url(url);
 
-    await browser.click('#connectWebsocketsBtn');
+    await browser.click('#connectWs');
     const wsConnectionSpan = await browser.globals.findSpan(span => span.name === 'connect');          
-    await browser.url(`${browser.globals.baseUrl}empty-page`);
+    // await browser.url(`${browser.globals.baseUrl}empty-page`);
 
     await browser.assert.strictEqual(wsConnectionSpan.tags['location.href'], url);
     await browser.assert.strictEqual(wsConnectionSpan.tags['app'], 'splunk-otel-js-dummy-app');
@@ -45,10 +45,25 @@ module.exports = {
     
     browser.globals.clearReceivedSpans();
     await browser.url(browser.globals.getUrl('/websocket/websocket-ignored.ejs'));
-    await browser.click('#connectWebsocketsBtn');
+    await browser.click('#connectWs');
 
     const wsConnectionSpan = await browser.globals.findSpan(span => span.name === 'connect');   
     await browser.assert.not.ok(wsConnectionSpan);
     await browser.end();
+  },
+  'sending via ws.send creates a span': async function(browser) {
+    await browser.url(browser.globals.getUrl('/websocket/websocket.ejs'));
+    await browser.click('#connectWs');
+    await browser.click('#sendtWs');
+
+
+
+
+  },
+  'on message span works': async function(browser) {
+    
+  },
+  'endSpanExceptionally': async function(browser) {
+
   }
 };
