@@ -4,8 +4,8 @@ published versions.  Meanwhile, do not modify anything in the deps/ directory on
 direct contributions to otel upstream.
 
 ```
-$ git submodule init   (one-time)
-$ git submodule update  (every time you update this repo)
+$ git submodule update --init --recursive # one-time
+$ git submodule update # every time you update this repo
 ```
 
 ## Building, for real
