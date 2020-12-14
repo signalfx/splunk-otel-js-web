@@ -14,17 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+function isSafari(browser) {
+  const UNSUPPORTED_BROWSERS = ['Safari'];
+  const currentBrowser = browser.options.desiredCapabilities.browserName;
+  return UNSUPPORTED_BROWSERS.includes(currentBrowser)
+}
+
 module.exports = {
   afterEach : function(browser) {
     browser.globals.clearReceivedSpans();  
   },
   'can produce websocket events': async function(browser) {
-    const UNSUPPORTED_BROWSERS = ['Safari'];
-    const currentBrowser = browser.options.desiredCapabilities.browserName;
-    if (UNSUPPORTED_BROWSERS.includes(currentBrowser)) {
+    if (isSafari(browser)) {
       return;
     }
-
     const url = browser.globals.getUrl('/websocket/websocket.ejs');
     await browser.url(url);
 
@@ -38,12 +41,9 @@ module.exports = {
     await browser.assert.strictEqual(wsConnectionSpan.tags['error'], undefined);
   },
   'websocket url can be ignored': async function(browser) {
-    const UNSUPPORTED_BROWSERS = ['Safari'];
-    const currentBrowser = browser.options.desiredCapabilities.browserName;
-    if (UNSUPPORTED_BROWSERS.includes(currentBrowser)) {
+    if (isSafari(browser)) {
       return;
     }
-    
     await browser.url(browser.globals.getUrl('/websocket/websocket-ignored.ejs'));
     await browser.click('#connectWs');
 
@@ -51,6 +51,9 @@ module.exports = {
     await browser.assert.not.ok(browser.globals.receivedSpans.find(span => span.name === 'connect'));
   },
   'sending send and on message create a span': async function(browser) {
+    if (isSafari(browser)) {
+      return;
+    }
     await browser.url(browser.globals.getUrl('/websocket/websocket.ejs'));
     await browser.click('#connectWs');
     // check for connect span so connection has time to initialize otherwise send will fail
@@ -67,6 +70,9 @@ module.exports = {
     await browser.assert.strictEqual(wsSend.tags['http.request_content_length'], '12');
   },
   'websocket constructor errors are captured': async function(browser) {
+    if (isSafari(browser)) {
+      return;
+    }
     await browser.url(browser.globals.getUrl('/websocket/websocket-construct-errors.ejs'));
     await browser.click('#connectWs');
     const wsConnectionSpan = await browser.globals.findSpan(span => span.name === 'connect', -5000);     
@@ -74,6 +80,9 @@ module.exports = {
     await browser.assert.strictEqual(wsConnectionSpan.tags['error'], 'true');
   },
   'websocket send errors are captured': async function(browser) {
+    if (isSafari(browser)) {
+      return;
+    }
     await browser.url(browser.globals.getUrl('/websocket/websocket-send-errors.ejs'));
     await browser.click('#connectWs');
     // not many ways to generate these errors, 
