@@ -4,18 +4,14 @@ browsers_unit_tests: &browsers_unit_tests
   resource_class: large
   steps:
     - checkout
-    - run: git submodule init
-    - run: git submodule update
+    - run: git submodule update --init --recursive
     - run: npm install
     - run: npm run build:release
     - run: npx eslint --no-eslintrc --env es2015 dist/splunk-rum.js
     - run: npx eslint --no-eslintrc --no-inline-config --env es2015 dist/splunk-rum.debug.js
     - run: npm run test
     - run: npm run test:integration:local:_execute
-
-    # Firefox keeps having an issue where it reports negative fetchStart in performance API
-    # - run: npm run test:integration:local:firefox:_execute
-
+    - run: npm run test:integration:local:firefox:_execute
     - run: npm run test:integration:_execute
     
     - store_artifacts:

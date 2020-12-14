@@ -58,7 +58,7 @@ function createTunnel() {
     const configPath = path.join(__dirname, 'browserstack.conf.js'); 
     console.log(`Loading config from ${configPath}`);
 
-    const envs = ['chrome', 'edge'];
+    const envs = ['safari', 'edge'];
     const reporters = [];
     for (const env of envs) {
       const runner = new Nightwatch.CliRunner({

@@ -17,7 +17,7 @@ limitations under the License.
 const devServer = require('../devServer/devServer');
 
 const GLOBAL_TEST_BUFFER_TIMEOUT = 20;
-const NETWORK_LATENCY_MARGIN = 1000;
+const NETWORK_LATENCY_MARGIN = 2000;
 
 // Allow two buffer timeout cycles to pass, and allow an additional small grace period
 const TWO_BUFFER_CYCLES = 2 * GLOBAL_TEST_BUFFER_TIMEOUT;
@@ -29,7 +29,7 @@ async function findSpan(spans, testFn, accruedTime) {
   if (accruedTime > SPAN_WAIT_TIMEOUT) {
     console.error('Listing recorded spans for your convenience.');
     console.error(spans);
-    return false;
+    return null;
   }
 
   const foundSpan = spans.find(testFn);

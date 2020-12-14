@@ -73,8 +73,6 @@ const nightwatch_config = {
         'browserstack.selenium_version' : '4.0.0-alpha-6'
       }
     },
-    /*
-    // FIXME firefox broken (-3)
     firefox: {
       desiredCapabilities: {
         os: 'Windows',
@@ -83,7 +81,6 @@ const nightwatch_config = {
         browser_version: 'latest',
       }
     },
-    */
     safari: {
       desiredCapabilities: {
         os: 'OS X',
