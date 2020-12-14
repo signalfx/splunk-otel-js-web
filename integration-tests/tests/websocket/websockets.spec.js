@@ -17,7 +17,7 @@ limitations under the License.
 function isSafari(browser) {
   const UNSUPPORTED_BROWSERS = ['Safari'];
   const currentBrowser = browser.options.desiredCapabilities.browserName;
-  return UNSUPPORTED_BROWSERS.includes(currentBrowser)
+  return UNSUPPORTED_BROWSERS.includes(currentBrowser);
 }
 
 module.exports = {
