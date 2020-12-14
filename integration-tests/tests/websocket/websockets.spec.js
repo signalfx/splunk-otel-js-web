@@ -15,6 +15,9 @@ limitations under the License.
 */
 
 module.exports = {
+  afterEach : function(browser) {
+    browser.globals.clearReceivedSpans();  
+  },
   'can produce websocket events': async function(browser) {
     const UNSUPPORTED_BROWSERS = ['Safari'];
     const currentBrowser = browser.options.desiredCapabilities.browserName;
@@ -22,18 +25,16 @@ module.exports = {
       return;
     }
 
-    browser.globals.clearReceivedSpans();
     const url = browser.globals.getUrl('/websocket/websocket.ejs');
     await browser.url(url);
 
     await browser.click('#connectWs');
-    const wsConnectionSpan = await browser.globals.findSpan(span => span.name === 'connect');          
-    // await browser.url(`${browser.globals.baseUrl}empty-page`);
+    const wsConnectionSpan = await browser.globals.findSpan(span => span.name === 'connect', -1000);          
 
     await browser.assert.strictEqual(wsConnectionSpan.tags['location.href'], url);
     await browser.assert.strictEqual(wsConnectionSpan.tags['app'], 'splunk-otel-js-dummy-app');
     await browser.assert.strictEqual(wsConnectionSpan.tags['component'], 'websocket');
-    await browser.assert.strictEqual(wsConnectionSpan.tags['ot.status_code'], 'UNSET'); //pointless check, always OK
+    await browser.assert.strictEqual(wsConnectionSpan.tags['ot.status_code'], 'UNSET');
     await browser.assert.strictEqual(wsConnectionSpan.tags['error'], undefined);
   },
   'websocket url can be ignored': async function(browser) {
@@ -43,24 +44,44 @@ module.exports = {
       return;
     }
     
-    browser.globals.clearReceivedSpans();
     await browser.url(browser.globals.getUrl('/websocket/websocket-ignored.ejs'));
     await browser.click('#connectWs');
 
     await browser.globals.findSpan(span => span.name === 'websocket-guard-span');   
     await browser.assert.not.ok(browser.globals.receivedSpans.find(span => span.name === 'connect'));
   },
-  'sending via ws.send creates a span': async function(browser) {
+  'sending send and on message create a span': async function(browser) {
     await browser.url(browser.globals.getUrl('/websocket/websocket.ejs'));
     await browser.click('#connectWs');
-    await browser.click('#sendtWs');
+    // check for connect span so connection has time to initialize otherwise send will fail
+    const wsConnectionSpan = await browser.globals.findSpan(span => span.name === 'connect');     
+    await browser.assert.ok(!!wsConnectionSpan, 'Connect span missing');     
 
+    await browser.click('#sendWs');
+    const wsMessage = await browser.globals.findSpan(span => span.name === 'onmessage');
+    await browser.assert.ok(!!wsMessage);
+    await browser.assert.strictEqual(wsMessage.tags['http.response_content_length'], '7');
 
+    const wsSend = browser.globals.receivedSpans.find(span => span.name === 'send');
+    await browser.assert.ok(!!wsSend);
+    await browser.assert.strictEqual(wsSend.tags['http.request_content_length'], '12');
   },
-  'on message span works': async function(browser) {
-    
+  'websocket constructor errors are captured': async function(browser) {
+    await browser.url(browser.globals.getUrl('/websocket/websocket-construct-errors.ejs'));
+    await browser.click('#connectWs');
+    const wsConnectionSpan = await browser.globals.findSpan(span => span.name === 'connect', -5000);     
+    await browser.assert.ok(!!wsConnectionSpan, 'Connect span missing');
+    await browser.assert.strictEqual(wsConnectionSpan.tags['error'], 'true');
   },
-  'endSpanExceptionally': async function(browser) {
-
-  }
+  'websocket send errors are captured': async function(browser) {
+    await browser.url(browser.globals.getUrl('/websocket/websocket-send-errors.ejs'));
+    await browser.click('#connectWs');
+    // not many ways to generate these errors, 
+    // trying to send msg during connect is the one I know but can be flaky
+    const wsSend = await browser.globals.findSpan(span => span.name === 'send');     
+    await browser.assert.ok(!!wsSend, 'Send span missing');
+    await browser.assert.strictEqual(wsSend.tags['error'], 'true');
+    await browser.assert.strictEqual(wsSend.tags['error.message'], 'Failed to execute \'send\' on \'WebSocket\': Still in CONNECTING state.');
+    await browser.assert.strictEqual(wsSend.tags['error.object'], 'InvalidStateError');
+  },
 };

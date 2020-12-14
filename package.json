@@ -42,7 +42,7 @@
     "@rollup/plugin-node-resolve": "^9.0.0",
     "body-parser": "^1.19.0",
     "browserstack-local": "^1.4.8",
-    "chromedriver": "^86.0.0",
+    "chromedriver": "^87.0.0",
     "codecov": "^3.8.1",
     "dotenv": "^8.2.0",
     "eslint": "^7.13.0",

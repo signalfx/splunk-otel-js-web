@@ -9,20 +9,27 @@
 <body>
 	<h1>Websocket</h1>
 	<button id="connectWs" type="button">Connect to a websockets server</button>
-	<button id="sendWs" type="button">Connect to a websockets server</button>
+	<button id="sendWs" type="button">Send</button>
 	<script>
 			let socket;
 			connectWs.addEventListener('click', () => {
 				const params = new URLSearchParams(window.location.search);
-				socket = new WebSocket(`${params.get('wsProtocol')}://${document.location.hostname}:${params.get('wsPort')}/`);
+				const url = `${params.get('wsProtocol')}://${document.location.hostname}:${params.get('wsPort')}/`;
+				console.log('WS URL: ', url);
+				socket = new WebSocket(url);
 
 				socket.addEventListener('message', function (event) {
 					console.log('Message from server ', event.data);
 				});
+				
+				socket.addEventListener('error', function(event) {					
+					console.log('Message from server ', event.data);
+				})
 			});
 
 			sendWs.addEventListener('click', function() {
 				socket.send('hello world!');
+
 			});
 	</script>
 </body>

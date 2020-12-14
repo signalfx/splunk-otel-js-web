@@ -18,10 +18,10 @@
 </head>
 <body>
 	<h1>Websocket</h1>
-	<button id="connectWebsocketsBtn" type="button">Connect to a websockets server</button>
+	<button id="connectWs" type="button">Connect to a websockets server</button>
 	<script>
 			let socket;
-			document.getElementById('connectWebsocketsBtn').addEventListener('click', () => {
+			connectWs.addEventListener('click', () => {
 				socket = new WebSocket(window.wsUrl);
 				socket.onopen = () => {
 					SplunkRum.provider.getTracer('default').startSpan('websocket-guard-span').end();
