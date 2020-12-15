@@ -18,10 +18,13 @@ const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const bodyParser = require('body-parser');
-const https = require('https');
-const http = require('http');
 const WebSocket = require('ws');
 const {render, renderFile} = require('ejs');
+const { buildBasicLocalServer } = require('../../test-utils/server');
+const { 
+  generateServerTiming,
+  setServerTimingHeader,
+} = require('../../test-utils/server/serverTiming');
 
 const INJECT_TEMPLATE = `<script src="<%= file -%>"></script>
   <script>
@@ -34,13 +37,7 @@ const INJECT_TEMPLATE = `<script src="<%= file -%>"></script>
 `;
 
 function buildServer({ enableHttps, listener }) {
-  const serverOptions = {
-    hostname: 'localhost',
-    key: fs.readFileSync(path.join(__dirname, 'certs', 'server.key'), 'utf8'),
-    cert: fs.readFileSync(path.join(__dirname, 'certs', 'server.cert'), 'utf8'),
-  };
-
-  const server = (enableHttps ? https : http).createServer(serverOptions, listener);
+  const { server, serverOptions } = buildBasicLocalServer({ enableHttps, listener });
 
   const sockets = {};
   let nextSocketId = 0;
@@ -119,25 +116,6 @@ function startWebsocketServer({ enableHttps, listener }) {
   });
 }
 
-function generateHex(length) {
-  return [...Array(length).keys()].map(() => parseInt(Math.random() * 16).toString(16)).join('');
-}
-
-function generateServerTiming() {
-  const traceId = generateHex(32);
-  const spanId = generateHex(16);
-  const formatted = `traceparent;desc="00-${traceId}-${spanId}-01"`;
-  return {
-    traceId,
-    spanId,
-    header: formatted,
-  };
-}
-
-function attachServerTiming(res) {
-  res.set('Server-Timing', generateServerTiming().header);
-}
-
 function getSpans(spanOrSpans) {
   if (Array.isArray(spanOrSpans)) {
     return spanOrSpans.flatMap(getSpans);
@@ -156,10 +134,9 @@ function getSpans(spanOrSpans) {
 exports.run = async function run({onSpanReceived, enableHttps}) {
   enableHttps = enableHttps || false;
   let lastServerTiming;
-  function addHeaders(res) {
+  function addHeaders(response) {
     lastServerTiming = generateServerTiming();
-    res.set('Access-Control-Expose-Headers', 'Server-Timing');
-    res.set('Server-Timing', lastServerTiming.header);
+    setServerTimingHeader(response, lastServerTiming);
   }
 
   if (!onSpanReceived) {
@@ -210,9 +187,9 @@ exports.run = async function run({onSpanReceived, enableHttps}) {
     res.send('');
   });
 
-  app.get('/some-data', (req, res) => {
-    attachServerTiming(res);
-    res.send({
+  app.get('/some-data', (req, response) => {
+    setServerTimingHeader(response);
+    response.send({
       key1: 'value1',
       key2: 'value2',
       key3: 'value3',
