@@ -4,7 +4,6 @@ You have a number of options for how you place the script into your pages/apps. 
 of them and discusses their tradeoffs.  The best choice for you will depend on the design of your app/pages, the performance
 variables you cast most about, and how much complexity/work you want to put into your integration.
 
-
 ## Default Recommendation
 
 Our recommendation for getting started is simple: host `splunk-rum.js` as your own asset
@@ -42,6 +41,7 @@ Other options for script placement all have implications for data completeness:
 ## Placement elsewhere on page
 
 Because our `document-load` information comes from the browser's `performance` APIs, you can place the same `<script>` tags nearly anywhere in your page and we will still be able to report information about the document-load sequence.  Per the above notes on [data completeness](#data-completeness), this will cause some data to be missing.  If not the `<head>`, the next best places for our script initialization are (in priority order):
+
 - Just before the initialization of any third-party `<script>` or `<iframe>`.
 - Just before the first `<script>` of your app
 - At the bottom of the page (e.g., just before `</body>`)
@@ -53,6 +53,7 @@ If you have build-time infrastructure to support it, you can inline our script i
 ## Async/defer options
 
 **We do not recommend this approach.**.  In addition to placing elsewhere, you can also load our script `async` or `defer`.   This has all the data completeness drawbacks discussed above while also (in the case of `async`) introducing randomness/variability into the process - three different page loads might miss different amounts of monitoring data.   If you want to use `async`, it might look like the following:
+
 ```html
 <script>
 function initializeSplunkRum() {
