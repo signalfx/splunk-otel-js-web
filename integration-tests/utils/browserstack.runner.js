@@ -19,11 +19,14 @@ require('dotenv').config();
 const Nightwatch = require('nightwatch');
 const browserstack = require('browserstack-local');
 const { clearBuildId, generateBuildId } = require('./buildApi');
-const path = require('path');
+
+
+function generateHex(length) {
+  return [...Array(length).keys()].map(() => parseInt(Math.random() * 16).toString(16)).join('');
+}
 
 let browserstackLocal;
-
-function createTunnel() {
+function createTunnel({localIdentifier}) {
   return new Promise((resolve, reject) => {
     Nightwatch.browserstackLocal = browserstackLocal = new browserstack.Local();
 
@@ -32,7 +35,11 @@ function createTunnel() {
       throw new Error('You need to provide environment variable: BROWSERSTACK_KEY.');
     }
 
-    browserstackLocal.start({ key }, function(error) {
+    browserstackLocal.start({ 
+      key,
+      verbose: true,
+      localIdentifier,
+    }, function(error) {
       if (error) {
         reject(error);
       } else {
@@ -44,37 +51,31 @@ function createTunnel() {
   });
 }
 
-(async function() {
+async function runTests(argv) {
   let buildId;
   try {
     buildId = generateBuildId();
     console.log(`Starting build ${buildId}`);
 
     console.log('Starting tunnel.');
-    const tunnelHandle = await createTunnel();
+    const localIdentifier = generateHex(32);
+    const tunnelHandle = await createTunnel({localIdentifier});
     console.log('Tunnel started.');
 
-    // TODO: restructure so that we don't have to rely on a path to the config file
-    const configPath = path.join(__dirname, 'browserstack.conf.js'); 
-    console.log(`Loading config from ${configPath}`);
+    const runner = new Nightwatch.CliRunner({
+      ...argv,
+      // note: this can be used to scope down tests, leaving here so I don't need to search for this in the future
+      // test: path.join(__dirname, '..', 'tests', 'websocket', 'websockets.spec.js')
+    });
+    runner.setup({
+      desiredCapabilities: {
+        'browserstack.localIdentifier': localIdentifier,
+        build: generateBuildId(),
+      },
+    });
+    await runner.runTests();
 
-    const envs = ['safari', 'edge'];
-    const reporters = [];
-    for (const env of envs) {
-      const runner = new Nightwatch.CliRunner({
-        config: configPath, 
-        env, 
-
-        // note: this can be used to scope down tests, leaving here so I don't need to search for this in the future
-        // test: path.join(__dirname, '..', 'tests', 'websocket', 'websockets.spec.js')
-      });
-      runner.setup();
-      await runner.runTests();
-
-      reporters.push(runner.testRunner);
-    }
-
-    if (reporters.some(r => r.hasTestFailures)) {
+    if (runner.testRunner.hasTestFailures) {
       console.warn('Tests failed.');
       process.exitCode = 1;
     } else {
@@ -90,4 +91,6 @@ function createTunnel() {
     clearBuildId();
     console.log(`Finished build ${buildId}`);
   }
-}());
+}
+
+Nightwatch.cli(runTests);

@@ -15,46 +15,19 @@ limitations under the License.
 */
 
 const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
-
-const buildIdFilePath = path.join(__dirname, '..', '..', '.nightwatch_build_id');
 
 function sanitizeCliOut(out) {
   return out.toString().replace(/\n/g, '');
 }
 
 function generateBuildId() {
-  if (fs.existsSync(buildIdFilePath)) {
-    console.warn('Build ID file already exists. Please remove the existing file, before requesting a new ID.');
-  }
-
   const commitId = process.env.CIRCLE_SHA1 || sanitizeCliOut(execSync('git rev-parse HEAD'));
   const author = process.env.CIRCLE_PR_USERNAME || sanitizeCliOut(execSync('whoami'));
   const when = new Date().toJSON();
 
-  const buildId = `${author}-${when}-${commitId.substring(0, 8)}`;
-  fs.writeFileSync(buildIdFilePath, buildId);
-
-  return buildId;
-}
-
-function getCurrentBuildId() {
-  if (!fs.existsSync(buildIdFilePath)) {
-    throw new Error('Build ID file does not exist.');
-  }
-
-  return fs.readFileSync(buildIdFilePath).toString();
-}
-
-function clearBuildId() {
-  if (fs.existsSync(buildIdFilePath)) {
-    fs.unlinkSync(buildIdFilePath);
-  }
+  return `${author}-${when}-${commitId.substring(0, 8)}`;
 }
 
 module.exports = {
   generateBuildId,
-  getCurrentBuildId,
-  clearBuildId,
 };
