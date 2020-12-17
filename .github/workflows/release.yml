@@ -1,0 +1,73 @@
+name: Auto tag-based release
+
+on:
+  push:
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # without this step submodules won't load, as ssh keys are not configured
+      # in Actions by default
+      - name: Fix ssh+git access
+        run: git config --global url."https://github.com/".insteadOf "git@github.com:"
+      - name: Checkout submodules
+        run: git submodule update --init --recursive
+      
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '12'
+      - run: npm install
+      - run: npm run lint
+
+      - name: Build minified version
+        run: npx rollup -c
+      - name: Build debug version
+        run: DEBUG_BUILD=1 npx rollup -c
+
+      - name: Build smoke test
+        run: npx eslint --no-eslintrc --env es2015 dist/splunk-rum.js
+
+      - run: echo "RELEASE_TAG=$(echo "${{ github.ref }}" | awk '{gsub("/refs/tags/", "");print}')" >> $GITHUB_ENV
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            Changes in this Release
+            - TODO: please fill in the changes in this release
+            - TODO: please convert from draft into release when ready
+          draft: true
+          prerelease: false
+
+      - name: Upload the non-minified script
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./dist/splunk-rum.js
+          asset_name: splunk-rum.js
+          asset_content_type: text/javascript
+
+      - name: Upload the non-minified script
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./dist/splunk-rum.debug.js
+          asset_name: splunk-rum.debug.js
+          asset_content_type: text/javascript
