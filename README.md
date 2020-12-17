@@ -36,7 +36,7 @@ For example:
 ```html
 <script src="http://your-site.com/path/to/splunk-rum.js"></script>
 <script>
-  window.SplunkRum.init(
+  SplunkRum.init(
     {
       // Your beaconUrl should be provided by your friendly Splunk representative
       beaconUrl: 'https://example.com/v1/rum',
@@ -49,7 +49,7 @@ For example:
 
 ## Installation options
 
-Please read [INSTALLING.md](./INSTALLING.md) for more advanced installation scenarios.
+Please read [INSTALLING.md](./docs/INSTALLING.md) for more advanced installation scenarios.
 
 ## All configuration options
 
@@ -64,8 +64,8 @@ Please read [INSTALLING.md](./INSTALLING.md) for more advanced installation scen
 | captureErrors | boolean | Turns on/off error reporting feature | No | true |
 | allowInsecureBeacon | boolean | Allows http beacon urls | No | false |
 | debug | boolean | Turns on/off internal debug logging | No | false |
-| ignoreUrls | array | Applies for XHR,Fetch and Websocket URLs. URLs that partially match any regex in ignoreUrls will not be traced. In addition, URLs that are _exact matches_ of strings in ignoreUrls will also not be traced. | No | (No default) |
-| spanProcessor | SpanProcessor | Offers ability to alter/remove data in-browser.  See below for more details | (undefined) |
+| ignoreUrls | array | Applies for XHR,Fetch and Websocket URLs. URLs that partially match any regex in ignoreUrls will not be traced. In addition, URLs that are _exact matches_ of strings in ignoreUrls will also not be traced. | No | [] |
+| spanProcessor | SpanProcessor | Offers ability to alter/remove data in-browser.  See below for more details | No | (undefined) |
 
 ### `SplunkRum.setGlobalAttributes(attributes)`
 
@@ -85,7 +85,7 @@ API.  Our `TracingProvider` is in `SplunkRum.provider`.
 Example on how to manually instrument:
 
 ```javascript
-  const provider = window.SplunkRum.provider;
+  const provider = SplunkRum.provider;
   const span = provider.getTracer('searchbox').startSpan('search');
   span.setAttribute('searchLength', searchString.length);
   // time passes
@@ -98,7 +98,7 @@ While many errors are captured by default, manual errors can be reported by
 using:
 
 ```javascript
-  window.SplunkRum && window.SplunkRum.error(errorObjectOrMessageString);
+  SplunkRum.error(errorObjectOrMessageString);
 ```
 
 ### spanProcessor
@@ -123,6 +123,20 @@ SplunkRum.init({
   spanProcessor: new UrlRedactor(),
 });
 ```
+
+## Supported browsers
+
+Not all supported browsers support all features/attributes, but the following browsers are generally supported.  We are actively working on expanding this list.
+
+- Chrome 52+
+- Safari 11+
+- Firefox 57+
+- Edge 79+
+- IE not currently supported
+
+## Building and contributing
+
+Please read [CONTRIBUTING.md](./docs/CONTRIBUTING.md) for instructions on building, running tests, and so forth.
 
 ## License and versioning
 
