@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+jobs:
+  Release:
+    name: Lint code base
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Checkout submodules
+        run: git submodule update --init --recursive
+      
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '12'
+      - run: npm install
+      - run: npm run lint
+      - run: npm test
+
+      - name: Build minified version
+        run: npx rollup -c
+      - name: Build debug version
+        run: DEBUG_BUILD=1 npx rollup -c
+
+      - name: Build smoke test
+        run: npx eslint --no-eslintrc --env es2015 dist/splunk-rum.js
+
+      - run: echo "" | awk '{gsub("/refs/tags/", "");print}' >> $RELEASE_TAG
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          # This token is provided by Actions
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            Changes in this Release
+            - First Change
+            - Second Change
+            - ${{ env.RELEASE_TAG }}
+          draft: false
+          prerelease: false
