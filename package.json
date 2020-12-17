@@ -1,6 +1,6 @@
 {
   "name": "splunk-rum",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "description": "",
   "private": true,
   "scripts": {
