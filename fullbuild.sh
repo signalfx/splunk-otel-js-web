@@ -3,6 +3,7 @@ set -e
 rm -f dist/*
 npm install
 npm run lint
+npm run lint:markdown
 npm test
 npx rollup -c
 DEBUG_BUILD=1 npx rollup -c

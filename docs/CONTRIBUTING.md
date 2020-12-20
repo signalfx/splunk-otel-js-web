@@ -1,9 +1,10 @@
+# Building, testing and contributing to splunk-browser-otel-js
 ## Building, preamble
 This repo makes use of git submodules to pull in the latest otel-js and otel-js-contrib code.  In time, we may move to only using
 published versions.  Meanwhile, do not modify anything in the deps/ directory once you've updated the submodules.  We want to make
 direct contributions to otel upstream.
 
-```
+```bash
 $ git submodule update --init --recursive # one-time
 $ git submodule update # every time you update this repo
 ```
@@ -11,7 +12,7 @@ $ git submodule update # every time you update this repo
 ## Building, for real
 Build as so:
 
-```
+```bash
 $ git submodule update
 $ npm install
 $ npm run lint (optional)
@@ -20,6 +21,7 @@ $ npx rollup -c (this produces dist/splunk-rum.js)
 $ DEBUG_BUILD=1 npx rollup -c (optional; this produces dist/splunk-rum.debug.js)
 $ npx eslint --no-eslintrc --env es2015 dist/splunk-rum.js (pure syntax check of dist script; optional)
 ```
+
 For your convenience, the script `fullbuild.sh` runs all these steps except for the submodule update.
 
 ## Functional tests
@@ -42,8 +44,9 @@ By running BrowserStack-based tests you are exposing your local network to the t
 
 ### Safari
 Requires the code below to be run once, to enable running integration tests in Safari locally.
-```
-/usr/bin/safaridriver --enable
+
+```bash
+$ /usr/bin/safaridriver --enable
 ```
 
 ## Updating deps from upstream
@@ -51,7 +54,7 @@ Requires the code below to be run once, to enable running integration tests in S
 Periodically this repo needs to pull in the latest from upstream (otel-js and otel-js-contrib).  I recommend doing one at a time
 and testing in between to isolate things that affect us more directly.
 
-```
+```bash
 $ cd deps/
 $ git submodule status (review output, note the commit hash of each upstream HEAD, compare to actual remote HEAD)
 $ git submodule update --remote opentelemetry-js (or -contrib)
@@ -66,16 +69,18 @@ From here, you can commit+push like normal.
 
 1. `git checkout main && git pull`, generally clean up the workspace.
 1. Run build + tests:
-    ```
+
+    ```bash
     $ git submodule update
     $ ./fullbuild.sh
     ```
+
 1. Manual sanity test
 1. `npm version patch`
 1. `git push` to publish the version bump commit
 1. `git push origin --tags` to publish the version tag, if you haven't created any local tags manually
 1. `git push origin <release tag>` if you have local tags, which shouldn't be published
-1. Release on github: https://github.com/signalfx/rum-browser-js/releases/
+1. Release on github: <https://github.com/signalfx/rum-browser-js/releases/>
     1. "Draft a new release"
     1. Fill out the tag version.  This is confusing as github has automatically created a 
        release from the tag.  Doing this and publishing will change/overwrite the automatically
@@ -88,4 +93,3 @@ From here, you can commit+push like normal.
 
 If you are not a Splunk employee and would like to contribute code to this project, please read and fill out the
 [Splunk CLA](https://www.splunk.com/en_us/form/contributions.html).
-
