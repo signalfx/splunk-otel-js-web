@@ -21,10 +21,10 @@ function isSafari(browser) {
 }
 
 module.exports = {
-  afterEach : function(browser) {
+  beforeEach : function(browser) {
     browser.globals.clearReceivedSpans();  
   },
-  'can produce websocket events': async function(browser) {
+  'produces correct connect span': async function(browser) {
     if (isSafari(browser)) {
       return;
     }
@@ -34,6 +34,7 @@ module.exports = {
     await browser.click('#connectWs');
     const wsConnectionSpan = await browser.globals.findSpan(span => span.name === 'connect', -1000);          
 
+    await browser.assert.strictEqual(wsConnectionSpan.kind, 'CLIENT');
     await browser.assert.strictEqual(wsConnectionSpan.tags['location.href'], url);
     await browser.assert.strictEqual(wsConnectionSpan.tags['app'], 'splunk-otel-js-dummy-app');
     await browser.assert.strictEqual(wsConnectionSpan.tags['component'], 'websocket');
@@ -104,12 +105,16 @@ module.exports = {
     if (isSafari(browser)) {
       return;
     }
-    await browser.url(browser.globals.getUrl('/websocket/websocket-sub-protocol.ejs'));
+    const url = browser.globals.getUrl('/websocket/websocket-sub-protocol.ejs');
+    await browser.url(url);
     await browser.click('#connectWs');
-    const wsConnectionSpan = await browser.globals.findSpan(span => span.name === 'connect');     
+    // Apparently there are leftover spans from last test even after clear
+    // as the spans arrive after clearing TODO fix somehow
+    
+    const wsConnectionSpan = await browser.globals.findSpan(span => span.name === 'connect' && span.tags['location.href'] === url);
+    await browser.assert.ok(!!wsConnectionSpan, 'Connect span missing');   
     await browser.assert.strictEqual(wsConnectionSpan.tags['protocols'], '["soap"]');
 
-    await browser.assert.ok(!!wsConnectionSpan, 'Connect span missing');     
     await browser.click('#sendWs');
     const wsMessage = await browser.globals.findSpan(span => span.name === 'onmessage');
     await browser.assert.ok(!!wsMessage);
