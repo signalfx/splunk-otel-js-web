@@ -59,14 +59,21 @@ module.exports = {
     // check for connect span so connection has time to initialize otherwise send will fail
     const wsConnectionSpan = await browser.globals.findSpan(span => span.name === 'connect');     
     await browser.assert.ok(!!wsConnectionSpan, 'Connect span missing');     
-
     await browser.click('#sendWs');
     const wsMessage = await browser.globals.findSpan(span => span.name === 'onmessage');
     await browser.assert.ok(!!wsMessage);
+    await browser.assert.strictEqual(wsMessage.kind, 'CONSUMER');
+    await browser.assert.strictEqual(wsMessage.tags['component'], 'websocket');
+    await browser.assert.strictEqual(wsMessage.tags['protocol'], '');
+    await browser.assert.strictEqual(wsMessage.tags['http.url'], browser.globals.wsBase);
     await browser.assert.strictEqual(wsMessage.tags['http.response_content_length'], '7');
 
     const wsSend = browser.globals.receivedSpans.find(span => span.name === 'send');
     await browser.assert.ok(!!wsSend);
+    await browser.assert.strictEqual(wsSend.kind, 'PRODUCER');
+    await browser.assert.strictEqual(wsSend.tags['component'], 'websocket');
+    await browser.assert.strictEqual(wsSend.tags['protocol'], '');
+    await browser.assert.strictEqual(wsSend.tags['http.url'], browser.globals.wsBase);
     await browser.assert.strictEqual(wsSend.tags['http.request_content_length'], '12');
   },
   'websocket constructor errors are captured': async function(browser) {
@@ -92,5 +99,32 @@ module.exports = {
     await browser.assert.strictEqual(wsSend.tags['error'], 'true');
     await browser.assert.ok(wsSend.tags['error.message']);
     await browser.assert.ok(wsSend.tags['error.object']);
+  },
+  'specifying sub-protocols does not break anything': async function(browser) {
+    if (isSafari(browser)) {
+      return;
+    }
+    await browser.url(browser.globals.getUrl('/websocket/websocket-sub-protocol.ejs'));
+    await browser.click('#connectWs');
+    const wsConnectionSpan = await browser.globals.findSpan(span => span.name === 'connect');     
+    await browser.assert.strictEqual(wsConnectionSpan.tags['protocols'], '["soap"]');
+
+    await browser.assert.ok(!!wsConnectionSpan, 'Connect span missing');     
+    await browser.click('#sendWs');
+    const wsMessage = await browser.globals.findSpan(span => span.name === 'onmessage');
+    await browser.assert.ok(!!wsMessage);
+    await browser.assert.strictEqual(wsMessage.kind, 'CONSUMER');
+    await browser.assert.strictEqual(wsMessage.tags['component'], 'websocket');
+    await browser.assert.strictEqual(wsMessage.tags['protocol'], 'soap');
+    await browser.assert.strictEqual(wsMessage.tags['http.url'], browser.globals.wsBase);
+    await browser.assert.strictEqual(wsMessage.tags['http.response_content_length'], '7');
+
+    const wsSend = browser.globals.receivedSpans.find(span => span.name === 'send');
+    await browser.assert.ok(!!wsSend);
+    await browser.assert.strictEqual(wsSend.kind, 'PRODUCER');
+    await browser.assert.strictEqual(wsSend.tags['component'], 'websocket');
+    await browser.assert.strictEqual(wsSend.tags['protocol'], 'soap');
+    await browser.assert.strictEqual(wsSend.tags['http.url'], browser.globals.wsBase);
+    await browser.assert.strictEqual(wsSend.tags['http.request_content_length'], '12');
   },
 };

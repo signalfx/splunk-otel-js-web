@@ -146,6 +146,7 @@ function getSpans(spanOrSpans) {
   return [{
     name: spanOrSpans.name,
     tags: spanOrSpans.tags,
+    kind: spanOrSpans.kind,
     annotations: spanOrSpans.annotations,
     traceId: spanOrSpans.traceId,
     id: spanOrSpans.id,
