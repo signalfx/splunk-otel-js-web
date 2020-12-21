@@ -18,7 +18,7 @@ const specUtils = require('../spec-utils');
 
 module.exports = {
 
-    'documentFetch, resourceFetch, and documentLoad spans': async function(browser) {
+  'documentFetch, resourceFetch, and documentLoad spans': async function(browser) {
     const url = browser.globals.getUrl('/docload/docload.ejs');
     await browser.url(url);
 
