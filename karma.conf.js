@@ -1,5 +1,19 @@
-// Karma configuration
-// Generated on Thu Jun 04 2020 09:56:24 GMT-0400 (Eastern Daylight Time)
+/*
+Copyright 2020 Splunk Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 const json = require('@rollup/plugin-json');
 const alias = require('@rollup/plugin-alias');
 const commonjs = require('@rollup/plugin-commonjs');
@@ -7,7 +21,11 @@ const typescript = require('rollup-plugin-typescript2');
 const resolve = require('@rollup/plugin-node-resolve');
 const istanbulrollup = require('rollup-plugin-istanbul');
 const rollupPolyfills = require('rollup-plugin-node-polyfills');
+const path = require('path');
+
 const rollupHelpers = require('./rollup.helpers');
+
+process.env.CHROME_BIN = require('puppeteer').executablePath();
 
 module.exports = function (config) {
   config.set({
@@ -57,21 +75,8 @@ module.exports = function (config) {
       'test/index.js'
     ],
 
-
     // list of files / patterns to exclude
     exclude: [],
-
-
-    // preprocess matching files before serving them to the browser
-    // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
-    preprocessors: {},
-
-
-    // test results reporter to use
-    // possible values: 'dots', 'progress'
-    // available reporters: https://npmjs.org/browse/keyword/karma-reporter
-    reporters: ['progress'],
-
 
     // web server port
     port: 9876,
@@ -90,9 +95,8 @@ module.exports = function (config) {
     autoWatch: false,
 
 
-    // start these browsers
-    // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['Chrome'],
+    // start these browsers - might be using Puppeteer
+    browsers: ['ChromeHeadless'],
 
 
     // Continuous Integration mode
@@ -145,8 +149,7 @@ module.exports = function (config) {
       },
     },
 
-    reporters: ['spec', 'coverage-istanbul'],
-    preprocessors: {'test/index.js': ['rollup']}
-
+    reporters: ['progress', 'spec', 'coverage-istanbul'],
+    preprocessors: {'test/index.js': ['rollup']},
   });
 };

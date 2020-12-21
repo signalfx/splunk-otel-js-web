@@ -29,6 +29,7 @@ const nightwatch_config = {
     start_session: false,
     server_path: seleniumServer.path,
     port: 9515,
+    check_process_delay: 5000,
     cli_args: {
       'webdriver.chrome.driver': chromeDriver.path,
       'webdriver.gecko.driver': geckoDriver.path,
@@ -69,6 +70,15 @@ const nightwatch_config = {
       desiredCapabilities: {
         browserName: 'firefox',
         marionette: true,
+      }
+    },
+    headlessFirefox: {
+      desiredCapabilities: {
+        browserName: 'firefox',
+        marionette: true,
+        'moz:firefoxOptions': {
+          'args': ['--headless']
+        },
       }
     },
     safari: {
