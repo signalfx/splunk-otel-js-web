@@ -14,31 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+const specUtils = require('../spec-utils');
+
 module.exports = {
-  'documentFetch, resourceFetch, and documentLoad spans': async function(browser) {
 
-    const timesMakeSense = async function(eventsArr, startName, endName) {
-      const name2time = {};
-      eventsArr.forEach(event => {
-        name2time[event.value] = event.timestamp;
-      });
-      await browser.assert.ok(name2time[startName], `Checking presence of ${startName}`);
-      await browser.assert.ok(name2time[endName], `Checking presence of ${endName}`);
-      await browser.assert.ok(name2time[startName] <= name2time[endName], `Checking sanity of ${startName} vs ${endName}`);
-      const diff = name2time[endName] - name2time[startName];
-      // times reported in zipkin as micros
-      // looking for egregiously incorrect response times here, not a tight bound
-      const fiveMinutes = 5 * 60 * 1000 * 1000;
-      await browser.assert.ok(diff < fiveMinutes, 'Sanity check for time difference.'); 
-      // Also looking for rough synchronization with reality (at least from our CI systems/laptops...)
-      const nowMicros = new Date().getTime() * 1000;
-      let clockSkew = name2time[startName] - nowMicros;
-      if (clockSkew < 0) {
-        clockSkew = -clockSkew;
-      }
-      await browser.assert.ok(clockSkew <= fiveMinutes, 'Sanity check for clock skew');
-    };
-
+    'documentFetch, resourceFetch, and documentLoad spans': async function(browser) {
     const url = browser.globals.getUrl('/docload/docload.ejs');
     await browser.url(url);
 
@@ -66,13 +46,11 @@ module.exports = {
     // docFetch
     await browser.assert.strictEqual(docFetch.tags['component'], 'document-load');
     await browser.assert.strictEqual(docFetch.tags['location.href'], url);
-    await timesMakeSense(docFetch.annotations, 'domainLookupStart', 'domainLookupEnd');
-    await timesMakeSense(docFetch.annotations, 'connectStart', 'connectEnd');
-    await timesMakeSense(docFetch.annotations, 'requestStart', 'responseStart');
-    await timesMakeSense(docFetch.annotations, 'responseStart', 'responseEnd');
-    console.log('--------------------------------------');
-    console.log(docFetch.annotations);
-    await timesMakeSense(docFetch.annotations, 'fetchStart', 'responseEnd');
+    await specUtils.timesMakeSense(browser, docFetch.annotations, 'domainLookupStart', 'domainLookupEnd');
+    await specUtils.timesMakeSense(browser, docFetch.annotations, 'connectStart', 'connectEnd');
+    await specUtils.timesMakeSense(browser, docFetch.annotations, 'requestStart', 'responseStart');
+    await specUtils.timesMakeSense(browser, docFetch.annotations, 'responseStart', 'responseEnd');
+    await specUtils.timesMakeSense(browser, docFetch.annotations, 'fetchStart', 'responseEnd');
     if (browser.options.desiredCapabilities.browserName !== 'Safari') {
       await browser.assert.ok(docFetch.tags['http.response_content_length'] >= 0, 'Checking response_content_length');
       await browser.assert.ok(docFetch.tags['link.traceId'], 'Checking presence of link.traceId');
@@ -93,9 +71,9 @@ module.exports = {
     await browser.assert.strictEqual(docLoad.tags['component'], 'document-load');
     await browser.assert.strictEqual(docLoad.tags['location.href'], url);
     await browser.assert.ok(docLoad.tags['screen.xy'].match(/[0-9]+x[0-9]+/), 'Checking sanity of screen.xy');
-    await timesMakeSense(docLoad.annotations, 'domContentLoadedEventStart', 'domContentLoadedEventEnd');
-    await timesMakeSense(docLoad.annotations, 'loadEventStart', 'loadEventEnd');
-    await timesMakeSense(docLoad.annotations, 'fetchStart', 'domInteractive');
-    await timesMakeSense(docLoad.annotations, 'fetchStart', 'domComplete');
+    await specUtils.timesMakeSense(browser, docLoad.annotations, 'domContentLoadedEventStart', 'domContentLoadedEventEnd');
+    await specUtils.timesMakeSense(browser, docLoad.annotations, 'loadEventStart', 'loadEventEnd');
+    await specUtils.timesMakeSense(browser, docLoad.annotations, 'fetchStart', 'domInteractive');
+    await specUtils.timesMakeSense(browser, docLoad.annotations, 'fetchStart', 'domComplete');
   }
 };
