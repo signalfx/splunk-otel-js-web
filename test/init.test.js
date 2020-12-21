@@ -83,6 +83,7 @@ describe('test init', () => {
       window.SplunkRum.init({
         beaconUrl: 'https://127.0.0.1:9999/foo',
         app: 'my-app',
+        environment: 'my-env',
         debug: true, //FIXME I don't think tests should use debug: true
         globalAttributes: {customerType: 'GOLD'},
       });
@@ -140,6 +141,7 @@ describe('creating spans is possible', () => {
       assert.ok(!!span.attributes['location.href']);
       assert.ok(!!span.attributes['splunk.scriptInstance']);
       assert.strictEqual(span.attributes['app'], 'my-app');
+      assert.strictEqual(span.attributes['deployment.environment'], 'my-env');
       assert.strictEqual(span.attributes.customerType, 'GOLD');
     });
     span.end();
