@@ -14,8 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-const specUtils = require('../spec-utils');
-
 module.exports = {
   afterEach : function(browser) {
     browser.globals.clearReceivedSpans();  
@@ -33,14 +31,14 @@ module.exports = {
     if (browser.options.desiredCapabilities.browserName.toLowerCase() !==  'safari') {
       await browser.assert.strictEqual(fetchSpan.tags['http.response_content_length'], '49');
     }
-    await browser.assert.ok(fetchSpan.tags['link.traceId']);
-    await browser.assert.ok(fetchSpan.tags['link.spanId']);
-    await specUtils.timesMakeSense(browser, fetchSpan.annotations, 'domainLookupStart', 'domainLookupEnd');
-    await specUtils.timesMakeSense(browser, fetchSpan.annotations, 'connectStart', 'connectEnd');
-    await specUtils.timesMakeSense(browser, fetchSpan.annotations, 'secureConnectionStart', 'connectEnd');
-    await specUtils.timesMakeSense(browser, fetchSpan.annotations, 'requestStart', 'responseStart');
-    await specUtils.timesMakeSense(browser, fetchSpan.annotations, 'responseStart', 'responseEnd');
-    await specUtils.timesMakeSense(browser, fetchSpan.annotations, 'fetchStart', 'responseEnd');
+    await browser.assert.ok(fetchSpan.tags['link.traceId'], 'got link.traceId');
+    await browser.assert.ok(fetchSpan.tags['link.spanId'], 'got link.spanId');
+    await browser.timesMakeSense(fetchSpan.annotations, 'domainLookupStart', 'domainLookupEnd');
+    await browser.timesMakeSense(fetchSpan.annotations, 'connectStart', 'connectEnd');
+    await browser.timesMakeSense(fetchSpan.annotations, 'secureConnectionStart', 'connectEnd');
+    await browser.timesMakeSense(fetchSpan.annotations, 'requestStart', 'responseStart');
+    await browser.timesMakeSense(fetchSpan.annotations, 'responseStart', 'responseEnd');
+    await browser.timesMakeSense(fetchSpan.annotations, 'fetchStart', 'responseEnd');
   },
   'fetch request can be ignored': async function(browser) {
     await browser.url(`${browser.globals.baseUrl}fetch/fetch-ignored.ejs`);

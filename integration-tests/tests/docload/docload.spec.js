@@ -14,8 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-const specUtils = require('../spec-utils');
-
 module.exports = {
 
   'documentFetch, resourceFetch, and documentLoad spans': async function(browser) {
@@ -46,11 +44,11 @@ module.exports = {
     // docFetch
     await browser.assert.strictEqual(docFetch.tags['component'], 'document-load');
     await browser.assert.strictEqual(docFetch.tags['location.href'], url);
-    await specUtils.timesMakeSense(browser, docFetch.annotations, 'domainLookupStart', 'domainLookupEnd');
-    await specUtils.timesMakeSense(browser, docFetch.annotations, 'connectStart', 'connectEnd');
-    await specUtils.timesMakeSense(browser, docFetch.annotations, 'requestStart', 'responseStart');
-    await specUtils.timesMakeSense(browser, docFetch.annotations, 'responseStart', 'responseEnd');
-    await specUtils.timesMakeSense(browser, docFetch.annotations, 'fetchStart', 'responseEnd');
+    await browser.timesMakeSense(docFetch.annotations, 'domainLookupStart', 'domainLookupEnd');
+    await browser.timesMakeSense(docFetch.annotations, 'connectStart', 'connectEnd');
+    await browser.timesMakeSense(docFetch.annotations, 'requestStart', 'responseStart');
+    await browser.timesMakeSense(docFetch.annotations, 'responseStart', 'responseEnd');
+    await browser.timesMakeSense(docFetch.annotations, 'fetchStart', 'responseEnd');
     if (browser.options.desiredCapabilities.browserName !== 'Safari') {
       await browser.assert.ok(docFetch.tags['http.response_content_length'] >= 0, 'Checking response_content_length');
       await browser.assert.ok(docFetch.tags['link.traceId'], 'Checking presence of link.traceId');
@@ -71,9 +69,9 @@ module.exports = {
     await browser.assert.strictEqual(docLoad.tags['component'], 'document-load');
     await browser.assert.strictEqual(docLoad.tags['location.href'], url);
     await browser.assert.ok(docLoad.tags['screen.xy'].match(/[0-9]+x[0-9]+/), 'Checking sanity of screen.xy');
-    await specUtils.timesMakeSense(browser, docLoad.annotations, 'domContentLoadedEventStart', 'domContentLoadedEventEnd');
-    await specUtils.timesMakeSense(browser, docLoad.annotations, 'loadEventStart', 'loadEventEnd');
-    await specUtils.timesMakeSense(browser, docLoad.annotations, 'fetchStart', 'domInteractive');
-    await specUtils.timesMakeSense(browser, docLoad.annotations, 'fetchStart', 'domComplete');
+    await browser.timesMakeSense(docLoad.annotations, 'domContentLoadedEventStart', 'domContentLoadedEventEnd');
+    await browser.timesMakeSense(docLoad.annotations, 'loadEventStart', 'loadEventEnd');
+    await browser.timesMakeSense(docLoad.annotations, 'fetchStart', 'domInteractive');
+    await browser.timesMakeSense(docLoad.annotations, 'fetchStart', 'domComplete');
   }
 };
