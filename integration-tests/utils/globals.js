@@ -111,7 +111,7 @@ module.exports = {
         clockSkew = -clockSkew;
       }
       await this.assert.ok(clockSkew <= fiveMinutes, 'Sanity check for clock skew');
-    },
+    };
   
     // left here for old tests
     browser.globals.baseUrl = base + '/';
