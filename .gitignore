@@ -9,6 +9,7 @@ node_modules/
 *.log
 tests_output/
 /.nightwatch_build_id
+/.http-mitm-proxy
 
 # contains secrets
 .env
