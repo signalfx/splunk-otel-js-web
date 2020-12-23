@@ -23,13 +23,22 @@ module.exports = {
 
     const fetchSpan = await browser.globals.findSpan(span => span.tags['http.url'] === '/some-data');
     await browser.assert.ok(!!fetchSpan, 'Fetch span found.');
-    await browser.assert.ok(fetchSpan.tags['component'], 'fetch');
-    await browser.assert.ok(fetchSpan.tags['ot.status_code'], 'UNSET');
-    await browser.assert.ok(fetchSpan.tags['http.status_code'], '200');
-    await browser.assert.ok(fetchSpan.tags['http.status_text'], 'OK');
-    await browser.assert.ok(fetchSpan.tags['http.method'], 'GET');
-    await browser.assert.ok(fetchSpan.tags['http.url'], '/some-data1');
-    await browser.assert.ok(fetchSpan.tags['location.href'], browser.globals.defaultUrl);
+    await browser.assert.strictEqual(fetchSpan.tags['component'], 'fetch');
+    await browser.assert.strictEqual(fetchSpan.tags['http.status_code'], '200');
+    await browser.assert.strictEqual(fetchSpan.tags['http.status_text'], 'OK');
+    await browser.assert.strictEqual(fetchSpan.tags['http.method'], 'GET');
+    await browser.assert.strictEqual(fetchSpan.tags['http.url'], '/some-data');
+    if (browser.options.desiredCapabilities.browserName.toLowerCase() !==  'safari') {
+      await browser.assert.strictEqual(fetchSpan.tags['http.response_content_length'], '49');
+    }
+    await browser.assert.ok(fetchSpan.tags['link.traceId'], 'got link.traceId');
+    await browser.assert.ok(fetchSpan.tags['link.spanId'], 'got link.spanId');
+    await browser.timesMakeSense(fetchSpan.annotations, 'domainLookupStart', 'domainLookupEnd');
+    await browser.timesMakeSense(fetchSpan.annotations, 'connectStart', 'connectEnd');
+    await browser.timesMakeSense(fetchSpan.annotations, 'secureConnectionStart', 'connectEnd');
+    await browser.timesMakeSense(fetchSpan.annotations, 'requestStart', 'responseStart');
+    await browser.timesMakeSense(fetchSpan.annotations, 'responseStart', 'responseEnd');
+    await browser.timesMakeSense(fetchSpan.annotations, 'fetchStart', 'responseEnd');
   },
   'fetch request can be ignored': async function(browser) {
     await browser.url(`${browser.globals.baseUrl}fetch/fetch-ignored.ejs`);
