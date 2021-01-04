@@ -62,7 +62,7 @@ module.exports = {
     await browser.assert.ok(!!wsConnectionSpan, 'Connect span missing');     
     await browser.click('#sendWs');
     const wsMessage = await browser.globals.findSpan(span => span.name === 'onmessage');
-    await browser.assert.ok(!!wsMessage);
+    await browser.assert.ok(!!wsMessage, 'Onmessage span missing');
     await browser.assert.strictEqual(wsMessage.kind, 'CONSUMER');
     await browser.assert.strictEqual(wsMessage.tags['component'], 'websocket');
     await browser.assert.strictEqual(wsMessage.tags['protocol'], '');
@@ -70,7 +70,7 @@ module.exports = {
     await browser.assert.strictEqual(wsMessage.tags['http.response_content_length'], '7');
 
     const wsSend = browser.globals.receivedSpans.find(span => span.name === 'send');
-    await browser.assert.ok(!!wsSend);
+    await browser.assert.ok(!!wsSend, 'Send span missing');
     await browser.assert.strictEqual(wsSend.kind, 'PRODUCER');
     await browser.assert.strictEqual(wsSend.tags['component'], 'websocket');
     await browser.assert.strictEqual(wsSend.tags['protocol'], '');
@@ -117,7 +117,7 @@ module.exports = {
 
     await browser.click('#sendWs');
     const wsMessage = await browser.globals.findSpan(span => span.name === 'onmessage');
-    await browser.assert.ok(!!wsMessage);
+    await browser.assert.ok(!!wsMessage, 'Onmessage span missing');
     await browser.assert.strictEqual(wsMessage.kind, 'CONSUMER');
     await browser.assert.strictEqual(wsMessage.tags['component'], 'websocket');
     await browser.assert.strictEqual(wsMessage.tags['protocol'], 'soap');
@@ -125,7 +125,7 @@ module.exports = {
     await browser.assert.strictEqual(wsMessage.tags['http.response_content_length'], '7');
 
     const wsSend = browser.globals.receivedSpans.find(span => span.name === 'send');
-    await browser.assert.ok(!!wsSend);
+    await browser.assert.ok(!!wsSend, 'Send span missing');
     await browser.assert.strictEqual(wsSend.kind, 'PRODUCER');
     await browser.assert.strictEqual(wsSend.tags['component'], 'websocket');
     await browser.assert.strictEqual(wsSend.tags['protocol'], 'soap');
