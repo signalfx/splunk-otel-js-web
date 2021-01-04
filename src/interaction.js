@@ -16,21 +16,31 @@ limitations under the License.
 
 import {UserInteractionPlugin} from '@opentelemetry/plugin-user-interaction';
 
-const allowedEventTypes = {
-  click: true,
-  dblclick: true,
-  submit: true,
-  reset: true,
-  dragend: true,
-  drop: true,
-  ended: true,
-  pause: true,
-  play: true,
-  change: true,
-  mousedown: true,
-  mouseup: true,
-};
+const allowedEventTypes = [
+  // pointer
+  'click',
+  'dblclick',
+  'mousedown',
+  'mouseup',
 
+  // form
+  'submit',
+  'reset',
+  'change',
+
+  // drap & drop
+  'dragend',
+  'drop',
+
+  // media
+  'ended',
+  'pause',
+  'play',
+
+  // keyboard
+  'keydown',
+  'keyup',
+];
 
 export class SplunkUserInteractionPlugin extends UserInteractionPlugin {
   getZoneWithPrototype() {
@@ -39,7 +49,7 @@ export class SplunkUserInteractionPlugin extends UserInteractionPlugin {
   }
 
   _allowEventType(eventType) {
-    return allowedEventTypes[eventType];
+    return allowedEventTypes.includes(eventType);
   }
 
   emitRouteChangeSpan(oldHref) {

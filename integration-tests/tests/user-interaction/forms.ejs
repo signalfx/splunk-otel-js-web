@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Forms events test</title>
+  <%- renderAgent() %>
+  
+</head>
+<body>
+  <h1>Forms events test</h1>
+
+  <form action="" method="GET" id="form1">
+    <button type="submit" id="btnSubmit">Submit</button>
+  </form>
+
+  <pre id="scenarioDisplay"></pre>
+  <script id="scenario">
+    document.querySelector('#form1').addEventListener('submit', (e) => {
+      e.preventDefault();
+      // run ajax submit
+    });
+  </script>
+  <script>scenarioDisplay.innerHTML = scenario.innerHTML;</script>
+</body>
+</html>
