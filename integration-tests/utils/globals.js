@@ -52,7 +52,7 @@ module.exports = {
     browser.globals.receivedSpans = spans;
     browser.globals.rumVersion = require('../../package.json').version;
     browser.globals.clearReceivedSpans = () => { spans.length = 0; };
-    browser.globals.findSpan = (testFn) => findSpan(spans, testFn);
+    browser.globals.findSpan = (testFn, timeout = 0) => findSpan(spans, testFn, timeout);
     browser.globals.emulateTabSwitchingAway = async () => {
       await browser.execute(() => {
         Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
@@ -71,6 +71,7 @@ module.exports = {
     const wsProtocol = browser.globals.enableHttps ? 'wss' : 'ws';
     const httpProtocol = browser.globals.enableHttps ? 'https' : 'http';
     const base = `${httpProtocol}://${browser.globals.host}:${browser.globals._backend.port}`;
+    browser.globals.wsBase = `${wsProtocol}://${browser.globals.host}:${browser.globals._backend.websocketsPort}/`;
     const AVAILABLE_SEARCH_PARAMS = {
       wsProtocol: wsProtocol,
       wsPort: browser.globals._backend.websocketsPort  

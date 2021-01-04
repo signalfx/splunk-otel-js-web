@@ -124,6 +124,7 @@ function getSpans(spanOrSpans) {
   return [{
     name: spanOrSpans.name,
     tags: spanOrSpans.tags,
+    kind: spanOrSpans.kind,
     annotations: spanOrSpans.annotations,
     traceId: spanOrSpans.traceId,
     id: spanOrSpans.id,
@@ -210,13 +211,13 @@ exports.run = async function run({onSpanReceived, enableHttps}) {
     serverOptions: wsOptions,
     websocketServer,
   } = await startWebsocketServer({ enableHttps });
+
   websocketServer.on('connection', function connection(ws) {
+    console.log('websocket connected');
     ws.on('message', function incoming(message) {
-      console.log('received: %s', message);
-      ws.send(message);
+      console.log('ws received: ', message);
+      ws.send('success');
     });
-  
-    ws.send('connected');
   });
 
   console.log(`App accessible at: ${enableHttps ? 'https' : 'http'}://${httpOptions.hostname}:${httpPort}/`);
