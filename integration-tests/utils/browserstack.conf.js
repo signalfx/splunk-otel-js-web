@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 const path = require('path');
-const { getCurrentBuildId } = require('./buildApi');
 
 console.log('Loading config.');
 if (!process.env.BROWSERSTACK_USER || !process.env.BROWSERSTACK_KEY) {
@@ -57,7 +56,6 @@ const nightwatch_config = {
 
         // metadata for grouping sessions in browserstack
         project: require('../../package.json').name,
-        build: getCurrentBuildId(),
       },
       globals: {
         host: 'bs-local.com',

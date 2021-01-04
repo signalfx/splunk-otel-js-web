@@ -14,20 +14,26 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-const { execSync } = require('child_process');
-
-function sanitizeCliOut(out) {
-  return out.toString().replace(/\n/g, '');
+function generateHex(length) {
+  return [...Array(length).keys()].map(() => parseInt(Math.random() * 16).toString(16)).join('');
 }
 
-function generateBuildId() {
-  const commitId = process.env.CIRCLE_SHA1 || sanitizeCliOut(execSync('git rev-parse HEAD'));
-  const author = process.env.CIRCLE_PR_USERNAME || sanitizeCliOut(execSync('whoami'));
-  const when = new Date().toJSON();
+function generateServerTiming() {
+  const traceId = generateHex(32);
+  const spanId = generateHex(16);
+  const formatted = `traceparent;desc="00-${traceId}-${spanId}-01"`;
+  return {
+    traceId,
+    spanId,
+    header: formatted,
+  };
+}
 
-  return `${author}-${when}-${commitId.substring(0, 8)}`;
+function setServerTimingHeader(responseObject, serverTiming = generateServerTiming()) {
+  responseObject.set('Server-Timing', serverTiming.header);
 }
 
 module.exports = {
-  generateBuildId,
+  generateServerTiming,
+  setServerTimingHeader,
 };

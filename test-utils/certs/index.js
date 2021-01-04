@@ -14,20 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-const { execSync } = require('child_process');
+const path = require('path');
+const fs = require('fs');
 
-function sanitizeCliOut(out) {
-  return out.toString().replace(/\n/g, '');
-}
-
-function generateBuildId() {
-  const commitId = process.env.CIRCLE_SHA1 || sanitizeCliOut(execSync('git rev-parse HEAD'));
-  const author = process.env.CIRCLE_PR_USERNAME || sanitizeCliOut(execSync('whoami'));
-  const when = new Date().toJSON();
-
-  return `${author}-${when}-${commitId.substring(0, 8)}`;
+function getCertificateConfig() {
+  return {
+    key: fs.readFileSync(path.join(__dirname, 'server.key'), 'utf8'),
+    cert: fs.readFileSync(path.join(__dirname, 'server.cert'), 'utf8'),
+  };
 }
 
 module.exports = {
-  generateBuildId,
+  getCertificateConfig,
 };
