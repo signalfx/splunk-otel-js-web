@@ -43,7 +43,7 @@ const nightwatch_config = {
         'browserstack.local': true,
         'browserstack.debug': true,
 
-        'browserstack.console': 'errors',
+        'browserstack.console': 'verbose',
         'browserstack.networkLogs': true,
         'browserstack.wsLocalSupport': 'true',
         'browserstack.selenium_version': '3.14.0',
@@ -68,6 +68,7 @@ const nightwatch_config = {
         os_version: '10',
         browserName: 'Chrome',
         browser_version: 'latest',
+        'browserstack.selenium_version' : '4.0.0-alpha-6'
       }
     },
     firefox: {

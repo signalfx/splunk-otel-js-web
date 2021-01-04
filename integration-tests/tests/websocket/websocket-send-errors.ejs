@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Websocket</title>
+
+	<%- renderAgent({debug: true}) %>
+</head>
+<body>
+	<h1>Websocket send errors</h1>
+	<button id="connectWs" type="button">Connect to a websockets server</button>
+	<script>
+			let socket;
+			connectWs.addEventListener('click', () => {
+				const params = new URLSearchParams(window.location.search);
+				socket = new WebSocket(`${params.get('wsProtocol')}://${document.location.hostname}:${params.get('wsPort')}/`);
+				socket.send('Hello world!');
+			});
+	</script>
+</body>
+</html>

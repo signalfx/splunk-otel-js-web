@@ -7,7 +7,7 @@
 	<%- renderAgent({debug: true}) %>
 </head>
 <body>
-	<h1>Websocket</h1>
+	<h1>Websocket sub protocol</h1>
 	<button id="connectWs" type="button">Connect to a websockets server</button>
 	<button id="sendWs" type="button">Send</button>
 	<script>
@@ -16,7 +16,7 @@
 				const params = new URLSearchParams(window.location.search);
 				const url = `${params.get('wsProtocol')}://${document.location.hostname}:${params.get('wsPort')}/`;
 				console.log('WS URL: ', url);
-				socket = new WebSocket(url);
+				socket = new WebSocket(url, ["soap"]);
 
 				socket.addEventListener('message', function (event) {
 					console.log('Message from server ', event.data);
@@ -29,7 +29,6 @@
 
 			sendWs.addEventListener('click', function() {
 				socket.send('hello world!');
-
 			});
 	</script>
 </body>
