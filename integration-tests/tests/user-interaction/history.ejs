@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>History events test</title>
+  <%- renderAgent() %>
+  
+</head>
+<body>
+  <h1>History events test</h1>
+
+  <button type="button" id="btnGoToPage">Go to another page</button>
+  <button type="button" id="btnGoBack">Go back</button>
+  <button type="button" id="btnGoForward">Go back</button>
+
+  <pre id="scenarioDisplay"></pre>
+  <script id="scenario">
+    document.querySelector('#btnGoToPage').addEventListener('click', function () {
+      location.hash = 'another-page';
+    });
+    document.querySelector('#btnGoBack').addEventListener('click', function () {
+      history.back();
+    });
+    document.querySelector('#btnGoForward').addEventListener('click', function () {
+      history.forward();
+    });
+  </script>
+  <script>scenarioDisplay.innerHTML = scenario.innerHTML;</script>
+</body>
+</html>

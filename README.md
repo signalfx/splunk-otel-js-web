@@ -135,6 +135,10 @@ Not all supported browsers support all features/attributes, but the following br
 - Edge 79+
 - IE not currently supported
 
+### Known issues
+
+Auto-instrumentation doesn't currently capture events handled on `document` level, ie. `document.addEventListener(...)`.
+
 ## Building and contributing
 
 Please read [CONTRIBUTING.md](./docs/CONTRIBUTING.md) for instructions on building, running tests, and so forth.
