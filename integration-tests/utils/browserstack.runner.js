@@ -18,7 +18,7 @@ require('dotenv').config();
 
 const Nightwatch = require('nightwatch');
 const browserstack = require('browserstack-local');
-const { clearBuildId, generateBuildId } = require('./buildApi');
+const { generateBuildId } = require('./buildApi');
 
 
 function generateHex(length) {
@@ -52,9 +52,8 @@ function createTunnel({localIdentifier}) {
 }
 
 async function runTests(argv) {
-  let buildId;
+  const buildId = generateBuildId();
   try {
-    buildId = generateBuildId();
     console.log(`Starting build ${buildId}`);
 
     console.log('Starting tunnel.');
@@ -88,7 +87,6 @@ async function runTests(argv) {
     process.stderr.write(e.stack + '\n');
     process.exit(2);
   } finally {
-    clearBuildId();
     console.log(`Finished build ${buildId}`);
   }
 }
