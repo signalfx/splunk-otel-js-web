@@ -44,7 +44,6 @@ jobs:
       fail-fast: false
       matrix:
         browser: [safari, edge]
-        experimental: [true] # due to instabilities of integration tests, let these fail, provided we review failures manually
     steps:
       - name: Checkout
         uses: actions/checkout@v1
@@ -65,8 +64,7 @@ jobs:
       - run: npm run build:prod
       - name: Run integration tests in Browserstack
         run: node ./integration-tests/utils/browserstack.runner.js -e ${{ matrix.browser }} -c ./integration-tests/utils/browserstack.conf.js
-        continue-on-error: true
-        timeout-minutes: 10
+        timeout-minutes: 15
 
   local-integration-tests:
     runs-on: ubuntu-latest
