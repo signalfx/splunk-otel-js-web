@@ -97,7 +97,7 @@ if (!window.SplunkRum) {
     this.setGlobalAttributes = function(attributes) {
       globalAttributes = typeof attributes === 'object' ? attributes : {};
       if (options.environment) {
-        globalAttributes['deployment.environment'] = options.environment;
+        globalAttributes['environment'] = options.environment;
       }
     };
     this.setGlobalAttributes(options.globalAttributes);

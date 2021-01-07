@@ -141,7 +141,7 @@ describe('creating spans is possible', () => {
       assert.ok(!!span.attributes['location.href']);
       assert.ok(!!span.attributes['splunk.scriptInstance']);
       assert.strictEqual(span.attributes['app'], 'my-app');
-      assert.strictEqual(span.attributes['deployment.environment'], 'my-env');
+      assert.strictEqual(span.attributes['environment'], 'my-env');
       assert.strictEqual(span.attributes.customerType, 'GOLD');
     });
     span.end();
