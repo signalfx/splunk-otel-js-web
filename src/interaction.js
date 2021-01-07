@@ -16,40 +16,43 @@ limitations under the License.
 
 import {UserInteractionPlugin} from '@opentelemetry/plugin-user-interaction';
 
-const allowedEventTypes = [
+export const DEFAULT_AUTO_INSTRUMENTED_EVENTS = {
   // pointer
-  'click',
-  'dblclick',
-  'mousedown',
-  'mouseup',
+  click: true,
+  dblclick: true,
+  mousedown: true,
+  mouseup: true,
 
   // form
-  'submit',
-  'reset',
-  'change',
+  submit: true,
+  reset: true,
+  change: true,
 
   // drap & drop
-  'dragend',
-  'drop',
+  dragend: true,
+  drop: true,
 
   // media
-  'ended',
-  'pause',
-  'play',
-
-  // keyboard
-  'keydown',
-  'keyup',
-];
+  ended: true,
+  pause: true,
+  play: true,
+};
 
 export class SplunkUserInteractionPlugin extends UserInteractionPlugin {
+  constructor({adjustAutoInstrumentedEvents}) {
+    super();
+    this._autoInstrumentedEvents = adjustAutoInstrumentedEvents ?
+      Object.assign({}, DEFAULT_AUTO_INSTRUMENTED_EVENTS, adjustAutoInstrumentedEvents) :
+      DEFAULT_AUTO_INSTRUMENTED_EVENTS;
+  }
+
   getZoneWithPrototype() {
     // FIXME work out ngZone issues with Angular  PENDING
     return undefined;
   }
 
   _allowEventType(eventType) {
-    return allowedEventTypes.includes(eventType);
+    return !!this._autoInstrumentedEvents[eventType];
   }
 
   emitRouteChangeSpan(oldHref) {
