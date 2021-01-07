@@ -57,4 +57,26 @@ module.exports = {
     await browser.assert.strictEqual(mouseUpSpan.tags['target_xpath'], '//*[@id="btn1"]');
     await browser.assert.strictEqual(mouseUpSpan.tags['ot.status_code'], 'UNSET');
   },
+  'handles disabling of mouse events': async function(browser) {
+    browser.globals.clearReceivedSpans();
+    await browser.url(browser.globals.getUrl('/user-interaction/mouse-disabled.ejs'));
+    await browser.click('#btn1');
+    await browser.click('#btnGuard');
+
+    const guardSpan = await browser.globals.findSpan(span => span.name === 'guard');
+    await browser.assert.ok(guardSpan, 'Checking presence of guard span.');
+
+    await browser.assert.not.ok(
+      browser.globals.receivedSpans.find(span => span.name === 'mouseup'),
+      'Ensuring no mouseup span arrived.'
+    );
+    await browser.assert.not.ok(
+      browser.globals.receivedSpans.find(span => span.name === 'mousedown'),
+      'Ensuring no mousedown span arrived.'
+    );
+    await browser.assert.not.ok(
+      browser.globals.receivedSpans.find(span => span.name === 'click'),
+      'Ensuring no click span arrived.'
+    );
+  },
 };

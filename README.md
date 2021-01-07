@@ -67,6 +67,7 @@ Please read [INSTALLING.md](./docs/INSTALLING.md) for more advanced installation
 | debug | boolean | Turns on/off internal debug logging | No | false |
 | ignoreUrls | array | Applies for XHR,Fetch and Websocket URLs. URLs that partially match any regex in ignoreUrls will not be traced. In addition, URLs that are _exact matches_ of strings in ignoreUrls will also not be traced. | No | [] |
 | spanProcessor | SpanProcessor | Offers ability to alter/remove data in-browser.  See below for more details | No | (undefined) |
+| adjustAutoInstrumentedEvents | { [DOM Event Name]?: boolean } | Set keys to `false` to disable events handled by default. Set additional keys to true to auto-instrument `addEventListener` handlers. | No | Please check `window.SplunkRum.DEFAULT_AUTO_INSTRUMENTED_EVENTS` |
 
 ### `SplunkRum.setGlobalAttributes(attributes)`
 
