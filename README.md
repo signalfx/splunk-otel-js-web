@@ -60,7 +60,7 @@ Please read [INSTALLING.md](./docs/INSTALLING.md) for more advanced installation
 | beaconUrl | string | Destination for the captured data | Yes | (No default) |
 | rumAuth | string | Publicly-visible `rumAuth` value.  Please do not paste any other access token or auth value into here, as this will be visible to every user of your app | Yes | (No default) |
 | app | string | Application name | No | 'unknown-browser-app' |
-| environment | string | Sets a value for the `deployment.environment` attribute (persists through calls to `setGlobalAttributes()`) | No | (No default) |
+| environment | string | Sets a value for the `environment` attribute (persists through calls to `setGlobalAttributes()`) | No | (No default) |
 | globalAttributes | object | Extra attributes to add to each reported span.  See also `setGlobalAttributes` | No | {} |
 | captureErrors | boolean | Turns on/off error reporting feature | No | true |
 | allowInsecureBeacon | boolean | Allows http beacon urls | No | false |
