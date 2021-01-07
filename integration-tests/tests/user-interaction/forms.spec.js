@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 module.exports = {
-  'handles hash navigation': async function(browser) {
+  'handles form submit': async function(browser) {
     browser.globals.clearReceivedSpans();
 
     const startUrl = browser.globals.getUrl('/user-interaction/forms.ejs');
