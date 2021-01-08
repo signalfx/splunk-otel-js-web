@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Mouse events test</title>
+  <%- renderAgent() %>
+  
+</head>
+<body>
+  <h1>Mouse events test</h1>
+
+  <button type="button" id="btn1">Button</button>
+
+  <pre id="scenarioDisplay"></pre>
+  <script id="scenario">
+    btn1.addEventListener('click', function () {
+      fetch('/some-data').then(response => response.json()).then(console.log);
+    });
+  </script>
+  <script>scenarioDisplay.innerHTML = scenario.innerHTML;</script>
+</body>
+</html>
