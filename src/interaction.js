@@ -41,9 +41,7 @@ export const DEFAULT_AUTO_INSTRUMENTED_EVENTS = {
 export class SplunkUserInteractionPlugin extends UserInteractionPlugin {
   constructor({adjustAutoInstrumentedEvents}) {
     super();
-    this._autoInstrumentedEvents = adjustAutoInstrumentedEvents ?
-      Object.assign({}, DEFAULT_AUTO_INSTRUMENTED_EVENTS, adjustAutoInstrumentedEvents) :
-      DEFAULT_AUTO_INSTRUMENTED_EVENTS;
+    this._autoInstrumentedEvents = Object.assign({}, DEFAULT_AUTO_INSTRUMENTED_EVENTS, adjustAutoInstrumentedEvents);
   }
 
   getZoneWithPrototype() {
