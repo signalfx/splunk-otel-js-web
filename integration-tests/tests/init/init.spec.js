@@ -14,10 +14,37 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+const { sortAndDeduplicateDiagnostics } = require("typescript");
+
 module.exports = {
   'No spans sent when no beacon url set': async function(browser) {
-    await browser.url(browser.globals.getUrl('/init/init.ejs'));
+    await browser.url(browser.globals.getUrl('/init/nobeacon.ejs'));
     const span = await browser.globals.findSpan(() => {return true;});
     await browser.assert.not.ok(span);
-  }
+  },
+  'attribute-related config should work': async function(browser) {
+    browser.globals.clearReceivedSpans();
+    await browser.url(browser.globals.getUrl('/init/attributes.ejs'));
+    const span = await browser.globals.findSpan(span => span.name === 'documentLoad');    
+    await browser.assert.ok(span);
+    await browser.assert.strictEqual(span.tags['app'], 'custom-app');
+    await browser.assert.strictEqual(span.tags['environment'], 'custom-environment');
+    await browser.assert.strictEqual(span.tags['key1'], 'value1');
+    await browser.assert.strictEqual(span.tags['key2'], 'value2');
+
+    await browser.click('#clickToChangeAttributes');
+
+    const span2 = await browser.globals.findSpan(span => span.tags['error.message'] === 'fake error');    
+    await browser.assert.ok(span2);
+    // environment still set (not cleared by setGlobalAttributes call)
+    await browser.assert.strictEqual(span2.tags['environment'], 'custom-environment');
+    await browser.assert.strictEqual(span2.tags['key1'], 'newvalue1');
+    await browser.assert.strictEqual(span2.tags['key2'], undefined);
+  },
+  'captureErrors controls error capture': async function(browser) {
+    browser.globals.clearReceivedSpans();
+    await browser.url(browser.globals.getUrl('/init/captureErrors.ejs'));
+    const span = await browser.globals.findSpan(span => span.tags.component === 'error');
+    await browser.assert.not.ok(span);
+  },
 };

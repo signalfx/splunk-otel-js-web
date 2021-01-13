@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Test init</title>
+
+	<%- renderAgent({captureErrors: false}) %>
+</head>
+<body>
+	<p>Attributes</p>
+</body>
+<script>
+		SplunkRum.error('fake error');
+</script>
+</html>

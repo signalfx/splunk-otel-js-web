@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Test init</title>
+
+	<%- renderAgent({app:'custom-app', environment: 'custom-environment', globalAttributes: {'key1': 'value1', 'key2': 'value2'}}) %>
+</head>
+<body>
+	<p>Attributes</p>
+</body>
+<script>
+	function changeAttributes() {
+		SplunkRum.setGlobalAttributes({'key1': 'newvalue1'});
+		// force a new event to be sent
+		SplunkRum.error('fake error');
+	}
+</script>
+<a id="clickToChangeAttributes" href="javascript:changeAttributes()">changeAttributes</a>
+</html>
