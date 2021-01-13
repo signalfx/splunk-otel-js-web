@@ -17,7 +17,7 @@ limitations under the License.
 import * as assert from 'assert';
 import {DocumentLoad} from '@opentelemetry/plugin-document-load';
 import {UserInteractionPlugin} from '@opentelemetry/plugin-user-interaction';
-import {XMLHttpRequestPlugin} from '@opentelemetry/plugin-xml-http-request';
+import {XMLHttpRequestInstrumentation} from '@opentelemetry/instrumentation-xml-http-request';
 import {FetchPlugin} from '@opentelemetry/plugin-fetch';
 
 // These are test-time checks that the methods we're patching at least still exist
@@ -33,7 +33,7 @@ describe('check patching assumptions', () => {
     assert.ok(typeof new UserInteractionPlugin()._patchHistoryMethod === 'function');
   });
   it('xhr', () => {
-    assert.ok(typeof new XMLHttpRequestPlugin()._createSpan === 'function');
+    assert.ok(typeof new XMLHttpRequestInstrumentation()._createSpan === 'function');
   });
   it('fetch', () => {
     assert.ok(typeof new FetchPlugin()._addFinalSpanAttributes === 'function');

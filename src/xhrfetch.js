@@ -14,11 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {XMLHttpRequestPlugin} from '@opentelemetry/plugin-xml-http-request';
+import {XMLHttpRequestInstrumentation} from '@opentelemetry/instrumentation-xml-http-request';
 import {FetchPlugin} from '@opentelemetry/plugin-fetch';
 import {captureTraceParent} from './servertiming';
 
-export class SplunkXhrPlugin extends XMLHttpRequestPlugin {
+export class SplunkXhrPlugin extends XMLHttpRequestInstrumentation {
   _createSpan(xhr, url, method) {
     const span = super._createSpan(xhr, url, method);
     // if this url is ignored then there is no span
