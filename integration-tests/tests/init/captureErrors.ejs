@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Test init</title>
+
+	<%- renderAgent({captureErrors: false}) %>
+</head>
+<body>
+	<p>captureErrors: false</p>
+</body>
+<script>
+		SplunkRum.error('fake error');
+		SplunkRum.provider.getTracer('default').startSpan('error-guard-span').end();
+</script>
+</html>
