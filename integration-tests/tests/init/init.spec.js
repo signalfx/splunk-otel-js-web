@@ -42,6 +42,8 @@ module.exports = {
   'captureErrors controls error capture': async function(browser) {
     browser.globals.clearReceivedSpans();
     await browser.url(browser.globals.getUrl('/init/captureErrors.ejs'));
+    const errorGuard = await browser.globals.findSpan(span => span.name === 'error-guard-span');
+    await browser.assert.ok(errorGuard);
     const lackOfError = await browser.globals.findSpan(span => span.tags.component === 'error');
     await browser.assert.not.ok(lackOfError);
   },

@@ -7,9 +7,10 @@
 	<%- renderAgent({captureErrors: false}) %>
 </head>
 <body>
-	<p>Attributes</p>
+	<p>captureErrors: false</p>
 </body>
 <script>
 		SplunkRum.error('fake error');
+		SplunkRum.provider.getTracer('default').startSpan('error-guard-span').end();
 </script>
 </html>
