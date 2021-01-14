@@ -27,6 +27,7 @@ import {findCookieValue, generateId, isIframe} from './utils';
 import {version as SplunkRumVersion} from '../package.json';
 import {WebSocketInstrumentation} from './websocket';
 import { initWebVitals } from './webvitals';
+import { SplunkLongTaskPlugin } from './longtask';
 
 function browserSupported() {
   // FIXME very short-term patch for Safari 10.1 -> upstream fixes pending
@@ -140,6 +141,7 @@ if (!window.SplunkRum) {
         new SplunkXhrPlugin(pluginConf),
         new SplunkFetchPlugin(pluginConf),
         new SplunkUserInteractionPlugin({ adjustAutoInstrumentedEvents }),
+        new SplunkLongTaskPlugin(),
       ],
       logLevel: options.debug ? LogLevel.DEBUG : LogLevel.ERROR,
     });
