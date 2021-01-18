@@ -1,5 +1,5 @@
 /*
-Copyright 2020 Splunk Inc.
+Copyright 2021 Splunk Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,18 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { BasePlugin, hrTime } from '@opentelemetry/core';
+import { hrTime } from '@opentelemetry/core';
+import { InstrumentationBase } from '@opentelemetry/instrumentation';
+
 import { version } from '../package.json';
 
 const LONGTASK_PERFORMANCE_TYPE = 'longtask';
-const MODULE_NAME = 'longtask';
+const MODULE_NAME = 'splunk-longtask';
 
-export class SplunkLongTaskPlugin extends BasePlugin {
-  constructor() {
-    super('longtask', version);
+export class SplunkLongTaskInstrumentation extends InstrumentationBase {
+  constructor(config = {}) {
+    super(MODULE_NAME, version, Object.assign({}, config));
   }
 
-  patch() {
+  init() {}
+
+  enable() {
     if (!this._isSupported()) {
       return;
     }
@@ -33,10 +37,10 @@ export class SplunkLongTaskPlugin extends BasePlugin {
     this._longtaskObserver = new PerformanceObserver((list) => {
       list.getEntries().forEach((entry) => this._createSpanFromEntry(entry));
     });
-    this._longtaskObserver.observe({entryTypes: [LONGTASK_PERFORMANCE_TYPE]});
+    this._longtaskObserver.observe({type: [LONGTASK_PERFORMANCE_TYPE], buffered: true});
   }
 
-  unpatch() {
+  disable() {
     if (!this._isSupported()) {
       return;
     }
@@ -46,7 +50,7 @@ export class SplunkLongTaskPlugin extends BasePlugin {
 
   _createSpanFromEntry(entry) {
     const span = this._tracer.startSpan(
-      'longtask',
+      LONGTASK_PERFORMANCE_TYPE,
       {
         startTime: hrTime(entry.startTime),
       }
@@ -74,6 +78,7 @@ export class SplunkLongTaskPlugin extends BasePlugin {
   }
 
   _isSupported() {
-    return !!window.PerformanceObserver;
+    return window.PerformanceObserver &&
+      window.PerformanceObserver.supportedEntryTypes.includes(LONGTASK_PERFORMANCE_TYPE);
   }
 }

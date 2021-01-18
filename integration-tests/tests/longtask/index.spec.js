@@ -19,9 +19,9 @@ function valueIsWithin(value, expected, margin) {
 }
 
 function isSupported(browser) {
-  const SUPPORTED_BROWSERS = ['Chrome', 'Edge'];
+  const SUPPORTED_BROWSERS = ['chrome', 'edge'];
   const currentBrowser = browser.options.desiredCapabilities.browserName;
-  return SUPPORTED_BROWSERS.includes(currentBrowser);
+  return SUPPORTED_BROWSERS.includes(currentBrowser.toLowerCase());
 }
 
 module.exports = {
@@ -36,10 +36,13 @@ module.exports = {
 
     const longtaskSpan = await browser.globals.findSpan(span => span.name === 'longtask');
     await browser.assert.ok(!!longtaskSpan, 'Checking longtask span presence.');
-    await browser.assert.strictEqual(longtaskSpan.tags['component'], 'longtask', 'component');
+    await browser.assert.strictEqual(longtaskSpan.tags['component'], 'splunk-longtask', 'component');
     await browser.assert.strictEqual(longtaskSpan.tags['longtask.name'], 'self', 'longtask.name');
     await browser.assert.strictEqual(longtaskSpan.tags['longtask.entry_type'], 'longtask', 'longtask.entry_type');
-    await browser.assert.ok(valueIsWithin(parseFloat(longtaskSpan.tags['longtask.duration']), 55, 10), 'Duration is within norm.');
+
+    const duration = parseFloat(longtaskSpan.tags['longtask.duration']);
+    await browser.assert.ok(valueIsWithin(duration, 55, 15), `Duration (${duration}) is within 15ms of 55ms.`);
+    
     await browser.assert.strictEqual(longtaskSpan.tags['longtask.attribution[0].name'], 'unknown', 'longtask.attribution[0].name');
     await browser.assert.strictEqual(longtaskSpan.tags['longtask.attribution[0].entry_type'], 'taskattribution', 'longtask.attribution[0].entry_type');
     await browser.assert.strictEqual(longtaskSpan.tags['longtask.attribution[0].start_time'], '0', 'longtask.attribution[0].start_time');
