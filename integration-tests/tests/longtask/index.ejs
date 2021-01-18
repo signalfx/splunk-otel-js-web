@@ -15,11 +15,7 @@
     const LONGTASK_DURATION = 50 * 1.1; // add 10% margin
     function generateLongTask() {
       const startingTimestamp = performance.now();
-      
-      const value = 999999;
-      while (performance.now() - startingTimestamp < LONGTASK_DURATION) {
-        for (let i = 0; i < 1000; i++) { Math.sqrt(value); }
-      }
+      while (performance.now() - startingTimestamp < LONGTASK_DURATION) {}
     };
 
     document.querySelector('#btnLongtask').addEventListener('click', () => {
