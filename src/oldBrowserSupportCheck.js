@@ -15,6 +15,11 @@ limitations under the License.
 */
 
 if( typeof Symbol !== 'function') {
-  window.SplunkRum = { init: function(){} };
+  const noop = function(){}; 
+  window.SplunkRum = { 
+    init: noop,
+    error: noop,
+    setGlobalAttributes: noop
+  };
   throw new Error('SplunkRum: browser not supported, disabling instrumentation.');
 }
