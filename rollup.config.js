@@ -1,4 +1,3 @@
-/* eslint-disable header/header */
 import json from '@rollup/plugin-json';
 import alias from '@rollup/plugin-alias';
 import commonjs from '@rollup/plugin-commonjs';
