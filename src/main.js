@@ -21,7 +21,7 @@ import {WebTracerProvider} from '@opentelemetry/web';
 import {LogLevel} from '@opentelemetry/core';
 import {SplunkDocumentLoad} from './docload';
 import {SplunkXhrPlugin, SplunkFetchPlugin} from './xhrfetch';
-import {SplunkUserInteractionPlugin} from './interaction';
+import {SplunkUserInteractionPlugin, DEFAULT_AUTO_INSTRUMENTED_EVENTS} from './interaction';
 import {PatchedZipkinExporter} from './zipkin';
 import {captureErrors} from './errors';
 import {findCookieValue, generateId, isIframe} from './utils';
@@ -34,12 +34,20 @@ function browserSupported() {
   return window.PerformanceObserver && performance.getEntriesByType;
 }
 
+const OPTIONS_DEFAULTS = {
+  app: 'unknown-browser-app',
+  adjustAutoInstrumentedEvents: {},
+};
+
 if (!window.SplunkRum) {
   window.SplunkRum = {
-    inited: false
+    inited: false,
+    DEFAULT_AUTO_INSTRUMENTED_EVENTS,
   };
 
-  window.SplunkRum.init = function (options) {
+  window.SplunkRum.init = function (options = {}) {
+    options = Object.assign({}, OPTIONS_DEFAULTS, options);
+
     // Check more frequently in the case of SPA/long-lived document
     const SessionTimeoutSeconds = 24 * 60 * 60;
     const SessionTimeoutCheckSeconds = 60 * 60;
@@ -66,7 +74,7 @@ if (!window.SplunkRum) {
         console.log('rumAuth will be required in the future');
       }
     }
-    const app = options.app || 'unknown-browser-app';
+    const { app } = options;
 
     const instanceId = generateId(64);
 
@@ -98,7 +106,7 @@ if (!window.SplunkRum) {
     this.setGlobalAttributes = function(attributes) {
       globalAttributes = typeof attributes === 'object' ? attributes : {};
       if (options.environment) {
-        globalAttributes['deployment.environment'] = options.environment;
+        globalAttributes['environment'] = options.environment;
       }
     };
     this.setGlobalAttributes(options.globalAttributes);
@@ -125,13 +133,14 @@ if (!window.SplunkRum) {
       }
     }
 
-    const pluginConf = options.ignoreUrls ? {ignoreUrls: options.ignoreUrls} : {};
+    const { ignoreUrls, adjustAutoInstrumentedEvents } = options;
+    const pluginConf = { ignoreUrls };
     const provider = new PatchedWTP({
       plugins: [
         new SplunkDocumentLoad(),
         new SplunkXhrPlugin(pluginConf),
         new SplunkFetchPlugin(pluginConf),
-        new SplunkUserInteractionPlugin(),
+        new SplunkUserInteractionPlugin({ adjustAutoInstrumentedEvents }),
       ],
       logLevel: options.debug ? LogLevel.DEBUG : LogLevel.ERROR,
     });

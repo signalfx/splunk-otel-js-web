@@ -16,8 +16,35 @@ limitations under the License.
 
 module.exports = {
   'No spans sent when no beacon url set': async function(browser) {
-    await browser.url(browser.globals.getUrl('/init/init.ejs'));
+    await browser.url(browser.globals.getUrl('/init/nobeacon.ejs'));
     const span = await browser.globals.findSpan(() => {return true;});
     await browser.assert.not.ok(span);
-  }
+  },
+  'attribute-related config should work': async function(browser) {
+    browser.globals.clearReceivedSpans();
+    await browser.url(browser.globals.getUrl('/init/attributes.ejs'));
+    const atts = await browser.globals.findSpan(span => span.name === 'documentLoad');    
+    await browser.assert.ok(atts);
+    await browser.assert.strictEqual(atts.tags['app'], 'custom-app');
+    await browser.assert.strictEqual(atts.tags['environment'], 'custom-environment');
+    await browser.assert.strictEqual(atts.tags['key1'], 'value1');
+    await browser.assert.strictEqual(atts.tags['key2'], 'value2');
+
+    await browser.click('#clickToChangeAttributes');
+
+    const atts2 = await browser.globals.findSpan(span => span.tags['error.message'] === 'fake error');    
+    await browser.assert.ok(atts2);
+    // environment still set (not cleared by setGlobalAttributes call)
+    await browser.assert.strictEqual(atts2.tags['environment'], 'custom-environment');
+    await browser.assert.strictEqual(atts2.tags['key1'], 'newvalue1');
+    await browser.assert.strictEqual(atts2.tags['key2'], undefined);
+  },
+  'captureErrors controls error capture': async function(browser) {
+    browser.globals.clearReceivedSpans();
+    await browser.url(browser.globals.getUrl('/init/captureErrors.ejs'));
+    const errorGuard = await browser.globals.findSpan(span => span.name === 'error-guard-span');
+    await browser.assert.ok(errorGuard);
+    const lackOfError = await browser.globals.findSpan(span => span.tags.component === 'error');
+    await browser.assert.not.ok(lackOfError);
+  },
 };

@@ -60,13 +60,14 @@ Please read [INSTALLING.md](./docs/INSTALLING.md) for more advanced installation
 | beaconUrl | string | Destination for the captured data | Yes | (No default) |
 | rumAuth | string | Publicly-visible `rumAuth` value.  Please do not paste any other access token or auth value into here, as this will be visible to every user of your app | Yes | (No default) |
 | app | string | Application name | No | 'unknown-browser-app' |
-| environment | string | Sets a value for the `deployment.environment` attribute (persists through calls to `setGlobalAttributes()`) | No | (No default) |
+| environment | string | Sets a value for the `environment` attribute (persists through calls to `setGlobalAttributes()`) | No | (No default) |
 | globalAttributes | object | Extra attributes to add to each reported span.  See also `setGlobalAttributes` | No | {} |
 | captureErrors | boolean | Turns on/off error reporting feature | No | true |
 | allowInsecureBeacon | boolean | Allows http beacon urls | No | false |
 | debug | boolean | Turns on/off internal debug logging | No | false |
 | ignoreUrls | array | Applies for XHR,Fetch and Websocket URLs. URLs that partially match any regex in ignoreUrls will not be traced. In addition, URLs that are _exact matches_ of strings in ignoreUrls will also not be traced. | No | [] |
 | spanProcessor | SpanProcessor | Offers ability to alter/remove data in-browser.  See below for more details | No | (undefined) |
+| adjustAutoInstrumentedEvents | { [DOM Event Name]?: boolean } | Set keys to `false` to disable events handled by default. Set additional keys to true to auto-instrument `addEventListener` handlers. | No | Please check `window.SplunkRum.DEFAULT_AUTO_INSTRUMENTED_EVENTS` |
 
 ### `SplunkRum.setGlobalAttributes(attributes)`
 
@@ -134,6 +135,10 @@ Not all supported browsers support all features/attributes, but the following br
 - Firefox 57+
 - Edge 79+
 - IE not currently supported
+
+### Known issues
+
+Auto-instrumentation doesn't currently capture events handled on `document` level, ie. `document.addEventListener(...)`.
 
 ## Building and contributing
 

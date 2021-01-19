@@ -21,7 +21,7 @@
     "test:integration:local:firefox:_execute": "nightwatch -c ./integration-tests/utils/local.conf.js -e firefox",
     "test:integration:local:chrome:_execute": "nightwatch -c ./integration-tests/utils/local.conf.js -e chrome",
     "test:integration:local:safari:_execute": "nightwatch -c ./integration-tests/utils/local.conf.js -e safari",
-    "test:integration:local:headlessFirefox:_execute": "nightwatch --verbose -c ./integration-tests/utils/local.conf.js -e headlessFirefox",
+    "test:integration:local:headlessFirefox:_execute": "nightwatch -c ./integration-tests/utils/local.conf.js -e headlessFirefox",
     "test:integration:_selfSignCerts": "(cd utils && cd certs && openssl req -nodes -new -x509 -keyout server.key -out server.cert)",
     "test:integration:_build": "npm-run-all -s build:*",
     "test:performance": "node ./performance-tests/runner.js",
