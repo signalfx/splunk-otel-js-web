@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// import './oldBrowserSupportCheck.js';
 import {ConsoleSpanExporter, SimpleSpanProcessor, BatchSpanProcessor} from '@opentelemetry/tracing';
 import {NoopTracerProvider} from '@opentelemetry/api';
 import {WebTracerProvider} from '@opentelemetry/web';
