@@ -48,8 +48,8 @@ if (!window.SplunkRum) {
     options = Object.assign({}, OPTIONS_DEFAULTS, options);
 
     // Check more frequently in the case of SPA/long-lived document
-    const SessionTimeoutSeconds = 24 * 60 * 60;
-    const SessionTimeoutCheckSeconds = 60 * 60;
+    const SessionTimeoutSeconds = 4 * 60 * 60;
+    const SessionTimeoutCheckSeconds = 10 * 60;
 
     if (this.inited) {
       console.log('SplunkRum already init()ed.');
