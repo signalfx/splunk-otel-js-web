@@ -36,8 +36,8 @@ export default {
       include: /node_modules/,
     }),
     process.env.DEBUG_BUILD ? {} :
-      terser({
-        output: { comments: false, },
-      }),
+    terser({
+      output: { comments: false, },
+    }),
   ],
 };
