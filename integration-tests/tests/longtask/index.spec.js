@@ -14,10 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-function valueIsWithin(value, expected, margin) {
-  return value >= expected - margin && value <= expected + margin;
-}
-
 function isSupported(browser) {
   const SUPPORTED_BROWSERS = ['chrome', 'edge'];
   const currentBrowser = browser.options.desiredCapabilities.browserName;
@@ -39,17 +35,18 @@ module.exports = {
     await browser.assert.strictEqual(longtaskSpan.tags['component'], 'splunk-longtask', 'component');
     await browser.assert.strictEqual(longtaskSpan.tags['longtask.name'], 'self', 'longtask.name');
     await browser.assert.strictEqual(longtaskSpan.tags['longtask.entry_type'], 'longtask', 'longtask.entry_type');
+    await browser.assert.strictEqual(longtaskSpan.tags['longtask.attribution.name'], 'unknown', 'longtask.attribution.name');
+    await browser.assert.strictEqual(longtaskSpan.tags['longtask.attribution.entry_type'], 'taskattribution', 'longtask.attribution.entry_type');
+    await browser.assert.strictEqual(longtaskSpan.tags['longtask.attribution.start_time'], '0', 'longtask.attribution.start_time');
+    await browser.assert.strictEqual(longtaskSpan.tags['longtask.attribution.duration'], '0', 'longtask.attribution.duration');
+    await browser.assert.strictEqual(longtaskSpan.tags['longtask.attribution.container_type'], 'window', 'longtask.attribution.container_type');
+    await browser.assert.strictEqual(longtaskSpan.tags['longtask.attribution.container_src'], '', 'longtask.attribution.container_src');
+    await browser.assert.strictEqual(longtaskSpan.tags['longtask.attribution.container_id'], '', 'longtask.attribution.container_id');
+    await browser.assert.strictEqual(longtaskSpan.tags['longtask.attribution.container_name'], '', 'longtask.attribution.container_name');
 
     const duration = parseFloat(longtaskSpan.tags['longtask.duration']);
-    await browser.assert.ok(valueIsWithin(duration, 55, 15), `Duration (${duration}) is within 15ms of 55ms.`);
-    
-    await browser.assert.strictEqual(longtaskSpan.tags['longtask.attribution[0].name'], 'unknown', 'longtask.attribution[0].name');
-    await browser.assert.strictEqual(longtaskSpan.tags['longtask.attribution[0].entry_type'], 'taskattribution', 'longtask.attribution[0].entry_type');
-    await browser.assert.strictEqual(longtaskSpan.tags['longtask.attribution[0].start_time'], '0', 'longtask.attribution[0].start_time');
-    await browser.assert.strictEqual(longtaskSpan.tags['longtask.attribution[0].duration'], '0', 'longtask.attribution[0].duration');
-    await browser.assert.strictEqual(longtaskSpan.tags['longtask.attribution[0].container_type'], 'window', 'longtask.attribution[0].container_type');
-    await browser.assert.strictEqual(longtaskSpan.tags['longtask.attribution[0].container_src'], '', 'longtask.attribution[0].container_src');
-    await browser.assert.strictEqual(longtaskSpan.tags['longtask.attribution[0].container_id'], '', 'longtask.attribution[0].container_id');
-    await browser.assert.strictEqual(longtaskSpan.tags['longtask.attribution[0].container_name'], '', 'longtask.attribution[0].container_name');
+    await browser.assert.ok(duration >  50, `Duration (${duration}) must be over 50ms by definition.`);
+    // note: our longtask simulator targets 55ms, but headless chrome doesn't understand throttling
+    await browser.assert.ok(duration < 1000, `Duration (${duration}) must be less than 1s by definition.`);
   },
 };
