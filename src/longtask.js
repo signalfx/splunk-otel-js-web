@@ -37,7 +37,7 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
     this._longtaskObserver = new PerformanceObserver((list) => {
       list.getEntries().forEach((entry) => this._createSpanFromEntry(entry));
     });
-    this._longtaskObserver.observe({type: [LONGTASK_PERFORMANCE_TYPE], buffered: true});
+    this._longtaskObserver.observe({type: LONGTASK_PERFORMANCE_TYPE, buffered: true});
   }
 
   disable() {
@@ -62,7 +62,7 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
 
     if (Array.isArray(entry.attribution)) {
       entry.attribution.forEach((attribution, index) => {
-        const prefix = `longtask.attribution[${index}]`;
+        const prefix = entry.attribution > 1 ? `longtask.attribution[${index}]` : 'longtask.attribution';
         span.setAttribute(`${prefix}.name`, attribution.name);
         span.setAttribute(`${prefix}.entry_type`, attribution.entryType);
         span.setAttribute(`${prefix}.start_time`, attribution.startTime);
