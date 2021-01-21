@@ -23,7 +23,8 @@ import {SplunkXhrPlugin, SplunkFetchPlugin} from './xhrfetch';
 import {SplunkUserInteractionPlugin, DEFAULT_AUTO_INSTRUMENTED_EVENTS} from './interaction';
 import {PatchedZipkinExporter} from './zipkin';
 import {captureErrors} from './errors';
-import {findCookieValue, generateId, isIframe} from './utils';
+import {generateId} from './utils';
+import {initSessionTracking, getRumSessionId} from './session';
 import {version as SplunkRumVersion} from '../package.json';
 import {WebSocketInstrumentation} from './websocket';
 import { initWebVitals } from './webvitals';
@@ -47,10 +48,6 @@ if (!window.SplunkRum) {
 
   window.SplunkRum.init = function (options = {}) {
     options = Object.assign({}, OPTIONS_DEFAULTS, options);
-
-    // Check more frequently in the case of SPA/long-lived document
-    const SessionTimeoutSeconds = 4 * 60 * 60;
-    const SessionTimeoutCheckSeconds = 10 * 60;
 
     if (this.inited) {
       console.log('SplunkRum already init()ed.');
@@ -78,29 +75,7 @@ if (!window.SplunkRum) {
 
     const instanceId = generateId(64);
 
-
-    const cookieName = '_splunk_rum_sid';
-
-    let rumSessionId = instanceId;
-    const cookieSetter = function() {
-      if (!document.cookie.includes(cookieName)) {
-        const sessionId = generateId(128);
-        let cookie = cookieName + '=' + sessionId + '; path=/; max-age=' + SessionTimeoutSeconds ;
-
-        if (isIframe()) {
-          cookie += ';SameSite=None; Secure';
-        } else {
-          cookie += ';SameSite=Strict';
-        }
-        document.cookie = cookie;
-        setTimeout(cookieSetter, 1000*SessionTimeoutCheckSeconds);
-      }
-      const sessionIdFromCookie = findCookieValue(cookieName);
-      if (sessionIdFromCookie) {
-        rumSessionId = sessionIdFromCookie;
-      }
-    };
-    cookieSetter();
+    initSessionTracking(instanceId);
 
     let globalAttributes = {};
     this.setGlobalAttributes = function(attributes) {
@@ -120,7 +95,7 @@ if (!window.SplunkRum) {
           const span = origStartSpan.apply(tracer, arguments);
           span.setAttribute('location.href', location.href);
           // FIXME does otel want this stuff in Resource?
-          span.setAttribute('splunk.rumSessionId', rumSessionId);
+          span.setAttribute('splunk.rumSessionId', getRumSessionId());
           span.setAttribute('splunk.rumVersion', SplunkRumVersion);
           span.setAttribute('app', app);
           span.setAttribute('splunk.scriptInstance', instanceId);
