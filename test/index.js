@@ -25,3 +25,4 @@ import './init.test.js';
 import './patchchecks.test.js';
 import './servertiming.test.js';
 import './utils.test.js';
+import './session.test.js';

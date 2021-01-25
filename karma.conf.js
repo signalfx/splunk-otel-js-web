@@ -40,7 +40,9 @@ module.exports = function (config) {
     client: {
       mocha: {
         timeout: 6000
-      }
+      },
+      useIframe: false,
+      runInParent: true,
     },
     websocketServer: {
       port:8979,
