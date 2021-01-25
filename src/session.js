@@ -45,7 +45,8 @@ function markActivity() {
 }
   
 function pastMaxAge(startTime) {
-  return startTime > new Date().getTime() || new Date().getTime() > startTime + MaxSessionAgeMillis;
+  const now = Date.now();
+  return startTime > now || now > startTime + MaxSessionAgeMillis;
 }
   
 function parseCookieToSessionState() {
@@ -81,7 +82,7 @@ function parseCookieToSessionState() {
 function newSessionState() {
   return {
     id: generateId(128),
-    startTime: new Date().getTime()
+    startTime: Date.now()
   };
 }
 
