@@ -124,7 +124,7 @@ export function initSessionTracking(instanceId) {
   updateSessionStatus();
   setInterval(updateSessionStatus, PeriodicCheckSeconds * 1000);
   [ 
-    'click', 'scroll', 'mousedown', 'keydown', 'touchend'
+    'click', 'scroll', 'mousedown', 'keydown', 'touchend', 'visibilitychange'
   ].forEach(type => document.addEventListener(type, markActivity, {capture:true, passive: true}));
   // FIXME have span creation also markActivity?
 }
