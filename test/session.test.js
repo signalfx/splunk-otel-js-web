@@ -31,7 +31,7 @@ describe('Session tracking', () => {
     // set cookie to expire in 2 seconds, mark activity, and then updateSessionStatus.  
     // Wait 4 seconds and cookie should still be there (having been renewed)
     const cookieValue = encodeURIComponent(JSON.stringify({id:firstSessionId, startTime: new Date().getTime()}));
-    document.cookie = COOKIE_NAME + '=' + cookieValue + '; path=/; max-age=' + 4;
+    document.cookie = COOKIE_NAME + '=' + cookieValue + '; path=/; max-age=' + 2;
     document.body.dispatchEvent(new Event('click'));
     updateSessionStatus();
     setTimeout(()=>{
