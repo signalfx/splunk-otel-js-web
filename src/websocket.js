@@ -16,7 +16,7 @@ limitations under the License.
 
 // FIXME convert into otel-js-contrib Plugin and upstream
 import shimmer from 'shimmer';
-import {SpanKind} from '@opentelemetry/api';
+import {SpanKind, setSpan, context} from '@opentelemetry/api';
 import {isUrlIgnored} from '@opentelemetry/core';
 
 function size(o) {
@@ -112,7 +112,7 @@ export class WebSocketInstrumentation {
           span.setAttribute('http.response_content_length', size(capturedArgs[0].data));
         }
         // FIXME fill out message details, size, etc.
-        return plugin._tracer.withSpan(span, () => {
+        context.with(setSpan(context.active(), span), () => {
           let result = undefined;
           if (typeof callback === 'function') {
             result = callback.apply(capturedThiz, capturedArgs);
@@ -122,7 +122,6 @@ export class WebSocketInstrumentation {
           span.end();
           return result;
         });
-
       };
       if (plugin.addPatchedListener(ws, callback, patchedCallback)) {
         origAEL.apply(ws, [type, patchedCallback, options]);

@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import {XMLHttpRequestInstrumentation} from '@opentelemetry/instrumentation-xml-http-request';
-import {FetchPlugin} from '@opentelemetry/plugin-fetch';
+import {FetchInstrumentation} from '@opentelemetry/instrumentation-fetch';
 import {captureTraceParent} from './servertiming';
 
 export class SplunkXhrPlugin extends XMLHttpRequestInstrumentation {
@@ -40,7 +40,7 @@ export class SplunkXhrPlugin extends XMLHttpRequestInstrumentation {
 
 }
 
-export class SplunkFetchPlugin extends FetchPlugin {
+export class SplunkFetchInstrumentation extends FetchInstrumentation {
   _addFinalSpanAttributes(span, fetchResponse) {
     if (span && fetchResponse && fetchResponse.headers) {
       const st = fetchResponse.headers.get('Server-Timing');
