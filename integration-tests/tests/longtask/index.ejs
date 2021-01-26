@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Longtask tracking test</title>
+  <%- renderAgent() %>
+</head>
+<body>
+  <h1>Longtask tracking test</h1>
+
+  <button type="button" id="btnLongtask">Produce a longtask event</button>
+
+  <pre id="scenarioDisplay"></pre>
+  <script id="scenario">
+    const LONGTASK_DURATION = 50 * 1.1; // add 10% margin
+    function generateLongTask() {
+      const startingTimestamp = performance.now();
+      while (performance.now() - startingTimestamp < LONGTASK_DURATION) {}
+    };
+
+    document.querySelector('#btnLongtask').addEventListener('click', () => {
+      generateLongTask();
+    });
+  </script>
+  <script>scenarioDisplay.innerHTML = scenario.innerHTML;</script>
+</body>
+</html>
