@@ -20,7 +20,7 @@ import {NoopTracerProvider} from '@opentelemetry/api';
 import {WebTracerProvider} from '@opentelemetry/web';
 import {LogLevel} from '@opentelemetry/core';
 import {SplunkDocumentLoad} from './docload';
-import {SplunkXhrPlugin, SplunkFetchPlugin} from './xhrfetch';
+import {SplunkXhrPlugin, SplunkFetchInstrumentation} from './xhrfetch';
 import {SplunkUserInteractionPlugin, DEFAULT_AUTO_INSTRUMENTED_EVENTS} from './interaction';
 import {PatchedZipkinExporter} from './zipkin';
 import {captureErrors} from './errors';
@@ -115,7 +115,6 @@ if (!window.SplunkRum) {
       plugins: [
         new SplunkDocumentLoad(),
         new SplunkXhrPlugin(pluginConf),
-        new SplunkFetchPlugin(pluginConf),
         new SplunkUserInteractionPlugin({ adjustAutoInstrumentedEvents }),
       ],
       logLevel: options.debug ? LogLevel.DEBUG : LogLevel.ERROR,
@@ -128,6 +127,10 @@ if (!window.SplunkRum) {
     }
     
     new WebSocketInstrumentation(provider, pluginConf).patch();
+    
+    const fetchInstrumentation = new SplunkFetchInstrumentation(provider, pluginConf);
+    fetchInstrumentation.setTracerProvider(provider);
+    fetchInstrumentation.enable();
 
     const longtaskInstrumentation = new SplunkLongTaskInstrumentation();
     longtaskInstrumentation.setTracerProvider(provider);
