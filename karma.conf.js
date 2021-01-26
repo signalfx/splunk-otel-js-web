@@ -128,7 +128,7 @@ module.exports = function (config) {
           check: false,
         }),
         istanbulrollup({
-          exclude: ['deps/**', 'node_modules/**'],
+          exclude: ['deps/**', /node_modules/],
         }),
       ],
       input: 'test/index.js',
