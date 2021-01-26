@@ -4,6 +4,7 @@ import commonjs from '@rollup/plugin-commonjs';
 import resolve from '@rollup/plugin-node-resolve';
 import typescript from 'rollup-plugin-typescript2';
 import { terser } from 'rollup-plugin-terser';
+import babel from '@rollup/plugin-babel';
 const helpers = require('./rollup.helpers');
 
 export default {
@@ -18,14 +19,18 @@ export default {
     alias({
       entries: helpers.aliases,
     }),
+    resolve({
+      browser: true,
+    }),
     typescript({
       typescript: require('typescript'),
       useTsConfigDeclarationDir: true,
       clean: true,
-      check: false,
+      check: false
     }),
-    resolve({
-      browser: true,
+    babel({ 
+      babelHelpers: 'bundled',
+      exclude: 'node_modules/**'
     }),
     commonjs({
       include: /node_modules/,
