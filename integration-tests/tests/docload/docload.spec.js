@@ -35,11 +35,10 @@ module.exports = {
     await browser.assert.strictEqual(docFetch.traceId, docLoad.traceId);
     await browser.assert.strictEqual(docFetch.parentId, docLoad.id);
 
-    // FIXME otel is broken at the moment - need to fix up their code that makes this all the same trace
-    // await browser.assert.strictEqual(scriptFetch.traceId, docLoad.traceId);
-    // await browser.assert.strictEqual(scriptFetch.parentId, docLoad.id);
-    // await browser.assert.strictEqual(brokenImgFetch.traceId, docLoad.traceId);
-    // await browser.assert.strictEqual(brokenImgFetch.parentId, docLoad.id);
+    await browser.assert.strictEqual(scriptFetch.traceId, docLoad.traceId);
+    await browser.assert.strictEqual(scriptFetch.parentId, docLoad.id);
+    await browser.assert.strictEqual(brokenImgFetch.traceId, docLoad.traceId);
+    await browser.assert.strictEqual(brokenImgFetch.parentId, docLoad.id);
 
     // docFetch
     await browser.assert.strictEqual(docFetch.tags['component'], 'document-load');
