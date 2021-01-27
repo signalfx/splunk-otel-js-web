@@ -61,16 +61,13 @@ $ /usr/bin/safaridriver --enable
 
 1. Manual sanity test
 1. `npm version patch`
-1. `git push` to publish the version bump commit
+1. `git push origin main` to publish the version bump commit
 1. `git push origin --tags` to publish the version tag, if you haven't created any local tags manually
 1. `git push origin <release tag>` if you have local tags, which shouldn't be published
 1. Release on github: <https://github.com/signalfx/rum-browser-js/releases/>
-    1. "Draft a new release"
-    1. Fill out the tag version.  This is confusing as github has automatically created a 
-       release from the tag.  Doing this and publishing will change/overwrite the automatically
-       generated one.
+    1. A draft release has been created for you. Artifacts are already uploaded.
+    1. If you can't find the release matching your desired version, then there might be issues with the Release Action. Navigate to <https://github.com/signalfx/splunk-browser-otel-js/actions>, and investigate the right CD run.
     1. Fill out release title, release notes
-    1. Attach splunk-rum.js
     1. "Publish" the release.
 
 ### Syncing with upstream
