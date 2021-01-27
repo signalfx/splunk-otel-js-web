@@ -27,6 +27,9 @@ jobs:
       - run: npm install
       - run: npm run lint
 
+      - name: Check if package.json version matches the tag
+        run: node utils/check-version-tag-match.js
+
       - name: Build minified version
         run: npx rollup -c
       - name: Build debug version
