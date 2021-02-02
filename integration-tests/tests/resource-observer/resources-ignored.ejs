@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Resource observer ignore test</title>
+  
+	<%- renderAgent({}, true) %>
+	<script>
+			window.SplunkRumOptions.ignoreUrls = [
+        window.location.origin + '/integration-tests/assets/splunk-white-black.png', 
+        /test.js/
+      ];
+			window.SplunkRum && window.SplunkRum.init(window.SplunkRumOptions);
+	</script>
+</head>
+<body>
+  <h1>Resource observer ignore test</h1>
+
+  <script>
+
+    function loadScript() {
+      var s = document.createElement( 'script' );
+      s.setAttribute( 'src', '/integration-tests/assets/test.js' );
+      document.body.appendChild(s);
+    }
+    
+    function loadImg() {
+      var img = document.createElement('img');
+      img.src = '/integration-tests/assets/splunk-white-black.png';
+      document.body.appendChild(img);
+    }
+
+    window.addEventListener("load", function() {
+      setTimeout(function() {
+        loadImg();
+        loadScript();
+        SplunkRum.provider.getTracer('default').startSpan('guard-span').end();
+      }, 500)
+    })
+  </script>
+
+</body>
+</html>

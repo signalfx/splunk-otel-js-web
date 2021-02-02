@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Resource observer test</title>
+  <%- renderAgent() %>
+</head>
+<body>
+  <h1>Resource observer test</h1>
+
+  <button id="load-img">Load new Image</button>
+  <button id="load-script">Load new script</button>
+
+  <img id="img-1" src="/integration-tests/assets/splunk-black-white.png" alt="black">
+
+  <script>
+
+    document.getElementById('load-img').addEventListener('click', function() {
+      // random third party img
+      var img = new Image();
+      img.src = 'https://placeimg.com/320/240/any';
+    });
+
+    function loadScript() {
+      var s = document.createElement( 'script' );
+      s.setAttribute( 'src', '/integration-tests/assets/test.js' );
+      document.body.appendChild(s);
+    }
+    
+    function loadImg() {
+      var img = document.createElement('img');
+      img.src = '/integration-tests/assets/splunk-white-black.png';
+      document.body.appendChild(img);
+    }
+
+    document.getElementById('load-script').addEventListener('click', function() {
+      loadScript();
+    });
+
+    window.addEventListener("load", function() {
+      setTimeout(function() {
+        loadImg();
+        loadScript();
+      }, 500)
+    })
+  </script>
+
+</body>
+</html>

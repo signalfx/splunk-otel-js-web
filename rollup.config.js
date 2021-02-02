@@ -35,7 +35,7 @@ export default {
     commonjs({
       include: /node_modules/,
     }),
-    process.env.DEBUG_BUILD ? {} :
+    true ? {} :
     terser({
       output: { comments: false, },
     }),
