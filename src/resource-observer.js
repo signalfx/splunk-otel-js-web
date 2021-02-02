@@ -24,14 +24,13 @@ import { addSpanNetworkEvents } from '@opentelemetry/web';
 import { HttpAttribute } from '@opentelemetry/semantic-conventions';
 
 const MODULE_NAME = 'splunk-resource-obs';
-
+const defaultAllowedInitiatorTypes = ['img', 'script']; //other, css, link
 export class ResourceObserverInstrumentation extends InstrumentationBase {
   
   constructor(config = {}) {
-    super(MODULE_NAME, version, Object.assign({}, config));
+    super(MODULE_NAME, version, Object.assign({}, {allowedInitiatorTypes: defaultAllowedInitiatorTypes}, config));
     this.observer = undefined;
     this.afterInit = false;
-    this.allowedInitiatorTypes = ['img', 'script']; //other, css, link
   }
 
   init() {}
@@ -40,7 +39,7 @@ export class ResourceObserverInstrumentation extends InstrumentationBase {
     this.observer = new PerformanceObserver( (list) => {
       if (this.afterInit) {
         list.getEntries().forEach( entry => {
-          if (this.allowedInitiatorTypes.includes(entry.initiatorType)) {
+          if (this._config.allowedInitiatorTypes.includes(entry.initiatorType)) {
             this._createSpan(entry);
           }
         });

@@ -133,6 +133,9 @@ if (!window.SplunkRum) {
     const longtaskInstrumentation = new SplunkLongTaskInstrumentation();
     longtaskInstrumentation.setTracerProvider(provider);
    
+    if (options.allowedInitiatorTypes) {
+      pluginConf.allowedInitiatorTypes = options.allowedInitiatorTypes;
+    }
     new ResourceObserverInstrumentation(pluginConf).setTracerProvider(provider);
 
     if (options.beaconUrl) {
