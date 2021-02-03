@@ -52,7 +52,12 @@ module.exports = {
     browser.globals.receivedSpans = spans;
     browser.globals.rumVersion = require('../../package.json').version;
     browser.globals.clearReceivedSpans = () => { spans.length = 0; };
-    browser.globals.findSpan = (testFn, timeout = 0) => findSpan(spans, testFn, timeout);
+    let defaultTimeout = 0;
+    if (browser.options.desiredCapabilities.browserName === 'Safari') {
+      console.log('Setting default timeout for safari');
+      defaultTimeout = -3000;
+    }
+    browser.globals.findSpan = (testFn, timeout = defaultTimeout) => findSpan(spans, testFn, timeout);
     browser.globals.emulateTabSwitchingAway = async () => {
       await browser.execute(() => {
         Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });

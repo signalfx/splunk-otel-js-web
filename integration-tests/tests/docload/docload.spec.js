@@ -15,31 +15,35 @@ limitations under the License.
 */
 
 module.exports = {
-
+  '@tags': ['safari-10.1'],
   'documentFetch, resourceFetch, and documentLoad spans': async function(browser) {
+    const {browserName, browser_version} = browser.options.desiredCapabilities;
     const url = browser.globals.getUrl('/docload/docload.ejs');
     await browser.url(url);
 
     const docFetch = await browser.globals.findSpan(span => span.name === 'documentFetch');
-    const scriptFetch = await browser.globals.findSpan(span => span.name === 'resourceFetch' && span.tags['http.url'].includes('splunk-rum.js'));
     const docLoad = await browser.globals.findSpan(span => span.name === 'documentLoad');
+    const scriptFetch = await browser.globals.findSpan(span => span.name === 'resourceFetch' && span.tags['http.url'].includes('splunk-rum.js'));
     const brokenImgFetch = await browser.globals.findSpan(span => span.name === 'resourceFetch' && span.tags['http.url'].includes('/nosuchimage.jpg'));
-    
-    await browser.assert.ok(docFetch, 'Checking docFetch span');
-    await browser.assert.ok(scriptFetch, 'Checking scriptFetch span');
-    await browser.assert.ok(docLoad, 'Checking docLoad span');
-    await browser.assert.ok(brokenImgFetch, 'Checking brokenImgFetch span');
 
+    await browser.assert.ok(docFetch, 'Checking docFetch span');
+    await browser.assert.ok(docLoad, 'Checking docLoad span');
     await browser.assert.ok(docLoad.traceId.match(/[a-f0-9]+/), 'Checking sanity of traceId');
     await browser.assert.ok(docLoad.id.match(/[a-f0-9]+/), 'Checking sanity of id');
     await browser.assert.strictEqual(docFetch.traceId, docLoad.traceId);
     await browser.assert.strictEqual(docFetch.parentId, docLoad.id);
 
-    await browser.assert.strictEqual(scriptFetch.traceId, docLoad.traceId);
-    await browser.assert.strictEqual(scriptFetch.parentId, docLoad.id);
-    await browser.assert.strictEqual(brokenImgFetch.traceId, docLoad.traceId);
-    await browser.assert.strictEqual(brokenImgFetch.parentId, docLoad.id);
+    if (!(browserName === 'Safari' && browser_version === '10.1')) {
+      await browser.assert.ok(scriptFetch, 'Checking scriptFetch span');
+      await browser.assert.strictEqual(scriptFetch.traceId, docLoad.traceId);
+      await browser.assert.strictEqual(scriptFetch.parentId, docLoad.id);
+      await browser.assert.strictEqual(scriptFetch.tags['component'], 'document-load');
+      await browser.assert.strictEqual(scriptFetch.tags['location.href'], url);
 
+      await browser.assert.ok(brokenImgFetch, 'Checking brokenImgFetch span');
+      await browser.assert.strictEqual(brokenImgFetch.traceId, docLoad.traceId);
+      await browser.assert.strictEqual(brokenImgFetch.parentId, docLoad.id);
+    }
     // docFetch
     await browser.assert.strictEqual(docFetch.tags['component'], 'document-load');
     await browser.assert.strictEqual(docFetch.tags['location.href'], url);
@@ -48,16 +52,14 @@ module.exports = {
     await browser.timesMakeSense(docFetch.annotations, 'requestStart', 'responseStart');
     await browser.timesMakeSense(docFetch.annotations, 'responseStart', 'responseEnd');
     await browser.timesMakeSense(docFetch.annotations, 'fetchStart', 'responseEnd');
-    if (browser.options.desiredCapabilities.browserName !== 'Safari') {
+    if (browserName !== 'Safari') {
       await browser.assert.ok(docFetch.tags['http.response_content_length'] >= 0, 'Checking response_content_length');
       await browser.assert.ok(docFetch.tags['link.traceId'], 'Checking presence of link.traceId');
       await browser.assert.ok(docFetch.tags['link.spanId'], 'Checking presence of link.spanId');
     }
 
     // scriptFetch
-    await browser.assert.strictEqual(scriptFetch.tags['component'], 'document-load');
-    await browser.assert.strictEqual(scriptFetch.tags['location.href'], url);
-    if (browser.options.desiredCapabilities.browserName !== 'Safari') {
+    if (browserName !== 'Safari') {
       await browser.assert.ok(scriptFetch.tags['http.response_content_length'] >= 0, 'Checking response_content_length');
       await browser.assert.ok(docFetch.tags['link.traceId'], 'Checking presence of link.traceId');
       await browser.assert.ok(docFetch.tags['link.spanId'], 'Checking presence of link.spanId');
