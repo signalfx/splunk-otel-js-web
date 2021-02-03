@@ -35,7 +35,7 @@ function addStackIfUseful(span, err) {
 
 function captureConsoleError(reporter) {
   shimmer.wrap(console, 'error', function(original) {
-    return function () {
+    return function instrumentedConsoleError () {
       reporter.report('console.error', Array.from(arguments));
       return original.apply(this, arguments);
     };

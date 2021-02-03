@@ -155,7 +155,7 @@ export class WebSocketInstrumentation {
   patch() {
     const plugin = this;
     shimmer.wrap(window, 'WebSocket', function (original) {
-      return function (url, protocols) {
+      return function instrumentedConsoleError(url, protocols) {
         if (isUrlIgnored(url, plugin._config.ignoreUrls)) {
           return new original(url, protocols);
         }

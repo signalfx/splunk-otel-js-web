@@ -39,6 +39,7 @@ export default {
     process.env.DEBUG_BUILD ? {} :
     terser({
       output: { comments: false, },
+      keep_fnames: false,
     }),
   ],
 };
