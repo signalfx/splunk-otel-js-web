@@ -16,10 +16,7 @@
       var p = new Promise(function(resolve, _) {
         var img = document.createElement('img');
         img.src = '/integration-tests/assets/splunk-black.png';
-        img.onload = function() {
-          console.log('image onload', Date.now());
-          resolve();
-        }
+        img.onload = resolve;
         document.body.appendChild(img);
       });
       return p;

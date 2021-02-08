@@ -16,7 +16,7 @@
       var p = new Promise(function(resolve, _) {
         var img = document.createElement('img');
         img.src = '/integration-tests/assets/no-cache.png';
-        img.onload =  resolve();
+        img.onload =  resolve;
         document.body.appendChild(img);
       });
       return p;
