@@ -40,6 +40,8 @@ module.exports = {
     await browser.assert.strictEqual(wsConnectionSpan.tags['component'], 'websocket');
     await browser.assert.strictEqual(wsConnectionSpan.tags['ot.status_code'], 'UNSET');
     await browser.assert.strictEqual(wsConnectionSpan.tags['error'], undefined);
+
+    await browser.globals.assertNoErrorSpans();
   },
   'websocket url can be ignored': async function(browser) {
     if (isSafari(browser)) {

@@ -72,5 +72,7 @@ module.exports = {
     await browser.timesMakeSense(docLoad.annotations, 'loadEventStart', 'loadEventEnd');
     await browser.timesMakeSense(docLoad.annotations, 'fetchStart', 'domInteractive');
     await browser.timesMakeSense(docLoad.annotations, 'fetchStart', 'domComplete');
+
+    await browser.globals.assertNoErrorSpans();
   }
 };

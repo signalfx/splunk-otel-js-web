@@ -29,5 +29,7 @@ module.exports = {
     await browser.assert.strictEqual(submitSpan.tags['event_type'], 'submit');
     await browser.assert.strictEqual(submitSpan.tags['target_element'], 'FORM');
     await browser.assert.strictEqual(submitSpan.tags['target_xpath'], '//*[@id="form1"]');
+
+    await browser.globals.assertNoErrorSpans();
   },
 };
