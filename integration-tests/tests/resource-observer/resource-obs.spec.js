@@ -23,11 +23,20 @@ module.exports = {
 
     await browser.globals.findSpan(span => span.name === 'guard-span');
 
+    const plAgentSpans = browser.globals.receivedSpans.filter( 
+      span => span.tags['http.url'] && span.tags['http.url'].endsWith('splunk-rum.js')
+    );
+    const plImageSpans = browser.globals.receivedSpans.filter( 
+      span => span.tags['http.url'] && span.tags['http.url'].endsWith('no-cache.png')
+    );
+    await browser.assert.strictEqual(plAgentSpans.length, 1);
+    await browser.assert.strictEqual(plImageSpans.length, 1);
+  
     const imageSpan = await browser.globals.findSpan(
       span => span.tags['http.url'] && span.tags['http.url'].endsWith('splunk-black.png')
     );
 
-    await browser.assert.ok(imageSpan, 'Image span found.');
+    await browser.assert.ok(!!imageSpan, 'Image span found.');
     await browser.assert.strictEqual(imageSpan.tags['component'], 'splunk-resource-obs');
     const imgUrl = browser.globals.getUrl('/integration-tests/assets/', []) + 'splunk-black.png';
     await browser.assert.strictEqual(imageSpan.tags['http.url'], imgUrl);

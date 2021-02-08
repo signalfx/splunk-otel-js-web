@@ -37,13 +37,11 @@ export class ResourceObserverInstrumentation extends InstrumentationBase {
 
   _startObserver() {
     this.observer = new PerformanceObserver( (list) => {
-      if (this.afterInit) {
-        list.getEntries().forEach( entry => {
-          if (this._config.allowedInitiatorTypes.includes(entry.initiatorType)) {
-            this._createSpan(entry);
-          }
-        });
-      }
+      list.getEntries().forEach( entry => {
+        if (this._config.allowedInitiatorTypes.includes(entry.initiatorType)) {
+          this._createSpan(entry);
+        }
+      });
     });
     this.observer.observe({type: 'resource', buffered: false});
   }
@@ -76,14 +74,13 @@ export class ResourceObserverInstrumentation extends InstrumentationBase {
 
   enable() {
     if (window.PerformanceObserver) {
-      this.afterInit = window.document.readyState === 'complete';
-      if (!this.afterInit) {
+      if (window.document.readyState === 'complete') {
+        this._startObserver();
+      } else {
         window.addEventListener('load', () => {
-          this.afterInit = true;
+          this._startObserver();
         });
       }
-
-      this._startObserver();
     }
   }
   
