@@ -37,7 +37,7 @@ module.exports = {
     );
 
     await browser.assert.ok(!!imageSpan, 'Image span found.');
-    await browser.assert.strictEqual(imageSpan.tags['component'], 'splunk-resource-obs');
+    await browser.assert.strictEqual(imageSpan.tags['component'], 'splunk-post-doc-load-resource');
     const imgUrl = browser.globals.getUrl('/integration-tests/assets/', []) + 'splunk-black.png';
     await browser.assert.strictEqual(imageSpan.tags['http.url'], imgUrl);
     await browser.assert.strictEqual(imageSpan.annotations.length, 9, 'Missing network events');
@@ -46,7 +46,7 @@ module.exports = {
       span => span.tags['http.url'] && span.tags['http.url'].endsWith('test.js')
     );
 
-    await browser.assert.strictEqual(scriptSpan.tags['component'], 'splunk-resource-obs');
+    await browser.assert.strictEqual(scriptSpan.tags['component'], 'splunk-post-doc-load-resource');
     const scriptUrl = browser.globals.getUrl('/integration-tests/assets/', []) + 'test.js';
     await browser.assert.strictEqual(scriptSpan.tags['http.url'], scriptUrl);
     await browser.assert.strictEqual(scriptSpan.annotations.length, 9, 'Missing network events');
@@ -84,7 +84,7 @@ module.exports = {
 
     await browser.assert.strictEqual(imageSpans.length , 2);
     const docLoadImage = imageSpans.find( span => span.tags['component'] === 'document-load');
-    const afterLoadImage = imageSpans.find( span => span.tags['component'] === 'splunk-resource-obs');
+    const afterLoadImage = imageSpans.find( span => span.tags['component'] === 'splunk-post-doc-load-resource');
 
     await browser.assert.notEqual(docLoadImage.traceId, afterLoadImage.traceId);
   }

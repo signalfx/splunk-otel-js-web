@@ -30,7 +30,7 @@ import {version as SplunkRumVersion} from '../package.json';
 import {WebSocketInstrumentation} from './websocket';
 import { initWebVitals } from './webvitals';
 import { SplunkLongTaskInstrumentation } from './longtask';
-import { ResourceObserverInstrumentation } from './resource-observer';
+import { PostDocLoadResourceObserver } from './postDocLoadResourceObserver.js';
 
 function browserSupported() {
   // FIXME very short-term patch for Safari 10.1 -> upstream fixes pending
@@ -136,7 +136,7 @@ if (!window.SplunkRum) {
     if (options.allowedInitiatorTypes) {
       pluginConf.allowedInitiatorTypes = options.allowedInitiatorTypes;
     }
-    new ResourceObserverInstrumentation(pluginConf).setTracerProvider(provider);
+    new PostDocLoadResourceObserver(pluginConf).setTracerProvider(provider);
 
     if (options.beaconUrl) {
       const completeUrl = options.beaconUrl + (options.rumAuth ? '?auth='+options.rumAuth : '');

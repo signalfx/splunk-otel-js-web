@@ -23,9 +23,9 @@ import { hrTime, isUrlIgnored } from '@opentelemetry/core';
 import { addSpanNetworkEvents } from '@opentelemetry/web';
 import { HttpAttribute } from '@opentelemetry/semantic-conventions';
 
-const MODULE_NAME = 'splunk-resource-obs';
+const MODULE_NAME = 'splunk-post-doc-load-resource';
 const defaultAllowedInitiatorTypes = ['img', 'script']; //other, css, link
-export class ResourceObserverInstrumentation extends InstrumentationBase {
+export class PostDocLoadResourceObserver extends InstrumentationBase {
   
   constructor(config = {}) {
     super(MODULE_NAME, version, Object.assign({}, {allowedInitiatorTypes: defaultAllowedInitiatorTypes}, config));
