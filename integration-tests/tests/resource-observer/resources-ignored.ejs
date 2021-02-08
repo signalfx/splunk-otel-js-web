@@ -7,7 +7,7 @@
 	<%- renderAgent({}, true) %>
 	<script>
 			window.SplunkRumOptions.ignoreUrls = [
-        window.location.origin + '/integration-tests/assets/splunk-white-black.png', 
+        window.location.origin + '/integration-tests/assets/splunk-black.png', 
         /test.js/
       ];
 			window.SplunkRum && window.SplunkRum.init(window.SplunkRumOptions);
@@ -19,23 +19,31 @@
   <script>
 
     function loadScript() {
-      var s = document.createElement( 'script' );
-      s.setAttribute( 'src', '/integration-tests/assets/test.js' );
-      document.body.appendChild(s);
+      var p = new Promise(function(resolve, _) {
+        var s = document.createElement( 'script' );
+        s.setAttribute( 'src', '/integration-tests/assets/test.js' );
+        s.onload = resolve()
+        document.body.appendChild(s);
+      });
+      return p;
     }
     
     function loadImg() {
-      var img = document.createElement('img');
-      img.src = '/integration-tests/assets/splunk-white-black.png';
-      document.body.appendChild(img);
+      var p = new Promise(function(resolve, _) {
+        var img = document.createElement('img');
+        img.src = '/integration-tests/assets/splunk-black.png';
+        img.onload = resolve();
+        document.body.appendChild(img);
+      });
+      return p;
     }
 
     window.addEventListener("load", function() {
       setTimeout(function() {
-        loadImg();
-        loadScript();
-        SplunkRum.provider.getTracer('default').startSpan('guard-span').end();
-      }, 500)
+        Promise.all([loadImg(), loadScript()]).then(function() {
+          SplunkRum.provider.getTracer('default').startSpan('guard-span').end();
+        })
+      }, 0)
     })
   </script>
 

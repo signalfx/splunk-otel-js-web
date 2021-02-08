@@ -181,6 +181,16 @@ exports.run = async function run({onSpanReceived, enableHttps}) {
     } 
     return next();
   });
+
+  app.get('/integration-tests/assets/no-cache.png', function(req, res) {
+    res.sendFile(path.join(__dirname, '../assets/no-cache.png'), {
+      etag: false,
+      lastModified: false,
+      headers: {
+        'Cache-Control': 'no-store, max-age=0'
+      }
+    });
+  });
   app.use(express.static(path.join(__dirname, '../../')));
 
   app.post('/*', (req, res) => {

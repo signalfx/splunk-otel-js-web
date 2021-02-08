@@ -15,17 +15,21 @@ limitations under the License.
 */
 
 module.exports = {
-  'should report resource loads happening after page load': async function(browser) {
+  afterEach: function(browser) {  
     browser.globals.clearReceivedSpans();
+  },
+  'should report resource loads happening after page load': async function(browser) {
     await browser.url(browser.globals.getUrl('/resource-observer/resources.ejs'));
 
+    await browser.globals.findSpan(span => span.name === 'guard-span', -3000);
+
     const imageSpan = await browser.globals.findSpan(
-      span => span.tags['http.url'] && span.tags['http.url'].endsWith('splunk-white-black.png')
+      span => span.tags['http.url'] && span.tags['http.url'].endsWith('splunk-black.png')
     );
 
-    await browser.assert.ok(imageSpan, 'Image span not found.');
+    await browser.assert.ok(imageSpan, 'Image span found.');
     await browser.assert.strictEqual(imageSpan.tags['component'], 'splunk-resource-obs');
-    const imgUrl = browser.globals.getUrl('/integration-tests/assets/', []) + 'splunk-white-black.png';
+    const imgUrl = browser.globals.getUrl('/integration-tests/assets/', []) + 'splunk-black.png';
     await browser.assert.strictEqual(imageSpan.tags['http.url'], imgUrl);
     await browser.assert.strictEqual(imageSpan.annotations.length, 9, 'Missing network events');
 
@@ -39,12 +43,40 @@ module.exports = {
     await browser.assert.strictEqual(scriptSpan.annotations.length, 9, 'Missing network events');
   },
   'resources can be ignored': async function(browser) {
-    browser.globals.clearReceivedSpans();
     await browser.url(browser.globals.getUrl('/resource-observer/resources-ignored.ejs'));
     
     await browser.globals.findSpan(span => span.name === 'guard-span');
     const url = browser.globals.getUrl('/integration-tests/assets/', []);
     await browser.assert.not.ok(browser.globals.receivedSpans.find(span => span.tags['http.url'] === url + 'test.js'));
-    await browser.assert.not.ok(browser.globals.receivedSpans.find(span => span.tags['http.url'] === url + 'splunk-white-black.png'));
+    await browser.assert.not.ok(browser.globals.receivedSpans.find(span => span.tags['http.url'] === url + 'splunk-black.png'));
+  },
+  'should create one span for cached resource': async function(browser) {
+    await browser.url(browser.globals.getUrl('/resource-observer/resources-twice.ejs'));
+    await browser.globals.findSpan(span => span.name === 'guard-span');
+
+    const imageSpans = await browser.globals.receivedSpans.filter(
+      span => span.tags['http.url'] && span.tags['http.url'].endsWith('splunk-black.png')
+    );
+  
+    await browser.assert.strictEqual(imageSpans.length , 1);
+    await browser.assert.strictEqual(imageSpans[0].tags['component'] , 'document-load');
+  },
+  'should create two spans for non cached resource': async function(browser) {
+    if (browser.options.desiredCapabilities.browserName === 'Firefox') {
+      // Can't get fx to stop caching the image.
+      return;
+    }
+    await browser.url(browser.globals.getUrl('/resource-observer/resources-twice-no-cache.ejs'));
+    await browser.globals.findSpan(span => span.name === 'guard-span');
+
+    const imageSpans = await browser.globals.receivedSpans.filter(
+      span => span.tags['http.url'] && span.tags['http.url'].endsWith('no-cache.png')
+    );
+
+    await browser.assert.strictEqual(imageSpans.length , 2);
+    const docLoadImage = imageSpans.find( span => span.tags['component'] === 'document-load');
+    const afterLoadImage = imageSpans.find( span => span.tags['component'] === 'splunk-resource-obs');
+
+    await browser.assert.notEqual(docLoadImage.traceId, afterLoadImage.traceId);
   }
 };
