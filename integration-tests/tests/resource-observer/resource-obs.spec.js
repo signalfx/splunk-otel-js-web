@@ -62,7 +62,7 @@ module.exports = {
     await browser.assert.strictEqual(imageSpans[0].tags['component'] , 'document-load');
   },
   'should create two spans for non cached resource': async function(browser) {
-    if (browser.options.desiredCapabilities.browserName === 'Firefox') {
+    if (browser.options.desiredCapabilities.browserName.toLowerCase() === 'firefox') {
       // Can't get fx to stop caching the image.
       return;
     }
