@@ -39,5 +39,7 @@ module.exports = {
     await browser.assert.strictEqual(docFetchSpan.tags['component'], 'document-load');
     await browser.assert.strictEqual(docFetchSpan.tags['splunk.rumVersion'], browser.globals.rumVersion);
     await browser.assert.strictEqual(docFetchSpan.tags['ot.status_code'], 'UNSET');
+
+    await browser.globals.assertNoErrorSpans();
   },
 };

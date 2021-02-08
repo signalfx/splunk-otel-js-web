@@ -62,6 +62,10 @@ module.exports = {
     // browser.globals.delay = (time) => new Promise(resolve => setTimeout(resolve, time));
     //    browser.globals.spansSoFar = () => spans.slice();
 
+    browser.globals.assertNoErrorSpans = async () => { 
+      await browser.assert.ok(spans.every(s => s.name !== 'onerror'), 'Ensuring no errors were reported.');
+    };
+
     console.log('Starting dev server (dummy page and traces receiver).');
     browser.globals._backend = await devServer.run({
       onSpanReceived: handleSpanReceived,

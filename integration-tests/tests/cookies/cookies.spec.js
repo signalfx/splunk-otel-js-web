@@ -41,6 +41,7 @@ module.exports = {
     // FIXME we previously tested that the cookie was marked SameSite=Strict but new session implementation
     // has a race between iframes and parents from the same domain.
 
+    await browser.globals.assertNoErrorSpans();
     await browser.end();
   },
   'setting session cookie in iframe should work': async function(browser) {

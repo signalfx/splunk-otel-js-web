@@ -28,5 +28,7 @@ module.exports = {
 
     await browser.assert.not.ok(clickSpan.parentId, 'Click span does not have a parent.');
     await browser.assert.strictEqual(fetchSpan.parentId, clickSpan.id, 'Fetch span belongs to user interaction trace.');
+
+    await browser.globals.assertNoErrorSpans();
   },
 };
