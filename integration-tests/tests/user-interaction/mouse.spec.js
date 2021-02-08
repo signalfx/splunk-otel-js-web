@@ -28,6 +28,8 @@ module.exports = {
     await browser.assert.strictEqual(clickSpan.tags['target_element'], 'BUTTON');
     await browser.assert.strictEqual(clickSpan.tags['target_xpath'], '//*[@id="btn1"]');
     await browser.assert.strictEqual(clickSpan.tags['ot.status_code'], 'UNSET');
+
+    await browser.globals.assertNoErrorSpans();
   },
   'handles mouse down': async function(browser) {
     browser.globals.clearReceivedSpans();

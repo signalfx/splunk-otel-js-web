@@ -39,6 +39,8 @@ module.exports = {
     await browser.timesMakeSense(fetchSpan.annotations, 'requestStart', 'responseStart');
     await browser.timesMakeSense(fetchSpan.annotations, 'responseStart', 'responseEnd');
     await browser.timesMakeSense(fetchSpan.annotations, 'fetchStart', 'responseEnd');
+
+    await browser.globals.assertNoErrorSpans();
   },
   'fetch request can be ignored': async function(browser) {
     await browser.url(`${browser.globals.baseUrl}fetch/fetch-ignored.ejs`);

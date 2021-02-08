@@ -38,13 +38,13 @@ module.exports = {
     await browser.assert.strictEqual(atts2.tags['environment'], 'custom-environment');
     await browser.assert.strictEqual(atts2.tags['key1'], 'newvalue1');
     await browser.assert.strictEqual(atts2.tags['key2'], undefined);
+    await browser.globals.assertNoErrorSpans();
   },
   'captureErrors controls error capture': async function(browser) {
     browser.globals.clearReceivedSpans();
     await browser.url(browser.globals.getUrl('/init/captureErrors.ejs'));
     const errorGuard = await browser.globals.findSpan(span => span.name === 'error-guard-span');
     await browser.assert.ok(errorGuard);
-    const lackOfError = await browser.globals.findSpan(span => span.tags.component === 'error');
-    await browser.assert.not.ok(lackOfError);
+    await browser.globals.assertNoErrorSpans();
   },
 };

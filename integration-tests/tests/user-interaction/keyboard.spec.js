@@ -37,5 +37,7 @@ module.exports = {
     await browser.assert.strictEqual(keyupSpan.tags['event_type'], 'keyup');
     await browser.assert.strictEqual(keyupSpan.tags['target_element'], 'BODY');
     await browser.assert.strictEqual(keyupSpan.tags['target_xpath'], '//html/body');
+
+    await browser.globals.assertNoErrorSpans();
   },
 };
