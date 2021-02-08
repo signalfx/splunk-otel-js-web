@@ -21,7 +21,7 @@ module.exports = {
   'should report resource loads happening after page load': async function(browser) {
     await browser.url(browser.globals.getUrl('/resource-observer/resources.ejs'));
 
-    await browser.globals.findSpan(span => span.name === 'guard-span', -3000);
+    await browser.globals.findSpan(span => span.name === 'guard-span');
 
     const imageSpan = await browser.globals.findSpan(
       span => span.tags['http.url'] && span.tags['http.url'].endsWith('splunk-black.png')
