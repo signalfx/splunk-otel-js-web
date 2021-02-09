@@ -26,11 +26,12 @@ export default {
       typescript: require('typescript'),
       useTsConfigDeclarationDir: true,
       clean: true,
-      check: false
+      check: false,
+      esModuleInterop: true,
     }),
     babel({ 
       babelHelpers: 'bundled',
-      exclude: 'node_modules/**'
+      exclude: /node_modules/,
     }),
     commonjs({
       include: /node_modules/,

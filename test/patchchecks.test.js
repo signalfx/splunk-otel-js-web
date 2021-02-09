@@ -18,7 +18,7 @@ import * as assert from 'assert';
 import {DocumentLoad} from '@opentelemetry/plugin-document-load';
 import {UserInteractionPlugin} from '@opentelemetry/plugin-user-interaction';
 import {XMLHttpRequestInstrumentation} from '@opentelemetry/instrumentation-xml-http-request';
-import {FetchPlugin} from '@opentelemetry/plugin-fetch';
+import {FetchInstrumentation} from '@opentelemetry/instrumentation-fetch';
 
 // These are test-time checks that the methods we're patching at least still exist
 // when new upstream versions are pulled.
@@ -36,7 +36,7 @@ describe('check patching assumptions', () => {
     assert.ok(typeof new XMLHttpRequestInstrumentation()._createSpan === 'function');
   });
   it('fetch', () => {
-    assert.ok(typeof new FetchPlugin()._addFinalSpanAttributes === 'function');
+    assert.ok(typeof new FetchInstrumentation()._addFinalSpanAttributes === 'function');
   });
   // WebTracerProvider/getTracer/startSpan chain is entirely public APIs and well tested already
 });

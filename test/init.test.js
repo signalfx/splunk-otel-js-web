@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import * as assert from 'assert';
-import {SpanKind} from '@opentelemetry/api';
+import {SpanKind, setSpan, context, getSpan} from '@opentelemetry/api';
 
 import '../src/main.js';
 import {PatchedZipkinExporter} from '../src/zipkin';
@@ -134,8 +134,8 @@ describe('creating spans is possible', () => {
   it('should have extra fields added', () => {
     const tracer = window.SplunkRum.provider.getTracer('test');
     const span = tracer.startSpan('testSpan');
-    tracer.withSpan(span, () => {
-      assert.ok(tracer.getCurrentSpan() === span);
+    context.with(setSpan(context.active(), span), () => {
+      assert.ok(getSpan(context.active()) === span);
       assert.ok(!!span.attributes['splunk.rumSessionId']);
       assert.ok(!!span.attributes['splunk.rumVersion']);
       assert.ok(!!span.attributes['location.href']);
@@ -160,7 +160,7 @@ describe('setGlobalAttributes', () => {
     const tracer = window.SplunkRum.provider.getTracer('test');
     window.SplunkRum.setGlobalAttributes({newKey: 'newVal'});
     const span = tracer.startSpan('testSpan');
-    tracer.withSpan(span, () => {
+    context.with(setSpan(context.active(), span), () => {
       assert.strictEqual(span.attributes.newKey, 'newVal');
       assert.ok(!span.attributes.customerType); // old key from init() not there anymore
     });

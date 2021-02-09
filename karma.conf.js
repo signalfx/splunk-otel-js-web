@@ -21,7 +21,6 @@ const typescript = require('rollup-plugin-typescript2');
 const resolve = require('@rollup/plugin-node-resolve');
 const istanbulrollup = require('rollup-plugin-istanbul');
 const rollupPolyfills = require('rollup-plugin-node-polyfills');
-const path = require('path');
 
 const rollupHelpers = require('./rollup.helpers');
 
@@ -129,7 +128,7 @@ module.exports = function (config) {
           check: false,
         }),
         istanbulrollup({
-          exclude: ['deps/**', 'node_modules/**'],
+          exclude: ['deps/**', /node_modules/],
         }),
       ],
       input: 'test/index.js',

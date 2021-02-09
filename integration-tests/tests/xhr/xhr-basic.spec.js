@@ -37,5 +37,7 @@ module.exports = {
     await browser.timesMakeSense(xhrSpan.annotations, 'fetchStart', 'responseEnd');
     await browser.timesMakeSense(xhrSpan.annotations, 'open', 'send');
     await browser.timesMakeSense(xhrSpan.annotations, 'send', 'loaded');
+
+    await browser.globals.assertNoErrorSpans();
   },
 };
