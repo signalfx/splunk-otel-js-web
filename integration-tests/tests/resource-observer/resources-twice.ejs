@@ -23,11 +23,9 @@
     }
 
     window.addEventListener("load", function() {
-      setTimeout(function() {
-        Promise.all([loadImg()]).then(function() {
-          SplunkRum.provider.getTracer('default').startSpan('guard-span').end();
-        })
-      }, 5)
+      Promise.all([loadImg()]).then(function() {
+        SplunkRum.provider.getTracer('default').startSpan('guard-span').end();
+      })
     })
   </script>
 

@@ -30,18 +30,19 @@ export class PostDocLoadResourceObserver extends InstrumentationBase {
   constructor(config = {}) {
     super(MODULE_NAME, version, Object.assign({}, {allowedInitiatorTypes: defaultAllowedInitiatorTypes}, config));
     this.observer = undefined;
-    this.afterInit = false;
   }
 
   init() {}
 
   _startObserver() {
     this.observer = new PerformanceObserver( (list) => {
-      list.getEntries().forEach( entry => {
-        if (this._config.allowedInitiatorTypes.includes(entry.initiatorType)) {
-          this._createSpan(entry);
-        }
-      });
+      if (window.document.readyState === 'complete') {
+        list.getEntries().forEach( entry => {
+          if (this._config.allowedInitiatorTypes.includes(entry.initiatorType)) {
+            this._createSpan(entry);
+          }
+        });
+      }
     });
     this.observer.observe({type: 'resource', buffered: false});
   }
@@ -74,13 +75,7 @@ export class PostDocLoadResourceObserver extends InstrumentationBase {
 
   enable() {
     if (window.PerformanceObserver) {
-      if (window.document.readyState === 'complete') {
-        this._startObserver();
-      } else {
-        window.addEventListener('load', () => {
-          this._startObserver();
-        });
-      }
+      this._startObserver();
     }
   }
   

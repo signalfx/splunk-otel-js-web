@@ -14,7 +14,7 @@
       var p = new Promise(function(resolve, _) {
         var s = document.createElement( 'script' );
         s.setAttribute( 'src', '/integration-tests/assets/test.js' );
-        s.onload = resolve();
+        s.onload = resolve;
         document.body.appendChild(s);
       });
       return p;
@@ -31,11 +31,9 @@
     }
 
     window.addEventListener("load", function() {
-      setTimeout(function() {
-        Promise.all([loadImg(), loadScript()]).then(function() {
-          SplunkRum.provider.getTracer('default').startSpan('guard-span').end();
-        })
-      }, 5)
+      Promise.all([loadImg(), loadScript()]).then(function() {
+        SplunkRum.provider.getTracer('default').startSpan('guard-span').end();
+      })
     })
   </script>
 
