@@ -42,13 +42,6 @@ module.exports = {
     );
 
     await browser.assert.ok(!!imageSpan, 'Image span found.');
-    // if (imageSpan.tags['component'] !== 'splunk-post-doc-load-resource') {
-    //   console.log('browser.globals.receivedSpans');
-    //   console.log(browser.globals.receivedSpans);
-    //   await new Promise( (resolve) => {
-    //     setTimeout(resolve, 2000000);
-    //   });
-    // }
     await browser.assert.strictEqual(imageSpan.tags['component'], 'splunk-post-doc-load-resource');
     const imgUrl = browser.globals.getUrl('/integration-tests/assets/', []) + 'splunk-black.png?t=100';
     await browser.assert.strictEqual(imageSpan.tags['http.url'], imgUrl);
@@ -69,7 +62,7 @@ module.exports = {
     await browser.globals.findSpan(span => span.name === 'guard-span');
     const url = browser.globals.getUrl('/integration-tests/assets/', []);
     await browser.assert.not.ok(browser.globals.receivedSpans.find(span => span.tags['http.url'] === url + 'test.js'));
-    const imgSpan = browser.globals.receivedSpans.find(span => span.tags['http.url'] === url + 'splunk-black.png')
+    const imgSpan = browser.globals.receivedSpans.find(span => span.tags['http.url'] === url + 'splunk-black.png');
     if (imgSpan) {
       console.log('browser.globals.receivedSpans');
       console.log(browser.globals.receivedSpans);
