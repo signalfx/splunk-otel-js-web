@@ -44,7 +44,8 @@ export class PostDocLoadResourceObserver extends InstrumentationBase {
         });
       }
     });
-    this.observer.observe({type: 'resource', buffered: false});
+    //apparently safari 13.1 only supports entryTypes
+    this.observer.observe({entryTypes: ['resource']});
   }
 
   _createSpan(entry) {
@@ -75,7 +76,9 @@ export class PostDocLoadResourceObserver extends InstrumentationBase {
 
   enable() {
     if (window.PerformanceObserver) {
-      this._startObserver();
+      window.addEventListener('load', () => {
+        this._startObserver();
+      });
     }
   }
   

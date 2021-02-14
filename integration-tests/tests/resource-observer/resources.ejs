@@ -14,24 +14,35 @@
       var p = new Promise(function(resolve, _) {
         var s = document.createElement( 'script' );
         s.setAttribute( 'src', '/integration-tests/assets/test.js' );
-        s.onload = resolve;
+        s.onload = function() {
+          console.log('script resolved', performance.now());
+          resolve();
+        };
         document.body.appendChild(s);
+        console.log('script load end', performance.now());
       });
       return p;
     }
     
     function loadImg() {
+      console.log('image load start', performance.now());
       var p = new Promise(function(resolve, _) {
         var img = document.createElement('img');
-        img.src = '/integration-tests/assets/splunk-black.png';
-        img.onload = resolve;
+        img.src = '/integration-tests/assets/splunk-black.png?t=100';
+        img.onload = function() {
+          console.log('image resolved', performance.now());
+          resolve();
+        };
         document.body.appendChild(img);
+        console.log('load img end ', performance.now())
       });
       return p;
     }
 
     window.addEventListener("load", function() {
+      console.log('test doc-load', performance.now())
       Promise.all([loadImg(), loadScript()]).then(function() {
+        console.log('test promise-all', performance.now())
         SplunkRum.provider.getTracer('default').startSpan('guard-span').end();
       })
     })

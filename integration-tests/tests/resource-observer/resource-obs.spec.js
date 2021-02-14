@@ -29,16 +29,28 @@ module.exports = {
     const plImageSpans = browser.globals.receivedSpans.filter( 
       span => span.tags['http.url'] && span.tags['http.url'].endsWith('no-cache.png')
     );
+    
+    if (plImageSpans.length !== 1) {
+      console.log('browser.globals.receivedSpans');
+      console.log(browser.globals.receivedSpans);
+    }
     await browser.assert.strictEqual(plAgentSpans.length, 1);
     await browser.assert.strictEqual(plImageSpans.length, 1);
   
     const imageSpan = await browser.globals.findSpan(
-      span => span.tags['http.url'] && span.tags['http.url'].endsWith('splunk-black.png')
+      span => span.tags['http.url'] && span.tags['http.url'].endsWith('splunk-black.png?t=100')
     );
 
     await browser.assert.ok(!!imageSpan, 'Image span found.');
+    // if (imageSpan.tags['component'] !== 'splunk-post-doc-load-resource') {
+    //   console.log('browser.globals.receivedSpans');
+    //   console.log(browser.globals.receivedSpans);
+    //   await new Promise( (resolve) => {
+    //     setTimeout(resolve, 2000000);
+    //   });
+    // }
     await browser.assert.strictEqual(imageSpan.tags['component'], 'splunk-post-doc-load-resource');
-    const imgUrl = browser.globals.getUrl('/integration-tests/assets/', []) + 'splunk-black.png';
+    const imgUrl = browser.globals.getUrl('/integration-tests/assets/', []) + 'splunk-black.png?t=100';
     await browser.assert.strictEqual(imageSpan.tags['http.url'], imgUrl);
     await browser.assert.strictEqual(imageSpan.annotations.length, 9, 'Missing network events');
 
@@ -57,7 +69,12 @@ module.exports = {
     await browser.globals.findSpan(span => span.name === 'guard-span');
     const url = browser.globals.getUrl('/integration-tests/assets/', []);
     await browser.assert.not.ok(browser.globals.receivedSpans.find(span => span.tags['http.url'] === url + 'test.js'));
-    await browser.assert.not.ok(browser.globals.receivedSpans.find(span => span.tags['http.url'] === url + 'splunk-black.png'));
+    const imgSpan = browser.globals.receivedSpans.find(span => span.tags['http.url'] === url + 'splunk-black.png')
+    if (imgSpan) {
+      console.log('browser.globals.receivedSpans');
+      console.log(browser.globals.receivedSpans);
+    }
+    await browser.assert.not.ok(imgSpan);
   },
   'should create one span for cached resource': async function(browser) {
     await browser.url(browser.globals.getUrl('/resource-observer/resources-twice.ejs'));

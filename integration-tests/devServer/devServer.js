@@ -156,6 +156,15 @@ exports.run = async function run({onSpanReceived, enableHttps}) {
   });
   app.get('/empty-page', (_, res) => { res.send('<html><head></head><body></body></html>'); });
 
+  app.use(function(req, res, next) {
+    if (req.query && req.query.t) {
+      const timeout = parseInt(req.query.t);
+      setTimeout(next, timeout);
+    } else {
+      next();
+    }
+  });
+
   app.use(function(req, res, next) {  
     const filepath = path.resolve(__dirname, '../tests', req.path.substring(1));
     if (fs.existsSync(filepath)) {
