@@ -15,7 +15,10 @@
 	<h1>Ignore urls test</h1>
 	<script>
 		Promise.all([fetch('/some-data'), fetch('/no-server-timings')]).then(() => {
-			SplunkRum.provider.getTracer('default').startSpan('guard-span').end();
+			setTimeout(function() {
+				SplunkRum.provider.getTracer('default').startSpan('guard-span').end();
+				// fetch instrumentation waits for some time (300) before ending spans
+			}, 1000)
 		})
 	</script>
 </body>
