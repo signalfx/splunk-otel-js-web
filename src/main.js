@@ -129,7 +129,7 @@ if (!window.SplunkRum) {
     
     new WebSocketInstrumentation(provider, pluginConf).patch();
     
-    const fetchInstrumentation = new SplunkFetchInstrumentation(provider, pluginConf);
+    const fetchInstrumentation = new SplunkFetchInstrumentation(pluginConf);
     fetchInstrumentation.setTracerProvider(provider);
     fetchInstrumentation.enable();
 
