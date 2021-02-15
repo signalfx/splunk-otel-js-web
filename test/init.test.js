@@ -311,16 +311,6 @@ describe('test unloaded img', () => {
   it('should report a span', (done) => {
     capturer.clear();
 
-    const observer = new PerformanceObserver( (list) => {
-      if (window.document.readyState === 'complete') {
-        list.getEntries().forEach( entry => {
-          console.log('PPPPPPPPPPPPPPPPPPPPPPPPPEEERF', entry.name, entry.initiatorType);
-        });
-      }
-    });
-    //apparently safari 13.1 only supports entryTypes
-    observer.observe({entryTypes: ['resource']});
-
     const img = document.createElement('img');
     img.src = location.href+'/IAlwaysWantToUseVeryVerboseDescriptionsWhenIHaveToEnsureSomethingDoesNotExist.jpg';
     document.body.appendChild(img);
