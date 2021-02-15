@@ -20,15 +20,17 @@ module.exports = {
     browser.globals.clearReceivedSpans();  
   },
   'span created for fetch includes all properties': async function(browser) {
-    await browser.url(`${browser.globals.baseUrl}fetch/fetch.ejs`);
+    await browser.url(browser.globals.getUrl('/fetch/fetch.ejs'));
 
     const fetchSpan = await browser.globals.findSpan(span => span.tags['http.url'] === '/some-data');
+    console.log(fetchSpan);
     await browser.assert.ok(!!fetchSpan, 'Fetch span found.');
     await browser.assert.strictEqual(fetchSpan.tags['component'], 'fetch');
     await browser.assert.strictEqual(fetchSpan.tags['http.status_code'], '200');
     await browser.assert.strictEqual(fetchSpan.tags['http.status_text'], 'OK');
     await browser.assert.strictEqual(fetchSpan.tags['http.method'], 'GET');
     await browser.assert.strictEqual(fetchSpan.tags['http.url'], '/some-data');
+
     if (browser.options.desiredCapabilities.browserName !==  'Safari') {
       await browser.assert.strictEqual(fetchSpan.tags['http.response_content_length'], '49');
     }
