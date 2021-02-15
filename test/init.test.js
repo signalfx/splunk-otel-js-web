@@ -310,13 +310,13 @@ describe('test console.error', () => {
 describe('test unloaded img', () => {
   it('should report a span', (done) => {
     capturer.clear();
+
     const img = document.createElement('img');
     img.src = location.href+'/IAlwaysWantToUseVeryVerboseDescriptionsWhenIHaveToEnsureSomethingDoesNotExist.jpg';
     document.body.appendChild(img);
     setTimeout(() => {
-      assert.strictEqual(capturer.spans.length, 1);
-      const span = capturer.spans[0];
-      assert.strictEqual(span.attributes.component, 'error');
+      const span = capturer.spans.find( s => s.attributes.component === 'error');
+      assert.ok(span);
       assert.strictEqual(span.name, 'eventListener.error');
       assert.ok(span.attributes.target_src.endsWith('DoesNotExist.jpg'));
 
