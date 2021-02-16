@@ -29,6 +29,8 @@ module.exports = {
     await browser.assert.strictEqual(navigationSpan.tags['prev.href'], startUrl);
     await browser.assert.strictEqual(navigationSpan.tags['location.href'], startUrl + '#another-page');
     await browser.assert.strictEqual(navigationSpan.tags['ot.status_code'], 'UNSET');
+
+    await browser.globals.assertNoErrorSpans();
   },
   'handles history navigation': async function(browser) {
     browser.globals.clearReceivedSpans();

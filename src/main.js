@@ -29,6 +29,7 @@ import {version as SplunkRumVersion} from '../package.json';
 import {WebSocketInstrumentation} from './websocket';
 import { initWebVitals } from './webvitals';
 import { SplunkLongTaskInstrumentation } from './longtask';
+import { PostDocLoadResourceObserver } from './postDocLoadResourceObserver.js';
 
 const OPTIONS_DEFAULTS = {
   app: 'unknown-browser-app',
@@ -115,13 +116,18 @@ if (!window.SplunkRum) {
     
     new WebSocketInstrumentation(provider, pluginConf).patch();
     
-    const fetchInstrumentation = new SplunkFetchInstrumentation(provider, pluginConf);
+    const fetchInstrumentation = new SplunkFetchInstrumentation(pluginConf);
     fetchInstrumentation.setTracerProvider(provider);
     fetchInstrumentation.enable();
 
     const longtaskInstrumentation = new SplunkLongTaskInstrumentation();
     longtaskInstrumentation.setTracerProvider(provider);
-    
+   
+    if (options.allowedInitiatorTypes) {
+      pluginConf.allowedInitiatorTypes = options.allowedInitiatorTypes;
+    }
+    new PostDocLoadResourceObserver(pluginConf).setTracerProvider(provider);
+
     if (options.beaconUrl) {
       const completeUrl = options.beaconUrl + (options.rumAuth ? '?auth='+options.rumAuth : '');
       const bufferTimeout = typeof options.bufferTimeout !== 'undefined' 
