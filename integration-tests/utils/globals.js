@@ -53,9 +53,10 @@ module.exports = {
     browser.globals.rumVersion = require('../../package.json').version;
     browser.globals.clearReceivedSpans = () => { spans.length = 0; };
     let defaultTimeout = 0;
-    if (browser.options.desiredCapabilities.browserName === 'Safari') {
+    const {browserName, browser_version} = browser.options.desiredCapabilities;
+    if (browserName === 'Safari' && browser_version === '10.1') {
       console.log('Setting default timeout for safari');
-      defaultTimeout = -3000;
+      defaultTimeout = -10000;
     }
     browser.globals.findSpan = (testFn, timeout = defaultTimeout) => findSpan(spans, testFn, timeout);
     browser.globals.emulateTabSwitchingAway = async () => {
