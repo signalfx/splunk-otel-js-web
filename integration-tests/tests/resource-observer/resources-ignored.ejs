@@ -21,7 +21,7 @@
     function loadScript() {
       var p = new Promise(function(resolve, _) {
         var s = document.createElement( 'script' );
-        s.setAttribute( 'src', '/integration-tests/assets/test.js' );
+        s.setAttribute( 'src', '/integration-tests/assets/test.js?t=100' );
         s.onload = resolve;
         document.body.appendChild(s);
       });
