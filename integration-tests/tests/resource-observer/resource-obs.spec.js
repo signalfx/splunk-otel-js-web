@@ -92,6 +92,11 @@ module.exports = {
       span => span.tags['http.url'] && span.tags['http.url'].endsWith('no-cache.png')
     );
 
+    if (imageSpans.length !== 2) {
+      console.log('IMAGE SPANS');
+      console.log(imageSpans);
+    }
+    
     await browser.assert.strictEqual(imageSpans.length , 2);
     const docLoadImage = imageSpans.find( span => span.tags['component'] === 'document-load');
     const afterLoadImage = imageSpans.find( span => span.tags['component'] === 'splunk-post-doc-load-resource');
