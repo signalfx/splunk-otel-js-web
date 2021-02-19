@@ -17,7 +17,6 @@ limitations under the License.
 module.exports = {
   '@tags': ['safari-10.1'],
   'documentFetch, resourceFetch, and documentLoad spans': async function(browser) {
-    const {browserName, browser_version} = browser.options.desiredCapabilities;
     const url = browser.globals.getUrl('/docload/docload.ejs');
     await browser.url(url);
 
@@ -33,7 +32,7 @@ module.exports = {
     await browser.assert.strictEqual(docFetch.traceId, docLoad.traceId);
     await browser.assert.strictEqual(docFetch.parentId, docLoad.id);
 
-    if (!(browserName === 'Safari' && browser_version === '10.1')) {
+    if (!browser.globals.isBrowser('Safari', '10.1')) {
       await browser.assert.ok(scriptFetch, 'Checking scriptFetch span');
       await browser.assert.strictEqual(scriptFetch.traceId, docLoad.traceId);
       await browser.assert.strictEqual(scriptFetch.parentId, docLoad.id);
@@ -52,14 +51,14 @@ module.exports = {
     await browser.timesMakeSense(docFetch.annotations, 'requestStart', 'responseStart');
     await browser.timesMakeSense(docFetch.annotations, 'responseStart', 'responseEnd');
     await browser.timesMakeSense(docFetch.annotations, 'fetchStart', 'responseEnd');
-    if (browserName !== 'Safari') {
+    if (browser.globals.isBrowser('Safari')) {
       await browser.assert.ok(docFetch.tags['http.response_content_length'] >= 0, 'Checking response_content_length');
       await browser.assert.ok(docFetch.tags['link.traceId'], 'Checking presence of link.traceId');
       await browser.assert.ok(docFetch.tags['link.spanId'], 'Checking presence of link.spanId');
     }
 
     // scriptFetch
-    if (browserName !== 'Safari') {
+    if (browser.globals.isBrowser('Safari')) {
       await browser.assert.ok(scriptFetch.tags['http.response_content_length'] >= 0, 'Checking response_content_length');
       await browser.assert.ok(docFetch.tags['link.traceId'], 'Checking presence of link.traceId');
       await browser.assert.ok(docFetch.tags['link.spanId'], 'Checking presence of link.spanId');

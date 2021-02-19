@@ -53,9 +53,21 @@ module.exports = {
     browser.globals.rumVersion = require('../../package.json').version;
     browser.globals.clearReceivedSpans = () => { spans.length = 0; };
     let defaultTimeout = 0;
-    const {browserName, browser_version} = browser.options.desiredCapabilities;
-    if (browserName === 'Safari' && browser_version === '10.1') {
-      console.log('Setting default timeout for safari');
+
+    browser.globals.isBrowser = function(name, version) {
+      const browserName =  browser.options.desiredCapabilities.browserName.toLowerCase();
+      const browser_version =  browser.options.desiredCapabilities.browser_version;
+
+      let versionMatch = true;
+      if (version !== undefined) {
+        versionMatch = browser_version === version;
+      }
+      return browserName === name.toLowerCase() && versionMatch;
+    };
+    
+    if (browser.globals.isBrowser('safari', '10.1')) {
+      // Setting longer timeout be cause it seems to take forever for spans to arrive in Safari 10 during tests
+      // Real page seems fine. This timeout could be smaller but better safe than flaky for now.
       defaultTimeout = -10000;
     }
     browser.globals.findSpan = (testFn, timeout = defaultTimeout) => findSpan(spans, testFn, timeout);
@@ -65,6 +77,9 @@ module.exports = {
         document.dispatchEvent(new Event('visibilitychange'));
       });
     };
+
+
+
     // browser.globals.delay = (time) => new Promise(resolve => setTimeout(resolve, time));
     //    browser.globals.spansSoFar = () => spans.slice();
 
