@@ -65,7 +65,6 @@ async function runTests(argv) {
       ...argv,
       // note: this can be used to scope down tests, leaving here so I don't need to search for this in the future
       // test: path.join(__dirname, '..', 'tests', 'websocket', 'websockets.spec.js')
-      test: require('path').join(__dirname, '..', 'tests', 'websocket', 'websockets.spec.js')
     });
     runner.setup({
       desiredCapabilities: {
