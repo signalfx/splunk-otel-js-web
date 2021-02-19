@@ -51,14 +51,14 @@ module.exports = {
     await browser.timesMakeSense(docFetch.annotations, 'requestStart', 'responseStart');
     await browser.timesMakeSense(docFetch.annotations, 'responseStart', 'responseEnd');
     await browser.timesMakeSense(docFetch.annotations, 'fetchStart', 'responseEnd');
-    if (browser.globals.isBrowser('Safari')) {
+    if (!browser.globals.isBrowser('Safari')) {
       await browser.assert.ok(docFetch.tags['http.response_content_length'] >= 0, 'Checking response_content_length');
       await browser.assert.ok(docFetch.tags['link.traceId'], 'Checking presence of link.traceId');
       await browser.assert.ok(docFetch.tags['link.spanId'], 'Checking presence of link.spanId');
     }
 
     // scriptFetch
-    if (browser.globals.isBrowser('Safari')) {
+    if (!browser.globals.isBrowser('Safari')) {
       await browser.assert.ok(scriptFetch.tags['http.response_content_length'] >= 0, 'Checking response_content_length');
       await browser.assert.ok(docFetch.tags['link.traceId'], 'Checking presence of link.traceId');
       await browser.assert.ok(docFetch.tags['link.spanId'], 'Checking presence of link.spanId');
