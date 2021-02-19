@@ -51,7 +51,7 @@ module.exports = {
     await browser.click('#connectWs');
 
     await browser.globals.findSpan(span => span.name === 'websocket-guard-span');   
-    await browser.assert.not.ok(browser.globals.receivedSpans.find(span => span.name === 'connect'));
+    await browser.assert.not.ok(browser.globals.getReceivedSpans().find(span => span.name === 'connect'));
   },
   'sending send and on message create a span': async function(browser) {
     if (isSafari(browser)) {
@@ -71,7 +71,7 @@ module.exports = {
     await browser.assert.strictEqual(wsMessage.tags['http.url'], browser.globals.wsBase);
     await browser.assert.strictEqual(wsMessage.tags['http.response_content_length'], '7');
 
-    const wsSend = browser.globals.receivedSpans.find(span => span.name === 'send');
+    const wsSend = browser.globals.getReceivedSpans().find(span => span.name === 'send');
     await browser.assert.ok(!!wsSend, 'Send span missing');
     await browser.assert.strictEqual(wsSend.kind, 'PRODUCER');
     await browser.assert.strictEqual(wsSend.tags['component'], 'websocket');
@@ -126,7 +126,7 @@ module.exports = {
     await browser.assert.strictEqual(wsMessage.tags['http.url'], browser.globals.wsBase);
     await browser.assert.strictEqual(wsMessage.tags['http.response_content_length'], '7');
 
-    const wsSend = browser.globals.receivedSpans.find(span => span.name === 'send');
+    const wsSend = browser.globals.getReceivedSpans().find(span => span.name === 'send');
     await browser.assert.ok(!!wsSend, 'Send span missing');
     await browser.assert.strictEqual(wsSend.kind, 'PRODUCER');
     await browser.assert.strictEqual(wsSend.tags['component'], 'websocket');

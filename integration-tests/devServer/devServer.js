@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const bodyParser = require('body-parser');
+const cors = require('cors');
 const WebSocket = require('ws');
 const {render, renderFile} = require('ejs');
 const { buildBasicLocalServer } = require('../../test-utils/server');
@@ -25,16 +25,7 @@ const {
   generateServerTiming,
   setServerTimingHeader,
 } = require('../../test-utils/server/serverTiming');
-
-const INJECT_TEMPLATE = `<script src="<%= file -%>"></script>
-  <script>
-    <%if (noInit) { %>
-      window.SplunkRumOptions = <%- options -%>
-    <% } else { %>  
-      window.SplunkRum && window.SplunkRum.init(<%- options -%>)
-    <% } %> 
-  </script>
-`;
+const { registerTemplateProvider } = require('./templateProvider');
 
 function buildServer({ enableHttps, listener }) {
   const { server, serverOptions } = buildBasicLocalServer({ enableHttps, listener });
@@ -132,7 +123,7 @@ function getSpans(spanOrSpans) {
   }];
 }
 
-exports.run = async function run({onSpanReceived, enableHttps}) {
+exports.runIntegrationDevelopmentServer = async function run({onSpanReceived, enableHttps}) {
   enableHttps = enableHttps || false;
   let lastServerTiming;
   function addHeaders(response) {
@@ -150,6 +141,8 @@ exports.run = async function run({onSpanReceived, enableHttps}) {
 
   app.use(bodyParser.json({ type: 'text/plain' }));  
   app.use(bodyParser.json({ type: 'application/json' }));
+  app.use(cors());
+
   app.get('/', function(_, res) {
     addHeaders(res);
     return res.render(path.resolve(__dirname, 'index.html'));
@@ -165,31 +158,7 @@ exports.run = async function run({onSpanReceived, enableHttps}) {
     }
   });
 
-  app.use(function(req, res, next) {  
-    const filepath = path.resolve(__dirname, '../tests', req.path.substring(1));
-    if (fs.existsSync(filepath)) {
-      const host = `${enableHttps ? 'https' : 'http'}://${req.headers.host}`;
-      addHeaders(res);
-      return res.render(filepath, {
-        renderAgent(userOpts = {}, noInit = false, file = '/dist/splunk-rum.js') {
-          const options = {
-            beaconUrl: `${host}/api/v2/spans`,
-            app: 'splunk-otel-js-dummy-app',
-            debug: true,
-            bufferTimeout: require('../utils/globals').GLOBAL_TEST_BUFFER_TIMEOUT,
-            ...userOpts
-          };
-    
-          return render(INJECT_TEMPLATE, {
-            file,
-            noInit,
-            options: JSON.stringify(options)
-          });
-        },
-      });
-    } 
-    return next();
-  });
+  registerTemplateProvider({ app, addHeaders, enableHttps, render });
 
   app.get('/integration-tests/assets/no-cache.png', function(req, res) {
     res.sendFile(path.join(__dirname, '../assets/no-cache.png'), {
@@ -226,7 +195,7 @@ exports.run = async function run({onSpanReceived, enableHttps}) {
 
   const { 
     close: closeWebsocketServer, 
-    address: { port: wsPort }, 
+    address: { port: websocketsPort }, 
     serverOptions: wsOptions,
     websocketServer,
   } = await startWebsocketServer({ enableHttps });
@@ -239,13 +208,15 @@ exports.run = async function run({onSpanReceived, enableHttps}) {
     });
   });
 
-  console.log(`App accessible at: ${enableHttps ? 'https' : 'http'}://${httpOptions.hostname}:${httpPort}/`);
-  console.log(`Websockets accessible at: ${enableHttps ? 'wss' : 'ws'}://${wsOptions.hostname}:${wsPort}/`);
 
   return {
     close: () => Promise.all([closeHttpServer(), closeWebsocketServer()]),
-    port: httpPort,
-    websocketsPort: wsPort,
+    httpHostname: httpOptions.hostname,
+    httpPort,
+    httpProtocol: enableHttps ? 'https' : 'http',
+    websocketsHostname: wsOptions.hostname,
+    websocketsPort,
+    websocketsProtocol: enableHttps ? 'wss' : 'ws',
     getLastServerTiming: () => lastServerTiming,
   };
 };
