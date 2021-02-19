@@ -61,12 +61,13 @@ module.exports = {
     
     await browser.globals.findSpan(span => span.name === 'guard-span');
     const url = browser.globals.getUrl('/integration-tests/assets/', []);
-    await browser.assert.not.ok(browser.globals.receivedSpans.find(span => span.tags['http.url'] === url + 'test.js'));
-    const imgSpan = browser.globals.receivedSpans.find(span => span.tags['http.url'] === url + 'splunk-black.png');
-    if (imgSpan) {
-      console.log('browser.globals.receivedSpans');
-      console.log(browser.globals.receivedSpans);
-    }
+    await browser.assert.not.ok(browser.globals.receivedSpans.find(
+      span => span.tags['http.url'] === url + 'test.js' && span.tags['component'] === 'splunk-post-doc-load-resource'
+    ));
+    const imgSpan = browser.globals.receivedSpans.find(
+      span => span.tags['http.url'] === url + 'splunk-black.png' && span.tags['component'] === 'splunk-post-doc-load-resource'
+    );
+
     await browser.assert.not.ok(imgSpan);
   },
   'should create one span for cached resource': async function(browser) {
@@ -91,11 +92,6 @@ module.exports = {
     const imageSpans = await browser.globals.receivedSpans.filter(
       span => span.tags['http.url'] && span.tags['http.url'].endsWith('no-cache.png')
     );
-
-    if (imageSpans.length !== 2) {
-      console.log('IMAGE SPANS');
-      console.log(imageSpans);
-    }
     
     await browser.assert.strictEqual(imageSpans.length , 2);
     const docLoadImage = imageSpans.find( span => span.tags['component'] === 'document-load');
