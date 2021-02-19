@@ -69,15 +69,15 @@ module.exports = {
     await browser.assert.ok(guardSpan, 'Checking presence of guard span.');
 
     await browser.assert.not.ok(
-      browser.globals.receivedSpans.find(span => span.name === 'mouseup'),
+      browser.globals.getReceivedSpans().find(span => span.name === 'mouseup'),
       'Ensuring no mouseup span arrived.'
     );
     await browser.assert.not.ok(
-      browser.globals.receivedSpans.find(span => span.name === 'mousedown'),
+      browser.globals.getReceivedSpans().find(span => span.name === 'mousedown'),
       'Ensuring no mousedown span arrived.'
     );
     await browser.assert.not.ok(
-      browser.globals.receivedSpans.find(span => span.name === 'click'),
+      browser.globals.getReceivedSpans().find(span => span.name === 'click'),
       'Ensuring no click span arrived.'
     );
   },
