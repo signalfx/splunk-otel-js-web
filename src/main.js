@@ -16,7 +16,6 @@ limitations under the License.
 
 import './oldBrowserSupportCheck.js';
 import {ConsoleSpanExporter, SimpleSpanProcessor, BatchSpanProcessor} from '@opentelemetry/tracing';
-import {NoopTracerProvider} from '@opentelemetry/api';
 import {WebTracerProvider} from '@opentelemetry/web';
 import {LogLevel} from '@opentelemetry/core';
 import {SplunkDocumentLoad} from './docload';
@@ -31,11 +30,6 @@ import {WebSocketInstrumentation} from './websocket';
 import { initWebVitals } from './webvitals';
 import { SplunkLongTaskInstrumentation } from './longtask';
 import { PostDocLoadResourceObserver } from './postDocLoadResourceObserver.js';
-
-function browserSupported() {
-  // FIXME very short-term patch for Safari 10.1 -> upstream fixes pending
-  return window.PerformanceObserver && performance.getEntriesByType;
-}
 
 const OPTIONS_DEFAULTS = {
   app: 'unknown-browser-app',
@@ -53,13 +47,6 @@ if (!window.SplunkRum) {
 
     if (this.inited) {
       console.log('SplunkRum already init()ed.');
-      return;
-    }
-
-    if (!browserSupported()) {
-      console.log('SplunkRum: browser not supported, disabling instrumentation.');
-      window.SplunkRum.error = function() {};
-      window.SplunkRum.provider = new NoopTracerProvider();
       return;
     }
 

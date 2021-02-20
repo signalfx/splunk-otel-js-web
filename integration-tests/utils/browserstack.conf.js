@@ -88,6 +88,14 @@ const nightwatch_config = {
         resolution: '1024x768',
       }
     },
+    'safari-10.1': {
+      desiredCapabilities: {
+        'os' : 'OS X',
+        'os_version' : 'Sierra',
+        'browserName' : 'Safari',
+        'browser_version' : '10.1'
+      }
+    },      
     edge: {
       desiredCapabilities: {
         os: 'Windows',
