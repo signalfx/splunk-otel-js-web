@@ -23,17 +23,13 @@ module.exports = {
 
     await browser.globals.findSpan(span => span.name === 'guard-span');
 
-    const plAgentSpans = browser.globals.receivedSpans.filter( 
+    const plAgentSpans = browser.globals.getReceivedSpans().filter( 
       span => span.tags['http.url'] && span.tags['http.url'].endsWith('splunk-rum.js')
     );
-    const plImageSpans = browser.globals.receivedSpans.filter( 
+    const plImageSpans = browser.globals.getReceivedSpans().filter( 
       span => span.tags['http.url'] && span.tags['http.url'].endsWith('no-cache.png')
     );
     
-    if (plImageSpans.length !== 1) {
-      console.log('browser.globals.receivedSpans');
-      console.log(browser.globals.receivedSpans);
-    }
     await browser.assert.strictEqual(plAgentSpans.length, 1);
     await browser.assert.strictEqual(plImageSpans.length, 1);
   
@@ -61,20 +57,19 @@ module.exports = {
     
     await browser.globals.findSpan(span => span.name === 'guard-span');
     const url = browser.globals.getUrl('/integration-tests/assets/', []);
-    await browser.assert.not.ok(browser.globals.receivedSpans.find(
+    await browser.assert.not.ok(browser.globals.getReceivedSpans().find(
       span => span.tags['http.url'] === url + 'test.js' && span.tags['component'] === 'splunk-post-doc-load-resource'
     ));
-    const imgSpan = browser.globals.receivedSpans.find(
+    const imgSpan = browser.globals.getReceivedSpans().find(
       span => span.tags['http.url'] === url + 'splunk-black.png' && span.tags['component'] === 'splunk-post-doc-load-resource'
     );
-
     await browser.assert.not.ok(imgSpan);
   },
   'should create one span for cached resource': async function(browser) {
     await browser.url(browser.globals.getUrl('/resource-observer/resources-twice.ejs'));
     await browser.globals.findSpan(span => span.name === 'guard-span');
 
-    const imageSpans = await browser.globals.receivedSpans.filter(
+    const imageSpans = await browser.globals.getReceivedSpans().filter(
       span => span.tags['http.url'] && span.tags['http.url'].endsWith('splunk-black.png')
     );
   
@@ -89,7 +84,7 @@ module.exports = {
     await browser.url(browser.globals.getUrl('/resource-observer/resources-twice-no-cache.ejs'));
     await browser.globals.findSpan(span => span.name === 'guard-span');
 
-    const imageSpans = await browser.globals.receivedSpans.filter(
+    const imageSpans = await browser.globals.getReceivedSpans().filter(
       span => span.tags['http.url'] && span.tags['http.url'].endsWith('no-cache.png')
     );
     

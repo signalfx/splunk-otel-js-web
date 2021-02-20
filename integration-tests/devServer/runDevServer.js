@@ -14,5 +14,5 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-const { run } = require('./devServer');
-run({ enableHttps: false, onSpanReceived: (span) => console.log(span) });
+const { buildIntegrationBackend } = require('../utils/testBackendProvider');
+buildIntegrationBackend({ enableHttps: false });

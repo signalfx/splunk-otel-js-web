@@ -61,11 +61,14 @@ async function runTests(argv) {
     const tunnelHandle = await createTunnel({localIdentifier});
     console.log('Tunnel started.');
 
-    const runner = new Nightwatch.CliRunner({
+    const finalArgs = {
       ...argv,
+      // easier than messing around in ci.yml
+      ...argv.env === 'safari-10.1' ? {'tag': 'safari-10.1'} : {}
       // note: this can be used to scope down tests, leaving here so I don't need to search for this in the future
       // test: path.join(__dirname, '..', 'tests', 'websocket', 'websockets.spec.js')
-    });
+    };
+    const runner = new Nightwatch.CliRunner(finalArgs);
     runner.setup({
       desiredCapabilities: {
         'browserstack.localIdentifier': localIdentifier,

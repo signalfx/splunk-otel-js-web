@@ -20,7 +20,7 @@ module.exports = {
     
     await browser.globals.findSpan(span => span.name === 'guard-span');
 
-    await browser.assert.not.ok(browser.globals.receivedSpans.find(span => span.tags['http.url'] === '/some-data'));
-    await browser.assert.not.ok(browser.globals.receivedSpans.find(span => span.tags['http.url'] === '/no-server-timings'));
+    await browser.assert.not.ok(browser.globals.getReceivedSpans().find(span => span.tags['http.url'] === '/some-data'));
+    await browser.assert.not.ok(browser.globals.getReceivedSpans().find(span => span.tags['http.url'] === '/no-server-timings'));
   },
 };

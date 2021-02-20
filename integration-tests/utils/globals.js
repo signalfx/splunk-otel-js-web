@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-const devServer = require('../devServer/devServer');
+const { buildIntegrationBackend } = require('./testBackendProvider');
 
 const GLOBAL_TEST_BUFFER_TIMEOUT = 20;
 const NETWORK_LATENCY_MARGIN = 2000;
@@ -47,55 +47,52 @@ async function findSpan(spans, testFn, accruedTime) {
 module.exports = {
   // This will be run before each test suite is started
   beforeEach: async (browser, done) => {
-    const spans = [];
-    const handleSpanReceived = (spanName) => { spans.push(spanName); };
-    browser.globals.receivedSpans = spans;
     browser.globals.rumVersion = require('../../package.json').version;
-    browser.globals.clearReceivedSpans = () => { spans.length = 0; };
-    browser.globals.findSpan = (testFn, timeout = 0) => findSpan(spans, testFn, timeout);
+    let defaultTimeout = 0;
+    browser.globals.isBrowser = function(name, version) {
+      const browserName =  browser.options.desiredCapabilities.browserName.toLowerCase();
+      const browser_version =  browser.options.desiredCapabilities.browser_version;
+
+      let versionMatch = true;
+      if (version !== undefined) {
+        versionMatch = browser_version === version;
+      }
+      return browserName === name.toLowerCase() && versionMatch;
+    };
+    
+    if (browser.globals.isBrowser('safari', '10.1')) {
+      // Setting longer timeout be cause it seems to take forever for spans to arrive in Safari 10 during tests
+      // Real page seems fine. This timeout could be smaller but better safe than flaky for now.
+      defaultTimeout = -10000;
+    }
+    
+    const backend = await buildIntegrationBackend({
+      enableHttps: browser.globals.enableHttps,
+    });
+    browser.globals._closeBackend = backend.close;
+    browser.globals.buildIntegrationBackend = () => buildIntegrationBackend({
+      enableHttps: browser.globals.enableHttps,
+    });
+
+    browser.globals.httpPort = backend.httpPort;
+    browser.globals.clearReceivedSpans = backend.clearReceivedSpans;
+    browser.globals.getReceivedSpans = backend.getReceivedSpans;
+    browser.globals.findSpan = (testFn, timeout = defaultTimeout) => findSpan(backend.getReceivedSpans(), testFn, timeout);
+    browser.globals.wsBase = backend.getWebsocketsUrl().toString();
+    browser.globals.getLastServerTiming = backend.getLastServerTiming;
+    browser.globals.getUrl = (...args) => backend.getUrl(...args).toString();
+
     browser.globals.emulateTabSwitchingAway = async () => {
       await browser.execute(() => {
         Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
         document.dispatchEvent(new Event('visibilitychange'));
       });
     };
-    // browser.globals.delay = (time) => new Promise(resolve => setTimeout(resolve, time));
-    //    browser.globals.spansSoFar = () => spans.slice();
 
     browser.globals.assertNoErrorSpans = async () => { 
-      await browser.assert.ok(spans.every(s => s.name !== 'onerror'), 'Ensuring no errors were reported.');
+      await browser.assert.ok(backend.getReceivedSpans().every(s => s.name !== 'onerror'), 'Ensuring no errors were reported.');
     };
 
-    console.log('Starting dev server (dummy page and traces receiver).');
-    browser.globals._backend = await devServer.run({
-      onSpanReceived: handleSpanReceived,
-      enableHttps: browser.globals.enableHttps,
-    });
-
-    const wsProtocol = browser.globals.enableHttps ? 'wss' : 'ws';
-    const httpProtocol = browser.globals.enableHttps ? 'https' : 'http';
-    const base = `${httpProtocol}://${browser.globals.host}:${browser.globals._backend.port}`;
-    browser.globals.wsBase = `${wsProtocol}://${browser.globals.host}:${browser.globals._backend.websocketsPort}/`;
-    const AVAILABLE_SEARCH_PARAMS = {
-      wsProtocol: wsProtocol,
-      wsPort: browser.globals._backend.websocketsPort  
-    };
-
-    browser.globals.getUrl = function(path = '', includedParams = Object.keys(AVAILABLE_SEARCH_PARAMS) ) {
-      let url = base;
-      if (path) {
-        url += path;
-      }  
-
-      includedParams.forEach( (name, index) => {
-        if (index === 0) {
-          url += '?';
-        }
-        url += `&${name}=${AVAILABLE_SEARCH_PARAMS[name]}`;
-      });
-
-      return url;
-    };
     browser.timesMakeSense = async function(eventsArr, startName, endName) {
       const name2time = {};
       eventsArr.forEach(event => {
@@ -119,8 +116,8 @@ module.exports = {
     };
   
     // left here for old tests
-    browser.globals.baseUrl = base + '/';
-    browser.globals.defaultUrl = `${browser.globals.baseUrl}?wsProtocol=${wsProtocol}&wsPort=${browser.globals._backend.websocketsPort}`;
+    browser.globals.baseUrl = backend.getUrl().toString();
+    browser.globals.defaultUrl = backend.getUrl('/', ['wsProtocol', 'wsPort']).toString();
     console.log('Started dev server.');
 
     // note: at the time this was written util.promisify breaks nightwatch here
@@ -131,12 +128,15 @@ module.exports = {
 
   // This will be run after each test suite is finished
   afterEach: async function(browser, done) {
-    console.log('Closing dev server.');
-    if (browser.globals._backend) {
-      await browser.globals._backend.close();
+    try {
+      console.log('Closing dev server.');
+      if (browser.globals._closeBackend) {
+        await browser.globals._closeBackend();
+      }
+      console.log('Closed dev server.');
+    } finally {
+      done();
     }
-    console.log('Closed dev server.');
-    done();
   },
 
   GLOBAL_TEST_BUFFER_TIMEOUT,

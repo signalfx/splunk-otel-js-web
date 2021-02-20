@@ -30,7 +30,7 @@ module.exports = {
 
     browser.globals.clearReceivedSpans();    
     await browser.url(browser.globals.getUrl('/server-timing/index.ejs'));
-    const expectedTraceId = browser.globals._backend.getLastServerTiming().traceId;  
+    const expectedTraceId = browser.globals.getLastServerTiming().traceId;  
     const docFetchSpan = await browser.globals.findSpan(span => span.name === 'documentFetch' && span.tags['link.traceId'] === expectedTraceId);
 
     await browser.assert.strictEqual(docFetchSpan.tags['link.traceId'], expectedTraceId);
