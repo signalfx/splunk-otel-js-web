@@ -48,9 +48,7 @@ module.exports = {
   // This will be run before each test suite is started
   beforeEach: async (browser, done) => {
     browser.globals.rumVersion = require('../../package.json').version;
-    browser.globals.clearReceivedSpans = () => { spans.length = 0; };
     let defaultTimeout = 0;
-
     browser.globals.isBrowser = function(name, version) {
       const browserName =  browser.options.desiredCapabilities.browserName.toLowerCase();
       const browser_version =  browser.options.desiredCapabilities.browser_version;
@@ -67,7 +65,6 @@ module.exports = {
       // Real page seems fine. This timeout could be smaller but better safe than flaky for now.
       defaultTimeout = -10000;
     }
-    browser.globals.findSpan = (testFn, timeout = defaultTimeout) => findSpan(spans, testFn, timeout);
     
     const backend = await buildIntegrationBackend({
       enableHttps: browser.globals.enableHttps,
@@ -80,7 +77,7 @@ module.exports = {
     browser.globals.httpPort = backend.httpPort;
     browser.globals.clearReceivedSpans = backend.clearReceivedSpans;
     browser.globals.getReceivedSpans = backend.getReceivedSpans;
-    browser.globals.findSpan = (testFn, timeout = 0) => findSpan(backend.getReceivedSpans(), testFn, timeout);
+    browser.globals.findSpan = (testFn, timeout = defaultTimeout) => findSpan(backend.getReceivedSpans(), testFn, timeout);
     browser.globals.wsBase = backend.getWebsocketsUrl().toString();
     browser.globals.getLastServerTiming = backend.getLastServerTiming;
     browser.globals.getUrl = (...args) => backend.getUrl(...args).toString();
