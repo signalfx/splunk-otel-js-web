@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 module.exports = {
+  '@tags': ['safari-10.1'],
   afterEach : function(browser) {
     browser.globals.clearReceivedSpans();  
   },
@@ -28,18 +29,20 @@ module.exports = {
     await browser.assert.strictEqual(fetchSpan.tags['http.status_text'], 'OK');
     await browser.assert.strictEqual(fetchSpan.tags['http.method'], 'GET');
     await browser.assert.strictEqual(fetchSpan.tags['http.url'], '/some-data');
-    if (browser.options.desiredCapabilities.browserName.toLowerCase() !==  'safari') {
+
+    if (browser.options.desiredCapabilities.browserName !==  'Safari') {
       await browser.assert.strictEqual(fetchSpan.tags['http.response_content_length'], '49');
     }
     await browser.assert.ok(fetchSpan.tags['link.traceId'], 'got link.traceId');
     await browser.assert.ok(fetchSpan.tags['link.spanId'], 'got link.spanId');
-    await browser.timesMakeSense(fetchSpan.annotations, 'domainLookupStart', 'domainLookupEnd');
-    await browser.timesMakeSense(fetchSpan.annotations, 'connectStart', 'connectEnd');
-    await browser.timesMakeSense(fetchSpan.annotations, 'secureConnectionStart', 'connectEnd');
-    await browser.timesMakeSense(fetchSpan.annotations, 'requestStart', 'responseStart');
-    await browser.timesMakeSense(fetchSpan.annotations, 'responseStart', 'responseEnd');
-    await browser.timesMakeSense(fetchSpan.annotations, 'fetchStart', 'responseEnd');
-
+    if (browser.options.desiredCapabilities.browserName !== 'Safari' && browser.options.desiredCapabilities.browser_version !== '10.1') {
+      await browser.timesMakeSense(fetchSpan.annotations, 'domainLookupStart', 'domainLookupEnd');
+      await browser.timesMakeSense(fetchSpan.annotations, 'connectStart', 'connectEnd');
+      await browser.timesMakeSense(fetchSpan.annotations, 'secureConnectionStart', 'connectEnd');
+      await browser.timesMakeSense(fetchSpan.annotations, 'requestStart', 'responseStart');
+      await browser.timesMakeSense(fetchSpan.annotations, 'responseStart', 'responseEnd');
+      await browser.timesMakeSense(fetchSpan.annotations, 'fetchStart', 'responseEnd');
+    }
     await browser.globals.assertNoErrorSpans();
   },
   'fetch request can be ignored': async function(browser) {

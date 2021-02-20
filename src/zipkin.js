@@ -29,6 +29,14 @@ export function truncate(zspan) {
   }
 }
 
+function sendXHR(url, data) {
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', url);
+  xhr.setRequestHeader('Accept', '*/*');
+  xhr.setRequestHeader('Content-Type', 'text/plain;charset=UTF-8');
+  xhr.send(data);
+}
+
 export class PatchedZipkinExporter {
   constructor(beaconUrl) {
     this.beaconUrl = beaconUrl;
@@ -53,6 +61,8 @@ export class PatchedZipkinExporter {
     const zJson = JSON.stringify(zspans);
     if (navigator.sendBeacon) {
       navigator.sendBeacon(this.beaconUrl, zJson);
+    } else {
+      sendXHR(this.beaconUrl, zJson); 
     }
     resultCallback({code: ExportResultCode.SUCCESS});
   }

@@ -79,7 +79,7 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
 
   _isSupported() {
     // note: PerformanceObserver.supportedEntryTypes has better browser support than LongTask
-    const supportedEntryTypes = PerformanceObserver && PerformanceObserver.supportedEntryTypes;
+    const supportedEntryTypes = window.PerformanceObserver && PerformanceObserver.supportedEntryTypes;
     const effectiveEntryTypes = supportedEntryTypes || [];
     return effectiveEntryTypes.includes(LONGTASK_PERFORMANCE_TYPE);
   }
