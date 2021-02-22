@@ -28,7 +28,8 @@
     "build:debug": "DEBUG_BUILD=1 npx rollup -c",
     "build:prod": "npx rollup -c",
     "build:development": "npm-run-all -s build:debug build:prod",
-    "build:release": "npm-run-all -s lint test build:debug build:prod"
+    "build:release": "npm-run-all -s lint test build:debug build:prod",
+    "release:cdn": "node scripts/release-cdn.mjs"
   },
   "author": "",
   "license": "Apache-2.0",
@@ -37,7 +38,11 @@
     "web-vitals": "^1.1.0"
   },
   "devDependencies": {
+    "@aws-sdk/client-cloudfront": "^3.6.0",
+    "@aws-sdk/client-s3": "^3.6.0",
     "@babel/preset-env": "^7.12.11",
+    "@octokit/graphql": "^4.6.0",
+    "@octokit/request": "^5.4.14",
     "@rollup/plugin-alias": "^3.1.1",
     "@rollup/plugin-babel": "^5.2.2",
     "@rollup/plugin-commonjs": "^17.0.0",
