@@ -16,6 +16,7 @@ limitations under the License.
 
 const path = require('path');
 const fs = require('fs');
+const packageConfig = require('../../package.json');
 
 const INJECT_TEMPLATE = `<script src="<%= file -%>"></script>
   <script>
@@ -38,7 +39,7 @@ exports.registerTemplateProvider = ({app, addHeaders, enableHttps, render}) => {
 
       addHeaders(res);
       return res.render(filepath, {
-        renderAgent(userOpts = {}, noInit = false, file = '/dist/splunk-rum.js') {
+        renderAgent(userOpts = {}, noInit = false, file = '/dist/splunk-rum.js', cdn = false) {
           const options = {
             beaconUrl: beaconUrl.toString(),
             app: 'splunk-otel-js-dummy-app',
@@ -46,6 +47,10 @@ exports.registerTemplateProvider = ({app, addHeaders, enableHttps, render}) => {
             bufferTimeout: require('../utils/globals').GLOBAL_TEST_BUFFER_TIMEOUT,
             ...userOpts
           };
+
+          if (cdn) {
+            options.file = `https://cdn.signalfx.com/o11y-gdi-rum/v${packageConfig.version}/splunk-rum.js`;
+          }
 
           return render(INJECT_TEMPLATE, {
             file,
