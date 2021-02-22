@@ -31,7 +31,7 @@
     function loadImg() {
       var p = new Promise(function(resolve, _) {
         var img = document.createElement('img');
-        img.src = '/integration-tests/assets/splunk-black.png?t=100';
+        img.src = '/integration-tests/assets/splunk-black.png';
         img.onload = resolve;
         document.body.appendChild(img);
       });
