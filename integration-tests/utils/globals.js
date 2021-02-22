@@ -66,13 +66,12 @@ module.exports = {
       defaultTimeout = -10000;
     }
     
-    const backend = await buildIntegrationBackend({
-      enableHttps: browser.globals.enableHttps,
-    });
-    browser.globals._closeBackend = backend.close;
     browser.globals.buildIntegrationBackend = () => buildIntegrationBackend({
       enableHttps: browser.globals.enableHttps,
+      hostname: browser.globals.hostname,
     });
+    const backend = await browser.globals.buildIntegrationBackend();
+    browser.globals._closeBackend = backend.close;
 
     browser.globals.httpPort = backend.httpPort;
     browser.globals.clearReceivedSpans = backend.clearReceivedSpans;

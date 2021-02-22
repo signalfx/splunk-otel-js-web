@@ -58,7 +58,7 @@ const nightwatch_config = {
         project: require('../../package.json').name,
       },
       globals: {
-        host: 'bs-local.com',
+        hostname: 'bs-local.com',
         enableHttps: true, // this is for our server
       }
     },

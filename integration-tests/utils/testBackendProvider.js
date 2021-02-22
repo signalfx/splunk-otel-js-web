@@ -16,7 +16,7 @@ limitations under the License.
 
 const { runIntegrationDevelopmentServer } = require('../devServer/devServer');
 
-exports.buildIntegrationBackend = async ({ enableHttps }) => {
+exports.buildIntegrationBackend = async ({ enableHttps, hostname }) => {
   const spans = [];
   function handleSpanReceived(span) {
     spans.push(span);
@@ -26,9 +26,7 @@ exports.buildIntegrationBackend = async ({ enableHttps }) => {
     close,
     httpProtocol,
     httpPort,
-    httpHostname,
     websocketsProtocol,
-    websocketsHostname,
     websocketsPort,
     getLastServerTiming,
   } = await runIntegrationDevelopmentServer({
@@ -42,7 +40,7 @@ exports.buildIntegrationBackend = async ({ enableHttps }) => {
   };
 
   function getUrl (path = '/', includedParams = Object.keys(availableSearchParams), otherParams = {}) {
-    const url = new URL(path, `${httpProtocol}://${httpHostname}:${httpPort}`);
+    const url = new URL(path, `${httpProtocol}://${hostname}:${httpPort}`);
     includedParams.forEach((name) => {
       url.searchParams.set(name, availableSearchParams[name]);
     });
@@ -51,7 +49,7 @@ exports.buildIntegrationBackend = async ({ enableHttps }) => {
   }
 
   function getWebsocketsUrl() {
-    return new URL(`${websocketsProtocol}://${websocketsHostname}:${websocketsPort}`);
+    return new URL(`${websocketsProtocol}://${hostname}:${websocketsPort}`);
   }
 
   console.log(`Running integration tests server at: ${getUrl()}`);
@@ -65,6 +63,6 @@ exports.buildIntegrationBackend = async ({ enableHttps }) => {
     getUrl,
     getWebsocketsUrl,
     httpPort,
-    httpHostname,
+    httpHostname: hostname,
   };
 };

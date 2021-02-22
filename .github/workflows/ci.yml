@@ -68,11 +68,11 @@ jobs:
 
   local-integration-tests:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [headlessChrome, headlessFirefox]
     steps:
-      - name: Ensure that Chrome is present
-        run: google-chrome --version
-      - name: Ensure that Firefox is present
-        run: firefox --version
       - name: Checkout
         uses: actions/checkout@v1
       - name: Fix ssh+git access for public submodules
@@ -91,6 +91,4 @@ jobs:
       - run: npm run build:debug
       - run: npm run build:prod
       - name: Local integration tests using Headless Chrome
-        run: npm run test:integration:local:_execute
-      - name: Local integration tests using Firefox
-        run: npm run test:integration:local:headlessFirefox:_execute
+        run: npm run test:integration:local:${{ matrix.browser }}:_execute
