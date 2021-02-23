@@ -38,7 +38,7 @@ jobs:
       - name: Build smoke test
         run: npx eslint --no-eslintrc --env es2015 dist/splunk-rum.js
 
-      - run: echo "RELEASE_TAG=$(echo "${{ github.ref }}" | awk '{gsub("/refs/tags/", "");print}')" >> $GITHUB_ENV
+      - run: echo "RELEASE_TAG=$(echo "${{ github.ref }}" | awk '{gsub(/\/+refs\/tags\/+/, "");print}')" >> $GITHUB_ENV
 
       - name: Create Release
         id: create_release
