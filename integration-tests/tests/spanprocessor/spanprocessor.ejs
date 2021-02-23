@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<title>Test init</title>
-	<%- renderAgent({}, true) %>
+	<%- renderAgent({}, { noInit: true }) %>
 	<script>
 		class MySpanProcessor {
 			onEnd(span) {

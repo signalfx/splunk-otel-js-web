@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>Ignore urls</title>
 
-  <%- renderAgent({}, true) %>
+  <%- renderAgent({}, { noInit: true }) %>
   <script>
       //this is done because you can't inject RegExp to template via JSON.stringify
       window.SplunkRumOptions.ignoreUrls = ['/some-data', /server/];

@@ -94,7 +94,6 @@ const nightwatch_config = {
         acceptInsecureCerts: false,
       },
       globals: {
-        hostname: 'localhost',
         enableHttps: false,
       },
     },
