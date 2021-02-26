@@ -110,7 +110,7 @@ processor to our tracing provider.  This processor can modify/create/remove attr
 spans before they leave the browser.  A trivial example of this might be:
 
 ```javascript
-class MySpanProcessor {
+class UrlRedactor {
   onEnd(span) {
     if (span.attributes['http.url']) {
       span.attributes['http.url'] = '(redacted)';
