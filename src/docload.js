@@ -17,6 +17,7 @@ limitations under the License.
 import {DocumentLoad} from '@opentelemetry/plugin-document-load';
 import {captureTraceParentFromPerformanceEntries} from './servertiming';
 
+const excludedInitiatorTypes = ['beacon', 'fetch', 'xmlhttprequest'];
 
 function addExtraDocLoadTags(span) {
   if (document.referrer && document.referrer !== '') {
@@ -50,5 +51,12 @@ export class SplunkDocumentLoad extends DocumentLoad {
       }
     }
     return answer;
+  }
+
+  _initResourceSpan(resource, parentSpan) {
+    if (excludedInitiatorTypes.indexOf(resource.initiatorType) !== -1) {
+      return;
+    }
+    super._initResourceSpan(resource, parentSpan);
   }
 }
