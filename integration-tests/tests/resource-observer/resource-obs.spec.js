@@ -24,7 +24,7 @@ module.exports = {
     await browser.globals.findSpan(span => span.name === 'guard-span');
 
     const plAgentSpans = browser.globals.getReceivedSpans().filter( 
-      span => span.tags['http.url'] && span.tags['http.url'].endsWith('splunk-rum.js')
+      span => span.tags['http.url'] && span.tags['http.url'].endsWith('splunk-otel-web.js')
     );
     const plImageSpans = browser.globals.getReceivedSpans().filter( 
       span => span.tags['http.url'] && span.tags['http.url'].endsWith('no-cache.png')

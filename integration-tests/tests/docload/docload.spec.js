@@ -22,7 +22,7 @@ module.exports = {
 
     const docFetch = await browser.globals.findSpan(span => span.name === 'documentFetch');
     const docLoad = await browser.globals.findSpan(span => span.name === 'documentLoad');
-    const scriptFetch = await browser.globals.findSpan(span => span.name === 'resourceFetch' && span.tags['http.url'].includes('splunk-rum.js'));
+    const scriptFetch = await browser.globals.findSpan(span => span.name === 'resourceFetch' && span.tags['http.url'].includes('splunk-otel-web.js'));
     const brokenImgFetch = await browser.globals.findSpan(span => span.name === 'resourceFetch' && span.tags['http.url'].includes('/nosuchimage.jpg'));
 
     await browser.assert.ok(docFetch, 'Checking docFetch span');

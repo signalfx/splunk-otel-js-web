@@ -1,5 +1,5 @@
 /*
-Copyright 2020 Splunk Inc.
+Copyright 2021 Splunk Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,12 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-
-import 'mocha';
-
-// Manually maintain this list, as old webpack require-based mechanism isn't working under rollup
-import './init.test.js';
-import './patchchecks.test.js';
-import './servertiming.test.js';
-import './utils.test.js';
-import './session.test.js';
+import './throwIfUnsupportedBrowser';
+import SplunkRum from './index';
+export default SplunkRum;

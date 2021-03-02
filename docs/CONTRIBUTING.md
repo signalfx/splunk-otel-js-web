@@ -15,14 +15,10 @@ Build as so:
 ```bash
 $ git submodule update
 $ npm install
+$ npx run dist
 $ npm run lint (optional)
 $ npm test (optional)
-$ npx rollup -c (this produces dist/splunk-rum.js)
-$ DEBUG_BUILD=1 npx rollup -c (optional; this produces dist/splunk-rum.debug.js)
-$ npx eslint --no-eslintrc --env es2015 dist/splunk-rum.js (pure syntax check of dist script; optional)
 ```
-
-For your convenience, the script `fullbuild.sh` runs all these steps except for the submodule update.
 
 ## Functional tests
 2 nightwatch configurations are present in this repository:
@@ -50,15 +46,6 @@ $ /usr/bin/safaridriver --enable
 ```
 
 ## Releasing (During alpha/beta/preview)
-
-1. `git checkout main && git pull`, generally clean up the workspace.
-1. Run build + tests:
-
-    ```bash
-    $ git submodule update
-    $ ./fullbuild.sh
-    ```
-
 1. Manual sanity test
 1. `npm version patch`
 1. `git push origin main` to publish the version bump commit
@@ -68,7 +55,10 @@ $ /usr/bin/safaridriver --enable
     1. A draft release has been created for you. Artifacts are already uploaded.
     1. If you can't find the release matching your desired version, then there might be issues with the Release Action. Navigate to <https://github.com/signalfx/splunk-browser-otel-js/actions>, and investigate the right CD run.
     1. Fill out release title, release notes
-    1. "Publish" the release.
+1. run `npm run release:cdn`
+    1. this script updates release contents and will ask you to verify them (URL will be provided)
+    1. verify that CDN works by running `npm run test:integration:local:chrome`, one of the tests uses
+1. update the versions in `examples/npm/`
 
 ### Syncing with upstream
 Following an OTEL's release of either [core](https://github.com/open-telemetry/opentelemetry-js) or

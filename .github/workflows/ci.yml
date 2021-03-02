@@ -1,17 +1,13 @@
 name: Continuous Integration
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
 
 jobs:
   unit-tests:
     runs-on: ubuntu-latest
     steps:
-      - name: Ensure that Chrome is present
-        run: google-chrome --version
-      - name: Ensure that Firefox is present
-        run: firefox --version
       - name: Checkout
         uses: actions/checkout@v1
       - name: Fix ssh+git access
@@ -29,9 +25,9 @@ jobs:
       - run: npm install
       - name: Lint code 
         run: npm run lint
-      - name: Lint docs 
+      - name: Lint docs
         run: npm run lint:markdown
-      - run: npm run build:prod
+      - run: npm run dist
       - name: Unit test
         run: npm run test:unit:ci
 
@@ -60,8 +56,7 @@ jobs:
             packages/*/node_modules
           key: ${{ runner.os }}-${{ hashFiles('**/package.json') }}
       - run: npm install
-      - run: npm run build:debug
-      - run: npm run build:prod
+      - run: npm run dist
       - name: Run integration tests in Browserstack
         run: node ./integration-tests/utils/browserstack.runner.js -e ${{ matrix.browser }} -c ./integration-tests/utils/browserstack.conf.js
         timeout-minutes: 15
@@ -88,7 +83,6 @@ jobs:
             packages/*/node_modules
           key: ${{ runner.os }}-${{ hashFiles('**/package.json') }}
       - run: npm install
-      - run: npm run build:debug
-      - run: npm run build:prod
+      - run: npm run dist
       - name: Local integration tests using Headless Chrome
         run: npm run test:integration:local:${{ matrix.browser }}:_execute

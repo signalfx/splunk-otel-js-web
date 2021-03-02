@@ -1,6 +1,6 @@
 dist/
-package-lock.json
-node_modules/
+/package-lock.json
+/node_modules/
 .idea/
 .nyc_output/
 .DS_Store
@@ -13,3 +13,4 @@ tests_output/
 
 # contains secrets
 .env
+.npmrc

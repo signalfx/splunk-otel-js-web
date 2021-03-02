@@ -1,4 +1,4 @@
-# Installation Options for splunk-rum.js
+# Installation Options for splunk-otel-web.js
 
 You have a number of options for how you place the script into your pages/apps.  This document walks you through some
 of them and discusses their tradeoffs.  The best choice for you will depend on the design of your app/pages, the performance
@@ -6,12 +6,12 @@ variables you cast most about, and how much complexity/work you want to put into
 
 ## Default Recommendation
 
-Our recommendation for getting started is simple: host `splunk-rum.js` as your own asset
+Our recommendation for getting started is simple: host `splunk-otel-web.js` as your own asset
 (so that it is served over the same HTTP connection as your pages/scripts/images) and apply the following scripts in
 your `<head>`:
 
 ```html
-<script src="/whatever/splunk-rum.js"></script>
+<script src="/whatever/splunk-otel-web.js"></script>
 <script>
   window.SplunkRum.init(
     {
@@ -60,5 +60,5 @@ function initializeSplunkRum() {
   window.SplunkRum.init( ... );   
 }
 </script>
-<script src="/whatever/splunk-rum.js" async onload="initializeSplunkRum()"></script>
+<script src="/whatever/splunk-otel-web.js" async onload="initializeSplunkRum()"></script>
 ```

@@ -41,6 +41,7 @@ export const DEFAULT_AUTO_INSTRUMENTED_EVENTS = {
 export class SplunkUserInteractionPlugin extends UserInteractionPlugin {
   constructor({adjustAutoInstrumentedEvents}) {
     super();
+    this._tracerName = 'route';
     this._autoInstrumentedEvents = Object.assign({}, DEFAULT_AUTO_INSTRUMENTED_EVENTS, adjustAutoInstrumentedEvents);
   }
 
@@ -54,8 +55,7 @@ export class SplunkUserInteractionPlugin extends UserInteractionPlugin {
   }
 
   emitRouteChangeSpan(oldHref) {
-    const tracer = window.SplunkRum.provider.getTracer('route');
-    const span = tracer.startSpan('routeChange');
+    const span = this._tracer.startSpan('routeChange');
     span.setAttribute('component', this.moduleName);
     span.setAttribute('prev.href', oldHref);
     // location.href set with new value by default
