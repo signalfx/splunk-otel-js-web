@@ -34,7 +34,7 @@ to your page.
 For example:
 
 ```html
-<script src="http://your-site.com/path/to/splunk-rum.js"></script>
+<script src="http://your-site.com/path/to/splunk-otel-web.js"></script>
 <script>
   SplunkRum.init(
     {

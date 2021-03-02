@@ -15,10 +15,11 @@ limitations under the License.
 */
 
 import * as assert from 'assert';
-import {SpanKind, setSpan, context, getSpan} from '@opentelemetry/api';
 
-import '../src/main.js';
+import SplunkRum from '../src/index';
+import {SpanKind, setSpan, context, getSpan} from '@opentelemetry/api';
 import {PatchedZipkinExporter} from '../src/zipkin';
+
 class SpanCapturer {
   constructor() {
     this.spans = [];
@@ -36,7 +37,7 @@ class SpanCapturer {
 const capturer = new SpanCapturer();
 
 function doesBeaconUrlEndWith(path) {
-  const sps = window.SplunkRum.provider.getActiveSpanProcessor()._spanProcessors;
+  const sps = SplunkRum.provider.getActiveSpanProcessor()._spanProcessors;
   assert.ok(sps[0]._exporter.beaconUrl.endsWith(path));
 }
 
@@ -44,51 +45,52 @@ describe('test init', () => {
   describe('not specifying beaconUrl', () => {
     it('should not be inited', () => {
       try {
-        window.SplunkRum.init({noBeaconUrl: true});
+        SplunkRum.init({noBeaconUrl: true});
         assert.ok(false); // should not get here
       } catch (expected) {
-        assert.ok(window.SplunkRum.inited === false);
+        assert.ok(SplunkRum.inited === false);
       }
     });
   });
   describe('should enforce secure beacon url', () => {
     afterEach(() => {
       // Ugly way to create a "clean" state in order to test consecutive successful init calls
-      Object.defineProperty(window.SplunkRum, 'provider', {value:undefined, configurable: true});  
-      window.SplunkRum.inited = false;
+      Object.defineProperty(SplunkRum, 'provider', {value:undefined, configurable: true});  
+      SplunkRum.inited = false;
     });
     it('should not be inited with http', () => {
       try {        
-        window.SplunkRum.init({beaconUrl: 'http://127.0.0.1:8888/insecure'});
+        SplunkRum.init({beaconUrl: 'http://127.0.0.1:8888/insecure'});
         assert.ok(false);
       } catch(e) {
-        assert.ok(window.SplunkRum.inited === false);
+        assert.ok(SplunkRum.inited === false);
       }
     });
     it('should init with https', () => {
       const path = '/secure';
-      window.SplunkRum.init({beaconUrl: `https://127.0.0.1:8888/${path}`});
-      assert.ok(window.SplunkRum.inited);
+      SplunkRum.init({beaconUrl: `https://127.0.0.1:8888/${path}`});
+      assert.ok(SplunkRum.inited);
       doesBeaconUrlEndWith(path);
     });
     it('can be forced via allowInsecureBeacon option', () => {
       const path = '/insecure';
-      window.SplunkRum.init({beaconUrl: `http://127.0.0.1:8888/${path}`, allowInsecureBeacon: true});
-      assert.ok(window.SplunkRum.inited);      
+      SplunkRum.init({beaconUrl: `http://127.0.0.1:8888/${path}`, allowInsecureBeacon: true});
+      assert.ok(SplunkRum.inited);      
       doesBeaconUrlEndWith(path);
     });
   });
   describe('successful', () => {
     it('should have been inited properly with doc load spans', (done) => {
-      window.SplunkRum.init({
+      SplunkRum.init({
         beaconUrl: 'https://127.0.0.1:9999/foo',
         app: 'my-app',
         environment: 'my-env',
         globalAttributes: {customerType: 'GOLD'},
       });
-      assert.ok(window.SplunkRum.inited);
-      window.SplunkRum.provider.addSpanProcessor(capturer);
-      setTimeout(() => {
+      assert.ok(SplunkRum.inited);
+      SplunkRum.provider.addSpanProcessor(capturer);
+      setTimeout(()=> {
+        assert.ok(capturer.spans.length >= 3);
         const docLoadTraceId = capturer.spans[0].traceId;
         capturer.spans.forEach(span => {
           assert.strictEqual(span.traceId, docLoadTraceId);
@@ -118,7 +120,7 @@ describe('test init', () => {
   });
   describe('double-init has no effect', () => {
     it('should have been inited only once', () => {
-      window.SplunkRum.init({beaconUrl: 'https://127.0.0.1:8888/bar'});
+      SplunkRum.init({beaconUrl: 'https://127.0.0.1:8888/bar'});
       doesBeaconUrlEndWith('/foo');
     });
   });
@@ -128,7 +130,7 @@ describe('test init', () => {
 describe('creating spans is possible', () => {
   // FIXME figure out ways to validate zipkin 'export', sendBeacon, etc. etc.
   it('should have extra fields added', () => {
-    const tracer = window.SplunkRum.provider.getTracer('test');
+    const tracer = SplunkRum.provider.getTracer('test');
     const span = tracer.startSpan('testSpan');
     context.with(setSpan(context.active(), span), () => {
       assert.ok(getSpan(context.active()) === span);
@@ -143,7 +145,7 @@ describe('creating spans is possible', () => {
     span.end();
   });
   it('should truncate long values when sent through zipkin', () => {
-    const tracer = window.SplunkRum.provider.getTracer('test');
+    const tracer = SplunkRum.provider.getTracer('test');
     const span = tracer.startSpan('testSpan');
     span.setAttribute('somekey', 'a'.repeat(10000));
     const zspan = new PatchedZipkinExporter('no_beacon').modZipkinSpan(span);
@@ -153,8 +155,8 @@ describe('creating spans is possible', () => {
 });
 describe('setGlobalAttributes', () => {
   it('should have extra fields added', () => {
-    const tracer = window.SplunkRum.provider.getTracer('test');
-    window.SplunkRum.setGlobalAttributes({newKey: 'newVal'});
+    const tracer = SplunkRum.provider.getTracer('test');
+    SplunkRum.setGlobalAttributes({newKey: 'newVal'});
     const span = tracer.startSpan('testSpan');
     context.with(setSpan(context.active(), span), () => {
       assert.strictEqual(span.attributes.newKey, 'newVal');
@@ -252,7 +254,7 @@ describe('test stack length', () => {
       recurAndThrow(50);
     } catch (e) {
       try {
-        window.SplunkRum.error('something happened: ', e); // try out the API
+        SplunkRum.error('something happened: ', e); // try out the API
       } catch (e2) {
         // swallow
       }
@@ -324,10 +326,10 @@ describe('test unloaded img', () => {
 describe('test manual report', () => {
   it('should not report useless items', () => {
     capturer.clear();
-    window.SplunkRum.error('');
-    window.SplunkRum.error();
-    window.SplunkRum.error([]);
-    window.SplunkRum.error({});
+    SplunkRum.error('');
+    SplunkRum.error();
+    SplunkRum.error([]);
+    SplunkRum.error({});
     assert.strictEqual(capturer.spans.length, 0);
   });
 });

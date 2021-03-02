@@ -39,7 +39,7 @@ exports.registerTemplateProvider = ({app, addHeaders, enableHttps, render}) => {
 
       addHeaders(res);
       return res.render(filepath, {
-        renderAgent(userOpts = {}, noInit = false, file = '/dist/splunk-rum.js', cdn = false) {
+        renderAgent(userOpts = {}, noInit = false, file = '/dist/browser/splunk-otel-web.js', cdn = false) {
           const options = {
             beaconUrl: beaconUrl.toString(),
             app: 'splunk-otel-js-dummy-app',
@@ -49,7 +49,7 @@ exports.registerTemplateProvider = ({app, addHeaders, enableHttps, render}) => {
           };
 
           if (cdn) {
-            options.file = `https://cdn.signalfx.com/o11y-gdi-rum/v${packageConfig.version}/splunk-rum.js`;
+            options.file = `https://cdn.signalfx.com/o11y-gdi-rum/v${packageConfig.version}/splunk-otel-web.js`;
           }
 
           return render(INJECT_TEMPLATE, {
