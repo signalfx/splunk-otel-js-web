@@ -2,7 +2,7 @@
 
 ## Rationale
 
-`splunk-rum.js` captures the server trace context from a `Server-Timing` header in the `traceparent` format.  SignalFx
+`splunk-otel-web.js` captures the server trace context from a `Server-Timing` header in the `traceparent` format.  SignalFx
 server-side instrumentation generates this automatically.  This document describes how to recreate this if you want to 
 use an alternate form of instrumentation (i.e., creating this header manually).
 

@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import './oldBrowserSupportCheck.js';
 import {ConsoleSpanExporter, SimpleSpanProcessor, BatchSpanProcessor} from '@opentelemetry/tracing';
 import {WebTracerProvider} from '@opentelemetry/web';
 import {LogLevel} from '@opentelemetry/core';
@@ -36,13 +35,10 @@ const OPTIONS_DEFAULTS = {
   adjustAutoInstrumentedEvents: {},
 };
 
-if (!window.SplunkRum) {
-  window.SplunkRum = {
-    inited: false,
-    DEFAULT_AUTO_INSTRUMENTED_EVENTS,
-  };
-
-  window.SplunkRum.init = function (options = {}) {
+const SplunkRum = {
+  inited: false,
+  DEFAULT_AUTO_INSTRUMENTED_EVENTS,
+  init: function (options = {}) {
     options = Object.assign({}, OPTIONS_DEFAULTS, options);
 
     if (this.inited) {
@@ -122,7 +118,7 @@ if (!window.SplunkRum) {
 
     const longtaskInstrumentation = new SplunkLongTaskInstrumentation();
     longtaskInstrumentation.setTracerProvider(provider);
-   
+    
     if (options.allowedInitiatorTypes) {
       pluginConf.allowedInitiatorTypes = options.allowedInitiatorTypes;
     }
@@ -161,5 +157,7 @@ if (!window.SplunkRum) {
     initWebVitals(provider);
     this.inited = true;
     console.log('SplunkRum.init() complete');
-  };
-}
+  },
+};
+
+export default SplunkRum;

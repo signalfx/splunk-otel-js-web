@@ -10,7 +10,7 @@ const SPLUNK_RUM_TAGS_TEMPLATE = `
 </script>
 `;
 
-const LIB_DISK_PATH = path.join(__dirname, '..', '..', 'dist', 'splunk-rum.js');
+const LIB_DISK_PATH = path.join(__dirname, '..', '..', 'dist', 'splunk-otel-web.js');
 const LIB_PATH = '/bundles/splunk-rum';
 
 async function handleSplunkRumRequest(app) {
@@ -30,7 +30,7 @@ function generateSplunkRumTags () {
   };
 
   return render(SPLUNK_RUM_TAGS_TEMPLATE, {
-    file: '/dist/splunk-rum.js',
+    file: '/dist/browser/splunk-otel-web.js',
     options: JSON.stringify(options),
   });
 }

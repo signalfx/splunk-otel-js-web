@@ -10,6 +10,7 @@ import readline from 'readline';
 
 const OWNER = 'signalfx';
 const REPO = 'splunk-otel-js-browser';
+const PRERELEASE_KEYWORDS = ['alpha', 'beta', 'rc'];
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packageConfig = JSON.parse(fs.readFileSync(join(__dirname, '..', 'package.json')).toString());
@@ -84,7 +85,7 @@ for (const asset of assets) {
     const publicUrl = `https://cdn.signalfx.com/${key}`;
     console.log(`Uploaded ${asset.name} as ${publicUrl}`);
 
-    if (asset.name == 'splunk-rum.js') {
+    if (asset.name == 'splunk-otel-web.js') {
       cdnLinks.push(
 `### Version ${version}
 ${(isFinalVersion ? '' : '**WARNING: Content behind this URL might be updated when we release a new version.**')}
@@ -95,7 +96,11 @@ ${(isFinalVersion ? '' : '**WARNING: Content behind this URL might be updated wh
       );
     }
 
-    versionParts.pop(); // 1.2.3 -> 1.2
+    const lastSegment = versionParts.pop(); // 1.2.3 -> 1.2
+    if (PRERELEASE_KEYWORDS.some(keyword => lastSegment.includes(keyword))) {
+      // if version was 1.2.3-beta, then don't update 1.2
+      break;
+    }
     isFinalVersion = false;
   }
 }
@@ -115,6 +120,8 @@ const { Invalidation } = await cfClient.send(new CreateInvalidationCommand({
 console.log(`Invalidation ${Invalidation.Id} sent. Typically it takes about 5 minutes to execute.`);
 
 console.log('Appending CDN instructions to release description.');
-await requestWithAuth(`PATCH /repos/${OWNER}/${REPO}/releases/${latestRelease.id}`, {
+await requestWithAuth(`PATCH ${latestRelease.url}`, {
   body: latestRelease.body + cdnLinks.join('\n'),
 })
+
+console.log(`Please verify that instructions are correct by navigating to: ${latestRelease.html_url}`);

@@ -15,4 +15,4 @@ limitations under the License.
 */
 
 const { buildIntegrationBackend } = require('../utils/testBackendProvider');
-buildIntegrationBackend({ enableHttps: false });
+buildIntegrationBackend({ enableHttps: false, hostname: 'localhost' });

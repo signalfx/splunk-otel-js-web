@@ -37,7 +37,7 @@ const { generateServerTiming, setServerTimingHeader } = require('../../test-util
 
 function getRumScript({beaconHost, beaconPort}) {
   return `
-    <script src="https://${beaconHost}:${beaconPort}/dist/splunk-rum.js"></script>
+    <script src="https://${beaconHost}:${beaconPort}/dist/splunk-otel-web.js"></script>
     <script>
       SplunkRum.init({"beaconUrl":"https://${beaconHost}:${beaconPort}/api/v2/spans", app:"perf-test-app", debug:true});
     </script>
