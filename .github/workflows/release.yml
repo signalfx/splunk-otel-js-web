@@ -57,7 +57,7 @@ jobs:
             Changes in this Release
             - TODO: please fill in the changes in this release
             - TODO: please convert from draft into release when ready
-          draft: true
+          draft: false
           prerelease: false
 
       - name: Upload the non-minified script
