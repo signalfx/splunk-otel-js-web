@@ -34,7 +34,7 @@ jobs:
         run: npm run dist
 
       - name: Build smoke test
-        run: npx eslint --no-eslintrc --env es2015 dist/splunk-otel-web.js
+        run: npx eslint --no-eslintrc --env es2015 dist/browser/splunk-otel-web.js
 
       - name: Publish to NPM
         uses: JS-DevTools/npm-publish@v1
