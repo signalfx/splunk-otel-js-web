@@ -15,7 +15,7 @@ Build as so:
 ```bash
 $ git submodule update
 $ npm install
-$ npx run dist
+$ npm run dist
 $ npm run lint (optional)
 $ npm test (optional)
 ```
