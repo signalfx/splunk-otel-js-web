@@ -13,6 +13,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        ref: ${{ github.ref }}
 
       # without this step submodules won't load, as ssh keys are not configured
       # in Actions by default
