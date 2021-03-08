@@ -26,9 +26,12 @@ export class SplunkXhrPlugin extends XMLHttpRequestInstrumentation {
       // don't care about success/failure, just want to see response headers if they exist
       xhr.addEventListener('readystatechange', function () {
         if (xhr.readyState === xhr.HEADERS_RECEIVED) {
-          const st = xhr.getResponseHeader('server-timing');
-          if (st !== null) {
-            captureTraceParent(st, span);
+          const headers = xhr.getAllResponseHeaders().toLowerCase();
+          if (headers.indexOf('server-timing') !== -1) {
+            const st = xhr.getResponseHeader('server-timing');
+            if (st !== null) {
+              captureTraceParent(st, span);
+            }
           }
         }
       });
