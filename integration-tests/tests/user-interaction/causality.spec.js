@@ -15,8 +15,10 @@ limitations under the License.
 */
 
 module.exports = {
-  'handles causality of a mouse click': async function(browser) {
+  beforeEach: function (browser) {
     browser.globals.clearReceivedSpans();
+  },
+  'handles causality of a mouse click': async function(browser) {
     await browser.url(browser.globals.getUrl('/user-interaction/causality.ejs'));
     await browser.click('#btn1');
 
@@ -31,4 +33,18 @@ module.exports = {
 
     await browser.globals.assertNoErrorSpans();
   },
+  'can be disabled': async function(browser) {
+    await browser.url(browser.globals.getUrl('/user-interaction/causality.ejs'));
+    await browser.click('#btn1');
+    await browser.globals.waitForTestToFinish();
+
+    browser.assert.ok(!!await browser.globals.getReceivedSpans().find(({name}) => name === 'click'), 'click span recorded');
+
+    browser.globals.clearReceivedSpans();
+    await browser.url(browser.globals.getUrl('/user-interaction/causality.ejs?disableCapture=interactions'));
+    await browser.click('#btn1');
+    await browser.globals.waitForTestToFinish();
+
+    browser.assert.not.ok(await browser.globals.getReceivedSpans().find(({name}) => name === 'click'), 'lack of click span');
+  }
 };

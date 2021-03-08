@@ -59,7 +59,7 @@ export class PatchedZipkinExporter {
     spans = spans.filter(span => exporter.filter(span));
     const zspans = spans.map(span => this.modZipkinSpan(span));
     const zJson = JSON.stringify(zspans);
-    if (navigator.sendBeacon) {
+    if (false && navigator.sendBeacon) {
       navigator.sendBeacon(this.beaconUrl, zJson);
     } else {
       sendXHR(this.beaconUrl, zJson); 

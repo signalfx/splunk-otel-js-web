@@ -22,7 +22,7 @@ import {SplunkXhrPlugin, SplunkFetchInstrumentation} from './xhrfetch';
 import {SplunkUserInteractionPlugin, DEFAULT_AUTO_INSTRUMENTED_EVENTS} from './interaction';
 import {PatchedZipkinExporter} from './zipkin';
 import {captureErrors} from './errors';
-import {generateId} from './utils';
+import {generateId, getPluginConfig} from './utils';
 import {initSessionTracking, getRumSessionId} from './session';
 import {version as SplunkRumVersion} from '../package.json';
 import {WebSocketInstrumentation} from './websocket';
@@ -32,7 +32,7 @@ import { PostDocLoadResourceObserver } from './postDocLoadResourceObserver.js';
 
 const OPTIONS_DEFAULTS = {
   app: 'unknown-browser-app',
-  adjustAutoInstrumentedEvents: {},
+  capture: {},
 };
 
 const SplunkRum = {
@@ -93,14 +93,26 @@ const SplunkRum = {
       }
     }
 
-    const { ignoreUrls, adjustAutoInstrumentedEvents } = options;
-    const pluginConf = { ignoreUrls };
+    const plugins = [];
+    const {ignoreUrls} = options;
+    const pluginConf = {ignoreUrls};
+    const docConf = getPluginConfig(options.capture.document);
+    if (docConf !== false) {
+      plugins.push(new SplunkDocumentLoad(docConf));
+    }
+
+    const xhrConf = getPluginConfig(options.capture.xhr, pluginConf);
+    if (xhrConf !== false) {
+      plugins.push(new SplunkXhrPlugin(xhrConf));
+    }
+
+    const interactionsConf = getPluginConfig(options.capture.interactions);
+    if (interactionsConf !== false) {
+      plugins.push(new SplunkUserInteractionPlugin(interactionsConf));
+    }
+
     const provider = new PatchedWTP({
-      plugins: [
-        new SplunkDocumentLoad(),
-        new SplunkXhrPlugin(pluginConf),
-        new SplunkUserInteractionPlugin({ adjustAutoInstrumentedEvents }),
-      ],
+      plugins,
       logLevel: options.debug ? LogLevel.DEBUG : LogLevel.ERROR,
     });
     if (options.spanProcessor) {
@@ -110,19 +122,27 @@ const SplunkRum = {
       }
     }
     
-    new WebSocketInstrumentation(provider, pluginConf).patch();
-    
-    const fetchInstrumentation = new SplunkFetchInstrumentation(pluginConf);
-    fetchInstrumentation.setTracerProvider(provider);
-    fetchInstrumentation.enable();
-
-    const longtaskInstrumentation = new SplunkLongTaskInstrumentation();
-    longtaskInstrumentation.setTracerProvider(provider);
-    
-    if (options.allowedInitiatorTypes) {
-      pluginConf.allowedInitiatorTypes = options.allowedInitiatorTypes;
+    const websocketConf = getPluginConfig(options.capture.websocket, pluginConf, true);
+    if (websocketConf !== false) {
+      new WebSocketInstrumentation(provider, websocketConf).patch();
     }
-    new PostDocLoadResourceObserver(pluginConf).setTracerProvider(provider);
+
+    if (xhrConf !== false) {
+      const fetchInstrumentation = new SplunkFetchInstrumentation(pluginConf);
+      fetchInstrumentation.setTracerProvider(provider);
+      fetchInstrumentation.enable();
+    }
+
+    const longtaskConf = getPluginConfig(options.capture.longtask);
+    if (longtaskConf !== false) {
+      const longtaskInstrumentation = new SplunkLongTaskInstrumentation();
+      longtaskInstrumentation.setTracerProvider(provider);
+    }
+
+    const postloadConf = getPluginConfig(options.capture.postload, pluginConf);
+    if (postloadConf !== false) {
+      new PostDocLoadResourceObserver(postloadConf).setTracerProvider(provider);
+    }
 
     if (options.beaconUrl) {
       const completeUrl = options.beaconUrl + (options.rumAuth ? '?auth='+options.rumAuth : '');
@@ -142,19 +162,27 @@ const SplunkRum = {
         }
       });
       provider.addSpanProcessor(batchSpanProcessor);
+      this._processor = batchSpanProcessor;
     }
     if (options.debug) {
       provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
     }
     provider.register();
     Object.defineProperty(this, 'provider', {value:provider, configurable: true});
-    if (options.captureErrors === undefined || options.captureErrors === true) {
+
+    const errorsConf = getPluginConfig(options.capture.errors);
+    if (errorsConf !== false) {
       captureErrors(this, provider); // also registers SplunkRum.error
     } else {
       // stub out error reporting method to not break apps that call it
       this.error = function() { };
     }
-    initWebVitals(provider);
+
+    const vitalsConf = getPluginConfig(options.capture.webvitals);
+    if (vitalsConf !== false) {
+      initWebVitals(provider);
+    }
+
     this.inited = true;
     console.log('SplunkRum.init() complete');
   },

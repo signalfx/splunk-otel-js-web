@@ -9,7 +9,11 @@
 <body>
 	<h1>FETCH</h1>
 	<script>
-		fetch('/some-data').then(response => response.json()).then(console.log);
+		window.testing = true;
+		fetch('/some-data').then(response => response.json()).then(res => {
+			console.log(res);
+			window.testing = false;
+		});
 	</script>
 	</body>
 </html>

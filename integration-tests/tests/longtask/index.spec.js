@@ -21,8 +21,10 @@ function isSupported(browser) {
 }
 
 module.exports = {
+  beforeEach: function(browser) {
+    browser.globals.clearReceivedSpans();  
+  },
   'reports a longtask': async function(browser) {
-    browser.globals.clearReceivedSpans();
     await browser.url(browser.globals.getUrl('/longtask/index.ejs'));
     await browser.click('#btnLongtask');
 
@@ -49,4 +51,18 @@ module.exports = {
 
     await browser.globals.assertNoErrorSpans();
   },
+  'can be disabled': async function(browser) {
+    await browser.url(browser.globals.getUrl('/longtask/index.ejs'));
+    await browser.click('#btnLongtask');
+
+    browser.assert.ok(!!browser.globals.getReceivedSpans().find(({name}) => name === 'longtask'), 'Checking presence of error span.');
+    await browser.globals.assertNoErrorSpans();
+
+    browser.globals.clearReceivedSpans();
+    await browser.url(browser.globals.getUrl('/longtask/index.ejs?disableCapture=longtask'));
+    await browser.click('#btnLongtask');
+
+    browser.assert.not.ok(browser.globals.getReceivedSpans().find(({name}) => name === 'longtask'), 'Checking presence of error span.');
+    await browser.globals.assertNoErrorSpans();
+  }
 };

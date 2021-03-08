@@ -88,6 +88,17 @@ module.exports = {
       });
     };
 
+    browser.globals.waitForTestToFinish = async () => {
+      // eslint-disable-next-line no-shadow
+      const {value: lastId} = await browser.executeAsync(function (done) {
+        window.waitForTestToFinish(done);
+      });
+
+      if (lastId) {
+        await browser.globals.findSpan(({id}) => id === lastId);
+      }
+    };
+
     browser.globals.assertNoErrorSpans = async () => { 
       await browser.assert.ok(backend.getReceivedSpans().every(s => s.name !== 'onerror'), 'Ensuring no errors were reported.');
     };

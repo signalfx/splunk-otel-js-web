@@ -18,7 +18,11 @@
       return oReq;
     }
 
-    makeHXR('/some-data');
+    window.testing = true;
+    var req = makeHXR('/some-data');
+    req.addEventListener('loadend', function () {
+      window.testing = false;
+    })
   </script>
   </body>
 </html>

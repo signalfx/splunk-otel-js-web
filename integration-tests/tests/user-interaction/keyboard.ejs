@@ -3,7 +3,16 @@
 <head>
 	<meta charset="UTF-8">
 	<title>Keyboard events test</title>
-  <%- renderAgent({ adjustAutoInstrumentedEvents: { keydown: true, keyup: true } }) %>
+  <%- renderAgent({
+    capture: {
+      interactions: {
+        events: {
+          keydown: true,
+          keyup: true
+        }
+      }
+    }
+  }) %>
 </head>
 <body>
   <h1>Keyboard events test</h1>

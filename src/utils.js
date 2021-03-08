@@ -41,6 +41,27 @@ export function limitLen(s, cap) {
   }
 }
 
+/**
+ * Get plugin config from user provided value
+ *
+ * @template {Object|undefined} T
+ * @param {T|Boolean|undefined} value Value given by user
+ * @param {T|false} defaults Default value
+ * @param {boolean|undefined} defaultDisable If undefined by user should mean false
+ * @returns {T|false}
+ */ 
+export function getPluginConfig(value, defaults, defaultDisable) {
+  if (value === false) {
+    return value;
+  }
+
+  if (value === undefined && defaultDisable) {
+    return false;
+  }
+
+  return Object.assign({}, defaults, value);
+}
+
 export function isIframe() {
   try {
     return window.self !== window.top;

@@ -15,8 +15,10 @@ limitations under the License.
 */
 
 module.exports = {
-  'DOM resource 4xx': async function(browser) {
+  beforeEach: function (browser) {
     browser.globals.clearReceivedSpans();
+  },
+  'DOM resource 4xx': async function(browser) {
     await browser.url(browser.globals.getUrl('/errors/views/resource-4xx.ejs'));
 
     const errorSpan = await browser.globals.findSpan(s => s.name === 'eventListener.error');
@@ -32,7 +34,6 @@ module.exports = {
     await browser.end();
   },
   'JS syntax error': async function(browser) {
-    browser.globals.clearReceivedSpans();
     await browser.url(browser.globals.getUrl('/errors/views/js-syntax-error.ejs'));
 
     const errorSpan = await browser.globals.findSpan(s => s.name === 'onerror');
@@ -58,7 +59,6 @@ module.exports = {
     await browser.end();
   },
   'JS unhandled error': async function(browser) {
-    browser.globals.clearReceivedSpans();
     await browser.url(browser.globals.getUrl('/errors/views/unhandled-error.ejs'));
 
     const errorSpan = await browser.globals.findSpan(s => s.name === 'onerror');
@@ -84,7 +84,6 @@ module.exports = {
     await browser.end();
   },
   'unhandled promise rejection': async function(browser) {
-    browser.globals.clearReceivedSpans();
     await browser.url(browser.globals.getUrl('/errors/views/unhandled-rejection.ejs'));
 
     const errorSpan = await browser.globals.findSpan(s => s.name === 'unhandledrejection');
@@ -100,7 +99,6 @@ module.exports = {
   },
   'manual console.error': async function(browser) {
     const browserName = browser.options.desiredCapabilities.browserName.toLowerCase();
-    browser.globals.clearReceivedSpans();
     
     const url = browser.globals.getUrl('/errors/views/console-error.ejs');
     await browser.url(url);
@@ -123,8 +121,8 @@ module.exports = {
 
     const ERROR_STACK_MAP = {
       safari: `global code@${url}:16:15`,
-      chrome: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:16:25`,
-      edge: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:16:25`,
+      chrome: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:62:25`,
+      edge: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:62:25`,
       firefox: `@${url}:16:7\n`,
     };
     await browser.assert.strictEqual(tags['error.stack'], ERROR_STACK_MAP[browserName]);
@@ -133,7 +131,6 @@ module.exports = {
   },
   'SplunkRum.error': async function(browser) {
     const browserName = browser.options.desiredCapabilities.browserName.toLowerCase();
-    browser.globals.clearReceivedSpans();
     
     const url = browser.globals.getUrl('/errors/views/splunkrum-error.ejs');
     await browser.url(url);
@@ -156,12 +153,24 @@ module.exports = {
 
     const ERROR_STACK_MAP = {
       safari: `global code@${url}:16:15`,
-      chrome: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:16:25`,
-      edge: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:16:25`,
+      chrome: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:62:25`,
+      edge: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:62:25`,
       firefox: `@${url}:16:7\n`,
     };
     await browser.assert.strictEqual(tags['error.stack'], ERROR_STACK_MAP[browserName]);
 
     await browser.end();
+  },
+  'module can be disabled': async function(browser) {
+    await browser.url(browser.globals.getUrl('/errors/views/unhandled-error.ejs'));
+    await browser.globals.waitForTestToFinish();
+
+    browser.assert.ok(!!browser.globals.getReceivedSpans().find(({name}) => name === 'onerror'), 'Checking presence of error span.');
+
+    browser.globals.clearReceivedSpans();
+    await browser.url(browser.globals.getUrl('/errors/views/unhandled-error.ejs?disableCapture=errors'));
+    await browser.globals.waitForTestToFinish();
+
+    browser.assert.not.ok(browser.globals.getReceivedSpans().find(({name}) => name === 'onerror'), 'Checking lack of error span.');
   }
 };

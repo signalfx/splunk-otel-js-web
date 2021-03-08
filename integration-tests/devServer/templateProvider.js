@@ -21,10 +21,58 @@ const packageConfig = require('../../package.json');
 const INJECT_TEMPLATE = `<script src="<%= file -%>"></script>
   <script>
     <%if (noInit) { %>
-      window.SplunkRumOptions = <%- options -%>
+      window.SplunkRumOptions = <%- options -%>;
     <% } else { %>  
-      window.SplunkRum && window.SplunkRum.init(<%- options -%>)
-    <% } %> 
+      window.SplunkRum && window.SplunkRum.init(<%- options -%>);
+    <% } %>
+
+    var _testing = false;
+    var _onTestingDone = null;
+    Object.defineProperty(window, 'testing', {
+      get() {
+        return _testing;
+      },
+      set(value) {
+        _testing = value;
+        setTimeout(function () {
+          if (_onTestingDone) {
+            _flushData(_onTestingdone);
+            _onTestingDone = null;
+          }
+        }, 0);
+      }
+    });
+    function _flushData(done) {
+      if (!window.SplunkRum) {
+        done(null);
+      }
+
+      var len = SplunkRum._processor._finishedSpans.length;
+      var lastId = null;
+      if (len > 0) {
+        lastId = SplunkRum._processor._finishedSpans[len - 1].spanContext.spanId;
+      }
+
+      SplunkRum._processor.forceFlush().then(function () {
+        done(lastId);
+      }, function () {
+        done(null);
+      });
+    }
+    function waitForTestToFinish(done) {
+      if (document.readyState !== 'complete') {
+        window.addEventListener('load', function () {
+          waitForTestToFinish(done);
+        });
+      }
+
+      if (_testing) {
+        _onTestingDone = done;
+        return;
+      }
+
+      _flushData(done);
+    }
   </script>
 `;
 
@@ -47,6 +95,13 @@ exports.registerTemplateProvider = ({app, addHeaders, enableHttps, render}) => {
             bufferTimeout: require('../utils/globals').GLOBAL_TEST_BUFFER_TIMEOUT,
             ...userOpts
           };
+
+          if (req.query.disableCapture) {
+            if (!options.capture) {
+              options.capture = {};
+            }
+            options.capture[req.query.disableCapture] = false;
+          }
 
           if (cdn) {
             options.file = `https://cdn.signalfx.com/o11y-gdi-rum/v${packageConfig.version}/splunk-otel-web.js`;
