@@ -36,7 +36,7 @@ const INJECT_TEMPLATE = `<script src="<%= file -%>"></script>
         _testing = value;
         setTimeout(function () {
           if (_onTestingDone) {
-            _flushData(_onTestingdone);
+            _flushData(_onTestingDone);
             _onTestingDone = null;
           }
         }, 0);

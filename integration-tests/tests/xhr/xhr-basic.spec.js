@@ -52,16 +52,11 @@ module.exports = {
   'module can be disabled': async function(browser) {
     await browser.url(browser.globals.getUrl('/xhr/views/xhr-basic.ejs'));
     await browser.globals.waitForTestToFinish();
-    // Extra wait as xhr takes 300ms to wait for resource timings
-    await new Promise(resolve => setTimeout(resolve, 300));
-    await browser.globals.waitForTestToFinish();
 
     browser.assert.ok(!!browser.globals.getReceivedSpans().find(span => span.tags['http.url'] === '/some-data'), 'Checking presence of xhr span.');
 
     browser.globals.clearReceivedSpans();
     await browser.url(browser.globals.getUrl('/xhr/views/xhr-basic.ejs?disableCapture=xhr'));
-    await browser.globals.waitForTestToFinish();
-    await new Promise(resolve => setTimeout(resolve, 300));
     await browser.globals.waitForTestToFinish();
 
     browser.assert.not.ok(browser.globals.getReceivedSpans().find(span => span.tags['http.url'] === '/some-data'), 'Checking lack of xhr span.');
