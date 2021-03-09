@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {DocumentLoad} from '@opentelemetry/plugin-document-load';
+import {DocumentLoadInstrumentation} from '@opentelemetry/instrumentation-document-load';
 import {captureTraceParentFromPerformanceEntries} from './servertiming';
 
 const excludedInitiatorTypes = ['beacon', 'fetch', 'xmlhttprequest'];
@@ -28,7 +28,7 @@ function addExtraDocLoadTags(span) {
   }
 }
 
-export class SplunkDocumentLoad extends DocumentLoad {
+export class SplunkDocumentLoad extends DocumentLoadInstrumentation {
 
   _endSpan(span, performanceName, entries) {
     if (span && span.name !== 'documentLoad') { // only apply links to document/resource fetch

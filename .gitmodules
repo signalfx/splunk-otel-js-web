@@ -1,6 +1,0 @@
-[submodule "deps/opentelemetry-js"]
-	path = deps/opentelemetry-js
-	url = git@github.com:signalfx/opentelemetry-js.git
-[submodule "deps/opentelemetry-js-contrib"]
-	path = deps/opentelemetry-js-contrib
-	url = git@github.com:signalfx/opentelemetry-js-contrib.git

@@ -25,6 +25,7 @@ import { HttpAttribute } from '@opentelemetry/semantic-conventions';
 
 const MODULE_NAME = 'splunk-post-doc-load-resource';
 const defaultAllowedInitiatorTypes = ['img', 'script']; //other, css, link
+let _enabled = false;
 export class PostDocLoadResourceObserver extends InstrumentationBase {
   
   constructor(config = {}) {
@@ -54,7 +55,7 @@ export class PostDocLoadResourceObserver extends InstrumentationBase {
     }
 
     const span = this._tracer.startSpan(
-      //TODO use @opentelemetry/plugin-document-load AttributeNames.RESOURCE_FETCH ?,
+      //TODO use @opentelemetry/instrumentation-document-load AttributeNames.RESOURCE_FETCH ?,
       // AttributeNames not exported currently
       'resourceFetch', 
       {
@@ -75,6 +76,11 @@ export class PostDocLoadResourceObserver extends InstrumentationBase {
   }
 
   enable() {
+    if (_enabled) {
+      return;
+    }
+    _enabled = true;
+
     if (window.PerformanceObserver) {
       window.addEventListener('load', () => {
         this._startObserver();

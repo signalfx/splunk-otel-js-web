@@ -171,7 +171,7 @@ exports.runIntegrationDevelopmentServer = async function run({onSpanReceived, en
   });
   app.use(express.static(path.join(__dirname, '../../')));
 
-  app.post('/*', (req, res) => {
+  app.post('/api/v2/spans', (req, res) => {
     getSpans(req.body).forEach(onSpanReceived);
     res.send('');
   });

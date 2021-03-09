@@ -14,7 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {toZipkinSpan, statusCodeTagName, statusDescriptionTagName} from '../deps/opentelemetry-js/packages/opentelemetry-exporter-zipkin/src/transform';
+import {
+  toZipkinSpan, 
+  statusCodeTagName, 
+  statusDescriptionTagName,
+} from '@opentelemetry/exporter-zipkin/build/src/transform.js';
 import {ExportResultCode} from '@opentelemetry/core';
 import {limitLen} from './utils';
 

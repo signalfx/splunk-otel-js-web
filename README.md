@@ -142,6 +142,12 @@ Auto-instrumentation doesn't currently capture events handled on `document` leve
 
 Web Workers and Service Workers are not supported. Code loaded within them will not be auto-instrumented, and currently there is no version of the code which can be used within either Web or Service Workers for manual instrumentation.
 
+## Open Telemetry version
+| @splunk/otel-web | @opentelemetry/api |
+|------------------|--------------------|
+| 0.2.x | 0.18.x |
+| 0.1.x | 0.15.x |
+
 ## Building and contributing
 
 Please read [CONTRIBUTING.md](./docs/CONTRIBUTING.md) for instructions on building, running tests, and so forth.

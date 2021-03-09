@@ -8,10 +8,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v1
-      - name: Fix ssh+git access
-        run: git config --global url."https://github.com/".insteadOf "git@github.com:"
-      - name: Checkout submodules
-        run: git submodule update --init --recursive
       - name: Cache Dependencies
         uses: actions/cache@v2
         with:
@@ -41,10 +37,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v1
-      - name: Fix ssh+git access
-        run: git config --global url."https://github.com/".insteadOf "git@github.com:"
-      - name: Checkout submodules
-        run: git submodule update --init --recursive
       - name: Cache Dependencies
         uses: actions/cache@v2
         with:
@@ -68,10 +60,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v1
-      - name: Fix ssh+git access for public submodules
-        run: git config --global url."https://github.com/".insteadOf "git@github.com:"
-      - name: Checkout submodules
-        run: git submodule update --init --recursive
       - name: Cache Dependencies
         uses: actions/cache@v2
         with:
