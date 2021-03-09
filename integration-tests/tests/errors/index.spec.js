@@ -120,10 +120,10 @@ module.exports = {
     await browser.assert.strictEqual(tags['error.message'], ERROR_MESSAGE_MAP[browserName]);
 
     const ERROR_STACK_MAP = {
-      safari: `global code@${url}:16:15`,
-      chrome: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:62:25`,
-      edge: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:62:25`,
-      firefox: `@${url}:16:7\n`,
+      safari: `global code@${url}:64:15`,
+      chrome: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:64:25`,
+      edge: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:64:25`,
+      firefox: `@${url}:64:7\n`,
     };
     await browser.assert.strictEqual(tags['error.stack'], ERROR_STACK_MAP[browserName]);
 
@@ -152,10 +152,10 @@ module.exports = {
     await browser.assert.strictEqual(tags['error.message'], ERROR_MESSAGE_MAP[browserName]);
 
     const ERROR_STACK_MAP = {
-      safari: `global code@${url}:16:15`,
-      chrome: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:62:25`,
-      edge: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:62:25`,
-      firefox: `@${url}:16:7\n`,
+      safari: `global code@${url}:64:15`,
+      chrome: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:64:25`,
+      edge: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:64:25`,
+      firefox: `@${url}:64:7\n`,
     };
     await browser.assert.strictEqual(tags['error.stack'], ERROR_STACK_MAP[browserName]);
 

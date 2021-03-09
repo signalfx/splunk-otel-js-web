@@ -52,17 +52,23 @@ module.exports = {
     await browser.globals.assertNoErrorSpans();
   },
   'can be disabled': async function(browser) {
+    if (!isSupported(browser)) {
+      return; // Skip this test
+    }
+
     await browser.url(browser.globals.getUrl('/longtask/index.ejs'));
     await browser.click('#btnLongtask');
+    await browser.globals.waitForTestToFinish();
 
-    browser.assert.ok(!!browser.globals.getReceivedSpans().find(({name}) => name === 'longtask'), 'Checking presence of error span.');
+    browser.assert.ok(!!browser.globals.getReceivedSpans().find(({name}) => name === 'longtask'), 'Checking presence of longtask span.');
     await browser.globals.assertNoErrorSpans();
 
     browser.globals.clearReceivedSpans();
     await browser.url(browser.globals.getUrl('/longtask/index.ejs?disableCapture=longtask'));
     await browser.click('#btnLongtask');
+    await browser.globals.waitForTestToFinish();
 
-    browser.assert.not.ok(browser.globals.getReceivedSpans().find(({name}) => name === 'longtask'), 'Checking presence of error span.');
+    browser.assert.not.ok(browser.globals.getReceivedSpans().find(({name}) => name === 'longtask'), 'Checking presence of longtask span.');
     await browser.globals.assertNoErrorSpans();
   }
 };
