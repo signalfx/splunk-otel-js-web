@@ -14,7 +14,15 @@
   <pre id="scenarioDisplay"></pre>
   <script id="scenario">
     btn1.addEventListener('click', function () {
-      fetch('/some-data').then(response => response.json()).then(console.log);
+      window.testing = true;
+      fetch('/some-data').then(response => response.json()).then(function (res) {
+        console.log(res);
+        // Otel plugin waits for 300ms for resource timings to appear. This should schedule
+				// testing done to be after that.
+        setTimeout(function () {
+          window.testing = false;
+        }, 301);
+      });
     });
   </script>
   <script>scenarioDisplay.innerHTML = scenario.innerHTML;</script>
