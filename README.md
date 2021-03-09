@@ -72,9 +72,9 @@ Please read [INSTALLING.md](./docs/INSTALLING.md) for more advanced installation
 
 Capturing modules can be configured by passing following values to `capture` object in config:
 
-* `false` - disables this module
-* `true` - enables this module with default options
-* `object` - enables with additional options
+- `false` - disables this module
+- `true` - enables this module with default options
+- `object` - enables with additional options
 
 | Option | Default | Description |
 |---|---|---|

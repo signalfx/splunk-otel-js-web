@@ -12,7 +12,11 @@
 		window.testing = true;
 		fetch('/some-data').then(response => response.json()).then(res => {
 			console.log(res);
-			window.testing = false;
+			setTimeout(function () {
+				// Otel plugin waits for 300ms for resource timings to appear. This should schedule
+				// testing done to be after that.
+				window.testing = false;
+			}, 301);
 		});
 	</script>
 	</body>
