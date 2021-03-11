@@ -164,6 +164,9 @@ license file](./LICENSE) for more details.
 
 ### Unreleased
 
+### 0.2.0-rc.3
+- Transpile runtime to es2015 in browser build (#82)
+
 ### 0.2.0-rc.2
 
 ### 0.2.0-rc.1
