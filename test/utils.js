@@ -31,8 +31,9 @@ export class SpanCapturer {
   }
 }
 
-export function initWithDefaultConfig(capturer) {
+export function initWithDefaultConfig(capturer, additionalOptions = {}) {
   SplunkRum.init({
+    ...additionalOptions,
     beaconUrl: 'http://127.0.0.1:8888/v1/trace',
     allowInsecureBeacon: true,
     app: 'my-app',
