@@ -5,8 +5,8 @@ const { babel } = require('@rollup/plugin-babel');
 const commonjs = require('@rollup/plugin-commonjs');
 
 module.exports.babelPlugin = babel({ 
-  babelHelpers: 'bundled',
-  exclude: /node_modules/,
+  babelHelpers: 'runtime',
+  include: /node_modules/,
 });
 
 module.exports.nodeResolvePlugin = nodeResolve({
