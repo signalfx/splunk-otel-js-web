@@ -32,15 +32,14 @@ export class SpanCapturer {
 }
 
 export function initWithDefaultConfig(capturer, additionalOptions = {}) {
-  SplunkRum.init({
-    ...additionalOptions,
+  SplunkRum.init(Object.assign({}, additionalOptions, {
     beaconUrl: 'http://127.0.0.1:8888/v1/trace',
     allowInsecureBeacon: true,
     app: 'my-app',
     environment: 'my-env',
     globalAttributes: {customerType: 'GOLD'},
     bufferTimeout: 0,
-  });
+  }));
   SplunkRum.provider.addSpanProcessor(capturer);
 }
 
