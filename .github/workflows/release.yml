@@ -15,14 +15,6 @@ jobs:
         uses: actions/checkout@v2
         with:
           ref: ${{ github.ref }}
-
-      # without this step submodules won't load, as ssh keys are not configured
-      # in Actions by default
-      - name: Fix ssh+git access
-        run: git config --global url."https://github.com/".insteadOf "git@github.com:"
-      - name: Checkout submodules
-        run: git submodule update --init --recursive
-
       - uses: actions/setup-node@v2
         with:
           node-version: '12'
