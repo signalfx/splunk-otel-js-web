@@ -38,7 +38,7 @@ export function initWithDefaultConfig(capturer) {
     app: 'my-app',
     environment: 'my-env',
     globalAttributes: {customerType: 'GOLD'},
-    bufferTimeout: 1,
+    bufferTimeout: 0,
   });
   SplunkRum.provider.addSpanProcessor(capturer);
 }
