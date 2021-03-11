@@ -27,8 +27,6 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
     super(MODULE_NAME, version, Object.assign({}, config));
   }
 
-  init() {}
-
   enable() {
     if (!this._isSupported()) {
       return;

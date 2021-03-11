@@ -1,7 +1,6 @@
 const path = require('path');
 const fs = require('fs');
-const fetch = require('node-fetch');
-const {render, renderFile} = require('ejs');
+const {render} = require('ejs');
 
 const SPLUNK_RUM_TAGS_TEMPLATE = `
 <script src="<%= file -%>"></script>
