@@ -30,6 +30,7 @@
   "author": "Splunk Observability Instrumentals Team <ssg-observability-instrumentals-npm@splunk.com>",
   "license": "Apache-2.0",
   "dependencies": {
+    "@babel/runtime": "~7.13.10",
     "@opentelemetry/api": "0.18.1",
     "@opentelemetry/api-metrics": "0.18.0",
     "@opentelemetry/core": "0.18.0",
@@ -52,6 +53,7 @@
   "devDependencies": {
     "@aws-sdk/client-cloudfront": "^3.6.0",
     "@aws-sdk/client-s3": "^3.6.0",
+    "@babel/plugin-transform-runtime": "^7.13.10",
     "@babel/preset-env": "^7.13.0",
     "@octokit/graphql": "^4.6.0",
     "@octokit/request": "^5.4.14",
