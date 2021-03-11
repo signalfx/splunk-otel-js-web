@@ -1,6 +1,6 @@
 {
   "name": "@splunk/otel-web",
-  "version": "0.2.0-rc.0",
+  "version": "0.2.0-rc.1",
   "description": "Splunk distribution of Open Telemetry for browser environment.",
   "repository": "github:signalfx/splunk-otel-js-browser",
   "scripts": {
@@ -30,18 +30,20 @@
   "author": "Splunk Observability Instrumentals Team <ssg-observability-instrumentals-npm@splunk.com>",
   "license": "Apache-2.0",
   "dependencies": {
-    "@opentelemetry/api": "^0.18.1",
-    "@opentelemetry/api-metrics": "^0.18.0",
-    "@opentelemetry/core": "^0.18.0",
-    "@opentelemetry/exporter-zipkin": "^0.18.0",
-    "@opentelemetry/instrumentation": "^0.18.0",
-    "@opentelemetry/instrumentation-document-load": "^0.14.0",
-    "@opentelemetry/instrumentation-fetch": "^0.18.0",
-    "@opentelemetry/instrumentation-user-interaction": "^0.14.0",
-    "@opentelemetry/instrumentation-xml-http-request": "^0.18.0",
-    "@opentelemetry/web": "^0.18.0",
-    "shimmer": "^1.2.1",
-    "web-vitals": "^1.1.0"
+    "@opentelemetry/api": "0.18.1",
+    "@opentelemetry/api-metrics": "0.18.0",
+    "@opentelemetry/core": "0.18.0",
+    "@opentelemetry/exporter-zipkin": "0.18.0",
+    "@opentelemetry/instrumentation": "0.18.0",
+    "@opentelemetry/instrumentation-document-load": "0.14.0",
+    "@opentelemetry/instrumentation-fetch": "0.18.0",
+    "@opentelemetry/instrumentation-user-interaction": "0.14.0",
+    "@opentelemetry/instrumentation-xml-http-request": "0.18.0",
+    "@opentelemetry/semantic-conventions": "0.18.0",
+    "@opentelemetry/tracing": "0.18.0",
+    "@opentelemetry/web": "0.18.0",
+    "shimmer": "~1.2.1",
+    "web-vitals": "~1.1.0"
   },
   "browser": "dist/cjs/index.js",
   "files": [
