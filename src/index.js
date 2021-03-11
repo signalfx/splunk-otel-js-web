@@ -137,8 +137,8 @@ const SplunkRum = {
       const completeUrl = options.beaconUrl + (options.rumAuth ? '?auth='+options.rumAuth : '');
       const batchSpanProcessor = new BatchSpanProcessor(new PatchedZipkinExporter(completeUrl), {
         scheduledDelayMillis: options.bufferTimeout,
-        _maxExportBatchSize: options.bufferSize, 
-        _maxQueueSize: 2 * options.bufferSize,
+        maxExportBatchSize: options.bufferSize, 
+        maxQueueSize: 2 * options.bufferSize,
       });
       window.addEventListener('visibilitychange', function() {
         // this condition applies when the page is hidden or when it's closed
