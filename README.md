@@ -164,6 +164,8 @@ license file](./LICENSE) for more details.
 
 ### Unreleased
 
+### 0.2.0-rc.2
+
 ### 0.2.0-rc.1
 - Upgrade to OTel 0.18 and convert dependencies from git submodules to NPM (#80)
 - Safety check before asking for xhr headers (#77)
