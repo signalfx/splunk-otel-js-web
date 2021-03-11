@@ -18,16 +18,20 @@ limitations under the License.
 import shimmer from 'shimmer';
 import {SpanKind, setSpan, context} from '@opentelemetry/api';
 import {isUrlIgnored} from '@opentelemetry/core';
+import { version } from '../package.json';
+
+import {
+  InstrumentationBase,
+} from '@opentelemetry/instrumentation';
 
 function size(o) {
   return o.byteLength || o.size || o.length || undefined;
 }
 
-export class WebSocketInstrumentation {
-  constructor(provider, _config = {}) {
-    this._tracer = provider.getTracer('websocket');
+export class SplunkWebSocketInstrumentation extends InstrumentationBase {
+  constructor(config) {
+    super('splunk-websocket', version, config);
     this.listener2ws2patched = new WeakMap();
-    this._config = _config;
   }
   startSpan(ws, name, spanKind) {
     const span = this._tracer.startSpan(name, {kind: spanKind});
@@ -152,7 +156,7 @@ export class WebSocketInstrumentation {
     span.end();
   }
 
-  patch() {
+  enable() {
     const plugin = this;
     shimmer.wrap(window, 'WebSocket', function (original) {
       return function (url, protocols) {
@@ -214,5 +218,10 @@ export class WebSocketInstrumentation {
         }
       };
     });
+ 
+  }
+
+  disable() {
+    shimmer.unwrap(window, 'WebSocket');
   }
 }

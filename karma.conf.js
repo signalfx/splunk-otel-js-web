@@ -15,14 +15,12 @@ limitations under the License.
 */
 
 const json = require('@rollup/plugin-json');
-const alias = require('@rollup/plugin-alias');
-const commonjs = require('@rollup/plugin-commonjs');
-const typescript = require('rollup-plugin-typescript2');
-const resolve = require('@rollup/plugin-node-resolve');
 const istanbulrollup = require('rollup-plugin-istanbul');
 const rollupPolyfills = require('rollup-plugin-node-polyfills');
 
-const rollupHelpers = require('./rollup.helpers');
+const {
+  nodeResolvePlugin, commonjsPlugin,
+} = require('./rollup.shared');
 
 process.env.CHROME_BIN = require('puppeteer').executablePath();
 
@@ -44,7 +42,7 @@ module.exports = function (config) {
       runInParent: true,
     },
     websocketServer: {
-      port:8979,
+      port: 8979,
       beforeStart: (server) => {
         server.on('request', (request) => {
           const cx = request.accept(request.requestedProtocols ? request.requestedProtocols[0] : null, request.origin);
@@ -108,22 +106,9 @@ module.exports = function (config) {
     rollupPreprocessor: {
       plugins: [
         json(),
-        alias({
-          entries: rollupHelpers.aliases,
-        }),
-        rollupHelpers.nodeToBrowser(),
-        commonjs(),
-        resolve.nodeResolve({
-          browser: true,
-          preferBuiltins: false,
-        }),
+        nodeResolvePlugin,
+        commonjsPlugin,
         rollupPolyfills(),
-        typescript({
-          typescript: require('typescript'),
-          useTsConfigDeclarationDir: true,
-          clean: true,
-          check: false,
-        }),
         istanbulrollup({
           exclude: ['deps/**', /node_modules/],
         }),
@@ -131,7 +116,8 @@ module.exports = function (config) {
       input: 'test/index.js',
       output: {
         file: 'bundle.js',
-        format: 'iife'
+        format: 'iife',
+        sourcemap: true,
       }
     },
     coverageIstanbulReporter: {

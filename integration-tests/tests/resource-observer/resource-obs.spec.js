@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 module.exports = {
-  afterEach: function(browser) {  
+  beforeEach: function(browser) {  
     browser.globals.clearReceivedSpans();
   },
   'should report resource loads happening after page load': async function(browser) {

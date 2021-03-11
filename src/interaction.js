@@ -14,7 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {UserInteractionPlugin} from '@opentelemetry/plugin-user-interaction';
+import { trace } from '@opentelemetry/api';
+import {UserInteractionInstrumentation} from '@opentelemetry/instrumentation-user-interaction';
 
 export const DEFAULT_AUTO_INSTRUMENTED_EVENTS = {
   // pointer
@@ -38,11 +39,22 @@ export const DEFAULT_AUTO_INSTRUMENTED_EVENTS = {
   play: true,
 };
 
-export class SplunkUserInteractionPlugin extends UserInteractionPlugin {
-  constructor({events}) {
-    super();
-    this._tracerName = 'route';
+const ROUTING_INSTRUMENTATION_NAME = 'route';
+const ROUTING_INSTRUMENTATION_VERSION = 1;
+
+export class SplunkUserInteractionInstrumentation extends UserInteractionInstrumentation {
+  constructor(config) {
+    super(config);
+
+    const { events } = config;
     this._autoInstrumentedEvents = Object.assign({}, DEFAULT_AUTO_INSTRUMENTED_EVENTS, events);
+    
+    this._routingTracer = trace.getTracer(ROUTING_INSTRUMENTATION_NAME, ROUTING_INSTRUMENTATION_VERSION);
+  }
+
+  setTracerProvider(tracerProvider) {
+    super.setTracerProvider(tracerProvider);
+    this._routingTracer = tracerProvider.getTracer(ROUTING_INSTRUMENTATION_NAME, ROUTING_INSTRUMENTATION_VERSION);
   }
 
   getZoneWithPrototype() {
@@ -55,22 +67,30 @@ export class SplunkUserInteractionPlugin extends UserInteractionPlugin {
   }
 
   emitRouteChangeSpan(oldHref) {
-    const span = this._tracer.startSpan('routeChange');
+    const span = this._routingTracer.startSpan('routeChange');
     span.setAttribute('component', this.moduleName);
     span.setAttribute('prev.href', oldHref);
     // location.href set with new value by default
     span.end(span.startTime);
   }
 
-  patch() {
-    const plugin = this;
+  enable() {
+    this.__hashChangeHandler = (event) => {
+      this.emitRouteChangeSpan(event.oldURL);
+    };
+
     // Hash can be changed with location.hash = '#newThing', no way to hook that directly...
-    window.addEventListener('hashchange', function(event) {
-      plugin.emitRouteChangeSpan(event.oldURL);
-    });
-    return super.patch();
+    window.addEventListener('hashchange', this.__hashChangeHandler);
+
+    // parent wraps calls to addEventListener so call after us
+    super.enable();
   }
 
+  disable() {
+    // parent unwraps calls to addEventListener so call before us
+    super.disable();
+    window.removeEventListener('hashchange', this.__hashChangeHandler);
+  }
 
   // FIXME find cleaner way to patch
   _patchHistoryMethod() {

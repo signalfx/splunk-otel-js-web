@@ -46,7 +46,7 @@ export function limitLen(s, cap) {
  *
  * @template {Object|undefined} T
  * @param {T|Boolean|undefined} value Value given by user
- * @param {T|false} defaults Default value
+ * @param {T} defaults Default value
  * @param {boolean|undefined} defaultDisable If undefined by user should mean false
  * @returns {T|false}
  */ 
