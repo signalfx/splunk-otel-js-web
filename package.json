@@ -39,6 +39,8 @@
     "@opentelemetry/instrumentation-fetch": "^0.18.0",
     "@opentelemetry/instrumentation-user-interaction": "^0.14.0",
     "@opentelemetry/instrumentation-xml-http-request": "^0.18.0",
+    "@opentelemetry/semantic-conventions": "^0.18.0",
+    "@opentelemetry/tracing": "^0.18.0",
     "@opentelemetry/web": "^0.18.0",
     "shimmer": "^1.2.1",
     "web-vitals": "^1.1.0"
