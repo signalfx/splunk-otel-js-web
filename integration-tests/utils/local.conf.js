@@ -62,7 +62,7 @@ const nightwatch_config = {
         browserName: 'chrome',
         chromeOptions: {
           w3c: false,
-          args: ['disable-gpu']
+          args: ['disable-gpu', 'auto-open-devtools-for-tabs']
         }
       }
     },

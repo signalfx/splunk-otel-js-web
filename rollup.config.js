@@ -1,26 +1,13 @@
 /* eslint-disable header/header */
 
 import json from '@rollup/plugin-json';
-import alias from '@rollup/plugin-alias';
 import commonjs from '@rollup/plugin-commonjs';
-import nodeResolve from '@rollup/plugin-node-resolve';
-import typescript from 'rollup-plugin-typescript2';
 import { terser } from 'rollup-plugin-terser';
-import babel from '@rollup/plugin-babel';
-const helpers = require('./rollup.helpers');
 
-const typescriptPlugin = typescript({
-  typescript: require('typescript'),
-  useTsConfigDeclarationDir: true,
-  clean: true,
-  check: false,
-  esModuleInterop: true,
-});
-
-const babelPlugin = babel({ 
-  babelHelpers: 'bundled',
-  exclude: /node_modules/,
-});
+const {
+  babelPlugin,
+  nodeResolvePlugin,
+} = require('./rollup.shared');
 
 export default [
   {
@@ -33,15 +20,11 @@ export default [
     },
     plugins: [
       json(),
-      helpers.nodeToBrowser(),
-      alias({
-        entries: helpers.aliases,
-      }),
-      nodeResolve(),
-      typescriptPlugin,
+      nodeResolvePlugin,
       babelPlugin,
       commonjs({
         include: /node_modules/,
+        sourceMap: true,
       }),
       terser({ output: { comments: false } }),
     ],
@@ -56,15 +39,11 @@ export default [
     },
     plugins: [
       json(),
-      helpers.nodeToBrowser(),
-      alias({
-        entries: helpers.aliases,
-      }),
-      nodeResolve(),
-      typescriptPlugin,
+      nodeResolvePlugin,
       babelPlugin,
       commonjs({
         include: /node_modules/,
+        sourceMap: true,
       }),
     ],
   },

@@ -14,18 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import {registerInstrumentations} from '@opentelemetry/instrumentation';
 import {ConsoleSpanExporter, SimpleSpanProcessor, BatchSpanProcessor} from '@opentelemetry/tracing';
 import {WebTracerProvider} from '@opentelemetry/web';
-import {LogLevel} from '@opentelemetry/core';
+import {DiagLogLevel} from '@opentelemetry/api';
 import {SplunkDocumentLoad} from './docload';
 import {SplunkXhrPlugin, SplunkFetchInstrumentation} from './xhrfetch';
-import {SplunkUserInteractionPlugin, DEFAULT_AUTO_INSTRUMENTED_EVENTS} from './interaction';
+import {SplunkUserInteractionInstrumentation, DEFAULT_AUTO_INSTRUMENTED_EVENTS} from './interaction';
 import {PatchedZipkinExporter} from './zipkin';
 import {captureErrors} from './errors';
 import {generateId} from './utils';
 import {initSessionTracking, getRumSessionId} from './session';
 import {version as SplunkRumVersion} from '../package.json';
-import {WebSocketInstrumentation} from './websocket';
+import {SplunkWebSocketInstrumentation} from './websocket';
 import { initWebVitals } from './webvitals';
 import { SplunkLongTaskInstrumentation } from './longtask';
 import { PostDocLoadResourceObserver } from './postDocLoadResourceObserver.js';
@@ -33,10 +34,15 @@ import { PostDocLoadResourceObserver } from './postDocLoadResourceObserver.js';
 const OPTIONS_DEFAULTS = {
   app: 'unknown-browser-app',
   adjustAutoInstrumentedEvents: {},
+  bufferTimeout: 5000, //millis, tradeoff between batching and loss of spans by not sending before page close
+  bufferSize: 20, // spans, tradeoff between batching and hitting sendBeacon invididual limits
 };
+
+const NOOP = () => {};
 
 const SplunkRum = {
   inited: false,
+  _deregisterInstrumentations: NOOP,
   DEFAULT_AUTO_INSTRUMENTED_EVENTS,
   init: function (options = {}) {
     options = Object.assign({}, OPTIONS_DEFAULTS, options);
@@ -94,45 +100,45 @@ const SplunkRum = {
     }
 
     const { ignoreUrls, adjustAutoInstrumentedEvents } = options;
-    const pluginConf = { ignoreUrls };
+    
+    // enabled: false prevents registerInstrumentations from enabling instrumentations in constructor
+    // they will be enabled in registerInstrumentations
+    const pluginConf = { ignoreUrls, enabled: false };
+    
     const provider = new PatchedWTP({
-      plugins: [
-        new SplunkDocumentLoad(),
-        new SplunkXhrPlugin(pluginConf),
-        new SplunkUserInteractionPlugin({ adjustAutoInstrumentedEvents }),
-      ],
-      logLevel: options.debug ? LogLevel.DEBUG : LogLevel.ERROR,
+      logLevel: options.debug ? DiagLogLevel.DEBUG : DiagLogLevel.ERROR,
     });
+
+    this._deregisterInstrumentations = registerInstrumentations({
+      tracerProvider: provider,
+      instrumentations: [
+        new SplunkDocumentLoad(pluginConf),
+        new SplunkXhrPlugin(pluginConf),
+        new SplunkUserInteractionInstrumentation(Object.assign({}, pluginConf, {adjustAutoInstrumentedEvents})),
+        new PostDocLoadResourceObserver(
+          options.allowedInitiatorTypes ?
+            Object.assign({}, pluginConf, { allowedInitiatorTypes: options.allowedInitiatorTypes }) :
+            pluginConf
+        ),
+        new SplunkFetchInstrumentation(pluginConf),
+        new SplunkWebSocketInstrumentation(pluginConf),
+        new SplunkLongTaskInstrumentation(pluginConf),
+      ],
+    });
+
     if (options.spanProcessor) {
       const sp = options.spanProcessor;
       if (typeof sp.onStart === 'function' && typeof sp.onEnd === 'function') {
         provider.addSpanProcessor(sp);
       }
     }
-    
-    new WebSocketInstrumentation(provider, pluginConf).patch();
-    
-    const fetchInstrumentation = new SplunkFetchInstrumentation(pluginConf);
-    fetchInstrumentation.setTracerProvider(provider);
-    fetchInstrumentation.enable();
-
-    const longtaskInstrumentation = new SplunkLongTaskInstrumentation();
-    longtaskInstrumentation.setTracerProvider(provider);
-    
-    if (options.allowedInitiatorTypes) {
-      pluginConf.allowedInitiatorTypes = options.allowedInitiatorTypes;
-    }
-    new PostDocLoadResourceObserver(pluginConf).setTracerProvider(provider);
 
     if (options.beaconUrl) {
       const completeUrl = options.beaconUrl + (options.rumAuth ? '?auth='+options.rumAuth : '');
-      const bufferTimeout = typeof options.bufferTimeout !== 'undefined' 
-        ? Number(options.bufferTimeout)
-        : 5000; //millis, tradeoff between batching and loss of spans by not sending before page close
       const batchSpanProcessor = new BatchSpanProcessor(new PatchedZipkinExporter(completeUrl), {
-        // This number is still an experiment, probably not the final number yet.
-        bufferTimeout,
-        bufferSize: 20, // spans, tradeoff between batching and hitting sendBeacon invididual limits
+        scheduledDelayMillis: options.bufferTimeout,
+        maxExportBatchSize: options.bufferSize, 
+        maxQueueSize: 2 * options.bufferSize,
       });
       window.addEventListener('visibilitychange', function() {
         // this condition applies when the page is hidden or when it's closed
@@ -146,8 +152,10 @@ const SplunkRum = {
     if (options.debug) {
       provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
     }
+    
     provider.register();
-    Object.defineProperty(this, 'provider', {value:provider, configurable: true});
+    this.provider = provider;
+    
     if (options.captureErrors === undefined || options.captureErrors === true) {
       captureErrors(this, provider); // also registers SplunkRum.error
     } else {
@@ -157,6 +165,19 @@ const SplunkRum = {
     initWebVitals(provider);
     this.inited = true;
     console.log('SplunkRum.init() complete');
+  },
+
+  deinit() {
+    if (!this.inited) {
+      return;
+    }
+    this._deregisterInstrumentations();
+    this._deregisterInstrumentations = NOOP;
+    
+    this.provider.shutdown();
+    delete this.provider;
+
+    this.inited = false;
   },
 };
 

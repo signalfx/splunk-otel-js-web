@@ -1,6 +1,6 @@
 {
   "name": "@splunk/otel-web",
-  "version": "0.1.1",
+  "version": "0.2.0-rc.0",
   "description": "Splunk distribution of Open Telemetry for browser environment.",
   "repository": "github:signalfx/splunk-otel-js-browser",
   "scripts": {
@@ -30,6 +30,16 @@
   "author": "Splunk Observability Instrumentals Team <ssg-observability-instrumentals-npm@splunk.com>",
   "license": "Apache-2.0",
   "dependencies": {
+    "@opentelemetry/api": "^0.18.1",
+    "@opentelemetry/api-metrics": "^0.18.0",
+    "@opentelemetry/core": "^0.18.0",
+    "@opentelemetry/exporter-zipkin": "^0.18.0",
+    "@opentelemetry/instrumentation": "^0.18.0",
+    "@opentelemetry/instrumentation-document-load": "^0.14.0",
+    "@opentelemetry/instrumentation-fetch": "^0.18.0",
+    "@opentelemetry/instrumentation-user-interaction": "^0.14.0",
+    "@opentelemetry/instrumentation-xml-http-request": "^0.18.0",
+    "@opentelemetry/web": "^0.18.0",
     "shimmer": "^1.2.1",
     "web-vitals": "^1.1.0"
   },
@@ -40,12 +50,11 @@
   "devDependencies": {
     "@aws-sdk/client-cloudfront": "^3.6.0",
     "@aws-sdk/client-s3": "^3.6.0",
+    "@babel/preset-env": "^7.13.0",
     "@octokit/graphql": "^4.6.0",
     "@octokit/request": "^5.4.14",
-    "@babel/preset-env": "^7.13.0",
-    "@rollup/plugin-alias": "^3.1.1",
     "@rollup/plugin-babel": "^5.3.0",
-    "@rollup/plugin-commonjs": "^17.1.0",
+    "@rollup/plugin-commonjs": "16.x",
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "^11.2.0",
     "body-parser": "^1.19.0",
