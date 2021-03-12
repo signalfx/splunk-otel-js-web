@@ -16,7 +16,6 @@ limitations under the License.
 
 const path = require('path');
 const fs = require('fs');
-const packageConfig = require('../../package.json');
 
 const INJECT_TEMPLATE = `<script src="<%= file -%>"></script>
   <script>
@@ -87,7 +86,7 @@ exports.registerTemplateProvider = ({app, addHeaders, enableHttps, render}) => {
 
       addHeaders(res);
       return res.render(filepath, {
-        renderAgent(userOpts = {}, noInit = false, file = '/dist/browser/splunk-otel-web.js', cdn = false) {
+        renderAgent(userOpts = {}, noInit = false, file = '/dist/browser/splunk-otel-web.js', cdnVersion = null) {
           const options = {
             beaconUrl: beaconUrl.toString(),
             app: 'splunk-otel-js-dummy-app',
@@ -103,8 +102,8 @@ exports.registerTemplateProvider = ({app, addHeaders, enableHttps, render}) => {
             options.capture[req.query.disableCapture] = false;
           }
 
-          if (cdn) {
-            options.file = `https://cdn.signalfx.com/o11y-gdi-rum/v${packageConfig.version}/splunk-otel-web.js`;
+          if (cdnVersion) {
+            file = `https://cdn.signalfx.com/o11y-gdi-rum/v${cdnVersion}/splunk-otel-web.js`;
           }
 
           return render(INJECT_TEMPLATE, {

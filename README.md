@@ -184,3 +184,16 @@ of the [OpenTelemetry JavaScript
 Browser](https://github.com/open-telemetry/opentelemetry-js) project. It is
 released under the terms of the Apache Software License version 2.0. See [the
 license file](./LICENSE) for more details.
+
+## Changelog
+
+### Unreleased
+
+### 0.2.0-rc.3
+- Transpile runtime to es2015 in browser build (#82)
+
+### 0.2.0-rc.2
+
+### 0.2.0-rc.1
+- Upgrade to OTel 0.18 and convert dependencies from git submodules to NPM (#80)
+- Safety check before asking for xhr headers (#77)

@@ -21,11 +21,11 @@ export default [
     plugins: [
       json(),
       nodeResolvePlugin,
-      babelPlugin,
       commonjs({
         include: /node_modules/,
         sourceMap: true,
       }),
+      babelPlugin,
       terser({ output: { comments: false } }),
     ],
   },
@@ -37,10 +37,29 @@ export default [
       exports: 'named',
       sourcemap: true,
     },
+    external: [
+      '@opentelemetry/api',
+      '@opentelemetry/api-metrics',
+      '@opentelemetry/core',
+      '@opentelemetry/exporter-zipkin',
+      '@opentelemetry/instrumentation',
+      '@opentelemetry/instrumentation-document-load',
+      '@opentelemetry/instrumentation-fetch',
+      '@opentelemetry/instrumentation-user-interaction',
+      '@opentelemetry/instrumentation-xml-http-request',
+      '@opentelemetry/semantic-conventions',
+      '@opentelemetry/tracing',
+      '@opentelemetry/web',
+      'shimmer',
+      'web-vitals',
+
+      // note: seems like rollup (or one of its plugins) doesn't understand that if you reach into a package, it's still
+      // part of the package.
+      '@opentelemetry/exporter-zipkin/build/src/transform.js',
+    ],
     plugins: [
       json(),
       nodeResolvePlugin,
-      babelPlugin,
       commonjs({
         include: /node_modules/,
         sourceMap: true,
