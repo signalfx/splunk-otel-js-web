@@ -23,7 +23,7 @@ import {SplunkXhrPlugin, SplunkFetchInstrumentation} from './xhrfetch';
 import {SplunkUserInteractionInstrumentation, DEFAULT_AUTO_INSTRUMENTED_EVENTS} from './interaction';
 import {PatchedZipkinExporter} from './zipkin';
 import {captureErrors} from './errors';
-import {generateId} from './utils';
+import {generateId, getPluginConfig} from './utils';
 import {initSessionTracking, getRumSessionId} from './session';
 import {version as SplunkRumVersion} from '../package.json';
 import {SplunkWebSocketInstrumentation} from './websocket';
@@ -33,10 +33,20 @@ import { PostDocLoadResourceObserver } from './postDocLoadResourceObserver.js';
 
 const OPTIONS_DEFAULTS = {
   app: 'unknown-browser-app',
-  adjustAutoInstrumentedEvents: {},
   bufferTimeout: 5000, //millis, tradeoff between batching and loss of spans by not sending before page close
   bufferSize: 20, // spans, tradeoff between batching and hitting sendBeacon invididual limits
+  instrumentations: {},
 };
+
+const INSTRUMENTATIONS = [
+  {Instrument: SplunkDocumentLoad, confKey: 'document'},
+  {Instrument: SplunkXhrPlugin, confKey: 'xhr'},
+  {Instrument: SplunkUserInteractionInstrumentation, confKey: 'interactions'},
+  {Instrument: PostDocLoadResourceObserver, confKey: 'postload'},
+  {Instrument: SplunkFetchInstrumentation, confKey: 'xhr'},
+  {Instrument: SplunkWebSocketInstrumentation, confKey: 'websocket', disable: true},
+  {Instrument: SplunkLongTaskInstrumentation, confKey: 'longtask'},
+];
 
 const NOOP = () => {};
 
@@ -99,31 +109,27 @@ const SplunkRum = {
       }
     }
 
-    const { ignoreUrls, adjustAutoInstrumentedEvents } = options;
+    const { ignoreUrls } = options;
     
     // enabled: false prevents registerInstrumentations from enabling instrumentations in constructor
     // they will be enabled in registerInstrumentations
-    const pluginConf = { ignoreUrls, enabled: false };
+    const pluginDefaults = { ignoreUrls, enabled: false };
     
     const provider = new PatchedWTP({
       logLevel: options.debug ? DiagLogLevel.DEBUG : DiagLogLevel.ERROR,
     });
+    const instrumentations = INSTRUMENTATIONS.map(({Instrument, confKey, disable}) => {
+      const pluginConf = getPluginConfig(options.instrumentations[confKey], pluginDefaults, disable);
+      if (pluginConf) {
+        return new Instrument(pluginConf);
+      }
+
+      return null;
+    }).filter(a => a);
 
     this._deregisterInstrumentations = registerInstrumentations({
       tracerProvider: provider,
-      instrumentations: [
-        new SplunkDocumentLoad(pluginConf),
-        new SplunkXhrPlugin(pluginConf),
-        new SplunkUserInteractionInstrumentation(Object.assign({}, pluginConf, {adjustAutoInstrumentedEvents})),
-        new PostDocLoadResourceObserver(
-          options.allowedInitiatorTypes ?
-            Object.assign({}, pluginConf, { allowedInitiatorTypes: options.allowedInitiatorTypes }) :
-            pluginConf
-        ),
-        new SplunkFetchInstrumentation(pluginConf),
-        new SplunkWebSocketInstrumentation(pluginConf),
-        new SplunkLongTaskInstrumentation(pluginConf),
-      ],
+      instrumentations,
     });
 
     if (options.spanProcessor) {
@@ -148,6 +154,7 @@ const SplunkRum = {
         }
       });
       provider.addSpanProcessor(batchSpanProcessor);
+      this._processor = batchSpanProcessor;
     }
     if (options.debug) {
       provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
@@ -155,14 +162,20 @@ const SplunkRum = {
     
     provider.register();
     this.provider = provider;
-    
-    if (options.captureErrors === undefined || options.captureErrors === true) {
+
+    const errorsConf = getPluginConfig(options.instrumentations.errors);
+    if (errorsConf !== false) {
       captureErrors(this, provider); // also registers SplunkRum.error
     } else {
       // stub out error reporting method to not break apps that call it
       this.error = function() { };
     }
-    initWebVitals(provider);
+
+    const vitalsConf = getPluginConfig(options.instrumentations.webvitals);
+    if (vitalsConf !== false) {
+      initWebVitals(provider);
+    }
+
     this.inited = true;
     console.log('SplunkRum.init() complete');
   },

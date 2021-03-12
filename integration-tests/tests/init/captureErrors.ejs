@@ -4,10 +4,10 @@
 	<meta charset="UTF-8">
 	<title>Test init</title>
 
-	<%- renderAgent({captureErrors: false}) %>
+	<%- renderAgent({instrumentations: {errors: false}}) %>
 </head>
 <body>
-	<p>captureErrors: false</p>
+	<p>instrumentations.errors: false</p>
 </body>
 <script>
 		SplunkRum.error('fake error');

@@ -46,8 +46,8 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
   constructor(config) {
     super(config);
 
-    const { adjustAutoInstrumentedEvents } = config;
-    this._autoInstrumentedEvents = Object.assign({}, DEFAULT_AUTO_INSTRUMENTED_EVENTS, adjustAutoInstrumentedEvents);
+    const { events } = config;
+    this._autoInstrumentedEvents = Object.assign({}, DEFAULT_AUTO_INSTRUMENTED_EVENTS, events);
     
     this._routingTracer = trace.getTracer(ROUTING_INSTRUMENTATION_NAME, ROUTING_INSTRUMENTATION_VERSION);
   }

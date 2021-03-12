@@ -18,7 +18,15 @@
       return oReq;
     }
 
-    makeHXR('/some-data');
+    window.testing = true;
+    var req = makeHXR('/some-data');
+    req.addEventListener('loadend', function () {
+      // Otel plugin waits for 300ms for resource timings to appear. This should schedule
+      // testing done to be after that.
+      setTimeout(function () {
+        window.testing = false;
+      }, 301);
+    })
   </script>
   </body>
 </html>

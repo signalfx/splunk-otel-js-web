@@ -16,6 +16,9 @@ limitations under the License.
 
 module.exports = {
   '@tags': ['safari-10.1'],
+  beforeEach: function(browser) {
+    browser.globals.clearReceivedSpans();  
+  },
   'documentFetch, resourceFetch, and documentLoad spans': async function(browser) {
     const url = browser.globals.getUrl('/docload/docload.ejs');
     await browser.url(url);
@@ -73,6 +76,20 @@ module.exports = {
     await browser.timesMakeSense(docLoad.annotations, 'loadEventStart', 'loadEventEnd');
     await browser.timesMakeSense(docLoad.annotations, 'fetchStart', 'domInteractive');
     await browser.timesMakeSense(docLoad.annotations, 'fetchStart', 'domComplete');
+
+    await browser.globals.assertNoErrorSpans();
+  },
+  'module can be disabled': async function(browser) {
+    await browser.url(browser.globals.getUrl('/docload/docload.ejs?disableInstrumentation=document'));
+    await browser.globals.waitForTestToFinish();
+
+    browser.assert.ok(await browser.globals.findSpan(span => span.name === 'eventListener.error'));
+
+    const SPAN_TYPES = ['documentFetch', 'documentLoad', 'resourceFetch'];
+
+    browser.assert.not.ok(browser.globals.getReceivedSpans().find(
+      span => SPAN_TYPES.includes(span.name)
+    ), 'No spans with docload module type');
 
     await browser.globals.assertNoErrorSpans();
   }
