@@ -55,19 +55,44 @@ Please read [INSTALLING.md](./docs/INSTALLING.md) for more advanced installation
 
 ### `SplunkRum.init({ })`
 
-| Option | Type | Notes | Required? | Default |
-|--------|------|-------|-----------|---------|
-| beaconUrl | string | Destination for the captured data | Yes | (No default) |
-| rumAuth | string | Publicly-visible `rumAuth` value.  Please do not paste any other access token or auth value into here, as this will be visible to every user of your app | Yes | (No default) |
-| app | string | Application name | No | 'unknown-browser-app' |
-| environment | string | Sets a value for the `environment` attribute (persists through calls to `setGlobalAttributes()`) | No | (No default) |
-| globalAttributes | object | Extra attributes to add to each reported span.  See also `setGlobalAttributes` | No | {} |
-| captureErrors | boolean | Turns on/off error reporting feature | No | true |
-| allowInsecureBeacon | boolean | Allows http beacon urls | No | false |
-| debug | boolean | Turns on/off internal debug logging | No | false |
-| ignoreUrls | array | Applies for XHR,Fetch and Websocket URLs. URLs that partially match any regex in ignoreUrls will not be traced. In addition, URLs that are _exact matches_ of strings in ignoreUrls will also not be traced. | No | [] |
-| spanProcessor | SpanProcessor | Offers ability to alter/remove data in-browser.  See below for more details | No | (undefined) |
-| adjustAutoInstrumentedEvents | { [DOM Event Name]?: boolean } | Set keys to `false` to disable events handled by default. Set additional keys to true to auto-instrument `addEventListener` handlers. | No | Please check `window.SplunkRum.DEFAULT_AUTO_INSTRUMENTED_EVENTS` |
+| Option | Type | Notes | Default |
+|--------|------|-------|---------|
+| beaconUrl | string (required) | Destination for the captured data | (No default) |
+| rumAuth | string (required) | Publicly-visible `rumAuth` value.  Please do not paste any other access token or auth value into here, as this will be visible to every user of your app | (No default) |
+| app | string | Application name | 'unknown-browser-app' |
+| environment | string | Sets a value for the `environment` attribute (persists through calls to `setGlobalAttributes()`) | (No default) |
+| globalAttributes | object | Extra attributes to add to each reported span.  See also `setGlobalAttributes` | {} |
+| allowInsecureBeacon | boolean | Allows http beacon urls | false |
+| debug | boolean | Turns on/off internal debug logging | false |
+| ignoreUrls | array | Applies for XHR,Fetch and Websocket URLs. URLs that partially match any regex in ignoreUrls will not be traced. In addition, URLs that are _exact matches_ of strings in ignoreUrls will also not be traced. | [] |
+| spanProcessor | SpanProcessor | Offers ability to alter/remove data in-browser.  See below for more details | (undefined) |
+| instrumentations | { [moduleName]?: boolean or object } | Configuration for instrumentation modules. See following section for details. |
+
+### Capturing modules
+
+Capturing modules can be configured by passing following values to `instrumentations` object in config:
+
+- `false` - disables this module
+- `true` - enables this module with default options
+- `object` - enables with additional options
+
+| Option | Default | Description |
+|---|---|---|
+| instrumentations.document | true | Capturing spans related to document loading |
+| instrumentations.errors | true | Capturing errors |
+| instrumentations.interactions | true | Capturing interactions |
+| instrumentations.longtask | true | Capturing long task spans |
+| instrumentations.websockets | false | Capturing websockets |
+| instrumentations.webvitals | true | Capturing webvitals |
+| instrumentations.xhr | true | Capturing XHR and fetch requests | 
+
+Additional configuration options are available for following modules:
+
+### User interactions
+
+| Option | Type | Notes | Default |
+|---|---|---|---|
+| instrumentations.interactions.events | { [DOM Event Name]?: boolean } | Set keys to `false` to disable events handled by default. Set additional keys to true to auto-instrument `addEventListener` handlers. | Please check `window.SplunkRum.DEFAULT_AUTO_INSTRUMENTED_EVENTS` |
 
 ### `SplunkRum.setGlobalAttributes(attributes)`
 

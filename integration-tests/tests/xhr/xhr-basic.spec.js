@@ -16,6 +16,9 @@ limitations under the License.
 
 module.exports = {
   '@tags': ['safari-10.1'],
+  beforeEach: function (browser) {
+    browser.globals.clearReceivedSpans();
+  },
   'XHR request is registered': async function(browser) {
     const {browserName, browser_version} = browser.options.desiredCapabilities;
 
@@ -27,13 +30,13 @@ module.exports = {
     await browser.assert.strictEqual(xhrSpan.tags['http.status_text'], 'OK');
     await browser.assert.strictEqual(xhrSpan.tags['http.method'], 'GET');
     await browser.assert.strictEqual(xhrSpan.tags['http.url'], '/some-data');
-    if (browserName !==  'Safari') {
+    if (browserName.toLowerCase() !== 'safari') {
       await browser.assert.strictEqual(xhrSpan.tags['http.response_content_length'], '49');
     }
     await browser.assert.ok(xhrSpan.tags['link.traceId'], 'got link.traceId');
     await browser.assert.ok(xhrSpan.tags['link.spanId'], 'got link.spanId');
     
-    if (browserName !== 'Safari' && browser_version !== '10.1') {
+    if (browserName.toLowerCase() !== 'safari' && browser_version !== '10.1') {
       await browser.timesMakeSense(xhrSpan.annotations, 'domainLookupStart', 'domainLookupEnd');
       await browser.timesMakeSense(xhrSpan.annotations, 'connectStart', 'connectEnd');
       await browser.timesMakeSense(xhrSpan.annotations, 'secureConnectionStart', 'connectEnd');
@@ -46,4 +49,16 @@ module.exports = {
     await browser.timesMakeSense(xhrSpan.annotations, 'send', 'loaded');
     await browser.globals.assertNoErrorSpans();
   },
+  'module can be disabled': async function(browser) {
+    await browser.url(browser.globals.getUrl('/xhr/views/xhr-basic.ejs'));
+    await browser.globals.waitForTestToFinish();
+
+    browser.assert.ok(!!browser.globals.getReceivedSpans().find(span => span.tags['http.url'] === '/some-data'), 'Checking presence of xhr span.');
+
+    browser.globals.clearReceivedSpans();
+    await browser.url(browser.globals.getUrl('/xhr/views/xhr-basic.ejs?disableInstrumentation=xhr'));
+    await browser.globals.waitForTestToFinish();
+
+    browser.assert.not.ok(browser.globals.getReceivedSpans().find(span => span.tags['http.url'] === '/some-data'), 'Checking lack of xhr span.');
+  }
 };

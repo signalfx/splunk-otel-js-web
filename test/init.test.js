@@ -70,6 +70,9 @@ describe('test init', () => {
         app: 'my-app',
         environment: 'my-env',
         globalAttributes: {customerType: 'GOLD'},
+        instrumentations:{
+          websocket: true
+        }
       });
       assert.ok(SplunkRum.inited);
       SplunkRum.provider.addSpanProcessor(capturer);

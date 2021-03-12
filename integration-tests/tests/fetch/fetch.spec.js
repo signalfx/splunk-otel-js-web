@@ -16,7 +16,7 @@ limitations under the License.
 
 module.exports = {
   '@tags': ['safari-10.1'],
-  afterEach : function(browser) {
+  beforeEach: function(browser) {
     browser.globals.clearReceivedSpans();  
   },
   'span created for fetch includes all properties': async function(browser) {
@@ -69,5 +69,17 @@ module.exports = {
 
     await browser.globals.assertNoErrorSpans();
     await backend2.close();
+  },
+  'can be disabled (with xhr switch)': async function(browser) {
+    await browser.url(browser.globals.getUrl('/fetch/fetch.ejs'));
+    await browser.globals.waitForTestToFinish();
+
+    await browser.assert.ok(!!browser.globals.getReceivedSpans().find(span => span.tags['http.url'] === '/some-data'));
+
+    browser.globals.clearReceivedSpans();
+    await browser.url(browser.globals.getUrl('/fetch/fetch.ejs?disableInstrumentation=xhr'));
+    await browser.globals.waitForTestToFinish();
+
+    await browser.assert.not.ok(browser.globals.getReceivedSpans().find(span => span.tags['http.url'] === '/some-data'));
   }
 };
