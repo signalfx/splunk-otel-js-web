@@ -56,7 +56,7 @@ module.exports = {
     browser.assert.ok(!!browser.globals.getReceivedSpans().find(span => span.tags['http.url'] === '/some-data'), 'Checking presence of xhr span.');
 
     browser.globals.clearReceivedSpans();
-    await browser.url(browser.globals.getUrl('/xhr/views/xhr-basic.ejs?disableCapture=xhr'));
+    await browser.url(browser.globals.getUrl('/xhr/views/xhr-basic.ejs?disableInstrumentation=xhr'));
     await browser.globals.waitForTestToFinish();
 
     browser.assert.not.ok(browser.globals.getReceivedSpans().find(span => span.tags['http.url'] === '/some-data'), 'Checking lack of xhr span.');

@@ -33,10 +33,9 @@ import { PostDocLoadResourceObserver } from './postDocLoadResourceObserver.js';
 
 const OPTIONS_DEFAULTS = {
   app: 'unknown-browser-app',
-  adjustAutoInstrumentedEvents: {},
   bufferTimeout: 5000, //millis, tradeoff between batching and loss of spans by not sending before page close
   bufferSize: 20, // spans, tradeoff between batching and hitting sendBeacon invididual limits
-  capture: {},
+  instrumentations: {},
 };
 
 const INSTRUMENTATIONS = [
@@ -120,7 +119,7 @@ const SplunkRum = {
       logLevel: options.debug ? DiagLogLevel.DEBUG : DiagLogLevel.ERROR,
     });
     const instrumentations = INSTRUMENTATIONS.map(({Instrument, confKey, disable}) => {
-      const pluginConf = getPluginConfig(options.capture[confKey], pluginDefaults, disable);
+      const pluginConf = getPluginConfig(options.instrumentations[confKey], pluginDefaults, disable);
       if (pluginConf) {
         return new Instrument(pluginConf);
       }
@@ -164,7 +163,7 @@ const SplunkRum = {
     provider.register();
     this.provider = provider;
 
-    const errorsConf = getPluginConfig(options.capture.errors);
+    const errorsConf = getPluginConfig(options.instrumentations.errors);
     if (errorsConf !== false) {
       captureErrors(this, provider); // also registers SplunkRum.error
     } else {
@@ -172,7 +171,7 @@ const SplunkRum = {
       this.error = function() { };
     }
 
-    const vitalsConf = getPluginConfig(options.capture.webvitals);
+    const vitalsConf = getPluginConfig(options.instrumentations.webvitals);
     if (vitalsConf !== false) {
       initWebVitals(provider);
     }

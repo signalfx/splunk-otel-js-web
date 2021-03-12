@@ -95,11 +95,11 @@ exports.registerTemplateProvider = ({app, addHeaders, enableHttps, render}) => {
             ...userOpts
           };
 
-          if (req.query.disableCapture) {
-            if (!options.capture) {
-              options.capture = {};
+          if (req.query.disableInstrumentation) {
+            if (!options.instrumentations) {
+              options.instrumentations = {};
             }
-            options.capture[req.query.disableCapture] = false;
+            options.instrumentations[req.query.disableInstrumentation] = false;
           }
 
           if (cdnVersion) {

@@ -168,7 +168,7 @@ module.exports = {
     browser.assert.ok(!!browser.globals.getReceivedSpans().find(({name}) => name === 'onerror'), 'Checking presence of error span.');
 
     browser.globals.clearReceivedSpans();
-    await browser.url(browser.globals.getUrl('/errors/views/unhandled-error.ejs?disableCapture=errors'));
+    await browser.url(browser.globals.getUrl('/errors/views/unhandled-error.ejs?disableInstrumentation=errors'));
     await browser.globals.waitForTestToFinish();
 
     browser.assert.not.ok(browser.globals.getReceivedSpans().find(({name}) => name === 'onerror'), 'Checking lack of error span.');

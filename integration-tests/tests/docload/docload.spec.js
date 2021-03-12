@@ -80,7 +80,7 @@ module.exports = {
     await browser.globals.assertNoErrorSpans();
   },
   'module can be disabled': async function(browser) {
-    await browser.url(browser.globals.getUrl('/docload/docload.ejs?disableCapture=document'));
+    await browser.url(browser.globals.getUrl('/docload/docload.ejs?disableInstrumentation=document'));
     await browser.globals.waitForTestToFinish();
 
     browser.assert.ok(await browser.globals.findSpan(span => span.name === 'eventListener.error'));

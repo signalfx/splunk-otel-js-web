@@ -70,7 +70,7 @@ describe('test init', () => {
         app: 'my-app',
         environment: 'my-env',
         globalAttributes: {customerType: 'GOLD'},
-        capture: {
+        instrumentations:{
           websocket: true
         }
       });

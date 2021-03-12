@@ -64,7 +64,7 @@ module.exports = {
     await browser.globals.assertNoErrorSpans();
 
     browser.globals.clearReceivedSpans();
-    await browser.url(browser.globals.getUrl('/longtask/index.ejs?disableCapture=longtask'));
+    await browser.url(browser.globals.getUrl('/longtask/index.ejs?disableInstrumentation=longtask'));
     await browser.click('#btnLongtask');
     await browser.globals.waitForTestToFinish();
 

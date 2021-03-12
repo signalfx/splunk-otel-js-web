@@ -41,7 +41,7 @@ module.exports = {
     browser.assert.ok(!!await browser.globals.getReceivedSpans().find(({name}) => name === 'click'), 'click span recorded');
 
     browser.globals.clearReceivedSpans();
-    await browser.url(browser.globals.getUrl('/user-interaction/causality.ejs?disableCapture=interactions'));
+    await browser.url(browser.globals.getUrl('/user-interaction/causality.ejs?disableInstrumentation=interactions'));
     await browser.click('#btn1');
     await browser.globals.waitForTestToFinish();
 

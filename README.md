@@ -66,11 +66,11 @@ Please read [INSTALLING.md](./docs/INSTALLING.md) for more advanced installation
 | debug | boolean | Turns on/off internal debug logging | false |
 | ignoreUrls | array | Applies for XHR,Fetch and Websocket URLs. URLs that partially match any regex in ignoreUrls will not be traced. In addition, URLs that are _exact matches_ of strings in ignoreUrls will also not be traced. | [] |
 | spanProcessor | SpanProcessor | Offers ability to alter/remove data in-browser.  See below for more details | (undefined) |
-| capture | { [moduleName]?: boolean or object } | Configuration for instrumentation modules. See following section for details. |
+| instrumentations | { [moduleName]?: boolean or object } | Configuration for instrumentation modules. See following section for details. |
 
 ### Capturing modules
 
-Capturing modules can be configured by passing following values to `capture` object in config:
+Capturing modules can be configured by passing following values to `instrumentations` object in config:
 
 - `false` - disables this module
 - `true` - enables this module with default options
@@ -78,13 +78,13 @@ Capturing modules can be configured by passing following values to `capture` obj
 
 | Option | Default | Description |
 |---|---|---|
-capture.document | true | Capturing spans related to document loading |
-| capture.errors | true | Capturing errors |
-| capture.interactions | true | Capturing interactions |
-| capture.longtask | true | Capturing long task spans |
-| capture.websockets | false | Capturing websockets |
-| capture.webvitals | true | Capturing webvitals |
-| capture.xhr | true | Capturing XHR and fetch requests | 
+| instrumentations.document | true | Capturing spans related to document loading |
+| instrumentations.errors | true | Capturing errors |
+| instrumentations.interactions | true | Capturing interactions |
+| instrumentations.longtask | true | Capturing long task spans |
+| instrumentations.websockets | false | Capturing websockets |
+| instrumentations.webvitals | true | Capturing webvitals |
+| instrumentations.xhr | true | Capturing XHR and fetch requests | 
 
 Additional configuration options are available for following modules:
 
@@ -92,7 +92,7 @@ Additional configuration options are available for following modules:
 
 | Option | Type | Notes | Default |
 |---|---|---|---|
-| capture.interactions.events | { [DOM Event Name]?: boolean } | Set keys to `false` to disable events handled by default. Set additional keys to true to auto-instrument `addEventListener` handlers. | Please check `window.SplunkRum.DEFAULT_AUTO_INSTRUMENTED_EVENTS` |
+| instrumentations.interactions.events | { [DOM Event Name]?: boolean } | Set keys to `false` to disable events handled by default. Set additional keys to true to auto-instrument `addEventListener` handlers. | Please check `window.SplunkRum.DEFAULT_AUTO_INSTRUMENTED_EVENTS` |
 
 ### `SplunkRum.setGlobalAttributes(attributes)`
 

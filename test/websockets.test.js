@@ -24,7 +24,7 @@ describe('can produce websocket events', () => {
   beforeEach(() => {
     capturer = new SpanCapturer();
     initWithDefaultConfig(capturer, {
-      capture: {
+      instrumentations: {
         websocket: true
       }
     });
