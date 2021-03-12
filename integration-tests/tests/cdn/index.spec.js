@@ -42,7 +42,7 @@ module.exports = {
     const rumScriptFetchSpan = await browser.globals.findSpan(s => s.name === 'resourceFetch');
     await browser.assert.ok(!!rumScriptFetchSpan, 'Checking presence of splunk-otel-web fetch span.');
 
-    const cdnUrl = 'https://cdn.signalfx.com/o11y-gdi-rum/v0.2.0-rc.3/splunk-otel-web.js';
+    const cdnUrl = 'https://cdn.signalfx.com/o11y-gdi-rum/v0.2.0-rc.5/splunk-otel-web.js';
     await browser.assert.strictEqual(rumScriptFetchSpan.tags['http.url'], cdnUrl);
 
     await browser.end();
