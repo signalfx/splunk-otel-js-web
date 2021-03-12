@@ -16,7 +16,6 @@ limitations under the License.
 
 const path = require('path');
 const fs = require('fs');
-const packageConfig = require('../../package.json');
 
 const INJECT_TEMPLATE = `<script src="<%= file -%>"></script>
   <script>
