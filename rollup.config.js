@@ -52,6 +52,10 @@ export default [
       '@opentelemetry/web',
       'shimmer',
       'web-vitals',
+
+      // note: seems like rollup (or one of its plugins) doesn't understand that if you reach into a package, it's still
+      // part of the package.
+      '@opentelemetry/exporter-zipkin/build/src/transform.js',
     ],
     plugins: [
       json(),
