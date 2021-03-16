@@ -189,6 +189,9 @@ license file](./LICENSE) for more details.
 
 ### Unreleased
 
+### 0.2.0-rc.6
+- New configuration format <https://github.com/signalfx/splunk-otel-js-web#all-configuration-options>
+
 ### 0.2.0-rc.3
 - Transpile runtime to es2015 in browser build (#82)
 

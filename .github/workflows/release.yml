@@ -50,7 +50,7 @@ jobs:
             - TODO: please fill in the changes in this release
             - TODO: please convert from draft into release when ready
           draft: false
-          prerelease: false
+          prerelease: ${{ contains(github.ref, 'rc') || 'contains(github.ref, 'beta')' || contains(github.ref, 'alpha') }}
 
       - name: Upload the non-minified script
         uses: actions/upload-release-asset@v1
