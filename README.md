@@ -189,7 +189,7 @@ license file](./LICENSE) for more details.
 
 ### Unreleased
 
-### 0.2.0-rc.6
+### 0.3.0-rc.1
 - New configuration format <https://github.com/signalfx/splunk-otel-js-web#all-configuration-options>
 
 ### 0.2.0-rc.3
