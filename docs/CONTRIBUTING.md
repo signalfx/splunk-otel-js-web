@@ -45,94 +45,23 @@ Requires the code below to be run once, to enable running integration tests in S
 $ /usr/bin/safaridriver --enable
 ```
 
-## Releasing (During alpha/beta/preview)
-1. Manual sanity test
-1. `npm version patch`
-1. `git push origin main` to publish the version bump commit
-1. `git push origin --tags` to publish the version tag, if you haven't created any local tags manually
-1. `git push origin <release tag>` if you have local tags, which shouldn't be published
-1. Release on github: <https://github.com/signalfx/rum-browser-js/releases/>
-    1. A draft release has been created for you. Artifacts are already uploaded.
-    1. If you can't find the release matching your desired version, then there might be issues with the Release Action. Navigate to <https://github.com/signalfx/splunk-browser-otel-js/actions>, and investigate the right CD run.
-    1. Fill out release title, release notes
-1. run `npm run release:cdn`
+## Releasing
+1. Prepare the release commit on `main`
+    1. Update the version in `package.json`
+    1. Update the changelog by creating a section for the new version, and moving all unreleased entries to it
+    1. Commit as `chore: prepare release <version>`
+1. `git push origin main` to publish
+1. `git tag v<version>` - please don't forget the "v"
+1. `git push origin v<version>` to publish the version tag, this starts the Github workflow, which will:
+    1. create a Github Release
+    1. publish to NPM
+1. Navigate to <https://github.com/signalfx/rum-browser-js/releases/> and find the release you just created
+    1. Update the changelog or link to the right section in README.    
+1. run `npm run release:cdn` and verify that the plan is correct
+1. run `npm run release:cdn:wet`
     1. this script updates release contents and will ask you to verify them (URL will be provided)
-    1. verify that CDN works by running `npm run test:integration:local:chrome`, one of the tests uses
-1. update the versions in `examples/npm/`
-
-### Syncing with upstream
-Following an OTEL's release of either [core](https://github.com/open-telemetry/opentelemetry-js) or
-[contrib](https://github.com/open-telemetry/opentelemetry-js) schedule a release of our distribution as soon as
-possible.
-
-First you need to prepare the local submodules:
-1. for core do:
-    1. `cd deps/opentelemetry-js`
-    1. `git remote -v`
-    1. ensure that a remote called `origin` is present and points to `https://github.com/signalfx/opentelemetry-js/` - exact link will depend on your if you're using http or ssh+git
-    1. if you see a remote called `upstream` you are done, otherwise proceed
-    1. `git remote add upstream https://github.com/open-telemetry/opentelemetry-js.git`
-1. for contrib do:
-    1. `cd deps/opentelemetry-js-contrib`
-    1. `git remote -v`
-    1. ensure that a remote called `origin` is present and points to `https://github.com/signalfx/opentelemetry-js-contrib/` - exact link will depend on your if you're using http or ssh+git
-    1. if you see a remote called `upstream` you are done, otherwise proceed
-    1. `git remote add upstream https://github.com/open-telemetry/opentelemetry-js-contrib.git`
-
-Then you need to identify the list of changes to be applied:
-1. identify last (the newest) tag of core and contrib - they might be different!
-1. identify the last upstream commit and our patches in `deps/opentelemetry-js`
-    1. `cd deps/opentelemetry-js`
-    1. `git log`
-    1. look for a tag in the form of `vx.x.x` (hint: `x.x.x.xxxxxx` are our tags, ignore these)
-    1. write down that tag
-    1. copy the list of commits above the tag - these are our patches
-1. identify the last upstream commit and our patches in `deps/opentelemetry-js-contrib`
-    1. steps are the same as above
-1. go to <https://github.com/open-telemetry/opentelemetry-js/commits/master>
-    1. in the URL, replace `master` with the last released tag, e.g. `v0.14.0`, resulting in `https://github.com/open-telemetry/opentelemetry-js/commits/v0.14.0`
-    1. compare the list of commits with the list of our patches for the core repository (`opentelemetry-js`)
-    1. compare by looking at commit messages and authors, commit ids will most likely be different
-    1. if there's an overlap between the lists, it means that our patches were merged upstream, and we should not apply them anymore, make a note of these
-1. repeat the step above for the contrib repository
-
-You are now ready to pull from upstream:
-1. For the core repository:
-    1. `cd deps/opentelemetry-js`
-    1. `git fetch upstream --tags`
-    1. `git rebase <our last upstream tag> --onto <latest upstream tag> -i`
-    1. you will be presented with a list of our patches
-    1. from the list remove the lines which reference patches merged to upstream (you have written these down while identifying the list of changes to be applied)
-    1. replace all instances of `pick` with `edit` - this results in stopping rebase after applying every patch, so you can ensure the patch is applied correctly
-    1. save the file and close the editor, you will now begin interactive rebase-onto
-    1. for every patch:
-        1. check if there's merge conflicts, if so, fix them
-        1. `git submodule update --recursive`
-        1. `npm i && npm run test` (installation also runs build in OTEL repos)
-        1. if there's test failures fix them
-        1. resume rebase by following instructions in git
-        1. if you're stuck, run `git status`, it displays instructions
-    1. at this point, the rebase should be complete
-    1. tag current commit `git tag <latest upstream tag>.<first 7 characters of HEAD commit id>`
-        1. push the commit to origin `git push origin <tag id you just created>`
-        1. you are publishing this tag to tell Git that it needs to store the commit you're on and make it public. Remember, you're in detached HEAD.
-1. For the contrib repo:
-    1. `cd deps/opentelemetry-js-contrb`
-    1. repeat the other steps above
-1. Changing references in the submodules will produce changes as seen from the root of the repository
-1. Submit these changes as a PR or if you know what you're doing create a commit and push to `master`
-1. Now proceed with regular release instructions.
-
-```bash
-$ cd deps/
-$ git submodule status (review output, note the commit hash of each upstream HEAD, compare to actual remote HEAD)
-$ git submodule update --remote opentelemetry-js (or -contrib)
-(run tests, automated and manual sanity; adjust our code as necessary).
-$ git diff
-(You should see a diff showing the commit hashes changing for the submodules)
-```
-
-From here, you can commit+push like normal.
+    1. update the versions in `integration-tests/tests/cdn/index.ejs` and `integration-tests/tests/cdn/index.spec.js`
+    1. verify that CDN works by running `npm run test:integration:local:chrome`
 
 ## Community Contributions
 
