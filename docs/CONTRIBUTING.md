@@ -49,7 +49,7 @@ $ /usr/bin/safaridriver --enable
 1. Prepare the release commit on `main`
     1. Update the version in `package.json`
     1. Update the changelog by creating a section for the new version, and moving all unreleased entries to it
-    1. Commit as "chore: prepare release <version>"
+    1. Commit as `chore: prepare release <version>`
 1. `git push origin main` to publish
 1. `git tag v<version>` - please don't forget the "v"
 1. `git push origin v<version>` to publish the version tag, this starts the Github workflow, which will:
