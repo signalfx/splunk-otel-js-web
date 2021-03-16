@@ -14,9 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { join, dirname } from 'path';
 import crypto from 'crypto';
-import fs from 'fs';
 
 import { default as dotenv } from 'dotenv';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
@@ -33,8 +31,6 @@ if (isDryRun) {
   console.log('---- DRY RUN ----');
 }
 
-const ourDirectory = dirname(process.argv[1]);
-const packageConfig = JSON.parse(fs.readFileSync(join(ourDirectory, '..', 'package.json')).toString());
 dotenv.config();
 
 if (!process.env.CDN_DISTRIBUTION_ID) {
@@ -67,7 +63,12 @@ console.log(`I have found the latest version to be: ${latestRelease.tag_name} na
 const { data: assets } = await requestWithAuth(`GET /repos/${OWNER}/${REPO}/releases/${latestRelease.id}/assets`);
 console.log(`This release has ${assets.length} release artifacts: ${assets.map(({name}) => name).join(', ')}.`);
 
-const versions = Array.from(generateAllVersions());
+const baseVersion = latestRelease.tag_name;
+if (!baseVersion.startsWith('v')) {
+  throw new Error('Release version tag must start with the letter "v".');
+}
+
+const versions = Array.from(generateAllVersions(baseVersion));
 console.log(`This release will update following versions in CDN: ${versions.map(([version]) => version).join(', ')}`);
 
 console.log(`I will now process the files:`);
@@ -137,12 +138,12 @@ if (!isDryRun) {
   console.log(`Please verify that instructions are correct by navigating to: ${latestRelease.html_url}`);
 }
 
-function* generateAllVersions() {
-  const versionParts = packageConfig.version.split('.');
+function* generateAllVersions(baseVersion) {
+  const versionParts = baseVersion.split('.');
 
   let isAutoUpdating = false, isPreRelease = false;
   while (versionParts.length) {
-    yield [`v${versionParts.join('.')}`, isAutoUpdating];
+    yield [`${versionParts.join('.')}`, isAutoUpdating];
     const lastSegment = versionParts.pop(); // 1.2.3 -> 1.2
 
     if (PRERELEASE_KEYWORDS.some(keyword => lastSegment.includes(keyword))) {
