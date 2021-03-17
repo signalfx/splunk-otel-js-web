@@ -189,7 +189,7 @@ license file](./LICENSE) for more details.
 
 ### Unreleased
 
-### 0.3.0
+### 0.3.1
 - New meta version `latest` is now available from CDN, it is always updated, even if there are changes, which are not backwards-compatible
 - Fix for issues in Safari 10 caused by array-like non-iterable types
 
