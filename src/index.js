@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import './polyfill-safari10';
 import {registerInstrumentations} from '@opentelemetry/instrumentation';
 import {ConsoleSpanExporter, SimpleSpanProcessor, BatchSpanProcessor} from '@opentelemetry/tracing';
 import {WebTracerProvider} from '@opentelemetry/web';
