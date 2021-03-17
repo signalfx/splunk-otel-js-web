@@ -188,7 +188,10 @@ license file](./LICENSE) for more details.
 ## Changelog
 
 ### Unreleased
+
+### 0.3.0
 - New meta version `latest` is now available from CDN, it is always updated, even if there are changes, which are not backwards-compatible
+- Fix for issues in Safari 10 caused by array-like non-iterable types
 
 ### 0.3.0-rc.1
 - New configuration format <https://github.com/signalfx/splunk-otel-js-web#all-configuration-options>
