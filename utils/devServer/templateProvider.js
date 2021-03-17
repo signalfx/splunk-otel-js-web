@@ -91,7 +91,7 @@ exports.registerTemplateProvider = ({app, addHeaders, enableHttps, render}) => {
             beaconUrl: beaconUrl.toString(),
             app: 'splunk-otel-js-dummy-app',
             debug: true,
-            bufferTimeout: require('../utils/globals').GLOBAL_TEST_BUFFER_TIMEOUT,
+            bufferTimeout: require('../../integration-tests/utils/globals').GLOBAL_TEST_BUFFER_TIMEOUT,
             ...userOpts
           };
 

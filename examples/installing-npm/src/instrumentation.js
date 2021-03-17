@@ -1,7 +1,7 @@
 import SplunkOtelWeb from '@splunk/otel-web';
 
 SplunkOtelWeb.init({
-  beaconUrl: 'http://localhost:9411/api/v2/spans',
+  beaconUrl: 'http://localhost:9101/api/v2/spans',
   debug: true,
   allowInsecureBeacon: true,
   app: 'splunk-otel-web-example-npm',

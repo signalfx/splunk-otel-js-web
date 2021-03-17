@@ -14,5 +14,5 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-const { buildIntegrationBackend } = require('../utils/testBackendProvider');
-buildIntegrationBackend({ enableHttps: false, hostname: 'localhost' });
+const { buildInstrumentationBackend } = require('../testBackendProvider');
+buildInstrumentationBackend({ enableHttps: false, hostname: 'localhost' });
