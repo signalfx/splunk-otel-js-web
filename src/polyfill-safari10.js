@@ -14,6 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/**
+ * Why another polyfill if we already have babel?
+ * When applying spread operator, babel checks if the target is 1) an array or 2) an iterable.
+ * However, Safari 10 has some array-like types which are neither 1) nor 2).
+ * Below we're polyfilling two of these, as caused by [...document.getElementsByTagName(tagName)].
+ * This is a good-enough solution for now. If there's more polyfills needed, we should migrate to corejs.
+ */
+
 if (!NodeList.prototype[Symbol.iterator]) {
   NodeList.prototype[Symbol.iterator] = [][Symbol.iterator];
 }
