@@ -103,7 +103,7 @@ exports.registerTemplateProvider = ({app, addHeaders, enableHttps, render}) => {
           }
 
           if (cdnVersion) {
-            file = `https://cdn.signalfx.com/o11y-gdi-rum/v${cdnVersion}/splunk-otel-web.js`;
+            file = `https://cdn.signalfx.com/o11y-gdi-rum/${cdnVersion}/splunk-otel-web.js`;
           }
 
           return render(INJECT_TEMPLATE, {
