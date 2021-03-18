@@ -15,6 +15,13 @@
 		// force a new event to be sent
 		SplunkRum.error('fake error');
 	}
+
+	function resetAttributes() {
+		SplunkRum.setGlobalAttributes();
+		// force a new event to be sent
+		SplunkRum.error('fake error 2');
+	}
 </script>
 <a id="clickToChangeAttributes" href="javascript:changeAttributes()">changeAttributes</a>
+<a id="clickToResetAttributes" href="javascript:resetAttributes()">resetAttributes</a>
 </html>

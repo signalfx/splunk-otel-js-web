@@ -80,12 +80,18 @@ const SplunkRum = {
     initSessionTracking(instanceId);
 
     let globalAttributes = {};
+    if (options.environment) {
+      globalAttributes['environment'] = options.environment;  
+    }
+
     this.setGlobalAttributes = function(attributes) {
-      globalAttributes = typeof attributes === 'object' ? attributes : {};
-      if (options.environment) {
-        globalAttributes['environment'] = options.environment;
+      if (!attributes || Object.keys(attributes).length === 0) {
+        globalAttributes = {}; 
+      } else {
+        Object.assign(globalAttributes, attributes);
       }
     };
+    
     this.setGlobalAttributes(options.globalAttributes);
 
     // FIXME this is still not the cleanest way to add an attribute to all created spans..,
