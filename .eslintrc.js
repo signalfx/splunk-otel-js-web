@@ -107,7 +107,7 @@ module.exports = {
         'ecmaVersion': 2018
       },
       rules: {
-        'header/header': false,
+        'header/header': 'off',
       },
     },
   ]
