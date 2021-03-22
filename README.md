@@ -34,22 +34,45 @@ to your page.
 For example:
 
 ```html
-<script src="http://your-site.com/path/to/splunk-otel-web.js"></script>
+<script src="https://cdn.signalfx.com/o11y-gdi-rum/latest/splunk-otel-web.js" crossorigin="anonymous"></script>
 <script>
-  SplunkRum.init(
-    {
-      // Your beaconUrl should be provided by your friendly Splunk representative
-      beaconUrl: 'https://example.com/v1/rum',
-      // You can generate or get your rumAuth token from your friendly Splunk representative
-      rumAuth: 'ABC123...789',
-      app: 'my-awesome-app'
+  SplunkRum.init({
+      beaconUrl: 'https://rum-ingest.<REALM>.signalfx.com/v1/rum',
+      rumAuth: '<RUM_ACCESS_TOKEN>',
+      app: '<YOUR_APPLICATION_NAME>'
     });
 </script>
 ```
 
-## Installation options
-
 Please read [INSTALLING.md](./docs/INSTALLING.md) for more advanced installation scenarios.
+
+## Supported browsers
+
+Not all supported browsers support all features/attributes, but the following
+browsers are generally supported.  We are actively working on expanding this
+list.
+
+- Chrome 52+
+- Safari 11+
+- Firefox 57+
+- Edge 79+
+- IE not currently supported
+
+### Known issues
+
+Auto-instrumentation doesn't currently capture events handled on `document`
+level, ie. `document.addEventListener(...)`.
+
+Web Workers and Service Workers are not supported. Code loaded within them will
+not be auto-instrumented, and currently there is no version of the code which
+can be used within either Web or Service Workers for manual instrumentation.
+
+## Open Telemetry version
+
+| @splunk/otel-web | @opentelemetry/api |
+|------------------|--------------------|
+| 0.2.x | 0.18.x |
+| 0.1.x | 0.15.x |
 
 ## All configuration options
 
@@ -152,28 +175,6 @@ SplunkRum.init({
 });
 ```
 
-## Supported browsers
-
-Not all supported browsers support all features/attributes, but the following browsers are generally supported.  We are actively working on expanding this list.
-
-- Chrome 52+
-- Safari 11+
-- Firefox 57+
-- Edge 79+
-- IE not currently supported
-
-### Known issues
-
-Auto-instrumentation doesn't currently capture events handled on `document` level, ie. `document.addEventListener(...)`.
-
-Web Workers and Service Workers are not supported. Code loaded within them will not be auto-instrumented, and currently there is no version of the code which can be used within either Web or Service Workers for manual instrumentation.
-
-## Open Telemetry version
-| @splunk/otel-web | @opentelemetry/api |
-|------------------|--------------------|
-| 0.2.x | 0.18.x |
-| 0.1.x | 0.15.x |
-
 ## Building and contributing
 
 Please read [CONTRIBUTING.md](./docs/CONTRIBUTING.md) for instructions on building, running tests, and so forth.
@@ -185,23 +186,3 @@ of the [OpenTelemetry JavaScript
 Browser](https://github.com/open-telemetry/opentelemetry-js) project. It is
 released under the terms of the Apache Software License version 2.0. See [the
 license file](./LICENSE) for more details.
-
-## Changelog
-
-### Unreleased
-
-### 0.3.1
-- New meta version `latest` is now available from CDN, it is always updated, even if there are changes, which are not backwards-compatible
-- Fix for issues in Safari 10 caused by array-like non-iterable types
-
-### 0.3.0-rc.1
-- New configuration format <https://github.com/signalfx/splunk-otel-js-web#all-configuration-options>
-
-### 0.2.0-rc.3
-- Transpile runtime to es2015 in browser build (#82)
-
-### 0.2.0-rc.2
-
-### 0.2.0-rc.1
-- Upgrade to OTel 0.18 and convert dependencies from git submodules to NPM (#80)
-- Safety check before asking for xhr headers (#77)
