@@ -96,9 +96,10 @@ Additional configuration options are available for following modules:
 
 ### `SplunkRum.setGlobalAttributes(attributes)`
 
-You can (re)set the entirety of `globalAttributes` at any time with this
-method.  Any spans reported from this point on will have your new attributes
-set.  You can pass `{}` or `undefined` to clear your global attributes.
+You can (re)set `globalAttributes` at any time with this
+method. Using it will overwrite specified properties and leave others unchanged. 
+Any spans reported from this point on will have your new attributes set.  
+You can pass `{}` or `undefined` to clear your global attributes.
 
 ## Manual OpenTelemetry instrumentation
 
