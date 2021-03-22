@@ -37,7 +37,16 @@ module.exports = {
     // environment still set (not cleared by setGlobalAttributes call)
     await browser.assert.strictEqual(atts2.tags['environment'], 'custom-environment');
     await browser.assert.strictEqual(atts2.tags['key1'], 'newvalue1');
-    await browser.assert.strictEqual(atts2.tags['key2'], undefined);
+    await browser.assert.strictEqual(atts2.tags['key2'], 'value2');
+
+    await browser.click('#clickToResetAttributes');
+    // no argument setGlobalAttributes() call will set empty attributes
+    const atts3 = await browser.globals.findSpan(span => span.tags['error.message'] === 'fake error 2');    
+    await browser.assert.ok(atts3);
+    await browser.assert.strictEqual(atts3.tags['environment'], undefined);
+    await browser.assert.strictEqual(atts3.tags['key1'], undefined);
+    await browser.assert.strictEqual(atts3.tags['key2'], undefined);
+
     await browser.globals.assertNoErrorSpans();
   },
   'instrumentations.errors controls error capture': async function(browser) {
