@@ -166,7 +166,7 @@ describe('setGlobalAttributes', () => {
     const span = tracer.startSpan('testSpan');
     context.with(setSpan(context.active(), span), () => {
       assert.strictEqual(span.attributes.newKey, 'newVal');
-      assert.ok(!span.attributes.customerType); // old key from init() not there anymore
+      assert.strictEqual(span.attributes.customerType, 'GOLD');
     });
     span.end();
   });
