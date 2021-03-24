@@ -17,6 +17,8 @@ limitations under the License.
 const path = require('path');
 const fs = require('fs');
 
+const {render} = require('ejs');
+
 const INJECT_TEMPLATE = `<script src="<%= file -%>"></script>
   <script>
     <%if (noInit) { %>
@@ -75,9 +77,9 @@ const INJECT_TEMPLATE = `<script src="<%= file -%>"></script>
   </script>
 `;
 
-exports.registerTemplateProvider = ({app, addHeaders, enableHttps, render}) => {
+exports.registerTemplateProvider = ({app, addHeaders, enableHttps}) => {
   app.use(function(req, res, next) {  
-    const filepath = path.resolve(__dirname, '../tests', req.path.substring(1));
+    const filepath = path.resolve(__dirname, '..', '..', 'integration-tests', 'tests', req.path.substring(1));
     if (fs.existsSync(filepath)) {
       const beaconUrl = new URL(`${enableHttps ? 'https' : 'http'}://${req.headers.host}/api/v2/spans`);
       if (req.query.beaconPort) {

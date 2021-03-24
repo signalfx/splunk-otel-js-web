@@ -19,7 +19,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const WebSocket = require('ws');
-const {render, renderFile} = require('ejs');
+const {renderFile} = require('ejs');
 const { buildBasicLocalServer } = require('../../utils/server');
 const { 
   generateServerTiming,
@@ -163,7 +163,7 @@ exports.runIntegrationDevelopmentServer = async function run({
     }
   });
 
-  registerTemplateProvider({ app, addHeaders, enableHttps, render });
+  registerTemplateProvider({ app, addHeaders, enableHttps });
 
   app.get('/integration-tests/assets/no-cache.png', function(req, res) {
     res.sendFile(path.join(__dirname, '../assets/no-cache.png'), {
