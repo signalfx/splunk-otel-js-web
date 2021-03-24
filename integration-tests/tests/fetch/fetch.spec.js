@@ -55,7 +55,7 @@ module.exports = {
     await browser.assert.not.ok(browser.globals.getReceivedSpans().find(span => span.tags['http.url'] === '/no-server-timings'));
   },
   'fetch reported over CORS': async function(browser) {
-    const backend2 = await browser.globals.buildIntegrationBackend();
+    const backend2 = await browser.globals.buildInstrumentationBackend();
     await browser.url(backend2.getUrl('/fetch/fetch.ejs', undefined, { beaconPort: browser.globals.httpPort }).toString());
 
     const fetchSpan = await browser.globals.findSpan(span => span.tags['http.url'] === '/some-data');

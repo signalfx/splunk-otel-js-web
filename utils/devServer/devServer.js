@@ -19,12 +19,12 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const WebSocket = require('ws');
-const {render, renderFile} = require('ejs');
-const { buildBasicLocalServer } = require('../../test-utils/server');
+const {renderFile} = require('ejs');
+const { buildBasicLocalServer } = require('../../utils/server');
 const { 
   generateServerTiming,
   setServerTimingHeader,
-} = require('../../test-utils/server/serverTiming');
+} = require('../../utils/server/serverTiming');
 const { registerTemplateProvider } = require('./templateProvider');
 
 function buildServer({ enableHttps, listener }) {
@@ -58,7 +58,7 @@ function buildServer({ enableHttps, listener }) {
   return { server, serverOptions, close };
 }
 
-function startHttpServer({ enableHttps, listener }) {
+function startHttpServer({ enableHttps, listener, port }) {
   const { server, serverOptions, close } = buildServer({ enableHttps, listener });
   return new Promise((resolve, reject) => {
     server.on('listening', () => {
@@ -77,11 +77,11 @@ function startHttpServer({ enableHttps, listener }) {
 
     // 0 acquires a random available port
     // 127.0.0.1 has been found to work with Circle CI and Browserstack well
-    server.listen(0, '127.0.0.1');
+    server.listen(port, '127.0.0.1');
   });
 }
 
-function startWebsocketServer({ enableHttps, listener }) {
+function startWebsocketServer({ enableHttps, listener, port }) {
   const { server, serverOptions, close } = buildServer({ enableHttps, listener });
   return new Promise((resolve, reject) => {
     const websocketServer = new WebSocket.Server({ server });    
@@ -103,7 +103,7 @@ function startWebsocketServer({ enableHttps, listener }) {
 
     // 0 acquires a random available port
     // 127.0.0.1 has been found to work with Circle CI and Browserstack well
-    server.listen(0, '127.0.0.1');
+    server.listen(port, '127.0.0.1');
   });
 }
 
@@ -123,7 +123,12 @@ function getSpans(spanOrSpans) {
   }];
 }
 
-exports.runIntegrationDevelopmentServer = async function run({onSpanReceived, enableHttps}) {
+exports.runIntegrationDevelopmentServer = async function run({
+  onSpanReceived,
+  enableHttps,
+  httpPort: requestedHttpPort,
+  websocketsPort: requestedWebsocketsPort,
+}) {
   enableHttps = enableHttps || false;
   let lastServerTiming;
   function addHeaders(response) {
@@ -158,7 +163,7 @@ exports.runIntegrationDevelopmentServer = async function run({onSpanReceived, en
     }
   });
 
-  registerTemplateProvider({ app, addHeaders, enableHttps, render });
+  registerTemplateProvider({ app, addHeaders, enableHttps });
 
   app.get('/integration-tests/assets/no-cache.png', function(req, res) {
     res.sendFile(path.join(__dirname, '../assets/no-cache.png'), {
@@ -191,14 +196,14 @@ exports.runIntegrationDevelopmentServer = async function run({onSpanReceived, en
     close: closeHttpServer, 
     address: { port: httpPort }, 
     serverOptions: httpOptions,
-  } = await startHttpServer({ enableHttps, listener: app });
+  } = await startHttpServer({ enableHttps, listener: app, port: requestedHttpPort });
 
   const { 
     close: closeWebsocketServer, 
     address: { port: websocketsPort }, 
     serverOptions: wsOptions,
     websocketServer,
-  } = await startWebsocketServer({ enableHttps });
+  } = await startWebsocketServer({ enableHttps, port: requestedWebsocketsPort });
 
   websocketServer.on('connection', function connection(ws) {
     console.log('websocket connected');
