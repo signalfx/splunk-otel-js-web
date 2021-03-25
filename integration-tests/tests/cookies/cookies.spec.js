@@ -58,5 +58,16 @@ module.exports = {
     }
 
     await browser.end();
-  }
+  },
+  'setting invalid cookieDomain in options does not set the cookie': async function(browser) {
+    await browser.url(browser.globals.getUrl('/cookies/cookies-domain.ejs'));
+
+    await browser.globals.findSpan(span => span.name === 'documentFetch');
+    const cookie = await browser.getCookie('_splunk_rum_sid');
+
+    await browser.assert.not.ok(cookie);
+
+    await browser.globals.assertNoErrorSpans();
+    await browser.end();
+  },
 };

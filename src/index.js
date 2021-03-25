@@ -77,7 +77,7 @@ const SplunkRum = {
 
     const instanceId = generateId(64);
 
-    initSessionTracking(instanceId);
+    initSessionTracking(instanceId, options.cookieDomain);
 
     let globalAttributes = {};
     if (options.environment) {
