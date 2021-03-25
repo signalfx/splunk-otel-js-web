@@ -85,6 +85,7 @@ can be used within either Web or Service Workers for manual instrumentation.
 | app | string | Application name | 'unknown-browser-app' |
 | environment | string | Sets a value for the `environment` attribute (persists through calls to `setGlobalAttributes()`) | (No default) |
 | globalAttributes | object | Extra attributes to add to each reported span.  See also `setGlobalAttributes` | {} |
+| cookieDomain | string | Sets session cookie to this domain | If unspecified, it defaults to the same host that set the cookie, excluding subdomains
 | allowInsecureBeacon | boolean | Allows http beacon urls | false |
 | debug | boolean | Turns on/off internal debug logging | false |
 | ignoreUrls | array | Applies for XHR,Fetch and Websocket URLs. URLs that partially match any regex in ignoreUrls will not be traced. In addition, URLs that are _exact matches_ of strings in ignoreUrls will also not be traced. | [] |
