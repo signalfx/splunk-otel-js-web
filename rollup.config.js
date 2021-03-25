@@ -38,15 +38,20 @@ export default [
       sourcemap: true,
     },
     external: [
-      '@opentelemetry/api',
       '@opentelemetry/api-metrics',
+      '@opentelemetry/api',
       '@opentelemetry/core',
       '@opentelemetry/exporter-zipkin',
-      '@opentelemetry/instrumentation',
+
+      // note: seems like rollup (or one of its plugins) doesn't understand that if you reach into a package, it's still
+      // part of the package.
+      '@opentelemetry/exporter-zipkin/build/src/transform.js',
+      
       '@opentelemetry/instrumentation-document-load',
       '@opentelemetry/instrumentation-fetch',
       '@opentelemetry/instrumentation-user-interaction',
       '@opentelemetry/instrumentation-xml-http-request',
+      '@opentelemetry/instrumentation',
       '@opentelemetry/semantic-conventions',
       '@opentelemetry/tracing',
       '@opentelemetry/web',

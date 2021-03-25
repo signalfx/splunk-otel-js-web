@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-const { buildIntegrationBackend } = require('./testBackendProvider');
+const { buildInstrumentationBackend } = require('../../utils/testBackendProvider');
 
 const GLOBAL_TEST_BUFFER_TIMEOUT = 20;
 const NETWORK_LATENCY_MARGIN = 2000;
@@ -66,11 +66,11 @@ module.exports = {
       defaultTimeout = -10000;
     }
     
-    browser.globals.buildIntegrationBackend = () => buildIntegrationBackend({
+    browser.globals.buildInstrumentationBackend = () => buildInstrumentationBackend({
       enableHttps: browser.globals.enableHttps,
       hostname: browser.globals.hostname,
     });
-    const backend = await browser.globals.buildIntegrationBackend();
+    const backend = await browser.globals.buildInstrumentationBackend();
     browser.globals._closeBackend = backend.close;
 
     browser.globals.httpPort = backend.httpPort;
