@@ -5,7 +5,7 @@
   "repository": "github:signalfx/splunk-otel-js-browser",
   "scripts": {
     "start": "npm-run-all -s dist start:_execute",
-    "start:_execute": "node integration-tests/devServer/runDevServer.js",
+    "start:_execute": "node utils/devServer/runDevServer.js",
     "dist": "rollup -c",
     "test:unit:watch": "karma start",
     "test:unit:ci": "nyc karma start --single-run --no-auto-watch --browsers ChromeHeadless",
