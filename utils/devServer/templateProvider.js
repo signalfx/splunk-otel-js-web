@@ -17,6 +17,8 @@ limitations under the License.
 const path = require('path');
 const fs = require('fs');
 
+const {render} = require('ejs');
+
 const INJECT_TEMPLATE = `<script src="<%= file -%>"></script>
   <script>
     <%if (noInit) { %>
@@ -75,9 +77,9 @@ const INJECT_TEMPLATE = `<script src="<%= file -%>"></script>
   </script>
 `;
 
-exports.registerTemplateProvider = ({app, addHeaders, enableHttps, render}) => {
+exports.registerTemplateProvider = ({app, addHeaders, enableHttps}) => {
   app.use(function(req, res, next) {  
-    const filepath = path.resolve(__dirname, '../tests', req.path.substring(1));
+    const filepath = path.resolve(__dirname, '..', '..', 'integration-tests', 'tests', req.path.substring(1));
     if (fs.existsSync(filepath)) {
       const beaconUrl = new URL(`${enableHttps ? 'https' : 'http'}://${req.headers.host}/api/v2/spans`);
       if (req.query.beaconPort) {
@@ -91,7 +93,7 @@ exports.registerTemplateProvider = ({app, addHeaders, enableHttps, render}) => {
             beaconUrl: beaconUrl.toString(),
             app: 'splunk-otel-js-dummy-app',
             debug: true,
-            bufferTimeout: require('../utils/globals').GLOBAL_TEST_BUFFER_TIMEOUT,
+            bufferTimeout: require('../../integration-tests/utils/globals').GLOBAL_TEST_BUFFER_TIMEOUT,
             ...userOpts
           };
 
@@ -103,7 +105,7 @@ exports.registerTemplateProvider = ({app, addHeaders, enableHttps, render}) => {
           }
 
           if (cdnVersion) {
-            file = `https://cdn.signalfx.com/o11y-gdi-rum/v${cdnVersion}/splunk-otel-web.js`;
+            file = `https://cdn.signalfx.com/o11y-gdi-rum/${cdnVersion}/splunk-otel-web.js`;
           }
 
           return render(INJECT_TEMPLATE, {

@@ -14,9 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-const { runIntegrationDevelopmentServer } = require('../devServer/devServer');
+const { runIntegrationDevelopmentServer } = require('./devServer/devServer');
 
-exports.buildIntegrationBackend = async ({ enableHttps, hostname }) => {
+exports.buildInstrumentationBackend = async ({
+  enableHttps,
+  hostname,
+  httpPort: requestedHttpPort,
+  websocketsPort: requestedWebsocketsPort,
+}) => {
   const spans = [];
   function handleSpanReceived(span) {
     spans.push(span);
@@ -32,6 +37,8 @@ exports.buildIntegrationBackend = async ({ enableHttps, hostname }) => {
   } = await runIntegrationDevelopmentServer({
     onSpanReceived: handleSpanReceived,
     enableHttps,
+    httpPort: requestedHttpPort,
+    websocketsPort: requestedWebsocketsPort,
   });
 
   const availableSearchParams = {
