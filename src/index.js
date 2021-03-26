@@ -32,11 +32,16 @@ import { initWebVitals } from './webvitals';
 import { SplunkLongTaskInstrumentation } from './longtask';
 import { PostDocLoadResourceObserver } from './postDocLoadResourceObserver.js';
 
+// note: underscored fields are considered internal
 const OPTIONS_DEFAULTS = {
   app: 'unknown-browser-app',
   bufferTimeout: 5000, //millis, tradeoff between batching and loss of spans by not sending before page close
   bufferSize: 20, // spans, tradeoff between batching and hitting sendBeacon invididual limits
   instrumentations: {},
+  exporter: {
+    _factory: (options) => new SplunkExporter(options),
+    onAttributesSerializing: undefined,
+  },
 };
 
 const INSTRUMENTATIONS = [
@@ -53,8 +58,9 @@ const NOOP = () => {};
 
 function buildExporter(options) {
   const completeUrl = options.beaconUrl + (options.rumAuth ? '?auth='+options.rumAuth : '');
-  return new SplunkExporter({
+  return options.exporter._factory({
     beaconUrl: completeUrl,
+    onAttributesSerializing: options.exporter.onAttributesSerializing,
   });
 }
 

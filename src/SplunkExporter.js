@@ -88,7 +88,21 @@ export class SplunkExporter {
 
   _preTranslateSpan(span) {
     return {
-      ...span,
+      // todo: once typescript is implemented, conform to ReadableSpan
+      // note: some properties in Span are not enumerable, and as a result cannot be spread or Object.assign'ed
+      name: span.name,
+      kind: span.kind,
+      spanContext: span.spanContext,
+      parentSpanId: span.parentSpanId,
+      startTime: span.startTime,
+      endTime: span.endTime,
+      status: span.status,
+      links: span.links,
+      events: span.events,
+      duration: span.duration,
+      ended: span.ended,
+      instrumentationLibrary: span.instrumentationLibrary,
+      
       resource: Resource.EMPTY,
       attributes: this._onAttributesSerializing(span),
     };
