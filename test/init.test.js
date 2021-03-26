@@ -17,7 +17,6 @@ limitations under the License.
 import * as assert from 'assert';
 import SplunkRum from '../src/index';
 import { setSpan, context, getSpan } from '@opentelemetry/api';
-import { PatchedZipkinExporter } from '../src/zipkin';
 import { deinit, initWithDefaultConfig, SpanCapturer } from './utils';
 
 function doesBeaconUrlEndWith(suffix) {
@@ -141,13 +140,6 @@ describe('creating spans is possible', () => {
       assert.strictEqual(span.attributes.customerType, 'GOLD');
     });
     span.end();
-  });
-  it('should truncate long values when sent through zipkin', () => {
-    const tracer = SplunkRum.provider.getTracer('test');
-    const span = tracer.startSpan('testSpan');
-    span.setAttribute('somekey', 'a'.repeat(10000));
-    const zspan = new PatchedZipkinExporter('no_beacon').modZipkinSpan(span);
-    assert.strictEqual(4096, zspan.tags.somekey.length);
   });
 });
 

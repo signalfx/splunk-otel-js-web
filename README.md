@@ -153,28 +153,8 @@ using:
   SplunkRum.error(errorObjectOrMessageString);
 ```
 
-### spanProcessor
+### Redacting PII
 
-Passing an OpenTelemetry `SpanProcessor` as a `spanProcessor:` option to `init()` adds the provided
-processor to our tracing provider.  This processor can modify/create/remove attributes of
-spans before they leave the browser.  A trivial example of this might be:
-
-```javascript
-class UrlRedactor {
-  onEnd(span) {
-    if (span.attributes['http.url']) {
-      span.attributes['http.url'] = '(redacted)';
-    }
-  }
-  onStart(span, cts) { }
-  forceFlush() { return Promise.resolve(); }
-  shutdown() { return Promise.resolve(); }
-};
-SplunkRum.init({
-  ...
-  spanProcessor: new UrlRedactor(),
-});
-```
 
 ## Building and contributing
 
