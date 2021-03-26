@@ -6,8 +6,8 @@ variables you cast most about, and how much complexity/work you want to put into
 
 ## Default Recommendation
 
-Our recommendation for getting started is simple: host `splunk-otel-web.js` as your own asset
-(so that it is served over the same HTTP connection as your pages/scripts/images) and apply the following scripts in
+Our recommendation for getting started is simple: host `splunk-otel-web.js` either as your own asset
+(so that it is served over the same HTTP connection as your pages/scripts/images) or with our CDN, and apply the following scripts in
 your `<head>`:
 
 ```html
@@ -46,9 +46,15 @@ Because our `document-load` information comes from the browser's `performance` A
 - Just before the first `<script>` of your app
 - At the bottom of the page (e.g., just before `</body>`)
 
+## Installing via NPM
+
+You can integrate the script with your app directly by importing it as an npm package.  See [an example](../examples/installing-npm/README.md)
+for how to do this.  Please note the above limitations and be aware of, e.g., third-party components that load before your app.
+
 ## Inlining / manual bundling
 
-If you have build-time infrastructure to support it, you can inline our script in your page (again, at any point you wish, being aware of the data completeness tradeoffs) to avoid paying the penalty of a separate HTTP request.  If you have an existing pipeline where you bundle commonly-used scripts into one download, you could also integrate our script (and its initialization) with that.
+Alternately, if you have the infrastructure to support it, you can inline our script in your page or copy it into common utility library that you load, 
+saving the additional http request and/or connection.
 
 ## Async/defer options
 
