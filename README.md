@@ -133,6 +133,7 @@ We'd advise that you review 2 cases in particular:
 - any user interaction (e.g. a click), where a target element might contain a secret piece of information in its `id`
 
 To redact PII you can pass an option when initializing.
+
 ```javascript
 SplunkRum.init({
   ...otherOptions,
@@ -144,6 +145,7 @@ SplunkRum.init({
   },
 });
 ```
+
 For a working example see [this integration test](integration-tests/tests/redacting-attributes/index.ejs). `Span` is provided a second argument for your convenience.
 
 ## Manual OpenTelemetry instrumentation
