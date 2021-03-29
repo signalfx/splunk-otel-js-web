@@ -40,6 +40,7 @@ export const COOKIE_NAME = '_splunk_rum_sid';
 
 let rumSessionId = generateId(64); // will be overwritten in init() with scriptInstance; only here as extreme fallback
 let recentActivity = false;
+let cookieDomain;
 function markActivity() {
   recentActivity = true;
 }
@@ -91,8 +92,8 @@ function renewCookieTimeout(sessionState) {
     return;
   }
   const cookieValue = encodeURIComponent(JSON.stringify(sessionState));
-
-  let cookie = COOKIE_NAME + '=' + cookieValue + '; path=/; max-age=' + InactivityTimeoutSeconds ;
+  const domain  = cookieDomain ? `domain=${cookieDomain};` : '';
+  let cookie = COOKIE_NAME + '=' + cookieValue + '; path=/;' + domain + 'max-age=' + InactivityTimeoutSeconds ;
 
   if (isIframe()) {
     cookie += ';SameSite=None; Secure';
@@ -119,7 +120,10 @@ export function updateSessionStatus() {
   recentActivity = false;
 }
 
-export function initSessionTracking(instanceId) {
+export function initSessionTracking(instanceId, domain) {
+  if (domain) {
+    cookieDomain = domain;
+  }
   rumSessionId = instanceId;
   recentActivity = true; // document loaded implies activity
   updateSessionStatus();
