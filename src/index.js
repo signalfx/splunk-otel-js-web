@@ -69,7 +69,9 @@ const SplunkRum = {
   _deregisterInstrumentations: NOOP,
   DEFAULT_AUTO_INSTRUMENTED_EVENTS,
   init: function (options = {}) {
-    options = Object.assign({}, OPTIONS_DEFAULTS, options);
+    options = Object.assign({}, OPTIONS_DEFAULTS, options, {
+      exporter: Object.assign({}, OPTIONS_DEFAULTS.exporter, options.exporter),
+    });
 
     if (this.inited) {
       console.log('SplunkRum already init()ed.');

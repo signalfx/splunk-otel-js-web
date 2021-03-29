@@ -15,16 +15,14 @@ limitations under the License.
 */
 
 module.exports = {
-  'redacting attributes with custom spanProcessor': async function(browser) {
-
-
-    const url = browser.globals.getUrl('/spanprocessor/spanprocessor.ejs');
+  'redacting attributes with custom exporter': async function(browser) {
+    const url = browser.globals.getUrl('/redacting-attributes/index.ejs');
     await browser.url(url);
-    const resourceFetch = await browser.globals.findSpan(span => span.name === 'resourceFetch');
-    
-    await browser.assert.ok(resourceFetch);
 
-    await browser.assert.strictEqual(resourceFetch.tags['http.url'], 'redacted');
-    //    const allSpans = await browser.globals.
+    await browser.click('#btnClick');
+
+    const clickSpan = await browser.globals.findSpan(span => span.name === 'click');
+    await browser.assert.ok(clickSpan);
+    await browser.assert.strictEqual(clickSpan.tags['http.url'], '[redacted]');
   }
 };
