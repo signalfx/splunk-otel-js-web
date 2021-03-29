@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- New configuration option cookieDomain. This can be used to manually set session cookie domain.
 
 ## 0.3.1
 - New meta version `latest` is now available from CDN, it is always updated, even if there are changes, which are not backwards-compatible

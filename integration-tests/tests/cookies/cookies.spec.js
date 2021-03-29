@@ -58,5 +58,28 @@ module.exports = {
     }
 
     await browser.end();
-  }
+  },
+  'setting cookieDomain via config sets it on subdomains also': async function(browser) {
+    /*
+      We are using xip.io to let us test subdomains not sure how reliable it is, so if 
+      you are debugging flaky test then this should be your first guess.
+      cookies-domain.ejs has cookieDomain set to 127.0.0.1.xip.io, cookie set via cookieDomain
+      should be accessible for subdomains also so when we go to test. subdomain we should find the same 
+      cookie.
+    */
+
+    const protocol = browser.globals.enableHttps ? 'https' : 'http';
+    await browser.url(`${protocol}://127.0.0.1.xip.io:${browser.globals.httpPort}/cookies/cookies-domain.ejs`);
+    const cookie = await browser.getCookie('_splunk_rum_sid');
+    await browser.assert.ok(cookie);
+    
+    await browser.url(`${protocol}://test.127.0.0.1.xip.io:${browser.globals.httpPort}/cookies/cookies-domain.ejs`);
+
+    const cookie2 = await browser.getCookie('_splunk_rum_sid');
+    await browser.assert.strictEqual(cookie.domain, cookie2.domain);
+    await browser.assert.strictEqual(cookie.value, cookie2.value);
+
+    await browser.globals.assertNoErrorSpans();
+    await browser.end();
+  },
 };
