@@ -117,7 +117,18 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 
   disable() {
     // parent unwraps calls to addEventListener so call before us
-    super.disable();
+    if (this._zonePatched) {
+      super.disable();
+    } else {
+      if (isWrapped(Node.prototype.addEventListener)) {
+        this._unwrap(Node.prototype, 'addEventListener');
+      }
+      if (isWrapped(Node.prototype.removeEventListener)) {
+        this._unwrap(Node.prototype, 'removeEventListener');
+      }
+      this._unpatchHistoryApi();
+    }
+
     window.removeEventListener('hashchange', this.__hashChangeHandler);
   }
 
