@@ -6,9 +6,9 @@
   <%- renderAgent({}, true) %>
   <script>
     SplunkRumOptions.exporter = {
-      onAttributesSerializing: (span) => {
-        return Object.keys(span.attributes).reduce((acc, key) => {
-          acc[key] = /https?\:\/\//.test(span.attributes[key]) ? '[redacted]' : span.attributes[key];
+      onAttributesSerializing: (attributes) => {
+        return Object.keys(attributes).reduce((acc, key) => {
+          acc[key] = /https?\:\/\//.test(attributes[key]) ? '[redacted]' : attributes[key];
           return acc;
         }, {});
       },

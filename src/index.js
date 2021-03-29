@@ -32,6 +32,8 @@ import { initWebVitals } from './webvitals';
 import { SplunkLongTaskInstrumentation } from './longtask';
 import { PostDocLoadResourceObserver } from './postDocLoadResourceObserver.js';
 
+export * from './SplunkExporter';
+
 // note: underscored fields are considered internal
 const OPTIONS_DEFAULTS = {
   app: 'unknown-browser-app',

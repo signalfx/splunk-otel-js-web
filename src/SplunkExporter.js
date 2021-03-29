@@ -1,5 +1,5 @@
 /*
-Copyright 2020 Splunk Inc.
+Copyright 2021 Splunk Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -28,23 +28,29 @@ const SPAN_RATE_LIMIT_PERIOD = 30000; // millis, sweep to clear out span counts
 const MAX_SPANS_PER_PERIOD_PER_COMPONENT = 100;
 const SERVICE_NAME = 'browser';
 
-const SPAN_TO_ATTRIBUTES = (span) => span.attributes;
-const XHR_FACTORY = () => new XMLHttpRequest();
-const BEACON_SENDER = navigator.sendBeacon ? (url, data) => navigator.sendBeacon(url, data) : null;
+export const TRANSFORM_ATTRIBUTES = (attributes) => attributes;
+export const XHR_SENDER = (url, data) => {
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', url);
+  xhr.setRequestHeader('Accept', '*/*');
+  xhr.setRequestHeader('Content-Type', 'text/plain;charset=UTF-8');
+  xhr.send(data);
+};
+export const BEACON_SENDER = navigator.sendBeacon ? (url, data) => navigator.sendBeacon(url, data) : null;
 
 /**
- * SplunkExporter is compatible with Zipkin V2 with some.
+ * SplunkExporter is based on Zipkin V2. It includes Splunk-specific modifications.
  */
 export class SplunkExporter {
   constructor({
     beaconUrl,
-    onAttributesSerializing = SPAN_TO_ATTRIBUTES, 
-    xhrFactory = XHR_FACTORY,
+    onAttributesSerializing = TRANSFORM_ATTRIBUTES, 
+    xhrSender = XHR_SENDER,
     beaconSender = BEACON_SENDER,
   }) {
     this.beaconUrl = beaconUrl;
     this._onAttributesSerializing = onAttributesSerializing;
-    this._xhrFactory = xhrFactory;
+    this._xhrSender = xhrSender;
     this._beaconSender = beaconSender;
     this.spanCounts = {};
     this._limiterHandle = setInterval(() => {
@@ -67,11 +73,7 @@ export class SplunkExporter {
     if (this._beaconSender) {
       this._beaconSender(this.beaconUrl, zJson);
     } else {
-      const xhr = this._xhrFactory();
-      xhr.open('POST', this.beaconUrl);
-      xhr.setRequestHeader('Accept', '*/*');
-      xhr.setRequestHeader('Content-Type', 'text/plain;charset=UTF-8');
-      xhr.send(zJson);
+      this._xhrSender(this.beaconUrl, zJson);
     }
     resultCallback({code: ExportResultCode.SUCCESS});
   }
@@ -104,7 +106,7 @@ export class SplunkExporter {
       instrumentationLibrary: span.instrumentationLibrary,
       
       resource: Resource.EMPTY,
-      attributes: this._onAttributesSerializing(span),
+      attributes: this._onAttributesSerializing(span.attributes, span),
     };
   }
 

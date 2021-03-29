@@ -91,7 +91,7 @@ can be used within either Web or Service Workers for manual instrumentation.
 | ignoreUrls | array | Applies for XHR,Fetch and Websocket URLs. URLs that partially match any regex in ignoreUrls will not be traced. In addition, URLs that are _exact matches_ of strings in ignoreUrls will also not be traced. | [] |
 | spanProcessor | SpanProcessor | Offers ability to alter/remove data in-browser.  See below for more details | (undefined) |
 | instrumentations | { [moduleName]?: boolean or object } | Configuration for instrumentation modules. See following section for details. |
-| exporter.onAttributesSerializing | (s: Span): SpanAttributes | Described in [its own section](#redacting-pii) | (s) => s.attributes |
+| exporter.onAttributesSerializing | (a: SpanAttributes, s: Span): SpanAttributes | Described in [its own section](#redacting-pii) | (s) => s.attributes |
 
 ### Capturing modules
 
@@ -126,10 +126,10 @@ method. Using it will overwrite specified properties and leave others unchanged.
 Any spans reported from this point on will have your new attributes set.  
 You can pass `{}` or `undefined` to clear your global attributes.
 
-### Redacting PII
+### Redacting Personally Identifiable Information (PII)
 In certain situations, metadata collected by our instrumentation may include PII.
 We'd advise that you review 2 cases in particular:
-- any network operation, where a secret piece of information might be present in the URL (e.g. an authentication token)
+- any network operation, where a secret piece of information might be present in the URL (e.g. an authentication token); please note that we do not capture or report any data from the payload of the request (i.e. the POST body), apart from its size;
 - any user interaction (e.g. a click), where a target element might contain a secret piece of information in its `id`
 
 To redact PII you can pass an option when initializing.
@@ -137,16 +137,14 @@ To redact PII you can pass an option when initializing.
 SplunkRum.init({
   ...otherOptions,
   exporter: {
-    onAttributesSerializing: (span) => ({
-      ...span.attributes,
-      'http.url': /secret\=/.test(span.attributes['http.url']) ? '[redacted]' : span.attributes['http.url'],
+    onAttributesSerializing: (attributes, span) => ({
+      ...attributes,
+      'http.url': /secret\=/.test(attributes['http.url']) ? '[redacted]' : attributes['http.url'],
     }),
   },
 });
 ```
-Please note that this method (spread operator) carries a small risk of dropping non-enumerable properties should anyone define them on `span.attributes`.
-
-For a working example see [this integration test](integration-tests/tests/redacting-attributes/index.ejs).
+For a working example see [this integration test](integration-tests/tests/redacting-attributes/index.ejs). `Span` is provided a second argument for your convenience.
 
 ## Manual OpenTelemetry instrumentation
 

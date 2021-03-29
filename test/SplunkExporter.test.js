@@ -43,54 +43,51 @@ function buildDummySpan({
 }
 
 describe('SplunkExporter', () => {
-  let sendBeaconMock;
-  let xhrFactoryMock;
-  let xhrMock;
+  let beaconSenderMock;
+  let xhrSenderMock;
   let exporter;
 
   beforeEach(() => {
-    sendBeaconMock = sinon.stub(navigator, 'sendBeacon').returns(true);
-
-    xhrMock = {
-      open: sinon.fake(),
-      setRequestHeader: sinon.fake(),
-      send: sinon.fake(),
-    };
-    xhrFactoryMock = sinon.fake.returns(xhrMock);
+    beaconSenderMock = sinon.stub(navigator, 'sendBeacon').returns(true);
+    xhrSenderMock = sinon.fake();
   });
 
   afterEach(() => {
     exporter.shutdown();
-    sendBeaconMock.restore();
+    beaconSenderMock.restore();
   });
 
   it('uses Beacon API if available', () => {
     exporter = new SplunkExporter({
-      beaconUrl: 'https://localhost',
-      xhrFactoryMock: xhrFactoryMock,
+      beaconUrl: 'https://domain1',
+      xhrSenderMock: xhrSenderMock,
     });
 
     const dummySpan = buildDummySpan();
     exporter.export([dummySpan], () => {});
 
-    const sentSpan = JSON.parse(sendBeaconMock.getCall(0).args[1])[0];
+    expect(beaconSenderMock.args[0][0]).to.eq('https://domain1');
+
+    const sentSpan = JSON.parse(beaconSenderMock.args[0][1])[0];
     expect(sentSpan.name).to.equal('<name>');
     expect(sentSpan.id).to.equal('0001');
 
-    expect(xhrFactoryMock.called).to.eq(false);
+    expect(xhrSenderMock.called).to.eq(false);
   });
 
   it('uses XHR if Beacon API is unavailable', () => {
     exporter = new SplunkExporter({
-      beaconUrl: 'https://localhost',
+      beaconUrl: 'https://domain2',
       beaconSender: null,
-      xhrFactory: xhrFactoryMock,
+      xhrSender: xhrSenderMock,
     });
 
     const dummySpan = buildDummySpan();
     exporter.export([dummySpan], () => {});
 
-    const sentSpan = JSON.parse(xhrMock.send.getCall(0).args[0])[0];
+    expect(xhrSenderMock.args[0][0]).to.eq('https://domain2');
+
+    const sentSpan = JSON.parse(xhrSenderMock.args[0][1])[0];
     expect(sentSpan.name).to.equal('<name>');
     expect(sentSpan.id).to.equal('0001');
   });
@@ -105,7 +102,7 @@ describe('SplunkExporter', () => {
     for (let i = 0; i < 110; i++) { spans.push(dummySpan); }
     exporter.export(spans, () => {});
 
-    const sentSpans = JSON.parse(sendBeaconMock.getCall(0).args[1]);
+    const sentSpans = JSON.parse(beaconSenderMock.getCall(0).args[1]);
     expect(sentSpans).to.have.lengthOf(100);
   });
 
@@ -123,7 +120,7 @@ describe('SplunkExporter', () => {
     });
     exporter.export([dummySpan], () => {});
 
-    const sentSpan = JSON.parse(sendBeaconMock.getCall(0).args[1])[0];
+    const sentSpan = JSON.parse(beaconSenderMock.getCall(0).args[1])[0];
     expect(sentSpan.name).to.eq('a'.repeat(4096));
     expect(sentSpan.tags['longValue']).to.eq('b'.repeat(4096));
     expect(sentSpan.tags['shortValue']).to.eq('c'.repeat(4000));
@@ -132,26 +129,28 @@ describe('SplunkExporter', () => {
   it('allows hooking into serialization', () => {
     exporter = new SplunkExporter({
       beaconUrl: 'https://localhost',
-      onAttributesSerializing: () => ({
-        key1: 'new value1',
-        key3: 'value3',
+      onAttributesSerializing: (attributes) => ({
+        ...attributes,
+        key1: 'new value 1',
+        key3: null,
       }),
     });
 
     const dummySpan = buildDummySpan({
       attributes: {
-        key1: 'value1',
-        key2: 'value2',
+        key1: 'value 1',
+        key2: 'value 2',
+        key3: 'value 3',
       },
     });
     exporter.export([dummySpan], () => {});
 
-    const sentSpan = JSON.parse(sendBeaconMock.getCall(0).args[1])[0];
+    const sentSpan = JSON.parse(beaconSenderMock.getCall(0).args[1])[0];
     expect(sentSpan.name).to.eq('<name>');
-    console.log(sentSpan.tags);
-    expect(sentSpan.tags).to.deep.equal({
-      key1: 'new value1',
-      key3: 'value3',
+    expect(sentSpan.tags).to.deep.eq({
+      key1: 'new value 1',
+      key2: 'value 2',
+      key3: 'null',
       'ot.status_code': 'UNSET'
     });
   });
