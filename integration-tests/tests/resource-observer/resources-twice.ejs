@@ -8,14 +8,14 @@
 <body>
   <h1>Resource observer test</h1>
 
-  <img src="/integration-tests/assets/splunk-black.png" alt="white">
+  <img src="/utils/devServer/assets/splunk-black.png" alt="white">
 
   <script>
     
     function loadImg() {
       var p = new Promise(function(resolve, _) {
         var img = document.createElement('img');
-        img.src = '/integration-tests/assets/splunk-black.png?t=100';
+        img.src = '/utils/devServer/assets/splunk-black.png?t=100';
         img.onload = resolve;
         document.body.appendChild(img);
       });

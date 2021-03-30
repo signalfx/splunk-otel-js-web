@@ -42,7 +42,7 @@ module.exports = {
 
     await browser.assert.ok(!!imageSpan, 'Image span found.');
     await browser.assert.strictEqual(imageSpan.tags['component'], 'splunk-post-doc-load-resource');
-    const imgUrl = browser.globals.getUrl('/integration-tests/assets/', []) + 'splunk-black.png?t=100';
+    const imgUrl = browser.globals.getUrl('/utils/devServer/assets/', []) + 'splunk-black.png?t=100';
     await browser.assert.strictEqual(imageSpan.tags['http.url'], imgUrl);
     await browser.assert.strictEqual(imageSpan.annotations.length, 9, 'Missing network events');
 
@@ -51,7 +51,7 @@ module.exports = {
     );
 
     await browser.assert.strictEqual(scriptSpan.tags['component'], 'splunk-post-doc-load-resource');
-    const scriptUrl = browser.globals.getUrl('/integration-tests/assets/', []) + 'test.js';
+    const scriptUrl = browser.globals.getUrl('/utils/devServer/assets/', []) + 'test.js';
     await browser.assert.strictEqual(scriptSpan.tags['http.url'], scriptUrl);
     await browser.assert.strictEqual(scriptSpan.annotations.length, 9, 'Missing network events');
   },
@@ -62,7 +62,7 @@ module.exports = {
     await browser.url(browser.globals.getUrl('/resource-observer/resources-ignored.ejs'));
     
     await browser.globals.findSpan(span => span.name === 'guard-span');
-    const url = browser.globals.getUrl('/integration-tests/assets/', []);
+    const url = browser.globals.getUrl('/utils/devServer/assets/', []);
     await browser.assert.not.ok(browser.globals.getReceivedSpans().find(
       span => span.tags['http.url'] === url + 'test.js' && span.tags['component'] === 'splunk-post-doc-load-resource'
     ));
