@@ -22,7 +22,7 @@ import {DiagLogLevel} from '@opentelemetry/api';
 import {SplunkDocumentLoad} from './docload';
 import {SplunkXhrPlugin, SplunkFetchInstrumentation} from './xhrfetch';
 import {SplunkUserInteractionInstrumentation, DEFAULT_AUTO_INSTRUMENTED_EVENTS} from './interaction';
-import {PatchedZipkinExporter} from './zipkin';
+import {SplunkExporter} from './SplunkExporter';
 import {captureErrors} from './errors';
 import {generateId, getPluginConfig} from './utils';
 import {initSessionTracking, getRumSessionId} from './session';
@@ -32,11 +32,18 @@ import { initWebVitals } from './webvitals';
 import { SplunkLongTaskInstrumentation } from './longtask';
 import { PostDocLoadResourceObserver } from './postDocLoadResourceObserver.js';
 
+export * from './SplunkExporter';
+
+// note: underscored fields are considered internal
 const OPTIONS_DEFAULTS = {
   app: 'unknown-browser-app',
   bufferTimeout: 5000, //millis, tradeoff between batching and loss of spans by not sending before page close
   bufferSize: 20, // spans, tradeoff between batching and hitting sendBeacon invididual limits
   instrumentations: {},
+  exporter: {
+    _factory: (options) => new SplunkExporter(options),
+    onAttributesSerializing: undefined,
+  },
 };
 
 const INSTRUMENTATIONS = [
@@ -51,12 +58,22 @@ const INSTRUMENTATIONS = [
 
 const NOOP = () => {};
 
+function buildExporter(options) {
+  const completeUrl = options.beaconUrl + (options.rumAuth ? '?auth='+options.rumAuth : '');
+  return options.exporter._factory({
+    beaconUrl: completeUrl,
+    onAttributesSerializing: options.exporter.onAttributesSerializing,
+  });
+}
+
 const SplunkRum = {
   inited: false,
   _deregisterInstrumentations: NOOP,
   DEFAULT_AUTO_INSTRUMENTED_EVENTS,
   init: function (options = {}) {
-    options = Object.assign({}, OPTIONS_DEFAULTS, options);
+    options = Object.assign({}, OPTIONS_DEFAULTS, options, {
+      exporter: Object.assign({}, OPTIONS_DEFAULTS.exporter, options.exporter),
+    });
 
     if (this.inited) {
       console.log('SplunkRum already init()ed.');
@@ -139,16 +156,9 @@ const SplunkRum = {
       instrumentations,
     });
 
-    if (options.spanProcessor) {
-      const sp = options.spanProcessor;
-      if (typeof sp.onStart === 'function' && typeof sp.onEnd === 'function') {
-        provider.addSpanProcessor(sp);
-      }
-    }
-
     if (options.beaconUrl) {
-      const completeUrl = options.beaconUrl + (options.rumAuth ? '?auth='+options.rumAuth : '');
-      const batchSpanProcessor = new BatchSpanProcessor(new PatchedZipkinExporter(completeUrl), {
+      const exporter = buildExporter(options);
+      const batchSpanProcessor = new BatchSpanProcessor(exporter, {
         scheduledDelayMillis: options.bufferTimeout,
         maxExportBatchSize: options.bufferSize, 
         maxQueueSize: 2 * options.bufferSize,
