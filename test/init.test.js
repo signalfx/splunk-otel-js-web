@@ -17,8 +17,9 @@ limitations under the License.
 import * as assert from 'assert';
 import SplunkRum from '../src/index';
 import { setSpan, context, getSpan } from '@opentelemetry/api';
-import { PatchedZipkinExporter } from '../src/zipkin';
 import { deinit, initWithDefaultConfig, SpanCapturer } from './utils';
+import sinon from 'sinon';
+import { expect } from 'chai';
 
 function doesBeaconUrlEndWith(suffix) {
   const sps = SplunkRum.provider.getActiveSpanProcessor()._spanProcessors;
@@ -114,7 +115,35 @@ describe('test init', () => {
       SplunkRum.deinit();
     });
   });
-
+  describe('exporter option', () => {
+    it ('allows setting factory', (done) => {
+      const exportMock = sinon.fake();
+      const onAttributesSerializingMock = sinon.fake();
+      SplunkRum.init({
+        beaconUrl: 'https://domain1',
+        allowInsecureBeacon: true,
+        app: 'my-app',
+        environment: 'my-env',
+        globalAttributes: {customerType: 'GOLD'},
+        bufferTimeout: 0,
+        exporter: {
+          onAttributesSerializing: onAttributesSerializingMock,
+          _factory: (options) => {
+            expect(options.onAttributesSerializing).to.eq(onAttributesSerializingMock);
+            return {
+              'export': exportMock,
+              shutdown: () => {},
+            };
+          },
+        },
+      });
+      SplunkRum.provider.getTracer('test').startSpan('testSpan').end();
+      setTimeout(() => {
+        expect(exportMock.called).to.eq(true);
+        done();
+      });
+    });
+  });
 });
 
 describe('creating spans is possible', () => {
@@ -141,13 +170,6 @@ describe('creating spans is possible', () => {
       assert.strictEqual(span.attributes.customerType, 'GOLD');
     });
     span.end();
-  });
-  it('should truncate long values when sent through zipkin', () => {
-    const tracer = SplunkRum.provider.getTracer('test');
-    const span = tracer.startSpan('testSpan');
-    span.setAttribute('somekey', 'a'.repeat(10000));
-    const zspan = new PatchedZipkinExporter('no_beacon').modZipkinSpan(span);
-    assert.strictEqual(4096, zspan.tags.somekey.length);
   });
 });
 

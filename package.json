@@ -9,9 +9,9 @@
     "dist": "rollup -c",
     "test:unit:watch": "karma start",
     "test:unit:ci": "nyc karma start --single-run --no-auto-watch --browsers ChromeHeadless",
-    "lint": "eslint src/*.js test/*.js integration-tests/**/*.js integration-tests/**/**/*.js",
+    "lint": "eslint src/ test/ integration-tests/ integration-tests/",
     "lint:markdown": "markdownlint README.md docs/*.md",
-    "lint:fix": "eslint --fix src/*.js test/*.js integration-tests/**/*.js integration-tests/**/**/*.js",
+    "lint:fix": "eslint --fix src/ test/ integration-tests/ integration-tests/",
     "test:integration:local": "npm-run-all -s dist test:integration:local:headlessChrome:_execute",
     "test:integration:local:firefox": "npm-run-all -s dist test:integration:local:firefox:_execute",
     "test:integration:local:chrome": "npm-run-all -s dist test:integration:local:chrome:_execute",
@@ -64,6 +64,7 @@
     "@rollup/plugin-node-resolve": "^11.2.1",
     "body-parser": "^1.19.0",
     "browserstack-local": "^1.4.8",
+    "chai": "^4.3.4",
     "chrome-launcher": "^0.13.4",
     "chromedriver": "^89.0.0",
     "codecov": "^3.8.1",
@@ -98,6 +99,7 @@
     "rollup-plugin-terser": "^7.0.2",
     "rollup-plugin-typescript2": "^0.30.0",
     "selenium-server": "^3.141.59",
+    "sinon": "^10.0.0",
     "typescript": "^4.2.3",
     "ws": "^7.4.4"
   }

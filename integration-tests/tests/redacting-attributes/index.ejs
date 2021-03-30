@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Redacting attributes with exporter.onAttributesSerializing</title>
+  <%- renderAgent({}, true) %>
+  <script>
+    SplunkRumOptions.exporter = {
+      onAttributesSerializing: (attributes) => {
+        return Object.keys(attributes).reduce((acc, key) => {
+          acc[key] = /https?\:\/\//.test(attributes[key]) ? '[redacted]' : attributes[key];
+          return acc;
+        }, {});
+      },
+    };
+    SplunkRum.init(SplunkRumOptions);
+  </script>
+</head>
+<body>
+  <p>Redacting attributes with exporter.onAttributesSerializing</p>
+  <p>
+    Please note that redaction is applied right before sending the data. 
+    Debug span preview in DevTools is not affected.
+  </p>
+
+  <button type="button" id="btnClick">Produce a click</button>
+
+  <pre id="scenarioDisplay"></pre>
+  <script id="scenario">
+    document.querySelector('#btnClick').addEventListener('click', () => { });
+  </script>
+  <script>scenarioDisplay.innerHTML = scenario.innerHTML;</script>
+</body>
+</html>
