@@ -51,7 +51,7 @@ const INSTRUMENTATIONS = [
   {Instrument: SplunkXhrPlugin, confKey: 'xhr'},
   {Instrument: SplunkUserInteractionInstrumentation, confKey: 'interactions'},
   {Instrument: PostDocLoadResourceObserver, confKey: 'postload'},
-  {Instrument: SplunkFetchInstrumentation, confKey: 'xhr'},
+  {Instrument: SplunkFetchInstrumentation, confKey: 'fetch'},
   {Instrument: SplunkWebSocketInstrumentation, confKey: 'websocket', disable: true},
   {Instrument: SplunkLongTaskInstrumentation, confKey: 'longtask'},
 ];

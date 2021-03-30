@@ -21,7 +21,10 @@ jobs:
         run: npm run lint
       - name: Lint docs
         run: npm run lint:markdown
-      - run: npm run dist
+      - name: Verify types
+        run: npm run compile:types
+      - name: Transpile code
+        run: npm run dist
       - name: Unit test
         run: npm run test:unit:ci
 
