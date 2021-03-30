@@ -91,6 +91,7 @@ can be used within either Web or Service Workers for manual instrumentation.
 | ignoreUrls | array | Applies for XHR,Fetch and Websocket URLs. URLs that partially match any regex in ignoreUrls will not be traced. In addition, URLs that are _exact matches_ of strings in ignoreUrls will also not be traced. | [] |
 | spanProcessor | SpanProcessor | Offers ability to alter/remove data in-browser.  See below for more details | (undefined) |
 | instrumentations | { [moduleName]?: boolean or object } | Configuration for instrumentation modules. See following section for details. |
+| exporter.onAttributesSerializing | (a: SpanAttributes, s: Span): SpanAttributes | Described in [its own section](#redacting-pii) | (s) => s.attributes |
 
 ### Capturing modules
 
@@ -125,6 +126,28 @@ method. Using it will overwrite specified properties and leave others unchanged.
 Any spans reported from this point on will have your new attributes set.  
 You can pass `{}` or `undefined` to clear your global attributes.
 
+### Redacting Personally Identifiable Information (PII)
+In certain situations, metadata collected by our instrumentation may include PII.
+We'd advise that you review 2 cases in particular:
+- any network operation, where a secret piece of information might be present in the URL (e.g. an authentication token); please note that we do not capture or report any data from the payload of the request (i.e. the POST body), apart from its size;
+- any user interaction (e.g. a click), where a target element might contain a secret piece of information in its `id`
+
+To redact PII you can pass an option when initializing.
+
+```javascript
+SplunkRum.init({
+  ...otherOptions,
+  exporter: {
+    onAttributesSerializing: (attributes, span) => ({
+      ...attributes,
+      'http.url': /secret\=/.test(attributes['http.url']) ? '[redacted]' : attributes['http.url'],
+    }),
+  },
+});
+```
+
+For a working example see [this integration test](integration-tests/tests/redacting-attributes/index.ejs). `Span` is provided a second argument for your convenience.
+
 ## Manual OpenTelemetry instrumentation
 
 ### Tracing Provider
@@ -151,29 +174,6 @@ using:
 
 ```javascript
   SplunkRum.error(errorObjectOrMessageString);
-```
-
-### spanProcessor
-
-Passing an OpenTelemetry `SpanProcessor` as a `spanProcessor:` option to `init()` adds the provided
-processor to our tracing provider.  This processor can modify/create/remove attributes of
-spans before they leave the browser.  A trivial example of this might be:
-
-```javascript
-class UrlRedactor {
-  onEnd(span) {
-    if (span.attributes['http.url']) {
-      span.attributes['http.url'] = '(redacted)';
-    }
-  }
-  onStart(span, cts) { }
-  forceFlush() { return Promise.resolve(); }
-  shutdown() { return Promise.resolve(); }
-};
-SplunkRum.init({
-  ...
-  spanProcessor: new UrlRedactor(),
-});
 ```
 
 ## Building and contributing
