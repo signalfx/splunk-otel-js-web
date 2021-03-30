@@ -72,7 +72,13 @@ module.exports = {
     const imageSpans = await browser.globals.getReceivedSpans().filter(
       span => span.tags['http.url'] && span.tags['http.url'].endsWith('splunk-black.png')
     );
-  
+      
+    // for debugging flaky tests
+    if (imageSpans.length !== 0) {
+      console.log('imageSpans.length');
+      console.log(imageSpans);
+    }
+
     await browser.assert.strictEqual(imageSpans.length , 1);
     await browser.assert.strictEqual(imageSpans[0].tags['component'] , 'document-load');
   },
@@ -88,6 +94,11 @@ module.exports = {
       span => span.tags['http.url'] && span.tags['http.url'].endsWith('no-cache.png')
     );
     
+    // for debugging flaky tests
+    if (imageSpans.length !== 2) {
+      console.log('imageSpans.length');
+      console.log(imageSpans.length);
+    }
     await browser.assert.strictEqual(imageSpans.length , 2);
     const docLoadImage = imageSpans.find( span => span.tags['component'] === 'document-load');
     const afterLoadImage = imageSpans.find( span => span.tags['component'] === 'splunk-post-doc-load-resource');

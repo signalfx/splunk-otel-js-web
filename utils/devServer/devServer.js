@@ -166,7 +166,7 @@ exports.runIntegrationDevelopmentServer = async function run({
   registerTemplateProvider({ app, addHeaders, enableHttps });
 
   app.get('/integration-tests/assets/no-cache.png', function(req, res) {
-    res.sendFile(path.join(__dirname, '../assets/no-cache.png'), {
+    res.sendFile(path.join(__dirname, '../../integration-tests/assets/no-cache.png'), {
       etag: false,
       lastModified: false,
       headers: {
