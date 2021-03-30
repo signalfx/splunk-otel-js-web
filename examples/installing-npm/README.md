@@ -23,7 +23,7 @@ Navigate to <https://app.signalfx.com/o11y/> to see your data.
 ## Installing via NPM in your own app
 
 ```bash
-npm install @splunk/splunk-otel-web
+npm install @splunk/otel-web
 ```
 Note: in modern versions of NPM, installed packages are added to `package.json` by default.
 
