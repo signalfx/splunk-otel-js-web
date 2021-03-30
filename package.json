@@ -38,7 +38,7 @@
     "@opentelemetry/exporter-zipkin": "0.18.0",
     "@opentelemetry/instrumentation": "0.18.0",
     "@opentelemetry/instrumentation-document-load": "0.14.0",
-    "@opentelemetry/instrumentation-fetch": "0.18.0",
+    "@opentelemetry/instrumentation-fetch": "0.18.1",
     "@opentelemetry/instrumentation-user-interaction": "0.14.0",
     "@opentelemetry/instrumentation-xml-http-request": "0.18.0",
     "@opentelemetry/semantic-conventions": "0.18.0",
