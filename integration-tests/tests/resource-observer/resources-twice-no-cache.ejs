@@ -8,14 +8,14 @@
 <body>
   <h1>Resource observer test</h1>
 
-  <img src="/integration-tests/assets/no-cache.png" alt="white">
+  <img src="/utils/devServer/assets/no-cache.png" alt="white">
 
   <script>
     
     function loadImg() {
       var p = new Promise(function(resolve, _) {
         var img = document.createElement('img');
-        img.src = '/integration-tests/assets/no-cache.png';
+        img.src = '/utils/devServer/assets/no-cache.png';
         img.onload =  resolve;
         document.body.appendChild(img);
       });
