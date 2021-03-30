@@ -19,6 +19,9 @@ module.exports = {
     browser.globals.clearReceivedSpans();
   },
   'should report resource loads happening after page load': async function(browser) {
+    if (browser.globals.isBrowser('Safari') || browser.globals.isBrowser('Edge')) {
+      return;
+    }
     await browser.url(browser.globals.getUrl('/resource-observer/resources.ejs'));
 
     await browser.globals.findSpan(span => span.name === 'guard-span');
@@ -53,6 +56,9 @@ module.exports = {
     await browser.assert.strictEqual(scriptSpan.annotations.length, 9, 'Missing network events');
   },
   'resources can be ignored': async function(browser) {
+    if (browser.globals.isBrowser('Safari') || browser.globals.isBrowser('Edge')) {
+      return;
+    }
     await browser.url(browser.globals.getUrl('/resource-observer/resources-ignored.ejs'));
     
     await browser.globals.findSpan(span => span.name === 'guard-span');
@@ -66,6 +72,9 @@ module.exports = {
     await browser.assert.not.ok(imgSpan);
   },
   'should create one span for cached resource': async function(browser) {
+    if (browser.globals.isBrowser('Safari') || browser.globals.isBrowser('Edge')) {
+      return;
+    }
     await browser.url(browser.globals.getUrl('/resource-observer/resources-twice.ejs'));
     await browser.globals.findSpan(span => span.name === 'guard-span');
 
@@ -83,6 +92,9 @@ module.exports = {
     await browser.assert.strictEqual(imageSpans[0].tags['component'] , 'document-load');
   },
   'should create two spans for non cached resource': async function(browser) {
+    if (browser.globals.isBrowser('Safari') || browser.globals.isBrowser('Edge')) {
+      return;
+    }
     if (browser.options.desiredCapabilities.browserName.toLowerCase() === 'firefox') {
       // Can't get fx to stop caching the image.
       return;
