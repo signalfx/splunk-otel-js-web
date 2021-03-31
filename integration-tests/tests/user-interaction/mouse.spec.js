@@ -81,4 +81,20 @@ module.exports = {
       'Ensuring no click span arrived.'
     );
   },
+  'handles clicks with event listener on document': async function (browser) {
+    browser.globals.clearReceivedSpans();
+    await browser.url(browser.globals.getUrl('/user-interaction/mouse-document.ejs'));
+    await browser.click('#btn1');
+
+    const clickSpan = await browser.globals.findSpan(span => span.name === 'click');
+    await browser.assert.ok(!!clickSpan, 'Checking click span presence.');
+
+    await browser.assert.strictEqual(clickSpan.tags['component'], 'user-interaction');
+    await browser.assert.strictEqual(clickSpan.tags['event_type'], 'click');
+    await browser.assert.strictEqual(clickSpan.tags['target_element'], 'HTML');
+    await browser.assert.strictEqual(clickSpan.tags['target_xpath'], '//html');
+    await browser.assert.strictEqual(clickSpan.tags['ot.status_code'], 'UNSET');
+
+    await browser.globals.assertNoErrorSpans();
+  }
 };

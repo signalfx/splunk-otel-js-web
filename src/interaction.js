@@ -14,7 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { trace } from '@opentelemetry/api';
+import {diag, trace} from '@opentelemetry/api';
+import {isWrapped} from '@opentelemetry/instrumentation';
 import {UserInteractionInstrumentation} from '@opentelemetry/instrumentation-user-interaction';
 
 export const DEFAULT_AUTO_INSTRUMENTED_EVENTS = {
@@ -66,6 +67,15 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
     return !!this._autoInstrumentedEvents[eventType];
   }
 
+  _createSpan(element, eventName, parentSpan) {
+    // Fix: No span is created when event is captured from document
+    if (element === document) {
+      element = document.documentElement;
+    }
+
+    return super._createSpan(element, eventName, parentSpan);
+  }
+
   emitRouteChangeSpan(oldHref) {
     const span = this._routingTracer.startSpan('routeChange');
     span.setAttribute('component', this.moduleName);
@@ -82,13 +92,43 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
     // Hash can be changed with location.hash = '#newThing', no way to hook that directly...
     window.addEventListener('hashchange', this.__hashChangeHandler);
 
-    // parent wraps calls to addEventListener so call after us
-    super.enable();
+    // Current parent implementation patches HTMLElement's prototype, which causes it to miss document.addEvenetListener:
+    // HTMLElementPrototype -> ElementPrototype -> NodePrototype -> EventTargetPrototype -> Object
+    // HTMLDocumentPrototype -> DocumentPrototype -> NodePrototype -> EventTargetPrototype -> Object
+    // Most browsers have addEventListener on EventTargetPrototype, except for IE for which it doesn't exist and uses NodePrototype
+    if (this.getZoneWithPrototype()) {
+      super.enable();
+    } else {
+      this._zonePatched = false;
+      if (isWrapped(Node.prototype.addEventListener)) {
+        this._unwrap(Node.prototype, 'addEventListener');
+        diag.debug('removing previous patch from method addEventListener');
+      }
+      if (isWrapped(Node.prototype.removeEventListener)) {
+        this._unwrap(Node.prototype, 'removeEventListener');
+        diag.debug('removing previous patch from method removeEventListener');
+      }
+      this._wrap(Node.prototype, 'addEventListener', this._patchElement());
+      this._wrap(Node.prototype, 'removeEventListener', this._patchRemoveEventListener());
+
+      this._patchHistoryApi();
+    }
   }
 
   disable() {
     // parent unwraps calls to addEventListener so call before us
-    super.disable();
+    if (this._zonePatched) {
+      super.disable();
+    } else {
+      if (isWrapped(Node.prototype.addEventListener)) {
+        this._unwrap(Node.prototype, 'addEventListener');
+      }
+      if (isWrapped(Node.prototype.removeEventListener)) {
+        this._unwrap(Node.prototype, 'removeEventListener');
+      }
+      this._unpatchHistoryApi();
+    }
+
     window.removeEventListener('hashchange', this.__hashChangeHandler);
   }
 

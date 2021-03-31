@@ -7,13 +7,13 @@
 </head>
 <body>
   <h1>Resource observer test</h1>
-  <img src="/integration-tests/assets/no-cache.png" alt="no-cache">
+  <img src="/utils/devServer/assets/no-cache.png" alt="no-cache">
   
   <script>
     function loadScript() {
       var p = new Promise(function(resolve, _) {
         var s = document.createElement( 'script' );
-        s.setAttribute( 'src', '/integration-tests/assets/test.js' );
+        s.setAttribute( 'src', '/utils/devServer/assets/test.js' );
         s.onload = function() {
           console.log('script resolved', performance.now());
           resolve();
@@ -28,7 +28,7 @@
       console.log('image load start', performance.now());
       var p = new Promise(function(resolve, _) {
         var img = document.createElement('img');
-        img.src = '/integration-tests/assets/splunk-black.png?t=100';
+        img.src = '/utils/devServer/assets/splunk-black.png?t=100';
         img.onload = function() {
           console.log('image resolved', performance.now());
           resolve();
