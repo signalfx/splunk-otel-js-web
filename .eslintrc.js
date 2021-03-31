@@ -20,7 +20,6 @@ module.exports = {
   ],
   'env': {
     'mocha': true,
-    'browser': true,
     'es2015': true,
     'commonjs': true,
   },
@@ -93,12 +92,32 @@ module.exports = {
   },
   'overrides': [
     {
+      'files': ['src/**/*.js'],
+      'parserOptions': {
+        'ecmaVersion': 2018,
+      },
+      'env': {
+        'browser': true,
+      },
+    },
+    {
       'files': ['integration-tests/**/*.js'],
       'env': {
-        'node': true
+        'node': true,
+        'browser': true,
       },
       'parserOptions': {
         'ecmaVersion': 2018
+      },
+    },
+    {
+      'files': ['test/**/*.js'],
+      'parserOptions': {
+        'ecmaVersion': 2018,
+      },
+      'env': {
+        'browser': true,
+        'node': true,
       },
     },
     {

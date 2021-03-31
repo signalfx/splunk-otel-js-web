@@ -2,6 +2,7 @@
 
 ## Unreleased
 - New configuration option cookieDomain. This can be used to manually set session cookie domain.
+- New option `exporter.onAttributesSerializing`
 - Wrap event listeners on document
 
 ## 0.3.1
