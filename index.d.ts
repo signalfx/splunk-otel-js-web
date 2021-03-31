@@ -22,7 +22,7 @@ type SplunkOtelOptions = {
   exporter?: {
     onAttributesSerializing?: (attributes: SpanAttributes, span: Span) => SpanAttributes;
   };
-  ignoreUrls: Array<String | RegExp>;
+  ignoreUrls?: Array<String | RegExp>;
   instrumentations?: {
     document?:     boolean | InstrumentationConfig;
     errors?:       boolean;
