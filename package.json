@@ -7,7 +7,7 @@
     "start": "npm-run-all -s dist start:_execute",
     "start:_execute": "node utils/devServer/runDevServer.js",
     "dist": "rollup -c",
-    "compile:types": "tsc index.d.ts",
+    "check:types": "tsc index.d.ts",
     "test:unit:watch": "karma start",
     "test:unit:ci": "nyc karma start --single-run --no-auto-watch --browsers ChromeHeadless",
     "lint": "eslint src/ test/ integration-tests/ integration-tests/",

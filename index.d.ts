@@ -4,12 +4,12 @@ import { FetchInstrumentationConfig } from "@opentelemetry/instrumentation-fetch
 import { XMLHttpRequestInstrumentationConfig } from "@opentelemetry/instrumentation-xml-http-request";
 import { WebTracerProvider } from "@opentelemetry/web";
 
-type SplunkUserInteractionInstrumentationConfig = {
+type SplunkUserInteractionInstrumentationConfig = InstrumentationConfig & {
   events?: {
     [type: string]: boolean;
   }; 
 };
-type PostDocLoadResourceObserverConfig = {
+type PostDocLoadResourceObserverConfig = InstrumentationConfig & {
   allowedInitiatorTypes?: string[];
 };
 
@@ -22,26 +22,26 @@ type SplunkOtelOptions = {
   exporter?: {
     onAttributesSerializing?: (attributes: SpanAttributes, span: Span) => SpanAttributes;
   };
+  ignoreUrls: Array<String | RegExp>;
   instrumentations?: {
-    document?: boolean | InstrumentationConfig,
-    xhr?: boolean | (XMLHttpRequestInstrumentationConfig & InstrumentationConfig),
-    interactions?: boolean | (InstrumentationConfig & SplunkUserInteractionInstrumentationConfig),
-    postload?: boolean | (InstrumentationConfig & PostDocLoadResourceObserverConfig),
-    fetch?: boolean | (FetchInstrumentationConfig & InstrumentationConfig),
-    websocket?: boolean | InstrumentationConfig,
-    longtask?: boolean | InstrumentationConfig,
-    errors?: boolean,
-    webvitals?: boolean,
+    document?:     boolean | InstrumentationConfig;
+    errors?:       boolean;
+    fetch?:        boolean | FetchInstrumentationConfig;
+    interactions?: boolean | SplunkUserInteractionInstrumentationConfig;
+    longtask?:     boolean | InstrumentationConfig;
+    postload?:     boolean | PostDocLoadResourceObserverConfig;
+    websocket?:    boolean | InstrumentationConfig;
+    webvitals?:    boolean;
+    xhr?:          boolean | XMLHttpRequestInstrumentationConfig;
   };
   rumAuth: string;
-  ignoreUrls: Array<String | RegExp>;
 }
 
 type SplunkOtel = {
-  init: (options: SplunkOtelOptions) => void;
   deinit: () => void;
-  setGlobalAttributes: (attributes: SpanAttributes) => void;
+  init: (options: SplunkOtelOptions) => void;
   provider?: WebTracerProvider;
+  setGlobalAttributes: (attributes: SpanAttributes) => void;
 }
 
 export default SplunkOtel;

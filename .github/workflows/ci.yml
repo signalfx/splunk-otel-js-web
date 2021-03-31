@@ -22,7 +22,7 @@ jobs:
       - name: Lint docs
         run: npm run lint:markdown
       - name: Verify types
-        run: npm run compile:types
+        run: npm run check:types
       - name: Transpile code
         run: npm run dist
       - name: Unit test
