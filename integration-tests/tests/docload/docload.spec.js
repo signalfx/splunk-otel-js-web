@@ -83,11 +83,10 @@ module.exports = {
     await browser.url(browser.globals.getUrl('/docload/docload.ejs?disableInstrumentation=document'));
     await browser.globals.waitForTestToFinish();
 
-    browser.assert.ok(await browser.globals.findSpan(span => span.name === 'eventListener.error'));
+    await browser.assert.ok(await browser.globals.findSpan(span => span.name === 'eventListener.error'));
 
     const SPAN_TYPES = ['documentFetch', 'documentLoad', 'resourceFetch'];
-
-    browser.assert.not.ok(browser.globals.getReceivedSpans().find(
+    await browser.assert.not.ok(browser.globals.getReceivedSpans().find(
       span => SPAN_TYPES.includes(span.name)
     ), 'No spans with docload module type');
 
