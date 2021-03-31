@@ -101,7 +101,10 @@ exports.registerTemplateProvider = ({app, addHeaders, enableHttps}) => {
             if (!options.instrumentations) {
               options.instrumentations = {};
             }
-            options.instrumentations[req.query.disableInstrumentation] = false;
+
+            req.query.disableInstrumentation.split(',').forEach(instrumentation => {
+              options.instrumentations[instrumentation] = false;
+            });
           }
 
           if (cdnVersion) {
