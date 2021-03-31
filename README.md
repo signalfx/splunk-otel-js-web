@@ -99,17 +99,18 @@ Capturing modules can be configured by passing following values to `instrumentat
 
 - `false` - disables this module
 - `true` - enables this module with default options
-- `object` - enables with additional options
+- `object` - enables with additional options, which are described in [the types definition](./index.d.ts)
 
 | Option | Default | Description |
 |---|---|---|
 | instrumentations.document | true | Capturing spans related to document loading |
 | instrumentations.errors | true | Capturing errors |
+| instrumentations.fetch | true | Capturing fetch requests | 
 | instrumentations.interactions | true | Capturing interactions |
 | instrumentations.longtask | true | Capturing long task spans |
 | instrumentations.websockets | false | Capturing websockets |
 | instrumentations.webvitals | true | Capturing webvitals |
-| instrumentations.xhr | true | Capturing XHR and fetch requests | 
+| instrumentations.xhr | true | Capturing XHR requests | 
 
 Additional configuration options are available for following modules:
 
