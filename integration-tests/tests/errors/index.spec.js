@@ -30,8 +30,6 @@ module.exports = {
     await browser.assert.strictEqual(tags['target_element'], 'IMG');
     await browser.assert.strictEqual(tags['target_xpath'], '//html/body/img');
     await browser.assert.ok(tags['target_src'].endsWith('/nonexistent.png'), `Checking target_src: ${tags['target_src']}`);
-
-    await browser.end();
   },
   'JS syntax error': async function(browser) {
     await browser.url(browser.globals.getUrl('/errors/views/js-syntax-error.ejs'));
@@ -55,8 +53,6 @@ module.exports = {
       await browser.assert.strictEqual(tags['error.message'], 'Unexpected token \';\'');
       break;
     }
-
-    await browser.end();
   },
   'JS unhandled error': async function(browser) {
     await browser.url(browser.globals.getUrl('/errors/views/unhandled-error.ejs'));
@@ -80,8 +76,6 @@ module.exports = {
       await browser.assert.strictEqual(tags['error.message'], 'null is not an object (evaluating \'test.prop1 = true\')');
       break;
     }
-
-    await browser.end();
   },
   'unhandled promise rejection': async function(browser) {
     await browser.url(browser.globals.getUrl('/errors/views/unhandled-rejection.ejs'));
@@ -94,8 +88,6 @@ module.exports = {
     await browser.assert.strictEqual(tags['error'], 'true');
     await browser.assert.strictEqual(tags['error.object'], 'String');
     await browser.assert.strictEqual(tags['error.message'], 'rejection-value');
-
-    await browser.end();
   },
   'manual console.error': async function(browser) {
     const browserName = browser.options.desiredCapabilities.browserName.toLowerCase();
@@ -126,8 +118,6 @@ module.exports = {
       firefox: `@${url}:64:7\n`,
     };
     await browser.assert.strictEqual(tags['error.stack'], ERROR_STACK_MAP[browserName]);
-
-    await browser.end();
   },
   'SplunkRum.error': async function(browser) {
     const browserName = browser.options.desiredCapabilities.browserName.toLowerCase();
@@ -158,8 +148,6 @@ module.exports = {
       firefox: `@${url}:64:7\n`,
     };
     await browser.assert.strictEqual(tags['error.stack'], ERROR_STACK_MAP[browserName]);
-
-    await browser.end();
   },
   'module can be disabled': async function(browser) {
     await browser.url(browser.globals.getUrl('/errors/views/unhandled-error.ejs'));
