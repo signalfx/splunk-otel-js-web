@@ -1,9 +1,12 @@
 # Changelog
 
 ## Unreleased
+
+## 0.4.0
 - New configuration option cookieDomain. This can be used to manually set session cookie domain.
 - New option `exporter.onAttributesSerializing`
 - Wrap event listeners on document
+- Upgrade to Otel 0.18.2
 
 ## 0.3.1
 - New meta version `latest` is now available from CDN, it is always updated, even if there are changes, which are not backwards-compatible
