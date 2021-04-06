@@ -82,18 +82,17 @@ can be used within either Web or Service Workers for manual instrumentation.
 
 | Option | Type | Notes | Default |
 |--------|------|-------|---------|
-| beaconUrl | string (required) | Destination for the captured data | (No default) |
-| rumAuth | string (required) | Publicly-visible `rumAuth` value.  Please do not paste any other access token or auth value into here, as this will be visible to every user of your app | (No default) |
-| app | string | Application name | 'unknown-browser-app' |
-| environment | string | Sets a value for the `environment` attribute (persists through calls to `setGlobalAttributes()`) | (No default) |
-| globalAttributes | object | Extra attributes to add to each reported span.  See also `setGlobalAttributes` | {} |
-| cookieDomain | string | Sets session cookie to this domain | If unspecified, it defaults to the same host that set the cookie, excluding subdomains
 | allowInsecureBeacon | boolean | Allows http beacon urls | false |
+| app | string | Application name | 'unknown-browser-app' |
+| beaconUrl | string (required) | Destination for the captured data | (No default) |
+| cookieDomain | string | Sets session cookie to this domain | If unspecified, it defaults to the same host that set the cookie, excluding subdomains
 | debug | boolean | Turns on/off internal debug logging | false |
-| ignoreUrls | array | Applies for XHR,Fetch and Websocket URLs. URLs that partially match any regex in ignoreUrls will not be traced. In addition, URLs that are _exact matches_ of strings in ignoreUrls will also not be traced. | [] |
-| spanProcessor | SpanProcessor | Offers ability to alter/remove data in-browser.  See below for more details | (undefined) |
-| instrumentations | { [moduleName]?: boolean or object } | Configuration for instrumentation modules. See following section for details. |
+| environment | string | Sets a value for the `environment` attribute (persists through calls to `setGlobalAttributes()`) | (No default) |
 | exporter.onAttributesSerializing | (a: SpanAttributes, s: Span): SpanAttributes | Described in [its own section](#redacting-pii) | (s) => s.attributes |
+| globalAttributes | object | Extra attributes to add to each reported span.  See also `setGlobalAttributes` | {} |
+| ignoreUrls | array | Applies for XHR, Fetch and Websocket URLs. URLs that partially match any regex in ignoreUrls will not be traced. In addition, URLs that are _exact matches_ of strings in ignoreUrls will also not be traced. | [] |
+| instrumentations | { [moduleName]?: boolean or object } | Configuration for instrumentation modules. See following section for details. |
+| rumAuth | string (required) | Publicly-visible `rumAuth` value.  Please do not paste any other access token or auth value into here, as this will be visible to every user of your app | (No default) |
 
 ### Capturing modules
 
