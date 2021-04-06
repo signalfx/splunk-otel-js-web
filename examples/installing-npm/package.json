@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@splunk/otel-web": "0.4.0"
+    "@splunk/otel-web": "^0.4.1"
   },
   "scripts": {
     "start": "node backend.js"
