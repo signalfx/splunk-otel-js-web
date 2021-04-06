@@ -44,7 +44,7 @@ module.exports = {
 
     const cdnUrl = 'https://cdn.signalfx.com/o11y-gdi-rum/latest/splunk-otel-web.js';
     await browser.assert.strictEqual(rumScriptFetchSpan.tags['http.url'], cdnUrl);
-    await browser.assert.strictEqual(rumScriptFetchSpan.tags['splunk.rumVersion'], '0.3.1');
+    await browser.assert.strictEqual(rumScriptFetchSpan.tags['splunk.rumVersion'], '0.4.0');
 
     await browser.end();
   },
