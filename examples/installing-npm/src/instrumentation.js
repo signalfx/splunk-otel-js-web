@@ -8,5 +8,7 @@ SplunkOtelWeb.init({
 
   // uncomment to start sending to Splunk RUM backend
   // beaconUrl: 'https://rum-ingest.signalfx.com/api/v2/spans',
-  // rumAuth: 'ABC123...789',
+  
+  // get the token by going to https://app.signalfx.com/#/organization/current?selectedKeyValue=sf_section:accesstokens
+  rumAuth: 'ABC123...789',
 });
