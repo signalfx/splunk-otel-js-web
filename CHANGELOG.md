@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 0.4.2
+- Fixed environment setting
+
 ## 0.4.1
 - Fixed TypeScript definitions
 
