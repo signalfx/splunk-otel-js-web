@@ -42,7 +42,6 @@ module.exports = {
     // has a race between iframes and parents from the same domain.
 
     await browser.globals.assertNoErrorSpans();
-    await browser.end();
   },
   'setting session cookie in iframe should work': async function(browser) {
     await browser.url(browser.globals.getUrl('/cookies/cookies.iframe.ejs'));
@@ -56,8 +55,6 @@ module.exports = {
     if (browser.options.desiredCapabilities.browserName.toLowerCase() !==  'safari') {
       await browser.assert.equal(cookie.sameSite, 'None');
     }
-
-    await browser.end();
   },
   'setting cookieDomain via config sets it on subdomains also': async function(browser) {  
     if (browser.globals.isBrowser('chrome')) {
@@ -82,6 +79,5 @@ module.exports = {
     await browser.assert.strictEqual(cookie.value, cookie2.value);
 
     await browser.globals.assertNoErrorSpans();
-    await browser.end();
   },
 };
