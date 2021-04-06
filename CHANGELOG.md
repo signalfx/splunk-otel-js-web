@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 0.4.1
+- Fixed TypeScript definitions
+
 ## 0.4.0
 - New configuration option cookieDomain. This can be used to manually set session cookie domain.
 - New option `exporter.onAttributesSerializing`
