@@ -56,4 +56,15 @@ module.exports = {
     await browser.assert.ok(errorGuard);
     await browser.globals.assertNoErrorSpans();
   },
+  'environment still get set if no global attributes': async function(browser) {
+    browser.globals.clearReceivedSpans();
+    await browser.url(browser.globals.getUrl('/init/attributes-no-globals.ejs'));
+    
+    const atts = await browser.globals.findSpan(span => span.name === 'documentLoad');    
+    await browser.assert.ok(atts);
+    await browser.assert.strictEqual(atts.tags['app'], 'custom-app');
+    await browser.assert.strictEqual(atts.tags['environment'], 'custom-environment');
+
+    await browser.globals.assertNoErrorSpans();
+  },
 };

@@ -126,7 +126,7 @@ Additional configuration options are available for following modules:
 You can (re)set `globalAttributes` at any time with this
 method. Using it will overwrite specified properties and leave others unchanged. 
 Any spans reported from this point on will have your new attributes set.  
-You can pass `{}` or `undefined` to clear your global attributes.
+You can pass `undefined` to clear your global attributes.
 
 ### Redacting Personally Identifiable Information (PII)
 In certain situations, metadata collected by our instrumentation may include PII.

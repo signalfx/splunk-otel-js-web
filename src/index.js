@@ -102,14 +102,16 @@ const SplunkRum = {
     }
 
     this.setGlobalAttributes = function(attributes) {
-      if (!attributes || Object.keys(attributes).length === 0) {
-        globalAttributes = {}; 
-      } else {
+      if (attributes) {
         Object.assign(globalAttributes, attributes);
+      } else {
+        globalAttributes = {}; 
       }
     };
     
-    this.setGlobalAttributes(options.globalAttributes);
+    if (options.globalAttributes && Object.keys(options.globalAttributes).length > 0) {
+      this.setGlobalAttributes(options.globalAttributes);
+    }
 
     // FIXME this is still not the cleanest way to add an attribute to all created spans..,
     class PatchedWTP extends WebTracerProvider {
