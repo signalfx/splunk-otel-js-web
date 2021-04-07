@@ -51,16 +51,6 @@ module.exports = {
     browser.globals.rumVersion = require('../../package.json').version;
     let defaultTimeout = 0;
     browser.globals.isBrowser = isBrowser.bind(null, browser);
-    /* function(name, version) {
-      const browserName =  browser.options.desiredCapabilities.browserName.toLowerCase();
-      const browser_version =  browser.options.desiredCapabilities.browser_version;
-
-      let versionMatch = true;
-      if (version !== undefined) {
-        versionMatch = browser_version === version;
-      }
-      return browserName === name.toLowerCase() && versionMatch;
-    }; */
     
     if (browser.globals.isBrowser({'safari': {max: 10}})) {
       // Setting longer timeout be cause it seems to take forever for spans to arrive in Safari 10 during tests
