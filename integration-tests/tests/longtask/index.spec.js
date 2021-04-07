@@ -21,6 +21,7 @@ function isSupported(browser) {
 }
 
 module.exports = {
+  '@tags': ['skip-ie11'],
   beforeEach: function(browser) {
     browser.globals.clearReceivedSpans();  
   },

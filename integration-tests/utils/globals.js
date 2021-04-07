@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+const { isBrowser } = require('./helpers');
 const { buildInstrumentationBackend } = require('../../utils/testBackendProvider');
 
 const GLOBAL_TEST_BUFFER_TIMEOUT = 20;
@@ -49,7 +50,8 @@ module.exports = {
   beforeEach: async (browser, done) => {
     browser.globals.rumVersion = require('../../package.json').version;
     let defaultTimeout = 0;
-    browser.globals.isBrowser = function(name, version) {
+    browser.globals.isBrowser = isBrowser.bind(null, browser);
+    /* function(name, version) {
       const browserName =  browser.options.desiredCapabilities.browserName.toLowerCase();
       const browser_version =  browser.options.desiredCapabilities.browser_version;
 
@@ -58,9 +60,9 @@ module.exports = {
         versionMatch = browser_version === version;
       }
       return browserName === name.toLowerCase() && versionMatch;
-    };
+    }; */
     
-    if (browser.globals.isBrowser('safari', '10.1')) {
+    if (browser.globals.isBrowser({'safari': {max: 10}})) {
       // Setting longer timeout be cause it seems to take forever for spans to arrive in Safari 10 during tests
       // Real page seems fine. This timeout could be smaller but better safe than flaky for now.
       defaultTimeout = -10000;

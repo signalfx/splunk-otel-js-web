@@ -5,7 +5,7 @@
 	<title>Errors test</title>
   <%- renderAgent({}) %>
   <script id="scenario">
-    setTimeout(() => {
+    setTimeout(function() {
       Promise.reject('rejection-value');
     });
   </script>

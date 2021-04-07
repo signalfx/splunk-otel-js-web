@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 module.exports = {
+  '@tags': ['skip-ie11'],
   'JS unhandled error': async function(browser) {
     browser.globals.clearReceivedSpans();
     await browser.url(browser.globals.getUrl('/cdn/index.ejs'));

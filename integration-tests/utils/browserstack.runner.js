@@ -64,7 +64,9 @@ async function runTests(argv) {
     const finalArgs = {
       ...argv,
       // easier than messing around in ci.yml
-      ...argv.env === 'safari-10.1' ? {'tag': 'safari-10.1'} : {}
+      ...argv.env === 'safari-10.1' ? {'tag': 'safari-10.1'} : {},
+      // skip tests with skip-(browser name) tag in it
+      skiptags: `skip-${argv.env}`,
       // note: this can be used to scope down tests, leaving here so I don't need to search for this in the future
       // test: path.join(__dirname, '..', 'tests', 'websocket', 'websockets.spec.js')
     };

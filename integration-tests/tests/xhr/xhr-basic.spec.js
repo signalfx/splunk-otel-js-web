@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+const { isBrowser } = require('../../utils/helpers');
+
 module.exports = {
   '@tags': ['safari-10.1'],
   beforeEach: function (browser) {
     browser.globals.clearReceivedSpans();
   },
   'XHR request is registered': async function(browser) {
-    const {browserName, browser_version} = browser.options.desiredCapabilities;
-
     await browser.url(browser.globals.getUrl('/xhr/views/xhr-basic.ejs'));
     const xhrSpan = await browser.globals.findSpan(span => span.tags['http.url'] === '/some-data');
     await browser.assert.ok(xhrSpan, 'got an xhr span');
@@ -30,13 +30,16 @@ module.exports = {
     await browser.assert.strictEqual(xhrSpan.tags['http.status_text'], 'OK');
     await browser.assert.strictEqual(xhrSpan.tags['http.method'], 'GET');
     await browser.assert.strictEqual(xhrSpan.tags['http.url'], '/some-data');
-    if (browserName.toLowerCase() !== 'safari') {
+    if (!isBrowser(browser, {safari: true, ie: true})) {
       await browser.assert.strictEqual(xhrSpan.tags['http.response_content_length'], '49');
     }
     await browser.assert.ok(xhrSpan.tags['link.traceId'], 'got link.traceId');
     await browser.assert.ok(xhrSpan.tags['link.spanId'], 'got link.spanId');
     
-    if (browserName.toLowerCase() !== 'safari' && browser_version !== '10.1') {
+    if (!isBrowser(browser, {
+      safari: {max: 10},
+      ie: true,
+    })) {
       await browser.timesMakeSense(xhrSpan.annotations, 'domainLookupStart', 'domainLookupEnd');
       await browser.timesMakeSense(xhrSpan.annotations, 'connectStart', 'connectEnd');
       await browser.timesMakeSense(xhrSpan.annotations, 'secureConnectionStart', 'connectEnd');
