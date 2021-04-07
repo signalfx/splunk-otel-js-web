@@ -19,7 +19,7 @@ const fs = require('fs');
 
 const {render} = require('ejs');
 
-const INJECT_TEMPLATE = `<script src="<%= file -%>"></script>
+const INJECT_TEMPLATE = `<script src="<%= file -%>" crossorigin="anonymous"></script>
   <script>
     <%if (noInit) { %>
       window.SplunkRumOptions = <%- options -%>;
