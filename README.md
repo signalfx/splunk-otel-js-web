@@ -130,7 +130,7 @@ You can pass `undefined` to clear your global attributes.
 
 ### Redacting Personally Identifiable Information (PII)
 In certain situations, metadata collected by our instrumentation may include PII.
-We'd advise that you review 2 cases in particular:
+We'd advise that you review these cases in particular:
 - any network operation, where a secret piece of information might be present in the URL (e.g. an authentication token); please note that we do not capture or report any data from the payload of the request (i.e. the POST body), apart from its size;
 - any user interaction (e.g. a click), where a target element might contain a secret piece of information in its `id`
 - error messages produced by your app (e.g., usage of `console.error` or strings passed to an `Error` constructor).
