@@ -1,6 +1,6 @@
 # CDN
 To start monitoring with Splunk RUM distributed via CDN:
-1. Include & initialize the Splunk RUM by copying the following to HEAD section for all the HTML files/templates in your application
+1. Include & initialize the Splunk RUM by copying the following to HEAD section for all the HTML files or templates in your application
 ```
 <script src="https://cdn.signalfx.com/o11y-gdi-rum/latest/splunk-otel-web.js" crossorigin="anonymous"></script>
 <script>
