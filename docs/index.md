@@ -1,6 +1,5 @@
-# Index file for docs test
-
-* [Installing](/INSTALLING.html)
-* [MigratingInstrumentation](MigratingInstrumentation.html)
-* Test
-* 
+- [Installation](/splunk-otel-js-web/installation.html)
+  - [CDN](/splunk-otel-js-web/installation.html) 
+- [Configuration](/splunk-otel-js-web/configuration.html)
+- [Supported browsers](/splunk-otel-js-web/configuration.html)
+- [Data model](/splunk-otel-js-web/data-model.html)
