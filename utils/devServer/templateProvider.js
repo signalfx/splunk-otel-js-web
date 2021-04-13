@@ -30,10 +30,10 @@ const INJECT_TEMPLATE = `<script src="<%= file -%>" crossorigin="anonymous"></sc
     var _testing = false;
     var _onTestingDone = null;
     Object.defineProperty(window, 'testing', {
-      get() {
+      get: function() {
         return _testing;
       },
-      set(value) {
+      set: function(value) {
         _testing = value;
         setTimeout(function () {
           if (_onTestingDone) {
@@ -86,9 +86,15 @@ exports.registerTemplateProvider = ({app, addHeaders, enableHttps}) => {
         beaconUrl.port = req.query.beaconPort;
       }
 
+      let defaultFile = '/dist/browser/splunk-otel-web.js';
+      const browser = req.header('User-Agent')
+      if (browser && browser.includes('Trident')) {
+        defaultFile = '/dist/browser/splunk-otel-web-legacy.js';
+      }
+
       addHeaders(res);
       return res.render(filepath, {
-        renderAgent(userOpts = {}, noInit = false, file = '/dist/browser/splunk-otel-web.js', cdnVersion = null) {
+        renderAgent(userOpts = {}, noInit = false, file = defaultFile, cdnVersion = null) {
           const options = {
             beaconUrl: beaconUrl.toString(),
             app: 'splunk-otel-js-dummy-app',

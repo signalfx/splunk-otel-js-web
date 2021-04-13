@@ -14,10 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-function isSafari(browser) {
-  const UNSUPPORTED_BROWSERS = ['Safari'];
-  const currentBrowser = browser.options.desiredCapabilities.browserName;
-  return UNSUPPORTED_BROWSERS.includes(currentBrowser);
+const { isBrowser } = require('../../utils/helpers');
+
+function isUnsupported(browser) {
+  // Test manually works in IE but not here for some reason
+  return isBrowser(browser, {
+    safari: true,
+    ie: true,
+  });
 }
 
 module.exports = {
@@ -25,7 +29,7 @@ module.exports = {
     browser.globals.clearReceivedSpans();  
   },
   'produces correct connect span': async function(browser) {
-    if (isSafari(browser)) {
+    if (isUnsupported(browser)) {
       return;
     }
     const url = browser.globals.getUrl('/websocket/websocket.ejs');
@@ -44,7 +48,7 @@ module.exports = {
     await browser.globals.assertNoErrorSpans();
   },
   'websocket url can be ignored': async function(browser) {
-    if (isSafari(browser)) {
+    if (isUnsupported(browser)) {
       return;
     }
     await browser.url(browser.globals.getUrl('/websocket/websocket-ignored.ejs'));
@@ -54,7 +58,7 @@ module.exports = {
     await browser.assert.not.ok(browser.globals.getReceivedSpans().find(span => span.name === 'connect'));
   },
   'sending send and on message create a span': async function(browser) {
-    if (isSafari(browser)) {
+    if (isUnsupported(browser)) {
       return;
     }
     await browser.url(browser.globals.getUrl('/websocket/websocket.ejs'));
@@ -80,7 +84,7 @@ module.exports = {
     await browser.assert.strictEqual(wsSend.tags['http.request_content_length'], '12');
   },
   'websocket constructor errors are captured': async function(browser) {
-    if (isSafari(browser)) {
+    if (isUnsupported(browser)) {
       return;
     }
     await browser.url(browser.globals.getUrl('/websocket/websocket-construct-errors.ejs'));
@@ -90,7 +94,7 @@ module.exports = {
     await browser.assert.strictEqual(wsConnectionSpan.tags['error'], 'true');
   },
   'websocket send errors are captured': async function(browser) {
-    if (isSafari(browser)) {
+    if (isUnsupported(browser)) {
       return;
     }
     await browser.url(browser.globals.getUrl('/websocket/websocket-send-errors.ejs'));
@@ -104,7 +108,7 @@ module.exports = {
     await browser.assert.ok(wsSend.tags['error.object']);
   },
   'specifying sub-protocols does not break anything': async function(browser) {
-    if (isSafari(browser)) {
+    if (isUnsupported(browser)) {
       return;
     }
     const url = browser.globals.getUrl('/websocket/websocket-sub-protocol.ejs');

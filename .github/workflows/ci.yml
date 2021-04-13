@@ -36,7 +36,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        browser: [safari, edge, safari-10.1]
+        browser: [edge, ie11, safari, safari-10.1]
     steps:
       - name: Checkout
         uses: actions/checkout@v1

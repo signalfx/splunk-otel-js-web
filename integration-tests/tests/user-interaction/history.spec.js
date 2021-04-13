@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+const { isBrowser } = require('../../utils/helpers');
+
 module.exports = {
   'handles hash navigation': async function(browser) {
     browser.globals.clearReceivedSpans();
@@ -26,7 +28,9 @@ module.exports = {
     await browser.assert.ok(!!navigationSpan, 'Checking navigation span presence.');
 
     await browser.assert.strictEqual(navigationSpan.tags['component'], 'user-interaction');
-    await browser.assert.strictEqual(navigationSpan.tags['prev.href'], startUrl);
+    if (!isBrowser(browser, 'ie')) {
+      await browser.assert.strictEqual(navigationSpan.tags['prev.href'], startUrl);
+    }
     await browser.assert.strictEqual(navigationSpan.tags['location.href'], startUrl + '#another-page');
     await browser.assert.strictEqual(navigationSpan.tags['ot.status_code'], 'UNSET');
 

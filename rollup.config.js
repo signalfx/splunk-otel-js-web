@@ -3,6 +3,7 @@
 import json from '@rollup/plugin-json';
 import commonjs from '@rollup/plugin-commonjs';
 import { terser } from 'rollup-plugin-terser';
+import { babel } from '@rollup/plugin-babel';
 
 const {
   babelPlugin,
@@ -27,6 +28,36 @@ export default [
       }),
       babelPlugin,
       terser({ output: { comments: false } }),
+    ],
+  },
+  {
+    input: 'src/indexBrowser.js',
+    output: {
+      file: 'dist/browser/splunk-otel-web-legacy.js',
+      format: 'iife',
+      name: 'SplunkRum',
+      sourcemap: true,
+    },
+    plugins: [
+      json(),
+      nodeResolvePlugin,
+      commonjs({
+        include: /node_modules/,
+        sourceMap: true,
+      }),
+      babel({
+        babelHelpers: 'runtime',
+        envName: 'legacy',
+        exclude: [
+          /node_modules\/core-js/
+        ]
+      }),
+      terser({
+        ecma: 5,
+        output: {
+          comments: false
+        }
+      }),
     ],
   },
   {

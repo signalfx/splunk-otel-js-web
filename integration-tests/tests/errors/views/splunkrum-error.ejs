@@ -5,7 +5,7 @@
 	<title>Errors test</title>
   <%- renderAgent({}) %>
   <script id="scenario">
-    let someNull = null;
+    var someNull = null;
     try {
       someNull.anyField = 'value';
     } catch(e) {

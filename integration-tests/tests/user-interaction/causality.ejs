@@ -15,10 +15,13 @@
   <script id="scenario">
     btn1.addEventListener('click', function () {
       window.testing = true;
-      fetch('/some-data').then(response => response.json()).then(function (res) {
-        console.log(res);
+      var req = new XMLHttpRequest();
+      req.open('GET', '/some-data');
+      req.setRequestHeader('Content-Type', 'text/plain');
+      req.send();
+      req.addEventListener('loadend', function () {
         // Otel plugin waits for 300ms for resource timings to appear. This should schedule
-				// testing done to be after that.
+        // testing done to be after that.
         setTimeout(function () {
           window.testing = false;
         }, 301);

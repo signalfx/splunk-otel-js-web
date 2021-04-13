@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 module.exports = {
-  '@tags': ['safari-10.1'],
+  '@tags': ['safari-10.1', 'skip-ie11'],
   beforeEach: function(browser) {
     browser.globals.clearReceivedSpans();  
   },

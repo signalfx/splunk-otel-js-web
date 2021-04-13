@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+const { isBrowser } = require('../../utils/helpers');
+
 module.exports = {
   beforeEach: function (browser) {
     browser.globals.clearReceivedSpans();
@@ -40,7 +42,7 @@ module.exports = {
     const tags = errorSpan.tags;
     await browser.assert.strictEqual(tags['component'], 'error');
     await browser.assert.strictEqual(tags['error'], 'true');
-    await browser.assert.strictEqual(tags['error.object'], 'SyntaxError');
+    await browser.assert.strictEqual(tags['error.object'], isBrowser(browser, 'ie') ? 'String' : 'SyntaxError');
 
     switch (browser.options.desiredCapabilities.browserName.toLowerCase()) {
     case 'chrome':
@@ -52,13 +54,16 @@ module.exports = {
     case 'safari':
       await browser.assert.strictEqual(tags['error.message'], 'Unexpected token \';\'');
       break;
+    case 'ie':
+      await browser.assert.strictEqual(tags['error.message'], 'Syntax error');
+      break;
     }
   },
   'JS unhandled error': async function(browser) {
     await browser.url(browser.globals.getUrl('/errors/views/unhandled-error.ejs'));
 
     const errorSpan = await browser.globals.findSpan(s => s.name === 'onerror');
-    await browser.assert.ok(!!errorSpan, 'Checking presence of error span.');
+    await browser.assert.ok(errorSpan, 'Checking presence of error span.');
 
     const tags = errorSpan.tags;
     await browser.assert.strictEqual(tags['component'], 'error');
@@ -75,9 +80,15 @@ module.exports = {
     case 'safari':
       await browser.assert.strictEqual(tags['error.message'], 'null is not an object (evaluating \'test.prop1 = true\')');
       break;
+    case 'ie':
+      await browser.assert.strictEqual(tags['error.message'], 'Unable to set property \'prop1\' of undefined or null reference');
+      break;
     }
   },
   'unhandled promise rejection': async function(browser) {
+    if (isBrowser(browser, 'ie')) {
+      return; // No native promise
+    }
     await browser.url(browser.globals.getUrl('/errors/views/unhandled-rejection.ejs'));
 
     const errorSpan = await browser.globals.findSpan(s => s.name === 'unhandledrejection');
@@ -108,6 +119,7 @@ module.exports = {
       chrome: 'Cannot set property \'anyField\' of null',
       edge: 'Cannot set property \'anyField\' of null',
       firefox: 'someNull is null',
+      ie: 'Unable to set property \'anyField\' of undefined or null reference',
     };
     await browser.assert.strictEqual(tags['error.message'], ERROR_MESSAGE_MAP[browserName]);
 
@@ -116,6 +128,7 @@ module.exports = {
       chrome: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:64:25`,
       edge: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:64:25`,
       firefox: `@${url}:64:7\n`,
+      ie: `TypeError: Unable to set property 'anyField' of undefined or null reference\n   at Global code (${url}:64:7)`,
     };
     await browser.assert.strictEqual(tags['error.stack'], ERROR_STACK_MAP[browserName]);
   },
@@ -138,6 +151,7 @@ module.exports = {
       chrome: 'Cannot set property \'anyField\' of null',
       edge: 'Cannot set property \'anyField\' of null',
       firefox: 'someNull is null',
+      ie: 'Unable to set property \'anyField\' of undefined or null reference',
     };
     await browser.assert.strictEqual(tags['error.message'], ERROR_MESSAGE_MAP[browserName]);
 
@@ -146,6 +160,7 @@ module.exports = {
       chrome: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:64:25`,
       edge: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:64:25`,
       firefox: `@${url}:64:7\n`,
+      ie: `TypeError: Unable to set property 'anyField' of undefined or null reference\n   at Global code (${url}:64:7)`,
     };
     await browser.assert.strictEqual(tags['error.stack'], ERROR_STACK_MAP[browserName]);
   },

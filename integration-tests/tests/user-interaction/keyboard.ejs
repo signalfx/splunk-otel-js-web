@@ -22,12 +22,12 @@
   <script id="scenario">
     const messages = [];
     function handleKeyEvent(type, event) {
-      messages.push(`event=${type} code=${event.code}`);
+      messages.push('event=' + type + ' code=' + event.code);
       document.querySelector('#messagesLog').innerHTML = messages.join('\n');
     }
 
-    document.body.addEventListener('keyup', (e) => handleKeyEvent('keyup', e));
-    document.body.addEventListener('keydown', (e) => handleKeyEvent('keydown', e));
+    document.body.addEventListener('keyup', function (e) { handleKeyEvent('keyup', e) });
+    document.body.addEventListener('keydown', function (e) { handleKeyEvent('keydown', e) });
   </script>
   <script>scenarioDisplay.innerHTML = scenario.innerHTML;</script>
 </body>

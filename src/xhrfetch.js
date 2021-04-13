@@ -53,4 +53,13 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
     }
     return super._addFinalSpanAttributes(span, fetchResponse);
   }
+
+  enable() {
+    // Don't attempt in browsers where there's no fetch API
+    if (!window.fetch) {
+      return;
+    }
+
+    super.enable();
+  }
 }
