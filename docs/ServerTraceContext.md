@@ -30,3 +30,12 @@ trace-flags=01
 
 Note that only version `00` is supported (as of the date of this document it is the only 
 version that exists).  `trace-flags` must be `01` for the trace link to be picked up.
+
+## CORS
+
+If you are using CORS-related headers (e.g., `Access-Control-*`, you may need to grant the javascript permission to
+read the server-timing header:
+
+```http
+Access-Control-Expose-Headers: Server-Timing
+```
