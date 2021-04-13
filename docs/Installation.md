@@ -37,6 +37,30 @@ If you choose to self-host the Splunk RUM script you need to go through the foll
 3. Carry out the steps 1-4, similar to the previous section describing distribution over CDN.  
 
 ## NPM
+
+To start monitoring using Splunk RUM distributed via NPM:
+
+1. Execute `npm install @splunk/otel-web --save` which installs the Splunk RUM NPM package and adds it to your application runtime dependencies in `package.json`
+2. Create a file dedicated to initialising instrumentation named `splunk-instrumentation.js`, next to your bundle root file. Within this file include the following snippet:
+    ```html
+       import SplunkOtelWeb from '@splunk/otel-web';
+       SplunkOtelWeb.init({
+         beaconUrl: https://rum-ingest.<REALM>.signalfx.com/v1/rum,
+         rumAuth: '<RUM access token>',
+         app: '<application-name>',
+       });
+    ```
+3. Modify the initialization parameters to specify:
+   - `beaconUrl` - the destination URL to which captured telemetry is sent to be ingested. Replace the `<REALM>` with the actual realm you are using (i.e. us0, us1). 
+   - `rumAuth` - token authorizing the Agent to send the telemetry to the backend. You can find (or generate) the token [here](https://app.signalfx.com/o11y/#/organization/current?selectedKeyValue=sf_section:accesstokens). 
+     Notice that RUM and APM auth tokens are different.
+   - `app` - naming the application that will be monitored so it can be distinguished from other applications.
+4. Import or require the file above other application code files in your bundle root ensuring the instrumentation runs before the application code. 
+
+You can find an example NPM installation in our [Github examples](https://github.com/signalfx/splunk-otel-js-web/tree/cc69ea1e7c16a0ae2f9f144b7be8a139a708774d/examples/installing-npm).
+
+Bear in mind that choosing this approach will require updating to new versions of Splunk RUM Agent by you, vs choosing the CDN which automatically receives version upgrades as they are rolled out by Splunk. 
+
 ## Loading and initializing the Splunk RUM
 ## Versioning the agent
 ## Linking with APM traces
