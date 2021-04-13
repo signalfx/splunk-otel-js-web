@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 0.4.3
+- Added legacy build for IE
+
 ## 0.4.2
 - Fixed environment setting
 
