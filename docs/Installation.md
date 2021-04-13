@@ -102,15 +102,15 @@ To enable this, you need to adjust the configuration in the service the browser 
 Trace linkage with APM is currently supported for following Splunk APM agents:
 
 1. OpenTelemetry - based agents:
-- [splunk-otel-java](https://github.com/signalfx/splunk-otel-java)
-- [splunk-otel-python](https://github.com/signalfx/splunk-otel-python)
-- [splunk-otel-js](https://github.com/signalfx/splunk-otel-js)
-- [splunk-otel-go](https://github.com/signalfx/splunk-otel-go)
+  - [splunk-otel-java](https://github.com/signalfx/splunk-otel-java)
+  - [splunk-otel-python](https://github.com/signalfx/splunk-otel-python)
+  - [splunk-otel-js](https://github.com/signalfx/splunk-otel-js)
+  - [splunk-otel-go](https://github.com/signalfx/splunk-otel-go)
 1. SignalFX agents:
-- [signalfx-java-tracing](https://github.com/signalfx/signalfx-java-tracing)
-- [signalfx-python-tracing](https://github.com/signalfx/signalfx-python-tracing)
-- [signalfx-dotnet-tracing](https://github.com/signalfx/signalfx-dotnet-tracing)
-- [signalfx-nodejs-tracing](https://github.com/signalfx/signalfx-nodejs-tracing)
+  - [signalfx-java-tracing](https://github.com/signalfx/signalfx-java-tracing)
+  - [signalfx-python-tracing](https://github.com/signalfx/signalfx-python-tracing)
+  - [signalfx-dotnet-tracing](https://github.com/signalfx/signalfx-dotnet-tracing)
+  - [signalfx-nodejs-tracing](https://github.com/signalfx/signalfx-nodejs-tracing)
 
 If your configuration is unsupported, you can still stitch the APM trace with the RUM information by [enabling the trace linking manually](https://github.com/signalfx/splunk-otel-js-browser/blob/main/docs/ServerTraceContext.md).
 
