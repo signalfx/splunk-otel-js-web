@@ -10,14 +10,13 @@ Below are the different initialization options available for the Agent:
 | beaconUrl string [required]  | Provided by installation wizard | Sets the destination URL to which captured telemetry is sent to be ingested. Notice that the URL is specific to the actual realm you are using (i.e. us0, us1). | 
 | rumAuth string [required]  |  Provided by installation wizard | Defines a token authorizing the Agent to send the telemetry to the backend. You can find (or generate) the token here. Notice that RUM and APM auth tokens are different. |
 
-
 ## Configuring instrumentations
 
 ## Changing the configuration: examples
 
 In situation, where you need to change the default configuration, you need to change the object passed to `SplunkRum.init()` call:
 
-```
+```html
 <script src="/location/to/splunk-otel-web.js"></script>
 <script>
   window.SplunkRum.init(
