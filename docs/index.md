@@ -1,3 +1,4 @@
+# Index
 - [Installation](/splunk-otel-js-web/installation.html)
   - [CDN](/splunk-otel-js-web/installation.html) 
 - [Configuration](/splunk-otel-js-web/configuration.html)
