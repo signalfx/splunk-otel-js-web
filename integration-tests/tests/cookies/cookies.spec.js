@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+const {isBrowser} = require('../../utils/helpers');
+
 module.exports = {
   afterEach : function(browser) {
     browser.globals.clearReceivedSpans();  
@@ -51,28 +53,30 @@ module.exports = {
     const cookie = await browser.getCookie('_splunk_rum_sid');
     await browser.assert.ok(cookie);
     await browser.assert.ok(fetchSpan);
-    await browser.assert.ok(cookie.secure);
-    if (browser.options.desiredCapabilities.browserName.toLowerCase() !==  'safari') {
+    if (!isBrowser(browser, 'ie')) {
+      await browser.assert.ok(cookie.secure);
+    }
+    if (!isBrowser(browser, {ie: true, safari: true})) {
       await browser.assert.equal(cookie.sameSite, 'None');
     }
   },
   'setting cookieDomain via config sets it on subdomains also': async function(browser) {  
-    if (browser.globals.isBrowser('chrome')) {
+    if (isBrowser(browser, 'chrome')) {
       return;
     }
     /*
-      We are using xip.io to let us test subdomains not sure how reliable it is, so if 
+      We are using nip.io to let us test subdomains not sure how reliable it is, so if 
       you are debugging flaky test then this should be your first guess.
-      cookies-domain.ejs has cookieDomain set to 127.0.0.1.xip.io, cookie set via cookieDomain
+      cookies-domain.ejs has cookieDomain set to 127.0.0.1.nip.io, cookie set via cookieDomain
       should be accessible for subdomains also so when we go to test. subdomain we should find the same 
       cookie.
     */
     const protocol = browser.globals.enableHttps ? 'https' : 'http';
-    await browser.url(`${protocol}://127.0.0.1.xip.io:${browser.globals.httpPort}/cookies/cookies-domain.ejs`);
+    await browser.url(`${protocol}://127.0.0.1.nip.io:${browser.globals.httpPort}/cookies/cookies-domain.ejs`);
     const cookie = await browser.getCookie('_splunk_rum_sid');
     await browser.assert.ok(cookie);
     
-    await browser.url(`${protocol}://test.127.0.0.1.xip.io:${browser.globals.httpPort}/cookies/cookies-domain.ejs`);
+    await browser.url(`${protocol}://test.127.0.0.1.nip.io:${browser.globals.httpPort}/cookies/cookies-domain.ejs`);
 
     const cookie2 = await browser.getCookie('_splunk_rum_sid');
     await browser.assert.strictEqual(cookie.domain, cookie2.domain);

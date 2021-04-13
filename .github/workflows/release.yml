@@ -52,7 +52,7 @@ jobs:
           draft: false
           prerelease: ${{ contains(github.ref, 'rc') || contains(github.ref, 'beta') || contains(github.ref, 'alpha') }}
 
-      - name: Upload the non-minified script
+      - name: Upload the minified script
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -62,7 +62,7 @@ jobs:
           asset_name: splunk-otel-web.js
           asset_content_type: text/javascript
 
-      - name: Upload the non-minified script
+      - name: Upload the minified script sourcemap
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -70,4 +70,24 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./dist/browser/splunk-otel-web.js.map
           asset_name: splunk-otel-web.js.map
+          asset_content_type: application/octet-stream
+
+      - name: Upload the legacy script
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./dist/browser/splunk-otel-web-legacy.js
+          asset_name: splunk-otel-web-legacy.js
+          asset_content_type: text/javascript
+
+      - name: Upload the legacy script sourcemap
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./dist/browser/splunk-otel-web-legacy.js.map
+          asset_name: splunk-otel-web-legacy.js.map
           asset_content_type: application/octet-stream

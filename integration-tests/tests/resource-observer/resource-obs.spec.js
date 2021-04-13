@@ -14,12 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+const { isBrowser } = require('../../utils/helpers');
+
 module.exports = {
-  beforeEach: function(browser) {  
+  beforeEach: function(browser) {
     browser.globals.clearReceivedSpans();
   },
   'should report resource loads happening after page load': async function(browser) {
-    if (browser.globals.isBrowser('Safari') || browser.globals.isBrowser('Edge')) {
+    if (isBrowser(browser, {
+      safari: true,
+      edge: true,
+      ie: true,
+    })) {
       return;
     }
     await browser.url(browser.globals.getUrl('/resource-observer/resources.ejs'));
@@ -56,7 +62,11 @@ module.exports = {
     await browser.assert.strictEqual(scriptSpan.annotations.length, 9, 'Missing network events');
   },
   'resources can be ignored': async function(browser) {
-    if (browser.globals.isBrowser('Safari') || browser.globals.isBrowser('Edge')) {
+    if (isBrowser(browser, {
+      safari: true,
+      edge: true,
+      ie: true,
+    })) {
       return;
     }
     await browser.url(browser.globals.getUrl('/resource-observer/resources-ignored.ejs'));
@@ -72,7 +82,11 @@ module.exports = {
     await browser.assert.not.ok(imgSpan);
   },
   'should create one span for cached resource': async function(browser) {
-    if (browser.globals.isBrowser('Safari') || browser.globals.isBrowser('Edge')) {
+    if (isBrowser(browser, {
+      safari: true,
+      edge: true,
+      ie: true,
+    })) {
       return;
     }
     await browser.url(browser.globals.getUrl('/resource-observer/resources-twice.ejs'));
@@ -92,7 +106,11 @@ module.exports = {
     await browser.assert.strictEqual(imageSpans[0].tags['component'] , 'document-load');
   },
   'should create two spans for non cached resource': async function(browser) {
-    if (browser.globals.isBrowser('Safari') || browser.globals.isBrowser('Edge')) {
+    if (isBrowser(browser, {
+      safari: true,
+      edge: true,
+      ie: true,
+    })) {
       return;
     }
     if (browser.options.desiredCapabilities.browserName.toLowerCase() === 'firefox') {

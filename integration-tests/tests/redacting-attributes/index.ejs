@@ -6,8 +6,8 @@
   <%- renderAgent({}, true) %>
   <script>
     SplunkRumOptions.exporter = {
-      onAttributesSerializing: (attributes) => {
-        return Object.keys(attributes).reduce((acc, key) => {
+      onAttributesSerializing: function (attributes) {
+        return Object.keys(attributes).reduce(function (acc, key) {
           acc[key] = /https?\:\/\//.test(attributes[key]) ? '[redacted]' : attributes[key];
           return acc;
         }, {});
@@ -27,7 +27,7 @@
 
   <pre id="scenarioDisplay"></pre>
   <script id="scenario">
-    document.querySelector('#btnClick').addEventListener('click', () => { });
+    document.querySelector('#btnClick').addEventListener('click', function () { });
   </script>
   <script>scenarioDisplay.innerHTML = scenario.innerHTML;</script>
 </body>

@@ -23,5 +23,16 @@
         "regenerator": true
       }
     ]
-  ]
+  ],
+  "env": {
+    "legacy": {
+      "plugins": [
+        ["@babel/plugin-transform-runtime",
+          {
+            "corejs": 3
+          }
+        ]
+      ]
+    }
+  }
 }

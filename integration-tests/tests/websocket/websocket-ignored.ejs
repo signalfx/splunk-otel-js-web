@@ -7,8 +7,9 @@
 	<%- renderAgent({instrumentations: {websocket: true}}, true) %>
 
 	<script>
-		const params = new URLSearchParams(window.location.search);
-		window.wsUrl = `${params.get('wsProtocol')}://${document.location.hostname}:${params.get('wsPort')}/`;
+		var protocol = window.location.search.match(/wsProtocol=(\w+)/);
+		var port = window.location.search.match(/wsPort=(\d+)/);
+		window.url = (protocol ? protocol[1] : 'wss') + '://' + document.location.hostname + ':' + (port ? port[1] : (document.location.port + 1)) + '/';
 	</script>
 
 	<script>
@@ -21,9 +22,9 @@
 	<button id="connectWs" type="button">Connect to a websockets server</button>
 	<script>
 			let socket;
-			connectWs.addEventListener('click', () => {
+			connectWs.addEventListener('click', function () {
 				socket = new WebSocket(window.wsUrl);
-				socket.onopen = () => {
+				socket.onopen = function () {
 					SplunkRum.provider.getTracer('default').startSpan('websocket-guard-span').end();
 				};
 			});
