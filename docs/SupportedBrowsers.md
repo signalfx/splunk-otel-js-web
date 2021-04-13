@@ -1,4 +1,4 @@
-#Supported browsers
+# Supported browsers
 
 Splunk RUM Agent supports all the modern browsers. The support is available for the following browser families that embed support for `ES6` and `ResourceTiming API`:
 
