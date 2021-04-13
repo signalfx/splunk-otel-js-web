@@ -14,7 +14,7 @@ The data model closely follows OpenTelemetry’s [semantic conventions](https://
 
 All of the data is currently sent in batches, containing modified Zipkin spans encoded as JSON objects. A single batch can contain one or more spans. Spans have universal properties and in addition every instrumentation can add their own properties. 
 
-# Basic properties
+## Basic properties
 
 |Name|Type|Description|
 |---|---|---|
@@ -27,7 +27,7 @@ All of the data is currently sent in batches, containing modified Zipkin spans e
 |`tags`|`object`|Additional context, allowing to search and analyse the spans based on specific `tags`.|
 |`annotations`|`array`|Associates events that explain latency with the time they happened.|
 
-# Default tags
+## Default tags
 
 |Name|Type|Description|
 |---|---|---|
@@ -39,4 +39,20 @@ All of the data is currently sent in batches, containing modified Zipkin spans e
 |`splunk.scriptInstance`|`string`|64bit id. Every instance of splunk-rum.js gets assigned its own id eg. to distinguish between different open tabs within the same browser window sharing the same session.|
 |`ot.status_code`|`string`|Always `“UNSET”`|
 
-# HTTP request timings annotations
+## HTTP request timings annotations
+
+All spans are annotated with performance timings, as specified by the [W3C specification](https://www.w3.org/TR/resource-timing-1/#performanceresourcetiming). The timestamps represent the HTTP connection lifecycle:
+
+![HTTP connection lifecycle](https://w3c.github.io/perf-timing-primer/images/resource-timing-overview-1.png)
+
+|Name|Description|
+|---|---|
+|`fetchStart`|A timestamp immediately before the browser starts to fetch the resource.|
+|`domainLookupStart`|A timestamp immediately before the browser starts the domain name lookup for the resource.|
+|`domainLookupEnd`|A timestamp representing the time immediately after the browser finishes the domain name lookup for the resource.|
+|`connectStart`|A timestamp immediately before the browser starts to establish the connection to the server to retrieve the resource.|
+|`secureConnectionStart`|A timestamp immediately before the browser starts the handshake process to secure the current connection.|
+|`connectEnd`|A timestamp immediately after the browser finishes establishing the connection to the server to retrieve the resource.|
+|`requestStart`|A timestamp immediately before the browser starts requesting the resource from the server.|
+|`responseStart`|A timestamp immediately after the browser receives the first byte of the response from the server.|
+|`responseEnd`|A timestamp immediately after the browser receives the last byte of the resource or immediately before the transport connection is closed, whichever comes first.|
