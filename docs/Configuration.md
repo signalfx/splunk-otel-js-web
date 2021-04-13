@@ -43,7 +43,7 @@ Some instrumentations, such as interactions module, have additional configuratio
 ## Changing the configuration: examples
 In situation, where you need to change the default configuration, you need to change the object passed to `SplunkRum.init()` call:
 
-```
+```html
 <script src="/location/to/splunk-otel-web.js"></script>
 <script>
   window.SplunkRum.init(
@@ -62,7 +62,7 @@ The following example changes three default configuration parameters:
 - disables monitoring for `longtasks`;.
 - enables `websockets`.
 
-```
+```html
 SplunkRum.init({
   beaconUrl: 'https://rum-ingest.us0.signalfx.com/v1/rum,
   rumAuth: 'ABC123...789',
