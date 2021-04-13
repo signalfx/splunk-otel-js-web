@@ -1,17 +1,19 @@
-# CDN
+# Installing
+
+## CDN
 To start monitoring with Splunk RUM distributed via CDN:
 1. Include & initialize the Splunk RUM by copying the following to HEAD section for all the HTML files or templates in your application
 
-```html
-<script src="https://cdn.signalfx.com/o11y-gdi-rum/latest/splunk-otel-web.js" crossorigin="anonymous"></script>
-<script>
-  SplunkRum.init({
-      beaconUrl: 'https://rum-ingest.<REALM>.signalfx.com/v1/rum',
-      rumAuth: 'RUM access token',
-      app: 'enter-your-application-name'
-    });
-</script>
-```
+    ```html
+    <script src="https://cdn.signalfx.com/o11y-gdi-rum/latest/splunk-otel-web.js" crossorigin="anonymous"></script>
+    <script>
+      SplunkRum.init({
+          beaconUrl: 'https://rum-ingest.<REALM>.signalfx.com/v1/rum',
+          rumAuth: 'RUM access token',
+          app: 'enter-your-application-name'
+        });
+    </script>
+    ```
 
 1. Modify the initialization parameters to specify:
    - `beaconUrl` - the destination URL to which captured telemetry is sent to be ingested. Replace the `<REALM>` with the actual realm you are using (i.e. us0, us1). 
