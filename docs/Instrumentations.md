@@ -94,11 +94,53 @@ The annotations captured by the `XHR/Fetch` instrumentation are described in the
 
 ## Instrumentation: Web Vitals
 
+Web Vitals instrumentation collects data about Google [Web Vitals](https://web.dev/vitals/) metrics. Web Vitals are captured as spans with zero duration. Every such span has a designated `traceId` and has no parent span.
+
+Following tags are captured from the information captured by the `webVitals` instrumentation:
+
+|Name|Web Vital|Description|
+|---|---|---|
+|`lcp`|[Largest Contentful Paint](https://web.dev/lcp/)|Measures loading performance by capturing the render time of the largest image or text block visible within the viewport.|
+|`fid`|[First Input Delay](https://web.dev/fid/)|Measures interactivity by capturing the timestamp between user interaction (i.e. click on a link, tap on a button, etc) to the time when the browser is actually able to begin processing event handlers in response to that interaction.|
+|`cls`|[Cumulative Layout Shift](https://web.dev/cls/)|Measures visual stability by capturing the sum of all individual layout shift scores for every unexpected layout shift that occurs during the entire lifespan of the page. A layout shift occurs any time a visible element changes its position from one rendered frame to the next.|
+
 ## Instrumentation: Post document load
+
+This instrumentation collects data about resources loading after a page `load` event. By default, the instrumentation enables instrumenting for resource types `<script>`and `<img>` but adjusting the configuration allows it to harvest additional telemetry, given that the resource supports [PerformanceResourceTiming](https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming) interface. 
+
+Common use case where capturing information via this information is for example loading more images on `scroll` events.
+
+The spans captured by this instrumentation would match the data model described in the [`resourceFetch`](#resourcefetch) section.
 
 ## Instrumentation: User Interactions
 
+This instrumentation collects information on the user's activity with elements that have a registered event listener using `Element.addEventListener`. Events captured by this listener generate a span with the name matching the DOM event name.
+
+|Name|Type|Description|
+|---|---|---|
+|`event_type`|`string`|Event name (e.g. `click`).|
+|`target_element`|`string`|Name of the target element (e.g. `BUTTON`).|
+|`target_xpath`|`string`|XPath of the target element.|
+
+Following is an example listener which would be instrumented with this instrumentation:
+
+```html
+<button id="add_row">Add a row</button>
+
+document.getElementById('add_row').addEventListener('click', function (event) {
+  fetch('/api/row', {method: 'PUT'});
+});
+```
+
 ### History API
+
+User interaction instrumentation also instruments [History API](https://developer.mozilla.org/en-US/docs/Web/API/History_API) in order to provide visibility into the browser's session history. The history API is used to track URL changes that do not reload the page and is used in single page applications. Instrumentation also tracks URL changes done via changing the `location.hash` (by listening to `hashchange` event). Route change has no duration; it is just an event letting you know that the change happened. The info is sent as `routeChange` span with following tags:
+
+|Name|Type|Description|
+|---|---|---|
+|`component`|`string`|`"user-interaction"`|
+|`prev.href`|`string`|Page URL before the route change.|
+|`location.href`|`string`|Page URL after the route change.|
 
 ## Instrumentation: Long tasks
 
