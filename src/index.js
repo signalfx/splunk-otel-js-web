@@ -17,7 +17,6 @@ limitations under the License.
 import './polyfill-safari10';
 import {registerInstrumentations} from '@opentelemetry/instrumentation';
 import {ConsoleSpanExporter, SimpleSpanProcessor, BatchSpanProcessor} from '@opentelemetry/tracing';
-import {WebTracerProvider} from '@opentelemetry/web';
 import {DiagLogLevel} from '@opentelemetry/api';
 import {SplunkDocumentLoad} from './docload';
 import {SplunkXhrPlugin, SplunkFetchInstrumentation} from './xhrfetch';
@@ -25,14 +24,15 @@ import {SplunkUserInteractionInstrumentation, DEFAULT_AUTO_INSTRUMENTED_EVENTS} 
 import {SplunkExporter} from './SplunkExporter';
 import {captureErrors} from './errors';
 import {generateId, getPluginConfig} from './utils';
-import {initSessionTracking, getRumSessionId} from './session';
-import {version as SplunkRumVersion} from '../package.json';
+import {initSessionTracking} from './session';
 import {SplunkWebSocketInstrumentation} from './websocket';
 import { initWebVitals } from './webvitals';
 import { SplunkLongTaskInstrumentation } from './longtask';
 import { PostDocLoadResourceObserver } from './postDocLoadResourceObserver.js';
+import { SplunkWebTracerProvider } from './SplunkWebTracerProvider';
 
 export * from './SplunkExporter';
+export * from './SplunkWebTracerProvider';
 
 // note: underscored fields are considered internal
 const OPTIONS_DEFAULTS = {
@@ -55,6 +55,11 @@ const INSTRUMENTATIONS = [
   {Instrument: SplunkWebSocketInstrumentation, confKey: 'websocket', disable: true},
   {Instrument: SplunkLongTaskInstrumentation, confKey: 'longtask'},
 ];
+
+export const INSTRUMENTATIONS_ALL_DISABLED = INSTRUMENTATIONS
+  .map(instrumentation => instrumentation.confKey)
+  .concat(['webvitals', 'errors'])
+  .reduce((acc, key) => (acc[key] = false, acc), {});
 
 const NOOP = () => {};
 
@@ -90,59 +95,23 @@ const SplunkRum = {
         console.log('rumAuth will be required in the future');
       }
     }
-    const { app } = options;
 
     const instanceId = generateId(64);
-
     initSessionTracking(instanceId, options.cookieDomain);
 
-    let globalAttributes = {};
-    if (options.environment) {
-      globalAttributes['environment'] = options.environment;  
-    }
-
-    this.setGlobalAttributes = function(attributes) {
-      if (attributes) {
-        Object.assign(globalAttributes, attributes);
-      } else {
-        globalAttributes = {}; 
-      }
-    };
-    
-    if (options.globalAttributes && Object.keys(options.globalAttributes).length > 0) {
-      this.setGlobalAttributes(options.globalAttributes);
-    }
-
-    // FIXME this is still not the cleanest way to add an attribute to all created spans..,
-    class PatchedWTP extends WebTracerProvider {
-      getTracer(name, version, config) {
-        const tracer = super.getTracer(name, version, config);
-        const origStartSpan = tracer.startSpan;
-        tracer.startSpan = function () {
-          const span = origStartSpan.apply(tracer, arguments);
-          span.setAttribute('location.href', location.href);
-          // FIXME does otel want this stuff in Resource?
-          span.setAttribute('splunk.rumSessionId', getRumSessionId());
-          span.setAttribute('splunk.rumVersion', SplunkRumVersion);
-          span.setAttribute('app', app);
-          span.setAttribute('splunk.scriptInstance', instanceId);
-          if (globalAttributes) {
-            span.setAttributes(globalAttributes);
-          }
-          return span;
-        };
-        return tracer;
-      }
-    }
-
-    const { ignoreUrls } = options;
-    
+    const { ignoreUrls, app, environment } = options;
     // enabled: false prevents registerInstrumentations from enabling instrumentations in constructor
     // they will be enabled in registerInstrumentations
     const pluginDefaults = { ignoreUrls, enabled: false };
     
-    const provider = new PatchedWTP({
+    const provider = new SplunkWebTracerProvider({
       logLevel: options.debug ? DiagLogLevel.DEBUG : DiagLogLevel.ERROR,
+      app,
+      instanceId,
+      globalAttributes: {
+        ...environment ? { environment } : {},
+        ...options.globalAttributes || {},
+      },
     });
     const instrumentations = INSTRUMENTATIONS.map(({Instrument, confKey, disable}) => {
       const pluginConf = getPluginConfig(options.instrumentations[confKey], pluginDefaults, disable);
@@ -211,6 +180,10 @@ const SplunkRum = {
 
     this.inited = false;
   },
+
+  setGlobalAttributes(attributes) {
+    this.provider?.setGlobalAttributes(attributes);
+  }
 };
 
 export default SplunkRum;

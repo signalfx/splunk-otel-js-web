@@ -21,6 +21,18 @@ interface SplunkOtelWebExporterOptions {
   onAttributesSerializing?: (attributes: SpanAttributes, span: Span) => SpanAttributes;
 }
 
+interface SplunkOtelWebOptionsInstrumentations {
+  document?:     boolean | InstrumentationConfig;
+  errors?:       boolean;
+  fetch?:        boolean | FetchInstrumentationConfig;
+  interactions?: boolean | SplunkUserInteractionInstrumentationConfig;
+  longtask?:     boolean | InstrumentationConfig;
+  postload?:     boolean | PostDocLoadResourceObserverConfig;
+  websocket?:    boolean | InstrumentationConfig;
+  webvitals?:    boolean;
+  xhr?:          boolean | XMLHttpRequestInstrumentationConfig;
+}
+
 interface SplunkOtelWebOptions {
   /** Allows http beacon urls */
   allowInsecureBeacon?: boolean;
@@ -57,17 +69,7 @@ interface SplunkOtelWebOptions {
   ignoreUrls?: Array<String | RegExp>;
 
   /** Configuration for instrumentation modules. */
-  instrumentations?: {
-    document?:     boolean | InstrumentationConfig;
-    errors?:       boolean;
-    fetch?:        boolean | FetchInstrumentationConfig;
-    interactions?: boolean | SplunkUserInteractionInstrumentationConfig;
-    longtask?:     boolean | InstrumentationConfig;
-    postload?:     boolean | PostDocLoadResourceObserverConfig;
-    websocket?:    boolean | InstrumentationConfig;
-    webvitals?:    boolean;
-    xhr?:          boolean | XMLHttpRequestInstrumentationConfig;
-  };
+  instrumentations?: SplunkOtelWebOptionsInstrumentations;
 
   /** 
    * Publicly-visible `rumAuth` value.  Please do not paste any other access token or auth value into here, as this 
@@ -76,12 +78,18 @@ interface SplunkOtelWebOptions {
   rumAuth: string;
 }
 
+export class SplunkWebTracerProvider extends WebTracerProvider {
+  setGlobalAttributes(attributes: SpanAttributes): void;
+}
+
 type SplunkOtelWeb = {
   deinit: () => void;
   init: (options: SplunkOtelWebOptions) => void;
-  provider?: WebTracerProvider;
+  provider?: SplunkWebTracerProvider;
   setGlobalAttributes: (attributes: SpanAttributes) => void;
 }
 
 declare const SplunkOtelWebSingleton: SplunkOtelWeb;
 export default SplunkOtelWebSingleton;
+
+export const 

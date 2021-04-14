@@ -25,3 +25,4 @@ import './utils.test.js';
 import './session.test.js';
 import './websockets.test.js';
 import './SplunkExporter.test';
+import './api.test.ts';
