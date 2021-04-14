@@ -45,6 +45,7 @@ Following tags are captured by instrumenting the `documentFetch` invocations:
 |`link.traceId`|`string`|Trace identifier, captured from `server-timing` response header set by the APM agent|
 |`link.spanId`|`string`|Span identifier, captured from `server-timing` response header set by the APM agent|
 
+The annotations captured by the `documentFetch` instrumentation are described in the [HTTP request timing](DataModel.md#http-request-timings-annotations) chapter.
 
 ### resourceFetch
 
@@ -53,11 +54,43 @@ Following tags are captured by instrumenting the `resourceFetch` invocations:
 |Name|Type|Description|
 |---|---|---|
 |`http.response_content_length`|`number`|The size of the document received from the payload body as specified [here](https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/encodedBodySize).|
+|`http.url`|`string`|URL of the requested resource.|
 |`link.traceId`|`string`|Trace identifier, captured from `server-timing` response header set by the APM agent|
 |`link.spanId`|`string`|Span identifier, captured from `server-timing` response header set by the APM agent|
-|`http.url`|||
+
+The annotations captured by the `resourceFetch` instrumentation are described in the [HTTP request timing](DataModel.md#http-request-timings-annotations) chapter.
 
 ## Instrumentation: XHR/fetch
+
+`XHF/Fetch`, as the name indicates, consists of two separate instrumentations. One is capturing [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) events and another for [XMLHttpRequest](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest) events. The spans produced by the two instrumentations are almost identical. The only difference is set in the `component` tag value which differentiates between `xml-http-request` and `fetch`.
+
+This instrumentation prepends the span `name` with HTTP + HTTP method name (eg. `GET`, `POST`). If the `XHF/Fetch` maps to a backend providing a `server-timing` header in the response, the link with the backend trace is also created by this instrumentation. 
+
+All the tags captured by the instrumentation and exposed in next table follow OpenTelemetry [semantic conventions](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md#common-attributes): 
+
+|Name| Type and Description|
+|---|---|
+`http.method`|As specified in OpenTelemetry [semantic conventions](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md#common-attributes)|
+`http.response_content_length`|As specified in OpenTelemetry [semantic conventions](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md#common-attributes)|
+`http.host`|As specified in OpenTelemetry [semantic conventions](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md#common-attributes)|
+`http.scheme`|As specified in OpenTelemetry [semantic conventions](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md#common-attributes)|
+`http.status_code`|As specified in OpenTelemetry [semantic conventions](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md#common-attributes)|
+`http.status_text`|As specified in OpenTelemetry [semantic conventions](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md#common-attributes)|
+`http.user_agent`|As specified in OpenTelemetry [semantic conventions](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md#common-attributes)|
+`http.url`|As specified in OpenTelemetry [semantic conventions](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md#common-attributes)|
+
+In addition, the `XHR/Fetch` instrumentation annotates the span with timestamps representing the time when the following XHR events fired:
+
+|Name|Type|Description|
+|---|---|---|
+|`open`|`number`|Time in UNIX epoch, measured in microseconds measured when [XHR open](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/abort_event) event fires|
+|`send`|`number`|Time when [XHR send](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/send) event fires|
+|`load`|`number`|Time when [XHR load](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/load_event) event fires|
+|`error`|`number`|Time when [XHR error](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/error_event) event fires|
+|`timeout`|`number`|Time when [XHR timeout](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/timeout_event) event fires|
+|`abort`|`number`|Time when [XHR abort](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/abort_event) event fires|
+
+The annotations captured by the `XHR/Fetch` instrumentation are described in the [HTTP request timing](DataModel.md#http-request-timings-annotations) chapter.
 
 ## Instrumentation: Web Vitals
 
