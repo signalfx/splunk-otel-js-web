@@ -50,7 +50,7 @@ For this example, the error caught would be exposed as following:
 |`error`|`true`|
 |`error.message` (browser-specific)|`"Cannot set property 'prop1' of null"`|
 |`error.object`|`"TypeError"`|
-|`error.stack` (browser-specific)|<pre>"TypeError: Cannot set property 'prop1' of null<br>   at http://example.com/script.js:2:10"</pre>|
+|`error.stack` (browser-specific)|<pre>"TypeError: Cannot set property 'prop1' of null<br>   at <http://example.com/script.js:2:10>"</pre>|
 
 ## Uncaught promise rejections
 
@@ -76,7 +76,7 @@ For this example, the error caught would be exposed as following:
 |`error`|`true`|
 |`error.message`|`"broken"`|
 |`error.object`|`"Error"`|
-|`error.stack`|<pre>"Error: broken<br>   at http://example.com/script.js:2:10"</pre>|
+|`error.stack`|<pre>"Error: broken<br>   at <http://example.com/script.js:2:10>"</pre>|
 
 **Example 2:**
 
@@ -96,7 +96,7 @@ For this example, the error caught would be exposed as following:
 |`error`|`true`|
 |`error.message` (browser-specific)|`"Cannot set property 'prop' of null"`|
 |`error.object`|`"TypeError"`|
-|`error.stack` (browser-specific)|<pre>"TypeError: Cannot set property 'prop' of null<br>   at http://example.com/script.js:4:10"</pre>|
+|`error.stack` (browser-specific)|<pre>"TypeError: Cannot set property 'prop' of null<br>   at <http://example.com/script.js:4:10>"</pre>|
 
 ## Failing to load resources
 
@@ -130,7 +130,6 @@ For this example, the error caught would be exposed as following:
 
 Each error logged via console is registered as a span with name: `console.error`. `console.error` is a standard way in browsers to show messages in the developer console. Splunk Browser Agent captures errors logged via `console.error` from  `try...catch` blocks where you either don't want or can’t throw errors further in the stack.
 
-
 **Example 1:**
 
 ```html
@@ -149,7 +148,7 @@ For this example, the error caught would be exposed as following:
 |`error`|`true`|
 |`error.message`|`"failed to update TypeError: Cannot set property 'anyField' of null"`|
 |`error.object`|`"String"`|
-|`error.stack`|<pre>"TypeError: Cannot set property 'anyField' of null<br>   at http://example.com/script.js:3:19"</pre>|
+|`error.stack`|<pre>"TypeError: Cannot set property 'anyField' of null<br>   at <http://example.com/script.js:3:19>"</pre>|
 
 **Example 2:**
 
