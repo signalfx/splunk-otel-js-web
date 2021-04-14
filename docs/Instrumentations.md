@@ -37,7 +37,25 @@ Following annotations are captured from the  navigation timings, as specified by
 
 ### documentFetch
 
+Following tags are captured by instrumenting the `documentFetch` invocations:
+
+|Name|Type|Description|
+|---|---|---|
+|`http.response_content_length`|`number`|The size of the document received from the payload body as specified [here](https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/encodedBodySize).|
+|`link.traceId`|`string`|Trace identifier, captured from `server-timing` response header set by the APM agent|
+|`link.spanId`|`string`|Span identifier, captured from `server-timing` response header set by the APM agent|
+
+
 ### resourceFetch
+
+Following tags are captured by instrumenting the `resourceFetch` invocations:
+
+|Name|Type|Description|
+|---|---|---|
+|`http.response_content_length`|`number`|The size of the document received from the payload body as specified [here](https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/encodedBodySize).|
+|`link.traceId`|`string`|Trace identifier, captured from `server-timing` response header set by the APM agent|
+|`link.spanId`|`string`|Span identifier, captured from `server-timing` response header set by the APM agent|
+|`http.url`|||
 
 ## Instrumentation: XHR/fetch
 
