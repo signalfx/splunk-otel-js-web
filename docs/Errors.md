@@ -214,15 +214,113 @@ axios.get('/users').then(users => {
 
 Error caught in this example would expose similar attributes to the last example in [console.error](#consoleerror) section.
 
-
 ## Integrating with frameworks
+
+Integration with different SPA frameworks is required to allow capturing and sending the JS errors from SPA frameworks with their own error interceptors/handlers which catch and process JS errors. As a result, the errors will not bubble up to the global error handler (and/or logs), meaning the Splunk RUM Agentwould not be able to expose such errors.
+
+Following framework-specific examples help you to understand how to integrate with the particular framework. All the examples are made considering the agent distributed via npm. While we don't recommend using the API with CDN distributions, you should add `if (window.SplunkRum)` checks around `SplunkRum` API calls to not break the site when the agent fails to load due to reasons like content blockers.
 
 ### React.js
 
+Use the Splunk RUM Agent API in your [error boundary](https://reactjs.org/docs/error-boundaries.html) component to capture error information.
+
+```html
+import React from 'react'
+import SplunkRum from '@splunk/otel-js-browser'
+ 
+class ErrorBoundary extends React.Component {
+	componentDidCatch(error, errorInfo) {
+		SplunkRum.error(error, errorInfo)
+	}
+ 
+	// Rest of your error boundary component
+	render() {
+		return this.props.children
+	}
+}
+```
+
 ### Vue.js
+
+Add capture function to your Vue `errorHandler`. Implementation of this is different, depending on the Vue.js version used:
+
+For [Vue.js 3.x](https://v3.vuejs.org/api/application-config.html#errorhandler):
+
+```html
+import Vue from 'vue'
+import SplunkRum from '@splunk/otel-js-browser'
+ 
+const app = createApp(App);
+ 
+app.config.errorHandler = function (error, vm, info) {
+	SplunkRum.error(error, info)
+}
+app.mount('#app')
+```
+
+For [Vue.js 2.x](https://vuejs.org/v2/api/#errorHandler):
+
+```html
+import Vue from 'vue'
+import SplunkRum from '@splunk/otel-js-browser'
+ 
+Vue.config.errorHandler = function (error, vm, info) {
+	SplunkRum.error(error, info)
+}
+```
 
 ### Angular.js 2.x
 
+For Angular.js v2.x, you need  to create an [error handler module](https://angular.io/api/core/ErrorHandler) to collect errors consumed by Angular:
+
+
+```html
+import {NgModule, ErrorHandler} from '@angular/core'
+import SplunkRum from '@splunk/otel-js-browser'
+ 
+class SplunkErrorHandler implements ErrorHandler {
+	handleError(error) {
+		SplunkRum.error(error, info)
+}
+}
+ 
+@NgModule({
+	providers: [
+		{
+			provide: ErrorHandler,
+			useClass: SplunkErrorHandler
+		}
+	]
+})
+class AppModule {}
+```
+
+
 ### Angular.js 1.x
 
+For Angular.js v1.x, you need to create an [exceptionHandler](https://docs.angularjs.org/api/ng/service/$exceptionHandler):
+
+```html
+import SplunkRum from '@splunk/otel-js-browser'
+
+angular.module('...')
+	.factory('$exceptionHandler', function () {
+		return function (exception, cause) {
+			SplunkRum.error(exception, cause)
+		}
+	})
+```
+
 ### Ember.js
+
+For Ember, you need to configure an `Ember.onerror` hook:
+
+```html
+import Ember from 'ember'
+import SplunkRum from '@splunk/otel-js-browser'
+
+
+Ember.onerror = function(error) {
+	SplunkRum.error(error)
+}
+```
