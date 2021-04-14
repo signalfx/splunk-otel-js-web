@@ -130,7 +130,7 @@ For this example, the error caught would be exposed as following:
 
 Each error logged via console is registered as a span with name: `console.error`. `console.error` is a standard way in browsers to show messages in the developer console. Splunk Browser Agent captures errors logged via `console.error` from  `try...catch` blocks where you either don't want or can’t throw errors further in the stack.
 
-### Example 1
+### Example: setting field value to `null`
 
 ```html
 try {
@@ -150,7 +150,7 @@ For this example, the error caught would be exposed as following:
 |`error.object`|`"String"`|
 |`error.stack`|<pre>"TypeError: Cannot set property 'anyField' of null<br>   at <http://example.com/script.js:3:19>"</pre>|
 
-### Example 2
+### Example: 404
 
 ```html
 axios.get('/users').then(users => {
