@@ -230,14 +230,14 @@ import React from 'react'
 import SplunkRum from '@splunk/otel-js-browser'
  
 class ErrorBoundary extends React.Component {
-	componentDidCatch(error, errorInfo) {
-		SplunkRum.error(error, errorInfo)
-	}
+   componentDidCatch(error, errorInfo) {
+      SplunkRum.error(error, errorInfo)
+   }
  
-	// Rest of your error boundary component
-	render() {
-		return this.props.children
-	}
+   // Rest of your error boundary component
+   render() {
+      return this.props.children
+   }
 }
 ```
 
@@ -254,7 +254,7 @@ import SplunkRum from '@splunk/otel-js-browser'
 const app = createApp(App);
  
 app.config.errorHandler = function (error, vm, info) {
-	SplunkRum.error(error, info)
+   SplunkRum.error(error, info)
 }
 app.mount('#app')
 ```
@@ -266,7 +266,7 @@ import Vue from 'vue'
 import SplunkRum from '@splunk/otel-js-browser'
  
 Vue.config.errorHandler = function (error, vm, info) {
-	SplunkRum.error(error, info)
+   SplunkRum.error(error, info)
 }
 ```
 
@@ -279,18 +279,18 @@ import {NgModule, ErrorHandler} from '@angular/core'
 import SplunkRum from '@splunk/otel-js-browser'
  
 class SplunkErrorHandler implements ErrorHandler {
-	handleError(error) {
-		SplunkRum.error(error, info)
-}
+   handleError(error) {
+      SplunkRum.error(error, info)
+   }
 }
  
 @NgModule({
-	providers: [
-		{
-			provide: ErrorHandler,
-			useClass: SplunkErrorHandler
-		}
-	]
+   providers: [
+      {
+         provide: ErrorHandler,
+         useClass: SplunkErrorHandler
+      }
+   ]
 })
 class AppModule {}
 ```
@@ -303,11 +303,11 @@ For Angular.js v1.x, you need to create an [exceptionHandler](https://docs.angul
 import SplunkRum from '@splunk/otel-js-browser'
 
 angular.module('...')
-	.factory('$exceptionHandler', function () {
-		return function (exception, cause) {
-			SplunkRum.error(exception, cause)
-		}
-	})
+   .factory('$exceptionHandler', function () {
+      return function (exception, cause) {
+         SplunkRum.error(exception, cause)
+      }
+})
 ```
 
 ### Ember.js
@@ -320,6 +320,6 @@ import SplunkRum from '@splunk/otel-js-browser'
 
 
 Ember.onerror = function(error) {
-	SplunkRum.error(error)
+   SplunkRum.error(error)
 }
 ```
