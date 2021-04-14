@@ -99,9 +99,121 @@ For this example, the error caught would be exposed as following:
 
 ## Failing to load resources
 
+Each failure to load resources is registered as a span with name: `eventListener.error`. Failing to load resources can happen when server returning is 4xx/5xx status code when loading images or scripts.
+
+**Example - missing image:**
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+   [...]
+</head>
+<body>
+   <img src="/missing-image.png" />
+</body>
+</html>
+```
+
+For this example, the error caught would be exposed as following:
+
+|Attribute name|Attribute value|
+|---|---|
+|`component`|`"error"`|
+|`error`|`true`|
+|`target_element`|`"IMG"`|
+|`target_src`|`"https://example.com/missing-image.png"`|
+|`target_xpath`|`""//html/body/img""`|
+
 ## console.error
 
+Each error logged via console is registered as a span with name: `console.error`. `console.error` is a standard way in browsers to show messages in the developer console. Splunk Browser Agent captures errors logged via `console.error` from  `try...catch` blocks where you either don't want or can’t throw errors further in the stack.
+
+
+**Example 1:**
+
+```html
+try {
+  someNull.anyField = 'value';
+} catch(e) {
+  console.error('failed to update', e);
+}
+```
+
+For this example, the error caught would be exposed as following:
+
+|Attribute name|Attribute value|
+|---|---|
+|`component`|`"error"`|
+|`error`|`true`|
+|`error.message`|`"failed to update TypeError: Cannot set property 'anyField' of null"`|
+|`error.object`|`"String"`|
+|`error.stack`|<pre>"TypeError: Cannot set property 'anyField' of null<br>   at http://example.com/script.js:3:19"</pre>|
+
+**Example 2:**
+
+```html
+axios.get('/users').then(users => {
+  showUsers(users)
+}).catch(error => {
+  showErrorMessage()
+  console.error('error getting users', error)
+})
+```
+
+For this example, the error caught would be exposed as following:
+
+|Attribute name|Attribute value|
+|---|---|
+|`component`|`"error"`|
+|`error`|`true`|
+|`error.message`|`"error getting users Error: Request failed with status code 404"`|
+|`error.object`|`"String"`|
+|`error.stack`|<pre>"Error: Request failed with status code 404<br>  [...]<br>   at XMLHttpRequest.l.onreadystatechange (axios.min.js:2:8373)"</pre>|
+
+**Example 3:**
+
+```html
+async function getUsers() {
+  try {
+    const users = await axios.get('/users')
+  } catch (error) {
+    console.error('error getting users', error)
+  }
+}
+```
+
+For this example, the error caught would be exposed as following:
+
+|Attribute name|Attribute value|
+|---|---|
+|`component`|`"error"`|
+|`error`|`true`|
+|`error.message`|`"error getting users Error: Request failed with status code 404"`|
+|`error.object`|`"String"`|
+|`error.stack`|<pre>"Error: Request failed with status code 404<br>  [...]<br>   at XMLHttpRequest.l.onreadystatechange (axios.min.js:2:8373)"</pre>|
+
 ## SplunkRum.error
+
+Each error logged via invoking `SplunkRum.error` is registered as a span with name: `SplunkRum.error`.
+
+As opposed to the `console.error`, using `SplunkRum.error` doesn't log an error in browser's developer console. Instead such errors are only sent along with other RUM telemetry and exposed in the Splunk RUM product. This approach is useful when using a CDN distribution of Splunk Browser Agent. In such a situation, extra verification for Splunk Browser Agent loading is needed in order to avoid crashes when it's loading was blocked. This can happen in situations when a user has installed an aggressive privacy plugin/extension to their browser.
+
+Example:
+
+```html
+axios.get('/users').then(users => {
+  showUsers(users)
+}).catch(error => {
+  showErrorMessage()
+  if (window.SplunkRum) {
+    SplunkRum.error('error getting users', error)
+  }
+})
+```
+
+Error caught in this example would expose similar attributes to the last example in [console.error](#consoleerror) section.
+
 
 ## Integrating with frameworks
 
