@@ -144,8 +144,49 @@ User interaction instrumentation also instruments [History API](https://develope
 
 ## Instrumentation: Long tasks
 
+This instrumentation collects information about [long tasks](https://developer.mozilla.org/en-US/docs/Web/API/Long_Tasks_API). For every long task a span is created. 
+
+Span attributes include containers that the task occurred within. For tasks that don't occur within the top level page, the `containerId`, `containerName` and `containerSrc` fields provide information about the source of the task.
+
+|Name|Type|Description|
+|---|---|---|
+|`longtask.name`|`string`|Usually `self`, see [specification](https://w3c.github.io/longtasks/#sec-PerformanceLongTaskTiming) for all possible values.|
+|`longtask.entry_type`|`number`|Always set to `longtask`|
+|`longtask.duration`|`number`|Duration of the task.|
+|`attribution.name`|`string`|See [TaskAttributionTiming](https://w3c.github.io/longtasks/#sec-TaskAttributionTiming)|
+|`attribution.entry_type`|`string`|See [TaskAttributionTiming](https://w3c.github.io/longtasks/#sec-TaskAttributionTiming)|
+|`attribution.start_time`|`number`|See [TaskAttributionTiming](https://w3c.github.io/longtasks/#sec-TaskAttributionTiming)|
+|`attribution.duration`|`number`|See [TaskAttributionTiming](https://w3c.github.io/longtasks/#sec-TaskAttributionTiming)|
+|`attribution.container_type`|`string`|See [TaskAttributionTiming](https://w3c.github.io/longtasks/#sec-TaskAttributionTiming)|
+|`attribution.container_src`|`string`|See [TaskAttributionTiming](https://w3c.github.io/longtasks/#sec-TaskAttributionTiming)|
+|`attribution.container_id`|`string`|See [TaskAttributionTiming](https://w3c.github.io/longtasks/#sec-TaskAttributionTiming)|
+|`attribution.container_name`|`string`|See [TaskAttributionTiming](https://w3c.github.io/longtasks/#sec-TaskAttributionTiming)|
+
+The instrumentation doesn’t change the raw data captured from API’s, so for a more detailed description about the attributes see [PerformanceLongTaskTiming](https://w3c.github.io/longtasks/#sec-PerformanceLongTaskTiming) and [TaskAttributionTiming](https://w3c.github.io/longtasks/#sec-TaskAttributionTiming) interfaces.
+
 ## Instrumentation: Websockets
+
+This instrumentation captures websocket lifecycle events and populates span with the information captured by the information. Websocket instrumentation is disabled by default.  The instrumentation is disabled, as without the understanding about the purpose and design of the communication protocol it would likely not be capturing useful information from the native websocket. This can be enabled in configuration. 
+
+The instrumentation is capturing spans from websocket `connect`, `send` and `onmessage` events.
 
 ### connect
 
+Captures information from `connect` event.
+
+|Name|Type|Description|
+|---|---|---|
+|`http.url`|`string`|Websocket URL.|
+|`duration`|`number`|Time between websocket constructor call and ws.open event firing.|
+|`protocols`|`string \| array`|Protocols passed to the websocket constructor.|
+|`error`|`string`|`true` / `false` depending if an error occurred. Errors are captured during websocket construction(eg. Incorrect url) or when `ws.error` event fires.|
+|`error.message`|`string`|Websocket error event message.|
+
 ### send and onmessage
+
+Captures information from `send` and `onmessage` events.
+
+|Name|Type|Description|
+|---|---|---|
+|`http.url`|`string`|Websocket URL.|
+|`response_content_length`|`number`|Payload size in bytes.|
