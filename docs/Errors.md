@@ -20,6 +20,7 @@ Each uncaught/unhandled error is registered as a span with name: `onerror`. Unca
 Following examples help to understand the error collection from uncaught/unhandled errors:
 
 **Syntax error example**
+
 ```html
 var abc=;
 ```
@@ -273,7 +274,6 @@ Vue.config.errorHandler = function (error, vm, info) {
 
 For Angular.js v2.x, you need  to create an [error handler module](https://angular.io/api/core/ErrorHandler) to collect errors consumed by Angular:
 
-
 ```html
 import {NgModule, ErrorHandler} from '@angular/core'
 import SplunkRum from '@splunk/otel-js-browser'
@@ -294,7 +294,6 @@ class SplunkErrorHandler implements ErrorHandler {
 })
 class AppModule {}
 ```
-
 
 ### Angular.js 1.x
 
