@@ -112,7 +112,12 @@ module.exports = function (config) {
         commonjsPlugin,
         rollupPolyfills(),
         istanbulrollup({
-          exclude: ['deps/**', /node_modules/],
+          exclude: [
+            /node_modules/,
+            'karma.conf.js',
+            'rollup.shared.js',
+            'dist/**',
+          ],
         }),
       ],
       input: 'test/index.js',
