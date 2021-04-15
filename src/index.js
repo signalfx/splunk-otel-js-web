@@ -17,7 +17,7 @@ limitations under the License.
 import './polyfill-safari10';
 import {registerInstrumentations} from '@opentelemetry/instrumentation';
 import {ConsoleSpanExporter, SimpleSpanProcessor, BatchSpanProcessor} from '@opentelemetry/tracing';
-import {DiagLogLevel} from '@opentelemetry/api';
+import {diag, DiagConsoleLogger, DiagLogLevel} from '@opentelemetry/api';
 import {SplunkDocumentLoad} from './docload';
 import {SplunkXhrPlugin, SplunkFetchInstrumentation} from './xhrfetch';
 import {SplunkUserInteractionInstrumentation, DEFAULT_AUTO_INSTRUMENTED_EVENTS} from './interaction';
@@ -59,7 +59,7 @@ const INSTRUMENTATIONS = [
 export const INSTRUMENTATIONS_ALL_DISABLED = INSTRUMENTATIONS
   .map(instrumentation => instrumentation.confKey)
   .concat(['webvitals', 'errors'])
-  .reduce((acc, key) => (acc[key] = false, acc), {});
+  .reduce((acc, key) => { acc[key] = false; return acc; }, {});
 
 const NOOP = () => {};
 
@@ -76,12 +76,14 @@ const SplunkRum = {
   _deregisterInstrumentations: NOOP,
   DEFAULT_AUTO_INSTRUMENTED_EVENTS,
   init: function (options = {}) {
+    diag.setLogger(new DiagConsoleLogger(), options.debug ? DiagLogLevel.DEBUG : DiagLogLevel.ERROR);
+
     options = Object.assign({}, OPTIONS_DEFAULTS, options, {
       exporter: Object.assign({}, OPTIONS_DEFAULTS.exporter, options.exporter),
     });
 
     if (this.inited) {
-      console.log('SplunkRum already init()ed.');
+      diag.warn('SplunkRum already init()ed.');
       return;
     }
 
@@ -92,7 +94,7 @@ const SplunkRum = {
         throw new Error('Not using https is unsafe, if you want to force it use allowInsecureBeacon option.');
       }
       if (!options.rumAuth) {
-        console.log('rumAuth will be required in the future');
+        diag.warn('rumAuth will be required in the future');
       }
     }
 
@@ -105,7 +107,6 @@ const SplunkRum = {
     const pluginDefaults = { ignoreUrls, enabled: false };
     
     const provider = new SplunkWebTracerProvider({
-      logLevel: options.debug ? DiagLogLevel.DEBUG : DiagLogLevel.ERROR,
       app,
       instanceId,
       globalAttributes: {
@@ -165,7 +166,7 @@ const SplunkRum = {
     }
 
     this.inited = true;
-    console.log('SplunkRum.init() complete');
+    diag.info('SplunkRum.init() complete');
   },
 
   deinit() {
@@ -177,6 +178,7 @@ const SplunkRum = {
     
     this.provider.shutdown();
     delete this.provider;
+    diag.disable();
 
     this.inited = false;
   },

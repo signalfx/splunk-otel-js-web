@@ -17,6 +17,7 @@ limitations under the License.
 import { WebTracerProvider } from '@opentelemetry/web';
 import { getRumSessionId } from './session';
 import { version as SplunkRumVersion } from '../package.json';
+import { propagation, context, trace } from '@opentelemetry/api';
 
 export class SplunkWebTracerProvider extends WebTracerProvider {
   constructor(config) {
@@ -52,5 +53,15 @@ export class SplunkWebTracerProvider extends WebTracerProvider {
     } else {
       this._globalAttributes = {}; 
     }
+  }
+
+  shutdown() {
+    // TODO: upstream
+    // note: BasicTracerProvider registers the propagator given to it in config
+    // if the global propagator is the same as the one we registered, then we should deregister it
+    propagation.disable();
+    context.disable();
+    trace.disable();
+    super.shutdown();
   }
 }

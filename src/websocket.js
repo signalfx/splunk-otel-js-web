@@ -148,7 +148,6 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase {
   }
 
   endSpanExceptionally(span, err) {
-    console.log('endSpanExceptionally');
     span.setAttribute('error', true);
     span.setAttribute('error.message', err.message);
     span.setAttribute('error.object', err.name ?  err.name : err.constructor && err.constructor.name ? err.constructor.name : 'Error');

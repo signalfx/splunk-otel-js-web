@@ -7,7 +7,7 @@ import { WebTracerProvider } from "@opentelemetry/web";
 type SplunkUserInteractionInstrumentationConfig = InstrumentationConfig & {
   events?: {
     [type: string]: boolean;
-  }; 
+  };
 };
 type PostDocLoadResourceObserverConfig = InstrumentationConfig & {
   allowedInitiatorTypes?: string[];
@@ -32,6 +32,7 @@ interface SplunkOtelWebOptionsInstrumentations {
   webvitals?:    boolean;
   xhr?:          boolean | XMLHttpRequestInstrumentationConfig;
 }
+export const INSTRUMENTATIONS_ALL_DISABLED: SplunkOtelWebOptionsInstrumentations;
 
 interface SplunkOtelWebOptions {
   /** Allows http beacon urls */
@@ -91,5 +92,3 @@ type SplunkOtelWeb = {
 
 declare const SplunkOtelWebSingleton: SplunkOtelWeb;
 export default SplunkOtelWebSingleton;
-
-export const 
