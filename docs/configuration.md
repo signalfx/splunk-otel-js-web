@@ -77,4 +77,4 @@ SplunkRum.init({
     websockets: true,
   },
 });
-```
+````
