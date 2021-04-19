@@ -83,7 +83,7 @@ const SplunkRum = {
     });
 
     if (this.inited) {
-      diag.warn('SplunkRum already init()ed.');
+      diag.error('SplunkRum already init()ed.');
       return;
     }
 
@@ -105,7 +105,7 @@ const SplunkRum = {
     // enabled: false prevents registerInstrumentations from enabling instrumentations in constructor
     // they will be enabled in registerInstrumentations
     const pluginDefaults = { ignoreUrls, enabled: false };
-    
+
     const provider = new SplunkWebTracerProvider({
       app,
       instanceId,
@@ -132,7 +132,7 @@ const SplunkRum = {
       const exporter = buildExporter(options);
       const batchSpanProcessor = new BatchSpanProcessor(exporter, {
         scheduledDelayMillis: options.bufferTimeout,
-        maxExportBatchSize: options.bufferSize, 
+        maxExportBatchSize: options.bufferSize,
         maxQueueSize: 2 * options.bufferSize,
       });
       window.addEventListener('visibilitychange', function() {
@@ -148,7 +148,7 @@ const SplunkRum = {
     if (options.debug) {
       provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
     }
-    
+
     provider.register();
     this.provider = provider;
 
@@ -175,7 +175,7 @@ const SplunkRum = {
     }
     this._deregisterInstrumentations();
     this._deregisterInstrumentations = NOOP;
-    
+
     this.provider.shutdown();
     delete this.provider;
     diag.disable();
