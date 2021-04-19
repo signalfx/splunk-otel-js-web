@@ -17,8 +17,16 @@ jobs:
           ref: ${{ github.ref }}
       - uses: actions/setup-node@v2
         with:
-          node-version: '12'
-      - run: npm install
+          node-version: '14'
+      - name: Cache Dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+            node_modules
+            package-lock.json
+            packages/*/node_modules
+          key: ${{ runner.os }}-${{ hashFiles('**/package.json') }}
+      - run: npm ci
       - run: npm run lint
 
       - name: Check if package.json version matches the tag

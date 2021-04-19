@@ -8,6 +8,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v1
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14'
       - name: Cache Dependencies
         uses: actions/cache@v2
         with:
@@ -16,8 +19,8 @@ jobs:
             package-lock.json
             packages/*/node_modules
           key: ${{ runner.os }}-${{ hashFiles('**/package.json') }}
-      - run: npm install
-      - name: Lint code 
+      - run: npm ci
+      - name: Lint code
         run: npm run lint
       - name: Lint docs
         run: npm run lint:markdown
@@ -40,6 +43,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v1
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14'
       - name: Cache Dependencies
         uses: actions/cache@v2
         with:
@@ -48,7 +54,7 @@ jobs:
             package-lock.json
             packages/*/node_modules
           key: ${{ runner.os }}-${{ hashFiles('**/package.json') }}
-      - run: npm install
+      - run: npm ci
       - run: npm run dist
       - name: Run integration tests in Browserstack
         run: node ./integration-tests/utils/browserstack.runner.js -e ${{ matrix.browser }} -c ./integration-tests/utils/browserstack.conf.js
@@ -63,6 +69,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v1
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14'
       - name: Cache Dependencies
         uses: actions/cache@v2
         with:
@@ -71,7 +80,7 @@ jobs:
             package-lock.json
             packages/*/node_modules
           key: ${{ runner.os }}-${{ hashFiles('**/package.json') }}
-      - run: npm install
+      - run: npm ci
       - run: npm run dist
       - name: Local integration tests using Headless Chrome
         run: npm run test:integration:local:${{ matrix.browser }}:_execute
