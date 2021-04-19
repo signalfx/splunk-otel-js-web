@@ -24,7 +24,7 @@ By default, the following error sources are captured:
 
 All data and errors captured are reported to Splunk RUM.
 
-> :construction: This project is currently in **BETA**.
+> :construction: This project is currently in **BETA**. It is **officially supported** by Splunk. However, breaking changes **MAY** be introduced.
 
 ## Getting Started
 
