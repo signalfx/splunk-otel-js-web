@@ -22,6 +22,7 @@ For example:
 </script>
 ```
 
+If you don't yet have a backend where to send data to you can set `debug: true` and see the created spans in console.
 Please read [Installation.md](./docs/Installation.md) for more info on different installation options.
 
 
