@@ -25,7 +25,7 @@ module.exports = {
   },
   'extends': 'eslint:recommended',
   'parserOptions': {
-    'ecmaVersion': 6,
+    'ecmaVersion': 2020,
     'sourceType': 'module'
   },
   'rules': {
@@ -93,9 +93,6 @@ module.exports = {
   'overrides': [
     {
       'files': ['src/**/*.js'],
-      'parserOptions': {
-        'ecmaVersion': 2018,
-      },
       'env': {
         'browser': true,
       },
@@ -106,15 +103,9 @@ module.exports = {
         'node': true,
         'browser': true,
       },
-      'parserOptions': {
-        'ecmaVersion': 2018
-      },
     },
     {
       'files': ['test/**/*.js'],
-      'parserOptions': {
-        'ecmaVersion': 2018,
-      },
       'env': {
         'browser': true,
         'node': true,
@@ -122,9 +113,6 @@ module.exports = {
     },
     {
       'files': ['examples/**/*.js'],
-      'parserOptions': {
-        'ecmaVersion': 2018
-      },
       rules: {
         'header/header': 'off',
       },
