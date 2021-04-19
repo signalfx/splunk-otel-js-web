@@ -34,7 +34,7 @@ Please read [Installation.md](./docs/Installation.md) for more info on different
 * [Data model](./docs/DataModel.md)
 * [Instrumentations](./docs/Instrumentations.md)
 * [Collecting errors](./docs/Errors.md)
-* [Manual instrumnetation](./docs/ManualInstrumentation.md)
+* [Manual instrumentation](./docs/ManualInstrumentation.md)
 * [Exporters](./docs/Exporters.md)
 * [Context propagation](./docs/ContextPropagation.md)
 * [Data sending](./docs/DataSending.md)
