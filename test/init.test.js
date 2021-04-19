@@ -160,11 +160,11 @@ describe('creating spans is possible', () => {
     const tracer = SplunkRum.provider.getTracer('test');
     const span = tracer.startSpan('testSpan');
     context.with(setSpan(context.active(), span), () => {
-      assert.ok(getSpan(context.active()) === span);
-      assert.ok(!!span.attributes['splunk.rumSessionId']);
-      assert.ok(!!span.attributes['splunk.rumVersion']);
-      assert.ok(!!span.attributes['location.href']);
-      assert.ok(!!span.attributes['splunk.scriptInstance']);
+      assert.deepStrictEqual(getSpan(context.active()), span);
+      assert.ok(span.attributes['splunk.rumSessionId'], 'Checking splunk.rumSessionId');
+      assert.ok(span.attributes['splunk.rumVersion'], 'Checking splunk.rumVersion');
+      assert.ok(span.attributes['location.href'], 'Checking location.href');
+      assert.ok(span.attributes['splunk.scriptInstance'], 'Checking splunk.scriptInstance');
       assert.strictEqual(span.attributes['app'], 'my-app');
       assert.strictEqual(span.attributes['environment'], 'my-env');
       assert.strictEqual(span.attributes.customerType, 'GOLD');

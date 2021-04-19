@@ -17,6 +17,7 @@ limitations under the License.
 const json = require('@rollup/plugin-json');
 const istanbulrollup = require('rollup-plugin-istanbul');
 const rollupPolyfills = require('rollup-plugin-node-polyfills');
+const typescript2 = require('rollup-plugin-typescript2');
 
 const {
   nodeResolvePlugin, commonjsPlugin,
@@ -107,10 +108,16 @@ module.exports = function (config) {
       plugins: [
         json(),
         nodeResolvePlugin,
+        typescript2(),
         commonjsPlugin,
         rollupPolyfills(),
         istanbulrollup({
-          exclude: ['deps/**', /node_modules/],
+          exclude: [
+            /node_modules/,
+            'karma.conf.js',
+            'rollup.shared.js',
+            'dist/**',
+          ],
         }),
       ],
       input: 'test/index.js',
