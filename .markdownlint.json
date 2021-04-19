@@ -5,4 +5,5 @@
   "blanks-around-lists": false,
   "blanks-around-headings": false,
   "commands-show-output": false,
+  "no-inline-html": false
 }
