@@ -127,7 +127,7 @@ module.exports = {
     // for debugging flaky tests
     if (imageSpans.length !== 2) {
       console.log('imageSpans.length');
-      console.log(imageSpans.length);
+      console.log(imageSpans);
     }
     await browser.assert.strictEqual(imageSpans.length , 2);
     const docLoadImage = imageSpans.find( span => span.tags['component'] === 'document-load');
