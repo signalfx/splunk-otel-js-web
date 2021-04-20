@@ -1,7 +1,7 @@
-# Splunk distribution of OpenTelemetry JavaScript Browser
+# Splunk distribution of OpenTelemetry JavaScript for Web
 
-The Splunk distribution of [OpenTelemetry JavaScript
-Browser](https://github.com/open-telemetry/opentelemetry-js)
+The Splunk distribution of [OpenTelemetry JavaScript for
+Web](https://github.com/open-telemetry/opentelemetry-js)
 
 > :construction: This project is currently in **BETA**.
 
@@ -22,7 +22,7 @@ For example:
 </script>
 ```
 
-If you don't yet have a backend where to send data to you can set `debug: true` and see the created spans in console.
+If you don't yet have a backend where to send data to you can set `debug: true` and see the created spans in browser console.
 Please read [Installation.md](./docs/Installation.md) for more info on different installation options.
 
 
