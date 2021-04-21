@@ -18,14 +18,12 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: '14'
-      - name: Cache Dependencies
+      - name: Cache dependencies
         uses: actions/cache@v2
         with:
-          path: |
-            node_modules
-            package-lock.json
-            packages/*/node_modules
-          key: ${{ runner.os }}-${{ hashFiles('**/package.json') }}
+          path: ~/.npm
+          key: npm-${{ hashFiles('package-lock.json') }}
+          restore-keys: npm-
       - run: npm ci
       - run: npm run lint
 
