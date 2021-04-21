@@ -8,6 +8,7 @@ on:
 jobs:
   release:
     name: Release
+    environment: production
     runs-on: ubuntu-latest
 
     steps:
@@ -97,3 +98,13 @@ jobs:
           asset_path: ./dist/browser/splunk-otel-web-legacy.js.map
           asset_name: splunk-otel-web-legacy.js.map
           asset_content_type: application/octet-stream
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Release to CDN
+        run: node scripts/release-cdn.mjs
