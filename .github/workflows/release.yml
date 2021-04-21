@@ -111,3 +111,4 @@ jobs:
         env:
           CDN_BUCKET_NAME: ${{ secrets.CDN_BUCKET_NAME }}
           CDN_DISTRIBUTION_ID: ${{ secrets.CDN_DISTRIBUTION_ID }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
