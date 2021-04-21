@@ -25,9 +25,7 @@
     "test:integration:local:headlessFirefox:_execute": "nightwatch -c ./integration-tests/utils/local.conf.js -e headlessFirefox",
     "test:integration:local:safari:_execute": "nightwatch -c ./integration-tests/utils/local.conf.js -e safari",
     "test:integration:_selfSignCerts": "(cd utils && cd certs && openssl req -nodes -new -x509 -keyout server.key -out server.cert)",
-    "test:performance": "node ./performance-tests/runner.js",
-    "release:cdn": "node scripts/release-cdn.mjs --dry-run",
-    "release:cdn:wet": "node scripts/release-cdn.mjs"
+    "test:performance": "node ./performance-tests/runner.js"
   },
   "author": "Splunk Observability Instrumentals Team <ssg-observability-instrumentals-npm@splunk.com>",
   "license": "Apache-2.0",
