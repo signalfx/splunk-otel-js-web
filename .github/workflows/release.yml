@@ -107,7 +107,7 @@ jobs:
           aws-region: us-east-1
 
       - name: Release to CDN
-        run: node scripts/release-cdn.mj
+        run: node scripts/release-cdn.mjs
         env:
           CDN_BUCKET_NAME: ${{ secrets.CDN_BUCKET_NAME }}
           CDN_DISTRIBUTION_ID: ${{ secrets.CDN_DISTRIBUTION_ID }}
