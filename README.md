@@ -1,4 +1,3 @@
----
 <p align="center">
   <strong>
     <a href="./docs/Instsallation.md">Getting Started</a>
@@ -8,12 +7,11 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/signalfx/splunk-otel-java/releases">
+  <a href="https://github.com/signalfx/splunk-otel-js-web/releases">
     <img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/signalfx/splunk-otel-js-web?include_prereleases&style=for-the-badge">
   </a>
   <img alt="Beta" src="https://img.shields.io/badge/status-beta-informational?style=for-the-badge">
 </p>
----
 
 # Splunk distribution of OpenTelemetry JavaScript for Web
 
