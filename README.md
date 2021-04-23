@@ -1,3 +1,4 @@
+---
 <p align="center">
   <strong>
     <a href="./docs/Instsallation.md">Getting Started</a>
@@ -12,7 +13,7 @@
   </a>
   <img alt="Beta" src="https://img.shields.io/badge/status-beta-informational?style=for-the-badge">
 </p>
-
+---
 
 # Splunk distribution of OpenTelemetry JavaScript for Web
 
@@ -50,22 +51,21 @@ The method above is the recommendation to get started with Splunk RUM. This appr
 If you don't yet have a backend where to send data to you can set `debug: true` and see the created spans in browser console.
 Please read [Installation.md](./docs/Installation.md) for more info on different installation options.
 
-
 ## Documentation
 
-* [Installation](./docs/Installation.md)
-* [Configuration](./docs/Configuration.md)
-* [Supported browsers](./docs/SupportedBrowsers.md)
-* [Data model](./docs/DataModel.md)
-* [Instrumentations](./docs/Instrumentations.md)
-* [Collecting errors](./docs/Errors.md)
-* [Manual instrumentation](./docs/ManualInstrumentation.md)
-* [Exporters](./docs/Exporters.md)
-* [Context propagation](./docs/ContextPropagation.md)
-* [Data sending](./docs/DataSending.md)
-* [Cookies](./docs/Cookies.md)
-* [Content security policy](./docs/ContentSecurityPolicy.md)
-* [Redacting PII](./docs/PII.md)
+- [Installation](./docs/Installation.md)
+- [Configuration](./docs/Configuration.md)
+- [Supported browsers](./docs/SupportedBrowsers.md)
+- [Data model](./docs/DataModel.md)
+- [Instrumentations](./docs/Instrumentations.md)
+- [Collecting errors](./docs/Errors.md)
+- [Manual instrumentation](./docs/ManualInstrumentation.md)
+- [Exporters](./docs/Exporters.md)
+- [Context propagation](./docs/ContextPropagation.md)
+- [Data sending](./docs/DataSending.md)
+- [Cookies](./docs/Cookies.md)
+- [Content security policy](./docs/ContentSecurityPolicy.md)
+- [Redacting PII](./docs/PII.md)
 
 ## Open Telemetry version
 
