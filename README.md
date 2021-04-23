@@ -1,6 +1,6 @@
 <p align="center">
   <strong>
-    <a href="./docs/Instsallation.md">Getting Started</a>
+    <a href="./docs/Installation.md">Getting Started</a>
     &nbsp;&nbsp;&bull;&nbsp;&nbsp;
     <a href="./docs/CONTRIBUTING.md">Getting Involved</a>
   </strong>
