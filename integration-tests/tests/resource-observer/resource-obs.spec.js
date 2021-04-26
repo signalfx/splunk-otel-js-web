@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 const { isBrowser } = require('../../utils/helpers');
+const { inspect } = require('util');
 
 module.exports = {
   beforeEach: function(browser) {
@@ -99,7 +100,7 @@ module.exports = {
     // for debugging flaky tests
     if (imageSpans.length !== 0) {
       console.log('imageSpans.length');
-      console.log(imageSpans);
+      console.log(inspect(imageSpans, { depth: 10} ));
     }
 
     await browser.assert.strictEqual(imageSpans.length , 1);
@@ -127,7 +128,7 @@ module.exports = {
     // for debugging flaky tests
     if (imageSpans.length !== 2) {
       console.log('imageSpans.length');
-      console.log(imageSpans);
+      console.log(inspect(imageSpans, { depth: 10} ));
     }
     await browser.assert.strictEqual(imageSpans.length , 2);
     const docLoadImage = imageSpans.find( span => span.tags['component'] === 'document-load');
