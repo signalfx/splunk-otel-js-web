@@ -14,11 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {diag, trace} from '@opentelemetry/api';
-import {isWrapped} from '@opentelemetry/instrumentation';
+import {diag, Span, trace, Tracer} from '@opentelemetry/api';
+import { hrTime } from '@opentelemetry/core';
+import {InstrumentationConfig, isWrapped} from '@opentelemetry/instrumentation';
 import {UserInteractionInstrumentation} from '@opentelemetry/instrumentation-user-interaction';
 
-export const DEFAULT_AUTO_INSTRUMENTED_EVENTS = {
+export type UserInteractionEventsConfig = {
+  [type: string]: boolean;
+};
+
+export const DEFAULT_AUTO_INSTRUMENTED_EVENTS: UserInteractionEventsConfig = {
   // pointer
   click: true,
   dblclick: true,
@@ -41,16 +46,34 @@ export const DEFAULT_AUTO_INSTRUMENTED_EVENTS = {
 };
 
 const ROUTING_INSTRUMENTATION_NAME = 'route';
-const ROUTING_INSTRUMENTATION_VERSION = 1;
+const ROUTING_INSTRUMENTATION_VERSION = '1';
+
+interface SplunkUserInteractionInstrumentationConfig extends InstrumentationConfig {
+  events?: UserInteractionEventsConfig;
+};
 
 export class SplunkUserInteractionInstrumentation extends UserInteractionInstrumentation {
-  constructor(config) {
+  private readonly _autoInstrumentedEvents: UserInteractionEventsConfig;
+  private _routingTracer: Tracer;
+  private __hashChangeHandler: (ev: HashChangeEvent) => void;
+
+  constructor(config: SplunkUserInteractionInstrumentationConfig = {}) {
     super(config);
 
     const { events } = config;
     this._autoInstrumentedEvents = Object.assign({}, DEFAULT_AUTO_INSTRUMENTED_EVENTS, events);
-    
+
     this._routingTracer = trace.getTracer(ROUTING_INSTRUMENTATION_NAME, ROUTING_INSTRUMENTATION_VERSION);
+
+    const _superCreateSpan = (this as any)._createSpan.bind(this);
+    (this as any)._createSpan = (element: HTMLElement | Document, eventName: string, parentSpan: Span) => {
+      // Fix: No span is created when event is captured from document
+      if (element === document) {
+        element = document.documentElement;
+      }
+
+      return _superCreateSpan(element, eventName, parentSpan);
+    }
   }
 
   setTracerProvider(tracerProvider) {
@@ -67,21 +90,13 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
     return !!this._autoInstrumentedEvents[eventType];
   }
 
-  _createSpan(element, eventName, parentSpan) {
-    // Fix: No span is created when event is captured from document
-    if (element === document) {
-      element = document.documentElement;
-    }
-
-    return super._createSpan(element, eventName, parentSpan);
-  }
-
   emitRouteChangeSpan(oldHref) {
-    const span = this._routingTracer.startSpan('routeChange');
+    const now = hrTime();
+    const span = this._routingTracer.startSpan('routeChange', { startTime: now });
     span.setAttribute('component', this.moduleName);
     span.setAttribute('prev.href', oldHref);
     // location.href set with new value by default
-    span.end(span.startTime);
+    span.end(now);
   }
 
   enable() {
@@ -99,7 +114,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
     if (this.getZoneWithPrototype()) {
       super.enable();
     } else {
-      this._zonePatched = false;
+      (this as any)._zonePatched = false;
       if (isWrapped(Node.prototype.addEventListener)) {
         this._unwrap(Node.prototype, 'addEventListener');
         diag.debug('removing previous patch from method addEventListener');
@@ -108,8 +123,8 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
         this._unwrap(Node.prototype, 'removeEventListener');
         diag.debug('removing previous patch from method removeEventListener');
       }
-      this._wrap(Node.prototype, 'addEventListener', this._patchElement());
-      this._wrap(Node.prototype, 'removeEventListener', this._patchRemoveEventListener());
+      this._wrap(Node.prototype, 'addEventListener', (this as any)._patchElement());
+      this._wrap(Node.prototype, 'removeEventListener', (this as any)._patchRemoveEventListener());
 
       this._patchHistoryApi();
     }
@@ -117,7 +132,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 
   disable() {
     // parent unwraps calls to addEventListener so call before us
-    if (this._zonePatched) {
+    if ((this as any)._zonePatched) {
       super.disable();
     } else {
       if (isWrapped(Node.prototype.addEventListener)) {

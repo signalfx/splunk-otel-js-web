@@ -14,7 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-function addMatchToSpan(match, span) {
+import { Span } from "@opentelemetry/api";
+import { PerformanceEntries } from "@opentelemetry/web";
+
+function addMatchToSpan(match: RegExpMatchArray, span: Span) {
   if (match && match[1] && match[2]) {
     const traceId = match[1];
     const spanId = match[2];
@@ -26,7 +29,7 @@ function addMatchToSpan(match, span) {
 
 const HeaderRegex = new RegExp('traceparent;desc="00-([0-9a-f]{32})-([0-9a-f]{16})-01"');
 
-export function captureTraceParent(serverTimingValues, span) {
+export function captureTraceParent(serverTimingValues: string, span: Span) {
   // getResponseHeader returns multiple Server-Timing headers concat with ', ' (note space)
   // fetch returns concat with ','.
   // split the difference
@@ -39,11 +42,12 @@ export function captureTraceParent(serverTimingValues, span) {
 
 const ValueRegex = new RegExp('00-([0-9a-f]{32})-([0-9a-f]{16})-01');
 
-export function captureTraceParentFromPerformanceEntries(entries, span) {
-  if (!entries.serverTiming) {
+// TODO: fix types for ServerTiming from Performance
+export function captureTraceParentFromPerformanceEntries(entries: PerformanceEntries, span) {
+  if (!(entries as any).serverTiming) {
     return;
   }
-  for(const st of entries.serverTiming) {
+  for(const st of (entries as any).serverTiming) {
     if (st.name === 'traceparent' && st.description) {
       const match = st.description.match(ValueRegex);
       addMatchToSpan(match, span);

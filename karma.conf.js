@@ -17,7 +17,7 @@ limitations under the License.
 const json = require('@rollup/plugin-json');
 const istanbulrollup = require('rollup-plugin-istanbul');
 const rollupPolyfills = require('rollup-plugin-node-polyfills');
-const typescript2 = require('rollup-plugin-typescript2');
+const typescript = require('@rollup/plugin-typescript');
 
 const {
   nodeResolvePlugin, commonjsPlugin,
@@ -108,7 +108,7 @@ module.exports = function (config) {
       plugins: [
         json(),
         nodeResolvePlugin,
-        typescript2(),
+        typescript(),
         commonjsPlugin,
         rollupPolyfills(),
         istanbulrollup({

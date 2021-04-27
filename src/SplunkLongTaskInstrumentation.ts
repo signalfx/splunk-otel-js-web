@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import { hrTime } from '@opentelemetry/core';
-import { InstrumentationBase } from '@opentelemetry/instrumentation';
+import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation';
 
 import { version } from '../package.json';
 
@@ -23,12 +23,16 @@ const LONGTASK_PERFORMANCE_TYPE = 'longtask';
 const MODULE_NAME = 'splunk-longtask';
 
 export class SplunkLongTaskInstrumentation extends InstrumentationBase {
-  constructor(config = {}) {
+  private _longtaskObserver: PerformanceObserver | undefined;
+
+  constructor(config: InstrumentationConfig = {}) {
     super(MODULE_NAME, version, Object.assign({}, config));
   }
 
+  init() {}
+
   enable() {
-    if (!this._isSupported()) {
+    if (!this.isSupported()) {
       return;
     }
 
@@ -39,15 +43,15 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
   }
 
   disable() {
-    if (!this._isSupported()) {
+    if (!this.isSupported()) {
       return;
     }
 
     this._longtaskObserver.disconnect();
   }
 
-  _createSpanFromEntry(entry) {
-    const span = this._tracer.startSpan(
+  _createSpanFromEntry(entry: PerformanceEntry) {
+    const span = this.tracer.startSpan(
       LONGTASK_PERFORMANCE_TYPE,
       {
         startTime: hrTime(entry.startTime),
@@ -58,9 +62,10 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
     span.setAttribute('longtask.entry_type', entry.entryType);
     span.setAttribute('longtask.duration', entry.duration);
 
-    if (Array.isArray(entry.attribution)) {
-      entry.attribution.forEach((attribution, index) => {
-        const prefix = entry.attribution > 1 ? `longtask.attribution[${index}]` : 'longtask.attribution';
+    const attribution = (entry as any).attribution;
+    if (Array.isArray(attribution)) {
+      attribution.forEach((attribution, index) => {
+        const prefix = attribution > 1 ? `longtask.attribution[${index}]` : 'longtask.attribution';
         span.setAttribute(`${prefix}.name`, attribution.name);
         span.setAttribute(`${prefix}.entry_type`, attribution.entryType);
         span.setAttribute(`${prefix}.start_time`, attribution.startTime);
@@ -75,7 +80,8 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
     span.end();
   }
 
-  _isSupported() {
+  // TODO: change name, _isSupported is taken by parent
+  private isSupported() {
     // note: PerformanceObserver.supportedEntryTypes has better browser support than LongTask
     const supportedEntryTypes = window.PerformanceObserver && PerformanceObserver.supportedEntryTypes;
     const effectiveEntryTypes = supportedEntryTypes || [];

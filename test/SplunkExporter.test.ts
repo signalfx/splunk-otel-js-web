@@ -60,14 +60,13 @@ describe('SplunkExporter', () => {
   it('uses Beacon API if available', () => {
     exporter = new SplunkExporter({
       beaconUrl: 'https://domain1',
-      xhrSenderMock: xhrSenderMock,
+      xhrSender: xhrSenderMock,
     });
 
     const dummySpan = buildDummySpan();
     exporter.export([dummySpan], () => {});
 
     expect(beaconSenderMock.args[0][0]).to.eq('https://domain1');
-
     const sentSpan = JSON.parse(beaconSenderMock.args[0][1])[0];
     expect(sentSpan.name).to.equal('<name>');
     expect(sentSpan.id).to.equal('0001');

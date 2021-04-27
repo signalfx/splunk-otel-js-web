@@ -23,6 +23,7 @@ import { expect } from 'chai';
 
 function doesBeaconUrlEndWith(suffix) {
   const sps = SplunkRum.provider.getActiveSpanProcessor()._spanProcessors;
+  // TODO: refactor to make beaconUrl field private
   const beaconUrl = sps[0]._exporter.beaconUrl;
   assert.ok(beaconUrl.endsWith(suffix), `Checking beaconUrl if (${beaconUrl}) ends with ${suffix}`);
 }
@@ -34,15 +35,15 @@ describe('test init', () => {
     it('should not be inited', () => {
       try {
         SplunkRum.init({noBeaconUrl: true});
-        assert.ok(false); // should not get here
+        assert.ok(false, 'Initializer finished.'); // should not get here
       } catch (expected) {
-        assert.ok(SplunkRum.inited === false);
+        assert.ok(SplunkRum.inited === false, 'SplunkRum should not be inited.');
       }
     });
   });
   describe('should enforce secure beacon url', () => {
     it('should not be inited with http', () => {
-      try {        
+      try {
         SplunkRum.init({beaconUrl: 'http://127.0.0.1:8888/insecure'});
         assert.ok(false);
       } catch(e) {
@@ -59,7 +60,7 @@ describe('test init', () => {
     it('can be forced via allowInsecureBeacon option', () => {
       const path = '/insecure';
       SplunkRum.init({beaconUrl: `http://127.0.0.1:8888/${path}`, allowInsecureBeacon: true});
-      assert.ok(SplunkRum.inited);      
+      assert.ok(SplunkRum.inited);
       doesBeaconUrlEndWith(path);
       SplunkRum.deinit();
     });
@@ -240,10 +241,10 @@ describe('test fetch', () => {
         const fetchSpan = capturer.spans.find(span => span.attributes.component === 'fetch');
         assert.ok(fetchSpan, 'Check if fetch span is present.');
         assert.strictEqual(fetchSpan.name, 'HTTP GET');
-        
+
         // note: temporarily disabled because of instabilities in OTel's code
         // assert.ok(fetchSpan.attributes['http.response_content_length'] > 0, 'Checking response_content_length.');
-        
+
         assert.strictEqual(fetchSpan.attributes['link.spanId'], '0000000000000002');
         assert.strictEqual(fetchSpan.attributes['http.url'], location.href);
         done();

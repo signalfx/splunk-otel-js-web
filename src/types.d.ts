@@ -1,15 +1,16 @@
+
 import { SpanAttributes, Span } from "@opentelemetry/api";
 import { InstrumentationConfig } from "@opentelemetry/instrumentation";
 import { FetchInstrumentationConfig } from "@opentelemetry/instrumentation-fetch";
 import { XMLHttpRequestInstrumentationConfig } from "@opentelemetry/instrumentation-xml-http-request";
-import { WebTracerProvider } from "@opentelemetry/web";
+import { SplunkWebTracerProvider } from "./SplunkWebTracerProvider";
 
 type SplunkUserInteractionInstrumentationConfig = InstrumentationConfig & {
   events?: {
     [type: string]: boolean;
   };
 };
-type PostDocLoadResourceObserverConfig = InstrumentationConfig & {
+type SplunkPostDocLoadResourceInstrumentationConfig = InstrumentationConfig & {
   allowedInitiatorTypes?: string[];
 };
 
@@ -27,7 +28,7 @@ interface SplunkOtelWebOptionsInstrumentations {
   fetch?:        boolean | FetchInstrumentationConfig;
   interactions?: boolean | SplunkUserInteractionInstrumentationConfig;
   longtask?:     boolean | InstrumentationConfig;
-  postload?:     boolean | PostDocLoadResourceObserverConfig;
+  postload?:     boolean | SplunkPostDocLoadResourceInstrumentationConfig;
   websocket?:    boolean | InstrumentationConfig;
   webvitals?:    boolean;
   xhr?:          boolean | XMLHttpRequestInstrumentationConfig;
@@ -50,8 +51,8 @@ interface SplunkOtelWebOptions {
   /** Turns on/off internal debug logging */
   debug?: boolean;
 
-  /** 
-   * Sets a value for the `environment` attribute (persists through calls to `setGlobalAttributes()`) 
+  /**
+   * Sets a value for the `environment` attribute (persists through calls to `setGlobalAttributes()`)
    * */
   environment?: string;
 
@@ -63,8 +64,8 @@ interface SplunkOtelWebOptions {
     [attributeKey: string]: string;
   };
 
-  /** 
-   * Applies for XHR, Fetch and Websocket URLs. URLs that partially match any regex in ignoreUrls will not be traced. 
+  /**
+   * Applies for XHR, Fetch and Websocket URLs. URLs that partially match any regex in ignoreUrls will not be traced.
    * In addition, URLs that are _exact matches_ of strings in ignoreUrls will also not be traced.
    * */
   ignoreUrls?: Array<String | RegExp>;
@@ -72,23 +73,16 @@ interface SplunkOtelWebOptions {
   /** Configuration for instrumentation modules. */
   instrumentations?: SplunkOtelWebOptionsInstrumentations;
 
-  /** 
-   * Publicly-visible `rumAuth` value.  Please do not paste any other access token or auth value into here, as this 
-   * will be visible to every user of your app 
+  /**
+   * Publicly-visible `rumAuth` value.  Please do not paste any other access token or auth value into here, as this
+   * will be visible to every user of your app
    * */
   rumAuth: string;
 }
 
-export class SplunkWebTracerProvider extends WebTracerProvider {
-  setGlobalAttributes(attributes: SpanAttributes): void;
-}
-
-type SplunkOtelWeb = {
+type SplunkOtelWebType = {
   deinit: () => void;
   init: (options: SplunkOtelWebOptions) => void;
   provider?: SplunkWebTracerProvider;
   setGlobalAttributes: (attributes: SpanAttributes) => void;
 }
-
-declare const SplunkOtelWebSingleton: SplunkOtelWeb;
-export default SplunkOtelWebSingleton;

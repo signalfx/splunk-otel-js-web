@@ -15,8 +15,8 @@ limitations under the License.
 */
 
 if( typeof Symbol !== 'function') {
-  const noop = function(){}; 
-  window.SplunkRum = { 
+  const noop = function(){};
+  window.SplunkRum = {
     init: noop,
     error: noop,
     setGlobalAttributes: noop

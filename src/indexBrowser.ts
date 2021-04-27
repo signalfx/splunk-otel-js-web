@@ -14,6 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import SplunkRum, { } from './index';
+
+declare global {
+  interface Window {
+    SplunkRum: any;
+  }
+}
+
 import './throwIfUnsupportedBrowser';
-import SplunkRum from './index';
 export default SplunkRum;

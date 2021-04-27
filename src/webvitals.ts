@@ -14,21 +14,26 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {getCLS,getLCP,getFID} from 'web-vitals';
+import { TracerProvider, Tracer } from '@opentelemetry/api';
+import { hrTime } from '@opentelemetry/core';
+import { getCLS, getLCP, getFID, Metric} from 'web-vitals';
 const reported = {};
 
-function report(tracer, name, metric) {
+function report(tracer: Tracer, name: string, metric: Metric) {
   if (reported[name]) {
     return;
   }
   reported[name] = true;
+
   const value = metric.value;
-  const span = tracer.startSpan('webvitals');
+  const now = hrTime();
+
+  const span = tracer.startSpan('webvitals', { startTime: now });
   span.setAttribute(name, value);
-  span.end(span.startTime);
+  span.end(now);
 }
 
-export function initWebVitals(provider) {
+export function initWebVitals(provider: TracerProvider) {
   const tracer = provider.getTracer('webvitals');
   // CLS is defined as being sent more than once, easier to just ensure that everything is sent just on the first occurence.
   getFID((metric) => {
