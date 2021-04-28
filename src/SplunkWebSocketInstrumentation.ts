@@ -16,7 +16,7 @@ limitations under the License.
 
 // FIXME convert into otel-js-contrib Plugin and upstream
 import shimmer from 'shimmer';
-import {SpanKind, setSpan, context} from '@opentelemetry/api';
+import {SpanKind, setSpan, context, Span} from '@opentelemetry/api';
 import {isUrlIgnored} from '@opentelemetry/core';
 import { version } from '../package.json';
 
@@ -29,7 +29,7 @@ function size(o) {
 }
 
 interface SplunkWebSocketInstrumentationConfig extends InstrumentationConfig {
-  ignoreUrls?: string[];
+  ignoreUrls?: (string|RegExp)[];
 }
 
 export class SplunkWebSocketInstrumentation extends InstrumentationBase {
@@ -64,12 +64,12 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase {
       try {
         retVal = origSend.apply(ws, arguments);
       } catch (err) {
-        span.recordException(err);
+        instrumentation.endSpanExceptionally(span, err);
         throw err;
       }
 
       if (retVal === false) { // Gecko 6.0
-        span.setAttribute('error', true);
+        instrumentation.endSpanExceptionally(span, new Error('Failed to send frame.'));
       }
       span.end();
       return retVal;
@@ -195,8 +195,7 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase {
           try {
             return new original(url, protocols);
           } catch (constructorException) {
-            connectSpan.recordException(constructorException);
-            connectSpan.end()
+            instrumentation.endSpanExceptionally(connectSpan, constructorException);
             throw constructorException;
           }
         }
@@ -205,10 +204,9 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase {
         ws.addEventListener('open', function () {
           connectSpan.end();
         });
-        ws.addEventListener('error', function () {
+        ws.addEventListener('error', function (event: ErrorEvent) {
           if (connectSpan.isRecording()) {
-            connectSpan.recordException(new Error('Could not connect.'));
-            connectSpan.end();
+            instrumentation.endSpanExceptionally(connectSpan, new Error(event.error || event.message || 'Could not connect.'));
           } else {
             // error occured after connect... report that
             instrumentation.startSpan(ws, 'error', SpanKind.CLIENT).end();
@@ -223,5 +221,13 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase {
 
   public disable() {
     shimmer.unwrap(window, 'WebSocket');
+  }
+
+  protected endSpanExceptionally(span: Span, err: Error) {
+    span.setAttribute('error', true);
+    span.setAttribute('error.message', err.message);
+    span.setAttribute('error.object', err.name ?  err.name : err.constructor && err.constructor.name ? err.constructor.name : 'Error');
+    //TODO Should we do span.setStatus( someErroCode ) ? Currently all failed spans are CanonicalCode.OK
+    span.end();
   }
 }

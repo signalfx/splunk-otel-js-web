@@ -16,7 +16,7 @@ limitations under the License.
 
 import './polyfill-safari10';
 import {InstrumentationConfig, registerInstrumentations} from '@opentelemetry/instrumentation';
-import {ConsoleSpanExporter, SimpleSpanProcessor, BatchSpanProcessor, ReadableSpan} from '@opentelemetry/tracing';
+import {ConsoleSpanExporter, SimpleSpanProcessor, BatchSpanProcessor, ReadableSpan, SpanExporter} from '@opentelemetry/tracing';
 import {diag, DiagConsoleLogger, DiagLogLevel, Span, SpanAttributes} from '@opentelemetry/api';
 import { SplunkDocumentLoadInstrumentation } from './SplunkDocumentLoadInstrumentation';
 import { SplunkXhrPlugin } from './SplunkXhrPlugin';
@@ -26,10 +26,10 @@ import {
   DEFAULT_AUTO_INSTRUMENTED_EVENTS,
   UserInteractionEventsConfig,
 } from './SplunkUserInteractionInstrumentation';
-import {SplunkExporter} from './SplunkExporter';
-import {captureErrors} from './errors';
+import {SplunkExporter, SplunkExporterConfig} from './SplunkExporter';
+import { ERROR_INSTRUMENTATION_NAME, SplunkErrorInstrumentation } from './SplunkErrorInstrumentation';
 import {generateId, getPluginConfig} from './utils';
-import {getRumSessionId, initSessionTracking} from './session';
+import { initSessionTracking } from './session';
 import { SplunkWebSocketInstrumentation } from './SplunkWebSocketInstrumentation';
 import { initWebVitals } from './webvitals';
 import { SplunkLongTaskInstrumentation } from './SplunkLongTaskInstrumentation';
@@ -108,11 +108,11 @@ export interface SplunkOtelWebConfig {
 }
 
 interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
-  bufferSize: number;
-  bufferTimeout: number;
+  bufferSize?: number;
+  bufferTimeout?: number;
 
-  exporter: SplunkOtelWebExporterOptions & {
-    _factory: (SplunkExporterConfig) => SplunkExporter;
+  exporter?: SplunkOtelWebExporterOptions & {
+    _factory?: (config: SplunkExporterConfig) => SpanExporter;
   };
 }
 
@@ -130,19 +130,22 @@ const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
 };
 
 const INSTRUMENTATIONS = [
-  {Instrument: SplunkDocumentLoadInstrumentation, confKey: 'document'},
-  {Instrument: SplunkXhrPlugin, confKey: 'xhr'},
-  {Instrument: SplunkUserInteractionInstrumentation, confKey: 'interactions'},
-  {Instrument: SplunkPostDocLoadResourceInstrumentation, confKey: 'postload'},
-  {Instrument: SplunkFetchInstrumentation, confKey: 'fetch'},
+  {Instrument: SplunkDocumentLoadInstrumentation, confKey: 'document', disable: false},
+  {Instrument: SplunkXhrPlugin, confKey: 'xhr', disable: false},
+  {Instrument: SplunkUserInteractionInstrumentation, confKey: 'interactions', disable: false},
+  {Instrument: SplunkPostDocLoadResourceInstrumentation, confKey: 'postload', disable: false},
+  {Instrument: SplunkFetchInstrumentation, confKey: 'fetch', disable: false},
   {Instrument: SplunkWebSocketInstrumentation, confKey: 'websocket', disable: true},
-  {Instrument: SplunkLongTaskInstrumentation, confKey: 'longtask'},
-];
+  {Instrument: SplunkLongTaskInstrumentation, confKey: 'longtask', disable: false},
+  {Instrument: SplunkErrorInstrumentation, confKey: ERROR_INSTRUMENTATION_NAME, disable: false},
+] as const;
 
 export const INSTRUMENTATIONS_ALL_DISABLED: SplunkOtelWebOptionsInstrumentations = INSTRUMENTATIONS
   .map(instrumentation => instrumentation.confKey)
-  .concat(['webvitals', 'errors'])
-  .reduce((acc, key) => { acc[key] = false; return acc; }, {});
+  .reduce(
+    (acc, key) => { acc[key] = false; return acc; },
+    { 'webvitals': false },
+  );
 
 const NOOP = () => {};
 
@@ -156,7 +159,14 @@ function buildExporter(options) {
 
 interface SplunkOtelWebType {
   deinit: () => void;
+  error: (...args: Array<any>) => void;
   init: (options: SplunkOtelWebConfig) => void;
+
+  /**
+   * Allows experimental options to be passed. No versioning guarantees are given for this method.
+   */
+  _internalInit: (options: SplunkOtelWebConfigInternal) => void;
+
   provider?: SplunkWebTracerProvider;
   setGlobalAttributes: (attributes: SpanAttributes) => void;
   DEFAULT_AUTO_INSTRUMENTED_EVENTS: UserInteractionEventsConfig;
@@ -165,11 +175,16 @@ interface SplunkOtelWebType {
 
 let inited = false;
 let _deregisterInstrumentations = NOOP;
+let _errorInstrumentation: SplunkErrorInstrumentation | undefined;
 const SplunkRum: SplunkOtelWebType = {
   DEFAULT_AUTO_INSTRUMENTED_EVENTS,
 
   get inited(): boolean {
     return inited;
+  },
+
+  _internalInit: function (options: SplunkOtelWebConfigInternal) {
+    SplunkRum.init(options);
   },
 
   init: function (options) {
@@ -221,7 +236,11 @@ const SplunkRum: SplunkOtelWebType = {
     const instrumentations = INSTRUMENTATIONS.map(({Instrument, confKey, disable}) => {
       const pluginConf = getPluginConfig(processedOptions.instrumentations[confKey], pluginDefaults, disable);
       if (pluginConf) {
-        return new Instrument(pluginConf);
+        const instrumentation = new Instrument(pluginConf);
+        if (confKey === ERROR_INSTRUMENTATION_NAME && instrumentation instanceof SplunkErrorInstrumentation) {
+          _errorInstrumentation = instrumentation;
+        }
+        return instrumentation;
       }
 
       return null;
@@ -256,14 +275,6 @@ const SplunkRum: SplunkOtelWebType = {
     provider.register();
     this.provider = provider;
 
-    const errorsConf = getPluginConfig(processedOptions.instrumentations.errors);
-    if (errorsConf !== false) {
-      captureErrors(this, provider); // also registers SplunkRum.error
-    } else {
-      // stub out error reporting method to not break apps that call it
-      this.error = function() { };
-    }
-
     const vitalsConf = getPluginConfig(processedOptions.instrumentations.webvitals);
     if (vitalsConf !== false) {
       initWebVitals(provider);
@@ -290,6 +301,15 @@ const SplunkRum: SplunkOtelWebType = {
   setGlobalAttributes(attributes) {
     this.provider?.setGlobalAttributes(attributes);
   },
+
+  error(...args) {
+    if (!_errorInstrumentation) {
+      diag.error('Error was reported, but error instrumentation is disabled.');
+      return;
+    }
+
+    _errorInstrumentation.report('SplunkRum.error', args);
+  }
 };
 
 export default SplunkRum;

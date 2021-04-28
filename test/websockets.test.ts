@@ -102,7 +102,7 @@ describe('can produce websocket events', () => {
         assert.strictEqual('ws://127.0.0.1:31874/', wsSpans[0].attributes['http.url']);
         assert.strictEqual('websocket', wsSpans[0].attributes.component);
         assert.strictEqual('connect', wsSpans[0].name);
-        assert.strictEqual('exception', wsSpans[0].events[0].name);
+        assert.strictEqual(true, wsSpans[0].attributes.error);
         done();
       }, 100);
     });
@@ -131,7 +131,7 @@ describe('can produce websocket events', () => {
       assert.strictEqual('invalid url format', capturer.spans[0].attributes['http.url']);
       assert.strictEqual('websocket', capturer.spans[0].attributes.component);
       assert.strictEqual('connect', capturer.spans[0].name);
-      assert.strictEqual('exception', capturer.spans[0].events[0].name);
+      assert.strictEqual(true, capturer.spans[0].attributes.error);
     }
   });
 });

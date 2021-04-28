@@ -52,7 +52,7 @@ export function limitLen(s: string, cap: number) {
 export function getPluginConfig<T>(
   value: T | boolean | undefined,
   defaults?: T,
-  defaultDisable?: T | false,
+  defaultDisable?: T | boolean,
 ): false | T {
   if (value === false) {
     return value;

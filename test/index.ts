@@ -19,7 +19,6 @@ import 'mocha';
 
 // Manually maintain this list, as old webpack require-based mechanism isn't working under rollup
 import './init.test';
-import './patchchecks.test';
 import './servertiming.test';
 import './utils.test';
 import './session.test';

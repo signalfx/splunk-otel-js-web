@@ -19,6 +19,7 @@ import { getElementXPath } from '@opentelemetry/web';
 import {limitLen} from './utils';
 import { Span, Tracer } from '@opentelemetry/api';
 import { hrTime } from '@opentelemetry/core';
+import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation';
 
 // FIXME take timestamps from events?
 
@@ -62,15 +63,28 @@ function addTopLevelDocumentErrorListener(reporter) {
   }, {capture: true});
 }
 
+export const ERROR_INSTRUMENTATION_NAME = 'errors';
+export const ERROR_INSTRUMENTATION_VERSION = '1';
 
-class ErrorReporter {
-  private readonly tracer: Tracer;
-
-  constructor(tracer: Tracer) {
-    this.tracer = tracer;
+export class SplunkErrorInstrumentation extends InstrumentationBase {
+  constructor(config: InstrumentationConfig) {
+    super(ERROR_INSTRUMENTATION_NAME, ERROR_INSTRUMENTATION_VERSION, config);
   }
 
-  reportError(source: string, err: Error) {
+  init() {}
+
+  enable() {
+    captureError(this);
+    captureConsoleError(this);
+    registerUnhandledRejectionListener(this);
+    addTopLevelDocumentErrorListener(this);
+  }
+
+  disable() {
+    // TODO: implement
+  }
+
+  protected reportError(source: string, err: Error): void {
     const msg = err.message || err.toString();
     if (!useful(msg) && !err.stack) {
       return;
@@ -86,7 +100,7 @@ class ErrorReporter {
     span.end(now);
   }
 
-  reportString(source: string, message: string, firstError?: Error) {
+  protected reportString(source: string, message: string, firstError?: Error): void {
     if (!useful(message)) {
       return;
     }
@@ -103,7 +117,7 @@ class ErrorReporter {
     span.end(now);
   }
 
-  reportErrorEvent(source: string, ev: ErrorEvent) {
+  protected reportErrorEvent(source: string, ev: ErrorEvent): void {
     if (ev.error) {
       this.report(source, ev.error);
     } else if (ev.message) {
@@ -111,7 +125,7 @@ class ErrorReporter {
     }
   }
 
-  reportEvent(source: string, ev: Event) {
+  protected reportEvent(source: string, ev: Event): void {
     // FIXME consider other sources of global 'error' DOM callback - what else can be captured here?
     if (!ev.target && !useful(ev.type)) {
       return;
@@ -130,7 +144,7 @@ class ErrorReporter {
     span.end(now);
   }
 
-  report(source: string, arg: string | Event | ErrorEvent | Array<any>) {
+  public report(source: string, arg: string | Event | ErrorEvent | Array<any>): void {
     if (Array.isArray(arg) && arg.length === 0) {
       return;
     }
@@ -153,18 +167,4 @@ class ErrorReporter {
       this.reportString(source, (arg as any).toString()); // FIXME or JSON.stringify?
     }
   }
-}
-
-export function captureErrors(splunkRum, provider) {
-  const tracer = provider.getTracer('error');
-  const reporter = new ErrorReporter(tracer);
-  captureError(reporter);
-  captureConsoleError(reporter);
-  registerUnhandledRejectionListener(reporter);
-  addTopLevelDocumentErrorListener(reporter);
-  splunkRum.error = function() {
-    reporter.report('SplunkRum.error', Array.from(arguments));
-  };
-
-  // Future possibility is https://www.w3.org/TR/reporting/#reporting-observer
 }

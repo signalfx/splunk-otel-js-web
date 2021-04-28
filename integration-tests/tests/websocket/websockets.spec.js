@@ -26,7 +26,7 @@ function isUnsupported(browser) {
 
 module.exports = {
   beforeEach : function(browser) {
-    browser.globals.clearReceivedSpans();  
+    browser.globals.clearReceivedSpans();
   },
   'produces correct connect span': async function(browser) {
     if (isUnsupported(browser)) {
@@ -36,7 +36,7 @@ module.exports = {
     await browser.url(url);
 
     await browser.click('#connectWs');
-    const wsConnectionSpan = await browser.globals.findSpan(span => span.name === 'connect', -1000);          
+    const wsConnectionSpan = await browser.globals.findSpan(span => span.name === 'connect', -1000);
 
     await browser.assert.strictEqual(wsConnectionSpan.kind, 'CLIENT');
     await browser.assert.strictEqual(wsConnectionSpan.tags['location.href'], url);
@@ -54,7 +54,7 @@ module.exports = {
     await browser.url(browser.globals.getUrl('/websocket/websocket-ignored.ejs'));
     await browser.click('#connectWs');
 
-    await browser.globals.findSpan(span => span.name === 'websocket-guard-span');   
+    await browser.globals.findSpan(span => span.name === 'websocket-guard-span');
     await browser.assert.not.ok(browser.globals.getReceivedSpans().find(span => span.name === 'connect'));
   },
   'sending send and on message create a span': async function(browser) {
@@ -64,8 +64,8 @@ module.exports = {
     await browser.url(browser.globals.getUrl('/websocket/websocket.ejs'));
     await browser.click('#connectWs');
     // check for connect span so connection has time to initialize otherwise send will fail
-    const wsConnectionSpan = await browser.globals.findSpan(span => span.name === 'connect');     
-    await browser.assert.ok(!!wsConnectionSpan, 'Connect span missing');     
+    const wsConnectionSpan = await browser.globals.findSpan(span => span.name === 'connect');
+    await browser.assert.ok(!!wsConnectionSpan, 'Connect span missing');
     await browser.click('#sendWs');
     const wsMessage = await browser.globals.findSpan(span => span.name === 'onmessage');
     await browser.assert.ok(!!wsMessage, 'Onmessage span missing');
@@ -89,7 +89,7 @@ module.exports = {
     }
     await browser.url(browser.globals.getUrl('/websocket/websocket-construct-errors.ejs'));
     await browser.click('#connectWs');
-    const wsConnectionSpan = await browser.globals.findSpan(span => span.name === 'connect', -5000);     
+    const wsConnectionSpan = await browser.globals.findSpan(span => span.name === 'connect', -5000);
     await browser.assert.ok(!!wsConnectionSpan, 'Connect span missing');
     await browser.assert.strictEqual(wsConnectionSpan.tags['error'], 'true');
   },
@@ -99,9 +99,9 @@ module.exports = {
     }
     await browser.url(browser.globals.getUrl('/websocket/websocket-send-errors.ejs'));
     await browser.click('#connectWs');
-    // not many ways to generate these errors, 
+    // not many ways to generate these errors,
     // trying to send msg during connect is the one I know but can be flaky
-    const wsSend = await browser.globals.findSpan(span => span.name === 'send');     
+    const wsSend = await browser.globals.findSpan(span => span.name === 'send');
     await browser.assert.ok(!!wsSend, 'Send span missing');
     await browser.assert.strictEqual(wsSend.tags['error'], 'true');
     await browser.assert.ok(wsSend.tags['error.message']);
@@ -116,9 +116,9 @@ module.exports = {
     await browser.click('#connectWs');
     // Apparently there are leftover spans from last test even after clear
     // as the spans arrive after clearing TODO fix somehow
-    
+
     const wsConnectionSpan = await browser.globals.findSpan(span => span.name === 'connect' && span.tags['location.href'] === url);
-    await browser.assert.ok(!!wsConnectionSpan, 'Connect span missing');   
+    await browser.assert.ok(!!wsConnectionSpan, 'Connect span missing');
     await browser.assert.strictEqual(wsConnectionSpan.tags['protocols'], '["soap"]');
 
     await browser.click('#sendWs');

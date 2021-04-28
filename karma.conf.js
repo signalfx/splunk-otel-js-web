@@ -72,7 +72,7 @@ module.exports = function (config) {
 
     // list of files / patterns to load in the browser
     files: [
-      'test/index.js'
+      'test/index.ts',
     ],
 
     // list of files / patterns to exclude
@@ -120,7 +120,7 @@ module.exports = function (config) {
           ],
         }),
       ],
-      input: 'test/index.js',
+      input: 'test/index.ts',
       output: {
         file: 'bundle.js',
         format: 'iife',
@@ -141,6 +141,6 @@ module.exports = function (config) {
     },
 
     reporters: ['progress', 'spec', 'coverage-istanbul'],
-    preprocessors: {'test/index.js': ['rollup']},
+    preprocessors: {'test/index.ts': ['rollup']},
   });
 };
