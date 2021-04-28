@@ -72,8 +72,8 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
     const _superGetEntries: ExposedSuper['_getEntries'] = exposedSuper._getEntries.bind(this);
     exposedSuper._getEntries = () => {
       const entries = _superGetEntries();
-      if (entries) { //this is always empty object and truthy iirc
-        const navEntries = performance?.getEntriesByType('navigation') as any;
+      if (entries && performance.getEntriesByType) { //this is always empty object and truthy iirc
+        const navEntries = performance.getEntriesByType('navigation') as any;
         if (navEntries?.[0]?.serverTiming) {
           (entries as any).serverTiming = navEntries[0].serverTiming;
         }
