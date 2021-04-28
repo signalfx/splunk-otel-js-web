@@ -20,8 +20,8 @@ jobs:
       - run: npm ci
       # - name: Lint code
       #   run: npm run lint
-      - name: Lint docs
-        run: npm run lint:markdown
+      # - name: Lint docs
+      #   run: npm run lint:markdown
       - name: Verify types
         run: npm run check:types
       - name: Transpile code
