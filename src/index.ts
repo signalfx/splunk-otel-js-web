@@ -15,28 +15,31 @@ limitations under the License.
 */
 
 import './polyfill-safari10';
-import {InstrumentationConfig, registerInstrumentations} from '@opentelemetry/instrumentation';
-import {ConsoleSpanExporter, SimpleSpanProcessor, BatchSpanProcessor, ReadableSpan, SpanExporter} from '@opentelemetry/tracing';
-import {diag, DiagConsoleLogger, DiagLogLevel, Span, SpanAttributes} from '@opentelemetry/api';
+import { InstrumentationConfig, registerInstrumentations } from '@opentelemetry/instrumentation';
+import { ConsoleSpanExporter, SimpleSpanProcessor, BatchSpanProcessor, ReadableSpan, SpanExporter } from '@opentelemetry/tracing';
+import { diag, DiagConsoleLogger, DiagLogLevel, SpanAttributes } from '@opentelemetry/api';
 import { SplunkDocumentLoadInstrumentation } from './SplunkDocumentLoadInstrumentation';
 import { SplunkXhrPlugin } from './SplunkXhrPlugin';
 import { SplunkFetchInstrumentation } from './SplunkFetchInstrumentation';
 import {
   SplunkUserInteractionInstrumentation,
+  SplunkUserInteractionInstrumentationConfig,
   DEFAULT_AUTO_INSTRUMENTED_EVENTS,
   UserInteractionEventsConfig,
 } from './SplunkUserInteractionInstrumentation';
-import {SplunkExporter, SplunkExporterConfig} from './SplunkExporter';
+import { SplunkExporter, SplunkExporterConfig } from './SplunkExporter';
 import { ERROR_INSTRUMENTATION_NAME, SplunkErrorInstrumentation } from './SplunkErrorInstrumentation';
-import {generateId, getPluginConfig} from './utils';
+import { generateId, getPluginConfig } from './utils';
 import { initSessionTracking } from './session';
 import { SplunkWebSocketInstrumentation } from './SplunkWebSocketInstrumentation';
 import { initWebVitals } from './webvitals';
 import { SplunkLongTaskInstrumentation } from './SplunkLongTaskInstrumentation';
-import { SplunkPostDocLoadResourceInstrumentation } from './SplunkPostDocLoadResourceInstrumentation';
+import {
+  SplunkPostDocLoadResourceInstrumentation,
+  SplunkPostDocLoadResourceInstrumentationConfig,
+} from './SplunkPostDocLoadResourceInstrumentation';
 import { SplunkWebTracerProvider } from './SplunkWebTracerProvider';
 import { FetchInstrumentationConfig } from '@opentelemetry/instrumentation-fetch';
-import { SplunkPostDocLoadResourceInstrumentationConfig, SplunkUserInteractionInstrumentationConfig } from './types';
 import { XMLHttpRequestInstrumentationConfig } from '@opentelemetry/instrumentation-xml-http-request';
 
 export * from './SplunkExporter';
@@ -95,7 +98,7 @@ export interface SplunkOtelWebConfig {
    * Applies for XHR, Fetch and Websocket URLs. URLs that partially match any regex in ignoreUrls will not be traced.
    * In addition, URLs that are _exact matches_ of strings in ignoreUrls will also not be traced.
    * */
-  ignoreUrls?: Array<String | RegExp>;
+  ignoreUrls?: Array<string | RegExp>;
 
   /** Configuration for instrumentation modules. */
   instrumentations?: SplunkOtelWebOptionsInstrumentations;
@@ -130,14 +133,14 @@ const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
 };
 
 const INSTRUMENTATIONS = [
-  {Instrument: SplunkDocumentLoadInstrumentation, confKey: 'document', disable: false},
-  {Instrument: SplunkXhrPlugin, confKey: 'xhr', disable: false},
-  {Instrument: SplunkUserInteractionInstrumentation, confKey: 'interactions', disable: false},
-  {Instrument: SplunkPostDocLoadResourceInstrumentation, confKey: 'postload', disable: false},
-  {Instrument: SplunkFetchInstrumentation, confKey: 'fetch', disable: false},
-  {Instrument: SplunkWebSocketInstrumentation, confKey: 'websocket', disable: true},
-  {Instrument: SplunkLongTaskInstrumentation, confKey: 'longtask', disable: false},
-  {Instrument: SplunkErrorInstrumentation, confKey: ERROR_INSTRUMENTATION_NAME, disable: false},
+  { Instrument: SplunkDocumentLoadInstrumentation, confKey: 'document', disable: false },
+  { Instrument: SplunkXhrPlugin, confKey: 'xhr', disable: false },
+  { Instrument: SplunkUserInteractionInstrumentation, confKey: 'interactions', disable: false },
+  { Instrument: SplunkPostDocLoadResourceInstrumentation, confKey: 'postload', disable: false },
+  { Instrument: SplunkFetchInstrumentation, confKey: 'fetch', disable: false },
+  { Instrument: SplunkWebSocketInstrumentation, confKey: 'websocket', disable: true },
+  { Instrument: SplunkLongTaskInstrumentation, confKey: 'longtask', disable: false },
+  { Instrument: SplunkErrorInstrumentation, confKey: ERROR_INSTRUMENTATION_NAME, disable: false },
 ] as const;
 
 export const INSTRUMENTATIONS_ALL_DISABLED: SplunkOtelWebOptionsInstrumentations = INSTRUMENTATIONS
@@ -146,8 +149,6 @@ export const INSTRUMENTATIONS_ALL_DISABLED: SplunkOtelWebOptionsInstrumentations
     (acc, key) => { acc[key] = false; return acc; },
     { 'webvitals': false },
   );
-
-const NOOP = () => {};
 
 function buildExporter(options) {
   const completeUrl = options.beaconUrl + (options.rumAuth ? '?auth='+options.rumAuth : '');
@@ -174,7 +175,7 @@ interface SplunkOtelWebType {
 }
 
 let inited = false;
-let _deregisterInstrumentations = NOOP;
+let _deregisterInstrumentations: () => void | undefined;
 let _errorInstrumentation: SplunkErrorInstrumentation | undefined;
 const SplunkRum: SplunkOtelWebType = {
   DEFAULT_AUTO_INSTRUMENTED_EVENTS,
@@ -204,9 +205,7 @@ const SplunkRum: SplunkOtelWebType = {
       return;
     }
 
-    console.log(!processedOptions.debug, processedOptions);
     if (!processedOptions.debug) {
-      console.log(!processedOptions.debug, !processedOptions.beaconUrl);
       if (!processedOptions.beaconUrl) {
         throw new Error('SplunkRum.init( {beaconUrl: \'https://something\'} ) is required.');
       } else if(!processedOptions.beaconUrl.startsWith('https') && !processedOptions.allowInsecureBeacon) {
@@ -233,7 +232,7 @@ const SplunkRum: SplunkOtelWebType = {
         ...processedOptions.globalAttributes || {},
       },
     });
-    const instrumentations = INSTRUMENTATIONS.map(({Instrument, confKey, disable}) => {
+    const instrumentations = INSTRUMENTATIONS.map(({ Instrument, confKey, disable }) => {
       const pluginConf = getPluginConfig(processedOptions.instrumentations[confKey], pluginDefaults, disable);
       if (pluginConf) {
         const instrumentation = new Instrument(pluginConf);
@@ -288,8 +287,8 @@ const SplunkRum: SplunkOtelWebType = {
     if (!inited) {
       return;
     }
-    _deregisterInstrumentations();
-    _deregisterInstrumentations = NOOP;
+    _deregisterInstrumentations?.();
+    _deregisterInstrumentations = undefined;
 
     this.provider.shutdown();
     delete this.provider;

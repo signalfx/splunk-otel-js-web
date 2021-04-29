@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-const {isBrowser} = require('../../utils/helpers');
+const { isBrowser } = require('../../utils/helpers');
 
 module.exports = {
   afterEach : function(browser) {
@@ -56,7 +56,7 @@ module.exports = {
     if (!isBrowser(browser, 'ie')) {
       await browser.assert.ok(cookie.secure);
     }
-    if (!isBrowser(browser, {ie: true, safari: true})) {
+    if (!isBrowser(browser, { ie: true, safari: true })) {
       await browser.assert.equal(cookie.sameSite, 'None');
     }
   },

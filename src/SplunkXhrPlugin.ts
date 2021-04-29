@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {XMLHttpRequestInstrumentation, XMLHttpRequestInstrumentationConfig} from '@opentelemetry/instrumentation-xml-http-request';
-import {captureTraceParent} from './servertiming';
+import { XMLHttpRequestInstrumentation, XMLHttpRequestInstrumentationConfig } from '@opentelemetry/instrumentation-xml-http-request';
+import { captureTraceParent } from './servertiming';
 import * as api from '@opentelemetry/api';
 
 type CreateSpanFn = (xhr: XMLHttpRequest, url: string, method: string) => api.Span | undefined;
@@ -48,6 +48,6 @@ export class SplunkXhrPlugin extends XMLHttpRequestInstrumentation {
       }
 
       return span;
-    }
+    };
   }
 }

@@ -53,7 +53,7 @@ describe('test init', () => {
     });
     it('should init with https', () => {
       const path = '/secure';
-      SplunkRum.init({ beaconUrl: `https://127.0.0.1:8888/${path}`, app: 'app', rumAuth: undefined});
+      SplunkRum.init({ beaconUrl: `https://127.0.0.1:8888/${path}`, app: 'app', rumAuth: undefined });
       assert.ok(SplunkRum.inited);
       doesBeaconUrlEndWith(path);
       SplunkRum.deinit();
@@ -77,7 +77,7 @@ describe('test init', () => {
         beaconUrl: 'https://127.0.0.1:9999/foo',
         app: 'my-app',
         environment: 'my-env',
-        globalAttributes: {customerType: 'GOLD'},
+        globalAttributes: { customerType: 'GOLD' },
         instrumentations:{
           websocket: true
         },
@@ -128,7 +128,7 @@ describe('test init', () => {
         allowInsecureBeacon: true,
         app: 'my-app',
         environment: 'my-env',
-        globalAttributes: {customerType: 'GOLD'},
+        globalAttributes: { customerType: 'GOLD' },
         bufferTimeout: 0,
         exporter: {
           onAttributesSerializing: onAttributesSerializingMock,
@@ -191,7 +191,7 @@ describe('setGlobalAttributes', () => {
 
   it('should have extra fields added', () => {
     const tracer = SplunkRum.provider.getTracer('test');
-    SplunkRum.setGlobalAttributes({newKey: 'newVal'});
+    SplunkRum.setGlobalAttributes({ newKey: 'newVal' });
     const span = tracer.startSpan('testSpan');
     span.end();
 

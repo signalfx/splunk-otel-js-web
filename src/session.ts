@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {findCookieValue, generateId, isIframe} from './utils';
+import { findCookieValue, generateId, isIframe } from './utils';
 
 /*
     The basic idea is to let the browser expire cookies for us "naturally" once
@@ -40,7 +40,7 @@ export const COOKIE_NAME = '_splunk_rum_sid';
 
 type SessionIdType = string
 let rumSessionId: SessionIdType = generateId(64); // will be overwritten in init() with scriptInstance; only here as extreme fallback
-let recentActivity: boolean = false;
+let recentActivity = false;
 let cookieDomain: string;
 
 function markActivity() {
@@ -109,7 +109,7 @@ function renewCookieTimeout(sessionState) {
 // 1) Check if the cookie has been expired by the browser; if so, create a new one
 // 2) If activity has occured since the last periodic invocation, renew the cookie timeout
 // (Only exported for testing purposes.)
-export function updateSessionStatus() {
+export function updateSessionStatus(): void {
   let sessionState = parseCookieToSessionState();
   if (!sessionState) {
     sessionState = newSessionState();
@@ -122,7 +122,7 @@ export function updateSessionStatus() {
   recentActivity = false;
 }
 
-export function initSessionTracking(instanceId: SessionIdType, domain: string) {
+export function initSessionTracking(instanceId: SessionIdType, domain?: string): void {
   if (domain) {
     cookieDomain = domain;
   }
@@ -132,7 +132,7 @@ export function initSessionTracking(instanceId: SessionIdType, domain: string) {
   setInterval(updateSessionStatus, PeriodicCheckSeconds * 1000);
   [
     'click', 'scroll', 'mousedown', 'keydown', 'touchend', 'visibilitychange'
-  ].forEach(type => document.addEventListener(type, markActivity, {capture:true, passive: true}));
+  ].forEach(type => document.addEventListener(type, markActivity, { capture:true, passive: true }));
   // FIXME have span creation also markActivity?
 }
 

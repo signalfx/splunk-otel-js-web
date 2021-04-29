@@ -87,7 +87,7 @@ describe('can produce websocket events', () => {
           done();
         }, 100);
       }
-    }, {once:true});
+    }, { once:true });
   });
 
   // FIXME find a way to make send throw..

@@ -168,12 +168,12 @@ module.exports = {
     await browser.url(browser.globals.getUrl('/errors/views/unhandled-error.ejs'));
     await browser.globals.waitForTestToFinish();
 
-    browser.assert.ok(!!browser.globals.getReceivedSpans().find(({name}) => name === 'onerror'), 'Checking presence of error span.');
+    browser.assert.ok(!!browser.globals.getReceivedSpans().find(({ name }) => name === 'onerror'), 'Checking presence of error span.');
 
     browser.globals.clearReceivedSpans();
     await browser.url(browser.globals.getUrl('/errors/views/unhandled-error.ejs?disableInstrumentation=errors'));
     await browser.globals.waitForTestToFinish();
 
-    browser.assert.not.ok(browser.globals.getReceivedSpans().find(({name}) => name === 'onerror'), 'Checking lack of error span.');
+    browser.assert.not.ok(browser.globals.getReceivedSpans().find(({ name }) => name === 'onerror'), 'Checking lack of error span.');
   }
 };

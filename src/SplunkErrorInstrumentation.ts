@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import shimmer from 'shimmer';
+import * as shimmer from 'shimmer';
 import { getElementXPath } from '@opentelemetry/web';
-import {limitLen} from './utils';
-import { Span, Tracer } from '@opentelemetry/api';
+import { limitLen } from './utils';
+import { Span } from '@opentelemetry/api';
 import { hrTime } from '@opentelemetry/core';
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation';
 
@@ -36,52 +36,47 @@ function addStackIfUseful(span: Span, err: Error) {
   }
 }
 
-function captureConsoleError(reporter) {
-  shimmer.wrap(console, 'error', function(original) {
-    return function () {
-      reporter.report('console.error', Array.from(arguments));
-      return original.apply(this, arguments);
-    };
-  });
-}
-
-function registerUnhandledRejectionListener(reporter) {
-  window.addEventListener('unhandledrejection', function (event) {
-    reporter.report('unhandledrejection', event.reason);
-  });
-}
-
-function captureError(reporter) {
-  window.addEventListener('error', function(event) {
-    reporter.report('onerror', event);
-  });
-}
-
-function addTopLevelDocumentErrorListener(reporter) {
-  document.documentElement.addEventListener('error', function(event) {
-    reporter.report('eventListener.error', event);
-  }, {capture: true});
-}
-
 export const ERROR_INSTRUMENTATION_NAME = 'errors';
 export const ERROR_INSTRUMENTATION_VERSION = '1';
 
 export class SplunkErrorInstrumentation extends InstrumentationBase {
+  private readonly _consoleErrorHandler = (original: Console['error']) => {
+    return (...args: any[]) => {
+      this.report('console.error', args);
+      return original.apply(this, args);
+    };
+  };
+
+  private readonly _unhandledRejectionListener = (event: PromiseRejectionEvent) => {
+    this.report('unhandledrejection', event.reason);
+  };
+
+  private readonly _errorListener = (event: ErrorEvent) => {
+    this.report('onerror', event);
+  };
+
+  private readonly _documentErrorListener = (event: ErrorEvent) => {
+    this.report('eventListener.error', event);
+  };
+
   constructor(config: InstrumentationConfig) {
     super(ERROR_INSTRUMENTATION_NAME, ERROR_INSTRUMENTATION_VERSION, config);
   }
 
-  init() {}
+  init(): void {}
 
-  enable() {
-    captureError(this);
-    captureConsoleError(this);
-    registerUnhandledRejectionListener(this);
-    addTopLevelDocumentErrorListener(this);
+  enable(): void {
+    shimmer.wrap(console, 'error', this._consoleErrorHandler);
+    window.addEventListener('unhandledrejection', this._unhandledRejectionListener);
+    window.addEventListener('error', this._errorListener);
+    document.documentElement.addEventListener('error', this._documentErrorListener, { capture: true });
   }
 
-  disable() {
-    // TODO: implement
+  disable(): void {
+    shimmer.unwrap(console, 'error');
+    window.removeEventListener('unhandledrejection', this._unhandledRejectionListener);
+    window.removeEventListener('error', this._errorListener);
+    document.documentElement.removeEventListener('error', this._documentErrorListener, { capture: true });
   }
 
   protected reportError(source: string, err: Error): void {

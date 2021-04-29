@@ -61,7 +61,7 @@ module.exports = {
     await browser.click('#btnLongtask');
     await browser.globals.waitForTestToFinish();
 
-    browser.assert.ok(!!browser.globals.getReceivedSpans().find(({name}) => name === 'longtask'), 'Checking presence of longtask span.');
+    browser.assert.ok(!!browser.globals.getReceivedSpans().find(({ name }) => name === 'longtask'), 'Checking presence of longtask span.');
     await browser.globals.assertNoErrorSpans();
 
     browser.globals.clearReceivedSpans();
@@ -69,7 +69,7 @@ module.exports = {
     await browser.click('#btnLongtask');
     await browser.globals.waitForTestToFinish();
 
-    browser.assert.not.ok(browser.globals.getReceivedSpans().find(({name}) => name === 'longtask'), 'Checking presence of longtask span.');
+    browser.assert.not.ok(browser.globals.getReceivedSpans().find(({ name }) => name === 'longtask'), 'Checking presence of longtask span.');
     await browser.globals.assertNoErrorSpans();
   }
 };
