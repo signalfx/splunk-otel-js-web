@@ -14,31 +14,31 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { ReadableSpan, SpanProcessor } from '@opentelemetry/tracing';
 import SplunkRum from '../src/index';
 
-export class SpanCapturer {
-  constructor() {
-    this.spans = [];
-  }
-  forceFlush() {}
+export class SpanCapturer implements SpanProcessor {
+  public readonly spans: ReadableSpan[] = [];
+  forceFlush() { return Promise.resolve(); }
   onStart() {}
-  shutdown() {}
+  shutdown() { return Promise.resolve(); }
   onEnd(span) {
     this.spans.push(span);
   }
   clear() {
-    this.spans = [];
+    this.spans.length = 0;
   }
 }
 
 export function initWithDefaultConfig(capturer, additionalOptions = {}) {
-  SplunkRum.init(Object.assign({}, additionalOptions, {
+  SplunkRum._internalInit(Object.assign({}, additionalOptions, {
     beaconUrl: 'http://127.0.0.1:8888/v1/trace',
     allowInsecureBeacon: true,
     app: 'my-app',
     environment: 'my-env',
     globalAttributes: {customerType: 'GOLD'},
     bufferTimeout: 0,
+    rumAuth: undefined,
   }));
   SplunkRum.provider.addSpanProcessor(capturer);
 }

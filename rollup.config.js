@@ -4,6 +4,7 @@ import json from '@rollup/plugin-json';
 import commonjs from '@rollup/plugin-commonjs';
 import { terser } from 'rollup-plugin-terser';
 import { babel } from '@rollup/plugin-babel';
+import typescript from '@rollup/plugin-typescript';
 
 const {
   babelPlugin,
@@ -12,7 +13,7 @@ const {
 
 export default [
   {
-    input: 'src/indexBrowser.js',
+    input: 'src/indexBrowser.ts',
     output: {
       file: 'dist/browser/splunk-otel-web.js',
       format: 'iife',
@@ -26,12 +27,13 @@ export default [
         include: /node_modules/,
         sourceMap: true,
       }),
+      typescript(),
       babelPlugin,
       terser({ output: { comments: false } }),
     ],
   },
   {
-    input: 'src/indexBrowser.js',
+    input: 'src/indexBrowser.ts',
     output: {
       file: 'dist/browser/splunk-otel-web-legacy.js',
       format: 'iife',
@@ -45,9 +47,11 @@ export default [
         include: /node_modules/,
         sourceMap: true,
       }),
+      typescript(),
       babel({
         babelHelpers: 'runtime',
         envName: 'legacy',
+        extensions: ['.js', '.es6', '.es', 'mjs', '.ts'],
         exclude: [
           /node_modules\/core-js/
         ]
@@ -61,7 +65,7 @@ export default [
     ],
   },
   {
-    input: 'src/index.js',
+    input: 'src/index.ts',
     output: {
       dir: 'dist/cjs',
       format: 'cjs',
@@ -77,7 +81,7 @@ export default [
       // note: seems like rollup (or one of its plugins) doesn't understand that if you reach into a package, it's still
       // part of the package.
       '@opentelemetry/exporter-zipkin/build/src/transform.js',
-      
+
       '@opentelemetry/instrumentation-document-load',
       '@opentelemetry/instrumentation-fetch',
       '@opentelemetry/instrumentation-user-interaction',
@@ -100,6 +104,7 @@ export default [
         include: /node_modules/,
         sourceMap: true,
       }),
+      typescript(),
     ],
   },
 ];

@@ -17,6 +17,9 @@ limitations under the License.
 import shimmer from 'shimmer';
 import { getElementXPath } from '@opentelemetry/web';
 import {limitLen} from './utils';
+import { Span, Tracer } from '@opentelemetry/api';
+import { hrTime } from '@opentelemetry/core';
+import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation';
 
 // FIXME take timestamps from events?
 
@@ -27,7 +30,7 @@ function useful(s) {
   return s && s.trim() !== '' && !s.startsWith('[object') && s !== 'error';
 }
 
-function addStackIfUseful(span, err) {
+function addStackIfUseful(span: Span, err: Error) {
   if (err && err.stack && useful(err.stack)) {
     span.setAttribute('error.stack', limitLen(err.stack.toString(), STACK_LIMIT));
   }
@@ -60,42 +63,61 @@ function addTopLevelDocumentErrorListener(reporter) {
   }, {capture: true});
 }
 
+export const ERROR_INSTRUMENTATION_NAME = 'errors';
+export const ERROR_INSTRUMENTATION_VERSION = '1';
 
-class ErrorReporter {
-  constructor(tracer) {
-    this.tracer = tracer;
+export class SplunkErrorInstrumentation extends InstrumentationBase {
+  constructor(config: InstrumentationConfig) {
+    super(ERROR_INSTRUMENTATION_NAME, ERROR_INSTRUMENTATION_VERSION, config);
   }
 
-  reportError(source, err) {
+  init() {}
+
+  enable() {
+    captureError(this);
+    captureConsoleError(this);
+    registerUnhandledRejectionListener(this);
+    addTopLevelDocumentErrorListener(this);
+  }
+
+  disable() {
+    // TODO: implement
+  }
+
+  protected reportError(source: string, err: Error): void {
     const msg = err.message || err.toString();
     if (!useful(msg) && !err.stack) {
       return;
     }
-    const span = this.tracer.startSpan(source);
+
+    const now = hrTime();
+    const span = this.tracer.startSpan(source, { startTime: now });
     span.setAttribute('component', 'error');
     span.setAttribute('error', true);
     span.setAttribute('error.object', useful(err.name) ? err.name : err.constructor && err.constructor.name ? err.constructor.name : 'Error');
     span.setAttribute('error.message', limitLen(msg, MESSAGE_LIMIT));
     addStackIfUseful(span, err);
-    span.end(span.startTime);
+    span.end(now);
   }
 
-  reportString(source, s, firstError) {
-    if (!useful(s)) {
+  protected reportString(source: string, message: string, firstError?: Error): void {
+    if (!useful(message)) {
       return;
     }
-    const span = this.tracer.startSpan(source);
+
+    const now = hrTime();
+    const span = this.tracer.startSpan(source, { startTime: now });
     span.setAttribute('component', 'error');
     span.setAttribute('error', true);
     span.setAttribute('error.object', 'String');
-    span.setAttribute('error.message', limitLen(s, MESSAGE_LIMIT));
+    span.setAttribute('error.message', limitLen(message, MESSAGE_LIMIT));
     if (firstError) {
       addStackIfUseful(span, firstError);
     }
-    span.end(span.startTime);
+    span.end(now);
   }
 
-  reportErrorEvent(source, ev) {
+  protected reportErrorEvent(source: string, ev: ErrorEvent): void {
     if (ev.error) {
       this.report(source, ev.error);
     } else if (ev.message) {
@@ -103,24 +125,27 @@ class ErrorReporter {
     }
   }
 
-  reportEvent(source, ev) {
+  protected reportEvent(source: string, ev: Event): void {
     // FIXME consider other sources of global 'error' DOM callback - what else can be captured here?
     if (!ev.target && !useful(ev.type)) {
       return;
     }
-    const span = this.tracer.startSpan(source);
+
+    const now = hrTime();
+    const span = this.tracer.startSpan(source, { startTime: now });
     span.setAttribute('component', 'error');
     span.setAttribute('error.type', ev.type);
     if (ev.target) {
-      span.setAttribute('target_element', ev.target.tagName);
+      // TODO: find types to match this
+      span.setAttribute('target_element', (ev.target as any).tagName);
       span.setAttribute('target_xpath', getElementXPath(ev.target, true));
-      span.setAttribute('target_src', ev.target.src);
+      span.setAttribute('target_src', (ev.target as any).src);
     }
-    span.end(span.startTime);
+    span.end(now);
   }
 
-  report(source, arg) {
-    if (!arg || arg.length === 0) {
+  public report(source: string, arg: string | Event | ErrorEvent | Array<any>): void {
+    if (Array.isArray(arg) && arg.length === 0) {
       return;
     }
     if (arg instanceof Array && arg.length === 1) {
@@ -139,22 +164,7 @@ class ErrorReporter {
       const firstError = arg.find(x => x instanceof Error);
       this.reportString(source, arg.map(x => x.toString()).join(' '), firstError);
     } else {
-      this.reportString(source, arg.toString()); // FIXME or JSON.stringify?
+      this.reportString(source, (arg as any).toString()); // FIXME or JSON.stringify?
     }
   }
-}
-
-
-export function captureErrors(splunkRum, provider) {
-  const tracer = provider.getTracer('error');
-  const reporter = new ErrorReporter(tracer);
-  captureError(reporter);
-  captureConsoleError(reporter);
-  registerUnhandledRejectionListener(reporter);
-  addTopLevelDocumentErrorListener(reporter);
-  splunkRum.error = function() {
-    reporter.report('SplunkRum.error', Array.from(arguments));
-  };
-
-  // Future possibility is https://www.w3.org/TR/reporting/#reporting-observer
 }

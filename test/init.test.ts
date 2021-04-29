@@ -17,12 +17,14 @@ limitations under the License.
 import * as assert from 'assert';
 import SplunkRum from '../src/index';
 import { setSpan, context, getSpan } from '@opentelemetry/api';
+import * as tracing from '@opentelemetry/tracing';
 import { deinit, initWithDefaultConfig, SpanCapturer } from './utils';
 import sinon from 'sinon';
 import { expect } from 'chai';
 
 function doesBeaconUrlEndWith(suffix) {
-  const sps = SplunkRum.provider.getActiveSpanProcessor()._spanProcessors;
+  const sps = (SplunkRum.provider.getActiveSpanProcessor() as any)._spanProcessors;
+  // TODO: refactor to make beaconUrl field private
   const beaconUrl = sps[0]._exporter.beaconUrl;
   assert.ok(beaconUrl.endsWith(suffix), `Checking beaconUrl if (${beaconUrl}) ends with ${suffix}`);
 }
@@ -33,17 +35,17 @@ describe('test init', () => {
   describe('not specifying beaconUrl', () => {
     it('should not be inited', () => {
       try {
-        SplunkRum.init({noBeaconUrl: true});
-        assert.ok(false); // should not get here
+        SplunkRum.init({ beaconUrl: undefined, app: 'app', rumAuth: undefined });
+        assert.ok(false, 'Initializer finished.'); // should not get here
       } catch (expected) {
-        assert.ok(SplunkRum.inited === false);
+        assert.ok(SplunkRum.inited === false, 'SplunkRum should not be inited.');
       }
     });
   });
   describe('should enforce secure beacon url', () => {
     it('should not be inited with http', () => {
-      try {        
-        SplunkRum.init({beaconUrl: 'http://127.0.0.1:8888/insecure'});
+      try {
+        SplunkRum.init({ beaconUrl: 'http://127.0.0.1:8888/insecure', app: 'app', rumAuth: undefined });
         assert.ok(false);
       } catch(e) {
         assert.ok(SplunkRum.inited === false);
@@ -51,15 +53,20 @@ describe('test init', () => {
     });
     it('should init with https', () => {
       const path = '/secure';
-      SplunkRum.init({beaconUrl: `https://127.0.0.1:8888/${path}`});
+      SplunkRum.init({ beaconUrl: `https://127.0.0.1:8888/${path}`, app: 'app', rumAuth: undefined});
       assert.ok(SplunkRum.inited);
       doesBeaconUrlEndWith(path);
       SplunkRum.deinit();
     });
     it('can be forced via allowInsecureBeacon option', () => {
       const path = '/insecure';
-      SplunkRum.init({beaconUrl: `http://127.0.0.1:8888/${path}`, allowInsecureBeacon: true});
-      assert.ok(SplunkRum.inited);      
+      SplunkRum.init({
+        beaconUrl: `http://127.0.0.1:8888/${path}`,
+        allowInsecureBeacon: true,
+        app: 'app',
+        rumAuth: undefined,
+      });
+      assert.ok(SplunkRum.inited);
       doesBeaconUrlEndWith(path);
       SplunkRum.deinit();
     });
@@ -73,20 +80,17 @@ describe('test init', () => {
         globalAttributes: {customerType: 'GOLD'},
         instrumentations:{
           websocket: true
-        }
+        },
+        rumAuth: undefined,
       });
       assert.ok(SplunkRum.inited);
       SplunkRum.provider.addSpanProcessor(capturer);
       setTimeout(()=> {
         assert.ok(capturer.spans.length >= 3);
-        const docLoadTraceId = capturer.spans[0].traceId;
-        capturer.spans.forEach(span => {
-          assert.strictEqual(span.traceId, docLoadTraceId);
-        });
+        const docLoadTraceId = capturer.spans.find(span => span.name === 'documentLoad')?.spanContext.traceId;
 
         capturer.spans.filter(span => span.attributes['component'] === 'document-load').forEach(span => {
-          assert.strictEqual(span.attributes['component'], 'document-load');
-          assert.strictEqual(span.traceId, docLoadTraceId);
+          assert.strictEqual(span.spanContext.traceId, docLoadTraceId);
         });
 
         const documentFetchSpan = capturer.spans.find(span => span.name === 'documentFetch');
@@ -97,7 +101,7 @@ describe('test init', () => {
 
         const documentLoadSpan = capturer.spans.find(span => span.name === 'documentLoad');
         assert.ok(documentLoadSpan, 'documentLoad span presence.');
-        assert.ok(/^[0-9]+x[0-9]+$/.test(documentLoadSpan.attributes['screen.xy']));
+        assert.ok(/^[0-9]+x[0-9]+$/.test(documentLoadSpan.attributes['screen.xy'] as string));
 
         const resourceFetchSpan = capturer.spans.find(span => span.name === 'resourceFetch');
         assert.ok(resourceFetchSpan, 'resourceFetch span presence.');
@@ -109,8 +113,8 @@ describe('test init', () => {
   });
   describe('double-init has no effect', () => {
     it('should have been inited only once', () => {
-      SplunkRum.init({beaconUrl: 'https://127.0.0.1:8888/foo'});
-      SplunkRum.init({beaconUrl: 'https://127.0.0.1:8888/bar'});
+      SplunkRum.init({ beaconUrl: 'https://127.0.0.1:8888/foo', app: 'app', rumAuth: undefined });
+      SplunkRum.init({ beaconUrl: 'https://127.0.0.1:8888/bar', app: 'app', rumAuth: undefined });
       doesBeaconUrlEndWith('/foo');
       SplunkRum.deinit();
     });
@@ -119,7 +123,7 @@ describe('test init', () => {
     it ('allows setting factory', (done) => {
       const exportMock = sinon.fake();
       const onAttributesSerializingMock = sinon.fake();
-      SplunkRum.init({
+      SplunkRum._internalInit({
         beaconUrl: 'https://domain1',
         allowInsecureBeacon: true,
         app: 'my-app',
@@ -132,10 +136,11 @@ describe('test init', () => {
             expect(options.onAttributesSerializing).to.eq(onAttributesSerializingMock);
             return {
               'export': exportMock,
-              shutdown: () => {},
+              shutdown: () => Promise.resolve(),
             };
           },
         },
+        rumAuth: undefined,
       });
       SplunkRum.provider.getTracer('test').startSpan('testSpan').end();
       setTimeout(() => {
@@ -161,15 +166,17 @@ describe('creating spans is possible', () => {
     const span = tracer.startSpan('testSpan');
     context.with(setSpan(context.active(), span), () => {
       assert.deepStrictEqual(getSpan(context.active()), span);
-      assert.ok(span.attributes['splunk.rumSessionId'], 'Checking splunk.rumSessionId');
-      assert.ok(span.attributes['splunk.rumVersion'], 'Checking splunk.rumVersion');
-      assert.ok(span.attributes['location.href'], 'Checking location.href');
-      assert.ok(span.attributes['splunk.scriptInstance'], 'Checking splunk.scriptInstance');
-      assert.strictEqual(span.attributes['app'], 'my-app');
-      assert.strictEqual(span.attributes['environment'], 'my-env');
-      assert.strictEqual(span.attributes.customerType, 'GOLD');
     });
     span.end();
+
+    const exposedSpan = span as tracing.Span;
+    assert.ok(exposedSpan.attributes['splunk.rumSessionId'], 'Checking splunk.rumSessionId');
+    assert.ok(exposedSpan.attributes['splunk.rumVersion'], 'Checking splunk.rumVersion');
+    assert.ok(exposedSpan.attributes['location.href'], 'Checking location.href');
+    assert.ok(exposedSpan.attributes['splunk.scriptInstance'], 'Checking splunk.scriptInstance');
+    assert.strictEqual(exposedSpan.attributes['app'], 'my-app');
+    assert.strictEqual(exposedSpan.attributes['environment'], 'my-env');
+    assert.strictEqual(exposedSpan.attributes.customerType, 'GOLD');
   });
 });
 
@@ -186,11 +193,11 @@ describe('setGlobalAttributes', () => {
     const tracer = SplunkRum.provider.getTracer('test');
     SplunkRum.setGlobalAttributes({newKey: 'newVal'});
     const span = tracer.startSpan('testSpan');
-    context.with(setSpan(context.active(), span), () => {
-      assert.strictEqual(span.attributes.newKey, 'newVal');
-      assert.strictEqual(span.attributes.customerType, 'GOLD');
-    });
     span.end();
+
+    const exposedSpan = span as tracing.Span;
+    assert.strictEqual(exposedSpan.attributes.newKey, 'newVal');
+    assert.strictEqual(exposedSpan.attributes.customerType, 'GOLD');
   });
 });
 
@@ -240,10 +247,10 @@ describe('test fetch', () => {
         const fetchSpan = capturer.spans.find(span => span.attributes.component === 'fetch');
         assert.ok(fetchSpan, 'Check if fetch span is present.');
         assert.strictEqual(fetchSpan.name, 'HTTP GET');
-        
+
         // note: temporarily disabled because of instabilities in OTel's code
         // assert.ok(fetchSpan.attributes['http.response_content_length'] > 0, 'Checking response_content_length.');
-        
+
         assert.strictEqual(fetchSpan.attributes['link.spanId'], '0000000000000002');
         assert.strictEqual(fetchSpan.attributes['http.url'], location.href);
         done();
@@ -285,9 +292,9 @@ describe('test error', () => {
       const span = capturer.spans[capturer.spans.length - 1];
       assert.strictEqual(span.attributes.component, 'error');
       assert.strictEqual(span.name, 'onerror');
-      assert.ok(span.attributes['error.stack'].includes('callChain'));
-      assert.ok(span.attributes['error.stack'].includes('reportError'));
-      assert.ok(span.attributes['error.message'].includes('war room'));
+      assert.ok((span.attributes['error.stack'] as string).includes('callChain'));
+      assert.ok((span.attributes['error.stack'] as string).includes('reportError'));
+      assert.ok((span.attributes['error.message'] as string).includes('war room'));
       done();
     }, 100);
   });
@@ -322,10 +329,10 @@ describe('test stack length', () => {
     setTimeout(() => {
       const errorSpan = capturer.spans.find(span => span.attributes.component === 'error');
       assert.ok(errorSpan);
-      assert.ok(errorSpan.attributes['error.stack'].includes('recurAndThrow'));
-      assert.ok(errorSpan.attributes['error.stack'].length <= 4096);
-      assert.ok(errorSpan.attributes['error.message'].includes('something'));
-      assert.ok(errorSpan.attributes['error.message'].includes('bad thing'));
+      assert.ok((errorSpan.attributes['error.stack'] as string).includes('recurAndThrow'));
+      assert.ok((errorSpan.attributes['error.stack'] as string).length <= 4096);
+      assert.ok((errorSpan.attributes['error.message'] as string).includes('something'));
+      assert.ok((errorSpan.attributes['error.message'] as string).includes('bad thing'));
       done();
     }, 100);
   });
@@ -351,8 +358,8 @@ describe('test unhandled promise rejection', () => {
       const errorSpan = capturer.spans.find(span => span.attributes.component === 'error');
       assert.ok(errorSpan);
       assert.ok(errorSpan.attributes.error);
-      assert.ok(errorSpan.attributes['error.stack'].includes('throwBacon'));
-      assert.ok(errorSpan.attributes['error.message'].includes('bacon'));
+      assert.ok((errorSpan.attributes['error.stack'] as string).includes('throwBacon'));
+      assert.ok((errorSpan.attributes['error.message'] as string).includes('bacon'));
       done();
     }, 100);
   });
@@ -397,7 +404,7 @@ describe('test unloaded img', () => {
       const span = capturer.spans.find( s => s.attributes.component === 'error');
       assert.ok(span);
       assert.strictEqual(span.name, 'eventListener.error');
-      assert.ok(span.attributes.target_src.endsWith('DoesNotExist.jpg'));
+      assert.ok((span.attributes.target_src as string).endsWith('DoesNotExist.jpg'));
 
       done();
     }, 100);

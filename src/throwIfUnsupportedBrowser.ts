@@ -14,6 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import './throwIfUnsupportedBrowser';
-import SplunkRum from './index';
-export default SplunkRum;
+if( typeof Symbol !== 'function') {
+  const noop = function(){};
+  window.SplunkRum = {
+    init: noop,
+    error: noop,
+    setGlobalAttributes: noop
+  };
+  throw new Error('SplunkRum: browser not supported, disabling instrumentation.');
+}

@@ -18,10 +18,10 @@ jobs:
           key: npm-${{ hashFiles('package-lock.json') }}
           restore-keys: npm-
       - run: npm ci
-      - name: Lint code
-        run: npm run lint
-      - name: Lint docs
-        run: npm run lint:markdown
+      # - name: Lint code
+      #   run: npm run lint
+      # - name: Lint docs
+      #   run: npm run lint:markdown
       - name: Verify types
         run: npm run check:types
       - name: Transpile code

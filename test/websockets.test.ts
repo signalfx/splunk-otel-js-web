@@ -50,14 +50,14 @@ describe('can produce websocket events', () => {
           assert.strictEqual('ws://127.0.0.1:8979/', span.attributes['http.url']);
         });
         assert.strictEqual('connect', wsSpans[0].name);
-        assert.strictEqual(SpanKind.CLIENT, wsSpans[0].kind);
+        assert.strictEqual(SpanKind.CLIENT, wsSpans[0].kind, 'Check first span kind.');
         assert.strictEqual('foo', wsSpans[0].attributes.protocols);
         assert.strictEqual('send', wsSpans[1].name);
-        assert.strictEqual(SpanKind.PRODUCER, wsSpans[1].kind);
+        assert.strictEqual(SpanKind.PRODUCER, wsSpans[1].kind, 'Check second span kind.');
         assert.strictEqual(12, wsSpans[1].attributes['http.request_content_length']);
         assert.strictEqual('foo', wsSpans[1].attributes.protocol);
         assert.strictEqual('onmessage', wsSpans[2].name);
-        assert.strictEqual(SpanKind.CONSUMER, wsSpans[2].kind);
+        assert.strictEqual(SpanKind.CONSUMER, wsSpans[2].kind, 'Check third span kind.');
         assert.strictEqual(8, wsSpans[2].attributes['http.response_content_length']);
         assert.strictEqual('foo', wsSpans[2].attributes.protocol);
         socket.close();
@@ -92,7 +92,7 @@ describe('can produce websocket events', () => {
 
   // FIXME find a way to make send throw..
 
-  it ('can report failed connect to non-listening port', (done) => {
+  it('can report failed connect to non-listening port', (done) => {
     capturer.clear();
     const socket = new WebSocket('ws://127.0.0.1:31874/', ['foo', 'bar']); // assuming no ws server running there...
     socket.addEventListener('error', () => {

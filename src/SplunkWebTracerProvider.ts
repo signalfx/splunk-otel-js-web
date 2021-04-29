@@ -14,13 +14,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { WebTracerProvider } from '@opentelemetry/web';
+import { WebTracerConfig, WebTracerProvider } from '@opentelemetry/web';
 import { getRumSessionId } from './session';
 import { version as SplunkRumVersion } from '../package.json';
-import { propagation, context, trace } from '@opentelemetry/api';
+import { propagation, context, trace, SpanAttributes } from '@opentelemetry/api';
+import { Tracer } from '@opentelemetry/tracing';
+
+export interface SplunkWebTracerProviderConfig extends WebTracerConfig {
+  app: string;
+  instanceId: string;
+  globalAttributes: SpanAttributes;
+}
 
 export class SplunkWebTracerProvider extends WebTracerProvider {
-  constructor(config) {
+  private readonly _app: string;
+  private readonly _instanceId: string;
+  private readonly _globalAttributes: SpanAttributes;
+
+  constructor(config: SplunkWebTracerProviderConfig) {
     super(config);
 
     this._app = config.app;
@@ -28,8 +39,8 @@ export class SplunkWebTracerProvider extends WebTracerProvider {
     this._globalAttributes = config.globalAttributes ?? {};
   }
 
-  getTracer(name, version, config) {
-    const tracer = super.getTracer(name, version, config);
+  getTracer(name: string, version?: string): Tracer {
+    const tracer = super.getTracer(name, version);
     const origStartSpan = tracer.startSpan;
 
     const that = this;
@@ -47,21 +58,25 @@ export class SplunkWebTracerProvider extends WebTracerProvider {
     return tracer;
   }
 
-  setGlobalAttributes(attributes) {
+  setGlobalAttributes(attributes: SpanAttributes): void {
     if (attributes) {
       Object.assign(this._globalAttributes, attributes);
     } else {
-      this._globalAttributes = {}; 
+      for (const key of Object.keys(this._globalAttributes)) {
+        delete this._globalAttributes[key];
+      }
     }
   }
 
-  shutdown() {
-    // TODO: upstream
-    // note: BasicTracerProvider registers the propagator given to it in config
-    // if the global propagator is the same as the one we registered, then we should deregister it
-    propagation.disable();
-    context.disable();
-    trace.disable();
-    super.shutdown();
+  shutdown(): Promise<void> {
+    return new Promise<void>((resolve) => {
+      // TODO: upstream
+      // note: BasicTracerProvider registers the propagator given to it in config
+      // if the global propagator is the same as the one we registered, then we should deregister it
+      propagation.disable();
+      context.disable();
+      trace.disable();
+      resolve();
+    }).then(() => super.shutdown());
   }
 }
