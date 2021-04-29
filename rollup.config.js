@@ -51,6 +51,7 @@ export default [
       babel({
         babelHelpers: 'runtime',
         envName: 'legacy',
+        extensions: ['.js', '.es6', '.es', 'mjs', '.ts'],
         exclude: [
           /node_modules\/core-js/
         ]
