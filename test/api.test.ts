@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { context, setSpan, getSpan, SpanStatusCode, trace } from '@opentelemetry/api';
 
-import SplunkOtelWeb, { INSTRUMENTATIONS_ALL_DISABLED } from '..';
+import SplunkOtelWeb, { INSTRUMENTATIONS_ALL_DISABLED } from '../src/index';
 import { SpanCapturer } from './utils';
 import { SpanProcessor } from '@opentelemetry/tracing';
 
@@ -10,7 +10,7 @@ describe('Transitive API', () => {
   let spanCapturer = new SpanCapturer();
 
   beforeEach(() => {
-    SplunkOtelWeb.init({ 
+    SplunkOtelWeb.init({
       app: 'my-app',
       beaconUrl: 'https://localhost:9411/api/traces',
       rumAuth: 'xxx',
@@ -18,7 +18,7 @@ describe('Transitive API', () => {
     });
 
     spanCapturer = new SpanCapturer();
-    SplunkOtelWeb.provider!.addSpanProcessor(spanCapturer as any as SpanProcessor);
+    SplunkOtelWeb.provider?.addSpanProcessor(spanCapturer as any as SpanProcessor);
   });
 
   afterEach(() => {

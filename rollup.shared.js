@@ -6,6 +6,7 @@ const commonjs = require('@rollup/plugin-commonjs');
 
 module.exports.babelPlugin = babel({ 
   babelHelpers: 'runtime',
+  extensions: ['.js', '.es6', '.es', 'mjs', '.ts']
 });
 
 module.exports.nodeResolvePlugin = nodeResolve({

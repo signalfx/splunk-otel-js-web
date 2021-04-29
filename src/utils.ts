@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-export function generateId(bits) {
+export function generateId(bits: number): string {
   const xes = 'x'.repeat(bits/4);
   return xes.replace(/x/g, function () {
     return (Math.random() * 16 | 0).toString(16);
   });
 }
 
-export function findCookieValue(cookieName) {
+export function findCookieValue(cookieName: string): string | undefined {
   const decodedCookie = decodeURIComponent(document.cookie);
   const cookies = decodedCookie.split(';');
   for (let i = 0; i < cookies.length; i++) {
@@ -33,7 +33,7 @@ export function findCookieValue(cookieName) {
   return undefined;
 }
 
-export function limitLen(s, cap) {
+export function limitLen(s: string, cap: number) {
   if (s.length > cap) {
     return s.substring(0, cap);
   } else {
@@ -45,12 +45,15 @@ export function limitLen(s, cap) {
  * Get plugin config from user provided value
  *
  * @template {Object|undefined} T
- * @param {T|Boolean|undefined} value Value given by user
- * @param {T} defaults Default value
- * @param {boolean|undefined} defaultDisable If undefined by user should mean false
- * @returns {T|false}
- */ 
-export function getPluginConfig(value, defaults, defaultDisable) {
+ * @param value Value given by user
+ * @param defaults Default value
+ * @param defaultDisable If undefined by user should mean false
+ */
+export function getPluginConfig<T>(
+  value: T | boolean | undefined,
+  defaults?: T,
+  defaultDisable?: T | boolean,
+): false | T {
   if (value === false) {
     return value;
   }
@@ -62,7 +65,7 @@ export function getPluginConfig(value, defaults, defaultDisable) {
   return Object.assign({}, defaults, value);
 }
 
-export function isIframe() {
+export function isIframe(): boolean {
   try {
     return window.self !== window.top;
   } catch (e) {

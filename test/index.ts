@@ -1,5 +1,5 @@
 /*
-Copyright 2021 Splunk Inc.
+Copyright 2020 Splunk Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,12 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-if( typeof Symbol !== 'function') {
-  const noop = function(){}; 
-  window.SplunkRum = { 
-    init: noop,
-    error: noop,
-    setGlobalAttributes: noop
-  };
-  throw new Error('SplunkRum: browser not supported, disabling instrumentation.');
-}
+
+import 'mocha';
+
+// Manually maintain this list, as old webpack require-based mechanism isn't working under rollup
+import './init.test';
+import './servertiming.test';
+import './utils.test';
+import './session.test';
+import './websockets.test';
+import './SplunkExporter.test';
+import './api.test';

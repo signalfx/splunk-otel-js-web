@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import {
-  InstrumentationBase,
+  InstrumentationBase, InstrumentationConfig,
 } from '@opentelemetry/instrumentation';
 
 import { version } from '../package.json';
@@ -23,22 +23,35 @@ import { hrTime, isUrlIgnored } from '@opentelemetry/core';
 import { addSpanNetworkEvents } from '@opentelemetry/web';
 import { HttpAttribute } from '@opentelemetry/semantic-conventions';
 
+interface SplunkPostDocLoadResourceInstrumentationConfig extends InstrumentationConfig {
+  allowedInitiatorTypes?: string[];
+  ignoreUrls?: (string|RegExp)[];
+}
+
 const MODULE_NAME = 'splunk-post-doc-load-resource';
 const defaultAllowedInitiatorTypes = ['img', 'script']; //other, css, link
-export class PostDocLoadResourceObserver extends InstrumentationBase {
-  
-  constructor(config = {}) {
-    super(MODULE_NAME, version, Object.assign({}, {allowedInitiatorTypes: defaultAllowedInitiatorTypes}, config));
-    this.observer = undefined;
+export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBase {
+  private observer: PerformanceObserver | undefined;
+  private config: SplunkPostDocLoadResourceInstrumentationConfig;
+
+  constructor(config: SplunkPostDocLoadResourceInstrumentationConfig = {}) {
+    const processedConfig: SplunkPostDocLoadResourceInstrumentationConfig = Object.assign(
+      {},
+      { allowedInitiatorTypes: defaultAllowedInitiatorTypes },
+      config,
+    );
+    super(MODULE_NAME, version, processedConfig);
+    this.config = processedConfig;
   }
 
   init() {}
 
   _startObserver() {
-    this.observer = new PerformanceObserver( (list) => {
+    this.observer = new PerformanceObserver((list) => {
       if (window.document.readyState === 'complete') {
-        list.getEntries().forEach( entry => {
-          if (this._config.allowedInitiatorTypes.includes(entry.initiatorType)) {
+        list.getEntries().forEach(entry => {
+          // TODO: check how we can amend TS base typing to fix this
+          if (this.config.allowedInitiatorTypes.includes((entry as any).initiatorType)) {
             this._createSpan(entry);
           }
         });
@@ -48,15 +61,16 @@ export class PostDocLoadResourceObserver extends InstrumentationBase {
     this.observer.observe({entryTypes: ['resource']});
   }
 
-  _createSpan(entry) {
-    if (isUrlIgnored(entry.name, this._config.ignoreUrls)) {
+  // TODO: discuss TS built-in types
+  _createSpan(entry: any) {
+    if (isUrlIgnored(entry.name, this.config.ignoreUrls)) {
       return;
     }
 
-    const span = this._tracer.startSpan(
+    const span = this.tracer.startSpan(
       //TODO use @opentelemetry/instrumentation-document-load AttributeNames.RESOURCE_FETCH ?,
       // AttributeNames not exported currently
-      'resourceFetch', 
+      'resourceFetch',
       {
         startTime: hrTime(entry.fetchStart),
       }
@@ -81,7 +95,7 @@ export class PostDocLoadResourceObserver extends InstrumentationBase {
       });
     }
   }
-  
+
   disable() {
     if (this.observer) {
       this.observer.disconnect();
