@@ -48,9 +48,9 @@ export const DEFAULT_AUTO_INSTRUMENTED_EVENTS: UserInteractionEventsConfig = {
 const ROUTING_INSTRUMENTATION_NAME = 'route';
 const ROUTING_INSTRUMENTATION_VERSION = '1';
 
-interface SplunkUserInteractionInstrumentationConfig extends InstrumentationConfig {
+export interface SplunkUserInteractionInstrumentationConfig extends InstrumentationConfig {
   events?: UserInteractionEventsConfig;
-};
+}
 
 export class SplunkUserInteractionInstrumentation extends UserInteractionInstrumentation {
   private readonly _autoInstrumentedEvents: UserInteractionEventsConfig;
@@ -73,7 +73,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
       }
 
       return _superCreateSpan(element, eventName, parentSpan);
-    }
+    };
   }
 
   setTracerProvider(tracerProvider) {

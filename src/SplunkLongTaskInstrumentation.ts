@@ -62,9 +62,9 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
     span.setAttribute('longtask.entry_type', entry.entryType);
     span.setAttribute('longtask.duration', entry.duration);
 
-    const attribution = (entry as any).attribution;
-    if (Array.isArray(attribution)) {
-      attribution.forEach((attribution, index) => {
+    const attributionList = (entry as any).attribution;
+    if (Array.isArray(attributionList)) {
+      attributionList.forEach((attribution, index) => {
         const prefix = attribution > 1 ? `longtask.attribution[${index}]` : 'longtask.attribution';
         span.setAttribute(`${prefix}.name`, attribution.name);
         span.setAttribute(`${prefix}.entry_type`, attribution.entryType);

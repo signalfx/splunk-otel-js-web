@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 // FIXME convert into otel-js-contrib Plugin and upstream
-import shimmer from 'shimmer';
+import * as shimmer from 'shimmer';
 import {SpanKind, setSpan, context, Span} from '@opentelemetry/api';
 import {isUrlIgnored} from '@opentelemetry/core';
 import { version } from '../package.json';
@@ -55,14 +55,14 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase {
   protected patchSend(ws: WebSocket) {
     const instrumentation = this;
     const origSend = ws.send;
-    ws.send = function instrumentedSend() {
+    ws.send = function instrumentedSend(...args) {
       const span = instrumentation.startSpan(ws, 'send', SpanKind.PRODUCER);
-      const sendSize = arguments.length > 0 ? size(arguments[0]) : undefined;
+      const sendSize = args.length > 0 ? size(args[0]) : undefined;
       span.setAttribute('http.request_content_length', sendSize);
       let retVal = undefined;
 
       try {
-        retVal = origSend.apply(ws, arguments);
+        retVal = origSend.apply(ws, args);
       } catch (err) {
         instrumentation.endSpanExceptionally(span, err);
         throw err;
@@ -115,19 +115,20 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase {
       type: K,
       callback: ((this: WebSocket, ev: WebSocketEventMap[K]) => any) | EventListenerObject,
       options?: boolean | AddEventListenerOptions,
-    ): any {
+    ): void {
       if (type !== 'message') { // only patching message event listeners
         // TODO: remove any once typing is corrected
         // currently there's 2 overloaded versions of WebSocket['addEventListener']
         // this prevents function parameter inference,
         // and in consequence makes TS unable to match the arguments in the call below, even though they are correct
-        return origAEL(type, callback as any, options);
+        origAEL(type, callback as any, options);
+        return;
       }
 
-      const once = typeof options == 'boolean' ? undefined : options?.once;
-      const patchedCallback = function patchedAddEventListenerCallback() {
+      const once = typeof options === 'boolean' ? undefined : options?.once;
+      const patchedCallback = function patchedAddEventListenerCallback(...args) {
         const capturedThiz = this;
-        const capturedArgs = arguments;
+        const capturedArgs = args;
         if (once) {
           instrumentation.removePatchedListener(ws, callback);
         }
@@ -141,7 +142,7 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase {
           if (typeof callback === 'function') {
             result = callback.apply(capturedThiz, capturedArgs);
           } else {
-            result = callback.handleEvent(arguments[0]);
+            result = callback.handleEvent(args[0]);
           }
           span.end();
           return result;
@@ -153,15 +154,15 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase {
     };
 
     const origREL = ws.removeEventListener;
-    ws.removeEventListener = function(type, callback) {
+    ws.removeEventListener = function(type, callback, options): void {
       if (type !== 'message') {
-        return origREL.apply(ws, arguments);
+        return origREL.call(ws, type, callback, options);
       }
       const patchedCallback = instrumentation.removePatchedListener(ws, callback);
       if (patchedCallback) {
-        return origREL.apply(ws, [type, patchedCallback]);
+        return origREL.call(ws, type, patchedCallback, options);
       } else {
-        return origREL.apply(ws, arguments);
+        return origREL.call(ws, type, callback, options);
       }
     };
 
@@ -169,54 +170,57 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase {
 
   public enable() {
     const instrumentation = this;
-    shimmer.wrap(window, 'WebSocket', function (original) {
-      return function instrumentedWebSocket(url: string, protocols?: string | string[]) {
-        if (isUrlIgnored(url, instrumentation._config.ignoreUrls)) {
-          return new original(url, protocols);
-        }
-
-        let connectSpan = instrumentation.tracer.startSpan('connect', {
-          kind: SpanKind.CLIENT,
-          attributes: {
-            'component': 'websocket',
-          },
-        });
-        if (url) {
-          connectSpan.setAttribute('http.url', arguments[0]);
-        }
-        if (protocols) {
-          if (typeof protocols === 'string') {
-            connectSpan.setAttribute('protocols', protocols);
-          } else {
-            connectSpan.setAttribute('protocols', JSON.stringify(protocols));
+    function webSocketWrapper(): (typeof WebSocket) {
+      class InstrumentedWebSocket extends WebSocket {
+        constructor(url: string, protocols?: string | string[]) {
+          if (isUrlIgnored(url, instrumentation._config.ignoreUrls)) {
+            super(url, protocols);
+            return;
           }
-        }
-        function instrumentedConstructor(): WebSocket {
+
+          const connectSpan = instrumentation.tracer.startSpan('connect', {
+            kind: SpanKind.CLIENT,
+            attributes: {
+              'component': 'websocket',
+            },
+          });
+          if (url) {
+            connectSpan.setAttribute('http.url', url);
+          }
+          if (protocols) {
+            if (typeof protocols === 'string') {
+              connectSpan.setAttribute('protocols', protocols);
+            } else {
+              connectSpan.setAttribute('protocols', JSON.stringify(protocols));
+            }
+          }
+
           try {
-            return new original(url, protocols);
+            super(url, protocols);
           } catch (constructorException) {
             instrumentation.endSpanExceptionally(connectSpan, constructorException);
             throw constructorException;
           }
-        }
 
-        const ws = instrumentedConstructor();
-        ws.addEventListener('open', function () {
-          connectSpan.end();
-        });
-        ws.addEventListener('error', function (event: ErrorEvent) {
-          if (connectSpan.isRecording()) {
-            instrumentation.endSpanExceptionally(connectSpan, new Error(event.error || event.message || 'Could not connect.'));
-          } else {
-            // error occured after connect... report that
-            instrumentation.startSpan(ws, 'error', SpanKind.CLIENT).end();
-          }
-        });
-        instrumentation.patchSend(ws);
-        instrumentation.patchEventListener(ws);
-        return ws;
-      };
-    });
+          this.addEventListener('open', function () {
+            connectSpan.end();
+          });
+          this.addEventListener('error', function (event: ErrorEvent) {
+            if (connectSpan.isRecording()) {
+              instrumentation.endSpanExceptionally(connectSpan, new Error(event.error || event.message || 'Could not connect.'));
+            } else {
+              // error occured after connect... report that
+              instrumentation.startSpan(this, 'error', SpanKind.CLIENT).end();
+            }
+          });
+          instrumentation.patchSend(this);
+          instrumentation.patchEventListener(this);
+        }
+      }
+
+      return InstrumentedWebSocket;
+    }
+    shimmer.wrap(window, 'WebSocket', webSocketWrapper);
   }
 
   public disable() {

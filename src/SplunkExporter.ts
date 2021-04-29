@@ -35,7 +35,7 @@ export interface SplunkExporterConfig {
   onAttributesSerializing?: (attributes: SpanAttributes, span: ReadableSpan) => SpanAttributes,
   xhrSender?: (url: string, data: BodyInit) => void,
   beaconSender?: (url: string, data: BodyInit) => void,
-};
+}
 
 export const NOOP_ATTRIBUTES_TRANSFORMER: SplunkExporterConfig['onAttributesSerializing'] = (attributes) => attributes;
 export const NATIVE_XHR_SENDER: SplunkExporterConfig['xhrSender'] = (url: string, data: BodyInit) => {
@@ -46,22 +46,6 @@ export const NATIVE_XHR_SENDER: SplunkExporterConfig['xhrSender'] = (url: string
   xhr.send(data);
 };
 export const NATIVE_BEACON_SENDER: SplunkExporterConfig['beaconSender'] = navigator.sendBeacon ? (url, data) => navigator.sendBeacon(url, data) : null;
-
-// TODO: upstream proper exports from ZipkinExporter
-export interface ZipkinSpan {
-  traceId: string;
-  name: string;
-  parentId?: string;
-  id: string;
-  kind?: SpanKind;
-  timestamp: number;
-  duration: number;
-  debug?: boolean;
-  shared?: boolean;
-  localEndpoint: ZipkinEndpoint;
-  annotations?: ZipkinAnnotation[];
-  tags: ZipkinTags;
-}
 
 // TODO: upstream proper exports from ZipkinExporter
 export interface ZipkinAnnotation {
@@ -79,6 +63,22 @@ export interface ZipkinEndpoint {
 // TODO: upstream proper exports from ZipkinExporter
 export interface ZipkinTags {
   [tagKey: string]: unknown;
+}
+
+// TODO: upstream proper exports from ZipkinExporter
+export interface ZipkinSpan {
+  traceId: string;
+  name: string;
+  parentId?: string;
+  id: string;
+  kind?: SpanKind;
+  timestamp: number;
+  duration: number;
+  debug?: boolean;
+  shared?: boolean;
+  localEndpoint: ZipkinEndpoint;
+  annotations?: ZipkinAnnotation[];
+  tags: ZipkinTags;
 }
 
 /**

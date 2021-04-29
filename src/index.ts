@@ -23,6 +23,7 @@ import { SplunkXhrPlugin } from './SplunkXhrPlugin';
 import { SplunkFetchInstrumentation } from './SplunkFetchInstrumentation';
 import {
   SplunkUserInteractionInstrumentation,
+  SplunkUserInteractionInstrumentationConfig,
   DEFAULT_AUTO_INSTRUMENTED_EVENTS,
   UserInteractionEventsConfig,
 } from './SplunkUserInteractionInstrumentation';
@@ -33,10 +34,12 @@ import { initSessionTracking } from './session';
 import { SplunkWebSocketInstrumentation } from './SplunkWebSocketInstrumentation';
 import { initWebVitals } from './webvitals';
 import { SplunkLongTaskInstrumentation } from './SplunkLongTaskInstrumentation';
-import { SplunkPostDocLoadResourceInstrumentation } from './SplunkPostDocLoadResourceInstrumentation';
+import {
+  SplunkPostDocLoadResourceInstrumentation,
+  SplunkPostDocLoadResourceInstrumentationConfig,
+} from './SplunkPostDocLoadResourceInstrumentation';
 import { SplunkWebTracerProvider } from './SplunkWebTracerProvider';
 import { FetchInstrumentationConfig } from '@opentelemetry/instrumentation-fetch';
-import { SplunkPostDocLoadResourceInstrumentationConfig, SplunkUserInteractionInstrumentationConfig } from './types';
 import { XMLHttpRequestInstrumentationConfig } from '@opentelemetry/instrumentation-xml-http-request';
 
 export * from './SplunkExporter';
@@ -95,7 +98,7 @@ export interface SplunkOtelWebConfig {
    * Applies for XHR, Fetch and Websocket URLs. URLs that partially match any regex in ignoreUrls will not be traced.
    * In addition, URLs that are _exact matches_ of strings in ignoreUrls will also not be traced.
    * */
-  ignoreUrls?: Array<String | RegExp>;
+  ignoreUrls?: Array<string | RegExp>;
 
   /** Configuration for instrumentation modules. */
   instrumentations?: SplunkOtelWebOptionsInstrumentations;
@@ -204,9 +207,7 @@ const SplunkRum: SplunkOtelWebType = {
       return;
     }
 
-    console.log(!processedOptions.debug, processedOptions);
     if (!processedOptions.debug) {
-      console.log(!processedOptions.debug, !processedOptions.beaconUrl);
       if (!processedOptions.beaconUrl) {
         throw new Error('SplunkRum.init( {beaconUrl: \'https://something\'} ) is required.');
       } else if(!processedOptions.beaconUrl.startsWith('https') && !processedOptions.allowInsecureBeacon) {

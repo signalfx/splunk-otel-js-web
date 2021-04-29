@@ -40,7 +40,7 @@ export const COOKIE_NAME = '_splunk_rum_sid';
 
 type SessionIdType = string
 let rumSessionId: SessionIdType = generateId(64); // will be overwritten in init() with scriptInstance; only here as extreme fallback
-let recentActivity: boolean = false;
+let recentActivity = false;
 let cookieDomain: string;
 
 function markActivity() {
@@ -109,7 +109,7 @@ function renewCookieTimeout(sessionState) {
 // 1) Check if the cookie has been expired by the browser; if so, create a new one
 // 2) If activity has occured since the last periodic invocation, renew the cookie timeout
 // (Only exported for testing purposes.)
-export function updateSessionStatus() {
+export function updateSessionStatus(): void {
   let sessionState = parseCookieToSessionState();
   if (!sessionState) {
     sessionState = newSessionState();
@@ -122,7 +122,7 @@ export function updateSessionStatus() {
   recentActivity = false;
 }
 
-export function initSessionTracking(instanceId: SessionIdType, domain: string) {
+export function initSessionTracking(instanceId: SessionIdType, domain?: string): void {
   if (domain) {
     cookieDomain = domain;
   }

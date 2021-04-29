@@ -23,7 +23,7 @@ import { hrTime, isUrlIgnored } from '@opentelemetry/core';
 import { addSpanNetworkEvents } from '@opentelemetry/web';
 import { HttpAttribute } from '@opentelemetry/semantic-conventions';
 
-interface SplunkPostDocLoadResourceInstrumentationConfig extends InstrumentationConfig {
+export interface SplunkPostDocLoadResourceInstrumentationConfig extends InstrumentationConfig {
   allowedInitiatorTypes?: string[];
   ignoreUrls?: (string|RegExp)[];
 }

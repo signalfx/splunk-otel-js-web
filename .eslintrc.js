@@ -19,16 +19,19 @@ module.exports = {
     'header',
   ],
   'env': {
-    'mocha': true,
     'es2015': true,
     'commonjs': true,
   },
-  'extends': 'eslint:recommended',
+  parser: '@typescript-eslint/parser',
   'parserOptions': {
     'ecmaVersion': 2020,
     'sourceType': 'module'
   },
-  'rules': {
+  extends: [
+    'eslint:recommended',
+  ],
+  rules: {
+    // regular rules calibration
     'semi': ['error', 'always'],
     'quotes': ['error', 'single'],
     'strict': ['error', 'safe'],
@@ -92,10 +95,21 @@ module.exports = {
   },
   'overrides': [
     {
-      'files': ['src/**/*.js'],
-      'env': {
+      files: ['src/**/*.ts', 'test/**/*.ts'],
+      env: {
         'browser': true,
       },
+      extends: [
+        'plugin:@typescript-eslint/recommended',
+      ],
+      rules: {
+        // temporarily disabled rules, as we transition to Typescript
+        '@typescript-eslint/explicit-module-boundary-types': 'warn',
+        '@typescript-eslint/no-empty-function': 'warn',
+        'no-extra-parens': 'off', // otherwise removes parens around TS type casts
+        '@typescript-eslint/no-this-alias': 'warn',
+        '@typescript-eslint/explicit-function-return-type': 'warn',
+      }
     },
     {
       'files': ['integration-tests/**/*.js'],
@@ -105,10 +119,10 @@ module.exports = {
       },
     },
     {
-      'files': ['test/**/*.js'],
+      'files': ['test/**/*.ts'],
       'env': {
-        'browser': true,
         'node': true,
+        mocha: true,
       },
     },
     {

@@ -43,16 +43,16 @@ export class SplunkWebTracerProvider extends WebTracerProvider {
     const tracer = super.getTracer(name, version);
     const origStartSpan = tracer.startSpan;
 
-    const that = this;
-    tracer.startSpan = function () {
-      const span = origStartSpan.apply(tracer, arguments);
+    // TODO: subclass Tracer to implement this
+    tracer.startSpan = (...args) => {
+      const span = origStartSpan.apply(tracer, args);
       span.setAttribute('location.href', location.href);
       // FIXME does otel want this stuff in Resource?
       span.setAttribute('splunk.rumSessionId', getRumSessionId());
       span.setAttribute('splunk.rumVersion', SplunkRumVersion);
-      span.setAttribute('app', that._app);
-      span.setAttribute('splunk.scriptInstance', that._instanceId);
-      span.setAttributes(that._globalAttributes);
+      span.setAttribute('app', this._app);
+      span.setAttribute('splunk.scriptInstance', this._instanceId);
+      span.setAttributes(this._globalAttributes);
       return span;
     };
     return tracer;

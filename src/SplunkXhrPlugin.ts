@@ -48,6 +48,6 @@ export class SplunkXhrPlugin extends XMLHttpRequestInstrumentation {
       }
 
       return span;
-    }
+    };
   }
 }
