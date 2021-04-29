@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import { expect } from 'chai';
-import { context, setSpan, getSpan, SpanStatusCode, trace } from '@opentelemetry/api';
+import { context, setSpan, getSpan, SpanStatusCode } from '@opentelemetry/api';
 
 import SplunkOtelWeb, { INSTRUMENTATIONS_ALL_DISABLED } from '../src/index';
 import { SpanCapturer } from './utils';

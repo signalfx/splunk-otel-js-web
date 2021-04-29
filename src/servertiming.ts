@@ -42,7 +42,7 @@ export function captureTraceParent(serverTimingValues: string, span: Span): void
 const ValueRegex = new RegExp('00-([0-9a-f]{32})-([0-9a-f]{16})-01');
 
 // TODO: fix types for ServerTiming from Performance
-export function captureTraceParentFromPerformanceEntries(entries: PerformanceEntries, span): void {
+export function captureTraceParentFromPerformanceEntries(entries: PerformanceEntries, span: Span): void {
   if (!(entries as any).serverTiming) {
     return;
   }

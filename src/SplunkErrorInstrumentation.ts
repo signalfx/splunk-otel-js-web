@@ -16,8 +16,8 @@ limitations under the License.
 
 import * as shimmer from 'shimmer';
 import { getElementXPath } from '@opentelemetry/web';
-import {limitLen} from './utils';
-import { Span, Tracer } from '@opentelemetry/api';
+import { limitLen } from './utils';
+import { Span } from '@opentelemetry/api';
 import { hrTime } from '@opentelemetry/core';
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation';
 
@@ -63,20 +63,20 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
     super(ERROR_INSTRUMENTATION_NAME, ERROR_INSTRUMENTATION_VERSION, config);
   }
 
-  init() {}
+  init(): void {}
 
-  enable() {
+  enable(): void {
     shimmer.wrap(console, 'error', this._consoleErrorHandler);
     window.addEventListener('unhandledrejection', this._unhandledRejectionListener);
     window.addEventListener('error', this._errorListener);
-    document.documentElement.addEventListener('error', this._documentErrorListener, {capture: true});
+    document.documentElement.addEventListener('error', this._documentErrorListener, { capture: true });
   }
 
-  disable() {
+  disable(): void {
     shimmer.unwrap(console, 'error');
     window.removeEventListener('unhandledrejection', this._unhandledRejectionListener);
     window.removeEventListener('error', this._errorListener);
-    document.documentElement.removeEventListener('error', this._documentErrorListener, {capture: true});
+    document.documentElement.removeEventListener('error', this._documentErrorListener, { capture: true });
   }
 
   protected reportError(source: string, err: Error): void {

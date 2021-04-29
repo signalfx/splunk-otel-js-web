@@ -45,10 +45,10 @@ function isBrowser(browser, matches) {
   case 'boolean':
     return condition;
   case 'number':
-    condition = {min: condition};
+    condition = { min: condition };
   }
 
-  const {min, max} = condition;
+  const { min, max } = condition;
   const version = parseInt(browser.options.desiredCapabilities.browser_version, 10);
 
   return (!min || version >= min) && (!max || version <= max);

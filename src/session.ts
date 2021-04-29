@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {findCookieValue, generateId, isIframe} from './utils';
+import { findCookieValue, generateId, isIframe } from './utils';
 
 /*
     The basic idea is to let the browser expire cookies for us "naturally" once
@@ -132,7 +132,7 @@ export function initSessionTracking(instanceId: SessionIdType, domain?: string):
   setInterval(updateSessionStatus, PeriodicCheckSeconds * 1000);
   [
     'click', 'scroll', 'mousedown', 'keydown', 'touchend', 'visibilitychange'
-  ].forEach(type => document.addEventListener(type, markActivity, {capture:true, passive: true}));
+  ].forEach(type => document.addEventListener(type, markActivity, { capture:true, passive: true }));
   // FIXME have span creation also markActivity?
 }
 

@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import * as assert from 'assert';
-import {initSessionTracking, COOKIE_NAME, getRumSessionId, updateSessionStatus} from '../src/session';
+import { initSessionTracking, COOKIE_NAME, getRumSessionId, updateSessionStatus } from '../src/session';
 
 describe('Session tracking', () => {
   it('should correctly handle expiry, garbage values, (in)activity, etc.', (done) => {
@@ -30,7 +30,7 @@ describe('Session tracking', () => {
     assert.strictEqual(firstSessionId, getRumSessionId());
     // set cookie to expire in 2 seconds, mark activity, and then updateSessionStatus.  
     // Wait 4 seconds and cookie should still be there (having been renewed)
-    const cookieValue = encodeURIComponent(JSON.stringify({id:firstSessionId, startTime: new Date().getTime()}));
+    const cookieValue = encodeURIComponent(JSON.stringify({ id:firstSessionId, startTime: new Date().getTime() }));
     document.cookie = COOKIE_NAME + '=' + cookieValue + '; path=/; max-age=' + 2;
     document.body.dispatchEvent(new Event('click'));
     updateSessionStatus();
@@ -42,7 +42,7 @@ describe('Session tracking', () => {
       // Finally, set a fake cookie with startTime 5 hours ago, update status, and find a new cookie with a new session ID
       // after max age code does its thing
       const fiveHoursMillis = 5 * 60 * 60 * 1000;
-      const tooOldCookieValue = encodeURIComponent(JSON.stringify({id:firstSessionId, startTime: new Date().getTime()-fiveHoursMillis}));
+      const tooOldCookieValue = encodeURIComponent(JSON.stringify({ id:firstSessionId, startTime: new Date().getTime()-fiveHoursMillis }));
       document.cookie = COOKIE_NAME + '=' + tooOldCookieValue + '; path=/; max-age=' + 4;
 
       updateSessionStatus();

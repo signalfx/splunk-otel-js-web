@@ -44,7 +44,7 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
     };
   }
 
-  enable() {
+  enable(): void {
     // Don't attempt in browsers where there's no fetch API
     if (!window.fetch) {
       return;

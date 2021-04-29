@@ -16,8 +16,8 @@ limitations under the License.
 
 // FIXME convert into otel-js-contrib Plugin and upstream
 import * as shimmer from 'shimmer';
-import {SpanKind, setSpan, context, Span} from '@opentelemetry/api';
-import {isUrlIgnored} from '@opentelemetry/core';
+import { SpanKind, setSpan, context, Span } from '@opentelemetry/api';
+import { isUrlIgnored } from '@opentelemetry/core';
 import { version } from '../package.json';
 
 import {
@@ -41,10 +41,69 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase {
     this._config = config;
   }
 
-  init() {}
+  init(): void {}
 
-  protected startSpan(ws: WebSocket, name: string, spanKind: SpanKind) {
-    const span = this.tracer.startSpan(name, {kind: spanKind});
+  enable(): void {
+    const instrumentation = this;
+    function webSocketWrapper(): (typeof WebSocket) {
+      class InstrumentedWebSocket extends WebSocket {
+        constructor(url: string, protocols?: string | string[]) {
+          if (isUrlIgnored(url, instrumentation._config.ignoreUrls)) {
+            super(url, protocols);
+            return;
+          }
+
+          const connectSpan = instrumentation.tracer.startSpan('connect', {
+            kind: SpanKind.CLIENT,
+            attributes: {
+              'component': 'websocket',
+            },
+          });
+          if (url) {
+            connectSpan.setAttribute('http.url', url);
+          }
+          if (protocols) {
+            if (typeof protocols === 'string') {
+              connectSpan.setAttribute('protocols', protocols);
+            } else {
+              connectSpan.setAttribute('protocols', JSON.stringify(protocols));
+            }
+          }
+
+          try {
+            super(url, protocols);
+          } catch (constructorException) {
+            instrumentation.endSpanExceptionally(connectSpan, constructorException);
+            throw constructorException;
+          }
+
+          this.addEventListener('open', function () {
+            connectSpan.end();
+          });
+          this.addEventListener('error', function (event: ErrorEvent) {
+            if (connectSpan.isRecording()) {
+              instrumentation.endSpanExceptionally(connectSpan, new Error(event.error || event.message || 'Could not connect.'));
+            } else {
+              // error occured after connect... report that
+              instrumentation.startSpan(this, 'error', SpanKind.CLIENT).end();
+            }
+          });
+          instrumentation.patchSend(this);
+          instrumentation.patchEventListener(this);
+        }
+      }
+
+      return InstrumentedWebSocket;
+    }
+    shimmer.wrap(window, 'WebSocket', webSocketWrapper);
+  }
+
+  disable(): void {
+    shimmer.unwrap(window, 'WebSocket');
+  }
+
+  private startSpan(ws: WebSocket, name: string, spanKind: SpanKind) {
+    const span = this.tracer.startSpan(name, { kind: spanKind });
     span.setAttribute('component', 'websocket');
     span.setAttribute('protocol', ws.protocol);
     span.setAttribute('http.url', ws.url);
@@ -52,7 +111,7 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase {
     return span;
   }
 
-  protected patchSend(ws: WebSocket) {
+  private patchSend(ws: WebSocket) {
     const instrumentation = this;
     const origSend = ws.send;
     ws.send = function instrumentedSend(...args) {
@@ -77,7 +136,7 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase {
   }
 
   // Returns true iff we should use the patched callback; false if it's already been patched
-  protected addPatchedListener(ws: WebSocket, origListener, patched) {
+  private addPatchedListener(ws: WebSocket, origListener, patched) {
     let ws2patched = this.listener2ws2patched.get(origListener);
     if (!ws2patched) {
       ws2patched = new Map();
@@ -91,7 +150,7 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase {
   }
 
   // Returns patched listener or undefined
-  protected removePatchedListener(ws, origListener) {
+  private removePatchedListener(ws, origListener) {
     const ws2patched = this.listener2ws2patched.get(origListener);
     if (!ws2patched) {
       return undefined;
@@ -107,7 +166,7 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase {
   }
 
   // FIXME need to share logic better with userinteraction instrumentation
-  protected patchEventListener(ws: WebSocket) {
+  private patchEventListener(ws: WebSocket) {
     const instrumentation = this;
     const origAEL: WebSocket['addEventListener'] = ws.addEventListener.bind(ws);
 
@@ -168,66 +227,7 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase {
 
   }
 
-  public enable() {
-    const instrumentation = this;
-    function webSocketWrapper(): (typeof WebSocket) {
-      class InstrumentedWebSocket extends WebSocket {
-        constructor(url: string, protocols?: string | string[]) {
-          if (isUrlIgnored(url, instrumentation._config.ignoreUrls)) {
-            super(url, protocols);
-            return;
-          }
-
-          const connectSpan = instrumentation.tracer.startSpan('connect', {
-            kind: SpanKind.CLIENT,
-            attributes: {
-              'component': 'websocket',
-            },
-          });
-          if (url) {
-            connectSpan.setAttribute('http.url', url);
-          }
-          if (protocols) {
-            if (typeof protocols === 'string') {
-              connectSpan.setAttribute('protocols', protocols);
-            } else {
-              connectSpan.setAttribute('protocols', JSON.stringify(protocols));
-            }
-          }
-
-          try {
-            super(url, protocols);
-          } catch (constructorException) {
-            instrumentation.endSpanExceptionally(connectSpan, constructorException);
-            throw constructorException;
-          }
-
-          this.addEventListener('open', function () {
-            connectSpan.end();
-          });
-          this.addEventListener('error', function (event: ErrorEvent) {
-            if (connectSpan.isRecording()) {
-              instrumentation.endSpanExceptionally(connectSpan, new Error(event.error || event.message || 'Could not connect.'));
-            } else {
-              // error occured after connect... report that
-              instrumentation.startSpan(this, 'error', SpanKind.CLIENT).end();
-            }
-          });
-          instrumentation.patchSend(this);
-          instrumentation.patchEventListener(this);
-        }
-      }
-
-      return InstrumentedWebSocket;
-    }
-    shimmer.wrap(window, 'WebSocket', webSocketWrapper);
-  }
-
-  public disable() {
-    shimmer.unwrap(window, 'WebSocket');
-  }
-
-  protected endSpanExceptionally(span: Span, err: Error) {
+  private endSpanExceptionally(span: Span, err: Error) {
     span.setAttribute('error', true);
     span.setAttribute('error.message', err.message);
     span.setAttribute('error.object', err.name ?  err.name : err.constructor && err.constructor.name ? err.constructor.name : 'Error');

@@ -15,18 +15,18 @@ limitations under the License.
 */
 
 import * as assert from 'assert';
-import {captureTraceParent, captureTraceParentFromPerformanceEntries} from '../src/servertiming';
+import { captureTraceParent, captureTraceParentFromPerformanceEntries } from '../src/servertiming';
 
 describe('test captureTraceParent', () => {
   it('should deal with simple value', () => {
-    const span = { setAttribute: function(k,v){this[k] = v;}};
+    const span = { setAttribute: function(k,v){this[k] = v;} };
     // TODO: start an actual span
     captureTraceParent('traceparent;desc="00-000000000000000078499d3266d75d5f-7e1c10b3c482edbe-01"', span as any);
     assert.strictEqual('000000000000000078499d3266d75d5f', span['link.traceId']);
     assert.strictEqual('7e1c10b3c482edbe', span['link.spanId']);
   });
   it('should deal with multiple values', () => {
-    const span = { setAttribute: function(k,v){this[k] = v;}};
+    const span = { setAttribute: function(k,v){this[k] = v;} };
     // TODO: start an actual span
     captureTraceParent('other;dur=1234, traceparent;desc="00-000000000000000078499d3266d75d5f-7e1c10b3c482edbe-01",misc;desc="stuff"', span as any);
     assert.strictEqual('000000000000000078499d3266d75d5f', span['link.traceId']);
@@ -37,7 +37,7 @@ describe('test captureTraceParent', () => {
 describe('test captureTraceParentFromPerformanceEntries', () => {
   it('should handle absence of serverTiming', () => {
     const entries = {};
-    const span = { setAttribute: function(k,v){this[k] = v;}};
+    const span = { setAttribute: function(k,v){this[k] = v;} };
     // TODO: start an actual span
     captureTraceParentFromPerformanceEntries(entries, span as any);
     assert.ok(span['link.traceId'] === undefined);
@@ -45,11 +45,11 @@ describe('test captureTraceParentFromPerformanceEntries', () => {
   it('should deal with multiple entries', () => {
     const entries = {
       serverTiming: [
-        {name: 'nomatch'},
-        {name: 'traceparent', description: '00-000000000000000078499d3266d75d5f-7e1c10b3c482edbe-01'}
+        { name: 'nomatch' },
+        { name: 'traceparent', description: '00-000000000000000078499d3266d75d5f-7e1c10b3c482edbe-01' }
       ]
     };
-    const span = { setAttribute: function(k,v){this[k] = v;}};
+    const span = { setAttribute: function(k,v){this[k] = v;} };
     // TODO: start an actual span
     captureTraceParentFromPerformanceEntries(entries as any, span as any);
     assert.strictEqual('000000000000000078499d3266d75d5f', span['link.traceId']);
