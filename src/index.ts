@@ -150,8 +150,6 @@ export const INSTRUMENTATIONS_ALL_DISABLED: SplunkOtelWebOptionsInstrumentations
     { 'webvitals': false },
   );
 
-const NOOP = () => {};
-
 function buildExporter(options) {
   const completeUrl = options.beaconUrl + (options.rumAuth ? '?auth='+options.rumAuth : '');
   return options.exporter._factory({
@@ -177,7 +175,7 @@ interface SplunkOtelWebType {
 }
 
 let inited = false;
-let _deregisterInstrumentations = NOOP;
+let _deregisterInstrumentations: () => void | undefined;
 let _errorInstrumentation: SplunkErrorInstrumentation | undefined;
 const SplunkRum: SplunkOtelWebType = {
   DEFAULT_AUTO_INSTRUMENTED_EVENTS,
@@ -289,8 +287,8 @@ const SplunkRum: SplunkOtelWebType = {
     if (!inited) {
       return;
     }
-    _deregisterInstrumentations();
-    _deregisterInstrumentations = NOOP;
+    _deregisterInstrumentations?.();
+    _deregisterInstrumentations = undefined;
 
     this.provider.shutdown();
     delete this.provider;
