@@ -19,10 +19,10 @@ import {
   statusCodeTagName,
   statusDescriptionTagName,
 } from '@opentelemetry/exporter-zipkin/build/src/transform.js';
-import {ExportResult, ExportResultCode} from '@opentelemetry/core';
-import {limitLen} from './utils';
+import { ExportResult, ExportResultCode } from '@opentelemetry/core';
+import { limitLen } from './utils';
 import { Resource } from '@opentelemetry/resources';
-import { SpanAttributes, Span, SpanKind } from '@opentelemetry/api';
+import { SpanAttributes, SpanKind } from '@opentelemetry/api';
 import { ReadableSpan, SpanExporter } from '@opentelemetry/tracing';
 
 const MAX_VALUE_LIMIT = 4096;
@@ -35,7 +35,7 @@ export interface SplunkExporterConfig {
   onAttributesSerializing?: (attributes: SpanAttributes, span: ReadableSpan) => SpanAttributes,
   xhrSender?: (url: string, data: BodyInit) => void,
   beaconSender?: (url: string, data: BodyInit) => void,
-};
+}
 
 export const NOOP_ATTRIBUTES_TRANSFORMER: SplunkExporterConfig['onAttributesSerializing'] = (attributes) => attributes;
 export const NATIVE_XHR_SENDER: SplunkExporterConfig['xhrSender'] = (url: string, data: BodyInit) => {
@@ -46,22 +46,6 @@ export const NATIVE_XHR_SENDER: SplunkExporterConfig['xhrSender'] = (url: string
   xhr.send(data);
 };
 export const NATIVE_BEACON_SENDER: SplunkExporterConfig['beaconSender'] = navigator.sendBeacon ? (url, data) => navigator.sendBeacon(url, data) : null;
-
-// TODO: upstream proper exports from ZipkinExporter
-export interface ZipkinSpan {
-  traceId: string;
-  name: string;
-  parentId?: string;
-  id: string;
-  kind?: SpanKind;
-  timestamp: number;
-  duration: number;
-  debug?: boolean;
-  shared?: boolean;
-  localEndpoint: ZipkinEndpoint;
-  annotations?: ZipkinAnnotation[];
-  tags: ZipkinTags;
-}
 
 // TODO: upstream proper exports from ZipkinExporter
 export interface ZipkinAnnotation {
@@ -79,6 +63,22 @@ export interface ZipkinEndpoint {
 // TODO: upstream proper exports from ZipkinExporter
 export interface ZipkinTags {
   [tagKey: string]: unknown;
+}
+
+// TODO: upstream proper exports from ZipkinExporter
+export interface ZipkinSpan {
+  traceId: string;
+  name: string;
+  parentId?: string;
+  id: string;
+  kind?: SpanKind;
+  timestamp: number;
+  duration: number;
+  debug?: boolean;
+  shared?: boolean;
+  localEndpoint: ZipkinEndpoint;
+  annotations?: ZipkinAnnotation[];
+  tags: ZipkinTags;
 }
 
 /**
@@ -108,7 +108,27 @@ export class SplunkExporter implements SpanExporter {
     }, SPAN_RATE_LIMIT_PERIOD);
   }
 
-  filter(span: ReadableSpan) {
+  export(
+    spans: ReadableSpan[],
+    resultCallback: (result: ExportResult) => void
+  ): void {
+    spans = spans.filter(span => this._filter(span));
+    const zspans = spans.map(span => this._mapToZipkinSpan(span));
+    const zJson = JSON.stringify(zspans);
+    if (this._beaconSender) {
+      this._beaconSender(this.beaconUrl, zJson);
+    } else {
+      this._xhrSender(this.beaconUrl, zJson);
+    }
+    resultCallback({ code: ExportResultCode.SUCCESS });
+  }
+
+  shutdown(): Promise<void> {
+    clearInterval(this._limiterHandle);
+    return Promise.resolve();
+  }
+
+  private _filter(span: ReadableSpan) {
     const component = (span.attributes?.component ?? 'unknown').toString();
     if (!this._spanCounts.has(component)) {
       this._spanCounts.set(component, -1);
@@ -118,33 +138,13 @@ export class SplunkExporter implements SpanExporter {
     return counter < MAX_SPANS_PER_PERIOD_PER_COMPONENT;
   }
 
-  export(
-    spans: ReadableSpan[],
-    resultCallback: (result: ExportResult) => void
-  ) {
-    spans = spans.filter(span => this.filter(span));
-    const zspans = spans.map(span => this._mapToZipkinSpan(span));
-    const zJson = JSON.stringify(zspans);
-    if (this._beaconSender) {
-      this._beaconSender(this.beaconUrl, zJson);
-    } else {
-      this._xhrSender(this.beaconUrl, zJson);
-    }
-    resultCallback({code: ExportResultCode.SUCCESS});
-  }
-
-  shutdown(): Promise<void> {
-    clearInterval(this._limiterHandle);
-    return Promise.resolve();
-  }
-
-  _mapToZipkinSpan(span: ReadableSpan): ZipkinSpan {
+  private _mapToZipkinSpan(span: ReadableSpan): ZipkinSpan {
     const preparedSpan = this._preTranslateSpan(span);
     const zspan = toZipkinSpan(preparedSpan, SERVICE_NAME, statusCodeTagName, statusDescriptionTagName);
     return this._postTranslateSpan(zspan);
   }
 
-  _preTranslateSpan(span: ReadableSpan): ReadableSpan {
+  private _preTranslateSpan(span: ReadableSpan): ReadableSpan {
     return {
       // todo: once typescript is implemented, conform to ReadableSpan
       // note: some properties in Span are not enumerable, and as a result cannot be spread or Object.assign'ed
@@ -166,7 +166,7 @@ export class SplunkExporter implements SpanExporter {
     };
   }
 
-  _postTranslateSpan(span: ZipkinSpan) {
+  private _postTranslateSpan(span: ZipkinSpan) {
     delete span.localEndpoint;
     span.name = limitLen(span.name, MAX_VALUE_LIMIT);
     for (const [key, value] of Object.entries(span.tags)) {

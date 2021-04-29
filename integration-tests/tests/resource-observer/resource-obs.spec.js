@@ -100,7 +100,7 @@ module.exports = {
     // for debugging flaky tests
     if (imageSpans.length !== 0) {
       console.log('imageSpans.length');
-      console.log(inspect(imageSpans, { depth: 10} ));
+      console.log(inspect(imageSpans, { depth: 10 } ));
     }
 
     await browser.assert.strictEqual(imageSpans.length , 1);
@@ -128,7 +128,7 @@ module.exports = {
     // for debugging flaky tests
     if (imageSpans.length !== 2) {
       console.log('imageSpans.length');
-      console.log(inspect(imageSpans, { depth: 10} ));
+      console.log(inspect(imageSpans, { depth: 10 } ));
     }
     await browser.assert.strictEqual(imageSpans.length , 2);
     const docLoadImage = imageSpans.find( span => span.tags['component'] === 'document-load');

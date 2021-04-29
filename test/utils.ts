@@ -19,30 +19,30 @@ import SplunkRum from '../src/index';
 
 export class SpanCapturer implements SpanProcessor {
   public readonly spans: ReadableSpan[] = [];
-  forceFlush() { return Promise.resolve(); }
-  onStart() {}
-  shutdown() { return Promise.resolve(); }
-  onEnd(span) {
+  forceFlush(): Promise<void> { return Promise.resolve(); }
+  onStart(): void {}
+  shutdown(): Promise<void> { return Promise.resolve(); }
+  onEnd(span: ReadableSpan): void {
     this.spans.push(span);
   }
-  clear() {
+  clear(): void {
     this.spans.length = 0;
   }
 }
 
-export function initWithDefaultConfig(capturer, additionalOptions = {}) {
+export function initWithDefaultConfig(capturer: SpanCapturer, additionalOptions = {}): void {
   SplunkRum._internalInit(Object.assign({}, additionalOptions, {
     beaconUrl: 'http://127.0.0.1:8888/v1/trace',
     allowInsecureBeacon: true,
     app: 'my-app',
     environment: 'my-env',
-    globalAttributes: {customerType: 'GOLD'},
+    globalAttributes: { customerType: 'GOLD' },
     bufferTimeout: 0,
     rumAuth: undefined,
   }));
   SplunkRum.provider.addSpanProcessor(capturer);
 }
 
-export function deinit() {
+export function deinit(): void {
   SplunkRum.deinit();
 }

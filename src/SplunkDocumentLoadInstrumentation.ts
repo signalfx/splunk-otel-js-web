@@ -42,12 +42,12 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
   constructor(config: InstrumentationConfig = {}) {
     super(config);
 
-    const exposedSuper = (this as any as ExposedSuper);
+    const exposedSuper = this as any as ExposedSuper;
 
     const _superEndSpan: ExposedSuper['_endSpan'] = exposedSuper._endSpan.bind(this);
     exposedSuper._endSpan = (span, performanceName, entries) => {
       // TODO: upstream exposed name on api.Span, then fix
-      const exposedSpan = (span as any as Span);
+      const exposedSpan = span as any as Span;
 
       if (span && exposedSpan.name !== 'documentLoad') { // only apply links to document/resource fetch
         captureTraceParentFromPerformanceEntries(entries, span);
@@ -56,7 +56,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
         addExtraDocLoadTags(span);
       }
       return _superEndSpan(span, performanceName, entries);
-    }
+    };
 
     const _superInitResourceSpan: ExposedSuper['_initResourceSpan'] = exposedSuper._initResourceSpan.bind(this);
     exposedSuper._initResourceSpan = (resource, parentSpan) => {
@@ -79,6 +79,6 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
         }
       }
       return entries;
-    }
+    };
   }
 }

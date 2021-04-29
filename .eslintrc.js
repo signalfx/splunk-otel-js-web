@@ -19,59 +19,64 @@ module.exports = {
     'header',
   ],
   'env': {
-    'mocha': true,
     'es2015': true,
     'commonjs': true,
   },
-  'extends': 'eslint:recommended',
+  parser: '@typescript-eslint/parser',
   'parserOptions': {
     'ecmaVersion': 2020,
     'sourceType': 'module'
   },
-  'rules': {
-    'semi': ['error', 'always'],
-    'quotes': ['error', 'single'],
-    'strict': ['error', 'safe'],
+  extends: [
+    'eslint:recommended',
+  ],
+  rules: {
+    // regular rules calibration
+    'array-callback-return': 'error',
+    'block-scoped-var': 'error',
+    'brace-style': ['error', '1tbs', { 'allowSingleLine': true }],
+    'consistent-return': 'error',
     'curly': 'error',
     'eqeqeq': 'error',
-    'no-alert':'error',
-    'no-useless-backreference':'error',
-    'consistent-return': 'error',
-    'no-constructor-return': 'error',
-    'no-eval': 'error',
-    'no-implied-eval': 'error',
-    'no-script-url': 'error',
-    'no-shadow': 'error',
-    'no-duplicate-imports': 'error',
-    'no-useless-computed-key': 'error',
-    'no-useless-constructor': 'error',
-    'no-useless-rename': 'error',
-    'no-var': 'error',
-    'prefer-const': 'error',
-    'no-useless-concat': 'error',
-    'no-useless-return': 'error',
-    'no-throw-literal': 'error',
-    'no-unused-expressions': 'error',
     'indent': ['error', 2],
-    'no-tabs': 'error',
-    'no-unneeded-ternary': 'error',
-    'no-extra-parens': 'error',
-    'no-template-curly-in-string': 'error',
-    'no-unreachable-loop': 'error',
-    'block-scoped-var': 'error',
-    'array-callback-return': 'error',
+    'no-alert':'error',
+    'no-constructor-return': 'error',
+    'no-duplicate-imports': 'error',
+    'no-eval': 'error',
     'no-extend-native': 'error',
     'no-extra-bind': 'error',
     'no-extra-label': 'error',
     'no-implicit-globals': 'error',
+    'no-implied-eval': 'error',
+    'no-mixed-operators': 'error',
     'no-octal-escape': 'error',
     'no-return-assign': 'error',
+    'no-script-url': 'error',
     'no-self-compare': 'error',
+    'no-shadow': 'error',
+    'no-tabs': 'error',
+    'no-template-curly-in-string': 'error',
+    'no-throw-literal': 'error',
+    'no-unneeded-ternary': 'error',
+    'no-unreachable-loop': 'error',
+    'no-unused-expressions': 'error',
+    'no-use-before-define': 'error',
+    'no-useless-backreference':'error',
     'no-useless-call': 'error',
+    'no-useless-computed-key': 'error',
+    'no-useless-concat': 'error',
+    'no-useless-constructor': 'error',
+    'no-useless-rename': 'error',
+    'no-useless-return': 'error',
+    'no-var': 'error',
+    'object-curly-spacing': ['error', 'always'],
+    'prefer-const': 'error',
+    'quotes': ['error', 'single'],
+    'semi': ['error', 'always'],
+    'strict': ['error', 'safe'],
     'wrap-iife': 'error',
     'yoda': 'error',
-    'no-use-before-define': 'error',
-    'no-mixed-operators': 'error',
+
     'header/header': [2, 'block', [
       '',
       { 'pattern': 'Copyright 20\\d{2} Splunk Inc.', 'template': `Copyright ${new Date().getFullYear()} Splunk Inc.` },
@@ -92,23 +97,39 @@ module.exports = {
   },
   'overrides': [
     {
-      'files': ['src/**/*.js'],
-      'env': {
+      files: ['src/**/*.ts', 'test/**/*.ts'],
+      env: {
         'browser': true,
       },
+      extends: [
+        'plugin:@typescript-eslint/recommended',
+      ],
+      rules: {
+        '@typescript-eslint/brace-style': ['error', '1tbs', { 'allowSingleLine': true }],
+        '@typescript-eslint/explicit-function-return-type': 'off', // to be discussed
+        '@typescript-eslint/no-unused-vars': 'error',
+
+        // temporarily disabled rules, as we transition to Typescript
+        '@typescript-eslint/no-empty-function': 'warn',
+        '@typescript-eslint/no-this-alias': 'warn',
+        '@typescript-eslint/explicit-module-boundary-types': ['error', {
+          allowArgumentsExplicitlyTypedAsAny: true, // temporarily till code is completely migrated
+        }],
+      }
     },
     {
       'files': ['integration-tests/**/*.js'],
+
       'env': {
         'node': true,
         'browser': true,
       },
     },
     {
-      'files': ['test/**/*.js'],
+      'files': ['test/**/*.ts'],
       'env': {
-        'browser': true,
         'node': true,
+        mocha: true,
       },
     },
     {

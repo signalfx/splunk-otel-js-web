@@ -29,9 +29,10 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
     super(MODULE_NAME, version, Object.assign({}, config));
   }
 
-  init() {}
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  init(): void {}
 
-  enable() {
+  enable(): void {
     if (!this.isSupported()) {
       return;
     }
@@ -39,10 +40,10 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
     this._longtaskObserver = new PerformanceObserver((list) => {
       list.getEntries().forEach((entry) => this._createSpanFromEntry(entry));
     });
-    this._longtaskObserver.observe({type: LONGTASK_PERFORMANCE_TYPE, buffered: true});
+    this._longtaskObserver.observe({ type: LONGTASK_PERFORMANCE_TYPE, buffered: true });
   }
 
-  disable() {
+  disable(): void {
     if (!this.isSupported()) {
       return;
     }
@@ -50,7 +51,7 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
     this._longtaskObserver.disconnect();
   }
 
-  _createSpanFromEntry(entry: PerformanceEntry) {
+  private _createSpanFromEntry(entry: PerformanceEntry) {
     const span = this.tracer.startSpan(
       LONGTASK_PERFORMANCE_TYPE,
       {
@@ -62,9 +63,9 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
     span.setAttribute('longtask.entry_type', entry.entryType);
     span.setAttribute('longtask.duration', entry.duration);
 
-    const attribution = (entry as any).attribution;
-    if (Array.isArray(attribution)) {
-      attribution.forEach((attribution, index) => {
+    const attributionList = (entry as any).attribution;
+    if (Array.isArray(attributionList)) {
+      attributionList.forEach((attribution, index) => {
         const prefix = attribution > 1 ? `longtask.attribution[${index}]` : 'longtask.attribution';
         span.setAttribute(`${prefix}.name`, attribution.name);
         span.setAttribute(`${prefix}.entry_type`, attribution.entryType);

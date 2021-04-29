@@ -23,7 +23,7 @@ import { hrTime, isUrlIgnored } from '@opentelemetry/core';
 import { addSpanNetworkEvents } from '@opentelemetry/web';
 import { HttpAttribute } from '@opentelemetry/semantic-conventions';
 
-interface SplunkPostDocLoadResourceInstrumentationConfig extends InstrumentationConfig {
+export interface SplunkPostDocLoadResourceInstrumentationConfig extends InstrumentationConfig {
   allowedInitiatorTypes?: string[];
   ignoreUrls?: (string|RegExp)[];
 }
@@ -44,9 +44,23 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
     this.config = processedConfig;
   }
 
-  init() {}
+  init(): void {}
 
-  _startObserver() {
+  enable(): void {
+    if (window.PerformanceObserver) {
+      window.addEventListener('load', () => {
+        this._startObserver();
+      });
+    }
+  }
+
+  disable(): void {
+    if (this.observer) {
+      this.observer.disconnect();
+    }
+  }
+
+  private _startObserver() {
     this.observer = new PerformanceObserver((list) => {
       if (window.document.readyState === 'complete') {
         list.getEntries().forEach(entry => {
@@ -58,11 +72,11 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
       }
     });
     //apparently safari 13.1 only supports entryTypes
-    this.observer.observe({entryTypes: ['resource']});
+    this.observer.observe({ entryTypes: ['resource'] });
   }
 
   // TODO: discuss TS built-in types
-  _createSpan(entry: any) {
+  private _createSpan(entry: any) {
     if (isUrlIgnored(entry.name, this.config.ignoreUrls)) {
       return;
     }
@@ -85,20 +99,6 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
       span.end(resEnd);
     } else {
       span.end();
-    }
-  }
-
-  enable() {
-    if (window.PerformanceObserver) {
-      window.addEventListener('load', () => {
-        this._startObserver();
-      });
-    }
-  }
-
-  disable() {
-    if (this.observer) {
-      this.observer.disconnect();
     }
   }
 }

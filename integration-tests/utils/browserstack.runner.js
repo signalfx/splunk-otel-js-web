@@ -26,7 +26,7 @@ function generateHex(length) {
 }
 
 let browserstackLocal;
-function createTunnel({localIdentifier}) {
+function createTunnel({ localIdentifier }) {
   return new Promise((resolve, reject) => {
     Nightwatch.browserstackLocal = browserstackLocal = new browserstack.Local();
 
@@ -58,13 +58,13 @@ async function runTests(argv) {
 
     console.log('Starting tunnel.');
     const localIdentifier = generateHex(32);
-    const tunnelHandle = await createTunnel({localIdentifier});
+    const tunnelHandle = await createTunnel({ localIdentifier });
     console.log('Tunnel started.');
 
     const finalArgs = {
       ...argv,
       // easier than messing around in ci.yml
-      ...argv.env === 'safari-10.1' ? {'tag': 'safari-10.1'} : {},
+      ...argv.env === 'safari-10.1' ? { 'tag': 'safari-10.1' } : {},
       // skip tests with skip-(browser name) tag in it
       skiptags: `skip-${argv.env}`,
       // note: this can be used to scope down tests, leaving here so I don't need to search for this in the future

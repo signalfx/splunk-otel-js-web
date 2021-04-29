@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {diag, Span, trace, Tracer} from '@opentelemetry/api';
+import { diag, Span, trace, Tracer, TracerProvider } from '@opentelemetry/api';
 import { hrTime } from '@opentelemetry/core';
-import {InstrumentationConfig, isWrapped} from '@opentelemetry/instrumentation';
-import {UserInteractionInstrumentation} from '@opentelemetry/instrumentation-user-interaction';
+import { InstrumentationConfig, isWrapped } from '@opentelemetry/instrumentation';
+import { UserInteractionInstrumentation } from '@opentelemetry/instrumentation-user-interaction';
 
 export type UserInteractionEventsConfig = {
   [type: string]: boolean;
@@ -48,9 +48,9 @@ export const DEFAULT_AUTO_INSTRUMENTED_EVENTS: UserInteractionEventsConfig = {
 const ROUTING_INSTRUMENTATION_NAME = 'route';
 const ROUTING_INSTRUMENTATION_VERSION = '1';
 
-interface SplunkUserInteractionInstrumentationConfig extends InstrumentationConfig {
+export interface SplunkUserInteractionInstrumentationConfig extends InstrumentationConfig {
   events?: UserInteractionEventsConfig;
-};
+}
 
 export class SplunkUserInteractionInstrumentation extends UserInteractionInstrumentation {
   private readonly _autoInstrumentedEvents: UserInteractionEventsConfig;
@@ -73,35 +73,22 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
       }
 
       return _superCreateSpan(element, eventName, parentSpan);
-    }
+    };
   }
 
-  setTracerProvider(tracerProvider) {
+  setTracerProvider(tracerProvider: TracerProvider): void {
     super.setTracerProvider(tracerProvider);
     this._routingTracer = tracerProvider.getTracer(ROUTING_INSTRUMENTATION_NAME, ROUTING_INSTRUMENTATION_VERSION);
   }
 
-  getZoneWithPrototype() {
+  getZoneWithPrototype(): undefined {
     // FIXME work out ngZone issues with Angular  PENDING
     return undefined;
   }
 
-  _allowEventType(eventType) {
-    return !!this._autoInstrumentedEvents[eventType];
-  }
-
-  emitRouteChangeSpan(oldHref) {
-    const now = hrTime();
-    const span = this._routingTracer.startSpan('routeChange', { startTime: now });
-    span.setAttribute('component', this.moduleName);
-    span.setAttribute('prev.href', oldHref);
-    // location.href set with new value by default
-    span.end(now);
-  }
-
-  enable() {
+  enable(): void {
     this.__hashChangeHandler = (event) => {
-      this.emitRouteChangeSpan(event.oldURL);
+      this._emitRouteChangeSpan(event.oldURL);
     };
 
     // Hash can be changed with location.hash = '#newThing', no way to hook that directly...
@@ -130,7 +117,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
     }
   }
 
-  disable() {
+  disable(): void {
     // parent unwraps calls to addEventListener so call before us
     if ((this as any)._zonePatched) {
       super.disable();
@@ -148,7 +135,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
   }
 
   // FIXME find cleaner way to patch
-  _patchHistoryMethod() {
+  _patchHistoryMethod(): (original: any) => (this: History, ...args: unknown[]) => any {
     const plugin = this;
     return (original) => {
       return function patchHistoryMethod(...args) {
@@ -156,10 +143,23 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
         const result = original.apply(this, args);
         const newHref = location.href;
         if (oldHref !== newHref) {
-          plugin.emitRouteChangeSpan(oldHref);
+          plugin._emitRouteChangeSpan(oldHref);
         }
         return result;
       };
     };
+  }
+
+  protected _allowEventType(eventType: string): boolean {
+    return !!this._autoInstrumentedEvents[eventType];
+  }
+
+  private _emitRouteChangeSpan(oldHref) {
+    const now = hrTime();
+    const span = this._routingTracer.startSpan('routeChange', { startTime: now });
+    span.setAttribute('component', this.moduleName);
+    span.setAttribute('prev.href', oldHref);
+    // location.href set with new value by default
+    span.end(now);
   }
 }

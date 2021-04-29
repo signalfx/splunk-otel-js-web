@@ -33,7 +33,7 @@ export function findCookieValue(cookieName: string): string | undefined {
   return undefined;
 }
 
-export function limitLen(s: string, cap: number) {
+export function limitLen(s: string, cap: number): string {
   if (s.length > cap) {
     return s.substring(0, cap);
   } else {

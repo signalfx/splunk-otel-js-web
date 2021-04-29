@@ -30,14 +30,14 @@ module.exports = {
     await browser.assert.strictEqual(xhrSpan.tags['http.status_text'], 'OK');
     await browser.assert.strictEqual(xhrSpan.tags['http.method'], 'GET');
     await browser.assert.strictEqual(xhrSpan.tags['http.url'], '/some-data');
-    if (!isBrowser(browser, {safari: true, ie: true})) {
+    if (!isBrowser(browser, { safari: true, ie: true })) {
       await browser.assert.strictEqual(xhrSpan.tags['http.response_content_length'], '49');
     }
     await browser.assert.ok(xhrSpan.tags['link.traceId'], 'got link.traceId');
     await browser.assert.ok(xhrSpan.tags['link.spanId'], 'got link.spanId');
     
     if (!isBrowser(browser, {
-      safari: {max: 10},
+      safari: { max: 10 },
       ie: true,
     })) {
       await browser.timesMakeSense(xhrSpan.annotations, 'domainLookupStart', 'domainLookupEnd');

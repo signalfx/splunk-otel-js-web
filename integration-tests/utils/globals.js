@@ -52,7 +52,7 @@ module.exports = {
     let defaultTimeout = 0;
     browser.globals.isBrowser = isBrowser.bind(null, browser);
     
-    if (browser.globals.isBrowser({'safari': {max: 10}})) {
+    if (browser.globals.isBrowser({ 'safari': { max: 10 } })) {
       // Setting longer timeout be cause it seems to take forever for spans to arrive in Safari 10 during tests
       // Real page seems fine. This timeout could be smaller but better safe than flaky for now.
       defaultTimeout = -10000;
@@ -82,12 +82,12 @@ module.exports = {
 
     browser.globals.waitForTestToFinish = async () => {
       // eslint-disable-next-line no-shadow
-      const {value: lastId} = await browser.executeAsync(function (done) {
+      const { value: lastId } = await browser.executeAsync(function (done) {
         window.waitForTestToFinish(done);
       });
 
       if (lastId) {
-        await browser.globals.findSpan(({id}) => id === lastId);
+        await browser.globals.findSpan(({ id }) => id === lastId);
       }
     };
 

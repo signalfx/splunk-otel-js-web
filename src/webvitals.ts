@@ -16,10 +16,10 @@ limitations under the License.
 
 import { TracerProvider, Tracer } from '@opentelemetry/api';
 import { hrTime } from '@opentelemetry/core';
-import { getCLS, getLCP, getFID, Metric} from 'web-vitals';
+import { getCLS, getLCP, getFID, Metric } from 'web-vitals';
 const reported = {};
 
-function report(tracer: Tracer, name: string, metric: Metric) {
+function report(tracer: Tracer, name: string, metric: Metric): void {
   if (reported[name]) {
     return;
   }
@@ -33,7 +33,7 @@ function report(tracer: Tracer, name: string, metric: Metric) {
   span.end(now);
 }
 
-export function initWebVitals(provider: TracerProvider) {
+export function initWebVitals(provider: TracerProvider): void {
   const tracer = provider.getTracer('webvitals');
   // CLS is defined as being sent more than once, easier to just ensure that everything is sent just on the first occurence.
   getFID((metric) => {
