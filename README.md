@@ -1,71 +1,69 @@
-# Splunk distribution of OpenTelemetry JavaScript Browser
+<p align="center">
+  <strong>
+    <a href="./docs/Installation.md">Getting Started</a>
+    &nbsp;&nbsp;&bull;&nbsp;&nbsp;
+    <a href="./docs/CONTRIBUTING.md">Getting Involved</a>
+  </strong>
+</p>
 
-The Splunk distribution of [OpenTelemetry JavaScript
-Browser](https://github.com/open-telemetry/opentelemetry-js)
-provides a JavaScript file that can be added into a page
-that automatically captures:
+<p align="center">
+  <a href="https://github.com/signalfx/splunk-otel-js-web/releases">
+    <img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/signalfx/splunk-otel-js-web?include_prereleases&style=for-the-badge">
+  </a>
+  <img alt="Beta" src="https://img.shields.io/badge/status-beta-informational?style=for-the-badge">
+</p>
 
-- Document load information, including resource fetching
-- User interactions (clicks)
-- XmlHttpRequest (XHR) and fetch calls, including the full URL but not
-  including any body/payload
-- WebSocket activity
-- Errors
+# Splunk distribution of OpenTelemetry JavaScript for Web
 
-By default, the following error sources are captured:
-
-- `addEventListener('error')` which reports unhandled errors (e.g., from
-  setInterval callbacks)
-- `addEventListener('unhandledrejection')` which reports unhandled Promise
-  rejections
-- instrumenting usage of `console.error`
-- `document.documentElement.addEventListener('error', ... {capture:true});`
-  which reports errors on DOM elements (e.g., image loading issue)
-
-All data and errors captured are reported to Splunk RUM.
+The Splunk distribution of [OpenTelemetry JavaScript for
+Web](https://github.com/open-telemetry/opentelemetry-js)
 
 > :construction: This project is currently in **BETA**. It is **officially supported** by Splunk. However, breaking changes **MAY** be introduced.
 
 ## Getting Started
 
-To get started, download the JS file from the latest release and add its path
-to your page.
+The easiest way to get started is to use Splunk RUM distributed via CDN
 
-For example:
+1. Include & initialize the Splunk RUM by copying the following to HEAD section for all the HTML files or templates in your application
 
-```html
-<script src="https://cdn.signalfx.com/o11y-gdi-rum/latest/splunk-otel-web.js" crossorigin="anonymous"></script>
-<script>
-  SplunkRum.init({
-      beaconUrl: 'https://rum-ingest.<REALM>.signalfx.com/v1/rum',
-      rumAuth: '<RUM_ACCESS_TOKEN>',
-      app: '<YOUR_APPLICATION_NAME>'
-    });
-</script>
-```
+    ```html
+    <script src="https://cdn.signalfx.com/o11y-gdi-rum/latest/splunk-otel-web.js" crossorigin="anonymous"></script>
+    <script>
+      SplunkRum.init({
+          beaconUrl: 'https://rum-ingest.<REALM>.signalfx.com/v1/rum',
+          rumAuth: 'RUM access token',
+          app: 'enter-your-application-name'
+        });
+    </script>
+    ```
 
-Please read [INSTALLING.md](./docs/INSTALLING.md) for more advanced installation scenarios.
+1. Modify the initialization parameters to specify:
+   - `beaconUrl` - the destination URL to which captured telemetry is sent to be ingested. Replace the `<REALM>` with the actual realm you are using (i.e. us0, us1). 
+   - `rumAuth` - token authorizing the Agent to send the telemetry to the backend. You can find (or generate) the token [here](https://app.signalfx.com/o11y/#/organization/current?selectedKeyValue=sf_section:accesstokens). 
+     Notice that RUM and APM auth tokens are different.
+   - `app` - naming the application that will be monitored so it can be distinguished from other applications.
+1. Deploy the changes to your application and make sure that the application is being used.
 
-## Supported browsers
+The method above is the recommendation to get started with Splunk RUM. This approach picks up the latest stable version of the Browser Agent distributed via CDN and loads the agent synchronously.
 
-Not all supported browsers support all features/attributes, but the following
-browsers are generally supported.  We are actively working on expanding this
-list.
+If you don't yet have a backend where to send data to you can set `debug: true` and see the created spans in browser console.
+Please read [Installation.md](./docs/Installation.md) for more info on different installation options.
 
-- Chrome 52+
-- Safari 11+
-- Firefox 57+
-- Edge 79+
-- IE not currently supported
+## Documentation
 
-### Known issues
-
-Auto-instrumentation doesn't currently capture events handled on `document`
-level, ie. `document.addEventListener(...)`.
-
-Web Workers and Service Workers are not supported. Code loaded within them will
-not be auto-instrumented, and currently there is no version of the code which
-can be used within either Web or Service Workers for manual instrumentation.
+- [Installation](./docs/Installation.md)
+- [Configuration](./docs/Configuration.md)
+- [Supported browsers](./docs/SupportedBrowsers.md)
+- [Data model](./docs/DataModel.md)
+- [Instrumentations](./docs/Instrumentations.md)
+- [Collecting errors](./docs/Errors.md)
+- [Manual instrumentation](./docs/ManualInstrumentation.md)
+- [Exporters](./docs/Exporters.md)
+- [Context propagation](./docs/ContextPropagation.md)
+- [Data sending](./docs/DataSending.md)
+- [Cookies](./docs/Cookies.md)
+- [Content security policy](./docs/ContentSecurityPolicy.md)
+- [Redacting PII](./docs/PII.md)
 
 ## Open Telemetry version
 
@@ -75,109 +73,6 @@ can be used within either Web or Service Workers for manual instrumentation.
 | 0.3.x | 0.18.x |
 | 0.2.x | 0.18.x |
 | 0.1.x | 0.15.x |
-
-## All configuration options
-
-### `SplunkRum.init({ })`
-
-| Option | Type | Notes | Default |
-|--------|------|-------|---------|
-| allowInsecureBeacon | boolean | Allows http beacon urls | false |
-| app | string | Application name | 'unknown-browser-app' |
-| beaconUrl | string (required) | Destination for the captured data | (No default) |
-| cookieDomain | string | Sets session cookie to this domain | If unspecified, it defaults to the same host that set the cookie, excluding subdomains
-| debug | boolean | Turns on/off internal debug logging | false |
-| environment | string | Sets a value for the `environment` attribute (persists through calls to `setGlobalAttributes()`) | (No default) |
-| exporter.onAttributesSerializing | (a: SpanAttributes, s: Span): SpanAttributes | Described in [its own section](#redacting-pii) | (s) => s.attributes |
-| globalAttributes | object | Extra attributes to add to each reported span.  See also `setGlobalAttributes` | {} |
-| ignoreUrls | array | Applies for XHR, Fetch and Websocket URLs. URLs that partially match any regex in ignoreUrls will not be traced. In addition, URLs that are _exact matches_ of strings in ignoreUrls will also not be traced. | [] |
-| instrumentations | { [moduleName]?: boolean or object } | Configuration for instrumentation modules. See following section for details. |
-| rumAuth | string (required) | Publicly-visible `rumAuth` value.  Please do not paste any other access token or auth value into here, as this will be visible to every user of your app | (No default) |
-
-### Capturing modules
-
-Capturing modules can be configured by passing following values to `instrumentations` object in config:
-
-- `false` - disables this module
-- `true` - enables this module with default options
-- `object` - enables with additional options, which are described in [the types definition](./index.d.ts)
-
-| Option | Default | Description |
-|---|---|---|
-| instrumentations.document | true | Capturing spans related to document loading |
-| instrumentations.errors | true | Capturing errors |
-| instrumentations.fetch | true | Capturing fetch requests | 
-| instrumentations.interactions | true | Capturing interactions |
-| instrumentations.longtask | true | Capturing long task spans |
-| instrumentations.websockets | false | Capturing websockets |
-| instrumentations.webvitals | true | Capturing webvitals |
-| instrumentations.xhr | true | Capturing XHR requests | 
-
-Additional configuration options are available for following modules:
-
-### User interactions
-
-| Option | Type | Notes | Default |
-|---|---|---|---|
-| instrumentations.interactions.events | { [DOM Event Name]?: boolean } | Set keys to `false` to disable events handled by default. Set additional keys to true to auto-instrument `addEventListener` handlers. | Please check `window.SplunkRum.DEFAULT_AUTO_INSTRUMENTED_EVENTS` |
-
-### `SplunkRum.setGlobalAttributes(attributes)`
-
-You can (re)set `globalAttributes` at any time with this
-method. Using it will overwrite specified properties and leave others unchanged. 
-Any spans reported from this point on will have your new attributes set.  
-You can pass `undefined` to clear your global attributes.
-
-### Redacting Personally Identifiable Information (PII)
-In certain situations, metadata collected by our instrumentation may include PII.
-We'd advise that you review these cases in particular:
-- any network operation, where a secret piece of information might be present in the URL (e.g. an authentication token); please note that we do not capture or report any data from the payload of the request (i.e. the POST body), apart from its size;
-- any user interaction (e.g. a click), where a target element might contain a secret piece of information in its `id`
-- error messages produced by your app (e.g., usage of `console.error` or strings passed to an `Error` constructor).
-
-To redact PII you can pass an option when initializing.
-
-```javascript
-SplunkRum.init({
-  ...otherOptions,
-  exporter: {
-    onAttributesSerializing: (attributes, span) => ({
-      ...attributes,
-      'http.url': /secret\=/.test(attributes['http.url']) ? '[redacted]' : attributes['http.url'],
-    }),
-  },
-});
-```
-
-For a working example see [this integration test](integration-tests/tests/redacting-attributes/index.ejs). `Span` is provided a second argument for your convenience.
-
-## Manual OpenTelemetry instrumentation
-
-### Tracing Provider
-
-If you would like to manually instrument your application (for example, to
-report timings for key events), you can use the
-[OpenTelemetry](https://github.com/open-telemetry/opentelemetry-js/tree/master/packages/opentelemetry-tracing)
-API.  Our `TracingProvider` is in `SplunkRum.provider`.
-
-Example on how to manually instrument:
-
-```javascript
-  const provider = SplunkRum.provider;
-  const span = provider.getTracer('searchbox').startSpan('search');
-  span.setAttribute('searchLength', searchString.length);
-  // time passes
-  span.end();
-```
-
-### Errors
-
-While many errors are captured by default, manual errors can be reported by
-using:
-
-```javascript
-  SplunkRum.error(errorObjectOrMessageString);
-```
 
 ## Building and contributing
 
