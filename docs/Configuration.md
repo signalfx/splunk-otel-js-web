@@ -22,17 +22,15 @@ In order to enable or disable specific instrumentations in the Browser Agent, yo
 - `true` - enables specific instrumentation with default options;
 - `object` - passes additional options to a specific instrumentation.
 
-TODO: LINKS TO INSTRUMENTATIONS
-
 |Option|Default value|Description|
 |---|---|---|
-|`instrumentations.document`|`true`|Enables capturing spans related to [document loading](url).|
-|`instrumentations.errors`|`true`|Enables capturing [Javascript errors](url).|
-|`instrumentations.interactions`|`true`|Enables capturing [user interactions](url) (such as clicks or keyboard events).|
-|`instrumentations.longtask`|`true`|Enables capturing [long tasks](url).|
-|`instrumentations.websockets`|`false`|Enables capturing [websockets](url).|
-|`instrumentations.webvitals`|`true`|Enables capturing [Web Vitals](url) metrics.|
-|`instrumentations.xhr`|`true`|Enables capturing [XHR and fetch](url) requests.|
+|`instrumentations.document`|`true`|Enables capturing spans related to [document loading](Instrumentations.md#instrumentation-document-load).|
+|`instrumentations.errors`|`true`|Enables capturing [Javascript errors](Errors.md).|
+|`instrumentations.interactions`|`true`|Enables capturing [user interactions](Instrumentations.md#instrumentation-user-interactions) (such as clicks or keyboard events).|
+|`instrumentations.longtask`|`true`|Enables capturing [long tasks](Instrumentations.md#instrumentation-long-tasks).|
+|`instrumentations.websockets`|`false`|Enables capturing [websockets](Instrumentations.md#instrumentation-websockets).|
+|`instrumentations.webvitals`|`true`|Enables capturing [Web Vitals](Instrumentations.md#instrumentation-web-vitals) metrics.|
+|`instrumentations.xhr`|`true`|Enables capturing [XHR and fetch](Instrumentations.md#instrumentation-xhrfetch) requests.|
 
 Some instrumentations, such as interactions module, have additional configuration options which can used to override the default settings:
 
