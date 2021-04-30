@@ -21,7 +21,7 @@ To start monitoring with Splunk RUM distributed via CDN:
      Notice that RUM and APM auth tokens are different.
    - `app` - naming the application that will be monitored so it can be distinguished from other applications.
 1. Deploy the changes to your application and make sure that the application is being used.
-1. Verify that the data is appearing in the [RUM dashboard](http://TODO-ENTER-CORRECT-URL). 
+1. Verify that the data is appearing in the RUM dashboard. 
 
 The method above is the recommendation to get started with Splunk RUM. This approach picks up the latest stable version of the Browser Agent distributed via CDN and loads the agent synchronously. 
 
@@ -46,7 +46,7 @@ To start monitoring using Splunk RUM distributed via NPM:
     ```html
        import SplunkOtelWeb from '@splunk/otel-web';
        SplunkOtelWeb.init({
-         beaconUrl: https://rum-ingest.<REALM>.signalfx.com/v1/rum,
+         beaconUrl: 'https://rum-ingest.<REALM>.signalfx.com/v1/rum',
          rumAuth: '<RUM access token>',
          app: '<application-name>',
        });
