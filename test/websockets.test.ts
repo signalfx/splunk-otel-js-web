@@ -134,4 +134,10 @@ describe('can produce websocket events', () => {
       assert.strictEqual(true, capturer.spans[0].attributes.error);
     }
   });
+  it ('Websocket keeps static values', () => {
+    assert.strictEqual(WebSocket.CONNECTING, 0);
+    assert.strictEqual(WebSocket.OPEN, 1);
+    assert.strictEqual(WebSocket.CLOSING, 2);
+    assert.strictEqual(WebSocket.CLOSED, 3);
+  })
 });
