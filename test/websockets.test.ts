@@ -139,5 +139,5 @@ describe('can produce websocket events', () => {
     assert.strictEqual(WebSocket.OPEN, 1);
     assert.strictEqual(WebSocket.CLOSING, 2);
     assert.strictEqual(WebSocket.CLOSED, 3);
-  })
+  });
 });
