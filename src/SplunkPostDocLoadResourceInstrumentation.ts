@@ -21,7 +21,7 @@ import {
 import { version } from '../package.json';
 import { hrTime, isUrlIgnored } from '@opentelemetry/core';
 import { addSpanNetworkEvents } from '@opentelemetry/web';
-import { HttpAttribute } from '@opentelemetry/semantic-conventions';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 export interface SplunkPostDocLoadResourceInstrumentationConfig extends InstrumentationConfig {
   allowedInitiatorTypes?: string[];
@@ -90,7 +90,7 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
       }
     );
     span.setAttribute('component', MODULE_NAME);
-    span.setAttribute(HttpAttribute.HTTP_URL, entry.name);
+    span.setAttribute(SemanticAttributes.HTTP_URL, entry.name);
 
     addSpanNetworkEvents(span, entry);
     //TODO look for server-timings? captureTraceParentFromPerformanceEntries(entry)
