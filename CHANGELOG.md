@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- `@opentelemetry/*` core packages updated to `0.19` or latest compatible versions
 
 ## 0.4.3
 - Added legacy build for IE
