@@ -25,3 +25,5 @@ import './session.test';
 import './websockets.test';
 import './SplunkExporter.test';
 import './api.test';
+import './SplunkWebTracerProvider.test';
+import './SplunkOtelWeb.test';

@@ -2,6 +2,7 @@
 
 ## Unreleased
 - `@opentelemetry/*` core packages updated to `0.19` or latest compatible versions
+- Expose *_experimental_*-prefixed API for accessing and watching global attributes and session ID
 
 ## 0.4.3
 - Added legacy build for IE

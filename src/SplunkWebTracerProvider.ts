@@ -68,6 +68,10 @@ export class SplunkWebTracerProvider extends WebTracerProvider {
     }
   }
 
+  _experimental_getGlobalAttributes(): SpanAttributes {
+    return this._globalAttributes;
+  }
+
   shutdown(): Promise<void> {
     return new Promise<void>((resolve) => {
       // TODO: upstream

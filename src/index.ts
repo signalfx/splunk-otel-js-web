@@ -30,7 +30,7 @@ import {
 import { SplunkExporter, SplunkExporterConfig } from './SplunkExporter';
 import { ERROR_INSTRUMENTATION_NAME, SplunkErrorInstrumentation } from './SplunkErrorInstrumentation';
 import { generateId, getPluginConfig } from './utils';
-import { initSessionTracking } from './session';
+import { getRumSessionId, initSessionTracking, SessionIdType } from './session';
 import { SplunkWebSocketInstrumentation } from './SplunkWebSocketInstrumentation';
 import { initWebVitals } from './webvitals';
 import { SplunkLongTaskInstrumentation } from './SplunkLongTaskInstrumentation';
@@ -41,6 +41,7 @@ import {
 import { SplunkWebTracerProvider } from './SplunkWebTracerProvider';
 import { FetchInstrumentationConfig } from '@opentelemetry/instrumentation-fetch';
 import { XMLHttpRequestInstrumentationConfig } from '@opentelemetry/instrumentation-xml-http-request';
+import { GlobalAttributesChangedEvent, NativeEventTarget, SessionIdChangedEvent, SplunkOtelWebEventTarget, SplunkOtelWebEventType } from './EventTarget';
 
 export * from './SplunkExporter';
 export * from './SplunkWebTracerProvider';
@@ -158,9 +159,11 @@ function buildExporter(options) {
   });
 }
 
-interface SplunkOtelWebType {
+interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
   deinit: () => void;
+
   error: (...args: Array<any>) => void;
+
   init: (options: SplunkOtelWebConfig) => void;
 
   /**
@@ -169,14 +172,31 @@ interface SplunkOtelWebType {
   _internalInit: (options: SplunkOtelWebConfigInternal) => void;
 
   provider?: SplunkWebTracerProvider;
+
   setGlobalAttributes: (attributes: SpanAttributes) => void;
+
+  /**
+   * This method provides access to computed, final value of global attributes, which are applied to all created spans.
+   * It is exposed as *experimental*, and could be changed or removed without notice.
+   */
+  _experimental_getGlobalAttributes: () => SpanAttributes;
+
+  /**
+   * This method returns current session ID. It is exposed as *experimental*, and could be changed or removed without
+   * notice.
+   */
+  _experimental_getSessionId: () => SessionIdType;
+
   DEFAULT_AUTO_INSTRUMENTED_EVENTS: UserInteractionEventsConfig;
+
   readonly inited: boolean;
 }
 
 let inited = false;
 let _deregisterInstrumentations: () => void | undefined;
+let _deinitSessionTracking: () => void | undefined;
 let _errorInstrumentation: SplunkErrorInstrumentation | undefined;
+let eventTarget: NativeEventTarget | undefined;
 const SplunkRum: SplunkOtelWebType = {
   DEFAULT_AUTO_INSTRUMENTED_EVENTS,
 
@@ -190,6 +210,7 @@ const SplunkRum: SplunkOtelWebType = {
 
   init: function (options) {
     diag.setLogger(new DiagConsoleLogger(), options?.debug ? DiagLogLevel.DEBUG : DiagLogLevel.ERROR);
+    eventTarget = new NativeEventTarget;
 
     const processedOptions: SplunkOtelWebConfigInternal = Object.assign(
       {},
@@ -217,7 +238,11 @@ const SplunkRum: SplunkOtelWebType = {
     }
 
     const instanceId = generateId(64);
-    initSessionTracking(instanceId, processedOptions.cookieDomain);
+    _deinitSessionTracking = initSessionTracking(
+      instanceId,
+      eventTarget,
+      processedOptions.cookieDomain,
+    ).deinit;
 
     const { ignoreUrls, app, environment } = processedOptions;
     // enabled: false prevents registerInstrumentations from enabling instrumentations in constructor
@@ -287,18 +312,30 @@ const SplunkRum: SplunkOtelWebType = {
     if (!inited) {
       return;
     }
+
     _deregisterInstrumentations?.();
     _deregisterInstrumentations = undefined;
 
+    _deinitSessionTracking?.();
+    _deinitSessionTracking = undefined;
+
     this.provider.shutdown();
     delete this.provider;
+    eventTarget = undefined;
     diag.disable();
 
     inited = false;
   },
 
-  setGlobalAttributes(attributes) {
+  setGlobalAttributes(this: SplunkOtelWebType, attributes) {
     this.provider?.setGlobalAttributes(attributes);
+    eventTarget?.dispatchEvent(new GlobalAttributesChangedEvent({
+      attributes: this.provider?._experimental_getGlobalAttributes() || {},
+    }));
+  },
+
+  _experimental_getGlobalAttributes(this: SplunkOtelWebType) {
+    return this.provider?._experimental_getGlobalAttributes();
   },
 
   error(...args) {
@@ -308,7 +345,19 @@ const SplunkRum: SplunkOtelWebType = {
     }
 
     _errorInstrumentation.report('SplunkRum.error', args);
-  }
+  },
+
+  _experimental_addEventListener(name: SplunkOtelWebEventType, callback: (event: never) => void): void {
+    eventTarget?._experimental_addEventListener(name, callback);
+  },
+
+  _experimental_removeEventListener(name: SplunkOtelWebEventType, callback: (event: never) => void): void {
+    eventTarget?._experimental_removeEventListener(name, callback);
+  },
+
+  _experimental_getSessionId() {
+    return getRumSessionId();
+  },
 };
 
 export default SplunkRum;

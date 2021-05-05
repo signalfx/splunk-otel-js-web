@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import * as assert from 'assert';
+import { NativeEventTarget } from '../src/EventTarget';
 import { initSessionTracking, COOKIE_NAME, getRumSessionId, updateSessionStatus } from '../src/session';
 
 describe('Session tracking', () => {
@@ -22,13 +23,13 @@ describe('Session tracking', () => {
     // First clear the cookie so we start from a known quantity
     document.cookie = COOKIE_NAME+'=garbageValue;expires=Thu, 01 Jan 1970 00:00:00 GMT';
     // the init tests have possibly already started the setInterval for updateSessionStatus.  Try to accomodate this.
-    initSessionTracking('1234');
+    initSessionTracking('1234', new NativeEventTarget);
     const firstSessionId = getRumSessionId();
     assert.strictEqual(firstSessionId.length, 32);
     // no marked activity, should keep same state
     updateSessionStatus();
     assert.strictEqual(firstSessionId, getRumSessionId());
-    // set cookie to expire in 2 seconds, mark activity, and then updateSessionStatus.  
+    // set cookie to expire in 2 seconds, mark activity, and then updateSessionStatus.
     // Wait 4 seconds and cookie should still be there (having been renewed)
     const cookieValue = encodeURIComponent(JSON.stringify({ id:firstSessionId, startTime: new Date().getTime() }));
     document.cookie = COOKIE_NAME + '=' + cookieValue + '; path=/; max-age=' + 2;
