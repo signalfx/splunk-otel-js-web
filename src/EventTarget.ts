@@ -51,8 +51,8 @@ export interface SplunkOtelWebEventTarget {
 
 export class NativeEventTarget implements SplunkOtelWebEventTarget {
   // we're using DOM API to save on bytes a little bit
-  // another benefit is
-  private readonly target = new EventTarget;
+  // using EventTarget directly has low browser compatibility
+  private readonly target = document.createElement('div');
 
   _experimental_addEventListener(name: SplunkOtelWebEventType, callback: (event: never) => void): void {
     this.target.addEventListener(name, callback);

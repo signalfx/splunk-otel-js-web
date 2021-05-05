@@ -41,7 +41,7 @@ import {
 import { SplunkWebTracerProvider } from './SplunkWebTracerProvider';
 import { FetchInstrumentationConfig } from '@opentelemetry/instrumentation-fetch';
 import { XMLHttpRequestInstrumentationConfig } from '@opentelemetry/instrumentation-xml-http-request';
-import { GlobalAttributesChangedEvent, NativeEventTarget, SessionIdChangedEvent, SplunkOtelWebEventTarget, SplunkOtelWebEventType } from './EventTarget';
+import { GlobalAttributesChangedEvent, NativeEventTarget, SplunkOtelWebEventTarget, SplunkOtelWebEventType } from './EventTarget';
 
 export * from './SplunkExporter';
 export * from './SplunkWebTracerProvider';
