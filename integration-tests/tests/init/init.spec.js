@@ -23,7 +23,7 @@ module.exports = {
   'attribute-related config should work': async function(browser) {
     browser.globals.clearReceivedSpans();
     await browser.url(browser.globals.getUrl('/init/attributes.ejs'));
-    const atts = await browser.globals.findSpan(span => span.name === 'documentLoad');    
+    const atts = await browser.globals.findSpan(span => span.name === 'documentLoad');
     await browser.assert.ok(atts);
     await browser.assert.strictEqual(atts.tags['app'], 'custom-app');
     await browser.assert.strictEqual(atts.tags['environment'], 'custom-environment');
@@ -32,20 +32,28 @@ module.exports = {
 
     await browser.click('#clickToChangeAttributes');
 
-    const atts2 = await browser.globals.findSpan(span => span.tags['error.message'] === 'fake error');    
+    const atts2 = await browser.globals.findSpan(span => span.name === 'attributes-set');
     await browser.assert.ok(atts2);
     // environment still set (not cleared by setGlobalAttributes call)
     await browser.assert.strictEqual(atts2.tags['environment'], 'custom-environment');
     await browser.assert.strictEqual(atts2.tags['key1'], 'newvalue1');
     await browser.assert.strictEqual(atts2.tags['key2'], 'value2');
 
+    const attrsNotificationSpan = await browser.globals.findSpan(span => span.name === 'attributes-changed');
+    await browser.assert.ok(attrsNotificationSpan);
+
+    const notifiedAttrs = JSON.parse(attrsNotificationSpan.tags['payload']).attributes;
+    await browser.assert.strictEqual(notifiedAttrs.environment, 'custom-environment');
+    await browser.assert.strictEqual(notifiedAttrs.key1, 'newvalue1');
+    await browser.assert.strictEqual(notifiedAttrs.key2, 'value2');
+
     await browser.click('#clickToResetAttributes');
     // no argument setGlobalAttributes() call will set empty attributes
-    const atts3 = await browser.globals.findSpan(span => span.tags['error.message'] === 'fake error 2');    
+    const atts3 = await browser.globals.findSpan(span => span.name === 'attributes-reset');
     await browser.assert.ok(atts3);
     await browser.assert.strictEqual(atts3.tags['environment'], undefined);
     await browser.assert.strictEqual(atts3.tags['key1'], undefined);
-    await browser.assert.strictEqual(atts3.tags['key2'], undefined);
+    await browser.assert.strictEqual(atts3.tags['key1'], undefined);
 
     await browser.globals.assertNoErrorSpans();
   },
@@ -59,8 +67,8 @@ module.exports = {
   'environment still get set if no global attributes': async function(browser) {
     browser.globals.clearReceivedSpans();
     await browser.url(browser.globals.getUrl('/init/attributes-no-globals.ejs'));
-    
-    const atts = await browser.globals.findSpan(span => span.name === 'documentLoad');    
+
+    const atts = await browser.globals.findSpan(span => span.name === 'documentLoad');
     await browser.assert.ok(atts);
     await browser.assert.strictEqual(atts.tags['app'], 'custom-app');
     await browser.assert.strictEqual(atts.tags['environment'], 'custom-environment');
