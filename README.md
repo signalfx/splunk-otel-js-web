@@ -38,8 +38,8 @@ The easiest way to get started is to use Splunk RUM distributed via CDN
     ```
 
 1. Modify the initialization parameters to specify:
-   - `beaconUrl` - the destination URL to which captured telemetry is sent to be ingested. Replace the `<REALM>` with the actual realm you are using (i.e. us0, us1). 
-   - `rumAuth` - token authorizing the Agent to send the telemetry to the backend. You can find (or generate) the token [here](https://app.signalfx.com/o11y/#/organization/current?selectedKeyValue=sf_section:accesstokens). 
+   - `beaconUrl` - the destination URL to which captured telemetry is sent to be ingested. Replace the `<REALM>` with the actual realm you are using (i.e. us0, us1).
+   - `rumAuth` - token authorizing the Agent to send the telemetry to the backend. You can find (or generate) the token [here](https://app.signalfx.com/o11y/#/organization/current?selectedKeyValue=sf_section:accesstokens).
      Notice that RUM and APM auth tokens are different.
    - `app` - naming the application that will be monitored so it can be distinguished from other applications.
 1. Deploy the changes to your application and make sure that the application is being used.
@@ -69,6 +69,7 @@ Please read [Installation.md](./docs/Installation.md) for more info on different
 
 | @splunk/otel-web | @opentelemetry/api |
 |------------------|--------------------|
+| 0.5.x | 0.19.x |
 | 0.4.x | 0.18.x |
 | 0.3.x | 0.18.x |
 | 0.2.x | 0.18.x |
