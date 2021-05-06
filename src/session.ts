@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { InternalEventTarget, SessionIdChangedEvent } from './EventTarget';
 import { findCookieValue, generateId, isIframe } from './utils';
 
 /*
@@ -38,10 +39,11 @@ const InactivityTimeoutSeconds = 15 * 60;
 const PeriodicCheckSeconds = 60;
 export const COOKIE_NAME = '_splunk_rum_sid';
 
-type SessionIdType = string
-let rumSessionId: SessionIdType = generateId(64); // will be overwritten in init() with scriptInstance; only here as extreme fallback
+export type SessionIdType = string;
+let rumSessionId: SessionIdType | undefined;
 let recentActivity = false;
 let cookieDomain: string;
+let eventTarget: InternalEventTarget | undefined;
 
 function markActivity() {
   recentActivity = true;
@@ -115,25 +117,46 @@ export function updateSessionStatus(): void {
     sessionState = newSessionState();
     recentActivity = true;  // force write of new cookie
   }
+
   rumSessionId = sessionState.id;
+  eventTarget?.dispatchEvent(new SessionIdChangedEvent({ sessionId: rumSessionId }));
+
   if (recentActivity) {
     renewCookieTimeout(sessionState);
   }
   recentActivity = false;
 }
 
-export function initSessionTracking(instanceId: SessionIdType, domain?: string): void {
+export function initSessionTracking(
+  instanceId: SessionIdType,
+  newEventTarget: InternalEventTarget,
+  domain?: string,
+): { deinit: () => void; } {
   if (domain) {
     cookieDomain = domain;
   }
   rumSessionId = instanceId;
   recentActivity = true; // document loaded implies activity
+  eventTarget = newEventTarget;
+
   updateSessionStatus();
-  setInterval(updateSessionStatus, PeriodicCheckSeconds * 1000);
+  const intervalHandle = setInterval(
+    () => updateSessionStatus(),
+    PeriodicCheckSeconds * 1000,
+  );
+
   [
     'click', 'scroll', 'mousedown', 'keydown', 'touchend', 'visibilitychange'
   ].forEach(type => document.addEventListener(type, markActivity, { capture:true, passive: true }));
   // FIXME have span creation also markActivity?
+
+  return {
+    deinit: () => {
+      clearInterval(intervalHandle);
+      rumSessionId = undefined;
+      eventTarget = undefined;
+    },
+  };
 }
 
 export function getRumSessionId(): SessionIdType {

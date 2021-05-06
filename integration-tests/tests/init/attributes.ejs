@@ -10,17 +10,24 @@
 	<p>Attributes</p>
 </body>
 <script>
+	var ourTracer = SplunkRum.provider.getTracer('default');
+
 	function changeAttributes() {
 		SplunkRum.setGlobalAttributes({'key1': 'newvalue1'});
-		// force a new event to be sent
-		SplunkRum.error('fake error');
+		ourTracer.startSpan('attributes-set').end();
 	}
 
 	function resetAttributes() {
 		SplunkRum.setGlobalAttributes();
-		// force a new event to be sent
-		SplunkRum.error('fake error 2');
+		ourTracer.startSpan('attributes-reset').end();
 	}
+
+	SplunkRum._experimental_addEventListener('global-attributes-changed', (event) => {
+		ourTracer.startSpan('attributes-changed').setAttribute(
+			'payload',
+			JSON.stringify(event.payload)
+		).end();
+	});
 </script>
 <a id="clickToChangeAttributes" href="javascript:changeAttributes()">changeAttributes</a>
 <a id="clickToResetAttributes" href="javascript:resetAttributes()">resetAttributes</a>
