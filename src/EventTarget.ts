@@ -41,28 +41,21 @@ export class GlobalAttributesChangedEvent extends Event {
   }
 }
 
-export interface SplunkOtelWebEventTarget {
-  _experimental_addEventListener(name: SplunkOtelWebEventType.SessionChanged, callback: (event: SessionIdChangedEvent) => void);
-  _experimental_addEventListener(name: SplunkOtelWebEventType.GlobalAttributesChanged, callback: (event: GlobalAttributesChangedEvent) => void);
+export interface InternalEventTarget {
+  addEventListener(name: SplunkOtelWebEventType.SessionChanged, callback: (event: SessionIdChangedEvent) => void): void;
+  addEventListener(name: SplunkOtelWebEventType.GlobalAttributesChanged, callback: (event: GlobalAttributesChangedEvent) => void): void;
 
-  _experimental_removeEventListener(name: SplunkOtelWebEventType.SessionChanged, callback: (event: SessionIdChangedEvent) => void);
-  _experimental_removeEventListener(name: SplunkOtelWebEventType.GlobalAttributesChanged, callback: (event: GlobalAttributesChangedEvent) => void);
+  removeEventListener(name: SplunkOtelWebEventType.SessionChanged, callback: (event: SessionIdChangedEvent) => void): void;
+  removeEventListener(name: SplunkOtelWebEventType.GlobalAttributesChanged, callback: (event: GlobalAttributesChangedEvent) => void): void;
+
+  dispatchEvent(event: SessionIdChangedEvent | GlobalAttributesChangedEvent);
 }
 
-export class NativeEventTarget implements SplunkOtelWebEventTarget {
-  // we're using DOM API to save on bytes a little bit
-  // using EventTarget directly has low browser compatibility
-  private readonly target = document.createElement('div');
+export interface SplunkOtelWebEventTarget {
+  _experimental_addEventListener: InternalEventTarget['addEventListener'];
+  _experimental_removeEventListener: InternalEventTarget['removeEventListener']
+}
 
-  _experimental_addEventListener(name: SplunkOtelWebEventType, callback: (event: never) => void): void {
-    this.target.addEventListener(name, callback);
-  }
-
-  _experimental_removeEventListener(name: SplunkOtelWebEventType, callback: (event: never) => void): void {
-    this.target.removeEventListener(name, callback);
-  }
-
-  dispatchEvent(event: SessionIdChangedEvent | GlobalAttributesChangedEvent): void {
-    this.target.dispatchEvent(event);
-  }
+export function buildInternalEventTarget(): InternalEventTarget {
+  return document.createElement('div');
 }

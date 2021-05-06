@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import * as assert from 'assert';
-import { NativeEventTarget } from '../src/EventTarget';
+import { buildInternalEventTarget } from '../src/EventTarget';
 import { initSessionTracking, COOKIE_NAME, getRumSessionId, updateSessionStatus } from '../src/session';
 
 describe('Session tracking', () => {
@@ -23,7 +23,7 @@ describe('Session tracking', () => {
     // First clear the cookie so we start from a known quantity
     document.cookie = COOKIE_NAME+'=garbageValue;expires=Thu, 01 Jan 1970 00:00:00 GMT';
     // the init tests have possibly already started the setInterval for updateSessionStatus.  Try to accomodate this.
-    initSessionTracking('1234', new NativeEventTarget);
+    initSessionTracking('1234', buildInternalEventTarget());
     const firstSessionId = getRumSessionId();
     assert.strictEqual(firstSessionId.length, 32);
     // no marked activity, should keep same state

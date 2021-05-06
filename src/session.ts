@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { NativeEventTarget, SessionIdChangedEvent } from './EventTarget';
+import { InternalEventTarget, SessionIdChangedEvent } from './EventTarget';
 import { findCookieValue, generateId, isIframe } from './utils';
 
 /*
@@ -43,7 +43,7 @@ export type SessionIdType = string;
 let rumSessionId: SessionIdType | undefined;
 let recentActivity = false;
 let cookieDomain: string;
-let eventTarget: NativeEventTarget | undefined;
+let eventTarget: InternalEventTarget | undefined;
 
 function markActivity() {
   recentActivity = true;
@@ -129,7 +129,7 @@ export function updateSessionStatus(): void {
 
 export function initSessionTracking(
   instanceId: SessionIdType,
-  newEventTarget: NativeEventTarget,
+  newEventTarget: InternalEventTarget,
   domain?: string,
 ): { deinit: () => void; } {
   if (domain) {

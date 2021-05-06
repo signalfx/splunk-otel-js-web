@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 module.exports = {
+  '@tags': ['safari-10.1'],
   'No spans sent when no beacon url set': async function(browser) {
     await browser.url(browser.globals.getUrl('/init/nobeacon.ejs'));
     const span = await browser.globals.findSpan(() => {return true;});

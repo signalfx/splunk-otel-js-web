@@ -41,7 +41,12 @@ import {
 import { SplunkWebTracerProvider } from './SplunkWebTracerProvider';
 import { FetchInstrumentationConfig } from '@opentelemetry/instrumentation-fetch';
 import { XMLHttpRequestInstrumentationConfig } from '@opentelemetry/instrumentation-xml-http-request';
-import { GlobalAttributesChangedEvent, NativeEventTarget, SplunkOtelWebEventTarget, SplunkOtelWebEventType } from './EventTarget';
+import {
+  buildInternalEventTarget,
+  GlobalAttributesChangedEvent,
+  InternalEventTarget,
+  SplunkOtelWebEventTarget,
+} from './EventTarget';
 
 export * from './SplunkExporter';
 export * from './SplunkWebTracerProvider';
@@ -196,7 +201,7 @@ let inited = false;
 let _deregisterInstrumentations: () => void | undefined;
 let _deinitSessionTracking: () => void | undefined;
 let _errorInstrumentation: SplunkErrorInstrumentation | undefined;
-let eventTarget: NativeEventTarget | undefined;
+let eventTarget: InternalEventTarget | undefined;
 const SplunkRum: SplunkOtelWebType = {
   DEFAULT_AUTO_INSTRUMENTED_EVENTS,
 
@@ -210,7 +215,7 @@ const SplunkRum: SplunkOtelWebType = {
 
   init: function (options) {
     diag.setLogger(new DiagConsoleLogger(), options?.debug ? DiagLogLevel.DEBUG : DiagLogLevel.ERROR);
-    eventTarget = new NativeEventTarget;
+    eventTarget = buildInternalEventTarget();
 
     const processedOptions: SplunkOtelWebConfigInternal = Object.assign(
       {},
@@ -347,12 +352,12 @@ const SplunkRum: SplunkOtelWebType = {
     _errorInstrumentation.report('SplunkRum.error', args);
   },
 
-  _experimental_addEventListener(name: SplunkOtelWebEventType, callback: (event: never) => void): void {
-    eventTarget?._experimental_addEventListener(name, callback);
+  _experimental_addEventListener(name, callback): void {
+    eventTarget?.addEventListener(name, callback);
   },
 
-  _experimental_removeEventListener(name: SplunkOtelWebEventType, callback: (event: never) => void): void {
-    eventTarget?._experimental_removeEventListener(name, callback);
+  _experimental_removeEventListener(name, callback): void {
+    eventTarget?.removeEventListener(name, callback);
   },
 
   _experimental_getSessionId() {
