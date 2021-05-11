@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+
+## 0.5.0
 - `@opentelemetry/*` core packages updated to `0.19` or latest compatible versions
 - Expose *_experimental_*-prefixed API for accessing and watching global attributes and session ID
 
