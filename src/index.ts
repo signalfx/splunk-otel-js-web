@@ -195,6 +195,7 @@ interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
   DEFAULT_AUTO_INSTRUMENTED_EVENTS: UserInteractionEventsConfig;
 
   readonly inited: boolean;
+  readonly version: string;
 }
 
 let inited = false;
@@ -207,6 +208,10 @@ const SplunkRum: SplunkOtelWebType = {
 
   get inited(): boolean {
     return inited;
+  },
+
+  get version() {
+    return __SPLUNK_OTEL_WEB_BUILD_VERSION;
   },
 
   _internalInit: function (options: SplunkOtelWebConfigInternal) {

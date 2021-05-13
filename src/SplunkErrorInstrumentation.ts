@@ -17,7 +17,7 @@ limitations under the License.
 import * as shimmer from 'shimmer';
 import { getElementXPath } from '@opentelemetry/web';
 import { limitLen } from './utils';
-import { Span } from '@opentelemetry/api';
+import { diag, Span } from '@opentelemetry/api';
 import { hrTime } from '@opentelemetry/core';
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation';
 
@@ -71,6 +71,12 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
   init(): void {}
 
   enable(): void {
+    if (window.__SplunkRumInline) {
+      if (window.__SplunkRumInline.version !== __SPLUNK_OTEL_WEB_BUILD_VERSION) {
+        diag.error(`Inline version is ${window.__SplunkRumInline.version}, but main script version is ${__SPLUNK_OTEL_WEB_BUILD_VERSION}. This may result in faulty behaviour.`);
+      }
+    }
+
     window.__SplunkRumInline?.shutdown();
     setTimeout(() => {
       window.__SplunkRumInline?.popCapturedErrors().forEach(report => {

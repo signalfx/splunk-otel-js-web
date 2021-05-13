@@ -9,6 +9,7 @@ import typescript from '@rollup/plugin-typescript';
 const {
   babelPlugin,
   nodeResolvePlugin,
+  replacePlugin,
 } = require('./rollup.shared');
 
 export default [
@@ -22,6 +23,7 @@ export default [
     },
     plugins: [
       json(),
+      replacePlugin,
       nodeResolvePlugin,
       commonjs({
         include: /node_modules/,
@@ -42,6 +44,7 @@ export default [
     },
     plugins: [
       json(),
+      replacePlugin,
       nodeResolvePlugin,
       commonjs({
         include: /node_modules/,
@@ -99,6 +102,7 @@ export default [
     ],
     plugins: [
       json(),
+      replacePlugin,
       nodeResolvePlugin,
       commonjs({
         include: /node_modules/,
@@ -117,6 +121,7 @@ export default [
     },
     plugins: [
       json(),
+      replacePlugin,
       nodeResolvePlugin,
       commonjs({
         include: /node_modules/,

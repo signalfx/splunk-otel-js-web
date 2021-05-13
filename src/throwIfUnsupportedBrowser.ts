@@ -20,6 +20,7 @@ if( typeof Symbol !== 'function') {
   window.SplunkRum = {
     DEFAULT_AUTO_INSTRUMENTED_EVENTS: {},
     inited: false,
+    version: __SPLUNK_OTEL_WEB_BUILD_VERSION,
     init: noop,
     error: noop,
     setGlobalAttributes: noop,

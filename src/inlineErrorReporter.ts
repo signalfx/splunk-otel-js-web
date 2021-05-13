@@ -19,6 +19,7 @@ import { ErrorReport } from './SplunkErrorInstrumentation';
 interface SplunkRumInlineType {
   popCapturedErrors: () => ErrorReport[];
   shutdown: () => void;
+  version: typeof __SPLUNK_OTEL_WEB_BUILD_VERSION;
 }
 
 declare global {
@@ -60,6 +61,7 @@ const SplunkRumInline: SplunkRumInlineType = {
     window.removeEventListener('error', errorListener);
     document.documentElement.removeEventListener('error', documentErrorListener, { capture: true });
   },
+  version: __SPLUNK_OTEL_WEB_BUILD_VERSION,
 };
 
 export default SplunkRumInline;
