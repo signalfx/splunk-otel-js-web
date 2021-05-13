@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<title>Errors test</title>
-  <%- renderAgent({}) %>
+  <%- renderInlineAgent() %>
   <script id="scenario">
     setTimeout(function() {
       Promise.reject('rejection-value');
@@ -12,5 +12,6 @@
 </head>
 <body>
   <h1>Unhandled rejection</h1>
+  <%- renderAgent({}) %>
 </body>
 </html>

@@ -36,6 +36,11 @@ function addStackIfUseful(span: Span, err: Error) {
   }
 }
 
+export interface ErrorReport {
+  source: string;
+  arg: string | Event | ErrorEvent | Array<any>;
+}
+
 export const ERROR_INSTRUMENTATION_NAME = 'errors';
 export const ERROR_INSTRUMENTATION_VERSION = '1';
 
@@ -66,6 +71,13 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
   init(): void {}
 
   enable(): void {
+    window.__SplunkRumInline?.shutdown();
+    setTimeout(() => {
+      window.__SplunkRumInline?.popCapturedErrors().forEach(report => {
+        this.report(report.source, report.arg);
+      });
+    }, 0);
+
     shimmer.wrap(console, 'error', this._consoleErrorHandler);
     window.addEventListener('unhandledrejection', this._unhandledRejectionListener);
     window.addEventListener('error', this._errorListener);
@@ -139,7 +151,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
     span.end(now);
   }
 
-  public report(source: string, arg: string | Event | ErrorEvent | Array<any>): void {
+  public report(source: ErrorReport['source'], arg: ErrorReport['arg']): void {
     if (Array.isArray(arg) && arg.length === 0) {
       return;
     }

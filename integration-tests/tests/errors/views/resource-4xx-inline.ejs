@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Errors test</title>
+  <%- renderInlineAgent() %>
+</head>
+<body>
+	<h1>Dom parsing error simulation</h1>
+	<img src="/nonexistent.png" />
+
+  <%- renderAgent({allowInsecureBeacon: true}) %>
+</body>
+</html>

@@ -23,7 +23,7 @@ const INJECT_TEMPLATE = `<script src="<%= file -%>" crossorigin="anonymous"></sc
   <script>
     <%if (noInit) { %>
       window.SplunkRumOptions = <%- options -%>;
-    <% } else { %>  
+    <% } else { %>
       window.SplunkRum && window.SplunkRum.init(<%- options -%>);
     <% } %>
 
@@ -78,7 +78,7 @@ const INJECT_TEMPLATE = `<script src="<%= file -%>" crossorigin="anonymous"></sc
 `;
 
 exports.registerTemplateProvider = ({app, addHeaders, enableHttps}) => {
-  app.use(function(req, res, next) {  
+  app.use(function(req, res, next) {
     const filepath = path.resolve(__dirname, '..', '..', 'integration-tests', 'tests', req.path.substring(1));
     if (fs.existsSync(filepath)) {
       const beaconUrl = new URL(`${enableHttps ? 'https' : 'http'}://${req.headers.host}/api/v2/spans`);
@@ -123,8 +123,13 @@ exports.registerTemplateProvider = ({app, addHeaders, enableHttps}) => {
             options: JSON.stringify(options)
           });
         },
+        renderInlineAgent() {
+          const snippetPath = path.resolve(__dirname, '..', '..', 'dist', 'browser', 'splunk-otel-web-inline.js');
+          const script = fs.readFileSync(snippetPath);
+          return `<script>${script.toString('utf8')}</script>`;
+        },
       });
-    } 
+    }
     return next();
   });
 };

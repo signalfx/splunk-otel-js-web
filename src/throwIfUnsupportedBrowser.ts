@@ -15,11 +15,20 @@ limitations under the License.
 */
 
 if( typeof Symbol !== 'function') {
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   const noop = function(){};
   window.SplunkRum = {
+    DEFAULT_AUTO_INSTRUMENTED_EVENTS: {},
+    inited: false,
     init: noop,
     error: noop,
-    setGlobalAttributes: noop
+    setGlobalAttributes: noop,
+    deinit: noop,
+    _internalInit: noop,
+    _experimental_addEventListener: noop,
+    _experimental_getGlobalAttributes: () => ({}),
+    _experimental_getSessionId: () => null,
+    _experimental_removeEventListener: noop,
   };
   throw new Error('SplunkRum: browser not supported, disabling instrumentation.');
 }

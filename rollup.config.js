@@ -107,4 +107,29 @@ export default [
       typescript(),
     ],
   },
+  {
+    input: 'src/inlineErrorReporter.ts',
+    output: {
+      file: 'dist/browser/splunk-otel-web-inline.js',
+      format: 'iife',
+      name: '__SplunkRumInline',
+      sourcemap: false,
+    },
+    plugins: [
+      json(),
+      nodeResolvePlugin,
+      commonjs({
+        include: /node_modules/,
+        sourceMap: false,
+      }),
+      typescript(),
+      babelPlugin,
+      terser({
+        output: {
+          comments: false,
+        },
+        compress: true,
+      }),
+    ],
+  },
 ];
