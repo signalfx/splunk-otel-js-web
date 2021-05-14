@@ -8,7 +8,7 @@
     "start:_execute": "node utils/devServer/runDevServer.js",
     "dist": "rollup -c",
     "check:types": "tsc --noEmit --project tsconfig.json",
-    "build:types": "tsc --declaration --emitDeclarationOnly --project tsconfig.json",
+    "build:types": "tsc --declaration --project tsconfig.json",
     "test:unit:watch": "karma start",
     "test:unit:ci": "nyc karma start --single-run --no-auto-watch --browsers ChromeHeadless",
     "lint": "eslint --quiet src/ test/ integration-tests/",
