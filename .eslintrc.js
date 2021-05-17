@@ -120,7 +120,7 @@ module.exports = {
       }
     },
     {
-      'files': ['integration-tests/**/*.js'],
+      'files': ['integration-tests/**/*.js', './scripts/**/*.js'],
 
       'env': {
         'node': true,

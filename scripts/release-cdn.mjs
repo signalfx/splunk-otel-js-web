@@ -22,8 +22,7 @@ import { CloudFrontClient, CreateInvalidationCommand } from "@aws-sdk/client-clo
 import fetch from 'node-fetch';
 import { request } from '@octokit/request';
 
-const OWNER = 'signalfx';
-const REPO = 'splunk-otel-js-browser';
+const FULL_REPO_NAME = process.env.GITHUB_REPOSITORY;
 const PRERELEASE_KEYWORDS = ['alpha', 'beta', 'rc'];
 
 const isDryRun = process.argv.some(arg => arg === '--dry-run');
@@ -49,7 +48,7 @@ const requestWithAuth = request.defaults({
   },
 });
 
-const { data: releases, status } = await requestWithAuth(`GET /repos/${OWNER}/${REPO}/releases`);
+const { data: releases, status } = await requestWithAuth(`GET /repos/${FULL_REPO_NAME}/releases`);
 if (status >= 400) {
   throw new Error('There was an error while trying to fetch the list of releases.');
 }
@@ -60,7 +59,7 @@ if (!latestRelease) {
 }
 console.log(`I have found the latest version to be: ${latestRelease.tag_name} named "${latestRelease.name}."`);
 
-const { data: assets } = await requestWithAuth(`GET /repos/${OWNER}/${REPO}/releases/${latestRelease.id}/assets`);
+const { data: assets } = await requestWithAuth(`GET /repos/${FULL_REPO_NAME}/releases/${latestRelease.id}/assets`);
 console.log(`This release has ${assets.length} release artifacts: ${assets.map(({name}) => name).join(', ')}.`);
 
 const baseVersion = latestRelease.tag_name;
@@ -78,7 +77,7 @@ const cdnLinks = ['\n## CDN'];
 for (const asset of assets) {
   console.log(`\t- ${asset.name}`);
   console.log(`\t\t- fetching from ${asset.browser_download_url}.`);
-  
+
   const response = await fetch(asset.browser_download_url);
   const assetBuffer = await response.buffer();
   console.log(`\t\t- fetched`);
