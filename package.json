@@ -6,8 +6,10 @@
   "scripts": {
     "start": "npm-run-all -s dist start:_execute",
     "start:_execute": "node utils/devServer/runDevServer.js",
-    "dist": "rollup -c",
-    "check:types": "tsc --noEmit --allowJs --project tsconfig.json",
+    "compile": "npm-run-all -s compile:*",
+    "compile:browser": "rollup -c",
+    "compile:cjs": "tsc --project tsconfig.cjs.json",
+    "compile:esm": "tsc --project tsconfig.esm.json",
     "test:unit:watch": "karma start",
     "test:unit:ci": "nyc karma start --single-run --no-auto-watch --browsers ChromeHeadless",
     "lint": "eslint --quiet src/ test/ integration-tests/",
@@ -25,7 +27,8 @@
     "test:integration:local:headlessFirefox:_execute": "nightwatch -c ./integration-tests/utils/local.conf.js -e headlessFirefox",
     "test:integration:local:safari:_execute": "nightwatch -c ./integration-tests/utils/local.conf.js -e safari",
     "test:integration:_selfSignCerts": "(cd utils && cd certs && openssl req -nodes -new -x509 -keyout server.key -out server.cert)",
-    "test:performance": "node ./performance-tests/runner.js"
+    "test:performance": "node ./performance-tests/runner.js",
+    "version:update": "node ./scripts/version-update.js"
   },
   "author": "Splunk Observability Instrumentals Team <ssg-observability-instrumentals-npm@splunk.com>",
   "license": "Apache-2.0",
@@ -48,9 +51,14 @@
     "web-vitals": "~1.1.2"
   },
   "browser": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
   "files": [
-    "dist",
-    "index.d.ts"
+    "dist/cjs/*.ts",
+    "dist/cjs/*.d.ts",
+    "dist/cjs/*.d.ts.map",
+    "dist/esm/*.ts",
+    "dist/esm/*.d.ts",
+    "dist/esm/*.d.ts.map"
   ],
   "devDependencies": {
     "@aws-sdk/client-cloudfront": "^3.15.0",

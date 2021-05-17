@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "declaration": true,
+    "declarationMap": true,
+    "module": "CommonJS",
+    "outDir": "./dist/cjs",
+    "rootDir": "src",
+  },
+  "extends": "./tsconfig.base.json",
+}

@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+    "noEmitOnError": true,
+    "pretty": true,
+    "resolveJsonModule": true,
+    "target": "ES2017",
+    "types": [
+      "node"
+    ],
+  },
+  "include": [
+    "src/*.ts",
+  ],
+  "files": [
+    "node_modules/zone.js/dist/zone.js.d.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
