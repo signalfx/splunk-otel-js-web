@@ -52,6 +52,7 @@
   },
   "browser": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
+  "types": "dist/cjs/index.d.ts",
   "files": [
     "dist/cjs/*.ts",
     "dist/cjs/*.d.ts",
