@@ -15,7 +15,7 @@ export default [
   {
     input: 'src/indexBrowser.ts',
     output: {
-      file: 'dist/browser/splunk-otel-web.js',
+      file: 'dist/artifacts/splunk-otel-web.js',
       format: 'iife',
       name: 'SplunkRum',
       sourcemap: true,
@@ -35,7 +35,7 @@ export default [
   {
     input: 'src/indexBrowser.ts',
     output: {
-      file: 'dist/browser/splunk-otel-web-legacy.js',
+      file: 'dist/artifacts/splunk-otel-web-legacy.js',
       format: 'iife',
       name: 'SplunkRum',
       sourcemap: true,
