@@ -54,11 +54,11 @@
   "types": "dist/cjs/index.d.ts",
   "files": [
     "dist/cjs/*.js",
+    "dist/cjs/*.js.map",
     "dist/cjs/*.d.ts",
-    "dist/cjs/*.d.ts.map",
     "dist/esm/*.js",
-    "dist/esm/*.d.ts",
-    "dist/esm/*.d.ts.map"
+    "dist/esm/*.js.map",
+    "dist/esm/*.d.ts"
   ],
   "devDependencies": {
     "@aws-sdk/client-cloudfront": "^3.15.0",
