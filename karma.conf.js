@@ -108,8 +108,8 @@ module.exports = function (config) {
       plugins: [
         json(),
         nodeResolvePlugin,
-        typescript(),
         commonjsPlugin,
+        typescript({ tsconfig: './tsconfig.test.json' }),
         rollupPolyfills(),
         istanbulrollup({
           exclude: [
@@ -141,6 +141,6 @@ module.exports = function (config) {
     },
 
     reporters: ['progress', 'spec', 'coverage-istanbul'],
-    preprocessors: {'test/index.ts': ['rollup']},
+    preprocessors: { 'test/index.ts': ['rollup'] },
   });
 };

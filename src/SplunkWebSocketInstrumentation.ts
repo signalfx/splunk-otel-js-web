@@ -18,7 +18,7 @@ limitations under the License.
 import * as shimmer from 'shimmer';
 import { SpanKind, setSpan, context, Span } from '@opentelemetry/api';
 import { isUrlIgnored } from '@opentelemetry/core';
-import { version } from '../package.json';
+import { VERSION } from './version';
 
 import {
   InstrumentationBase, InstrumentationConfig,
@@ -37,7 +37,7 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase {
   protected _config: SplunkWebSocketInstrumentationConfig;
 
   constructor(config: SplunkWebSocketInstrumentationConfig) {
-    super('splunk-websocket', version, config);
+    super('splunk-websocket', VERSION, config);
     this._config = config;
   }
 
