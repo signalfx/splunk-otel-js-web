@@ -32,7 +32,7 @@ jobs:
         run: node scripts/check-version-tag-match.js
 
       - name: Build
-        run: npm run dist
+        run: npm run compile
 
       - name: Build smoke test
         run: npx eslint --no-eslintrc --env es2015 dist/browser/splunk-otel-web.js

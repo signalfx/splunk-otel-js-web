@@ -15,7 +15,11 @@ limitations under the License.
 */
 
 const { exec } = require('child_process');
-const appVersion = require('../package.json').version;
+const path = require('path');
+
+const appRoot = process.cwd();
+const packageJsonUrl = path.resolve(`${appRoot}/package.json`);
+const { version } = require(packageJsonUrl);
 
 exec('git tag -l --contains HEAD', (err, stdout) => {
   if (err) {
@@ -23,7 +27,7 @@ exec('git tag -l --contains HEAD', (err, stdout) => {
     process.exitCode = 1;
   }
 
-  const hasMatchingTag = stdout.split('\n').some(line => line === `v${appVersion}`);
+  const hasMatchingTag = stdout.split('\n').some(line => line === `v${version}`);
   if (!hasMatchingTag) {
     console.error('We could not find any matching tags for the current version.');
     process.exitCode = 1;

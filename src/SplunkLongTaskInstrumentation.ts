@@ -17,7 +17,7 @@ limitations under the License.
 import { hrTime } from '@opentelemetry/core';
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation';
 
-import { version } from '../package.json';
+import { VERSION } from './version';
 
 const LONGTASK_PERFORMANCE_TYPE = 'longtask';
 const MODULE_NAME = 'splunk-longtask';
@@ -26,7 +26,7 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
   private _longtaskObserver: PerformanceObserver | undefined;
 
   constructor(config: InstrumentationConfig = {}) {
-    super(MODULE_NAME, version, Object.assign({}, config));
+    super(MODULE_NAME, VERSION, Object.assign({}, config));
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function

@@ -16,7 +16,7 @@ limitations under the License.
 
 import { WebTracerConfig, WebTracerProvider } from '@opentelemetry/web';
 import { getRumSessionId } from './session';
-import { version as SplunkRumVersion } from '../package.json';
+import { VERSION } from './version';
 import { propagation, context, trace, SpanAttributes } from '@opentelemetry/api';
 import { Tracer } from '@opentelemetry/tracing';
 
@@ -49,7 +49,7 @@ export class SplunkWebTracerProvider extends WebTracerProvider {
       span.setAttribute('location.href', location.href);
       // FIXME does otel want this stuff in Resource?
       span.setAttribute('splunk.rumSessionId', getRumSessionId());
-      span.setAttribute('splunk.rumVersion', SplunkRumVersion);
+      span.setAttribute('splunk.rumVersion', VERSION);
       span.setAttribute('app', this._app);
       span.setAttribute('splunk.scriptInstance', this._instanceId);
       span.setAttributes(this._globalAttributes);

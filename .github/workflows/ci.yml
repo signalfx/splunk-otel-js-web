@@ -20,12 +20,10 @@ jobs:
       - run: npm ci
       - name: Lint code
         run: npm run lint
-      # - name: Lint docs
-      #   run: npm run lint:markdown
-      - name: Verify types
-        run: npm run check:types
+      - name: Lint docs
+        run: npm run lint:markdown
       - name: Transpile code
-        run: npm run dist
+        run: npm run compile
       - name: Unit test
         run: npm run test:unit:ci
 
@@ -51,7 +49,7 @@ jobs:
           key: npm-${{ hashFiles('package-lock.json') }}
           restore-keys: npm-
       - run: npm ci
-      - run: npm run dist
+      - run: npm run compile
       - name: Run integration tests in Browserstack
         run: node ./integration-tests/utils/browserstack.runner.js -e ${{ matrix.browser }} -c ./integration-tests/utils/browserstack.conf.js
         timeout-minutes: 15
@@ -75,6 +73,6 @@ jobs:
           key: npm-${{ hashFiles('package-lock.json') }}
           restore-keys: npm-
       - run: npm ci
-      - run: npm run dist
+      - run: npm run compile
       - name: Local integration tests using Headless Chrome
         run: npm run test:integration:local:${{ matrix.browser }}:_execute
