@@ -32,7 +32,6 @@ if (isDryRun) {
 }
 
 dotenv.config();
-const { GITHUB_REPOSITORY } = process.env;
 
 if (!process.env.CDN_DISTRIBUTION_ID) {
   throw new Error('You are missing an environment variable CDN_DISTRIBUTION_ID.');
@@ -79,7 +78,7 @@ const cdnLinks = ['\n## CDN'];
 for (const asset of assets) {
   console.log(`\t- ${asset.name}`);
   console.log(`\t\t- fetching from ${asset.browser_download_url}.`);
-
+  
   const response = await fetch(asset.browser_download_url);
   const assetBuffer = await response.buffer();
   console.log(`\t\t- fetched`);

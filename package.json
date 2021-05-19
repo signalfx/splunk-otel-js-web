@@ -8,8 +8,7 @@
     "start:_execute": "node utils/devServer/runDevServer.js",
     "compile": "npm-run-all -s compile:*",
     "compile:browser": "rollup -c",
-    "compile:cjs": "tsc --project tsconfig.cjs.json",
-    "compile:esm": "tsc --project tsconfig.esm.json",
+    "compile:tsc": "tsc --build tsconfig.cjs.json tsconfig.esm.json",
     "test:unit:watch": "karma start",
     "test:unit:ci": "nyc karma start --single-run --no-auto-watch --browsers ChromeHeadless",
     "lint": "eslint --quiet src/ test/ integration-tests/",
@@ -54,10 +53,10 @@
   "module": "dist/esm/index.js",
   "types": "dist/cjs/index.d.ts",
   "files": [
-    "dist/cjs/*.ts",
+    "dist/cjs/*.js",
     "dist/cjs/*.d.ts",
     "dist/cjs/*.d.ts.map",
-    "dist/esm/*.ts",
+    "dist/esm/*.js",
     "dist/esm/*.d.ts",
     "dist/esm/*.d.ts.map"
   ],
