@@ -38,6 +38,27 @@ const items = [
     completed: true
   }
 ];
+const secretItems = [
+  {
+    id: 1,
+    text: 'A secret todo for logged in user',
+    completed: false
+  },
+  {
+    id: 2,
+    text: 'See the secret todos',
+    completed: true
+  }
+];
+const secretToken = 'top-secret-do-not-share-me';
+
+function getItems(req) {
+  if (req.query.token === secretToken) {
+    return secretItems;
+  }
+
+  return items;
+}
 
 app.use(json());
 app.use(cors());
@@ -46,8 +67,12 @@ app.get('/ping', (req, res) => {
   res.json({ status: true });
 });
 
+app.get('/login', (req, res) => {
+  res.json({ token: secretToken });
+});
+
 app.get('/items', (req, res) => {
-  res.json(items);
+  res.json(getItems(req));
 });
 
 app.post('/items', (req, res) => {
@@ -56,14 +81,14 @@ app.post('/items', (req, res) => {
     text: req.body.text || '',
     completed: req.body.completed || false
   };
-  items.push(item);
+  getItems(req).push(item);
 
   res.status(201).json(item);
 });
 
 app.get('/items/:id', (req, res) => {
   const reqId = parseInt(req.params.id);
-  const item = items.find(({ id }) => id === reqId);
+  const item = getItems(req).find(({ id }) => id === reqId);
   
   if (!item) {
     return res.sendStatus(404);
@@ -74,7 +99,7 @@ app.get('/items/:id', (req, res) => {
 
 app.patch('/items/:id', (req, res) => {
   const reqId = parseInt(req.params.id);
-  const item = items.find(({ id }) => id === reqId);
+  const item = getItems(req).find(({ id }) => id === reqId);
   
   if (!item) {
     return res.sendStatus(404);
@@ -92,7 +117,7 @@ app.patch('/items/:id', (req, res) => {
 
 app.delete('/items/:id', (req, res) => {
   const reqId = parseInt(req.params.id);
-  const item = items.find(({ id }) => id === reqId);
+  const item = getItems(req).find(({ id }) => id === reqId);
   
   if (!item) {
     return res.sendStatus(404);

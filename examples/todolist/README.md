@@ -6,6 +6,7 @@ This example todo application consists of react frontend app and express backend
 
 After downloading this folder:
 
+0. If you don't have one already [make a trial account to try out Splunk Observability Cloud](https://www.splunk.com/en_us/observability/o11y-cloud-free-trial.html)
 1. Run `npm install`
 2. Copy `.env.example` to `.env`
 3. Fill out `REACT_APP_RUM_*` with your ingest URL and RUM token

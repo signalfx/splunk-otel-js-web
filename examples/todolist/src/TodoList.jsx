@@ -21,18 +21,30 @@ import TodoRow from './TodoRow';
 const ENDPOINT = process.env.REACT_APP_BACKEND + '/items';
 
 function TodoList() {
+  const [token, setToken] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [todos, setTodos] = useState([]);
 
   useEffect(async () => {
     setIsLoading(true);
-    const res = await fetch(ENDPOINT);
+    const res = await fetch(ENDPOINT + (token ? '?token=' + token : ''));
     setTodos(await res.json());
     setIsLoading(false);
-  }, []);
+  }, [token]);
+
+  const login = useCallback(async () => {
+    if (token) {
+      setToken(null);
+      return;
+    }
+
+    const res = await fetch(process.env.REACT_APP_BACKEND + '/login');
+
+    setToken((await res.json()).token);
+  }, [token, setToken]);
 
   const addItem = useCallback(async (text) => {
-    const res = await fetch(ENDPOINT, {
+    const res = await fetch(ENDPOINT + (token ? '?token=' + token : ''), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -52,7 +64,7 @@ function TodoList() {
   }, [todos, setTodos]);
 
   const editItem = useCallback(async (id, props) => {
-    const res = await fetch(ENDPOINT + '/' + id, {
+    const res = await fetch(ENDPOINT + '/' + id + (token ? '?token=' + token : ''), {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -67,10 +79,10 @@ function TodoList() {
 
     const updated = await res.json();
     setTodos(todos.map(todo => todo.id === id ? updated : todo));
-  }, [todos, setTodos]);
+  }, [todos, setTodos, token]);
 
   const deleteItem = useCallback(async (id) => {
-    const res = await fetch(ENDPOINT + '/' + id, {
+    const res = await fetch(ENDPOINT + '/' + id + (token ? '?token=' + token : ''), {
       method: 'DELETE',
     });
 
@@ -80,7 +92,7 @@ function TodoList() {
     }
 
     setTodos(todos.filter(todo => todo.id !== id));
-  }, [todos, setTodos]);
+  }, [todos, setTodos, token]);
 
   if (isLoading) {
     return (
@@ -94,6 +106,9 @@ function TodoList() {
 
   return (
     <div>
+      <div className="mb-4">
+        <button className="btn btn-secondary" onClick={login}>{token ? 'Logout' : 'Login'}</button>
+      </div>
       <ul className="list-group">
         {todos.map((item) => <TodoRow key={item.id} item={item} editItem={editItem} deleteItem={deleteItem} />)}
         <li className="list-group-item">

@@ -25,6 +25,34 @@
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
     <title>React App</title>
+
+    <!--
+      Example of loading Splunk Otel RUM
+    -->
+    <script src="https://cdn.signalfx.com/o11y-gdi-rum/latest/splunk-otel-web.js" crossorigin="anonymous"></script>
+    <script>
+      SplunkRum.init({
+        // Values here are injected from .env file by create-react-app
+        beaconUrl: '%REACT_APP_RUM_BEACON_URL%',
+        rumAuth: '%REACT_APP_RUM_TOKEN%',
+        app: 'enter-your-application-name',
+        // Ignore /ping request that is on a 30s interval
+        ignoreUrls: [/\/ping/],
+        // Redact token from url when logged in
+        exporter: {
+          // If you need to support older browsers like IE make sure to
+          // rewrite this in an older syntax, as it won't be transpiled
+          // injected into HTML.
+          onAttributesSerializing: (attributes) => ({
+            ...attributes,
+            'http.url': typeof attributes['http.url'] === 'string'
+              ? attributes['http.url'].replace(/([?&]token=)[^&]+(&|$)/g, '$1<token>$2')
+              : attributes['http.url'],
+          }),
+        },
+      });
+  </script>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-wEmeIV1mKuiNpC+IOBjI7aAzPcEZeedi5yW5f2yOq55WWLwNGmvvx4Um1vskeMj0" crossorigin="anonymous">
   </head>
   <body>
