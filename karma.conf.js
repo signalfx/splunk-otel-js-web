@@ -109,8 +109,8 @@ module.exports = function (config) {
         json(),
         replacePlugin,
         nodeResolvePlugin,
-        typescript(),
         commonjsPlugin,
+        typescript({ tsconfig: './tsconfig.test.json' }),
         rollupPolyfills(),
         istanbulrollup({
           exclude: [

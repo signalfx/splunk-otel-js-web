@@ -14,7 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-/**
- * This value is injected during build by Rollup.
- */
-declare const __SPLUNK_OTEL_WEB_BUILD_VERSION: string;
+import { StrictMode } from 'react';
+import ReactDOM from 'react-dom';
+
+import App from './App';
+
+ReactDOM.render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+  document.getElementById('root')
+);

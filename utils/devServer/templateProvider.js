@@ -86,10 +86,10 @@ exports.registerTemplateProvider = ({app, addHeaders, enableHttps}) => {
         beaconUrl.port = req.query.beaconPort;
       }
 
-      let defaultFile = '/dist/browser/splunk-otel-web.js';
+      let defaultFile = '/dist/artifacts/splunk-otel-web.js';
       const browser = req.header('User-Agent')
       if (browser && browser.includes('Trident')) {
-        defaultFile = '/dist/browser/splunk-otel-web-legacy.js';
+        defaultFile = '/dist/artifacts/splunk-otel-web-legacy.js';
       }
 
       addHeaders(res);
@@ -124,7 +124,7 @@ exports.registerTemplateProvider = ({app, addHeaders, enableHttps}) => {
           });
         },
         renderInlineAgent() {
-          const snippetPath = path.resolve(__dirname, '..', '..', 'dist', 'browser', 'splunk-otel-web-inline.js');
+          const snippetPath = path.resolve(__dirname, '..', '..', 'dist', 'artifacts', 'splunk-otel-web-inline.js');
           const script = fs.readFileSync(snippetPath);
           return `<script>${script.toString('utf8')}</script>`;
         },

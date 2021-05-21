@@ -47,6 +47,7 @@ import {
   InternalEventTarget,
   SplunkOtelWebEventTarget,
 } from './EventTarget';
+import { VERSION } from './version';
 
 export * from './SplunkExporter';
 export * from './SplunkWebTracerProvider';
@@ -211,7 +212,7 @@ const SplunkRum: SplunkOtelWebType = {
   },
 
   get version() {
-    return __SPLUNK_OTEL_WEB_BUILD_VERSION;
+    return VERSION;
   },
 
   _internalInit: function (options: SplunkOtelWebConfigInternal) {

@@ -1,0 +1,85 @@
+default:
+  image: 'cimg/node:lts-browsers'
+
+cache:
+  key:
+    files:
+      - package-lock.json
+  paths:
+    - .npm/
+    - node_modules/
+
+# tell npm to store cache in .npm so it can be cached by Gitlab
+before_script:
+  - npm ci --cache .npm --prefer-offline
+
+stages:
+  - setup
+  - build
+  - test
+  - release
+
+npm_install:
+  stage: setup
+  script:
+    - npm install
+
+lint:
+  stage: build
+  script:
+    - npm run lint
+    - npm run lint:markdown
+
+build:
+  stage: build
+  only:
+    - /^[^v].*/
+  artifacts:
+    paths:
+      - dist/
+  script:
+    - npm run compile
+
+build_artifacts:
+  stage: build
+  only:
+  - /^v[0-9]+\..*/
+  artifacts:
+    paths:
+      - dist/artifacts/
+  script:
+    - npm run compile
+    - npm pack
+
+    # complete artifacts & checksums
+    - mv splunk-otel-web-${CI_COMMIT_REF_NAME:1}.tgz dist/artifacts/
+    - shasum -a 256 dist/artifacts/* > dist/artifacts/checksums.txt
+
+unit_test:
+  stage: test
+  script:
+    - npm run test:unit:ci
+
+release_production:
+  artifacts:
+    paths:
+      - dist/artifacts/
+  stage: release
+  only:
+    - /^v[0-9]+\..*/
+  script:
+    - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-key C99B11DEB97541F0
+    - sudo apt-add-repository https://cli.github.com/packages
+    - sudo apt update
+    - sudo apt install gh
+
+    # release to NPM
+    - echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
+    - npm publish ./dist/artifacts/splunk-otel-web-${CI_COMMIT_REF_NAME:1}.tgz
+    - rm -f ~/.npmrc
+
+    # release in Github
+    - gh release create v${CI_COMMIT_REF_NAME:1} ./dist/artifacts/* --target $CI_COMMIT_SHA --repo $GITHUB_REPOSITORY
+
+    # release to CDN
+    - node scripts/release-cdn.mjs

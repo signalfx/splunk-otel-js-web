@@ -1,5 +1,5 @@
 /*
-Copyright 2020 Splunk Inc.
+Copyright 2021 Splunk Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,18 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-
-import 'mocha';
-
-import '../src/inlineErrorReporter';
-
-// Manually maintain this list, as old webpack require-based mechanism isn't working under rollup
-import './init.test';
-import './servertiming.test';
-import './utils.test';
-import './session.test';
-import './websockets.test';
-import './SplunkExporter.test';
-import './api.test';
-import './SplunkWebTracerProvider.test';
-import './SplunkOtelWeb.test';
+module.exports = {
+  extends: '../../.eslintrc.js',
+  env: {
+    browser: true,
+    es6: true,
+  },
+  globals: {
+    process: 'readable',
+  },
+};

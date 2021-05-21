@@ -20,6 +20,7 @@ import { limitLen } from './utils';
 import { diag, Span } from '@opentelemetry/api';
 import { hrTime } from '@opentelemetry/core';
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation';
+import { VERSION } from './version';
 
 // FIXME take timestamps from events?
 
@@ -72,8 +73,8 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 
   enable(): void {
     if (window.__SplunkRumInline) {
-      if (window.__SplunkRumInline.version !== __SPLUNK_OTEL_WEB_BUILD_VERSION) {
-        diag.error(`Inline version is ${window.__SplunkRumInline.version}, but main script version is ${__SPLUNK_OTEL_WEB_BUILD_VERSION}. This may result in faulty behaviour.`);
+      if (window.__SplunkRumInline.version !== VERSION) {
+        diag.error(`Inline version is ${window.__SplunkRumInline.version}, but main script version is ${VERSION}. This may result in faulty behaviour.`);
       }
     }
 

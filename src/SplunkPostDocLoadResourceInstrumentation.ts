@@ -18,7 +18,7 @@ import {
   InstrumentationBase, InstrumentationConfig,
 } from '@opentelemetry/instrumentation';
 
-import { version } from '../package.json';
+import { VERSION } from './version';
 import { hrTime, isUrlIgnored } from '@opentelemetry/core';
 import { addSpanNetworkEvents } from '@opentelemetry/web';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
@@ -40,7 +40,7 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
       { allowedInitiatorTypes: defaultAllowedInitiatorTypes },
       config,
     );
-    super(MODULE_NAME, version, processedConfig);
+    super(MODULE_NAME, VERSION, processedConfig);
     this.config = processedConfig;
   }
 

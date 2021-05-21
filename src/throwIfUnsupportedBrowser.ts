@@ -14,21 +14,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { VERSION } from './version';
+
 if( typeof Symbol !== 'function') {
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   const noop = function(){};
   window.SplunkRum = {
     DEFAULT_AUTO_INSTRUMENTED_EVENTS: {},
-    inited: false,
-    version: __SPLUNK_OTEL_WEB_BUILD_VERSION,
+    version: VERSION,
     init: noop,
+    inited: false,
     error: noop,
     setGlobalAttributes: noop,
     deinit: noop,
     _internalInit: noop,
     _experimental_addEventListener: noop,
     _experimental_getGlobalAttributes: () => ({}),
-    _experimental_getSessionId: () => null,
+    _experimental_getSessionId: () => undefined,
     _experimental_removeEventListener: noop,
   };
   throw new Error('SplunkRum: browser not supported, disabling instrumentation.');

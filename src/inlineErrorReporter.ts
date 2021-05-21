@@ -15,11 +15,12 @@ limitations under the License.
 */
 
 import { ErrorReport } from './SplunkErrorInstrumentation';
+import { VERSION } from './version';
 
 interface SplunkRumInlineType {
   popCapturedErrors: () => ErrorReport[];
   shutdown: () => void;
-  version: typeof __SPLUNK_OTEL_WEB_BUILD_VERSION;
+  version: typeof VERSION;
 }
 
 declare global {
@@ -45,12 +46,13 @@ const documentErrorListener = (event: ErrorEvent) => {
   report('eventListener.error', event);
 };
 
-console.log('addEventListener');
-window.addEventListener('unhandledrejection', unhandledRejectionListener);
-window.addEventListener('error', errorListener);
-document.documentElement.addEventListener('error', documentErrorListener, { capture: true });
+export function inlineReportErrors(): void {
+  window.addEventListener('unhandledrejection', unhandledRejectionListener);
+  window.addEventListener('error', errorListener);
+  document.documentElement.addEventListener('error', documentErrorListener, { capture: true });
+}
 
-const SplunkRumInline: SplunkRumInlineType = {
+export const SplunkRumInline: SplunkRumInlineType = {
   popCapturedErrors: () => {
     const result = store.slice();
     store.length = 0;
@@ -61,7 +63,5 @@ const SplunkRumInline: SplunkRumInlineType = {
     window.removeEventListener('error', errorListener);
     document.documentElement.removeEventListener('error', documentErrorListener, { capture: true });
   },
-  version: __SPLUNK_OTEL_WEB_BUILD_VERSION,
+  version: VERSION,
 };
-
-export default SplunkRumInline;
