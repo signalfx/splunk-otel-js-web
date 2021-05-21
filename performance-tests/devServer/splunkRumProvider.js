@@ -23,13 +23,13 @@ async function handleSplunkRumRequest(app) {
 
 function generateSplunkRumTags () {
   const options = {
-    beaconUrl: `/api/v2/spans`, 
+    beaconUrl: `/api/v2/spans`,
     app: 'splunk-otel-js-dummy-app',
     debug: false,
   };
 
   return render(SPLUNK_RUM_TAGS_TEMPLATE, {
-    file: '/dist/browser/splunk-otel-web.js',
+    file: '/dist/artifacts/splunk-otel-web.js',
     options: JSON.stringify(options),
   });
 }

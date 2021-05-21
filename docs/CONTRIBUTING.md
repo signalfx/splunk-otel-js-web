@@ -1,23 +1,9 @@
 # Building, testing and contributing to splunk-browser-otel-js
-## Building, preamble
-This repo makes use of git submodules to pull in the latest otel-js and otel-js-contrib code.  In time, we may move to only using
-published versions.  Meanwhile, do not modify anything in the deps/ directory once you've updated the submodules.  We want to make
-direct contributions to otel upstream.
+## Building
 
 ```bash
-$ git submodule update --init --recursive # one-time
-$ git submodule update --recursive # every time you update this repo
-```
-
-## Building, for real
-Build as so:
-
-```bash
-$ git submodule update
-$ npm install
-$ npm run dist
-$ npm run lint (optional)
-$ npm test (optional)
+npm install
+npm run compile
 ```
 
 ## Functional tests
@@ -44,25 +30,6 @@ Requires the code below to be run once, to enable running integration tests in S
 ```bash
 $ /usr/bin/safaridriver --enable
 ```
-
-## Releasing
-1. Prepare the release commit on `main`
-    1. Update the version in `package.json`
-    1. `npm i` to update the version in `package-lock.json`
-    1. Update the changelog by creating a section for the new version, and moving all unreleased entries to it
-    1. Commit as `chore: prepare release <version>`
-1. `git push origin main` to publish
-1. `git tag v<version>` - please don't forget the "v"
-1. `git push origin v<version>` to publish the version tag, this starts the Github workflow, which will:
-    1. create a Github Release
-    1. publish to NPM
-1. Navigate to <https://github.com/signalfx/rum-browser-js/releases/> and find the release you just created
-    1. Update the changelog or link to the right section in README.    
-1. run `npm run release:cdn` and verify that the plan is correct
-1. run `npm run release:cdn:wet`
-    1. this script updates release contents and will ask you to verify them (URL will be provided)
-    1. update the versions in `integration-tests/tests/cdn/index.ejs` and `integration-tests/tests/cdn/index.spec.js`
-    1. verify that CDN works by running `npm run test:integration:local:chrome`
 
 ## Community Contributions
 
