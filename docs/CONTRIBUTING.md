@@ -1,6 +1,7 @@
 # Building, testing and contributing to splunk-browser-otel-js
 ## Building
-```
+
+```bash
 npm install
 npm run compile
 ```
