@@ -114,9 +114,13 @@ Trace linkage with APM is currently supported for following Splunk APM agents:
 
 If your configuration is unsupported, you can still stitch the APM trace with the RUM information by [enabling the trace linking manually](https://github.com/signalfx/splunk-otel-js-browser/blob/main/docs/ServerTraceContext.md).
 
-## Hybrid inline / body bottom mode
+## Hybrid inline / bottom-of-the-body mode
 
-If you decide not to load the instrumentation synchronously in the HEAD due to its size, but you would like to track of errors happening during the page load, you can add a separate small inline error tracker.
+If you decide not to load the instrumentation synchronously in the HEAD due to its size, but you would like to track of errors happening during the page load, you can add a separate small inline error tracker, which you'll find [in the latest release](https://github.com/signalfx/splunk-otel-js-web/releases/latest).
+
+This snippet should be placed in `<head>` above any other scripts in the document. **You still need to add the main script, either from CDN, or from NPM.**
+
+The snippet's job is to capture errors which were raised before the main script loaded, and which would otherwise be missed. When the main script eventually loads, it disables the snippet, picks up the errors that were in it, and exports them to the backend. The benefit of using the hybrid mode is that you can load the main script later in the document, while you retain the ability to capture all errors.
 
 ## Miscellaneous
 

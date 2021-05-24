@@ -15,12 +15,12 @@ limitations under the License.
 */
 
 import { ErrorReport } from './SplunkErrorInstrumentation';
-import { VERSION } from './version';
+import { INLINE_VERSION } from './version';
 
 interface SplunkRumInlineType {
   popCapturedErrors: () => ErrorReport[];
   shutdown: () => void;
-  version: typeof VERSION;
+  version: typeof INLINE_VERSION;
 }
 
 declare global {
@@ -63,5 +63,5 @@ export const SplunkRumInline: SplunkRumInlineType = {
     window.removeEventListener('error', errorListener);
     document.documentElement.removeEventListener('error', documentErrorListener, { capture: true });
   },
-  version: VERSION,
+  version: INLINE_VERSION,
 };
