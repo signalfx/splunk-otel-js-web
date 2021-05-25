@@ -39,6 +39,10 @@ module.exports = {
       await browser.assert.strictEqual(tags['target_xpath'], '//html/body/img');
       await browser.assert.ok(tags['target_src'].endsWith('/nonexistent.png'), `Checking target_src: ${tags['target_src']}`);
 
+      if (url.includes('inline')) {
+        await browser.assert.strictEqual(tags['inlineErrorReporter'], 'true');
+      }
+
       browser.globals.clearReceivedSpans();
     }
   },
@@ -72,6 +76,10 @@ module.exports = {
       case 'ie':
         await browser.assert.strictEqual(tags['error.message'], 'Syntax error');
         break;
+      }
+
+      if (url.includes('inline')) {
+        await browser.assert.strictEqual(tags['inlineErrorReporter'], 'true');
       }
 
       browser.globals.clearReceivedSpans();
@@ -109,6 +117,10 @@ module.exports = {
         break;
       }
 
+      if (url.includes('inline')) {
+        await browser.assert.strictEqual(tags['inlineErrorReporter'], 'true');
+      }
+
       browser.globals.clearReceivedSpans();
     }
   },
@@ -133,6 +145,10 @@ module.exports = {
       await browser.assert.strictEqual(tags['error'], 'true');
       await browser.assert.strictEqual(tags['error.object'], 'String');
       await browser.assert.strictEqual(tags['error.message'], 'rejection-value');
+
+      if (url.includes('inline')) {
+        await browser.assert.strictEqual(tags['inlineErrorReporter'], 'true');
+      }
 
       browser.globals.clearReceivedSpans();
     }
