@@ -318,7 +318,6 @@ describe('test unhandled promise rejection', () => {
     });
     setTimeout(() => {
       const errorSpan = capturer.spans.find(span => span.attributes.component === 'error');
-      console.log(capturer.spans.map(s => s.name + ' ' + s.attributes.component));
       expect(errorSpan).to.exist;
       expect(errorSpan.attributes.error).to.be.true;
       expect(errorSpan.attributes['error.stack']).to.match(/throwBacon/);
@@ -365,7 +364,6 @@ describe('test unloaded img', () => {
     document.body.appendChild(img);
     setTimeout(() => {
       const span = capturer.spans.find(s => s.attributes.component === 'error');
-      console.log(capturer.spans.map(s => s.attributes.component));
       expect(span).to.exist;
       assert.strictEqual(span.name, 'eventListener.error');
       assert.ok((span.attributes.target_src as string).endsWith('DoesNotExist.jpg'));
@@ -390,7 +388,6 @@ describe('test manual report', () => {
     SplunkRum.error();
     SplunkRum.error([]);
     SplunkRum.error({});
-    console.log(capturer.spans.map(s => s.name + ' ' + s.attributes.component));
     assert.strictEqual(capturer.spans.length, 0);
   });
 });

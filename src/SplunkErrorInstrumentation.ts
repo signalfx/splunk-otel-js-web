@@ -98,7 +98,6 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
   }
 
   disable(): void {
-    console.log('disable');
     shimmer.unwrap(console, 'error');
     window.removeEventListener('unhandledrejection', this._unhandledRejectionListener);
     window.removeEventListener('error', this._errorListener);
@@ -188,7 +187,6 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
     }
 
     const attributes =  this.getAttributesFromArg(arg);
-    console.log('attributes', attributes);
     if (attributes) {
       const now = hrTime();
       const span = this.tracer.startSpan(source, { startTime: now });
