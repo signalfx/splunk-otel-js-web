@@ -13,8 +13,10 @@ users.  OpenTelemetry represents operations like this with spans; in addition to
 and end time, you can also include additional details in key-value pairs called attributes:
 
 ```javascript
+import {trace} from '@opentelemetry/api'
+
 function calculateEstateTax(estate) {
-    const span = SplunkRum.provider.getTracer('estate').startSpan('calculateEstateTax');
+    const span = trace.getTracer('estate').startSpan('calculateEstateTax');
     span.setAttribute('estate.jurisdictionCount', estate.jurisdictions.length);
     var taxOwed = 0;
     // ...
