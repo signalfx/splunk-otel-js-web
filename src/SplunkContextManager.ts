@@ -135,9 +135,10 @@ export class SplunkContextManager implements ContextManager {
     const manager = this;
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore for some reason CI decides error is here while locally goe to next
+    // @ts-ignore for some reason CI decides error is here while locally happens on next line
     wrapNatively(window, 'setTimeout', (original) =>
-      // @ts-expect-error expects __promisify__ for some reason
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore expects __promisify__ for some reason
       function (...args: Parameters<typeof setTimeout>) {
         // Don't copy parent context if the timeout is long enough that it isn't really
         // expected to happen within interaction (eg polling every second).
