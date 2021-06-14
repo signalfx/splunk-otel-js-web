@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Promise - finally</title>
+
+  <%- renderAgent({}) %>
+</head>
+<body>
+  <h1>Promise - finally</h1>
+
+  <button type="button" id="btn1">Button</button>
+
+  <script>
+    btn1.addEventListener('click', function () {
+      Promise.resolve().finally(function (resolve) {
+        SplunkRum.provider.getTracer('default').startSpan('context-child').end();
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Promise - then (2nd argument)</title>
+
+  <%- renderAgent({}) %>
+</head>
+<body>
+  <h1>Promise - then (2nd argument)</h1>
+
+  <button type="button" id="btn1">Button</button>
+
+  <script>
+    btn1.addEventListener('click', function () {
+      Promise.reject().then(undefined, function (resolve) {
+        SplunkRum.provider.getTracer('default').startSpan('context-child').end();
+      });
+    });
+  </script>
+</body>
+</html>

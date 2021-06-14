@@ -47,6 +47,7 @@ import {
   InternalEventTarget,
   SplunkOtelWebEventTarget,
 } from './EventTarget';
+import { SplunkContextManager } from './SplunkContextManager';
 
 export * from './SplunkExporter';
 export * from './SplunkWebTracerProvider';
@@ -301,7 +302,9 @@ const SplunkRum: SplunkOtelWebType = {
       provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
     }
 
-    provider.register();
+    provider.register({
+      contextManager: new SplunkContextManager()
+    });
     this.provider = provider;
 
     const vitalsConf = getPluginConfig(processedOptions.instrumentations.webvitals);

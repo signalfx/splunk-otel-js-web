@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Promise - catch</title>
+
+  <%- renderAgent({}) %>
+</head>
+<body>
+  <h1>Promise - catch</h1>
+
+  <button type="button" id="btn1">Button</button>
+
+  <script>
+    btn1.addEventListener('click', function () {
+      Promise.reject().catch(function (resolve) {
+        SplunkRum.provider.getTracer('default').startSpan('context-child').end();
+      });
+    });
+  </script>
+</body>
+</html>

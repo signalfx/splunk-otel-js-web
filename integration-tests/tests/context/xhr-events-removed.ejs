@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>XHR - events</title>
+
+  <%- renderAgent({}) %>
+</head>
+<body>
+  <h1>XHR - events</h1>
+
+  <button type="button" id="btn1">Button</button>
+
+  <script>
+    btn1.addEventListener('click', function () {
+      var req = new XMLHttpRequest();
+      req.open('GET', '/some-data');
+      req.setRequestHeader('Content-Type', 'text/plain');
+      req.send();
+
+      function optionalListener() {
+        SplunkRum.provider.getTracer('default').startSpan('optional-child').end();
+      }
+
+      req.addEventListener('load', optionalListener);
+      req.addEventListener('load', function () {
+        SplunkRum.provider.getTracer('default').startSpan('context-child').end();
+      });
+
+      req.removeEventListener('load', optionalListener);
+    });
+  </script>
+</body>
+</html>
