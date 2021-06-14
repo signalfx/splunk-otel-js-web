@@ -134,6 +134,8 @@ export class SplunkContextManager implements ContextManager {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const manager = this;
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore for some reason CI decides error is here while locally goe to next
     wrapNatively(window, 'setTimeout', (original) =>
       // @ts-expect-error expects __promisify__ for some reason
       function (...args: Parameters<typeof setTimeout>) {
