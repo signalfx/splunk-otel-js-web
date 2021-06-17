@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Parent span propagation through async activities
 
 ## 0.5.1
 - Include TS types and esm in release
