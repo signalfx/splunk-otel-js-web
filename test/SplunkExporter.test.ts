@@ -26,10 +26,10 @@ function buildDummySpan({
   attributes = {},
 } = {}) {
   return {
-    spanContext: {
+    spanContext: () => ({
       traceId: '0000',
       spanId: '0001',
-    },
+    }),
     parentSpanId: '0002',
     name,
     attributes,

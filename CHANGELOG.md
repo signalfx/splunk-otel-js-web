@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Upgrade opentelemetry packages to 0.21.0
 
 ## 0.5.1
 - Include TS types and esm in release

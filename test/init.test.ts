@@ -16,7 +16,7 @@ limitations under the License.
 
 import * as assert from 'assert';
 import SplunkRum from '../src/index';
-import { setSpan, context, getSpan } from '@opentelemetry/api';
+import { context, trace } from '@opentelemetry/api';
 import * as tracing from '@opentelemetry/tracing';
 import { deinit, initWithDefaultConfig, SpanCapturer } from './utils';
 import sinon from 'sinon';
@@ -87,10 +87,10 @@ describe('test init', () => {
       SplunkRum.provider.addSpanProcessor(capturer);
       setTimeout(()=> {
         assert.ok(capturer.spans.length >= 3);
-        const docLoadTraceId = capturer.spans.find(span => span.name === 'documentLoad')?.spanContext.traceId;
+        const docLoadTraceId = capturer.spans.find(span => span.name === 'documentLoad')?.spanContext().traceId;
 
         capturer.spans.filter(span => span.attributes['component'] === 'document-load').forEach(span => {
-          assert.strictEqual(span.spanContext.traceId, docLoadTraceId);
+          assert.strictEqual(span.spanContext().traceId, docLoadTraceId);
         });
 
         const documentFetchSpan = capturer.spans.find(span => span.name === 'documentFetch');
@@ -164,8 +164,8 @@ describe('creating spans is possible', () => {
   it('should have extra fields added', () => {
     const tracer = SplunkRum.provider.getTracer('test');
     const span = tracer.startSpan('testSpan');
-    context.with(setSpan(context.active(), span), () => {
-      assert.deepStrictEqual(getSpan(context.active()), span);
+    context.with(trace.setSpan(context.active(), span), () => {
+      assert.deepStrictEqual(trace.getSpan(context.active()), span);
     });
     span.end();
 
