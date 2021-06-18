@@ -1,10 +1,12 @@
 name: Continuous Integration
 on:
   pull_request:
+permissions: read-all
 
 jobs:
   unit-tests:
     runs-on: ubuntu-latest
+    permissions: read-all
     steps:
       - name: Checkout
         uses: actions/checkout@v1
@@ -29,6 +31,7 @@ jobs:
 
   browserstack-integration-tests:
     runs-on: ubuntu-latest
+    permissions: read-all
     env:
       BROWSERSTACK_USER: ${{ secrets.BROWSERSTACK_USER }}
       BROWSERSTACK_KEY: ${{ secrets.BROWSERSTACK_KEY }}
@@ -56,6 +59,7 @@ jobs:
 
   local-integration-tests:
     runs-on: ubuntu-latest
+    permissions: read-all
     strategy:
       fail-fast: false
       matrix:

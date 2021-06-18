@@ -12,7 +12,7 @@
     "test:unit:watch": "karma start",
     "test:unit:ci": "nyc karma start --single-run --no-auto-watch --browsers ChromeHeadless",
     "lint": "eslint --quiet src/ test/ integration-tests/",
-    "lint:markdown": "markdownlint README.md docs/*.md",
+    "lint:markdown": "markdownlint *.md docs/*.md",
     "lint:fix": "eslint --fix src/ test/ integration-tests/",
     "test:integration:local": "npm-run-all -s compile test:integration:local:headlessChrome:_execute",
     "test:integration:local:firefox": "npm-run-all -s compile test:integration:local:firefox:_execute",
