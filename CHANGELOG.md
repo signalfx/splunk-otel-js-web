@@ -1,11 +1,3 @@
-| @splunk/otel-web | @opentelemetry/api | @opentelemetry/core | @opentelemetry/*-contrib |
-|------------------|--------------------|
-| 0.5.x | 0.19.x |
-| 0.4.x | 0.18.x |
-| 0.3.x | 0.18.x |
-| 0.2.x | 0.18.x |
-| 0.1.x | 0.15.x |
-
 # Changelog
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
