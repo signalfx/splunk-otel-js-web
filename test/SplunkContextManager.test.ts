@@ -27,6 +27,9 @@ describe('async context propagation', () => {
       app: 'my-app',
       beaconUrl: 'https://localhost:9411/api/traces',
       rumAuth: 'xxx',
+      context: {
+        async: true,
+      },
       instrumentations: INSTRUMENTATIONS_ALL_DISABLED,
     });
 

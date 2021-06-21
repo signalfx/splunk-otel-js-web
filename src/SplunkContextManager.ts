@@ -18,10 +18,15 @@ import { Context, ContextManager, ROOT_CONTEXT } from '@opentelemetry/api';
 import { unwrap } from 'shimmer';
 import { getOriginalFunction, isFunction, wrapNatively } from './utils';
 
+export interface ContextManagerConfig {
+  /** Enable async tracking of span parents */
+  async?: boolean;
+}
+
 const ATTACHED_CONTEXT_KEY = '__splunk_context';
 
 /**
- * Extends otel-web stack context manager
+ * Extends otel-web stack context manager.
  * Due to privates being unaccessible in subclasses (_enabled) need to copy-paste everything
  */
 export class SplunkContextManager implements ContextManager {
@@ -34,6 +39,11 @@ export class SplunkContextManager implements ContextManager {
    * Keeps the reference to current context
    */
   public _currentContext = ROOT_CONTEXT;
+
+  // eslint-disable-next-line no-useless-constructor
+  constructor(
+    protected _config: ContextManagerConfig = {}
+  ) {}
 
   /**
    *
@@ -87,11 +97,13 @@ export class SplunkContextManager implements ContextManager {
       return this;
     }
 
-    this._unpatchTimeouts();
-    this._unpatchPromise();
-    this._unpatchMutationObserver();
-    this._unpatchEvents();
-    this._unpatchMessageChannel();
+    if (this._config.async) {
+      this._unpatchTimeouts();
+      this._unpatchPromise();
+      this._unpatchMutationObserver();
+      this._unpatchEvents();
+      this._unpatchMessageChannel();
+    }
 
     this._currentContext = ROOT_CONTEXT;
     this._enabled = false;
@@ -106,11 +118,13 @@ export class SplunkContextManager implements ContextManager {
       return this;
     }
 
-    this._patchTimeouts();
-    this._patchPromise();
-    this._patchMutationObserver();
-    this._patchEvents();
-    this._patchMessageChannel();
+    if (this._config.async) {
+      this._patchTimeouts();
+      this._patchPromise();
+      this._patchMutationObserver();
+      this._patchEvents();
+      this._patchMessageChannel();
+    }
 
     this._enabled = true;
     this._currentContext = ROOT_CONTEXT;

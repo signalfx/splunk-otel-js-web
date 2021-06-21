@@ -9,7 +9,7 @@ Usually traces that happen asyncronously (for example user interactions that res
 * MutationObserver on textNode
 * MessagePort
 
-These also cover most common methods frameworks use to delay re-renderers when values change, allowing requests done when a component is first rendered to be linked with user interaction that caused the component to be added to the page.
+These also cover most common methods frameworks use to delay re-renderers when values change, allowing requests done when a component is first rendered to be linked with the user interaction that caused the component to be added to the page.
 
 Additionally XMLHttpRequest events and fetch (via promise methods) are patched to keep parent context so subsequent requests get linked to parent.
 
@@ -23,6 +23,21 @@ document.getElementById('save-button').addEventListener('click', function () {
     listReq.open('GET', '/api/items');
     listReq.send(); // Gets parent of click span
   });
+});
+```
+
+## Enabling
+
+As we're currently still testing it you can opt in to using it by setting `context.async` to `true` in your agent configuration.
+
+```js
+SplunkRum.init({
+  beaconUrl: 'https://rum-ingest.us0.signalfx.com/v1/rum',
+  rumAuth: 'ABC123...789',
+  app: 'my-awesome-app',
+  context: {
+    async: true,
+  },
 });
 ```
 

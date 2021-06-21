@@ -41,10 +41,22 @@ async function runTest(browser, filename, extraChecks) {
 
 module.exports = {
   afterEach: function(browser) {
-    browser.globals.clearReceivedSpans();  
+    browser.globals.clearReceivedSpans();
   },
-  setTimeout: function (browser) {
-    return runTest(browser, '/context/set-timeout.ejs');
+  setTimeout: async function (browser) {
+    await runTest(browser, '/context/set-timeout.ejs');
+
+    browser.globals.clearReceivedSpans();
+
+    await browser.click('#btn2');
+
+    const clickSpan = await browser.globals.findSpan(span => span.name === 'click');
+    const childSpan = await browser.globals.findSpan(span => span.name === 'context-child');
+
+    browser.assert.ok(!!clickSpan, 'Click has a span');
+    browser.assert.not.ok(childSpan.parentId, 'Child span in a longer timeout doesn\'t have a parent');
+
+    await browser.globals.assertNoErrorSpans();
   },
   setImmediate: function (browser) {
     if (!isBrowser(browser, 'ie')) {
@@ -54,45 +66,27 @@ module.exports = {
 
     return runTest(browser, '/context/set-immediate.ejs');
   },
-  'promise constructor': function (browser) {
+  'promise constructor': async function (browser) {
     if (isBrowser(browser, 'ie')) {
       // Doesn't exist natively in IE
       return Promise.resolve();
     }
+    await browser.url(browser.globals.getUrl('/context/promise.ejs'));
 
-    return runTest(browser, '/context/promise-constructor.ejs');
-  },
-  'promise then': function (browser) {
-    if (isBrowser(browser, 'ie')) {
-      // Doesn't exist natively in IE
-      return Promise.resolve();
+    for (let i = 1; i <= 5; i++) {
+      await browser.click('#btn' + i);
+
+      const clickSpan = await browser.globals.findSpan(span => span.name === 'click');
+      const childSpan = await browser.globals.findSpan(span => span.name === 'context-child');
+
+      browser.assert.not.ok(clickSpan.parentId, `Click ${i} span does not have a parent.`);
+      browser.assert.strictEqual(childSpan.parentId, clickSpan.id, `Child span ${i} belongs to user interaction trace.`);
+
+      await browser.globals.assertNoErrorSpans();
+      browser.globals.clearReceivedSpans();
     }
 
-    return runTest(browser, '/context/promise-then.ejs');
-  },
-  'promise then catch': function (browser) {
-    if (isBrowser(browser, 'ie')) {
-      // Doesn't exist natively in IE
-      return Promise.resolve();
-    }
-
-    return runTest(browser, '/context/promise-then-catch.ejs');
-  },
-  'promise catch': function (browser) {
-    if (isBrowser(browser, 'ie')) {
-      // Doesn't exist natively in IE
-      return Promise.resolve();
-    }
-
-    return runTest(browser, '/context/promise-catch.ejs');
-  },
-  'promise finally': function (browser) {
-    if (isBrowser(browser, 'ie')) {
-      // Doesn't exist natively in IE
-      return Promise.resolve();
-    }
-
-    return runTest(browser, '/context/promise-finally.ejs');
+    return true;
   },
   'fetch then': function (browser) {
     if (isBrowser(browser, 'ie')) {

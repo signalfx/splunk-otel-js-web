@@ -4,7 +4,11 @@
   <meta charset="UTF-8">
   <title>MessagePort - onmessage</title>
 
-  <%- renderAgent({}) %>
+  <%- renderAgent({
+    context: {
+      async: true
+    }
+  }) %>
 </head>
 <body>
   <h1>MessagePort - onmessage</h1>

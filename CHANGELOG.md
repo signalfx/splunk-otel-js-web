@@ -2,7 +2,7 @@
 
 ## Unreleased
 - Upgrade OpenTelemetry packages to 0.21.0 - [See OpenTelemetry API changelog](https://github.com/open-telemetry/opentelemetry-js-api#0200-to-0210)
-- Parent span propagation through async activities
+- New `SplunkContextManager` for limited causality support in Promise-based, React, and Vue frameworks
 
 ## 0.5.1
 - Include TS types and esm in release

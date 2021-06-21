@@ -4,18 +4,28 @@
   <meta charset="UTF-8">
   <title>setTimeout</title>
 
-  <%- renderAgent({}) %>
+  <%- renderAgent({
+    context: {
+      async: true
+    }
+  }) %>
 </head>
 <body>
   <h1>setTimeout</h1>
 
-  <button type="button" id="btn1">Button</button>
+  <button type="button" id="btn1">Short timeout</button>
+  <button type="button" id="btn2">Long timeout</button>
 
   <script>
     btn1.addEventListener('click', function () {
       setTimeout(function () {
         SplunkRum.provider.getTracer('default').startSpan('context-child').end();
       }, 1);
+    });
+    btn2.addEventListener('click', function () {
+      setTimeout(function () {
+        SplunkRum.provider.getTracer('default').startSpan('context-child').end();
+      }, 35);
     });
   </script>
 </body>

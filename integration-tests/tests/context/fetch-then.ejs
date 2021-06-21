@@ -4,7 +4,11 @@
   <meta charset="UTF-8">
   <title>Fetch - then</title>
 
-  <%- renderAgent({}) %>
+  <%- renderAgent({
+    context: {
+      async: true
+    }
+  }) %>
 </head>
 <body>
   <h1>Fetch - then</h1>
