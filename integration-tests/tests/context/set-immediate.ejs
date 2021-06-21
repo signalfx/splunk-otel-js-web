@@ -17,8 +17,10 @@
 
   <script>
     btn1.addEventListener('click', function () {
+      window.testing = true;
       setImmediate(function () {
         SplunkRum.provider.getTracer('default').startSpan('context-child').end();
+        window.testing = false;
       });
     });
   </script>

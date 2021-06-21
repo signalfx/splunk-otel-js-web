@@ -18,13 +18,17 @@
 
   <script>
     btn1.addEventListener('click', function () {
+      window.testing = true;
       setTimeout(function () {
         SplunkRum.provider.getTracer('default').startSpan('context-child').end();
+        window.testing = false;
       }, 1);
     });
     btn2.addEventListener('click', function () {
+      window.testing = true;
       setTimeout(function () {
         SplunkRum.provider.getTracer('default').startSpan('context-child').end();
+        window.testing = false;
       }, 35);
     });
   </script>

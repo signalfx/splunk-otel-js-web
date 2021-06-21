@@ -21,28 +21,38 @@
 
   <script>
     btn1.addEventListener('click', function () {
+      window.testing = true;
       new Promise(function (resolve) {
         SplunkRum.provider.getTracer('default').startSpan('context-child').end();
+        window.testing = false;
       });
     });
     btn2.addEventListener('click', function () {
+      window.testing = true;
       Promise.resolve().then(function (resolve) {
         SplunkRum.provider.getTracer('default').startSpan('context-child').end();
+        window.testing = false;
       });
     });
     btn3.addEventListener('click', function () {
+      window.testing = true;
       Promise.reject().then(undefined, function (resolve) {
         SplunkRum.provider.getTracer('default').startSpan('context-child').end();
+        window.testing = false;
       });
     });
     btn4.addEventListener('click', function () {
+      window.testing = true;
       Promise.reject().catch(function (resolve) {
         SplunkRum.provider.getTracer('default').startSpan('context-child').end();
+        window.testing = false;
       });
     });
     btn5.addEventListener('click', function () {
+      window.testing = true;
       Promise.resolve().finally(function (resolve) {
         SplunkRum.provider.getTracer('default').startSpan('context-child').end();
+        window.testing = false;
       });
     });
   </script>

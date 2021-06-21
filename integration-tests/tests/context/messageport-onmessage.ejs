@@ -21,9 +21,11 @@
     var channel = new MessageChannel();
     channel.port1.onmessage = function () {
       SplunkRum.provider.getTracer('default').startSpan('context-child').end();
+      window.testing = false;
     };
 
     btn1.addEventListener('click', function () {
+      window.testing = true;
       channel.port2.postMessage(null);
     });
   </script>

@@ -470,7 +470,7 @@ export class SplunkContextManager implements ContextManager {
           if (target[ATTACHED_CONTEXT_KEY] === active) {
             target[ATTACHED_CONTEXT_KEY] = null;
           }
-        });
+        }, 1);
 
         return res;
       }

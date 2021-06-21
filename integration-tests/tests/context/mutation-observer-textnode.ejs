@@ -20,6 +20,7 @@
     // https://github.com/vuejs/vue/blob/0603ff695d2f41286239298210113cbe2b209e28/src/core/util/next-tick.js#L59
     var observer = new MutationObserver(function () {
       SplunkRum.provider.getTracer('default').startSpan('context-child').end();
+      window.testing = false;
     });
 
     var counter = 1;
@@ -29,6 +30,7 @@
     })
 
     btn1.addEventListener('click', function () {
+      window.testing = true;
       textNode.data = String(counter++);
     });
   </script>

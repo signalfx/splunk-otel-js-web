@@ -25,11 +25,13 @@ async function runTest(browser, filename, extraChecks) {
   await browser.url(browser.globals.getUrl(filename));
 
   await browser.click('#btn1');
+  await browser.globals.waitForTestToFinish();
 
   const clickSpan = await browser.globals.findSpan(span => span.name === 'click');
   const childSpan = await browser.globals.findSpan(span => span.name === 'context-child');
 
   browser.assert.not.ok(clickSpan.parentId, 'Click span does not have a parent.');
+  console.log(childSpan);
   browser.assert.strictEqual(childSpan.parentId, clickSpan.id, 'Child span belongs to user interaction trace.');
 
   await browser.globals.assertNoErrorSpans();
@@ -49,6 +51,7 @@ module.exports = {
     browser.globals.clearReceivedSpans();
 
     await browser.click('#btn2');
+    await browser.globals.waitForTestToFinish();
 
     const clickSpan = await browser.globals.findSpan(span => span.name === 'click');
     const childSpan = await browser.globals.findSpan(span => span.name === 'context-child');
@@ -75,6 +78,7 @@ module.exports = {
 
     for (let i = 1; i <= 5; i++) {
       await browser.click('#btn' + i);
+      await browser.globals.waitForTestToFinish();
 
       const clickSpan = await browser.globals.findSpan(span => span.name === 'click');
       const childSpan = await browser.globals.findSpan(span => span.name === 'context-child');
@@ -116,6 +120,7 @@ module.exports = {
   },
   'MessagePort: Works with cors': async function (browser) {
     await browser.url(browser.globals.getUrl('/context/messageport-cors.ejs'));
+    await browser.globals.waitForTestToFinish();
 
     await browser.globals.findSpan(span => span.name === 'message-event');
 

@@ -17,6 +17,7 @@
 
   <script>
     btn1.addEventListener('click', function () {
+      window.testing = true;
       var req = new XMLHttpRequest();
       req.open('GET', '/some-data');
       req.setRequestHeader('Content-Type', 'text/plain');
@@ -24,6 +25,7 @@
 
       req.onload = function () {
         SplunkRum.provider.getTracer('default').startSpan('context-child').end();
+        window.testing = false;
       };
     });
   </script>
