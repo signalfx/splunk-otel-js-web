@@ -26,11 +26,13 @@ export default [
       commonjs({
         include: /node_modules/,
         sourceMap: true,
+        transformMixedEsModules: true,
       }),
       typescript({ tsconfig: './tsconfig.base.json' }),
       babelPlugin,
       terser({ output: { comments: false } }),
     ],
+    context: 'window',
   },
   {
     input: 'src/indexBrowser.ts',
@@ -46,6 +48,7 @@ export default [
       commonjs({
         include: /node_modules/,
         sourceMap: true,
+        transformMixedEsModules: true,
       }),
       typescript({ tsconfig: './tsconfig.base.json' }),
       babel({
@@ -63,5 +66,6 @@ export default [
         }
       }),
     ],
+    context: 'window',
   },
 ];

@@ -32,9 +32,10 @@ function addExtraDocLoadTags(span: api.Span) {
   }
 }
 
+type PerformanceEntriesWithServerTiming = PerformanceEntries & {serverTiming?: ({name: string, duration: number, description: string})[]}
+
 type ExposedSuper = {
   _endSpan(span: api.Span | undefined, performanceName: string, entries: PerformanceEntries): void;
-  _getEntries(): PerformanceEntries;
   _initResourceSpan(resource: PerformanceResourceTiming, parentSpan: api.Span): void;
 }
 
@@ -50,6 +51,20 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
       const exposedSpan = span as any as Span;
 
       if (span && exposedSpan.name !== 'documentLoad') { // only apply links to document/resource fetch
+        // To maintain compatibility, getEntries copies out select items from
+        // different versions of the performance API into its own structure for the
+        // initial document load (but leaves the entries undisturbed for resource loads).
+        if (
+          exposedSpan.name === 'documentFetch' &&
+          !(entries as PerformanceEntriesWithServerTiming).serverTiming &&
+          performance.getEntriesByType
+        ) {
+          const navEntries = performance.getEntriesByType('navigation') as PerformanceEntriesWithServerTiming[];
+          if (navEntries[0]?.serverTiming) {
+            (entries as PerformanceEntriesWithServerTiming).serverTiming = navEntries[0].serverTiming;
+          }
+        }
+
         captureTraceParentFromPerformanceEntries(entries, span);
       }
       if (span && exposedSpan.name === 'documentLoad') {
@@ -66,19 +81,5 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
       _superInitResourceSpan(resource, parentSpan);
     };
 
-    // To maintain compatibility, getEntries copies out select items from
-    // different versions of the performance API into its own structure for the
-    // initial document load (but leaves the entries undisturbed for resource loads).
-    const _superGetEntries: ExposedSuper['_getEntries'] = exposedSuper._getEntries.bind(this);
-    exposedSuper._getEntries = () => {
-      const entries = _superGetEntries();
-      if (entries && performance.getEntriesByType) { //this is always empty object and truthy iirc
-        const navEntries = performance.getEntriesByType('navigation') as any;
-        if (navEntries?.[0]?.serverTiming) {
-          (entries as any).serverTiming = navEntries[0].serverTiming;
-        }
-      }
-      return entries;
-    };
   }
 }
