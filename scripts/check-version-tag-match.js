@@ -16,10 +16,14 @@ limitations under the License.
 
 const { exec } = require('child_process');
 const path = require('path');
+const fs = require('fs');
 
 const appRoot = process.cwd();
-const packageJsonUrl = path.resolve(`${appRoot}/package.json`);
+const packageJsonUrl = path.join(appRoot, 'package.json');
 const { version } = require(packageJsonUrl);
+
+const versionFileUrl = path.join(appRoot, 'src', 'version.ts');
+const versionFileContent = fs.readFileSync(versionFileUrl).toString();
 
 exec('git tag -l --contains HEAD', (err, stdout) => {
   if (err) {
@@ -30,6 +34,12 @@ exec('git tag -l --contains HEAD', (err, stdout) => {
   const hasMatchingTag = stdout.split('\n').some(line => line === `v${version}`);
   if (!hasMatchingTag) {
     console.error('We could not find any matching tags for the current version.');
+    process.exitCode = 1;
+  }
+
+  const hasMatchingInternalVersion = versionFileContent.indexOf(`export const VERSION = '${version}';`) > -1;
+  if (!hasMatchingInternalVersion) {
+    console.error('The version in src/version.ts does not match the package version.');
     process.exitCode = 1;
   }
 });
