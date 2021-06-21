@@ -31,7 +31,6 @@ async function runTest(browser, filename, extraChecks) {
   const childSpan = await browser.globals.findSpan(span => span.name === 'context-child');
 
   browser.assert.not.ok(clickSpan.parentId, 'Click span does not have a parent.');
-  console.log(childSpan);
   browser.assert.strictEqual(childSpan.parentId, clickSpan.id, 'Child span belongs to user interaction trace.');
 
   await browser.globals.assertNoErrorSpans();

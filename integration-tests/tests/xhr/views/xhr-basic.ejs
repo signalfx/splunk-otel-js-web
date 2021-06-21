@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <title>XHR</title>
 
-  <%- renderAgent() %>
+  <%- renderAgent({
+    bufferTimeout: 5000,
+  }) %>
 </head>
 <body>
   <h1>XHR</h1>
@@ -25,7 +27,7 @@
       // testing done to be after that.
       setTimeout(function () {
         window.testing = false;
-      }, 301);
+      }, 400);
     })
   </script>
   </body>

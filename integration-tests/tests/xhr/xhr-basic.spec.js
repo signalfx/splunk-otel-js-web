@@ -23,6 +23,8 @@ module.exports = {
   },
   'XHR request is registered': async function(browser) {
     await browser.url(browser.globals.getUrl('/xhr/views/xhr-basic.ejs'));
+    await browser.globals.waitForTestToFinish();
+
     const xhrSpan = await browser.globals.findSpan(span => span.tags['http.url'] === '/some-data');
     await browser.assert.ok(xhrSpan, 'got an xhr span');
     await browser.assert.strictEqual(xhrSpan.tags['component'], 'xml-http-request');
