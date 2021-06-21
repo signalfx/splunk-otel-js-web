@@ -20,6 +20,7 @@ jobs:
           key: npm-${{ hashFiles('package-lock.json') }}
           restore-keys: npm-
       - run: npm ci
+      - run: npm run version:check
       - name: Lint code
         run: npm run lint
       - name: Lint docs

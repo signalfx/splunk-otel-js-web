@@ -19,6 +19,18 @@ npm_install:
   script:
     - npm ci
 
+check_version:
+  stage: build
+  script:
+    - npm run version:check
+
+check_tag:
+  stage: build
+  only:
+    - /^[^v].*/
+  script:
+    - npm run tag:check
+
 lint:
   stage: build
   script:

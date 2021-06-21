@@ -27,7 +27,9 @@
     "test:integration:local:safari:_execute": "nightwatch -c ./integration-tests/utils/local.conf.js -e safari",
     "test:integration:_selfSignCerts": "(cd utils && cd certs && openssl req -nodes -new -x509 -keyout server.key -out server.cert)",
     "test:performance": "node ./performance-tests/runner.js",
-    "version:update": "node ./scripts/version-update.js"
+    "version:check": "node ./scripts/version-check.js",
+    "version:update": "node ./scripts/version-update.js",
+    "tag:check": "node ./scripts/tag-check.js"
   },
   "author": "Splunk Observability Instrumentals Team <ssg-observability-instrumentals-npm@splunk.com>",
   "license": "Apache-2.0",
