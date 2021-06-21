@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { context, setSpan } from '@opentelemetry/api';
+import { context, trace } from '@opentelemetry/api';
 import { SpanProcessor } from '@opentelemetry/tracing';
 import { expect } from 'chai';
 import SplunkOtelWeb, { INSTRUMENTATIONS_ALL_DISABLED } from '../src/index';
@@ -40,15 +40,15 @@ describe('async context propagation', () => {
   it('setTimeout', (done) => {
     const tracer = SplunkOtelWeb.provider.getTracer('test');
     const span = tracer.startSpan('test-span');
-    context.with(setSpan(context.active(), span), () => {
+    context.with(trace.setSpan(context.active(), span), () => {
       setTimeout(() => {
         tracer.startSpan('child-span').end();
         span.end();
 
         expect(capturer.spans).to.have.length(2);
         const [childSpan, parentSpan] = capturer.spans;
-        expect(childSpan.parentSpanId).to.eq(parentSpan.spanContext.spanId);
-        expect(childSpan.spanContext.traceId).to.eq(parentSpan.spanContext.traceId);
+        expect(childSpan.parentSpanId).to.eq(parentSpan.spanContext().spanId);
+        expect(childSpan.spanContext().traceId).to.eq(parentSpan.spanContext().traceId);
         done();
       });
     });
@@ -57,15 +57,15 @@ describe('async context propagation', () => {
   it('Promise.then', (done) => {
     const tracer = SplunkOtelWeb.provider.getTracer('test');
     const span = tracer.startSpan('test-span');
-    context.with(setSpan(context.active(), span), () => {
+    context.with(trace.setSpan(context.active(), span), () => {
       Promise.resolve().then(() => {
         tracer.startSpan('child-span').end();
         span.end();
 
         expect(capturer.spans).to.have.length(2);
         const [childSpan, parentSpan] = capturer.spans;
-        expect(childSpan.parentSpanId).to.eq(parentSpan.spanContext.spanId);
-        expect(childSpan.spanContext.traceId).to.eq(parentSpan.spanContext.traceId);
+        expect(childSpan.parentSpanId).to.eq(parentSpan.spanContext().spanId);
+        expect(childSpan.spanContext().traceId).to.eq(parentSpan.spanContext().traceId);
         done();
       });
     });
@@ -74,15 +74,15 @@ describe('async context propagation', () => {
   it('Promise.then - catch', (done) => {
     const tracer = SplunkOtelWeb.provider.getTracer('test');
     const span = tracer.startSpan('test-span');
-    context.with(setSpan(context.active(), span), () => {
+    context.with(trace.setSpan(context.active(), span), () => {
       Promise.reject().then(() => null, () => {
         tracer.startSpan('child-span').end();
         span.end();
 
         expect(capturer.spans).to.have.length(2);
         const [childSpan, parentSpan] = capturer.spans;
-        expect(childSpan.parentSpanId).to.eq(parentSpan.spanContext.spanId);
-        expect(childSpan.spanContext.traceId).to.eq(parentSpan.spanContext.traceId);
+        expect(childSpan.parentSpanId).to.eq(parentSpan.spanContext().spanId);
+        expect(childSpan.spanContext().traceId).to.eq(parentSpan.spanContext().traceId);
         done();
       });
     });
@@ -91,15 +91,15 @@ describe('async context propagation', () => {
   it('Promise.catch', (done) => {
     const tracer = SplunkOtelWeb.provider.getTracer('test');
     const span = tracer.startSpan('test-span');
-    context.with(setSpan(context.active(), span), () => {
+    context.with(trace.setSpan(context.active(), span), () => {
       Promise.reject().catch(() => {
         tracer.startSpan('child-span').end();
         span.end();
 
         expect(capturer.spans).to.have.length(2);
         const [childSpan, parentSpan] = capturer.spans;
-        expect(childSpan.parentSpanId).to.eq(parentSpan.spanContext.spanId);
-        expect(childSpan.spanContext.traceId).to.eq(parentSpan.spanContext.traceId);
+        expect(childSpan.parentSpanId).to.eq(parentSpan.spanContext().spanId);
+        expect(childSpan.spanContext().traceId).to.eq(parentSpan.spanContext().traceId);
         done();
       });
     });
@@ -115,8 +115,8 @@ describe('async context propagation', () => {
 
       expect(capturer.spans).to.have.length(2);
       const [childSpan, parentSpan] = capturer.spans;
-      expect(childSpan.parentSpanId).to.eq(parentSpan.spanContext.spanId);
-      expect(childSpan.spanContext.traceId).to.eq(parentSpan.spanContext.traceId);
+      expect(childSpan.parentSpanId).to.eq(parentSpan.spanContext().spanId);
+      expect(childSpan.spanContext().traceId).to.eq(parentSpan.spanContext().traceId);
       done();
     });
 
@@ -126,7 +126,7 @@ describe('async context propagation', () => {
       characterData: true
     });
 
-    context.with(setSpan(context.active(), span), () => {
+    context.with(trace.setSpan(context.active(), span), () => {
       textNode.data = String(counter++);
     });
   });
@@ -134,7 +134,7 @@ describe('async context propagation', () => {
   it('xhr event', (done) => {
     const tracer = SplunkOtelWeb.provider.getTracer('test');
     const span = tracer.startSpan('test-span');
-    context.with(setSpan(context.active(), span), () => {
+    context.with(trace.setSpan(context.active(), span), () => {
       const req = new XMLHttpRequest();
       req.open('GET', location.href);
       req.send();
@@ -145,8 +145,8 @@ describe('async context propagation', () => {
 
         expect(capturer.spans).to.have.length(2);
         const [childSpan, parentSpan] = capturer.spans;
-        expect(childSpan.parentSpanId).to.eq(parentSpan.spanContext.spanId);
-        expect(childSpan.spanContext.traceId).to.eq(parentSpan.spanContext.traceId);
+        expect(childSpan.parentSpanId).to.eq(parentSpan.spanContext().spanId);
+        expect(childSpan.spanContext().traceId).to.eq(parentSpan.spanContext().traceId);
         done();
       });
     });
@@ -155,7 +155,7 @@ describe('async context propagation', () => {
   it('xhr onevent', (done) => {
     const tracer = SplunkOtelWeb.provider.getTracer('test');
     const span = tracer.startSpan('test-span');
-    context.with(setSpan(context.active(), span), () => {
+    context.with(trace.setSpan(context.active(), span), () => {
       const req = new XMLHttpRequest();
       req.open('GET', location.href);
       req.send();
@@ -166,8 +166,8 @@ describe('async context propagation', () => {
 
         expect(capturer.spans).to.have.length(2);
         const [childSpan, parentSpan] = capturer.spans;
-        expect(childSpan.parentSpanId).to.eq(parentSpan.spanContext.spanId);
-        expect(childSpan.spanContext.traceId).to.eq(parentSpan.spanContext.traceId);
+        expect(childSpan.parentSpanId).to.eq(parentSpan.spanContext().spanId);
+        expect(childSpan.spanContext().traceId).to.eq(parentSpan.spanContext().traceId);
         done();
       };
     });
@@ -184,12 +184,12 @@ describe('async context propagation', () => {
 
       expect(capturer.spans).to.have.length(2);
       const [childSpan, parentSpan] = capturer.spans;
-      expect(childSpan.parentSpanId).to.eq(parentSpan.spanContext.spanId);
-      expect(childSpan.spanContext.traceId).to.eq(parentSpan.spanContext.traceId);
+      expect(childSpan.parentSpanId).to.eq(parentSpan.spanContext().spanId);
+      expect(childSpan.spanContext().traceId).to.eq(parentSpan.spanContext().traceId);
       done();
     };
 
-    context.with(setSpan(context.active(), span), () => {
+    context.with(trace.setSpan(context.active(), span), () => {
       channel.port2.postMessage(null);
     });
   });

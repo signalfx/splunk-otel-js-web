@@ -71,7 +71,7 @@ export class SplunkContextManager implements ContextManager {
    * @param target a function or event emitter. When target or one of its callbacks is called,
    *  the provided context will be used as the active context for the duration of the call.
    */
-  bind<T>(target: T, context = ROOT_CONTEXT): T {
+  bind<T>(context: Context, target: T): T {
     // if no specific context to propagate is given, we use the current one
     if (isFunction(target)) {
       return this._bindFunction(target, context) as unknown as T;
@@ -126,7 +126,7 @@ export class SplunkContextManager implements ContextManager {
   protected bindActiveToArgument(args: unknown[], index: number): void {
     if (isFunction(args[index])) {
       // Bind callback to current context 
-      args[index] = this.bind(args[index], this.active());
+      args[index] = this.bind(this.active(), args[index]);
     }
   }
 
@@ -349,7 +349,7 @@ export class SplunkContextManager implements ContextManager {
           let wrapped = wrappedListeners.get(args[1] as EventListener);
 
           if (!wrapped) {
-            wrapped = manager.bind(args[1] as EventListener, manager.active());
+            wrapped = manager.bind(manager.active(), args[1] as EventListener);
             wrappedListeners.set(args[1], wrapped);
           }
 
@@ -391,7 +391,7 @@ export class SplunkContextManager implements ContextManager {
         function (value) {
           if (isFunction(value)) {
             const orig = value;
-            const wrapped = manager.bind(value, manager.active());
+            const wrapped = manager.bind(manager.active(), value);
             // @ts-expect-error coulda add it to function type
             wrapped._orig = orig;
             value = wrapped;

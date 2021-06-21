@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Upgrade OpenTelemetry packages to 0.21.0 - [See OpenTelemetry API changelog](https://github.com/open-telemetry/opentelemetry-js-api#0200-to-0210)
 - Parent span propagation through async activities
 
 ## 0.5.1
