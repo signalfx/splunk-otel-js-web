@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import { expect } from 'chai';
-import { context, setSpan, getSpan, SpanStatusCode } from '@opentelemetry/api';
+import { context, trace, SpanStatusCode } from '@opentelemetry/api';
 
 import SplunkOtelWeb, { INSTRUMENTATIONS_ALL_DISABLED } from '../src/index';
 import { SpanCapturer } from './utils';
@@ -50,14 +50,13 @@ describe('Transitive API', () => {
       const tracer = subject();
       expect(typeof tracer.startSpan).to.eql('function');
       expect(typeof tracer.getActiveSpanProcessor).to.eql('function');
-      expect(typeof tracer.getActiveTraceParams).to.eql('function');
     });
 
     it('can start a span', () => {
       const span = subject().startSpan('span.test');
 
       expect(typeof span.end).to.eql('function');
-      expect(typeof span.context).to.eql('function');
+      expect(typeof span.spanContext).to.eql('function');
       expect(typeof span.recordException).to.eql('function');
       expect(typeof span.setAttributes).to.eql('function');
       expect(typeof span.setStatus).to.eql('function');
@@ -118,15 +117,15 @@ describe('Transitive API', () => {
     it('can set span as active', () => {
       const tracer = SplunkOtelWeb.provider.getTracer('test');
       const span = tracer.startSpan('test-span');
-      context.with(setSpan(context.active(), span), () => {
-        expect(getSpan(context.active())).to.eq(span);
+      context.with(trace.setSpan(context.active(), span), () => {
+        expect(trace.getSpan(context.active())).to.eq(span);
       });
     });
 
     it('can create a child of an active span', () => {
       const tracer = SplunkOtelWeb.provider.getTracer('test');
       const span = tracer.startSpan('test-span');
-      context.with(setSpan(context.active(), span), () => {
+      context.with(trace.setSpan(context.active(), span), () => {
         tracer.startSpan('child-span').end();
       });
       span.end();
@@ -134,8 +133,8 @@ describe('Transitive API', () => {
       expect(spanCapturer.spans).to.have.length(2);
 
       const [childSpan, parentSpan] = spanCapturer.spans;
-      expect(childSpan.parentSpanId).to.eq(parentSpan.spanContext.spanId);
-      expect(childSpan.spanContext.traceId).to.eq(parentSpan.spanContext.traceId);
+      expect(childSpan.parentSpanId).to.eq(parentSpan.spanContext().spanId);
+      expect(childSpan.spanContext().traceId).to.eq(parentSpan.spanContext().traceId);
     });
   });
 });

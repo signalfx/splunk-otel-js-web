@@ -150,7 +150,7 @@ export class SplunkExporter implements SpanExporter {
       // note: some properties in Span are not enumerable, and as a result cannot be spread or Object.assign'ed
       name: span.name,
       kind: span.kind,
-      spanContext: span.spanContext,
+      spanContext: span.spanContext.bind(span),
       parentSpanId: span.parentSpanId,
       startTime: span.startTime,
       endTime: span.endTime,

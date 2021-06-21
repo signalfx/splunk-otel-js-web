@@ -125,7 +125,8 @@ module.exports = function (config) {
         file: 'bundle.js',
         format: 'iife',
         sourcemap: true,
-      }
+      },
+      context: 'window',
     },
     coverageIstanbulReporter: {
       reports: ['json'],

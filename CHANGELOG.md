@@ -2,6 +2,13 @@
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
 ## Unreleased
+| Open Telemetry API | Core   | Contrib |
+|--------------------|--------|---------|
+| 0.21.0             | 0.21.0 | 0.21.0  |
+
+Changes:
+
+- Upgrade OpenTelemetry packages to 0.21.0 - [See OpenTelemetry API changelog](https://github.com/open-telemetry/opentelemetry-js-api#0200-to-0210)
 
 ## 0.5.1
 - Include TS types and esm in release
