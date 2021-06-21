@@ -17,4 +17,5 @@ module.exports.nodeResolvePlugin = nodeResolve({
 module.exports.commonjsPlugin = commonjs({
   browser: true,
   preferBuiltins: false,
+  transformMixedEsModules: true,
 });
