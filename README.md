@@ -69,6 +69,7 @@ Please read [Installation.md](./docs/Installation.md) for more info on different
 
 | @splunk/otel-web | @opentelemetry/api |
 |------------------|--------------------|
+| 0.6.x | 0.21.x |
 | 0.5.x | 0.19.x |
 | 0.4.x | 0.18.x |
 | 0.3.x | 0.18.x |
