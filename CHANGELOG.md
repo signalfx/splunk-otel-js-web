@@ -9,6 +9,7 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 Changes:
 
 - Upgrade OpenTelemetry packages to 0.21.0 - [See OpenTelemetry API changelog](https://github.com/open-telemetry/opentelemetry-js-api#0200-to-0210)
+- New `SplunkContextManager` for limited causality support in Promise-based, React, and Vue frameworks
 
 ## 0.5.1
 - Include TS types and esm in release

@@ -13,6 +13,7 @@ Below are the different initialization options available for the Agent:
 |`allowInsecureBeacon`|`boolean`|`false`|Allows sending data to insecure endpoints not using `https`. It is not recommended to enable this. |
 |`debug`|`boolean`|`false`|Enables debug logging in developer console|
 |`ignoreUrls`|`(string\|regex)[]`|`[]`|Sets a list of URLs to be ignored. Any URLs that XHR/Fetch or websocket connect that match the rules will not produce a span. Two different rules can be provided: equals match to a specified string or a regex match.|
+|`context.async`|`boolean`|`false`|Enable [asyncronous context manager](Async-Traces.md)|
 |`exporter.onAttributesSerializing`|`(a: SpanAttributes, s?: Span) => SpanAttributes`|`(attrs) => attrs`|Provides a callback for modifying span attributes before exporting. An example use case of the serializer is to filter out PII.|
 |`instrumentations`|`object`|See the following chapter|Enables or disables specific instrumentations. More details how to enable or disable the instrumentations in the next chapter.|
 ## Configuring instrumentations
@@ -60,9 +61,9 @@ The following example changes three default configuration parameters:
 - disables monitoring for `longtasks`;.
 - enables `websockets`.
 
-```html
+```js
 SplunkRum.init({
-  beaconUrl: 'https://rum-ingest.us0.signalfx.com/v1/rum,
+  beaconUrl: 'https://rum-ingest.us0.signalfx.com/v1/rum',
   rumAuth: 'ABC123...789',
   app: 'my-awesome-app',
   instrumentations: {
