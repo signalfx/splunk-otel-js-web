@@ -47,6 +47,7 @@ import {
   InternalEventTarget,
   SplunkOtelWebEventTarget,
 } from './EventTarget';
+import { ContextManagerConfig, SplunkContextManager } from './SplunkContextManager';
 
 export * from './SplunkExporter';
 export * from './SplunkWebTracerProvider';
@@ -80,6 +81,9 @@ export interface SplunkOtelWebConfig {
 
   /** Destination for the captured data */
   beaconUrl: string | undefined;
+
+  /** Options for context manager */
+  context?: ContextManagerConfig;
 
   /** Sets session cookie to this domain */
   cookieDomain?: string;
@@ -302,7 +306,11 @@ const SplunkRum: SplunkOtelWebType = {
       provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
     }
 
-    provider.register();
+    provider.register({
+      contextManager: new SplunkContextManager(
+        processedOptions.context
+      )
+    });
     this.provider = provider;
 
     const vitalsConf = getPluginConfig(processedOptions.instrumentations.webvitals);

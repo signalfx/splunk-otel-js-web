@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fetch - then</title>
+
+  <%- renderAgent({
+    context: {
+      async: true
+    }
+  }) %>
+</head>
+<body>
+  <h1>Fetch - then</h1>
+
+  <button type="button" id="btn1">Button</button>
+
+  <script>
+    btn1.addEventListener('click', function () {
+      fetch('/some-data').then(response => response.json()).then(res => {
+        SplunkRum.provider.getTracer('default').startSpan('context-child').end();
+      });
+    });
+  </script>
+</body>
+</html>

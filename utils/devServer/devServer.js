@@ -19,7 +19,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const WebSocket = require('ws');
-const {renderFile} = require('ejs');
+const { renderFile } = require('ejs');
 const { buildBasicLocalServer } = require('../../utils/server');
 const { 
   generateServerTiming,
@@ -197,6 +197,7 @@ exports.runIntegrationDevelopmentServer = async function run({
     address: { port: httpPort }, 
     serverOptions: httpOptions,
   } = await startHttpServer({ enableHttps, listener: app, port: requestedHttpPort });
+  app.set('httpPort', httpPort);
 
   const { 
     close: closeWebsocketServer, 

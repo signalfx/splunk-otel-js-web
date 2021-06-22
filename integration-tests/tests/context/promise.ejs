@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Promise</title>
+
+  <%- renderAgent({
+    context: {
+      async: true
+    }
+  }) %>
+</head>
+<body>
+  <h1>Promise</h1>
+
+  <button type="button" id="btn1">Promise - constructor</button>
+  <button type="button" id="btn2">Promise - then</button>
+  <button type="button" id="btn3">Promise - then-catch</button>
+  <button type="button" id="btn4">Promise - catch</button>
+  <button type="button" id="btn5">Promise - finally</button>
+
+  <script>
+    btn1.addEventListener('click', function () {
+      window.testing = true;
+      new Promise(function (resolve) {
+        SplunkRum.provider.getTracer('default').startSpan('context-child').end();
+        window.testing = false;
+      });
+    });
+    btn2.addEventListener('click', function () {
+      window.testing = true;
+      Promise.resolve().then(function (resolve) {
+        SplunkRum.provider.getTracer('default').startSpan('context-child').end();
+        window.testing = false;
+      });
+    });
+    btn3.addEventListener('click', function () {
+      window.testing = true;
+      Promise.reject().then(undefined, function (resolve) {
+        SplunkRum.provider.getTracer('default').startSpan('context-child').end();
+        window.testing = false;
+      });
+    });
+    btn4.addEventListener('click', function () {
+      window.testing = true;
+      Promise.reject().catch(function (resolve) {
+        SplunkRum.provider.getTracer('default').startSpan('context-child').end();
+        window.testing = false;
+      });
+    });
+    btn5.addEventListener('click', function () {
+      window.testing = true;
+      Promise.resolve().finally(function (resolve) {
+        SplunkRum.provider.getTracer('default').startSpan('context-child').end();
+        window.testing = false;
+      });
+    });
+  </script>
+</body>
+</html>
