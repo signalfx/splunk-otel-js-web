@@ -7,11 +7,6 @@ cache:
       - package-lock.json
   paths:
     - .npm/
-    - node_modules/
-
-# tell npm to store cache in .npm so it can be cached by Gitlab
-before_script:
-  - npm ci --cache .npm --prefer-offline
 
 stages:
   - setup
@@ -22,7 +17,19 @@ stages:
 npm_install:
   stage: setup
   script:
-    - npm install
+    - npm ci
+
+check_version:
+  stage: build
+  script:
+    - npm run version:check
+
+check_tag:
+  stage: build
+  only:
+    - /^[^v].*/
+  script:
+    - npm run tag:check
 
 lint:
   stage: build

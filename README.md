@@ -2,7 +2,7 @@
   <strong>
     <a href="./docs/Installation.md">Getting Started</a>
     &nbsp;&nbsp;&bull;&nbsp;&nbsp;
-    <a href="./docs/CONTRIBUTING.md">Getting Involved</a>
+    <a href="./CONTRIBUTING.md">Getting Involved</a>
   </strong>
 </p>
 
@@ -10,6 +10,7 @@
   <a href="https://github.com/signalfx/splunk-otel-js-web/releases">
     <img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/signalfx/splunk-otel-js-web?include_prereleases&style=for-the-badge">
   </a>
+  <img alt="GitHub Workflow Status (branch)" src="https://img.shields.io/github/workflow/status/signalfx/splunk-otel-js-web/Continuous%20Integration%20Main/main?style=for-the-badge">
   <img alt="Beta" src="https://img.shields.io/badge/status-beta-informational?style=for-the-badge">
 </p>
 
@@ -67,18 +68,11 @@ Please read [Installation.md](./docs/Installation.md) for more info on different
 
 ## Open Telemetry version
 
-| @splunk/otel-web | @opentelemetry/api |
-|------------------|--------------------|
-| 0.6.x | 0.21.x |
-| 0.5.x | 0.19.x |
-| 0.4.x | 0.18.x |
-| 0.3.x | 0.18.x |
-| 0.2.x | 0.18.x |
-| 0.1.x | 0.15.x |
+Compatibility between the versions of this project and Open Telemetry is specified in [CHANGELOG.md](./CHANGELOG.md).
 
 ## Building and contributing
 
-Please read [CONTRIBUTING.md](./docs/CONTRIBUTING.md) for instructions on building, running tests, and so forth.
+Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for instructions on building, running tests, and so forth.
 
 ## License and versioning
 
