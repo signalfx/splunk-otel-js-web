@@ -16,7 +16,7 @@ limitations under the License.
 
 // FIXME convert into otel-js-contrib Plugin and upstream
 import * as shimmer from 'shimmer';
-import { SpanKind, setSpan, context, Span } from '@opentelemetry/api';
+import { SpanKind, trace, context, Span } from '@opentelemetry/api';
 import { isUrlIgnored } from '@opentelemetry/core';
 import { VERSION } from './version';
 
@@ -196,7 +196,7 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase {
           span.setAttribute('http.response_content_length', size(capturedArgs[0].data));
         }
         // FIXME fill out message details, size, etc.
-        context.with(setSpan(context.active(), span), () => {
+        context.with(trace.setSpan(context.active(), span), () => {
           let result = undefined;
           if (typeof callback === 'function') {
             result = callback.apply(capturedThiz, capturedArgs);

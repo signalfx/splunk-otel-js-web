@@ -1,0 +1,53 @@
+name: Continuous Integration Main
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: npm-${{ hashFiles('package-lock.json') }}
+          restore-keys: npm-
+      - run: npm ci
+      - name: Lint code
+        run: npm run lint
+      - name: Lint docs
+        run: npm run lint:markdown
+      - name: Transpile code
+        run: npm run compile
+      - name: Unit test
+        run: npm run test:unit:ci
+
+  local-integration-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        browser: [headlessChrome, headlessFirefox]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: npm-${{ hashFiles('package-lock.json') }}
+          restore-keys: npm-
+      - run: npm ci
+      - run: npm run compile
+      - name: Local integration tests using Headless Chrome
+        run: npm run test:integration:local:${{ matrix.browser }}:_execute

@@ -131,7 +131,7 @@ if (!isDryRun) {
     InvalidationBatch: {
       CallerReference: invalidationRef,
       Paths: {
-        Items: ['/cdn/o11y-gdi-rum/*'],
+        Items: ['/o11y-gdi-rum/*'],
         Quantity: 1,
       },
     },
