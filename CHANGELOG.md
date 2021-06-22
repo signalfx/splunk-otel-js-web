@@ -2,6 +2,8 @@
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
 ## Unreleased
+
+## 0.6.0
 | Open Telemetry API | Core   | Contrib |
 |--------------------|--------|---------|
 | 0.21.0             | 0.21.0 | 0.21.0  |
