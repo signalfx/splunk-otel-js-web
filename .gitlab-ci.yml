@@ -1,12 +1,12 @@
 default:
-  image: 'cimg/node:lts-browsers'
+  image: 'cimg/node:current-browsers'
 
 cache:
   key:
     files:
       - package-lock.json
   paths:
-    - "$HOME/.npm/"
+    - "./node_modules"
 
 stages:
   - setup
@@ -17,7 +17,7 @@ stages:
 npm_install:
   stage: setup
   script:
-    - npm ci
+    - npm ci --include=dev
 
 check_version:
   stage: build
