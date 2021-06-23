@@ -6,7 +6,7 @@ cache:
     files:
       - package-lock.json
   paths:
-    - .npm/
+    - "$HOME/.npm/"
 
 stages:
   - setup
@@ -27,7 +27,7 @@ check_version:
 check_tag:
   stage: build
   only:
-    - /^[^v].*/
+    - /^v.*/
   script:
     - npm run tag:check
 
