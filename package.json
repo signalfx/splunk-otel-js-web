@@ -1,6 +1,6 @@
 {
   "name": "@splunk/otel-web",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "Splunk distribution of Open Telemetry for browser environment.",
   "repository": "github:signalfx/splunk-otel-js-browser",
   "scripts": {
@@ -12,7 +12,7 @@
     "test:unit:watch": "karma start",
     "test:unit:ci": "nyc karma start --single-run --no-auto-watch --browsers ChromeHeadless",
     "lint": "eslint --quiet src/ test/ integration-tests/",
-    "lint:markdown": "markdownlint README.md docs/*.md",
+    "lint:markdown": "markdownlint *.md docs/*.md",
     "lint:fix": "eslint --fix src/ test/ integration-tests/",
     "test:integration:local": "npm-run-all -s compile test:integration:local:headlessChrome:_execute",
     "test:integration:local:firefox": "npm-run-all -s compile test:integration:local:firefox:_execute",
@@ -27,7 +27,9 @@
     "test:integration:local:safari:_execute": "nightwatch -c ./integration-tests/utils/local.conf.js -e safari",
     "test:integration:_selfSignCerts": "(cd utils && cd certs && openssl req -nodes -new -x509 -keyout server.key -out server.cert)",
     "test:performance": "node ./performance-tests/runner.js",
-    "version:update": "node ./scripts/version-update.js"
+    "version:check": "node ./scripts/version-check.js",
+    "version:update": "node ./scripts/version-update.js",
+    "tag:check": "node ./scripts/tag-check.js"
   },
   "author": "Splunk Observability Instrumentals Team <ssg-observability-instrumentals-npm@splunk.com>",
   "license": "Apache-2.0",
@@ -74,6 +76,7 @@
     "@rollup/plugin-typescript": "^8.2.1",
     "@types/chai": "^4.2.18",
     "@types/mocha": "^8.2.2",
+    "@types/nightwatch": "^1.3.3",
     "@types/shimmer": "^1.0.1",
     "@typescript-eslint/eslint-plugin": "^4.23.0",
     "@typescript-eslint/parser": "^4.23.0",

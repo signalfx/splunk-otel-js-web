@@ -17,7 +17,7 @@ limitations under the License.
 const path = require('path');
 const fs = require('fs');
 
-const {render} = require('ejs');
+const { render } = require('ejs');
 
 const INJECT_TEMPLATE = `<script src="<%= file -%>" crossorigin="anonymous"></script>
   <script>
@@ -77,7 +77,7 @@ const INJECT_TEMPLATE = `<script src="<%= file -%>" crossorigin="anonymous"></sc
   </script>
 `;
 
-exports.registerTemplateProvider = ({app, addHeaders, enableHttps}) => {
+exports.registerTemplateProvider = ({ app, addHeaders, enableHttps }) => {
   app.use(function(req, res, next) {
     const filepath = path.resolve(__dirname, '..', '..', 'integration-tests', 'tests', req.path.substring(1));
     if (fs.existsSync(filepath)) {
@@ -87,13 +87,14 @@ exports.registerTemplateProvider = ({app, addHeaders, enableHttps}) => {
       }
 
       let defaultFile = '/dist/artifacts/splunk-otel-web.js';
-      const browser = req.header('User-Agent')
+      const browser = req.header('User-Agent');
       if (browser && browser.includes('Trident')) {
         defaultFile = '/dist/artifacts/splunk-otel-web-legacy.js';
       }
 
       addHeaders(res);
       return res.render(filepath, {
+        httpPort: app.get('httpPort'),
         renderAgent(userOpts = {}, noInit = false, file = defaultFile, cdnVersion = null) {
           const options = {
             beaconUrl: beaconUrl.toString(),

@@ -100,6 +100,7 @@ module.exports = {
       const tags = errorSpan.tags;
       await browser.assert.strictEqual(tags['component'], 'error');
       await browser.assert.strictEqual(tags['error'], 'true');
+      await browser.assert.strictEqual(tags['error.type'], undefined);
       await browser.assert.strictEqual(tags['error.object'], 'TypeError');
 
       switch (browser.options.desiredCapabilities.browserName.toLowerCase()) {

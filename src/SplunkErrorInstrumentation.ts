@@ -133,11 +133,11 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
     };
   }
 
-  protected reportErrorEvent(source: string, ev: ErrorEvent): void {
+  protected reportErrorEvent(source: string, ev: ErrorEvent, extraAttributes: SpanAttributes = {}): void {
     if (ev.error) {
-      this.report(source, ev.error);
+      this.report(source, ev.error, extraAttributes);
     } else if (ev.message) {
-      this.report(source, ev.message);
+      this.report(source, ev.message, extraAttributes);
     }
   }
 
@@ -182,7 +182,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
     }
 
     if (arg instanceof ErrorEvent) {
-      this.reportErrorEvent(source, arg);
+      this.reportErrorEvent(source, arg, extraAttributes);
       return;
     }
 
