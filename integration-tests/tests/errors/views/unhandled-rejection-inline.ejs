@@ -5,9 +5,7 @@
 	<title>Errors test</title>
   <%- renderInlineAgent() %>
   <script id="scenario">
-    setTimeout(function() {
-      Promise.reject('rejection-value');
-    });
+    Promise.reject('rejection-value');
   </script>
 </head>
 <body>
