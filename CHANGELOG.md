@@ -3,6 +3,11 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## Unreleased
 
+## 0.7.0
+| Open Telemetry API | Core   | Contrib |
+|--------------------|--------|---------|
+| 1.0.0             | 0.22.0 | 0.22.0  |
+
 ## 0.6.0
 | Open Telemetry API | Core   | Contrib |
 |--------------------|--------|---------|
