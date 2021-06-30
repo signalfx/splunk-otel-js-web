@@ -2,6 +2,7 @@
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
 ## Unreleased
+- Support for Synthetics-RunId [(200)](https://github.com/signalfx/splunk-otel-js-web/pull/200)
 
 ## 0.7.0
 | Open Telemetry API | Core   | Contrib |
