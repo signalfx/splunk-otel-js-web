@@ -16,7 +16,7 @@ limitations under the License.
 
 import './polyfill-safari10';
 import { InstrumentationConfig, registerInstrumentations } from '@opentelemetry/instrumentation';
-import { ConsoleSpanExporter, SimpleSpanProcessor, BatchSpanProcessor, ReadableSpan, SpanExporter } from '@opentelemetry/tracing';
+import { ConsoleSpanExporter, SimpleSpanProcessor, ReadableSpan, SpanExporter } from '@opentelemetry/tracing';
 import { diag, DiagConsoleLogger, DiagLogLevel, SpanAttributes } from '@opentelemetry/api';
 import { SplunkDocumentLoadInstrumentation } from './SplunkDocumentLoadInstrumentation';
 import { SplunkXhrPlugin } from './SplunkXhrPlugin';
@@ -48,6 +48,8 @@ import {
   SplunkOtelWebEventTarget,
 } from './EventTarget';
 import { ContextManagerConfig, SplunkContextManager } from './SplunkContextManager';
+import { HttpBaggagePropagator } from '@opentelemetry/core';
+import { SplunkBatchSpanProcessor } from './SplunkBatchSpanProcessor';
 
 export * from './SplunkExporter';
 export * from './SplunkWebTracerProvider';
@@ -287,7 +289,7 @@ const SplunkRum: SplunkOtelWebType = {
 
     if (processedOptions.beaconUrl) {
       const exporter = buildExporter(processedOptions);
-      const batchSpanProcessor = new BatchSpanProcessor(exporter, {
+      const batchSpanProcessor = new SplunkBatchSpanProcessor(exporter, {
         scheduledDelayMillis: processedOptions.bufferTimeout,
         maxExportBatchSize: processedOptions.bufferSize,
         maxQueueSize: 2 * processedOptions.bufferSize,
@@ -309,7 +311,8 @@ const SplunkRum: SplunkOtelWebType = {
     provider.register({
       contextManager: new SplunkContextManager(
         processedOptions.context
-      )
+      ),
+      propagator: new HttpBaggagePropagator(),
     });
     this.provider = provider;
 

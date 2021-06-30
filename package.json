@@ -78,6 +78,7 @@
     "@types/mocha": "^8.2.2",
     "@types/nightwatch": "^1.3.3",
     "@types/shimmer": "^1.0.1",
+    "@types/sinon": "^10.0.2",
     "@typescript-eslint/eslint-plugin": "^4.23.0",
     "@typescript-eslint/parser": "^4.23.0",
     "body-parser": "^1.19.0",

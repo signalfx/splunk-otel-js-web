@@ -28,3 +28,4 @@ import './api.test';
 import './SplunkContextManager.test';
 import './SplunkWebTracerProvider.test';
 import './SplunkOtelWeb.test';
+import './propagation.test';
