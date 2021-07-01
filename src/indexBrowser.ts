@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import SplunkRum, { } from './index';
+import SplunkRum from './index';
 
 declare global {
   interface Window {

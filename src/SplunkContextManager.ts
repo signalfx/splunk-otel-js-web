@@ -38,11 +38,11 @@ export class SplunkContextManager implements ContextManager {
   /**
    * Keeps the reference to current context
    */
-  public _currentContext = ROOT_CONTEXT;
+  public _currentContext = this._rootContext;
 
-  // eslint-disable-next-line no-useless-constructor
   constructor(
-    protected _config: ContextManagerConfig = {}
+    protected _config: ContextManagerConfig = {},
+    protected _rootContext = ROOT_CONTEXT,
   ) {}
 
   /**
@@ -52,7 +52,7 @@ export class SplunkContextManager implements ContextManager {
    */
   protected _bindFunction<T extends (...args: unknown[]) => unknown>(
     target: T,
-    context = ROOT_CONTEXT
+    context = this._rootContext,
   ): T {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const manager = this;
@@ -105,7 +105,7 @@ export class SplunkContextManager implements ContextManager {
       this._unpatchMessageChannel();
     }
 
-    this._currentContext = ROOT_CONTEXT;
+    this._currentContext = this._rootContext;
     this._enabled = false;
     return this;
   }
@@ -127,7 +127,7 @@ export class SplunkContextManager implements ContextManager {
     }
 
     this._enabled = true;
-    this._currentContext = ROOT_CONTEXT;
+    this._currentContext = this._rootContext;
     return this;
   }
 
@@ -139,7 +139,7 @@ export class SplunkContextManager implements ContextManager {
    */
   protected bindActiveToArgument(args: unknown[], index: number): void {
     if (isFunction(args[index])) {
-      // Bind callback to current context 
+      // Bind callback to current context
       args[index] = this.bind(this.active(), args[index]);
     }
   }
@@ -220,7 +220,7 @@ export class SplunkContextManager implements ContextManager {
       }
     );
 
-    wrapNatively(Promise.prototype, 'catch', (original) => 
+    wrapNatively(Promise.prototype, 'catch', (original) =>
       function <T, TResult>(
         this: Promise<T>,
         ...args: [
@@ -233,7 +233,7 @@ export class SplunkContextManager implements ContextManager {
       }
     );
 
-    wrapNatively(Promise.prototype, 'finally', (original) => 
+    wrapNatively(Promise.prototype, 'finally', (original) =>
       function <T>(
         this: Promise<T>,
         ...args: [
@@ -325,7 +325,7 @@ export class SplunkContextManager implements ContextManager {
 
   /**
    * Event listeners wrapped to resume context from event registration
-   * 
+   *
    * _contextResumingListeners.get(Target).get(EventType).get(origListener)
    */
   protected _contextResumingListeners = new WeakMap<
@@ -356,7 +356,7 @@ export class SplunkContextManager implements ContextManager {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const manager = this;
 
-    wrapNatively(XMLHttpRequest.prototype, 'addEventListener', original => 
+    wrapNatively(XMLHttpRequest.prototype, 'addEventListener', original =>
       function (...args: Parameters<XMLHttpRequest['addEventListener']>) {
         if (isFunction(args[1])) {
           const wrappedListeners = manager._getListenersMap(this, args[0]);
@@ -374,7 +374,7 @@ export class SplunkContextManager implements ContextManager {
       }
     );
 
-    wrapNatively(XMLHttpRequest.prototype, 'removeEventListener', original => 
+    wrapNatively(XMLHttpRequest.prototype, 'removeEventListener', original =>
       function (...args: Parameters<XMLHttpRequest['addEventListener']>) {
         if (isFunction(args[1])) {
           const wrappedListeners = manager._getListenersMap(this, args[0]);
@@ -397,7 +397,7 @@ export class SplunkContextManager implements ContextManager {
           if (val._orig) {
             return val._orig;
           }
-  
+
           return val;
         }
       );
@@ -410,7 +410,7 @@ export class SplunkContextManager implements ContextManager {
             wrapped._orig = orig;
             value = wrapped;
           }
-  
+
           return original.call(this, value);
         }
       );
@@ -429,7 +429,7 @@ export class SplunkContextManager implements ContextManager {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const manager = this;
 
-    wrapNatively(window, 'MessageChannel', original => 
+    wrapNatively(window, 'MessageChannel', original =>
       class WrappedMessagePort extends original {
         constructor(...args: []) {
           super(...args);
@@ -476,7 +476,7 @@ export class SplunkContextManager implements ContextManager {
       }
     );
 
-    wrapNatively(MessagePort.prototype, 'addEventListener', original => 
+    wrapNatively(MessagePort.prototype, 'addEventListener', original =>
       function (...args: Parameters<MessagePort['addEventListener']>) {
         if (args[0] === 'message' && isFunction(args[1])) {
           const wrappedListeners = manager._getListenersMap(this, args[0]);
@@ -501,7 +501,7 @@ export class SplunkContextManager implements ContextManager {
       }
     );
 
-    wrapNatively(MessagePort.prototype, 'removeEventListener', original => 
+    wrapNatively(MessagePort.prototype, 'removeEventListener', original =>
       function (...args: Parameters<MessagePort['addEventListener']>) {
         if (args[0] === 'message' && isFunction(args[1])) {
           const wrappedListeners = manager._getListenersMap(this, args[0]);
@@ -574,7 +574,7 @@ export class SplunkContextManager implements ContextManager {
     ...args: A
   ): ReturnType<F> {
     const previousContext = this._currentContext;
-    this._currentContext = context || ROOT_CONTEXT;
+    this._currentContext = context || this._rootContext;
 
     try {
       return fn.call(thisArg, ...args);

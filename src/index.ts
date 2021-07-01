@@ -17,7 +17,7 @@ limitations under the License.
 import './polyfill-safari10';
 import { InstrumentationConfig, registerInstrumentations } from '@opentelemetry/instrumentation';
 import { ConsoleSpanExporter, SimpleSpanProcessor, ReadableSpan, SpanExporter } from '@opentelemetry/tracing';
-import { diag, DiagConsoleLogger, DiagLogLevel, SpanAttributes } from '@opentelemetry/api';
+import { diag, DiagConsoleLogger, DiagLogLevel, ROOT_CONTEXT, SpanAttributes } from '@opentelemetry/api';
 import { SplunkDocumentLoadInstrumentation } from './SplunkDocumentLoadInstrumentation';
 import { SplunkXhrPlugin } from './SplunkXhrPlugin';
 import { SplunkFetchInstrumentation } from './SplunkFetchInstrumentation';
@@ -50,6 +50,7 @@ import {
 import { ContextManagerConfig, SplunkContextManager } from './SplunkContextManager';
 import { HttpBaggagePropagator } from '@opentelemetry/core';
 import { SplunkBatchSpanProcessor } from './SplunkBatchSpanProcessor';
+import { injectSyntheticsBaggageFromWindow } from './synthetics';
 
 export * from './SplunkExporter';
 export * from './SplunkWebTracerProvider';
@@ -310,7 +311,8 @@ const SplunkRum: SplunkOtelWebType = {
 
     provider.register({
       contextManager: new SplunkContextManager(
-        processedOptions.context
+        processedOptions.context,
+        injectSyntheticsBaggageFromWindow(ROOT_CONTEXT),
       ),
       propagator: new HttpBaggagePropagator(),
     });

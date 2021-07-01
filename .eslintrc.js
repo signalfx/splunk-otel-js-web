@@ -107,6 +107,7 @@ module.exports = {
       rules: {
         'no-shadow': 'off', // TS has its dedicated rule, the JS one breaks
         'no-unused-expressions': 'off',
+        'no-useless-constructor': 'off',
         '@typescript-eslint/brace-style': ['error', '1tbs', { 'allowSingleLine': true }],
         '@typescript-eslint/explicit-function-return-type': 'off', // to be discussed
         '@typescript-eslint/no-unused-vars': 'error',

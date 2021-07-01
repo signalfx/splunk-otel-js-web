@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Splunk Synthetics integration</title>
+
+  <script id="scenario">
+    window.syntheticsRunId = 'abcd1234' + 'abcd1234' + 'abcd1234' + 'abcd1234';
+  </script>
+	<%- renderAgent() %>
+</head>
+<body>
+  <h1>Splunk Synthetics integration</h1>
+	<pre id="scenarioDisplay"></pre>
+  <script>scenarioDisplay.innerHTML = scenario.innerHTML;</script>
+</body>
+</html>

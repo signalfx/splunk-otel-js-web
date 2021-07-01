@@ -23,7 +23,6 @@ import { InMemorySpanExporter } from '@opentelemetry/tracing';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import SplunkRum from '../src';
-import { SYNTHETIC_RUN_ID_FIELD } from '../src/SplunkBatchSpanProcessor';
 
 describe('propagation', () => {
   const sandbox = sinon.createSandbox();
@@ -68,7 +67,7 @@ describe('propagation', () => {
     (SplunkRum as any)._processor.forceFlush().then(() => {
       expect(exporter.getFinishedSpans().length).to.eql(1);
       expect(
-        exporter.getFinishedSpans()[0].attributes[SYNTHETIC_RUN_ID_FIELD],
+        exporter.getFinishedSpans()[0].attributes['Synthetics-RunId'],
       ).to.eql(syntheticsTraceId);
 
       done();
@@ -87,7 +86,7 @@ describe('propagation', () => {
     (SplunkRum as any)._processor.forceFlush().then(() => {
       expect(exporter.getFinishedSpans().length).to.eql(1);
       expect(
-        exporter.getFinishedSpans()[0].attributes[SYNTHETIC_RUN_ID_FIELD],
+        exporter.getFinishedSpans()[0].attributes['Synthetics-RunId'],
       ).to.eql(undefined);
       done();
     });

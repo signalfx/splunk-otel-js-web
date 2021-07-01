@@ -17,7 +17,7 @@ limitations under the License.
 module.exports = {
   '@tags': ['safari-10.1'],
   beforeEach: function(browser) {
-    browser.globals.clearReceivedSpans();  
+    browser.globals.clearReceivedSpans();
   },
   'documentFetch, resourceFetch, and documentLoad spans': async function(browser) {
     const url = browser.globals.getUrl('/docload/docload.ejs');
@@ -67,7 +67,7 @@ module.exports = {
       await browser.assert.ok(docFetch.tags['link.spanId'], 'Checking presence of link.spanId');
     }
     // http.url has already been checked by the findSpan
-    
+
     // documentLoad
     await browser.assert.strictEqual(docLoad.tags['component'], 'document-load');
     await browser.assert.strictEqual(docLoad.tags['location.href'], url);
