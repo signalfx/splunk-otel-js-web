@@ -110,7 +110,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
         this._unwrap(Node.prototype, 'removeEventListener');
         diag.debug('removing previous patch from method removeEventListener');
       }
-      this._wrap(Node.prototype, 'addEventListener', (this as any)._patchElement());
+      this._wrap(Node.prototype, 'addEventListener', (this as any)._patchAddEventListener());
       this._wrap(Node.prototype, 'removeEventListener', (this as any)._patchRemoveEventListener());
 
       this._patchHistoryApi();

@@ -14,22 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-const { exec } = require('child_process');
 const path = require('path');
+const fs = require('fs');
 
 const appRoot = process.cwd();
-const packageJsonUrl = path.resolve(`${appRoot}/package.json`);
+const packageJsonUrl = path.join(appRoot, 'package.json');
 const { version } = require(packageJsonUrl);
 
-exec('git tag -l --contains HEAD', (err, stdout) => {
-  if (err) {
-    console.error('Could not acquire git tags for HEAD.');
-    process.exitCode = 1;
-  }
+const versionFileUrl = path.join(appRoot, 'src', 'version.ts');
+const versionFileContent = fs.readFileSync(versionFileUrl).toString();
 
-  const hasMatchingTag = stdout.split('\n').some(line => line === `v${version}`);
-  if (!hasMatchingTag) {
-    console.error('We could not find any matching tags for the current version.');
-    process.exitCode = 1;
-  }
-});
+const hasMatchingInternalVersion = versionFileContent.indexOf(`export const VERSION = '${version}';`) > -1;
+if (!hasMatchingInternalVersion) {
+  console.error('The version in src/version.ts does not match the package version.');
+  process.exitCode = 1;
+}
