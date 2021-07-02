@@ -97,7 +97,7 @@ refers to the `MAJOR.MINOR` version of `0.1`, receiving bugfix patches such as `
 
 In order to link the Splunk RUM information with the distributed traces in the APM, certain configuration changes need to be applied to the APM agents monitoring the backend of the application. The changes are required to enable sending the `server-timing` header from the back-end which is then used to stitch together the spans from the browser with the backend trace.
 
-To enable this, you need to adjust the configuration in the service the browser connects to that is monitored by Splunk APM agents and set `SPLUNK_CONTEXT_SERVER_TIMING_ENABLED` environmental variable to `true`. See manuals for corresponding APM agents for more information.
+To enable this, you need to adjust the configuration in the service the browser connects to that is monitored by Splunk APM agents and set `SPLUNK_CONTEXT_SERVER_TIMING_ENABLED` or  environmental variable to `true` for all agents that do not automatically enable this. Currently only OpenTelemetry-based Java and Node.js agents ship with the configuration option enabled by default.  See manuals for corresponding APM agents for more information.
 
 Trace linkage with APM is currently supported for following Splunk APM agents:
 

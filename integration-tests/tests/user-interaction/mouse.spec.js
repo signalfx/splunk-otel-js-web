@@ -91,8 +91,8 @@ module.exports = {
 
     await browser.assert.strictEqual(clickSpan.tags['component'], 'user-interaction');
     await browser.assert.strictEqual(clickSpan.tags['event_type'], 'click');
-    await browser.assert.strictEqual(clickSpan.tags['target_element'], 'HTML');
-    await browser.assert.strictEqual(clickSpan.tags['target_xpath'], '//html');
+    await browser.assert.strictEqual(clickSpan.tags['target_element'], 'BUTTON');
+    await browser.assert.strictEqual(clickSpan.tags['target_xpath'], '//*[@id="btn1"]');
     await browser.assert.strictEqual(clickSpan.tags['ot.status_code'], 'UNSET');
 
     await browser.globals.assertNoErrorSpans();
