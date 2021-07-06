@@ -8,5 +8,6 @@ In case when auto-instrumentations do not capture all the information needed, yo
 |---|---|
 |Manually creating a span:|<pre>import {trace} from '@opentelemetry/api'<br><br>const span = trace.getTracer('searchbox').startSpan('search');<br>span.setAttribute('searchLength', searchString.length);<br>// time passes<br>span.end();</pre>|
 |Set `userId` on all the spans:|<pre>SplunkRum.setGlobalAttributes({<br>  'user': 'Test User'<br>});</pre>|
+|Create a custom event|<pre>import {trace} from '@opentelemetry/api'<br><br>const tracer = trace.getTracer('appModuleLoader');<br>const span = tracer.startSpan('test.module.load', {<br>  attributes: {<br>    <em>'workflow.name'</em>: 'test.module.load'<br>  }<br>});<br><br>// time passes<br>span.end();</pre>|
 
 If you have some existing manual instrumentation of your app with, e.g., another vendor's API, you can usually translate this code fairly easily to use OpenTelemetry conventions. We have provided [a migration guide](https://github.com/signalfx/splunk-otel-js-web/blob/main/docs/MigratingInstrumentation.md) covering this in more in depth.
