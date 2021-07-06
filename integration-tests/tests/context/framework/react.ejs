@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fetch - then</title>
+
+  <%- renderAgent({
+    context: {
+      async: false
+    }
+  }) %>
+
+  <script src="/utils/devServer/assets/react.min.js"></script>
+  <script src="/utils/devServer/assets/react-dom.min.js"></script>
+</head>
+<body>
+
+  <div id="container">
+
+  </div>
+
+    <script>
+
+      ReactDOM.render(
+        <h1>Hello, world!</h1>,
+        document.getElementById('container')
+      );
+    </script>
+</body>
+
+
+</body>
+</html>
