@@ -44,6 +44,7 @@
     "@opentelemetry/instrumentation-fetch": "0.22.0",
     "@opentelemetry/instrumentation-user-interaction": "0.22.0",
     "@opentelemetry/instrumentation-xml-http-request": "0.22.0",
+    "@opentelemetry/resources": "0.22.0",
     "@opentelemetry/semantic-conventions": "0.22.0",
     "@opentelemetry/tracing": "0.22.0",
     "@opentelemetry/web": "0.22.0",

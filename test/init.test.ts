@@ -170,13 +170,17 @@ describe('creating spans is possible', () => {
     span.end();
 
     const exposedSpan = span as tracing.Span;
-    assert.ok(exposedSpan.attributes['splunk.rumSessionId'], 'Checking splunk.rumSessionId');
-    assert.ok(exposedSpan.attributes['splunk.rumVersion'], 'Checking splunk.rumVersion');
     assert.ok(exposedSpan.attributes['location.href'], 'Checking location.href');
-    assert.ok(exposedSpan.attributes['splunk.scriptInstance'], 'Checking splunk.scriptInstance');
-    assert.strictEqual(exposedSpan.attributes['app'], 'my-app');
     assert.strictEqual(exposedSpan.attributes['environment'], 'my-env');
     assert.strictEqual(exposedSpan.attributes.customerType, 'GOLD');
+    // Attributes set on resource that zipkin exporter merges to span tags
+    assert.ok(exposedSpan.resource.attributes['telemetry.sdk.name'], 'Checking splunk.rumSessionId');
+    assert.ok(exposedSpan.resource.attributes['telemetry.sdk.language'], 'Checking splunk.rumSessionId');
+    assert.ok(exposedSpan.resource.attributes['telemetry.sdk.version'], 'Checking splunk.rumSessionId');
+    assert.ok(exposedSpan.resource.attributes['splunk.rumSessionId'], 'Checking splunk.rumSessionId');
+    assert.ok(exposedSpan.resource.attributes['splunk.rumVersion'], 'Checking splunk.rumVersion');
+    assert.ok(exposedSpan.resource.attributes['splunk.scriptInstance'], 'Checking splunk.scriptInstance');
+    assert.strictEqual(exposedSpan.resource.attributes['app'], 'my-app');
   });
 });
 
