@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fetch - then</title>
+
+  <%- renderAgent({
+    context: {
+      async: false
+    }
+  }) %>
+
+  <script src="/utils/devServer/assets/vue.min.js"></script>
+</head>
+<body>
+  <h1>Vue async test</h1>
+
+  <div id="app">    
+    <button type="button" @click="toggle = !toggle">Toggle</button>
+    <lazy v-if="toggle"></lazy>
+  </div>
+
+  <script>
+    Vue.component('lazy', {
+      created() {
+        const span = SplunkRum.provider.getTracer('test').startSpan('custom-1').end()
+      }
+    })
+
+    var app = new Vue({
+      el: '#app',
+      data: {
+        toggle: false
+      }
+    })
+  </script>
+</body>
+</html>

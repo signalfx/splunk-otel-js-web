@@ -6,26 +6,47 @@
 
   <%- renderAgent({
     context: {
-      async: false
+      async: true
     }
   }) %>
 
-  <script src="/utils/devServer/assets/react.min.js"></script>
-  <script src="/utils/devServer/assets/react-dom.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react@17/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.24/browser.min.js"></script>
 </head>
 <body>
+  <div id="root"></div>
 
-  <div id="container">
+  <script type="text/babel">
 
-  </div>
+    function App() {
 
-    <script>
-
-      ReactDOM.render(
-        <h1>Hello, world!</h1>,
-        document.getElementById('container')
+      const [show, setShow] = React.useState(false);
+      return (
+        <div>
+          <button onClick={() => setShow(!show)}>Toggle</button>
+          {show && <Lazy />}
+        </div>
       );
-    </script>
+    }
+
+    function Lazy() {
+      React.useEffect(() => {
+        const span = SplunkRum.provider.getTracer('test').startSpan('custom-1').end()
+      });    
+
+      return (
+        <h2>Lazy</h2>
+      );
+    }
+
+    ReactDOM.render(
+      <App />,
+      document.getElementById('root')
+    );
+
+
+  </script>
 </body>
 
 
