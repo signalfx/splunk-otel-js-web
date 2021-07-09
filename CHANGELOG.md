@@ -3,6 +3,13 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## Unreleased
 
+## 0.7.1
+
+Changes:
+
+- Fix: Remove maximum queue size from BatchSpanProcessor [#213](https://github.com/signalfx/splunk-otel-js-web/pull/213)
+- Move common attributes to resource attributes [#212](https://github.com/signalfx/splunk-otel-js-web/pull/212)
+
 ## 0.7.0
 | Open Telemetry API | Core   | Contrib |
 |--------------------|--------|---------|
