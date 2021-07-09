@@ -290,7 +290,6 @@ const SplunkRum: SplunkOtelWebType = {
       const batchSpanProcessor = new BatchSpanProcessor(exporter, {
         scheduledDelayMillis: processedOptions.bufferTimeout,
         maxExportBatchSize: processedOptions.bufferSize,
-        maxQueueSize: 2 * processedOptions.bufferSize,
       });
       window.addEventListener('visibilitychange', function() {
         // this condition applies when the page is hidden or when it's closed
