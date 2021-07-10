@@ -6,29 +6,29 @@
 
   <%- renderAgent({
     context: {
-      async: false
+      async: true
     }
   }) %>
 
-  <script src="/utils/devServer/assets/vue.min.js"></script>
+  <script src="/utils/devServer/assets/frameworks/vue-2.min.js"></script>
 </head>
 <body>
-  <h1>Vue async test</h1>
+  <h1>Vue</h1>
 
-  <div id="app">    
-    <button type="button" @click="toggle = !toggle">Toggle</button>
+  <div id="root">    
+    <button type="button" id="btn1" @click="toggle = !toggle">Toggle</button>
     <lazy v-if="toggle"></lazy>
   </div>
 
   <script>
     Vue.component('lazy', {
       created() {
-        const span = SplunkRum.provider.getTracer('test').startSpan('custom-1').end()
+        const span = SplunkRum.provider.getTracer('test').startSpan('custom-span').end()
       }
     })
 
     var app = new Vue({
-      el: '#app',
+      el: '#root',
       data: {
         toggle: false
       }
