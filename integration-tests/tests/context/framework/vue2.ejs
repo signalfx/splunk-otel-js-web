@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Fetch - then</title>
+  <title>Vue 2</title>
 
   <%- renderAgent({
     context: {
@@ -13,9 +13,9 @@
   <script src="/utils/devServer/assets/frameworks/vue-2.min.js"></script>
 </head>
 <body>
-  <h1>Vue</h1>
+  <h1>Vue 2</h1>
 
-  <div id="root">    
+  <div id="app">    
     <button type="button" id="btn1" @click="toggle = !toggle">Toggle</button>
     <lazy v-if="toggle"></lazy>
   </div>
@@ -28,7 +28,7 @@
     })
 
     var app = new Vue({
-      el: '#root',
+      el: '#app',
       data: {
         toggle: false
       }

@@ -14,20 +14,27 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+async function runTest(browser, filename) {
+  await browser.url(browser.globals.getUrl(filename));
+  await browser.click('#btn1');
+  await browser.globals.waitForTestToFinish();
+  
+  const clickSpan = await browser.globals.findSpan(span => span.name === 'click');
+  const customSpan = await browser.globals.findSpan(span => span.name === 'custom-span');
+  
+  browser.assert.not.ok(clickSpan.parentId, 'Click span does not have a parent.');
+  browser.assert.strictEqual(customSpan.parentId, clickSpan.id, 'Child span belongs to user interaction trace.');
+  browser.assert.strictEqual(customSpan.traceId, clickSpan.traceId, 'Spans have same traceId');
+  
+  await browser.globals.assertNoErrorSpans();
+}
+
 module.exports = {
   'Vue 2 with async': async function(browser) {
-    await browser.url(browser.globals.getUrl('/context/framework/vue2.ejs'));
-    await browser.click('#btn1');
-    await browser.globals.waitForTestToFinish();
-    
-    const clickSpan = await browser.globals.findSpan(span => span.name === 'click');
-    const customSpan = await browser.globals.findSpan(span => span.name === 'custom-span');
-    
-    browser.assert.not.ok(clickSpan.parentId, 'Click span does not have a parent.');
-    browser.assert.strictEqual(customSpan.parentId, clickSpan.id, 'Child span belongs to user interaction trace.');
-    browser.assert.strictEqual(customSpan.traceId, clickSpan.traceId, 'Spans have same traceId');
-    
-    await browser.globals.assertNoErrorSpans();
+    runTest(browser, '/context/framework/vue2.ejs');
+  },
+  'Vue 3 with async': async function(browser) {
+    runTest(browser, '/context/framework/vue3.ejs');
   },
   'React 17 with async': async function(browser) {
     browser.globals.clearReceivedSpans();
