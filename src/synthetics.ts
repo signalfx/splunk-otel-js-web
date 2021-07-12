@@ -1,5 +1,5 @@
 /*
-Copyright 2020 Splunk Inc.
+Copyright 2021 Splunk Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,18 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+declare global {
+  interface Window {
+    syntheticsRunId: string | undefined;
+  }
+}
 
-import 'mocha';
+export const SYNTHETICS_RUN_ID_ATTRIBUTE = 'Synthetics-RunId';
 
-// Manually maintain this list, as old webpack require-based mechanism isn't working under rollup
-import './init.test';
-import './servertiming.test';
-import './utils.test';
-import './session.test';
-import './websockets.test';
-import './SplunkExporter.test';
-import './api.test';
-import './SplunkContextManager.test';
-import './SplunkWebTracerProvider.test';
-import './SplunkOtelWeb.test';
-import './synthetics.test';
+export function getSyntheticsRunId(): string | undefined {
+  return window.syntheticsRunId;
+}
