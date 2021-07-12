@@ -18,6 +18,7 @@ const { isBrowser } = require('../../utils/helpers');
 const { inspect } = require('util');
 
 module.exports = {
+  '@disabled': true, // too flaky, will fix when migrating from nightwatch
   beforeEach: function(browser) {
     browser.globals.clearReceivedSpans();
   },
