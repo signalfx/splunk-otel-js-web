@@ -48,6 +48,10 @@ import {
   SplunkOtelWebEventTarget,
 } from './EventTarget';
 import { ContextManagerConfig, SplunkContextManager } from './SplunkContextManager';
+import { Resource, ResourceAttributes as ResourceAttributesCollection } from '@opentelemetry/resources';
+import { ResourceAttributes } from '@opentelemetry/semantic-conventions';
+import { SDK_INFO } from '@opentelemetry/core';
+import { VERSION } from './version';
 
 export * from './SplunkExporter';
 export * from './SplunkWebTracerProvider';
@@ -258,6 +262,23 @@ const SplunkRum: SplunkOtelWebType = {
     // they will be enabled in registerInstrumentations
     const pluginDefaults = { ignoreUrls, enabled: false };
 
+    const resourceAttrs: ResourceAttributesCollection = {
+      ...SDK_INFO,
+      [ResourceAttributes.TELEMETRY_SDK_NAME]: '@splunk/otel-web',
+      [ResourceAttributes.TELEMETRY_SDK_VERSION]: VERSION,
+      // Splunk specific attributes
+      'splunk.rumVersion': VERSION,
+      'splunk.scriptInstance': instanceId,
+      'app': app,
+    };
+    Object.defineProperty(resourceAttrs, 'splunk.rumSessionId', {
+      get() {
+        return getRumSessionId();
+      },
+      configurable: true,
+      enumerable: true,
+    });
+
     const provider = new SplunkWebTracerProvider({
       app,
       instanceId,
@@ -265,6 +286,7 @@ const SplunkRum: SplunkOtelWebType = {
         ...environment ? { environment } : {},
         ...processedOptions.globalAttributes || {},
       },
+      resource: new Resource(resourceAttrs),
     });
     const instrumentations = INSTRUMENTATIONS.map(({ Instrument, confKey, disable }) => {
       const pluginConf = getPluginConfig(processedOptions.instrumentations[confKey], pluginDefaults, disable);
@@ -290,7 +312,6 @@ const SplunkRum: SplunkOtelWebType = {
       const batchSpanProcessor = new BatchSpanProcessor(exporter, {
         scheduledDelayMillis: processedOptions.bufferTimeout,
         maxExportBatchSize: processedOptions.bufferSize,
-        maxQueueSize: 2 * processedOptions.bufferSize,
       });
       window.addEventListener('visibilitychange', function() {
         // this condition applies when the page is hidden or when it's closed
