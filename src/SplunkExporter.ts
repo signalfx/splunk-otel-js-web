@@ -21,7 +21,6 @@ import {
 } from '@opentelemetry/exporter-zipkin/build/src/transform.js';
 import { ExportResult, ExportResultCode } from '@opentelemetry/core';
 import { limitLen } from './utils';
-import { Resource } from '@opentelemetry/resources';
 import { SpanAttributes, SpanKind } from '@opentelemetry/api';
 import { ReadableSpan, SpanExporter } from '@opentelemetry/tracing';
 
@@ -161,7 +160,7 @@ export class SplunkExporter implements SpanExporter {
       ended: span.ended,
       instrumentationLibrary: span.instrumentationLibrary,
 
-      resource: Resource.EMPTY,
+      resource: span.resource,
       attributes: this._onAttributesSerializing(span.attributes, span),
     };
   }

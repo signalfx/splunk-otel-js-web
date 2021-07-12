@@ -65,7 +65,7 @@ module.exports = {
     await browser.assert.ok(errorGuard);
     await browser.globals.assertNoErrorSpans();
   },
-  'environment still get set if no global attributes': async function(browser) {
+  'environment % resource attrs still get set if no global attributes': async function(browser) {
     browser.globals.clearReceivedSpans();
     await browser.url(browser.globals.getUrl('/init/attributes-no-globals.ejs'));
 
@@ -73,6 +73,12 @@ module.exports = {
     await browser.assert.ok(atts);
     await browser.assert.strictEqual(atts.tags['app'], 'custom-app');
     await browser.assert.strictEqual(atts.tags['environment'], 'custom-environment');
+
+    // Set as a resource, zipkin exporter should merge into tags
+    await browser.assert.strictEqual(atts.tags['telemetry.sdk.name'], '@splunk/otel-web');
+    await browser.assert.strictEqual(atts.tags['telemetry.sdk.language'], 'webjs');
+    await browser.assert.strictEqual(atts.tags['telemetry.sdk.version'], browser.globals.rumVersion);
+    await browser.assert.strictEqual(atts.tags['splunk.rumVersion'], browser.globals.rumVersion);
 
     await browser.globals.assertNoErrorSpans();
   },
