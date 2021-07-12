@@ -15,12 +15,13 @@ limitations under the License.
 */
 
 async function runTest(browser, filename) {
+  browser.globals.clearReceivedSpans();
   await browser.url(browser.globals.getUrl(filename));
   await browser.click('#btn1');
   await browser.globals.waitForTestToFinish();
   
-  const clickSpan = await browser.globals.findSpan(span => span.name === 'click');
   const customSpan = await browser.globals.findSpan(span => span.name === 'custom-span');
+  const clickSpan = await browser.globals.findSpan(span => span.name === 'click');
   
   browser.assert.not.ok(clickSpan.parentId, 'Click span does not have a parent.');
   browser.assert.strictEqual(customSpan.parentId, clickSpan.id, 'Child span belongs to user interaction trace.');
@@ -36,15 +37,17 @@ module.exports = {
   'Vue 3 with async': async function(browser) {
     runTest(browser, '/context/framework/vue3.ejs');
   },
+  'React 16 with async': async function(browser) {
+    runTest(browser, '/context/framework/react-16.ejs');
+  },
   'React 17 with async': async function(browser) {
     browser.globals.clearReceivedSpans();
 
-    await browser.url(browser.globals.getUrl('/context/framework/react17.ejs'));
+    await browser.url(browser.globals.getUrl('/context/framework/react-latest.ejs'));
     await browser.click('#btn1');
     await browser.globals.waitForTestToFinish();
     
-    //Investigate: for some reason for react there are several nested clicks
-
+    //Investigate: for some reason for react 17 there are several nested clicks
     const customSpan = await browser.globals.findSpan(span => span.name === 'custom-span');
     const clickSpans = browser.globals.getReceivedSpans().filter(span => span.name === 'click');
     
