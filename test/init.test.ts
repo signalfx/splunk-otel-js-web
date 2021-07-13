@@ -132,7 +132,7 @@ describe('test init', () => {
         bufferTimeout: 0,
         exporter: {
           onAttributesSerializing: onAttributesSerializingMock,
-          _factory: (options) => {
+          factory: (options) => {
             expect(options.onAttributesSerializing).to.eq(onAttributesSerializingMock);
             return {
               'export': exportMock,
