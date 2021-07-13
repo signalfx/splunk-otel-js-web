@@ -1,4 +1,3 @@
-
 /*
 Copyright 2021 Splunk Inc.
 
@@ -15,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-const { buildBackendContext } = require("../../utils/globals");
+const { buildBackendContext } = require('../../utils/globals');
 
 module.exports = {
   'applies Synthetics Run Id attribute on all spans': async function(browser) {
