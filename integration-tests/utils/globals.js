@@ -37,41 +37,54 @@ async function findSpan(spans, testFn, accruedTime) {
   if (foundSpan) {
     return foundSpan;
   }
-  
+
   return new Promise((resolve) => {
-    setTimeout(() => { 
-      resolve(findSpan(spans, testFn, accruedTime + SPAN_WAIT_ITERATION_TIME)); 
+    setTimeout(() => {
+      resolve(findSpan(spans, testFn, accruedTime + SPAN_WAIT_ITERATION_TIME));
     }, SPAN_WAIT_ITERATION_TIME);
   });
 }
 
+async function buildBackendContext(browser) {
+  const backend = await browser.globals.buildInstrumentationBackend();
+
+  // Setting longer timeout be cause it seems to take forever for spans to arrive in Safari 10 during tests
+  // Real page seems fine. This timeout could be smaller but better safe than flaky for now.
+  const defaultTimeout = browser.globals.isBrowser({ 'safari': { max: 10 } }) ? -10000 : 0;
+
+  return {
+    httpPort: backend.httpPort,
+    clearReceivedSpans:  backend.clearReceivedSpans,
+    getReceivedSpans:  backend.getReceivedSpans,
+    findSpan:  (testFn, timeout = defaultTimeout) => findSpan(backend.getReceivedSpans(), testFn, timeout),
+    wsBase:  backend.getWebsocketsUrl().toString(),
+    getLastServerTiming:  backend.getLastServerTiming,
+    getUrl:  (...args) => backend.getUrl(...args).toString(),
+    _closeBackend: backend.close,
+    assertNoErrorSpans: async () => {
+      await browser.assert.ok(backend.getReceivedSpans().every(s => s.name !== 'onerror'), 'Ensuring no errors were reported.');
+    },
+
+    // left here for old tests
+    baseUrl: backend.getUrl().toString(),
+    defaultUrl: backend.getUrl('/', ['wsProtocol', 'wsPort']).toString(),
+  };
+}
+
 module.exports = {
+  buildBackendContext,
+
   // This will be run before each test suite is started
   beforeEach: async (browser, done) => {
     browser.globals.rumVersion = require('../../package.json').version;
-    let defaultTimeout = 0;
     browser.globals.isBrowser = isBrowser.bind(null, browser);
-    
-    if (browser.globals.isBrowser({ 'safari': { max: 10 } })) {
-      // Setting longer timeout be cause it seems to take forever for spans to arrive in Safari 10 during tests
-      // Real page seems fine. This timeout could be smaller but better safe than flaky for now.
-      defaultTimeout = -10000;
-    }
-    
+
     browser.globals.buildInstrumentationBackend = () => buildInstrumentationBackend({
       enableHttps: browser.globals.enableHttps,
       hostname: browser.globals.hostname,
     });
-    const backend = await browser.globals.buildInstrumentationBackend();
-    browser.globals._closeBackend = backend.close;
 
-    browser.globals.httpPort = backend.httpPort;
-    browser.globals.clearReceivedSpans = backend.clearReceivedSpans;
-    browser.globals.getReceivedSpans = backend.getReceivedSpans;
-    browser.globals.findSpan = (testFn, timeout = defaultTimeout) => findSpan(backend.getReceivedSpans(), testFn, timeout);
-    browser.globals.wsBase = backend.getWebsocketsUrl().toString();
-    browser.globals.getLastServerTiming = backend.getLastServerTiming;
-    browser.globals.getUrl = (...args) => backend.getUrl(...args).toString();
+    Object.assign(browser.globals, await buildBackendContext(browser));
 
     browser.globals.emulateTabSwitchingAway = async () => {
       await browser.execute(() => {
@@ -91,10 +104,6 @@ module.exports = {
       }
     };
 
-    browser.globals.assertNoErrorSpans = async () => { 
-      await browser.assert.ok(backend.getReceivedSpans().every(s => s.name !== 'onerror'), 'Ensuring no errors were reported.');
-    };
-
     browser.timesMakeSense = async function(eventsArr, startName, endName) {
       const name2time = {};
       eventsArr.forEach(event => {
@@ -107,7 +116,7 @@ module.exports = {
       // times reported in zipkin as micros
       // looking for egregiously incorrect response times here, not a tight bound
       const fiveMinutes = 5 * 60 * 1000 * 1000;
-      await this.assert.ok(diff < fiveMinutes, 'Sanity check for time difference.'); 
+      await this.assert.ok(diff < fiveMinutes, 'Sanity check for time difference.');
       // Also looking for rough synchronization with reality (at least from our CI systems/laptops...)
       const nowMicros = new Date().getTime() * 1000;
       let clockSkew = name2time[startName] - nowMicros;
@@ -116,10 +125,7 @@ module.exports = {
       }
       await this.assert.ok(clockSkew <= fiveMinutes, 'Sanity check for clock skew');
     };
-  
-    // left here for old tests
-    browser.globals.baseUrl = backend.getUrl().toString();
-    browser.globals.defaultUrl = backend.getUrl('/', ['wsProtocol', 'wsPort']).toString();
+
     console.log('Started dev server.');
 
     // note: at the time this was written util.promisify breaks nightwatch here
