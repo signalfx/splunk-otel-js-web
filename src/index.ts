@@ -34,6 +34,7 @@ import { getRumSessionId, initSessionTracking, SessionIdType } from './session';
 import { SplunkWebSocketInstrumentation } from './SplunkWebSocketInstrumentation';
 import { initWebVitals } from './webvitals';
 import { SplunkLongTaskInstrumentation } from './SplunkLongTaskInstrumentation';
+import { SplunkPageVisibilityInstrumentation } from './SplunkPageVisibilityInstrumentation';
 import {
   SplunkPostDocLoadResourceInstrumentation,
   SplunkPostDocLoadResourceInstrumentationConfig,
@@ -62,6 +63,7 @@ interface SplunkOtelWebOptionsInstrumentations {
   fetch?:        boolean | FetchInstrumentationConfig;
   interactions?: boolean | SplunkUserInteractionInstrumentationConfig;
   longtask?:     boolean | InstrumentationConfig;
+  visibility?:   boolean | InstrumentationConfig;
   postload?:     boolean | SplunkPostDocLoadResourceInstrumentationConfig;
   websocket?:    boolean | InstrumentationConfig;
   webvitals?:    boolean;
@@ -155,6 +157,7 @@ const INSTRUMENTATIONS = [
   { Instrument: SplunkWebSocketInstrumentation, confKey: 'websocket', disable: true },
   { Instrument: SplunkLongTaskInstrumentation, confKey: 'longtask', disable: false },
   { Instrument: SplunkErrorInstrumentation, confKey: ERROR_INSTRUMENTATION_NAME, disable: false },
+  { Instrument: SplunkPageVisibilityInstrumentation, confKey: 'visibility', disable: false },
 ] as const;
 
 export const INSTRUMENTATIONS_ALL_DISABLED: SplunkOtelWebOptionsInstrumentations = INSTRUMENTATIONS
@@ -313,6 +316,7 @@ const SplunkRum: SplunkOtelWebType = {
         scheduledDelayMillis: processedOptions.bufferTimeout,
         maxExportBatchSize: processedOptions.bufferSize,
       });
+      
       window.addEventListener('visibilitychange', function() {
         // this condition applies when the page is hidden or when it's closed
         // see for more details: https://developers.google.com/web/updates/2018/07/page-lifecycle-api#developer-recommendations-for-each-state
