@@ -305,11 +305,6 @@ const SplunkRum: SplunkOtelWebType = {
       return null;
     }).filter(a => a);
 
-    _deregisterInstrumentations = registerInstrumentations({
-      tracerProvider: provider,
-      instrumentations,
-    });
-
     if (processedOptions.beaconUrl) {
       const exporter = buildExporter(processedOptions);
       const batchSpanProcessor = new BatchSpanProcessor(exporter, {
@@ -317,19 +312,25 @@ const SplunkRum: SplunkOtelWebType = {
         maxExportBatchSize: processedOptions.bufferSize,
       });
       
-      window.addEventListener('visibilitychange', function() {
-        // this condition applies when the page is hidden or when it's closed
-        // see for more details: https://developers.google.com/web/updates/2018/07/page-lifecycle-api#developer-recommendations-for-each-state
-        if (document.visibilityState === 'hidden') {
-          batchSpanProcessor.forceFlush();
-        }
-      });
       provider.addSpanProcessor(batchSpanProcessor);
       this._processor = batchSpanProcessor;
     }
     if (processedOptions.debug) {
       provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
     }
+
+    _deregisterInstrumentations = registerInstrumentations({
+      tracerProvider: provider,
+      instrumentations,
+    });
+
+    window.addEventListener('visibilitychange', () => {
+      // this condition applies when the page is hidden or when it's closed
+      // see for more details: https://developers.google.com/web/updates/2018/07/page-lifecycle-api#developer-recommendations-for-each-state
+      if (document.visibilityState === 'hidden') {
+        this._processor.forceFlush();
+      }
+    });
 
     provider.register({
       contextManager: new SplunkContextManager(

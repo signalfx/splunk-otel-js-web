@@ -19,12 +19,15 @@ import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instr
 import { VERSION } from './version';
 
 const MODULE_NAME = 'splunk-visibility';
-let listener: any;
+let visibilityListener: any;
+let unloadListener: any;
 
 export class SplunkPageVisibilityInstrumentation extends InstrumentationBase {
+  unloading: boolean;
 
   constructor(config: InstrumentationConfig = {}) {
     super(MODULE_NAME, VERSION, Object.assign({}, config));
+    this.unloading = false;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -32,18 +35,24 @@ export class SplunkPageVisibilityInstrumentation extends InstrumentationBase {
 
   enable(): void {
     if (document.hidden) {
-        console.log('enable doc hidden')
         this._createSpan(document.hidden);
     }
 
-    listener = window.addEventListener('visibilitychange', () => {
-        console.log('enable visibility change')
-        this._createSpan(document.hidden);
+    visibilityListener = window.addEventListener('beforeunload', () => {
+        this.unloading = true;
+    })
+
+    visibilityListener = window.addEventListener('visibilitychange', () => {
+        //ignore when page is unloading as it is expected then
+        if (!this.unloading) {
+            this._createSpan(document.hidden);
+        }
     })
   }
 
   disable(): void {
-      window.removeEventListener('visibilitychange', listener);
+      window.removeEventListener('beforeunload', unloadListener);
+      window.removeEventListener('visibilitychange', visibilityListener);
   }
 
   private _createSpan(hidden: boolean) {
