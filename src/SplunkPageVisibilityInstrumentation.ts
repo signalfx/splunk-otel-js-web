@@ -35,24 +35,24 @@ export class SplunkPageVisibilityInstrumentation extends InstrumentationBase {
 
   enable(): void {
     if (document.hidden) {
-        this._createSpan(document.hidden);
+      this._createSpan(document.hidden);
     }
 
     visibilityListener = window.addEventListener('beforeunload', () => {
-        this.unloading = true;
-    })
+      this.unloading = true;
+    });
 
     visibilityListener = window.addEventListener('visibilitychange', () => {
-        //ignore when page is unloading as it is expected then
-        if (!this.unloading) {
-            this._createSpan(document.hidden);
-        }
-    })
+      //ignore when page is unloading as it is expected then
+      if (!this.unloading) {
+        this._createSpan(document.hidden);
+      }
+    });
   }
 
   disable(): void {
-      window.removeEventListener('beforeunload', unloadListener);
-      window.removeEventListener('visibilitychange', visibilityListener);
+    window.removeEventListener('beforeunload', unloadListener);
+    window.removeEventListener('visibilitychange', visibilityListener);
   }
 
   private _createSpan(hidden: boolean) {

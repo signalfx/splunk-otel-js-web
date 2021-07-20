@@ -157,7 +157,7 @@ const INSTRUMENTATIONS = [
   { Instrument: SplunkWebSocketInstrumentation, confKey: 'websocket', disable: true },
   { Instrument: SplunkLongTaskInstrumentation, confKey: 'longtask', disable: false },
   { Instrument: SplunkErrorInstrumentation, confKey: ERROR_INSTRUMENTATION_NAME, disable: false },
-  { Instrument: SplunkPageVisibilityInstrumentation, confKey: 'visibility', disable: false },
+  { Instrument: SplunkPageVisibilityInstrumentation, confKey: 'visibility', disable: true },
 ] as const;
 
 export const INSTRUMENTATIONS_ALL_DISABLED: SplunkOtelWebOptionsInstrumentations = INSTRUMENTATIONS

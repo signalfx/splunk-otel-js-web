@@ -15,24 +15,24 @@ limitations under the License.
 */
 
 module.exports = {
-    'visibility events are captured': async function(browser) {
-      await browser.url(browser.globals.getUrl('/visibility/visibility.ejs'));
-      browser.globals.emulateTabSwitching(true);
+  'visibility events are captured': async function(browser) {
+    await browser.url(browser.globals.getUrl('/visibility/visibility.ejs'));
+    browser.globals.emulateTabSwitching(true);
 
-      const tabHiddenSpan = await browser.globals.findSpan(span => span.name === 'visibility' && span.tags['hidden'] === 'true');
-      const hiddenSpans = browser.globals.getReceivedSpans().filter( span => span.name === 'visibility');    
-      await browser.assert.ok(!!tabHiddenSpan, 'Visibility event for hidden tab exists');     
-      await browser.assert.strictEqual(hiddenSpans.length, 1, 'There is only one visibility event');    
+    const tabHiddenSpan = await browser.globals.findSpan(span => span.name === 'visibility' && span.tags['hidden'] === 'true');
+    const hiddenSpans = browser.globals.getReceivedSpans().filter( span => span.name === 'visibility');    
+    await browser.assert.ok(!!tabHiddenSpan, 'Visibility event for hidden tab exists');     
+    await browser.assert.strictEqual(hiddenSpans.length, 1, 'There is only one visibility event');    
       
-      browser.globals.clearReceivedSpans();    
+    browser.globals.clearReceivedSpans();    
 
-      browser.globals.emulateTabSwitching(false);
-      const tabVisibileSpan = await browser.globals.findSpan(span => span.name === 'visibility' && span.tags['hidden'] === 'false');
-      const visibleSpans = browser.globals.getReceivedSpans().filter( span => span.name === 'visibility');      
-      await browser.assert.ok(!!tabVisibileSpan, 'Visibility event for visible tab exists');      
-      await browser.assert.strictEqual(visibleSpans.length, 1, 'There is only one visibility event');    
+    browser.globals.emulateTabSwitching(false);
+    const tabVisibileSpan = await browser.globals.findSpan(span => span.name === 'visibility' && span.tags['hidden'] === 'false');
+    const visibleSpans = browser.globals.getReceivedSpans().filter( span => span.name === 'visibility');      
+    await browser.assert.ok(!!tabVisibileSpan, 'Visibility event for visible tab exists');      
+    await browser.assert.strictEqual(visibleSpans.length, 1, 'There is only one visibility event');    
 
-      await browser.globals.assertNoErrorSpans();
-    },
-  };
+    await browser.globals.assertNoErrorSpans();
+  },
+};
   
