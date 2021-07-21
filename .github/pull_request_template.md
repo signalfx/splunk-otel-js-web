@@ -2,7 +2,7 @@
 
 _Replace this with a description of the PR. Explain the problem it solves and the proposed solution._
 
-_List Github/JIRA issue(s) this PR fixes._
+_List Github issue(s) which this PR fixes._
 
 ## Type of change
 
