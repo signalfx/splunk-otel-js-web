@@ -17,7 +17,8 @@ Please delete options that are not relevant.
 # How Has This Been Tested?
 
 - [ ] Tested manually
-- [ ] Added automated tests
+- [ ] Added unit tests
+- [ ] Added integration tests
 
 # Checklist:
 
