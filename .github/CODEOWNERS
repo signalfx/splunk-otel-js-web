@@ -1,4 +1,4 @@
 * @signalfx/gdi-js-maintainers @signalfx/gdi-js-web-approvers
 *.md @signalfx/docs
 *.rst @signalfx/docs
-docs/* @signalfx/docs
+docs/ @signalfx/docs
