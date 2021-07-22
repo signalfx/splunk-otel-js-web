@@ -16,7 +16,15 @@ limitations under the License.
 
 import './polyfill-safari10';
 import { InstrumentationConfig, registerInstrumentations } from '@opentelemetry/instrumentation';
-import { ConsoleSpanExporter, SimpleSpanProcessor, BatchSpanProcessor, ReadableSpan, SpanExporter } from '@opentelemetry/tracing';
+import {
+  ConsoleSpanExporter,
+  SimpleSpanProcessor,
+  BatchSpanProcessor,
+  ReadableSpan,
+  SpanExporter,
+  SpanProcessor,
+  BufferConfig,
+} from '@opentelemetry/tracing';
 import { diag, DiagConsoleLogger, DiagLogLevel, SpanAttributes } from '@opentelemetry/api';
 import { SplunkDocumentLoadInstrumentation } from './SplunkDocumentLoadInstrumentation';
 import { SplunkXhrPlugin } from './SplunkXhrPlugin';
@@ -53,6 +61,7 @@ import { Resource, ResourceAttributes as ResourceAttributesCollection } from '@o
 import { ResourceAttributes } from '@opentelemetry/semantic-conventions';
 import { SDK_INFO } from '@opentelemetry/core';
 import { VERSION } from './version';
+import { getSyntheticsRunId, SYNTHETICS_RUN_ID_ATTRIBUTE } from './synthetics';
 
 export * from './SplunkExporter';
 export * from './SplunkWebTracerProvider';
@@ -130,12 +139,15 @@ interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
   bufferSize?: number;
   bufferTimeout?: number;
 
-  exporter?: SplunkOtelWebExporterOptions & {
-    _factory?: (config: SplunkExporterConfig) => SpanExporter;
+  exporter: SplunkOtelWebExporterOptions & {
+    factory: (config: SplunkExporterConfig) => SpanExporter;
+  };
+
+  spanProcessor: {
+    factory: <T extends BufferConfig> (exporter: SpanExporter, config: T) => SpanProcessor;
   };
 }
 
-// note: underscored fields are considered internal
 const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
   app: 'unknown-browser-app',
   beaconUrl: undefined,
@@ -143,7 +155,10 @@ const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
   bufferSize: 20, // spans, tradeoff between batching and hitting sendBeacon invididual limits
   instrumentations: {},
   exporter: {
-    _factory: (options) => new SplunkExporter(options),
+    factory: (options) => new SplunkExporter(options),
+  },
+  spanProcessor: {
+    factory: (exporter, config) => new BatchSpanProcessor(exporter, config),
   },
   rumAuth: undefined,
 };
@@ -169,13 +184,13 @@ export const INSTRUMENTATIONS_ALL_DISABLED: SplunkOtelWebOptionsInstrumentations
 
 function buildExporter(options) {
   const completeUrl = options.beaconUrl + (options.rumAuth ? '?auth='+options.rumAuth : '');
-  return options.exporter._factory({
+  return options.exporter.factory({
     beaconUrl: completeUrl,
     onAttributesSerializing: options.exporter.onAttributesSerializing,
   });
 }
 
-interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
+export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
   deinit: () => void;
 
   error: (...args: Array<any>) => void;
@@ -185,7 +200,7 @@ interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
   /**
    * Allows experimental options to be passed. No versioning guarantees are given for this method.
    */
-  _internalInit: (options: SplunkOtelWebConfigInternal) => void;
+  _internalInit: (options: Partial<SplunkOtelWebConfigInternal>) => void;
 
   provider?: SplunkWebTracerProvider;
 
@@ -213,15 +228,18 @@ let _deregisterInstrumentations: () => void | undefined;
 let _deinitSessionTracking: () => void | undefined;
 let _errorInstrumentation: SplunkErrorInstrumentation | undefined;
 let eventTarget: InternalEventTarget | undefined;
-const SplunkRum: SplunkOtelWebType = {
+export const SplunkRum: SplunkOtelWebType = {
   DEFAULT_AUTO_INSTRUMENTED_EVENTS,
 
   get inited(): boolean {
     return inited;
   },
 
-  _internalInit: function (options: SplunkOtelWebConfigInternal) {
-    SplunkRum.init(options);
+  _internalInit: function (options: Partial<SplunkOtelWebConfigInternal>) {
+    SplunkRum.init({
+      ...OPTIONS_DEFAULTS,
+      ...options,
+    });
   },
 
   init: function (options) {
@@ -282,6 +300,11 @@ const SplunkRum: SplunkOtelWebType = {
       enumerable: true,
     });
 
+    const syntheticsRunId = getSyntheticsRunId();
+    if (syntheticsRunId) {
+      resourceAttrs[SYNTHETICS_RUN_ID_ATTRIBUTE] = syntheticsRunId;
+    }
+
     const provider = new SplunkWebTracerProvider({
       app,
       instanceId,
@@ -307,13 +330,12 @@ const SplunkRum: SplunkOtelWebType = {
 
     if (processedOptions.beaconUrl) {
       const exporter = buildExporter(processedOptions);
-      const batchSpanProcessor = new BatchSpanProcessor(exporter, {
+      const spanProcessor = processedOptions.spanProcessor.factory(exporter, {
         scheduledDelayMillis: processedOptions.bufferTimeout,
         maxExportBatchSize: processedOptions.bufferSize,
       });
-      
-      provider.addSpanProcessor(batchSpanProcessor);
-      this._processor = batchSpanProcessor;
+      provider.addSpanProcessor(spanProcessor);
+      this._processor = spanProcessor;
     }
     if (processedOptions.debug) {
       provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));

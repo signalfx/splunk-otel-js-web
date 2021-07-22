@@ -59,6 +59,7 @@ Please read [Installation.md](./docs/Installation.md) for more info on different
 - [Instrumentations](./docs/Instrumentations.md)
 - [Collecting errors](./docs/Errors.md)
 - [Manual instrumentation](./docs/ManualInstrumentation.md)
+- [Identifying users](./docs/IdentifyingUsers.md)
 - [Exporters](./docs/Exporters.md)
 - [Context propagation](./docs/ContextPropagation.md)
 - [Data sending](./docs/DataSending.md)
