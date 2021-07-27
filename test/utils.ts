@@ -20,7 +20,6 @@ import SplunkRum, { SplunkExporter, ZipkinSpan } from '../src/index';
 export class SpanCapturer implements SpanProcessor {
   public readonly spans: ReadableSpan[] = [];
   forceFlush(): Promise<void> { return Promise.resolve(); }
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   onStart(): void {}
   shutdown(): Promise<void> { return Promise.resolve(); }
   onEnd(span: ReadableSpan): void {
