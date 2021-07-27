@@ -86,11 +86,12 @@ module.exports = {
 
     Object.assign(browser.globals, await buildBackendContext(browser));
 
-    browser.globals.emulateTabSwitchingAway = async () => {
-      await browser.execute(() => {
-        Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
-        document.dispatchEvent(new Event('visibilitychange'));
-      });
+    browser.globals.emulateTabSwitching = async (visible) => {
+      await browser.execute((hidden) => {
+        Object.defineProperty(document, 'hidden', { value: hidden, configurable: true });
+        Object.defineProperty(document,'visibilityState', { value: hidden ? 'hidden': 'visible', configurable: true });
+        window.dispatchEvent(new Event('visibilitychange'));
+      }, [visible]);
     };
 
     browser.globals.waitForTestToFinish = async () => {

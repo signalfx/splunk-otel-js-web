@@ -112,7 +112,7 @@ module.exports = {
         '@typescript-eslint/no-unused-vars': 'error',
 
         // temporarily disabled rules, as we transition to Typescript
-        '@typescript-eslint/no-empty-function': 'warn',
+        '@typescript-eslint/no-empty-function': 'off',
         '@typescript-eslint/no-this-alias': 'warn',
         '@typescript-eslint/explicit-module-boundary-types': ['error', {
           allowArgumentsExplicitlyTypedAsAny: true, // temporarily till code is completely migrated
