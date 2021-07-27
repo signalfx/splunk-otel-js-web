@@ -29,7 +29,6 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
     super(MODULE_NAME, VERSION, Object.assign({}, config));
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   init(): void {}
 
   enable(): void {
