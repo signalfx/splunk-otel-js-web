@@ -341,11 +341,6 @@ export const SplunkRum: SplunkOtelWebType = {
       provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
     }
 
-    _deregisterInstrumentations = registerInstrumentations({
-      tracerProvider: provider,
-      instrumentations,
-    });
-
     window.addEventListener('visibilitychange', () => {
       // this condition applies when the page is hidden or when it's closed
       // see for more details: https://developers.google.com/web/updates/2018/07/page-lifecycle-api#developer-recommendations-for-each-state
@@ -359,6 +354,13 @@ export const SplunkRum: SplunkOtelWebType = {
         processedOptions.context
       )
     });
+
+    // After context manager registartion so instrumentation event listeners are affected accordingly
+    _deregisterInstrumentations = registerInstrumentations({
+      tracerProvider: provider,
+      instrumentations,
+    });
+
     this.provider = provider;
 
     const vitalsConf = getPluginConfig(processedOptions.instrumentations.webvitals);
