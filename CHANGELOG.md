@@ -3,7 +3,7 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## Unreleased
 
-- Improve asynronous context for hash based routers
+- Improve asynchronous context for hash-based routers
 
 ## 0.7.1
 

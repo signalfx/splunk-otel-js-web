@@ -8,7 +8,7 @@ Usually traces that happen asyncronously (for example user interactions that res
 * Promise.then / catch / finally
 * MutationObserver on textNode
 * MessagePort
-* Hash based routers
+* Hash-based routers
 
 These also cover most common methods frameworks use to delay re-renderers when values change, allowing requests done when a component is first rendered to be linked with the user interaction that caused the component to be added to the page.
 
@@ -54,7 +54,7 @@ document.getElementById('save-button').addEventListener('click', async () => {
 });
 ```
 
-There's also limitations when using code splitting - only code loaded by promised based implementations will get linked to parent interaction (eg. [webpack's ìmport() syntax`](https://webpack.js.org/guides/code-splitting/#dynamic-imports))
+There are also limitations when using code splitting: only code loaded by promise-based implementations gets linked to the parent interaction. For an example, see [webpack's ìmport() syntax`](https://webpack.js.org/guides/code-splitting/#dynamic-imports).
 
 ```js
 // src/secret-page.js
