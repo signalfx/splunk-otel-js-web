@@ -43,6 +43,7 @@ import { SplunkWebSocketInstrumentation } from './SplunkWebSocketInstrumentation
 import { initWebVitals } from './webvitals';
 import { SplunkLongTaskInstrumentation } from './SplunkLongTaskInstrumentation';
 import { SplunkPageVisibilityInstrumentation } from './SplunkPageVisibilityInstrumentation';
+import { SplunkConnectivityInstrumentation } from './SplunkConnectivityInstrumentation';
 import {
   SplunkPostDocLoadResourceInstrumentation,
   SplunkPostDocLoadResourceInstrumentationConfig,
@@ -73,6 +74,7 @@ interface SplunkOtelWebOptionsInstrumentations {
   interactions?: boolean | SplunkUserInteractionInstrumentationConfig;
   longtask?:     boolean | InstrumentationConfig;
   visibility?:   boolean | InstrumentationConfig;
+  connectivity?: boolean | InstrumentationConfig;
   postload?:     boolean | SplunkPostDocLoadResourceInstrumentationConfig;
   websocket?:    boolean | InstrumentationConfig;
   webvitals?:    boolean;
@@ -173,6 +175,7 @@ const INSTRUMENTATIONS = [
   { Instrument: SplunkLongTaskInstrumentation, confKey: 'longtask', disable: false },
   { Instrument: SplunkErrorInstrumentation, confKey: ERROR_INSTRUMENTATION_NAME, disable: false },
   { Instrument: SplunkPageVisibilityInstrumentation, confKey: 'visibility', disable: true },
+  { Instrument: SplunkConnectivityInstrumentation, confKey: 'connectivity', disable: true }
 ] as const;
 
 export const INSTRUMENTATIONS_ALL_DISABLED: SplunkOtelWebOptionsInstrumentations = INSTRUMENTATIONS
