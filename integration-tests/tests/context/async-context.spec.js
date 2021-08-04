@@ -125,5 +125,13 @@ module.exports = {
     await browser.globals.findSpan(span => span.name === 'message-event');
 
     await browser.globals.assertNoErrorSpans();
-  }
+  },
+  'location - hashchange': async function (browser) {
+    await runTest(browser, '/context/location-hash.ejs');
+
+    const clickSpan = await browser.globals.findSpan(span => span.name === 'click');
+    const routeChangeSpan = await browser.globals.findSpan(span => span.name === 'routeChange');
+
+    browser.assert.strictEqual(routeChangeSpan.parentId, clickSpan.id, 'Route change span belongs to user interaction trace.');
+  },
 };
