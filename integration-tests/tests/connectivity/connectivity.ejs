@@ -6,7 +6,12 @@
 
 	<script>
 		// Offline mode
-		Object.defineProperty(navigator, 'onLine', {value: false})
+		Object.defineProperty(navigator, 'onLine', {
+			get: function () {
+				return false
+			},
+			configurable: true
+		})
 	</script>
 
 	<%- renderAgent({debug: true, instrumentations: {connectivity: true}}) %>

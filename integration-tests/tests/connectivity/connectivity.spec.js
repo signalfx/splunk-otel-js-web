@@ -18,7 +18,8 @@ module.exports = {
   'Connectivity events are captured': async function(browser) {
     // When we have a test run that supports chrome dev tools protocol we can properly emulate connectivity.
     // Otherwise this could be an unit test. 
-
+    // Should probably do some timing checks but don't want to add flakiness atm
+    
     await browser.url(browser.globals.getUrl('/connectivity/connectivity.ejs'));
 
     await browser.globals.findSpan(span => span.name === 'documentFetch');
@@ -26,11 +27,23 @@ module.exports = {
     await browser.assert.strictEqual(connectivitySpans.length, 0, 'No connectivity spans cause we are offline');
 
     await browser.globals.emulateOffline(true);
-    const offlineSpan = await browser.globals.findSpan(span => span.name === 'connectivity' && span.tags['online'] === 'false');
-    const onlineSpan = await browser.globals.findSpan(span => span.name === 'connectivity' && span.tags['online'] === 'true');
+    let offlineSpan = await browser.globals.findSpan(span => span.name === 'connectivity' && span.tags['online'] === 'false');
+    let onlineSpan = await browser.globals.findSpan(span => span.name === 'connectivity' && span.tags['online'] === 'true');
 
     await browser.assert.ok(!!onlineSpan, 'Offline span exists');  
     await browser.assert.ok(!!offlineSpan, 'Online span exists');  
+    await browser.globals.assertNoErrorSpans();
+
+    browser.globals.clearReceivedSpans();
+
+    await browser.globals.emulateOffline(false);
+    await browser.globals.emulateOffline(true);
+
+    offlineSpan = await browser.globals.findSpan(span => span.name === 'connectivity' && span.tags['online'] === 'false');
+    onlineSpan = await browser.globals.findSpan(span => span.name === 'connectivity' && span.tags['online'] === 'true');
+
+    await browser.assert.ok(!!onlineSpan, 'Offline span exists');  
+    await browser.assert.ok(!!offlineSpan, 'Online span exists'); 
 
     await browser.globals.assertNoErrorSpans();
   },
