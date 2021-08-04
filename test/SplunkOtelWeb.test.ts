@@ -17,7 +17,6 @@ limitations under the License.
 import { SpanAttributes } from '@opentelemetry/api';
 import { expect } from 'chai';
 import SplunkRum from '../src';
-import { SplunkOtelWebEventTypes } from '../src/EventTarget';
 import { updateSessionStatus } from '../src/session';
 
 describe('SplunkOtelWeb', () => {
