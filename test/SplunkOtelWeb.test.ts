@@ -62,7 +62,7 @@ describe('SplunkOtelWeb', () => {
       });
     });
 
-    it('should notify about changes via setGlobalAttributes', () => {
+    it('should notify about changes via setGlobalAttributes', async () => {
       SplunkRum.init({
         app: 'app-name',
         beaconUrl: 'https://beacon',
@@ -85,6 +85,9 @@ describe('SplunkOtelWeb', () => {
         key2: 'value2-changed',
         key3: 'value3',
       });
+
+      // Wait for promise chain to resolve
+      await Promise.resolve();
 
       expect(receivedAttributes).to.deep.eq({
         key1: 'value1',
@@ -109,7 +112,7 @@ describe('SplunkOtelWeb', () => {
       expect(SplunkRum._experimental_getSessionId()).to.eq(undefined);
     });
 
-    it('should produce notifications when updated', () => {
+    it('should produce notifications when updated', async () => {
       let sessionId: string | undefined;
 
       SplunkRum.init({
@@ -124,6 +127,9 @@ describe('SplunkOtelWeb', () => {
 
       document.body.click();
       updateSessionStatus();
+
+      // Wait for promise chain to resolve
+      await Promise.resolve();
 
       expect(sessionId).to.match(/[0-9a-f]{32}/);
     });
