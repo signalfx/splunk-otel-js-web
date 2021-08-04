@@ -15,23 +15,22 @@ limitations under the License.
 */
 
 module.exports = {
-  'visibility events are captured': async function(browser) {
+  'Connectivity events are captured': async function(browser) {
+    // When we have a test run that supports chrome dev tools protocol we can properly emulate connectivity.
+    // Otherwise this could be an unit test. 
+
     await browser.url(browser.globals.getUrl('/connectivity/connectivity.ejs'));
 
-    // browser.globals.emulateTabSwitching(true);
+    await browser.globals.findSpan(span => span.name === 'documentFetch');
+    const connectivitySpans = browser.globals.getReceivedSpans().filter( span => span.name === 'connectivity');
+    await browser.assert.strictEqual(connectivitySpans.length, 0, 'No connectivity spans cause we are offline');
 
-    // const tabHiddenSpan = await browser.globals.findSpan(span => span.name === 'visibility' && span.tags['hidden'] === 'true');
-    // const hiddenSpans = browser.globals.getReceivedSpans().filter( span => span.name === 'visibility');    
-    // await browser.assert.ok(!!tabHiddenSpan, 'Visibility event for hidden tab exists');     
-    // await browser.assert.strictEqual(hiddenSpans.length, 1, 'There is only one visibility event');    
-      
-    // browser.globals.clearReceivedSpans();    
+    await browser.globals.emulateOffline(true);
+    const offlineSpan = await browser.globals.findSpan(span => span.name === 'connectivity' && span.tags['online'] === 'false');
+    const onlineSpan = await browser.globals.findSpan(span => span.name === 'connectivity' && span.tags['online'] === 'true');
 
-    // browser.globals.emulateTabSwitching(false);
-    // const tabVisibileSpan = await browser.globals.findSpan(span => span.name === 'visibility' && span.tags['hidden'] === 'false');
-    // const visibleSpans = browser.globals.getReceivedSpans().filter( span => span.name === 'visibility');      
-    // await browser.assert.ok(!!tabVisibileSpan, 'Visibility event for visible tab exists');      
-    // await browser.assert.strictEqual(visibleSpans.length, 1, 'There is only one visibility event');    
+    await browser.assert.ok(!!onlineSpan, 'Offline span exists');  
+    await browser.assert.ok(!!offlineSpan, 'Online span exists');  
 
     await browser.globals.assertNoErrorSpans();
   },

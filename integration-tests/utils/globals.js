@@ -94,6 +94,13 @@ module.exports = {
       }, [visible]);
     };
 
+    browser.globals.emulateOffline = async (online) => {
+      await browser.execute((o) => {
+        Object.defineProperty(navigator,'onLine', { value: o, configurable: true });
+        window.dispatchEvent(new Event(o ? 'online' : 'offline'));
+      }, [online]);
+    };
+
     browser.globals.waitForTestToFinish = async () => {
       // eslint-disable-next-line no-shadow
       const { value: lastId } = await browser.executeAsync(function (done) {

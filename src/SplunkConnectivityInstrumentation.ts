@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { HrTime } from '@opentelemetry/api';
 import { hrTime } from '@opentelemetry/core';
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation';
 import { VERSION } from './version';
@@ -40,7 +41,9 @@ export class SplunkConnectivityInstrumentation extends InstrumentationBase {
 
     this.onlineListener = window.addEventListener('online', () => {
       if (this.offlineStart) {
-        this.tracer.startSpan('offline', { startTime: this.offlineStart }).end();
+        // this could be a span but let's keep it as an "event" for now.
+        this._createSpan(false, this.offlineStart);
+        this._createSpan(true, hrTime());
       }
     });
   }
@@ -48,6 +51,12 @@ export class SplunkConnectivityInstrumentation extends InstrumentationBase {
   disable(): void {
     window.removeEventListener('offline', this.offlineListener);
     window.removeEventListener('online', this.onlineListener);
+  }
+
+  private _createSpan(online: boolean, startTime: HrTime) {
+    const span = this.tracer.startSpan('connectivity', { startTime });
+    span.setAttribute('online', online);
+    span.end(startTime);
   }
 }
  

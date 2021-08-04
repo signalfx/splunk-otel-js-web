@@ -4,9 +4,14 @@
 	<meta charset="UTF-8">
 	<title>Test connectivity</title>
 
+	<script>
+		// Offline mode
+		Object.defineProperty(navigator, 'onLine', {value: false})
+	</script>
+
 	<%- renderAgent({debug: true, instrumentations: {connectivity: true}}) %>
 </head>
 <body>
-    <h1>Connectivity</h1>    
+    <h1>Connectivity</h1>
 </body>
 </html>
