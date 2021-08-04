@@ -17,7 +17,7 @@ limitations under the License.
 import { SpanAttributes } from '@opentelemetry/api';
 import { expect } from 'chai';
 import SplunkRum from '../src';
-import { SplunkOtelWebEventType } from '../src/EventTarget';
+import { SplunkOtelWebEventTypes } from '../src/EventTarget';
 import { updateSessionStatus } from '../src/session';
 
 describe('SplunkOtelWeb', () => {
@@ -76,7 +76,7 @@ describe('SplunkOtelWeb', () => {
 
       let receivedAttributes: SpanAttributes | undefined;
       SplunkRum._experimental_addEventListener(
-        SplunkOtelWebEventType.GlobalAttributesChanged,
+        'global-attributes-changed',
         ({ payload }) => {
           receivedAttributes = payload.attributes;
         },
@@ -119,7 +119,7 @@ describe('SplunkOtelWeb', () => {
         rumAuth: '<token>'
       });
       SplunkRum._experimental_addEventListener(
-        SplunkOtelWebEventType.SessionChanged,
+        'session-changed',
         (ev) => { sessionId = ev.payload.sessionId; },
       );
 

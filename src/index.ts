@@ -51,8 +51,6 @@ import { SplunkWebTracerProvider } from './SplunkWebTracerProvider';
 import { FetchInstrumentationConfig } from '@opentelemetry/instrumentation-fetch';
 import { XMLHttpRequestInstrumentationConfig } from '@opentelemetry/instrumentation-xml-http-request';
 import {
-  buildInternalEventTarget,
-  GlobalAttributesChangedEvent,
   InternalEventTarget,
   SplunkOtelWebEventTarget,
 } from './EventTarget';
@@ -244,7 +242,7 @@ export const SplunkRum: SplunkOtelWebType = {
 
   init: function (options) {
     diag.setLogger(new DiagConsoleLogger(), options?.debug ? DiagLogLevel.DEBUG : DiagLogLevel.ERROR);
-    eventTarget = buildInternalEventTarget();
+    eventTarget = new InternalEventTarget();
 
     const processedOptions: SplunkOtelWebConfigInternal = Object.assign(
       {},
@@ -393,9 +391,9 @@ export const SplunkRum: SplunkOtelWebType = {
 
   setGlobalAttributes(this: SplunkOtelWebType, attributes) {
     this.provider?.setGlobalAttributes(attributes);
-    eventTarget?.dispatchEvent(new GlobalAttributesChangedEvent({
+    eventTarget?.emit('global-attributes-changed', {
       attributes: this.provider?._experimental_getGlobalAttributes() || {},
-    }));
+    });
   },
 
   _experimental_getGlobalAttributes(this: SplunkOtelWebType) {

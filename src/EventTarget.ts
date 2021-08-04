@@ -16,46 +16,56 @@ limitations under the License.
 
 import { SpanAttributes } from '@opentelemetry/api';
 
-export const enum SplunkOtelWebEventType {
-  SessionChanged = 'session-changed',
-  GlobalAttributesChanged = 'global-attributes-changed',
-}
-
-export class SessionIdChangedEvent extends Event {
-  constructor(
-    public payload: {
-      sessionId: string,
-    },
-  ) {
-    super(SplunkOtelWebEventType.SessionChanged);
+export interface SplunkOtelWebEventTypes {
+  'session-changed': {
+    sessionId: string
+  };
+  'global-attributes-changed': {
+    attributes: SpanAttributes
   }
 }
 
-export class GlobalAttributesChangedEvent extends Event {
-  constructor(
-    public payload: {
-      attributes: SpanAttributes,
-    },
-  ) {
-    super(SplunkOtelWebEventType.GlobalAttributesChanged);
+type SplunkEventListener<type extends keyof SplunkOtelWebEventTypes> =
+  (event: {payload: SplunkOtelWebEventTypes[type]}) => void;
+
+export class InternalEventTarget {
+  protected events: Partial<{[T in keyof SplunkOtelWebEventTypes]: SplunkEventListener<T>[]}> = {};
+
+  addEventListener<T extends keyof SplunkOtelWebEventTypes>(type: T, listener: SplunkEventListener<T>): void {
+    if (!this.events[type]) {
+      this.events[type] = [];
+    }
+    (this.events[type] as SplunkEventListener<T>[]).push(listener);
+  }
+
+  removeEventListener<T extends keyof SplunkOtelWebEventTypes>(type: T, listener: SplunkEventListener<T>): void {
+    if (!this.events[type]) {
+      return;
+    }
+
+    const i = (this.events[type] as SplunkEventListener<T>[]).indexOf(listener);
+
+    if (i >= 0) {
+      this.events[type].splice(i, 1);
+    }
+  }
+
+  emit<T extends keyof SplunkOtelWebEventTypes>(type: T, payload: SplunkOtelWebEventTypes[T]): void {
+    const listeners = this.events[type];
+    if (!listeners) {
+      return;
+    }
+
+    listeners.forEach(listener => {
+      // Run it as promise so any broken code inside listener doesn't break the agent
+      Promise.resolve({ payload }).then(listener);
+    });
   }
 }
 
-export interface InternalEventTarget {
-  addEventListener(name: SplunkOtelWebEventType.SessionChanged, callback: (event: SessionIdChangedEvent) => void): void;
-  addEventListener(name: SplunkOtelWebEventType.GlobalAttributesChanged, callback: (event: GlobalAttributesChangedEvent) => void): void;
 
-  removeEventListener(name: SplunkOtelWebEventType.SessionChanged, callback: (event: SessionIdChangedEvent) => void): void;
-  removeEventListener(name: SplunkOtelWebEventType.GlobalAttributesChanged, callback: (event: GlobalAttributesChangedEvent) => void): void;
-
-  dispatchEvent(event: SessionIdChangedEvent | GlobalAttributesChangedEvent);
-}
 
 export interface SplunkOtelWebEventTarget {
   _experimental_addEventListener: InternalEventTarget['addEventListener'];
-  _experimental_removeEventListener: InternalEventTarget['removeEventListener']
-}
-
-export function buildInternalEventTarget(): InternalEventTarget {
-  return document.createElement('div');
+  _experimental_removeEventListener: InternalEventTarget['removeEventListener'];
 }
