@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>location.hash</title>
+
+  <%- renderAgent({
+    context: {
+      async: true
+    }
+  }) %>
+</head>
+<body>
+  <h1>location.hash</h1>
+
+  <button type="button" id="btn1">Button</button>
+
+  <script>
+    window.addEventListener('hashchange', function () {
+      SplunkRum.provider.getTracer('default').startSpan('context-child').end();
+      window.testing = false;
+    });
+
+    btn1.addEventListener('click', function () {
+      window.testing = true;
+      location.hash = '#!/page';
+    });
+  </script>
+</body>
+</html>
