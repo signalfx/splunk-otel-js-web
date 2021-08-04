@@ -3,6 +3,12 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## Unreleased
 
+| Open Telemetry API | Core   | Contrib |
+|--------------------|--------|---------|
+| 1.0.2              | 0.24.0 | 0.24.0  |
+
+Changes:
+
 - Improve asynchronous context for hash-based routers
 
 ## 0.7.1
