@@ -19,12 +19,12 @@ import { hrTime } from '@opentelemetry/core';
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation';
 import { VERSION } from './version';
 
-const MODULE_NAME = 'splunk-online';
+const MODULE_NAME = 'splunk-connectivity';
 
 export class SplunkConnectivityInstrumentation extends InstrumentationBase {
   offlineListener: any;
   onlineListener: any;
-  offlineStart: any;
+  offlineStart: HrTime;
 
   constructor(config: InstrumentationConfig = {}) {
     super(MODULE_NAME, VERSION, Object.assign({}, config));
