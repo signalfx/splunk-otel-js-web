@@ -8,6 +8,7 @@ Usually traces that happen asyncronously (for example user interactions that res
 * Promise.then / catch / finally
 * MutationObserver on textNode
 * MessagePort
+* Hash-based routers
 
 These also cover most common methods frameworks use to delay re-renderers when values change, allowing requests done when a component is first rendered to be linked with the user interaction that caused the component to be added to the page.
 
@@ -50,5 +51,24 @@ document.getElementById('save-button').addEventListener('click', async () => {
   const saveRes = await fetch('/api/items', {method: 'POST'});
 
   const listRes = await fetch('/api/items'); // Can be disconnected from click event when not transpiled
+});
+```
+
+There are also limitations when using code splitting: only code loaded by promise-based implementations gets linked to the parent interaction. For an example, see [webpack's ìmport() syntax`](https://webpack.js.org/guides/code-splitting/#dynamic-imports).
+
+```js
+// src/secret-page.js
+
+// This would not be linked
+const importantData = fetch('/api/secrets');
+
+export function renderPage() {
+  // This would be linked to click if called like shown next
+  const neededData = fetch('/api/needed');
+}
+
+// src/index.js
+document.getElementById('secret-page').addEventListener('click', () => {
+  import('./secret-page.js').then(({renderPage}) => renderPage());
 });
 ```

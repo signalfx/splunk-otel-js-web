@@ -23,6 +23,8 @@ export interface ContextManagerConfig {
   async?: boolean;
 }
 
+type EventListenerWithOrig = EventListener & {_orig?: EventListener};
+
 const ATTACHED_CONTEXT_KEY = '__splunk_context';
 
 /**
@@ -39,6 +41,8 @@ export class SplunkContextManager implements ContextManager {
    * Keeps the reference to current context
    */
   public _currentContext = ROOT_CONTEXT;
+
+  protected _hashChangeContext: Context = null;
 
   // eslint-disable-next-line no-useless-constructor
   constructor(
@@ -416,6 +420,49 @@ export class SplunkContextManager implements ContextManager {
       );
       Object.defineProperty(XMLHttpRequestEventTarget.prototype, prop, desc);
     });
+
+    // hashchange event/ window.onhashchange
+    wrapNatively(Window.prototype, 'addEventListener', original => 
+      function (this: Window, ...args: Parameters<Window['addEventListener']>) {
+        if (args[0] === 'hashchange' && isFunction(args[1])) {
+          const wrappedListeners = manager._getListenersMap(this, args[0]);
+          let wrapped = wrappedListeners.get(args[1] as EventListener);
+
+          if (!wrapped) {
+            wrapped = manager._getWrappedEventListener(args[1], () => manager._hashChangeContext);
+            wrappedListeners.set(args[1], wrapped);
+          }
+
+          args[1] = wrapped;
+        }
+
+        return original.apply(this, args);
+      }
+    );
+
+    const desc = Object.getOwnPropertyDescriptor(window, 'onhashchange');
+    wrapNatively(desc, 'get', original =>
+      function () {
+        const val = original.call(this);
+        if (val._orig) {
+          return val._orig;
+        }
+
+        return val;
+      }
+    );
+    wrapNatively(desc, 'set', original =>
+      function (this: Window, value) {
+        if (isFunction(value)) {
+          const wrapped = manager._getWrappedEventListener<EventListenerWithOrig>(value, () => manager._hashChangeContext);
+          wrapped._orig = value;
+          value = wrapped;
+        }
+
+        return original.call(this, value);
+      }
+    );
+    Object.defineProperty(window, 'onhashchange', desc);
   }
 
   protected _unpatchEvents(): void {
@@ -454,7 +501,7 @@ export class SplunkContextManager implements ContextManager {
     );
 
     wrapNatively(MessagePort.prototype, 'postMessage', original =>
-      function (...args: unknown[]) {
+      function (this: MessagePort, ...args: unknown[]) {
         const active = manager.active();
 
         if (!manager._messagePorts.has(this) || !active) {
@@ -477,20 +524,13 @@ export class SplunkContextManager implements ContextManager {
     );
 
     wrapNatively(MessagePort.prototype, 'addEventListener', original => 
-      function (...args: Parameters<MessagePort['addEventListener']>) {
+      function (this: MessagePort, ...args: Parameters<MessagePort['addEventListener']>) {
         if (args[0] === 'message' && isFunction(args[1])) {
           const wrappedListeners = manager._getListenersMap(this, args[0]);
           let wrapped = wrappedListeners.get(args[1] as EventListener);
 
           if (!wrapped) {
-            const orig = args[1];
-            wrapped = function (...innerArgs) {
-              if (this[ATTACHED_CONTEXT_KEY] && manager._enabled) {
-                return manager.with(this[ATTACHED_CONTEXT_KEY], orig, this, ...innerArgs);
-              } else {
-                return orig.apply(this, innerArgs);
-              }
-            };
+            wrapped = manager._getWrappedEventListener(args[1], () => this[ATTACHED_CONTEXT_KEY]);
             wrappedListeners.set(args[1], wrapped);
           }
 
@@ -528,17 +568,10 @@ export class SplunkContextManager implements ContextManager {
       }
     );
     wrapNatively(desc, 'set', original =>
-      function (value) {
+      function (this: MessagePort, value) {
         if (isFunction(value)) {
-          const orig = value;
-          const wrapped = function (...innerArgs) {
-            if (this[ATTACHED_CONTEXT_KEY] && manager._enabled) {
-              return manager.with(this[ATTACHED_CONTEXT_KEY], orig, this, ...innerArgs);
-            } else {
-              return orig.apply(this, innerArgs);
-            }
-          };
-          wrapped._orig = orig;
+          const wrapped = manager._getWrappedEventListener<EventListenerWithOrig>(value, () => this[ATTACHED_CONTEXT_KEY]);
+          wrapped._orig = value;
           value = wrapped;
         }
 
@@ -546,6 +579,21 @@ export class SplunkContextManager implements ContextManager {
       }
     );
     Object.defineProperty(MessagePort.prototype, 'onmessage', desc);
+  }
+
+  protected _getWrappedEventListener<E extends EventListener>(orig: E, contextGetter: () => Context | void): E {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const manager = this;
+
+    return function (...innerArgs) {
+      const context = contextGetter();
+      if (context && manager._enabled) {
+        // @ts-expect-error on orig: Type 'void' is not assignable to type 'ReturnType<E>'.
+        return manager.with(context, orig, this, ...innerArgs);
+      } else {
+        return orig.apply(this, innerArgs);
+      }
+    } as E;
   }
 
   protected _unpatchMessageChannel(): void {
@@ -576,10 +624,21 @@ export class SplunkContextManager implements ContextManager {
     const previousContext = this._currentContext;
     this._currentContext = context || ROOT_CONTEXT;
 
+    // Observe for location.hash changes (as it isn't a (re)configurable property))
+    const preLocationHash = location.hash;
     try {
       return fn.call(thisArg, ...args);
     } finally {
       this._currentContext = previousContext;
+      if (preLocationHash !== location.hash) {
+        this._hashChangeContext = context;
+        // Cleanup as macrotask (as hash change can also be done by user)
+        getOriginalFunction(setTimeout)(() => {
+          if (this._hashChangeContext === context) {
+            this._hashChangeContext = null;
+          }
+        }, 33);
+      }
     }
   }
 }
