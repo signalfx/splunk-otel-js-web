@@ -355,7 +355,7 @@ export const SplunkRum: SplunkOtelWebType = {
       )
     });
 
-    // After context manager registartion so instrumentation event listeners are affected accordingly
+    // After context manager registration so instrumentation event listeners are affected accordingly
     _deregisterInstrumentations = registerInstrumentations({
       tracerProvider: provider,
       instrumentations,
