@@ -32,6 +32,13 @@ describe('test captureTraceParent', () => {
     assert.strictEqual('000000000000000078499d3266d75d5f', span['link.traceId']);
     assert.strictEqual('7e1c10b3c482edbe', span['link.spanId']);
   });
+  it('should deal with single quotes', () => {
+    const span = { setAttribute: function(k,v){this[k] = v;} };
+    // TODO: start an actual span
+    captureTraceParent('traceparent;desc=\'00-000000000000000078499d3266d75d5f-7e1c10b3c482edbe-01\'', span as any);
+    assert.strictEqual('000000000000000078499d3266d75d5f', span['link.traceId']);
+    assert.strictEqual('7e1c10b3c482edbe', span['link.spanId']);
+  });
 });
 
 describe('test captureTraceParentFromPerformanceEntries', () => {
