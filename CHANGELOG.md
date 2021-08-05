@@ -10,6 +10,7 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 Changes:
 
 - Improve asynchronous context for hash-based routers
+- Support both types of quotes on server-timings header values
 
 ## 0.7.1
 
