@@ -3,14 +3,18 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## Unreleased
 
+## 0.8.0
+
 | Open Telemetry API | Core   | Contrib |
 |--------------------|--------|---------|
 | 1.0.2              | 0.24.0 | 0.24.0  |
 
 Changes:
 
-- Improve asynchronous context for hash-based routers
-- Support both types of quotes on server-timings header values
+- Support for Splunk Synthetics [#217](https://github.com/signalfx/splunk-otel-js-web/pull/217)
+- Capturing visibility events [#219](https://github.com/signalfx/splunk-otel-js-web/pull/219)
+- Improve asynchronous context for hash-based routers [#224](https://github.com/signalfx/splunk-otel-js-web/pull/224)
+- Support both types of quotes on server-timings header values [#231](https://github.com/signalfx/splunk-otel-js-web/pull/231)
 
 ## 0.7.1
 
