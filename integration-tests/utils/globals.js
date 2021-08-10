@@ -86,12 +86,25 @@ module.exports = {
 
     Object.assign(browser.globals, await buildBackendContext(browser));
 
-    browser.globals.emulateTabSwitching = async (visible) => {
-      await browser.execute((hidden) => {
+    browser.globals.emulateTabSwitching = async function (visible) {
+      await browser.execute(function (hidden) {
         Object.defineProperty(document, 'hidden', { value: hidden, configurable: true });
         Object.defineProperty(document,'visibilityState', { value: hidden ? 'hidden': 'visible', configurable: true });
         window.dispatchEvent(new Event('visibilitychange'));
       }, [visible]);
+    };
+
+    browser.globals.emulateOffline = async function (online) {
+      await browser.execute( function (o) {
+        // window.fakeOnlineState = o;
+        Object.defineProperty(navigator, 'onLine', {
+          get: function () {
+            return o;
+          },
+          configurable: true
+        });
+        window.dispatchEvent(new Event(o ? 'online' : 'offline'));
+      }, [online]);
     };
 
     browser.globals.waitForTestToFinish = async () => {

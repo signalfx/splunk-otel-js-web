@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Test connectivity</title>
+
+	<script>
+		// Offline mode
+		Object.defineProperty(navigator, 'onLine', {
+			get: function () {
+				return false
+			},
+			configurable: true
+		})
+	</script>
+
+	<%- renderAgent({debug: true, instrumentations: {connectivity: true}}) %>
+</head>
+<body>
+    <h1>Connectivity</h1>
+</body>
+</html>
