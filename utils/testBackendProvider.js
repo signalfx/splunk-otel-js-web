@@ -27,7 +27,7 @@ exports.buildInstrumentationBackend = async ({
     spans.push(span);
   }
 
-  const {
+const {
     close,
     httpProtocol,
     httpPort,
