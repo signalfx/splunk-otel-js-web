@@ -37,7 +37,7 @@ export class SplunkPageVisibilityInstrumentation extends InstrumentationBase {
       this._createSpan(document.hidden);
     }
 
-    this.visibilityListener = () => {
+    this.unloadListener = () => {
       this.unloading = true;
     };
         
@@ -48,7 +48,7 @@ export class SplunkPageVisibilityInstrumentation extends InstrumentationBase {
       }
     };
     
-    window.addEventListener('beforeunload', this.visibilityListener);
+    window.addEventListener('beforeunload', this.unloadListener);
     window.addEventListener('visibilitychange', this.visibilityListener);
   }
 
