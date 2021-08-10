@@ -35,17 +35,20 @@ export class SplunkConnectivityInstrumentation extends InstrumentationBase {
   init(): void {}
 
   enable(): void {
-    this.offlineListener = window.addEventListener('offline', () => {
+    this.offlineListener = () => {
       this.offlineStart = hrTime();
-    });
+    };
 
-    this.onlineListener = window.addEventListener('online', () => {
+    this.onlineListener = () => {
       if (this.offlineStart) {
         // this could be a span but let's keep it as an "event" for now.
         this._createSpan(false, this.offlineStart);
         this._createSpan(true, hrTime());
       }
-    });
+    };
+
+    window.addEventListener('offline', this.offlineListener);
+    window.addEventListener('online', this.onlineListener);
   }
 
   disable(): void {
