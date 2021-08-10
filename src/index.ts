@@ -58,8 +58,8 @@ import {
   SplunkOtelWebEventTarget,
 } from './EventTarget';
 import { ContextManagerConfig, SplunkContextManager } from './SplunkContextManager';
-import { Resource, ResourceAttributes as ResourceAttributesCollection } from '@opentelemetry/resources';
-import { ResourceAttributes } from '@opentelemetry/semantic-conventions';
+import { Resource, ResourceAttributes } from '@opentelemetry/resources';
+import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 import { SDK_INFO } from '@opentelemetry/core';
 import { VERSION } from './version';
 import { getSyntheticsRunId, SYNTHETICS_RUN_ID_ATTRIBUTE } from './synthetics';
@@ -286,10 +286,10 @@ export const SplunkRum: SplunkOtelWebType = {
     // they will be enabled in registerInstrumentations
     const pluginDefaults = { ignoreUrls, enabled: false };
 
-    const resourceAttrs: ResourceAttributesCollection = {
+    const resourceAttrs: ResourceAttributes = {
       ...SDK_INFO,
-      [ResourceAttributes.TELEMETRY_SDK_NAME]: '@splunk/otel-web',
-      [ResourceAttributes.TELEMETRY_SDK_VERSION]: VERSION,
+      [SemanticResourceAttributes.TELEMETRY_SDK_NAME]: '@splunk/otel-web',
+      [SemanticResourceAttributes.TELEMETRY_SDK_VERSION]: VERSION,
       // Splunk specific attributes
       'splunk.rumVersion': VERSION,
       'splunk.scriptInstance': instanceId,
@@ -344,11 +344,6 @@ export const SplunkRum: SplunkOtelWebType = {
       provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
     }
 
-    _deregisterInstrumentations = registerInstrumentations({
-      tracerProvider: provider,
-      instrumentations,
-    });
-
     window.addEventListener('visibilitychange', () => {
       // this condition applies when the page is hidden or when it's closed
       // see for more details: https://developers.google.com/web/updates/2018/07/page-lifecycle-api#developer-recommendations-for-each-state
@@ -362,6 +357,13 @@ export const SplunkRum: SplunkOtelWebType = {
         processedOptions.context
       )
     });
+
+    // After context manager registration so instrumentation event listeners are affected accordingly
+    _deregisterInstrumentations = registerInstrumentations({
+      tracerProvider: provider,
+      instrumentations,
+    });
+
     this.provider = provider;
 
     const vitalsConf = getPluginConfig(processedOptions.instrumentations.webvitals);
