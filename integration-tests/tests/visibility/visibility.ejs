@@ -4,16 +4,9 @@
 	<meta charset="UTF-8">
 	<title>Test visibility</title>
 
-	<%- renderAgent({
-		beaconUrl: "https://rum-ingest.us0.signalfx.com/v1/rum",
-		rumAuth: "nF2sRwMTyB-is8WpcGQ72w",
-		app: "mh-test",
-		environment: "local",
-		debug: true, 
-		instrumentations: {visibility: true, connectivity: true},
-	}) %>
+	<%- renderAgent({debug: true, instrumentations: {visibility: true}}) %>
 </head>
 <body>
-    <h1>visibility</h1>    
+    <h1>visibility</h1>   
 </body>
 </html>
