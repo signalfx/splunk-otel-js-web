@@ -131,6 +131,23 @@ document.getElementById('add_row').addEventListener('click', function (event) {
   fetch('/api/row', {method: 'PUT'});
 });
 ```
+## Instrumentation: Visibility
+
+Captures [visibilitychange](https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilitychange_event) events. 
+Visibility changes happening due to page being refreshed are not recorded. It is not recorded as a span because the browser 
+tab may never go visible and the span wouldn't be created at all. 
+
+|Name|Type|Description|
+|---|---|---|
+|`hidden`|`boolean`|True or false depending if page is hidden or not.|
+
+## Instrumentation: Connectivity
+
+Captures [offline](https://developer.mozilla.org/en-US/docs/Web/API/Window/offline_event) [online](https://developer.mozilla.org/en-US/docs/Web/API/Window/online_event) events. Offline event is recorded when browser goes offline and cached in memory until browser goes online. Then both offline and online events are sent at the same time.
+
+|Name|Type|Description|
+|---|---|---|
+|`online`|`boolean`|True or false depending if browser went offline or online.|
 
 ### History API
 
