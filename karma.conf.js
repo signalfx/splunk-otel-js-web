@@ -136,7 +136,7 @@ module.exports = function (config) {
       thresholds: {
         emitWarning: false,
         global: {
-          statements: 90,
+          statements: 80,
         },
       },
     },
