@@ -131,6 +131,7 @@ document.getElementById('add_row').addEventListener('click', function (event) {
   fetch('/api/row', {method: 'PUT'});
 });
 ```
+
 ## Instrumentation: Visibility
 
 Captures [visibilitychange](https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilitychange_event) events. 
