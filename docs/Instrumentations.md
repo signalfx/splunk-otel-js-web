@@ -144,7 +144,7 @@ tab may never go visible and the span wouldn't be created at all.
 
 ## Instrumentation: Connectivity
 
-Captures [offline](https://developer.mozilla.org/en-US/docs/Web/API/Window/offline_event) [online](https://developer.mozilla.org/en-US/docs/Web/API/Window/online_event) events. Offline event is recorded when browser goes offline and cached in memory until browser goes online. Then both offline and online events are sent at the same time.
+Captures [offline](https://developer.mozilla.org/en-US/docs/Web/API/Window/offline_event) and [online](https://developer.mozilla.org/en-US/docs/Web/API/Window/online_event) events. Offline event is recorded when browser goes offline and cached in memory until browser goes online. Then both offline and online events are sent at the same time.
 
 |Name|Type|Description|
 |---|---|---|
