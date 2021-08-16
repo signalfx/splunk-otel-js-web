@@ -17,7 +17,6 @@ limitations under the License.
 import { SpanAttributes } from '@opentelemetry/api';
 import { expect } from 'chai';
 import SplunkRum from '../src';
-import { SplunkOtelWebEventType } from '../src/EventTarget';
 import { updateSessionStatus } from '../src/session';
 
 describe('SplunkOtelWeb', () => {
@@ -63,7 +62,7 @@ describe('SplunkOtelWeb', () => {
       });
     });
 
-    it('should notify about changes via setGlobalAttributes', () => {
+    it('should notify about changes via setGlobalAttributes', async () => {
       SplunkRum.init({
         app: 'app-name',
         beaconUrl: 'https://beacon',
@@ -76,7 +75,7 @@ describe('SplunkOtelWeb', () => {
 
       let receivedAttributes: SpanAttributes | undefined;
       SplunkRum._experimental_addEventListener(
-        SplunkOtelWebEventType.GlobalAttributesChanged,
+        'global-attributes-changed',
         ({ payload }) => {
           receivedAttributes = payload.attributes;
         },
@@ -86,6 +85,9 @@ describe('SplunkOtelWeb', () => {
         key2: 'value2-changed',
         key3: 'value3',
       });
+
+      // Wait for promise chain to resolve
+      await Promise.resolve();
 
       expect(receivedAttributes).to.deep.eq({
         key1: 'value1',
@@ -110,7 +112,7 @@ describe('SplunkOtelWeb', () => {
       expect(SplunkRum._experimental_getSessionId()).to.eq(undefined);
     });
 
-    it('should produce notifications when updated', () => {
+    it('should produce notifications when updated', async () => {
       let sessionId: string | undefined;
 
       SplunkRum.init({
@@ -119,12 +121,15 @@ describe('SplunkOtelWeb', () => {
         rumAuth: '<token>'
       });
       SplunkRum._experimental_addEventListener(
-        SplunkOtelWebEventType.SessionChanged,
+        'session-changed',
         (ev) => { sessionId = ev.payload.sessionId; },
       );
 
       document.body.click();
       updateSessionStatus();
+
+      // Wait for promise chain to resolve
+      await Promise.resolve();
 
       expect(sessionId).to.match(/[0-9a-f]{32}/);
     });

@@ -96,14 +96,23 @@ module.exports = {
 
     browser.globals.emulateOffline = async function (online) {
       await browser.execute( function (o) {
-        // window.fakeOnlineState = o;
         Object.defineProperty(navigator, 'onLine', {
           get: function () {
             return o;
           },
           configurable: true
         });
-        window.dispatchEvent(new Event(o ? 'online' : 'offline'));
+        const eventType = o ? 'online' : 'offline';
+        let e;
+        try {
+          e = new Event(eventType);
+        } catch (err) {
+          // IE
+          e = document.createEvent('Event');
+          e.initEvent(eventType, false, false);
+        }
+        window.dispatchEvent(e);
+
       }, [online]);
     };
 
