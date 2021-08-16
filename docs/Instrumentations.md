@@ -132,6 +132,24 @@ document.getElementById('add_row').addEventListener('click', function (event) {
 });
 ```
 
+## Instrumentation: Visibility
+
+Captures [visibilitychange](https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilitychange_event) events. 
+Visibility changes happening due to page being refreshed are not recorded. It is not recorded as a span because the browser 
+tab may never go visible and the span wouldn't be created at all. 
+
+|Name|Type|Description|
+|---|---|---|
+|`hidden`|`boolean`|True or false depending if page is hidden or not.|
+
+## Instrumentation: Connectivity
+
+Captures [offline](https://developer.mozilla.org/en-US/docs/Web/API/Window/offline_event) and [online](https://developer.mozilla.org/en-US/docs/Web/API/Window/online_event) events. Offline event is recorded when browser goes offline and cached in memory until browser goes online. Then both offline and online events are sent at the same time.
+
+|Name|Type|Description|
+|---|---|---|
+|`online`|`boolean`|True or false depending if browser went offline or online.|
+
 ### History API
 
 User interaction instrumentation also instruments [History API](https://developer.mozilla.org/en-US/docs/Web/API/History_API) in order to provide visibility into the browser's session history. The history API is used to track URL changes that do not reload the page and is used in single page applications. Instrumentation also tracks URL changes done via changing the `location.hash` (by listening to `hashchange` event). Route change has no duration; it is just an event letting you know that the change happened. The info is sent as `routeChange` span with following tags:
