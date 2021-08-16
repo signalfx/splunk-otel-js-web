@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { InternalEventTarget, SessionIdChangedEvent } from './EventTarget';
+import { InternalEventTarget } from './EventTarget';
 import { findCookieValue, generateId, isIframe } from './utils';
 
 /*
@@ -119,7 +119,7 @@ export function updateSessionStatus(): void {
   }
 
   rumSessionId = sessionState.id;
-  eventTarget?.dispatchEvent(new SessionIdChangedEvent({ sessionId: rumSessionId }));
+  eventTarget?.emit('session-changed', { sessionId: rumSessionId });
 
   if (recentActivity) {
     renewCookieTimeout(sessionState);

@@ -2,6 +2,7 @@
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
 ## Unreleased
+- Fix Internet Explorer compatibility
 
 ## 0.8.0
 
