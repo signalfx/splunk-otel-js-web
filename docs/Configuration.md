@@ -25,13 +25,17 @@ In order to enable or disable specific instrumentations in the Browser Agent, yo
 
 |Option|Default value|Description|
 |---|---|---|
+|`instrumentations.connectivity`|`false`|Enables capturing [connectivity events](Instrumentations.md#instrumentation-connectivity).|
 |`instrumentations.document`|`true`|Enables capturing spans related to [document loading](Instrumentations.md#instrumentation-document-load).|
 |`instrumentations.errors`|`true`|Enables capturing [Javascript errors](Errors.md).|
+|`instrumentations.fetch`|`true`|Enables capturing [fetch requests](Instrumentations.md#instrumentation-xhrfetch) requests.|
 |`instrumentations.interactions`|`true`|Enables capturing [user interactions](Instrumentations.md#instrumentation-user-interactions) (such as clicks or keyboard events).|
 |`instrumentations.longtask`|`true`|Enables capturing [long tasks](Instrumentations.md#instrumentation-long-tasks).|
+|`instrumentations.postload`|`true`|Enables capturing [resources loaded after load event](Instrumentations.md#instrumentation-post-document-load).|
+|`instrumentations.visibility`|`false`|Enables capturing [visibility events](Instrumentations.md#instrumentation-visibility).|
 |`instrumentations.websockets`|`false`|Enables capturing [websockets](Instrumentations.md#instrumentation-websockets).|
 |`instrumentations.webvitals`|`true`|Enables capturing [Web Vitals](Instrumentations.md#instrumentation-web-vitals) metrics.|
-|`instrumentations.xhr`|`true`|Enables capturing [XHR and fetch](Instrumentations.md#instrumentation-xhrfetch) requests.|
+|`instrumentations.xhr`|`true`|Enables capturing [XHR requests](Instrumentations.md#instrumentation-xhrfetch) requests.|
 
 Some instrumentations, such as interactions module, have additional configuration options which can used to override the default settings:
 
