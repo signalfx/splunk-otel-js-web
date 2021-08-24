@@ -3,6 +3,7 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## Unreleased
 - Fix Internet Explorer compatibility
+- Add `skipExport` configuration option [#240](https://github.com/signalfx/splunk-otel-js-web/issues/240)
 
 ## 0.8.0
 
