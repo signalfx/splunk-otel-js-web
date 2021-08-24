@@ -106,6 +106,12 @@ export interface SplunkOtelWebConfig {
   /** Turns on/off internal debug logging */
   debug?: boolean;
 
+  /** 
+   * Use SplunkOtelWeb as a local tracer provider, but disable all exporting.
+   * If enabled, the values of `beaconUrl` and `debug` will be ignored.
+   */
+  skipExport?: boolean;
+
   /**
    * Sets a value for the `environment` attribute (persists through calls to `setGlobalAttributes()`)
    * */
@@ -261,7 +267,7 @@ export const SplunkRum: SplunkOtelWebType = {
       return;
     }
 
-    if (!processedOptions.debug) {
+    if (!processedOptions.debug && !processedOptions.skipExport) {
       if (!processedOptions.beaconUrl) {
         throw new Error('SplunkRum.init( {beaconUrl: \'https://something\'} ) is required.');
       } else if(!processedOptions.beaconUrl.startsWith('https') && !processedOptions.allowInsecureBeacon) {
