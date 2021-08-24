@@ -22,7 +22,7 @@ import {
 import { ExportResult, ExportResultCode } from '@opentelemetry/core';
 import { limitLen } from './utils';
 import { SpanAttributes, SpanKind } from '@opentelemetry/api';
-import { ReadableSpan, SpanExporter } from '@opentelemetry/tracing';
+import { ReadableSpan, SpanExporter } from '@opentelemetry/sdk-trace-base';
 
 const MAX_VALUE_LIMIT = 4096;
 const SPAN_RATE_LIMIT_PERIOD = 30000; // millis, sweep to clear out span counts
