@@ -45,7 +45,7 @@ describe('test init', () => {
       SplunkRum.init({ beaconUrl: undefined, app: 'app', rumAuth: undefined, skipExport: true });
       assert.ok(SplunkRum.inited);
       SplunkRum.deinit();
-    })
+    });
   });
   describe('should enforce secure beacon url', () => {
     it('should not be inited with http', () => {
