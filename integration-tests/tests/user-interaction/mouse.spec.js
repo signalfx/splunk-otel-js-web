@@ -96,5 +96,12 @@ module.exports = {
     await browser.assert.strictEqual(clickSpan.tags['ot.status_code'], 'UNSET');
 
     await browser.globals.assertNoErrorSpans();
+  },
+  'this is bubbled event is correct (open-telemetry/opentelemetry-js-contrib#643)': async function (browser) {
+    browser.globals.clearReceivedSpans();
+    await browser.url(browser.globals.getUrl('/user-interaction/mouse-bubble.ejs'));
+    await browser.click('#inner');
+
+    browser.expect.element('#result').text.to.equal('container');
   }
 };
