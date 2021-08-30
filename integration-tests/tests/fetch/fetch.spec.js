@@ -70,6 +70,12 @@ module.exports = {
     await browser.globals.assertNoErrorSpans();
     await backend2.close();
   },
+  'request body exists in request object (open-telemetry/opentelemetry-js#2411)': async function(browser) {
+    await browser.url(browser.globals.getUrl('/fetch/fetch-post.ejs'));
+    await browser.globals.findSpan(span => span.tags['http.url'] === '/echo');
+
+    browser.expect.element('#result').text.to.equal('{"test":true}');
+  },
   'can be disabled (with xhr switch)': async function(browser) {
     await browser.url(browser.globals.getUrl('/fetch/fetch.ejs'));
     await browser.globals.waitForTestToFinish();

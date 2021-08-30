@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { diag, Span, trace, Tracer, TracerProvider } from '@opentelemetry/api';
+import { context, diag, Span, trace, Tracer, TracerProvider } from '@opentelemetry/api';
 import { hrTime } from '@opentelemetry/core';
 import { InstrumentationConfig, isWrapped } from '@opentelemetry/instrumentation';
 import { UserInteractionInstrumentation } from '@opentelemetry/instrumentation-user-interaction';
@@ -73,6 +73,54 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
       }
 
       return _superCreateSpan(element, eventName, parentSpan);
+    };
+
+    // open-telemetry/opentelemetry-js-contrib#643 - wrong this in event listeners
+    (this as any)._patchAddEventListener = function() {
+      // eslint-disable-next-line @typescript-eslint/no-this-alias
+      const plugin = this;
+      return (original: EventTarget['addEventListener']) => {
+        // eslint-disable-next-line consistent-return
+        return function addEventListenerPatched(
+          this: HTMLElement,
+          type: any,
+          listener: any,
+          useCapture: any
+        ) {
+          const once = useCapture && useCapture.once;
+          const patchedListener = function (this: HTMLElement, ...args: any[]) {
+            let parentSpan: Span | undefined;
+            const event: Event | undefined = args[0];
+            const target = event?.target;
+            if (event) {
+              parentSpan = plugin._eventsSpanMap.get(event);
+            }
+            if (once) {
+              plugin.removePatchedListener(this, type, listener);
+            }
+            const span = plugin._createSpan(target, type, parentSpan);
+            if (span) {
+              if (event) {
+                plugin._eventsSpanMap.set(event, span);
+              }
+              return context.with(
+                trace.setSpan(context.active(), span),
+                () => {
+                  const result = plugin._invokeListener(listener, this, args);
+                  // no zone so end span immediately
+                  span.end();
+                  return result;
+                }
+              );
+            } else {
+              return plugin._invokeListener(listener, this, args);
+            }
+          };
+          if (plugin.addPatchedListener(this, type, listener, patchedListener)) {
+            return original.call(this, type, patchedListener, useCapture);
+          }
+        };
+      };
     };
   }
 

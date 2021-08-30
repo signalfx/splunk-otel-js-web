@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Mouse bubble test</title>
+  <%- renderAgent() %>
+  
+</head>
+<body>
+  <h1>Mouse bubble test</h1>
+
+  <div id="container">
+    <span id="inner">Text</span>
+  </div>
+
+  <div id="result"></div>
+
+  <pre id="scenarioDisplay"></pre>
+  <script id="scenario">
+    container.addEventListener('click', function () {
+      document.getElementById('result').innerText = this.id;
+    });
+  </script>
+  <script>scenarioDisplay.innerHTML = scenario.innerHTML;</script>
+</body>
+</html>
