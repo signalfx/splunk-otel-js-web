@@ -22,5 +22,6 @@ declare global {
   }
 }
 
+import './fixPrototype';
 import './throwIfUnsupportedBrowser';
 export default SplunkRum;

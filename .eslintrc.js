@@ -105,8 +105,12 @@ module.exports = {
         'plugin:@typescript-eslint/recommended',
       ],
       rules: {
-        'no-shadow': 'off', // TS has its dedicated rule, the JS one breaks
+        // disable incorrect JS rules
+        'no-shadow': 'off',
         'no-unused-expressions': 'off',
+        'no-useless-return': 'off',
+
+        // customised TS settings
         '@typescript-eslint/brace-style': ['error', '1tbs', { 'allowSingleLine': true }],
         '@typescript-eslint/explicit-function-return-type': 'off', // to be discussed
         '@typescript-eslint/no-unused-vars': 'error',

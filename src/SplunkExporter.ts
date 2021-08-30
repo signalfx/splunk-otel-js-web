@@ -14,37 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {
-  toZipkinSpan,
-  statusCodeTagName,
-  statusDescriptionTagName,
-} from '@opentelemetry/exporter-zipkin/build/src/transform.js';
-import { ExportResult, ExportResultCode } from '@opentelemetry/core';
+import { ExportResult, ExportResultCode, hrTimeToMicroseconds } from '@opentelemetry/core';
 import { limitLen } from './utils';
-import { SpanAttributes, SpanKind } from '@opentelemetry/api';
-import { ReadableSpan, SpanExporter } from '@opentelemetry/tracing';
+import { SpanAttributes, SpanKind, SpanStatus, SpanStatusCode } from '@opentelemetry/api';
+import { ReadableSpan, SpanExporter, TimedEvent } from '@opentelemetry/tracing';
+import { Resource } from '@opentelemetry/resources';
 
 const MAX_VALUE_LIMIT = 4096;
 const SPAN_RATE_LIMIT_PERIOD = 30000; // millis, sweep to clear out span counts
 const MAX_SPANS_PER_PERIOD_PER_COMPONENT = 100;
 const SERVICE_NAME = 'browser';
-
-export interface SplunkExporterConfig {
-  beaconUrl: string;
-  onAttributesSerializing?: (attributes: SpanAttributes, span: ReadableSpan) => SpanAttributes,
-  xhrSender?: (url: string, data: BodyInit) => void,
-  beaconSender?: (url: string, data: BodyInit) => void,
-}
-
-export const NOOP_ATTRIBUTES_TRANSFORMER: SplunkExporterConfig['onAttributesSerializing'] = (attributes) => attributes;
-export const NATIVE_XHR_SENDER: SplunkExporterConfig['xhrSender'] = (url: string, data: BodyInit) => {
-  const xhr = new XMLHttpRequest();
-  xhr.open('POST', url);
-  xhr.setRequestHeader('Accept', '*/*');
-  xhr.setRequestHeader('Content-Type', 'text/plain;charset=UTF-8');
-  xhr.send(data);
-};
-export const NATIVE_BEACON_SENDER: SplunkExporterConfig['beaconSender'] = navigator.sendBeacon ? (url, data) => navigator.sendBeacon(url, data) : null;
 
 // TODO: upstream proper exports from ZipkinExporter
 export interface ZipkinAnnotation {
@@ -80,6 +59,124 @@ export interface ZipkinSpan {
   tags: ZipkinTags;
 }
 
+export enum ZipkinSpanKind {
+  CLIENT = 'CLIENT',
+  SERVER = 'SERVER',
+  CONSUMER = 'CONSUMER',
+  PRODUCER = 'PRODUCER',
+}
+
+const ZIPKIN_SPAN_KIND_MAPPING = {
+  [SpanKind.CLIENT]: ZipkinSpanKind.CLIENT,
+  [SpanKind.SERVER]: ZipkinSpanKind.SERVER,
+  [SpanKind.CONSUMER]: ZipkinSpanKind.CONSUMER,
+  [SpanKind.PRODUCER]: ZipkinSpanKind.PRODUCER,
+  // When absent, the span is local.
+  [SpanKind.INTERNAL]: undefined,
+};
+
+export const statusCodeTagName = 'ot.status_code';
+export const statusDescriptionTagName = 'ot.status_description';
+
+export interface SplunkExporterConfig {
+  beaconUrl: string;
+  onAttributesSerializing?: (attributes: SpanAttributes, span: ReadableSpan) => SpanAttributes,
+  xhrSender?: (url: string, data: BodyInit) => void,
+  beaconSender?: (url: string, data: BodyInit) => void,
+}
+
+export const NOOP_ATTRIBUTES_TRANSFORMER: SplunkExporterConfig['onAttributesSerializing'] = (attributes) => attributes;
+export const NATIVE_XHR_SENDER: SplunkExporterConfig['xhrSender'] = (url: string, data: BodyInit) => {
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', url);
+  xhr.setRequestHeader('Accept', '*/*');
+  xhr.setRequestHeader('Content-Type', 'text/plain;charset=UTF-8');
+  xhr.send(data);
+};
+export const NATIVE_BEACON_SENDER: SplunkExporterConfig['beaconSender'] = navigator.sendBeacon ? (url, data) => navigator.sendBeacon(url, data) : null;
+
+/**
+ * Converts OpenTelemetry Events to Zipkin Annotations format.
+ */
+export function _toZipkinAnnotations(
+  events: TimedEvent[]
+): ZipkinAnnotation[] {
+  return events.map(event => ({
+    timestamp: hrTimeToMicroseconds(event.time),
+    value: event.name,
+  }));
+}
+
+/** Converts OpenTelemetry SpanAttributes and SpanStatus to Zipkin Tags format. */
+export function _toZipkinTags(
+  attributes: SpanAttributes,
+  status: SpanStatus,
+  statusCodeTagName: string,
+  statusDescriptionTagName: string,
+  resource: Resource,
+): ZipkinTags {
+  const tags: { [key: string]: string } = {};
+  for (const key of Object.keys(attributes)) {
+    tags[key] = String(attributes[key]);
+  }
+  tags[statusCodeTagName] = String(SpanStatusCode[status.code]);
+  if (status.message) {
+    tags[statusDescriptionTagName] = status.message;
+  }
+
+  Object.keys(resource.attributes).forEach(
+    name => (tags[name] = String(resource.attributes[name]))
+  );
+
+  return tags;
+}
+
+/**
+ * Translate OpenTelemetry ReadableSpan to ZipkinSpan format
+ * @param span Span to be translated
+ */
+export function toZipkinSpan(
+  span: ReadableSpan,
+  serviceName: string,
+  statusCodeTagName: string,
+  statusDescriptionTagName: string
+): ZipkinSpan {
+  // fix: prototype.js overwrite toJSON
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (span.events as any).toJSON = function () { return this; };
+
+  const annotations = span.events.length
+    ? _toZipkinAnnotations(span.events)
+    : undefined;
+
+  if (annotations !== undefined) {
+    // fix: prototype.js overwrite toJSON
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (annotations as any).toJSON = function () { return this; };
+  }
+
+  const zipkinSpan: ZipkinSpan = {
+    traceId: span.spanContext().traceId,
+    parentId: span.parentSpanId,
+    name: span.name,
+    id: span.spanContext().spanId,
+    kind: ZIPKIN_SPAN_KIND_MAPPING[span.kind],
+    timestamp: hrTimeToMicroseconds(span.startTime),
+    duration: hrTimeToMicroseconds(span.duration),
+    localEndpoint: { serviceName },
+    tags: _toZipkinTags(
+      span.attributes,
+      span.status,
+      statusCodeTagName,
+      statusDescriptionTagName,
+      span.resource
+    ),
+    annotations,
+  };
+
+  return zipkinSpan;
+}
+
 /**
  * SplunkExporter is based on Zipkin V2. It includes Splunk-specific modifications.
  */
@@ -113,6 +210,11 @@ export class SplunkExporter implements SpanExporter {
   ): void {
     spans = spans.filter(span => this._filter(span));
     const zspans = spans.map(span => this._mapToZipkinSpan(span));
+
+    // fix: prototype.js overwrite toJSON
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (zspans as any).toJSON = function () { return this; };
+
     const zJson = JSON.stringify(zspans);
     if (this._beaconSender) {
       this._beaconSender(this.beaconUrl, zJson);

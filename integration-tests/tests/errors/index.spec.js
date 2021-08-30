@@ -102,7 +102,7 @@ module.exports = {
   },
   'manual console.error': async function(browser) {
     const browserName = browser.options.desiredCapabilities.browserName.toLowerCase();
-    
+
     const url = browser.globals.getUrl('/errors/views/console-error.ejs');
     await browser.url(url);
 
@@ -124,17 +124,17 @@ module.exports = {
     await browser.assert.strictEqual(tags['error.message'], ERROR_MESSAGE_MAP[browserName]);
 
     const ERROR_STACK_MAP = {
-      safari: `global code@${url}:64:15`,
-      chrome: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:64:25`,
-      edge: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:64:25`,
-      firefox: `@${url}:64:7\n`,
-      ie: `TypeError: Unable to set property 'anyField' of undefined or null reference\n   at Global code (${url}:64:7)`,
+      safari: `global code@${url}:66:15`,
+      chrome: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:66:25`,
+      edge: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:66:25`,
+      firefox: `@${url}:66:7\n`,
+      ie: `TypeError: Unable to set property 'anyField' of undefined or null reference\n   at Global code (${url}:66:7)`,
     };
     await browser.assert.strictEqual(tags['error.stack'], ERROR_STACK_MAP[browserName]);
   },
   'SplunkRum.error': async function(browser) {
     const browserName = browser.options.desiredCapabilities.browserName.toLowerCase();
-    
+
     const url = browser.globals.getUrl('/errors/views/splunkrum-error.ejs');
     await browser.url(url);
 
@@ -156,11 +156,11 @@ module.exports = {
     await browser.assert.strictEqual(tags['error.message'], ERROR_MESSAGE_MAP[browserName]);
 
     const ERROR_STACK_MAP = {
-      safari: `global code@${url}:64:15`,
-      chrome: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:64:25`,
-      edge: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:64:25`,
-      firefox: `@${url}:64:7\n`,
-      ie: `TypeError: Unable to set property 'anyField' of undefined or null reference\n   at Global code (${url}:64:7)`,
+      safari: `global code@${url}:66:15`,
+      chrome: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:66:25`,
+      edge: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:66:25`,
+      firefox: `@${url}:66:7\n`,
+      ie: `TypeError: Unable to set property 'anyField' of undefined or null reference\n   at Global code (${url}:66:7)`,
     };
     await browser.assert.strictEqual(tags['error.stack'], ERROR_STACK_MAP[browserName]);
   },
