@@ -2,7 +2,14 @@
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
 ## Unreleased
+
+## 0.8.1
+
+Changes:
+
 - Fix Internet Explorer compatibility
+- Backport `fetch(Request)` fix
+- Backport `this` in event listeners fix
 
 ## 0.8.0
 
