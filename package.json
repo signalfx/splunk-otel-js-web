@@ -49,7 +49,7 @@
     "@opentelemetry/tracing": "0.24.0",
     "@opentelemetry/web": "0.24.0",
     "shimmer": "~1.2.1",
-    "web-vitals": "~1.1.2"
+    "web-vitals": "~2.0.1"
   },
   "browser": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
@@ -85,7 +85,7 @@
     "browserstack-local": "^1.4.8",
     "chai": "^4.3.4",
     "chrome-launcher": "^0.14.0",
-    "chromedriver": "^91.0.0",
+    "chromedriver": "^93.0.0",
     "codecov": "^3.8.2",
     "compression": "^1.7.4",
     "cors": "^2.8.5",
