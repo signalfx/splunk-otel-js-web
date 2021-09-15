@@ -5,9 +5,21 @@
 	<title>Webvitals</title>
 
 	<%- renderAgent({debug: true}) %>
+	
+	<style>
+		#container {
+			height: 200px;
+			width: 400px;
+		}
+	</style>
 </head>
 <body>
-	<p>Webvitals</p>
+	<h1>Webvitals</h1>
+
+	<!-- a dummy "interactive" link in order to compute FID -->
+	<a href="javascript:clicky()" id="clicky">Click me</a>
+
+	<div id="container">Don't shift me : (</div>
 	<script>
 		let id = 1;
 		function clicky() {
@@ -15,11 +27,10 @@
 			p.setAttribute('id', 'p'+id);
 			id++;
 			p.innerText = 'Very long paragraph to force a visual change.  '.repeat(30);
-			document.body.firstElementChild.appendChild(p);
+			const container = document.getElementById('container');
+			container.insertBefore(p, container.firstChild);
 		}
 		window.addEventListener('load', clicky);
 	</script>
-	<!-- a dummy "interactive" link in order to compute FID -->
-	<a href="javascript:clicky()" id="clicky">Click me</a>
 </body>
 </html>
