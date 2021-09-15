@@ -72,7 +72,8 @@ module.exports = {
 
     switch (browser.options.desiredCapabilities.browserName.toLowerCase()) {
     case 'chrome':
-      await browser.assert.strictEqual(tags['error.message'], 'Cannot set property \'prop1\' of null');
+      // await browser.assert.strictEqual(tags['error.message'], 'Cannot set property \'prop1\' of null');
+      await browser.assert.strictEqual(tags['error.message'], 'Cannot set properties of null (setting \'prop1\')');
       break;
     case 'firefox':
       await browser.assert.strictEqual(tags['error.message'], 'test is null');
@@ -116,7 +117,8 @@ module.exports = {
 
     const ERROR_MESSAGE_MAP = {
       safari: 'null is not an object (evaluating \'someNull.anyField = \'value\'\')',
-      chrome: 'Cannot set property \'anyField\' of null',
+      // chrome: 'Cannot set property \'anyField\' of null',
+      chrome: 'Cannot set properties of null (setting \'anyField\')',
       edge: 'Cannot set property \'anyField\' of null',
       firefox: 'someNull is null',
       ie: 'Unable to set property \'anyField\' of undefined or null reference',
@@ -125,7 +127,8 @@ module.exports = {
 
     const ERROR_STACK_MAP = {
       safari: `global code@${url}:64:15`,
-      chrome: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:64:25`,
+      // chrome: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:64:25`,
+      chrome: `TypeError: Cannot set properties of null (setting \'anyField\')\n    at ${url}:64:25`,
       edge: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:64:25`,
       firefox: `@${url}:64:7\n`,
       ie: `TypeError: Unable to set property 'anyField' of undefined or null reference\n   at Global code (${url}:64:7)`,
@@ -148,7 +151,8 @@ module.exports = {
 
     const ERROR_MESSAGE_MAP = {
       safari: 'null is not an object (evaluating \'someNull.anyField = \'value\'\')',
-      chrome: 'Cannot set property \'anyField\' of null',
+      // chrome: 'Cannot set property \'anyField\' of null',
+      chrome: 'Cannot set properties of null (setting \'anyField\')',
       edge: 'Cannot set property \'anyField\' of null',
       firefox: 'someNull is null',
       ie: 'Unable to set property \'anyField\' of undefined or null reference',
@@ -157,8 +161,9 @@ module.exports = {
 
     const ERROR_STACK_MAP = {
       safari: `global code@${url}:64:15`,
-      chrome: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:64:25`,
+      // chrome: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:64:25`,
       edge: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:64:25`,
+      chrome: `TypeError: Cannot set properties of null (setting \'anyField\')\n    at ${url}:64:25`,
       firefox: `@${url}:64:7\n`,
       ie: `TypeError: Unable to set property 'anyField' of undefined or null reference\n   at Global code (${url}:64:7)`,
     };

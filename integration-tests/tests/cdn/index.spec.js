@@ -30,7 +30,7 @@ module.exports = {
 
     switch (browser.options.desiredCapabilities.browserName.toLowerCase()) {
     case 'chrome':
-      await browser.assert.strictEqual(tags['error.message'], 'Cannot set property \'prop1\' of null');
+      await browser.assert.strictEqual(tags['error.message'], 'Cannot set properties of null (setting \'prop1\')');
       break;
     case 'firefox':
       await browser.assert.strictEqual(tags['error.message'], 'test is null');
