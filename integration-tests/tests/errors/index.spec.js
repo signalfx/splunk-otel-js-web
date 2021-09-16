@@ -117,7 +117,7 @@ module.exports = {
     const ERROR_MESSAGE_MAP = {
       safari: 'null is not an object (evaluating \'someNull.anyField = \'value\'\')',
       chrome: 'Cannot set properties of null (setting \'anyField\')',
-      edge: 'Cannot set property \'anyField\' of null',
+      edge: 'Cannot set properties of null (setting \'anyField\')',
       firefox: 'someNull is null',
       ie: 'Unable to set property \'anyField\' of undefined or null reference',
     };
@@ -149,7 +149,7 @@ module.exports = {
     const ERROR_MESSAGE_MAP = {
       safari: 'null is not an object (evaluating \'someNull.anyField = \'value\'\')',
       chrome: 'Cannot set properties of null (setting \'anyField\')',
-      edge: 'Cannot set property \'anyField\' of null',
+      edge: 'Cannot set properties of null (setting \'anyField\')',
       firefox: 'someNull is null',
       ie: 'Unable to set property \'anyField\' of undefined or null reference',
     };
