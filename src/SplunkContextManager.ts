@@ -170,8 +170,8 @@ export class SplunkContextManager implements ContextManager {
     );
 
     if (window.setImmediate) {
-      // @ts-expect-error expects __promisify__
       wrapNatively(window, 'setImmediate', (original) =>
+        // @ts-expect-error expects __promisify__
         function (...args: Parameters<typeof setImmediate>) {
           manager.bindActiveToArgument(args, 0);
 
