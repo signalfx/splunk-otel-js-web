@@ -118,14 +118,14 @@ module.exports = {
   'MessagePort - onmessage': function (browser) {
     return runTest(browser, '/context/messageport-onmessage.ejs');
   },
-  'MessagePort: Works with cors': async function (browser) {
-    await browser.url(browser.globals.getUrl('/context/messageport-cors.ejs'));
-    await browser.globals.waitForTestToFinish();
+  // 'MessagePort: Works with cors': async function (browser) {
+  //   await browser.url(browser.globals.getUrl('/context/messageport-cors.ejs'));
+  //   await browser.globals.waitForTestToFinish();
 
-    await browser.globals.findSpan(span => span.name === 'message-event');
+  //   await browser.globals.findSpan(span => span.name === 'message-event');
 
-    await browser.globals.assertNoErrorSpans();
-  },
+  //   await browser.globals.assertNoErrorSpans();
+  // },
   'location - hashchange': async function (browser) {
     await runTest(browser, '/context/location-hash.ejs');
 
