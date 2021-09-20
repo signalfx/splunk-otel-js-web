@@ -26,10 +26,20 @@ function TodoList() {
   const [todos, setTodos] = useState([]);
 
   useEffect(async () => {
+    const tracer = window.SplunkRum.provider.getTracer('todoList');
+    const span = tracer.startSpan('todoList.load', {
+      attributes: {
+        'workflow.id': 1,
+        'workflow.name': 'todoList.load'
+      }
+    });
+
     setIsLoading(true);
     const res = await fetch(ENDPOINT + (token ? '?token=' + token : ''));
     setTodos(await res.json());
     setIsLoading(false);
+
+    span.end();
   }, [token]);
 
   const login = useCallback(async () => {
@@ -44,6 +54,14 @@ function TodoList() {
   }, [token, setToken]);
 
   const addItem = useCallback(async (text) => {
+    const tracer = window.SplunkRum.provider.getTracer('todoList');
+    const span = tracer.startSpan('todoList.addItem', {
+      attributes: {
+        'workflow.id': 2,
+        'workflow.name': 'todoList.addItem'
+      }
+    });
+
     const res = await fetch(ENDPOINT + (token ? '?token=' + token : ''), {
       method: 'POST',
       headers: {
@@ -56,11 +74,17 @@ function TodoList() {
 
     if (!res.ok) {
       const error = await res.json();
+
+      span.setAttribute('error', true);
+      span.setAttribute('error.message', JSON.stringify(error));
+      span.end();
+
       throw error;
     }
 
     const created = await res.json();
     setTodos(todos.concat([created]));
+    span.end();
   }, [todos, setTodos]);
 
   const editItem = useCallback(async (id, props) => {
