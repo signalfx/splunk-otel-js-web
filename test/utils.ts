@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { ReadableSpan, SimpleSpanProcessor, SpanProcessor } from '@opentelemetry/tracing';
+import { ReadableSpan, SimpleSpanProcessor, SpanProcessor } from '@opentelemetry/sdk-trace-base';
 import SplunkRum, { SplunkExporter, ZipkinSpan } from '../src/index';
 
 export class SpanCapturer implements SpanProcessor {

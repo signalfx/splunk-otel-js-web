@@ -18,8 +18,8 @@ import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import { DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load';
 import * as api from '@opentelemetry/api';
 import { captureTraceParentFromPerformanceEntries } from './servertiming';
-import { PerformanceEntries } from '@opentelemetry/web';
-import { Span } from '@opentelemetry/tracing';
+import { PerformanceEntries } from '@opentelemetry/sdk-trace-web';
+import { Span } from '@opentelemetry/sdk-trace-base';
 
 const excludedInitiatorTypes = ['beacon', 'fetch', 'xmlhttprequest'];
 

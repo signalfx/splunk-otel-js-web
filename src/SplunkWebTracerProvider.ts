@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { WebTracerConfig, WebTracerProvider } from '@opentelemetry/web';
+import { WebTracerConfig, WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { propagation, context, trace, SpanAttributes } from '@opentelemetry/api';
-import { Tracer } from '@opentelemetry/tracing';
+import { Tracer } from '@opentelemetry/sdk-trace-base';
 
 export interface SplunkWebTracerProviderConfig extends WebTracerConfig {
   app: string;

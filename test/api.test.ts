@@ -19,7 +19,7 @@ import { context, trace, SpanStatusCode } from '@opentelemetry/api';
 
 import SplunkOtelWeb, { INSTRUMENTATIONS_ALL_DISABLED } from '../src/index';
 import { SpanCapturer } from './utils';
-import { SpanProcessor } from '@opentelemetry/tracing';
+import { SpanProcessor } from '@opentelemetry/sdk-trace-base';
 
 // note: we've added these tests mainly to keep track of substantial changes in the Open Telemetry API
 describe('Transitive API', () => {

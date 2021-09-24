@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import { Span } from '@opentelemetry/api';
-import { PerformanceEntries } from '@opentelemetry/web';
+import { PerformanceEntries } from '@opentelemetry/sdk-trace-web';
 
 function addMatchToSpan(match: RegExpMatchArray, span: Span): void {
   if (match && match[1] && match[2]) {

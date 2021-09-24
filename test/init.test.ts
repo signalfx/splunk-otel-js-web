@@ -17,7 +17,7 @@ limitations under the License.
 import * as assert from 'assert';
 import SplunkRum from '../src/index';
 import { context, trace } from '@opentelemetry/api';
-import * as tracing from '@opentelemetry/tracing';
+import * as tracing from '@opentelemetry/sdk-trace-base';
 import { deinit, initWithDefaultConfig, SpanCapturer } from './utils';
 import sinon from 'sinon';
 import { expect } from 'chai';

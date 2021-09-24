@@ -24,7 +24,7 @@ import {
   SpanExporter,
   SpanProcessor,
   BufferConfig,
-} from '@opentelemetry/tracing';
+} from '@opentelemetry/sdk-trace-base';
 import { diag, DiagConsoleLogger, DiagLogLevel, SpanAttributes } from '@opentelemetry/api';
 import { SplunkDocumentLoadInstrumentation } from './SplunkDocumentLoadInstrumentation';
 import { SplunkXhrPlugin } from './SplunkXhrPlugin';
