@@ -30,7 +30,7 @@ module.exports = {
 
     switch (browser.options.desiredCapabilities.browserName.toLowerCase()) {
     case 'chrome':
-      await browser.assert.strictEqual(tags['error.message'], 'Cannot set property \'prop1\' of null');
+      await browser.assert.strictEqual(tags['error.message'], 'Cannot set properties of null (setting \'prop1\')');
       break;
     case 'firefox':
       await browser.assert.strictEqual(tags['error.message'], 'test is null');
@@ -45,6 +45,6 @@ module.exports = {
 
     const cdnUrl = 'https://cdn.signalfx.com/o11y-gdi-rum/latest/splunk-otel-web.js';
     await browser.assert.strictEqual(rumScriptFetchSpan.tags['http.url'], cdnUrl);
-    await browser.assert.strictEqual(rumScriptFetchSpan.tags['splunk.rumVersion'], '0.8.0');
+    await browser.assert.strictEqual(rumScriptFetchSpan.tags['splunk.rumVersion'], '0.8.1');
   },
 };

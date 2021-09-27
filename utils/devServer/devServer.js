@@ -191,6 +191,10 @@ exports.runIntegrationDevelopmentServer = async function run({
     });
   });
 
+  app.post('/echo', (req, res) => {
+    res.send(req.body);
+  });
+
   app.get('/no-server-timings', (_, res) => { res.sendStatus(200); });
 
   const { 

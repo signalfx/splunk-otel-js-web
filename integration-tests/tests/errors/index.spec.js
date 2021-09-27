@@ -72,7 +72,7 @@ module.exports = {
 
     switch (browser.options.desiredCapabilities.browserName.toLowerCase()) {
     case 'chrome':
-      await browser.assert.strictEqual(tags['error.message'], 'Cannot set property \'prop1\' of null');
+      await browser.assert.strictEqual(tags['error.message'], 'Cannot set properties of null (setting \'prop1\')');
       break;
     case 'firefox':
       await browser.assert.strictEqual(tags['error.message'], 'test is null');
@@ -100,6 +100,21 @@ module.exports = {
     await browser.assert.strictEqual(tags['error.object'], 'String');
     await browser.assert.strictEqual(tags['error.message'], 'rejection-value');
   },
+  'unhandled promise rejection (undefined)': async function(browser) {
+    if (isBrowser(browser, 'ie')) {
+      return; // No native promise
+    }
+    await browser.url(browser.globals.getUrl('/errors/views/unhandled-rejection.undefined.ejs'));
+
+    const errorSpan = await browser.globals.findSpan(s => s.name === 'unhandledrejection');
+    await browser.assert.ok(!!errorSpan, 'Checking presence of error span.');
+
+    const tags = errorSpan.tags;
+    await browser.assert.strictEqual(tags['component'], 'error');
+    await browser.assert.strictEqual(tags['error'], 'true');
+    await browser.assert.strictEqual(tags['error.object'], 'String');
+    await browser.assert.strictEqual(tags['error.message'], '(undefined)');
+  },
   'manual console.error': async function(browser) {
     const browserName = browser.options.desiredCapabilities.browserName.toLowerCase();
     
@@ -116,8 +131,8 @@ module.exports = {
 
     const ERROR_MESSAGE_MAP = {
       safari: 'null is not an object (evaluating \'someNull.anyField = \'value\'\')',
-      chrome: 'Cannot set property \'anyField\' of null',
-      edge: 'Cannot set property \'anyField\' of null',
+      chrome: 'Cannot set properties of null (setting \'anyField\')',
+      edge: 'Cannot set properties of null (setting \'anyField\')',
       firefox: 'someNull is null',
       ie: 'Unable to set property \'anyField\' of undefined or null reference',
     };
@@ -125,8 +140,8 @@ module.exports = {
 
     const ERROR_STACK_MAP = {
       safari: `global code@${url}:64:15`,
-      chrome: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:64:25`,
-      edge: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:64:25`,
+      chrome: `TypeError: Cannot set properties of null (setting 'anyField')\n    at ${url}:64:25`,
+      edge: `TypeError: Cannot set properties of null (setting 'anyField')\n    at ${url}:64:25`,
       firefox: `@${url}:64:7\n`,
       ie: `TypeError: Unable to set property 'anyField' of undefined or null reference\n   at Global code (${url}:64:7)`,
     };
@@ -148,8 +163,8 @@ module.exports = {
 
     const ERROR_MESSAGE_MAP = {
       safari: 'null is not an object (evaluating \'someNull.anyField = \'value\'\')',
-      chrome: 'Cannot set property \'anyField\' of null',
-      edge: 'Cannot set property \'anyField\' of null',
+      chrome: 'Cannot set properties of null (setting \'anyField\')',
+      edge: 'Cannot set properties of null (setting \'anyField\')',
       firefox: 'someNull is null',
       ie: 'Unable to set property \'anyField\' of undefined or null reference',
     };
@@ -157,8 +172,8 @@ module.exports = {
 
     const ERROR_STACK_MAP = {
       safari: `global code@${url}:64:15`,
-      chrome: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:64:25`,
-      edge: `TypeError: Cannot set property 'anyField' of null\n    at ${url}:64:25`,
+      edge: `TypeError: Cannot set properties of null (setting 'anyField')\n    at ${url}:64:25`,
+      chrome: `TypeError: Cannot set properties of null (setting 'anyField')\n    at ${url}:64:25`,
       firefox: `@${url}:64:7\n`,
       ie: `TypeError: Unable to set property 'anyField' of undefined or null reference\n   at Global code (${url}:64:7)`,
     };

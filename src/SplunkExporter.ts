@@ -32,12 +32,12 @@ const SERVICE_NAME = 'browser';
 export interface SplunkExporterConfig {
   beaconUrl: string;
   onAttributesSerializing?: (attributes: SpanAttributes, span: ReadableSpan) => SpanAttributes,
-  xhrSender?: (url: string, data: BodyInit) => void,
+  xhrSender?: (url: string, data) => void,
   beaconSender?: (url: string, data: BodyInit) => void,
 }
 
 export const NOOP_ATTRIBUTES_TRANSFORMER: SplunkExporterConfig['onAttributesSerializing'] = (attributes) => attributes;
-export const NATIVE_XHR_SENDER: SplunkExporterConfig['xhrSender'] = (url: string, data: BodyInit) => {
+export const NATIVE_XHR_SENDER: SplunkExporterConfig['xhrSender'] = (url: string, data) => {
   const xhr = new XMLHttpRequest();
   xhr.open('POST', url);
   xhr.setRequestHeader('Accept', '*/*');

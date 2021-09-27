@@ -1,4 +1,5 @@
-* @signalfx/gdi-js-maintainers @signalfx/gdi-js-web-approvers
-*.md @signalfx/docs
-*.rst @signalfx/docs
-docs/ @signalfx/docs
+* @signalfx/gdi-js-maintainers @signalfx/gdi-js-approvers
+*.md @signalfx/docs @signalfx/gdi-js-maintainers @signalfx/gdi-js-approvers
+*.rst @signalfx/docs @signalfx/gdi-js-maintainers @signalfx/gdi-js-approvers
+docs/ @signalfx/docs @signalfx/gdi-js-maintainers @signalfx/gdi-js-approvers
+README* @signalfx/docs @signalfx/gdi-js-maintainers @signalfx/gdi-js-approvers

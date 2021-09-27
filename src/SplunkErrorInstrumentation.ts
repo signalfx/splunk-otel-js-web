@@ -30,6 +30,14 @@ function useful(s) {
   return s && s.trim() !== '' && !s.startsWith('[object') && s !== 'error';
 }
 
+function stringifyValue(value: unknown) {
+  if (value === undefined) {
+    return '(undefined)';
+  }
+
+  return value.toString();
+}
+
 function addStackIfUseful(span: Span, err: Error) {
   if (err && err.stack && useful(err.stack)) {
     span.setAttribute('error.stack', limitLen(err.stack.toString(), STACK_LIMIT));
@@ -157,9 +165,9 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
     } else if (arg instanceof Array) {
       // if any arguments are Errors then add the stack trace even though the message is handled differently
       const firstError = arg.find(x => x instanceof Error);
-      this.reportString(source, arg.map(x => x.toString()).join(' '), firstError);
+      this.reportString(source, arg.map(x => stringifyValue(x)).join(' '), firstError);
     } else {
-      this.reportString(source, (arg as any).toString()); // FIXME or JSON.stringify?
+      this.reportString(source, stringifyValue(arg)); // FIXME or JSON.stringify?
     }
   }
 }
