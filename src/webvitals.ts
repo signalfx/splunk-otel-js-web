@@ -14,35 +14,51 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { TracerProvider, Tracer } from '@opentelemetry/api';
+// import { TracerProvider, Tracer } from '@opentelemetry/api';
 import { hrTime } from '@opentelemetry/core';
-import { getCLS, getLCP, getFID, Metric } from 'web-vitals';
-const reported = {};
+import { getFID, getLCP, getCLS, Metric } from 'web-vitals';
+import { VERSION } from './version';
+import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation';
 
-function report(tracer: Tracer, name: string, metric: Metric): void {
-  if (reported[name]) {
-    return;
+export class SplunkWebVitalsInstrumentation extends InstrumentationBase {
+  private reported;
+
+  constructor(config: InstrumentationConfig = {}) {
+    super('splunk-webvitals', VERSION, Object.assign({}, config));
+    this.reported = {};
   }
-  reported[name] = true;
 
-  const value = metric.value;
-  const now = hrTime();
+  init(): void {}
 
-  const span = tracer.startSpan('webvitals', { startTime: now });
-  span.setAttribute(name, value);
-  span.end(now);
-}
+  enable(): void {
+    console.log('Enable: webvitals');
+    // CLS is defined as being sent more than once, easier to just ensure that everything is sent just on the first occurence.
+    getFID((metric) => {
+      this.report('fid', metric);
+    });
+    getCLS((metric) => {
+      this.report('cls', metric);
+    });
+    getLCP((metric) => {
+      this.report('lcp', metric);
+    });
+  }
 
-export function initWebVitals(provider: TracerProvider): void {
-  const tracer = provider.getTracer('webvitals');
-  // CLS is defined as being sent more than once, easier to just ensure that everything is sent just on the first occurence.
-  getFID((metric) => {
-    report(tracer, 'fid', metric);
-  });
-  getCLS((metric) => {
-    report(tracer, 'cls', metric);
-  });
-  getLCP((metric) => {
-    report(tracer, 'lcp', metric);
-  });
+  report(name: string, metric: Metric): void {
+    console.log('Metric: ', metric);
+    this.tracer.startSpan('web-vitals-test-span').end();
+    if (this.reported[name]) {
+      return;
+    }
+    this.reported[name] = true;
+
+    const value = metric.value;
+    const now = hrTime();
+
+    const span = this.tracer.startSpan('webvitals', { startTime: now });
+    span.setAttribute(name, value);
+    span.end(now);
+  }
+
+  disable(): void {}
 }

@@ -40,7 +40,7 @@ import { ERROR_INSTRUMENTATION_NAME, SplunkErrorInstrumentation } from './Splunk
 import { generateId, getPluginConfig } from './utils';
 import { getRumSessionId, initSessionTracking, SessionIdType } from './session';
 import { SplunkWebSocketInstrumentation } from './SplunkWebSocketInstrumentation';
-import { initWebVitals } from './webvitals';
+import { SplunkWebVitalsInstrumentation } from './webvitals';
 import { SplunkLongTaskInstrumentation } from './SplunkLongTaskInstrumentation';
 import { SplunkPageVisibilityInstrumentation } from './SplunkPageVisibilityInstrumentation';
 import { SplunkConnectivityInstrumentation } from './SplunkConnectivityInstrumentation';
@@ -75,7 +75,7 @@ interface SplunkOtelWebOptionsInstrumentations {
   connectivity?: boolean | InstrumentationConfig;
   postload?:     boolean | SplunkPostDocLoadResourceInstrumentationConfig;
   websocket?:    boolean | InstrumentationConfig;
-  webvitals?:    boolean;
+  webvitals?:    boolean | InstrumentationConfig;
   xhr?:          boolean | XMLHttpRequestInstrumentationConfig;
 }
 
@@ -173,7 +173,8 @@ const INSTRUMENTATIONS = [
   { Instrument: SplunkLongTaskInstrumentation, confKey: 'longtask', disable: false },
   { Instrument: SplunkErrorInstrumentation, confKey: ERROR_INSTRUMENTATION_NAME, disable: false },
   { Instrument: SplunkPageVisibilityInstrumentation, confKey: 'visibility', disable: true },
-  { Instrument: SplunkConnectivityInstrumentation, confKey: 'connectivity', disable: true }
+  { Instrument: SplunkConnectivityInstrumentation, confKey: 'connectivity', disable: true },
+  { Instrument: SplunkWebVitalsInstrumentation, confKey: 'webvitals', disable: false },
 ] as const;
 
 export const INSTRUMENTATIONS_ALL_DISABLED: SplunkOtelWebOptionsInstrumentations = INSTRUMENTATIONS
@@ -364,10 +365,11 @@ export const SplunkRum: SplunkOtelWebType = {
 
     this.provider = provider;
 
-    const vitalsConf = getPluginConfig(processedOptions.instrumentations.webvitals);
-    if (vitalsConf !== false) {
-      initWebVitals(provider);
-    }
+    //TODO remove
+    // const vitalsConf = getPluginConfig(processedOptions.instrumentations.webvitals);
+    // if (vitalsConf !== false) {
+    //   initWebVitals(provider);
+    // }
 
     inited = true;
     diag.info('SplunkRum.init() complete');
