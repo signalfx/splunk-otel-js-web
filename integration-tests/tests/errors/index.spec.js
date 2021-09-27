@@ -100,6 +100,21 @@ module.exports = {
     await browser.assert.strictEqual(tags['error.object'], 'String');
     await browser.assert.strictEqual(tags['error.message'], 'rejection-value');
   },
+  'unhandled promise rejection (undefined)': async function(browser) {
+    if (isBrowser(browser, 'ie')) {
+      return; // No native promise
+    }
+    await browser.url(browser.globals.getUrl('/errors/views/unhandled-rejection.undefined.ejs'));
+
+    const errorSpan = await browser.globals.findSpan(s => s.name === 'unhandledrejection');
+    await browser.assert.ok(!!errorSpan, 'Checking presence of error span.');
+
+    const tags = errorSpan.tags;
+    await browser.assert.strictEqual(tags['component'], 'error');
+    await browser.assert.strictEqual(tags['error'], 'true');
+    await browser.assert.strictEqual(tags['error.object'], 'String');
+    await browser.assert.strictEqual(tags['error.message'], '(undefined)');
+  },
   'manual console.error': async function(browser) {
     const browserName = browser.options.desiredCapabilities.browserName.toLowerCase();
     
