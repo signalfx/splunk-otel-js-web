@@ -4,7 +4,7 @@ Splunk's RUM uses Zipkin exporter for sending data to `beaconUrl` endpoint. Othe
 
 ```html
 import SplunkRum from '@splunk/otel-js-browser'
-import {BatchSpanProcessor} from '@opentelemetry/tracing'
+import {BatchSpanProcessor} from '@opentelemetry/sdk-trace-base'
 import {CollectorTraceExporter} from '@opentelemetry/exporter-collector'
  
 const exporter = new CollectorTraceExporter({

@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import { context, trace } from '@opentelemetry/api';
-import { SpanProcessor } from '@opentelemetry/tracing';
+import { SpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { expect } from 'chai';
 import SplunkOtelWeb, { INSTRUMENTATIONS_ALL_DISABLED } from '../src/index';
 import { SpanCapturer } from './utils';

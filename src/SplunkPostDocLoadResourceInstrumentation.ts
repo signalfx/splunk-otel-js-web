@@ -20,7 +20,7 @@ import {
 
 import { VERSION } from './version';
 import { hrTime, isUrlIgnored } from '@opentelemetry/core';
-import { addSpanNetworkEvents } from '@opentelemetry/web';
+import { addSpanNetworkEvents } from '@opentelemetry/sdk-trace-web';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 export interface SplunkPostDocLoadResourceInstrumentationConfig extends InstrumentationConfig {
