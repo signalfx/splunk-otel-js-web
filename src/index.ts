@@ -40,7 +40,7 @@ import { ERROR_INSTRUMENTATION_NAME, SplunkErrorInstrumentation } from './Splunk
 import { generateId, getPluginConfig } from './utils';
 import { getRumSessionId, initSessionTracking, SessionIdType } from './session';
 import { SplunkWebSocketInstrumentation } from './SplunkWebSocketInstrumentation';
-import { SplunkWebVitalsInstrumentation } from './webvitals';
+import { SplunkWebVitalsInstrumentation } from './SplunkWebvitalsInstrumentation';
 import { SplunkLongTaskInstrumentation } from './SplunkLongTaskInstrumentation';
 import { SplunkPageVisibilityInstrumentation } from './SplunkPageVisibilityInstrumentation';
 import { SplunkConnectivityInstrumentation } from './SplunkConnectivityInstrumentation';
@@ -364,12 +364,6 @@ export const SplunkRum: SplunkOtelWebType = {
     });
 
     this.provider = provider;
-
-    //TODO remove
-    // const vitalsConf = getPluginConfig(processedOptions.instrumentations.webvitals);
-    // if (vitalsConf !== false) {
-    //   initWebVitals(provider);
-    // }
 
     inited = true;
     diag.info('SplunkRum.init() complete');

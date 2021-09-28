@@ -31,7 +31,6 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase {
   init(): void {}
 
   enable(): void {
-    console.log('Enable: webvitals');
     // CLS is defined as being sent more than once, easier to just ensure that everything is sent just on the first occurence.
     getFID((metric) => {
       this.report('fid', metric);
@@ -45,8 +44,6 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase {
   }
 
   report(name: string, metric: Metric): void {
-    console.log('Metric: ', metric);
-    this.tracer.startSpan('web-vitals-test-span').end();
     if (this.reported[name]) {
       return;
     }
