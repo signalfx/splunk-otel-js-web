@@ -16,8 +16,7 @@
 
 # Splunk distribution of OpenTelemetry JavaScript for Web
 
-The Splunk distribution of [OpenTelemetry JavaScript for
-Web](https://github.com/open-telemetry/opentelemetry-js)
+The Splunk distribution of [OpenTelemetry JavaScript for Web](https://github.com/open-telemetry/opentelemetry-js)
 
 > :construction: This project is currently in **BETA**. It is **officially supported** by Splunk. However, breaking changes **MAY** be introduced.
 
