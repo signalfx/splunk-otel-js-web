@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import * as shimmer from 'shimmer';
-import { getElementXPath } from '@opentelemetry/web';
+import { getElementXPath } from '@opentelemetry/sdk-trace-web';
 import { limitLen } from './utils';
 import { Span } from '@opentelemetry/api';
 import { hrTime } from '@opentelemetry/core';
