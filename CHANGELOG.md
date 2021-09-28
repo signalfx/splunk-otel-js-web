@@ -3,6 +3,17 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## Unreleased
 
+## 0.9.0
+
+| Open Telemetry API | Core   | Contrib |
+|--------------------|--------|---------|
+| 1.0.2              | 0.25.0 | 0.25.0  |
+
+Changes:
+
+- Update web-vitals library to 2.0.0 [#249](https://github.com/signalfx/splunk-otel-js-web/pull/249)
+- Handle undefined errors more gracefully [#255](https://github.com/signalfx/splunk-otel-js-web/pull/255)
+
 ## 0.8.1
 
 Changes:
