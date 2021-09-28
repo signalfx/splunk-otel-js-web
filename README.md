@@ -77,7 +77,6 @@ Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for instructions on building, r
 ## License and versioning
 
 The Splunk distribution of OpenTelemetry JavaScript Browser is a distribution
-of the [OpenTelemetry JavaScript
-Browser](https://github.com/open-telemetry/opentelemetry-js) project. It is
+of the [OpenTelemetry JavaScript Browser](https://github.com/open-telemetry/opentelemetry-js) project. It is
 released under the terms of the Apache Software License version 2.0. See [the
 license file](./LICENSE) for more details.
