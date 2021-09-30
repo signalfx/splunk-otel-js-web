@@ -31,6 +31,9 @@ import { findCookieValue, generateId, isIframe } from './utils';
     Future work can add more fields though note that the fact that the value doesn't change
     once created makes this very robust when used in multiple tabs/windows - tabs don't compete/
     race to do anything but set the max-age.
+
+    Finally, if SplunkRumNative exists, use its session ID exclusively and don't bother
+    with setting cookies, checking for inactivity, etc.
 */
 
 
@@ -127,11 +130,23 @@ export function updateSessionStatus(): void {
   recentActivity = false;
 }
 
+function hasNativeSessionId(): boolean {
+  return window['SplunkRumNative'] && window['SplunkRumNative'].getNativeSessionId;
+}
+
 export function initSessionTracking(
   instanceId: SessionIdType,
   newEventTarget: InternalEventTarget,
   domain?: string,
 ): { deinit: () => void; } {
+  if (hasNativeSessionId()) {
+    // short-circuit and bail out - don't create cookie, watch for inactivity, or anything
+    return {
+      deinit: () => {
+        rumSessionId = undefined;
+      }
+    };
+  }
   if (domain) {
     cookieDomain = domain;
   }
@@ -160,5 +175,8 @@ export function initSessionTracking(
 }
 
 export function getRumSessionId(): SessionIdType {
+  if (hasNativeSessionId()) {
+    return window['SplunkRumNative'].getNativeSessionId();
+  }
   return rumSessionId;
 }
