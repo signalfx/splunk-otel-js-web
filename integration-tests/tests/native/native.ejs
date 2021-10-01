@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+       <meta charset="UTF-8">
+       <title>Native</title>
+       <script>
+               window.SplunkRumNative = {
+                       getNativeSessionId: function() {
+                               return '12341234123412341234123412341234';
+                       }
+               };
+       </script>
+
+       <%- renderAgent({debug: true}) %>
+
+       <style>
+               #container {
+                       height: 200px;
+                       width: 400px;
+               }
+       </style>
+</head>
+<body>
+       <h1>Native</h1>
+</body>
+</html>
