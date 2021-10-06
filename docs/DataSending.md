@@ -13,4 +13,4 @@ The Splunk Browser agent has built-in limits for situations where the instrument
 
 ## Geolocation data
 
-The beacon sends IP addresses as part of the data payload. Collected IP addresses are used in the APM back end to map the geographical location of the user (country, city, etc.).
+Splunk Observability Cloud collects the IP addresses of all beacon connections. Collected IP addresses are used in the APM back end to map the geographical location of the user (country, city, etc.).
