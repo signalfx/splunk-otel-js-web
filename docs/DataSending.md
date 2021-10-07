@@ -13,4 +13,6 @@ The Splunk Browser agent has built-in limits for situations where the instrument
 
 ## Geolocation data
 
-Splunk Observability Cloud collects the IP addresses of all beacon connections. Collected IP addresses are used in the APM back end to map the geographical location of the user (country, city, etc.).
+The browser agents sends the IP addresses of all beacon connections. Collected IP addresses are used in the APM back end to map the geographical location of the user (country, city, etc.). 
+
+> IP addresses are not persisted in RUM and are dropped within 6 hours. Only geo metadata (country, city, and region) is calculated from the IPs.
