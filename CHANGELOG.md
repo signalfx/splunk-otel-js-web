@@ -3,6 +3,9 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## Unreleased
 
+## 0.9.2
+- Use SplunkRumNative.getNativeSessionId when present
+
 ## 0.9.0 & 0.9.1
 
 | Open Telemetry API | Core   | Contrib |
