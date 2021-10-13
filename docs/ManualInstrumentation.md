@@ -1,6 +1,6 @@
 # Manual instrumentation using API
 
-In case when auto-instrumentations do not capture all the information needed, you can capture additional telemetry by manually instrumenting your application (for example, to report timings for actions that take multiple requests), you can use the [OpenTelemetry API](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-tracing). Splunk Browser Agent automatically registers it's TraceProvider with `@opentelemetry/api`, allowing you or any other instrumentations you want to use to access it via standard methods.
+In case when auto-instrumentations do not capture all the information needed, you can capture additional telemetry by manually instrumenting your application (for example, to report timings for actions that take multiple requests), you can use the [OpenTelemetry API](https://open-telemetry.github.io/opentelemetry-js-api/). Splunk Browser Agent automatically registers it's TraceProvider with `@opentelemetry/api`, allowing you or any other instrumentations you want to use to access it via standard methods.
 
 > The version of `@opentelemetry/api` should match [the agent's used `@opentelemetry/api` version](https://github.com/signalfx/splunk-otel-js-web#open-telemetry-version) <!-- TODO when stable it may be of same major and up to same minor version -->
 
