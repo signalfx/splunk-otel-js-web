@@ -59,7 +59,11 @@ To start monitoring using Splunk RUM distributed via NPM:
    - `app` - naming the application that will be monitored so it can be distinguished from other applications.
 1. Import or require the file above other application code files in your bundle root ensuring the instrumentation runs before the application code. 
 
-You can find an example NPM installation in our [Github examples](https://github.com/signalfx/splunk-otel-js-web/tree/cc69ea1e7c16a0ae2f9f144b7be8a139a708774d/examples/installing-npm).
+You can find an example NPM installation in our [Github examples](../examples/installing-npm).
+
+> When using a framework that includes support for server side rendering (SSR) or server side generation (SSG, ISR), make sure RUM isn't ran in node.js as it is not a supported environment. You can however install APM for it.
+> 
+> The instructions for this are highly framework specific. For next.js we have [an example app](../examples/next-ssr-example) with step-by-step instructions that you can follow.
 
 Bear in mind that choosing this approach will require updating to new versions of Splunk RUM Agent by you, vs choosing the CDN which automatically receives version upgrades as they are rolled out by Splunk. 
 
