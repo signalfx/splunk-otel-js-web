@@ -36,8 +36,7 @@ All of the data is currently sent in batches, containing modified Zipkin spans e
 |`location.href`|`string`|Value of [`location.href`](https://developer.mozilla.org/en-US/docs/Web/API/Location/href) at the moment of creating the span.|
 |`splunk.rumSessionId`|`string`|Session ID, captured from the \_splunk_rum_sid cookie.|
 |`splunk.rumVersion` [`telemetry.sdk.version`](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/semantic_conventions/README.md#telemetry-sdk)|`string`|Version of the Splunk RUM SDK instrumenting the application.|
-|`splunk.scriptInstance`|`string`|64bit id. Every instance of splunk-rum.js gets assigned its own id eg. to distinguish between different open tabs within the same browser window sharing the same session.|
-|`splunk.scriptInstance`|`string`|64bit id. Every instance of splunk-rum.js gets assigned its own id eg. to distinguish between different open tabs within the same browser window sharing the same session.|
+|`splunk.scriptInstance`|`string`|64bit id. Every instance of splunk-otel-web.js gets assigned its own id eg. to distinguish between different open tabs within the same browser window sharing the same session. This is not persisted so every time page is reloaded it will have new value.|
 |`ot.status_code`|`string`|Always `“UNSET”`|
 |[`telemetry.sdk.language`](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/semantic_conventions/README.md#telemetry-sdk)|`string`|Always `"webjs"`|
 |[`telemetry.sdk.name`](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/semantic_conventions/README.md#telemetry-sdk)|`string`|Always `"@splunk/otel-web"`|
