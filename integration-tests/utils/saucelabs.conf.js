@@ -23,7 +23,7 @@ module.exports = {
   src_folders: ['integration-tests/tests'],
   globals_path: join(__dirname, 'globals.js'),
   // See `/tests/custom-commands/customSauceLabsEnd.js` for the logic
-  custom_commands_path: 'integration-tests/utils/custom-commands/',
+  custom_commands_path: join(__dirname, 'custom-commands/'),
   filter: '**/*.spec.js',
 
   test_workers: {
