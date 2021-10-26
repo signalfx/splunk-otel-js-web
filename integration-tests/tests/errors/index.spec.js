@@ -21,7 +21,9 @@ module.exports = {
     browser.globals.clearReceivedSpans();
   },
   after: function(browser) {
-    browser.customSauceLabsEnd();
+    if (browser.options.webdriver.access_key) {
+      browser.customSauceLabsEnd();
+    }
   },
   'DOM resource 4xx': async function(browser) {
     await browser.url(browser.globals.getUrl('/errors/views/resource-4xx.ejs'));
