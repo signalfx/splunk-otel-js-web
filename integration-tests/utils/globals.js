@@ -16,7 +16,6 @@ limitations under the License.
 
 const { isBrowser } = require('./helpers');
 const { buildInstrumentationBackend } = require('../../utils/testBackendProvider');
-const SauceLabs = require('saucelabs');
 
 const GLOBAL_TEST_BUFFER_TIMEOUT = 20;
 const NETWORK_LATENCY_MARGIN = 2000;
@@ -82,7 +81,7 @@ module.exports = {
 
     browser.globals.buildInstrumentationBackend = () => buildInstrumentationBackend({
       enableHttps: browser.globals.enableHttps,
-      hostname: 'local.test'
+      hostname: browser.globals.hostname
     });
 
     Object.assign(browser.globals, await buildBackendContext(browser));

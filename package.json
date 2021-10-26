@@ -25,7 +25,7 @@
     "test:integration:local:headlessChrome:_execute": "nightwatch -c ./integration-tests/utils/local.conf.js -e headlessChrome",
     "test:integration:local:headlessFirefox:_execute": "nightwatch -c ./integration-tests/utils/local.conf.js -e headlessFirefox",
     "test:integration:local:safari:_execute": "nightwatch -c ./integration-tests/utils/local.conf.js -e safari",
-    "test.saucelabs.us": "nightwatch --config ./integration-tests/utils/saucelabs.conf.js --env edge",
+    "test.saucelabs.us": "nightwatch --config ./integration-tests/utils/saucelabs.conf.js",
     "test:integration:_selfSignCerts": "(cd utils && cd certs && openssl req -nodes -new -x509 -keyout server.key -out server.cert)",
     "test:performance": "node ./performance-tests/runner.js",
     "version:check": "node ./scripts/version-check.js",

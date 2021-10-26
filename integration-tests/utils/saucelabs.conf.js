@@ -45,6 +45,7 @@ module.exports = {
         seleniumVersion: '3.141.59',
       },
       globals: {
+        hostname: 'local.test',
         enableHttps: true
       }
     },
