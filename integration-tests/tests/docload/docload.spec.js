@@ -17,7 +17,9 @@ limitations under the License.
 module.exports = {
   '@tags': ['safari-10.1'],
   after: function(browser) {
-    browser.customSauceLabsEnd();
+    if (browser.options.webdriver.access_key) {
+      browser.customSauceLabsEnd();
+    }
   },
   beforeEach: function(browser) {
     browser.globals.clearReceivedSpans();  
