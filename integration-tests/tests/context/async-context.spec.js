@@ -42,6 +42,7 @@ async function runTest(browser, filename, extraChecks) {
 }
 
 module.exports = {
+  '@disabled': true,
   afterEach: function(browser) {
     browser.globals.clearReceivedSpans();
   },

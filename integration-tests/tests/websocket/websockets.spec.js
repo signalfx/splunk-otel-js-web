@@ -20,11 +20,12 @@ function isUnsupported(browser) {
   // Test manually works in IE but not here for some reason
   return isBrowser(browser, {
     safari: true,
-    ie: true,
+    'internet explorer': true,
   });
 }
 
 module.exports = {
+  '@disabled': true,
   beforeEach : function(browser) {
     browser.globals.clearReceivedSpans();
   },

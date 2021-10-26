@@ -15,6 +15,9 @@ limitations under the License.
 */
 
 module.exports = {
+  after: function(browser) {
+    browser.customSauceLabsEnd();
+  },
   'resources before load event are correctly captured': async function(browser) {
     browser.globals.clearReceivedSpans();
     await browser.url(browser.globals.getUrl('/docload/docload-all.ejs'));

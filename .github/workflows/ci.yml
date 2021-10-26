@@ -30,18 +30,26 @@ jobs:
       - name: Unit test
         run: npm run test:unit:ci
 
-  browserstack-integration-tests:
+  saucelabs-integration-tests:
     runs-on: ubuntu-latest
     permissions: read-all
     environment: integration
     env:
-      BROWSERSTACK_USER: ${{ secrets.BROWSERSTACK_USER }}
-      BROWSERSTACK_KEY: ${{ secrets.BROWSERSTACK_KEY }}
+      SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
+      SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
+      SAUCE_TUNNEL_ID: ${{ secrets.SAUCE_TUNNEL_ID }}
     strategy:
       fail-fast: false
       matrix:
-        browser: [edge, ie11, safari, safari-10.1]
+        browser: [edge]
     steps:
+      - name: Setup sauce connect
+        uses: saucelabs/sauce-connect-action@v2.0.0
+        with:
+            username: ${{ secrets.SAUCE_USERNAME }}
+            accessKey: ${{ secrets.SAUCE_ACCESS_KEY }}
+            tunnelIdentifier: ${{ secrets.SAUCE_TUNNEL_ID }}
+            scVersion: 4.6.4
       - name: Checkout
         uses: actions/checkout@v1
       - uses: actions/setup-node@v2
@@ -55,9 +63,11 @@ jobs:
           restore-keys: npm-
       - run: npm ci
       - run: npm run compile
-      - name: Run integration tests in Browserstack
-        run: node ./integration-tests/utils/browserstack.runner.js -e ${{ matrix.browser }} -c ./integration-tests/utils/browserstack.conf.js
-        timeout-minutes: 15
+      - name: Add to hosts file
+        run: echo "127.0.0.1 local.test" | sudo tee -a /etc/hosts          
+      - name: Run integration tests in Saucelabs
+        run: nightwatch --config ./integration-tests/utils/saucelabs.conf.js --env ${{ matrix.browser }}
+        timeout-minutes: 5
 
   local-integration-tests:
     runs-on: ubuntu-latest
