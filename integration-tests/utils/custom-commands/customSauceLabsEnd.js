@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 exports.command = async function () {
-  console.log('this', this.currentTest.name);
   // 1. Require the `Saucelabs` npm module
   const SauceLabs = require('saucelabs');
   // 2. Instantiate the module
@@ -28,7 +27,7 @@ exports.command = async function () {
   const sessionId = this.capabilities['webdriver.remote.sessionid'];
   // 3b. Get the jobName
   const jobName = this.currentTest.name;
-  // 3c. Get the status
+  // 3c. Get the status  
   const passed = this.currentTest.results.testcases[jobName].passed > 0;
 
   // 4. Update the status in Sauce Labs

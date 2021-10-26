@@ -174,6 +174,11 @@ module.exports = {
         await browser.globals._closeBackend();
       }
       console.log('Closed dev server.');
+
+      if (browser.options.webdriver.access_key) {
+        browser.customSauceLabsEnd();
+      }
+      
     } finally {
       done();
     }

@@ -17,9 +17,7 @@ limitations under the License.
 module.exports = {
   'webvitals spans': async function(browser) {
     // the google webvitals library only works on chrome (and chrome-based edge) at the moment
-    const SUPPORTED_BROWSERS = ['chrome', 'edge'];
-    const currentBrowser = browser.options.desiredCapabilities.browserName.toLowerCase();
-    if (!SUPPORTED_BROWSERS.includes(currentBrowser)) {
+    if (browser.globals.isBrowser({ chrome: true, MicrosoftEdge: true })) {
       return;
     }
 
