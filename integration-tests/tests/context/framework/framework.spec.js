@@ -18,7 +18,7 @@ async function runTest(browser, filename) {
   browser.globals.clearReceivedSpans();
   await browser.url(browser.globals.getUrl(filename));
   await browser.click('#btn1');
-  await browser.globals.waitForTestToFinish();
+  // await browser.globals.waitForTestToFinish();
   
   const customSpan = await browser.globals.findSpan(span => span.name === 'custom-span');
   const clickSpan = await browser.globals.findSpan(span => span.name === 'click');
