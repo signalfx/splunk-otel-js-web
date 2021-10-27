@@ -66,7 +66,7 @@ jobs:
       - name: Add to hosts file
         run: echo "127.0.0.1 local.test" | sudo tee -a /etc/hosts          
       - name: Run integration tests in Saucelabs
-        run: npm run test.saucelabs.us -- --env ${{ matrix.browser }}
+        run: npm run test:integration:remote -- --env ${{ matrix.browser }}
         timeout-minutes: 5
 
   local-integration-tests:
