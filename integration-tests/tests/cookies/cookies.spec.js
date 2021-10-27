@@ -53,10 +53,10 @@ module.exports = {
     const cookie = await browser.getCookie('_splunk_rum_sid');
     await browser.assert.ok(cookie);
     await browser.assert.ok(fetchSpan);
-    if (!isBrowser(browser, 'ie')) {
+    if (!isBrowser(browser, 'internet explorer')) {
       await browser.assert.ok(cookie.secure);
     }
-    if (!isBrowser(browser, { ie: true, safari: true })) {
+    if (!isBrowser(browser, { 'internet explorer': true, safari: true })) {
       await browser.assert.equal(cookie.sameSite, 'None');
     }
   },

@@ -14,12 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-function isSupported(browser) {
-  const SUPPORTED_BROWSERS = ['chrome', 'edge'];
-  const currentBrowser = browser.options.desiredCapabilities.browserName;
-  return SUPPORTED_BROWSERS.includes(currentBrowser.toLowerCase());
-}
-
 module.exports = {
   '@tags': ['skip-ie11'],
   beforeEach: function(browser) {
@@ -29,7 +23,7 @@ module.exports = {
     await browser.url(browser.globals.getUrl('/longtask/index.ejs'));
     await browser.click('#btnLongtask');
 
-    if (isSupported(browser)) {
+    if (browser.globals.isBrowser({ chrome: true, microsoftedge: true })) {
       const longtaskSpan = await browser.globals.findSpan(span => span.name === 'longtask');
       await browser.assert.ok(!!longtaskSpan, 'Checking longtask span presence.');
       await browser.assert.strictEqual(longtaskSpan.tags['component'], 'splunk-longtask', 'component');
@@ -53,7 +47,7 @@ module.exports = {
     await browser.globals.assertNoErrorSpans();
   },
   'can be disabled': async function(browser) {
-    if (!isSupported(browser)) {
+    if (!browser.globals.isBrowser({ chrome: true, microsoftedge: true })) {
       return; // Skip this test
     }
 
