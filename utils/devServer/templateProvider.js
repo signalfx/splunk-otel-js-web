@@ -48,14 +48,11 @@ const INJECT_TEMPLATE = `<script src="<%= file -%>" crossorigin="anonymous"></sc
         done(null);
       }
 
-      var len = SplunkRum._processor._finishedSpans.length;
-      var lastId = null;
-      if (len > 0) {
-        lastId = SplunkRum._processor._finishedSpans[len - 1].spanContext.spanId;
-      }
-
+      var span = SplunkRum.provider.getTracer('default').startSpan('guard-span');
+      span.end();
+      
       SplunkRum._processor.forceFlush().then(function () {
-        done(lastId);
+        done(span._spanContext.spanId);
       }, function () {
         done(null);
       });

@@ -35,7 +35,7 @@ async function findSpan(spans, testFn, accruedTime) {
 
   const foundSpan = spans.find(testFn);
   if (foundSpan) {
-    return foundSpan;
+    return foundSpan; 
   }
 
   return new Promise((resolve) => {
@@ -81,7 +81,7 @@ module.exports = {
 
     browser.globals.buildInstrumentationBackend = () => buildInstrumentationBackend({
       enableHttps: browser.globals.enableHttps,
-      hostname: browser.globals.hostname,
+      hostname: browser.globals.hostname
     });
 
     Object.assign(browser.globals, await buildBackendContext(browser));
@@ -90,7 +90,15 @@ module.exports = {
       await browser.execute(function (hidden) {
         Object.defineProperty(document, 'hidden', { value: hidden, configurable: true });
         Object.defineProperty(document,'visibilityState', { value: hidden ? 'hidden': 'visible', configurable: true });
-        window.dispatchEvent(new Event('visibilitychange'));
+        let e;
+        try {
+          e = new Event('visibilitychange');
+        } catch (err) {
+          // IE
+          e = document.createEvent('Event');
+          e.initEvent('visibilitychange', false, false);
+        }
+        window.dispatchEvent(e);
       }, [visible]);
     };
 
@@ -159,16 +167,23 @@ module.exports = {
 
   // This will be run after each test suite is finished
   afterEach: async function(browser, done) {
+    // console.log('after each', browser)
     try {
       console.log('Closing dev server.');
       if (browser.globals._closeBackend) {
         await browser.globals._closeBackend();
       }
       console.log('Closed dev server.');
+
+      if (browser.options.webdriver.access_key) {
+        browser.customSauceLabsEnd();
+      }
+      
     } finally {
       done();
     }
   },
+
 
   GLOBAL_TEST_BUFFER_TIMEOUT,
 };
