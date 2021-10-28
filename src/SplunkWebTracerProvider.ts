@@ -14,57 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { WebTracerConfig, WebTracerProvider } from '@opentelemetry/sdk-trace-web';
-import { propagation, context, trace, SpanAttributes } from '@opentelemetry/api';
-import { Tracer } from '@opentelemetry/sdk-trace-base';
+import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
+import { propagation, context, trace } from '@opentelemetry/api';
 
-export interface SplunkWebTracerProviderConfig extends WebTracerConfig {
-  app: string;
-  instanceId: string;
-  globalAttributes: SpanAttributes;
-}
 
 export class SplunkWebTracerProvider extends WebTracerProvider {
-  private readonly _app: string;
-  private readonly _instanceId: string;
-  private readonly _globalAttributes: SpanAttributes;
-
-  constructor(config: SplunkWebTracerProviderConfig) {
-    super(config);
-
-    this._app = config.app;
-    this._instanceId = config.instanceId;
-    this._globalAttributes = config.globalAttributes ?? {};
-  }
-
-  getTracer(name: string, version?: string): Tracer {
-    const tracer = super.getTracer(name, version);
-    const origStartSpan = tracer.startSpan;
-
-    // TODO: subclass Tracer to implement this
-    tracer.startSpan = (...args) => {
-      const span = origStartSpan.apply(tracer, args);
-      span.setAttribute('location.href', location.href);
-      span.setAttributes(this._globalAttributes);
-      return span;
-    };
-    return tracer;
-  }
-
-  setGlobalAttributes(attributes: SpanAttributes): void {
-    if (attributes) {
-      Object.assign(this._globalAttributes, attributes);
-    } else {
-      for (const key of Object.keys(this._globalAttributes)) {
-        delete this._globalAttributes[key];
-      }
-    }
-  }
-
-  _experimental_getGlobalAttributes(): SpanAttributes {
-    return this._globalAttributes;
-  }
-
   shutdown(): Promise<void> {
     return new Promise<void>((resolve) => {
       // TODO: upstream

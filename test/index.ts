@@ -26,6 +26,6 @@ import './websockets.test';
 import './SplunkExporter.test';
 import './api.test';
 import './SplunkContextManager.test';
-import './SplunkWebTracerProvider.test';
+import './SplunkSpanAttributesProcessor.test';
 import './SplunkOtelWeb.test';
 import './synthetics.test';
