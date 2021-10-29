@@ -3,6 +3,11 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## Unreleased
 
+## 0.9.3
+
+- Correct longtask span end for buffered spans ([#280](https://github.com/signalfx/splunk-otel-js-web/pull/280))
+- Move span attribute setting to spanprocessor / fix stack overflow bug ([#279](https://github.com/signalfx/splunk-otel-js-web/pull/279))
+
 ## 0.9.2
 - Use SplunkRumNative.getNativeSessionId when present
 
