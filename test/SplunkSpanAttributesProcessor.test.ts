@@ -15,40 +15,32 @@ limitations under the License.
 */
 
 import { expect } from 'chai';
-import { SplunkWebTracerProvider } from '../src';
+import { SplunkSpanAttributesProcessor } from '../src/SplunkSpanAttributesProcessor';
 
-describe('SplunkWebTracerProvider', () => {
+describe('SplunkSpanAttributesProcessor', () => {
   describe('setting global attribute', () => {
     it('should set attributes via constructor', () => {
-      const provider = new SplunkWebTracerProvider({
-        app: 'app-name',
-        instanceId: 'instance-id',
-        globalAttributes: {
-          key1: 'value1',
-        },
+      const processor = new SplunkSpanAttributesProcessor({
+        key1: 'value1',
       });
 
-      expect(provider._experimental_getGlobalAttributes()).to.deep.eq({
+      expect(processor._experimental_getGlobalAttributes()).to.deep.eq({
         key1: 'value1',
       });
     });
 
     it('should patch attributes via .setGlobalAttributes()', () => {
-      const provider = new SplunkWebTracerProvider({
-        app: 'app-name',
-        instanceId: 'instance-id',
-        globalAttributes: {
-          key1: 'value1',
-          key2: 'value2',
-        },
+      const processor = new SplunkSpanAttributesProcessor({
+        key1: 'value1',
+        key2: 'value2',
       });
 
-      provider.setGlobalAttributes({
+      processor.setGlobalAttributes({
         key2: 'value2-updaged',
         key3: 'value3',
       });
 
-      expect(provider._experimental_getGlobalAttributes()).to.deep.eq({
+      expect(processor._experimental_getGlobalAttributes()).to.deep.eq({
         key1: 'value1',
         key2: 'value2-updaged',
         key3: 'value3',

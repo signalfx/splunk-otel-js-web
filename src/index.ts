@@ -61,6 +61,7 @@ import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 import { SDK_INFO } from '@opentelemetry/core';
 import { VERSION } from './version';
 import { getSyntheticsRunId, SYNTHETICS_RUN_ID_ATTRIBUTE } from './synthetics';
+import { SplunkSpanAttributesProcessor } from './SplunkSpanAttributesProcessor';
 
 export * from './SplunkExporter';
 export * from './SplunkWebTracerProvider';
@@ -205,6 +206,8 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 
   provider?: SplunkWebTracerProvider;
 
+  attributesProcessor?: SplunkSpanAttributesProcessor;
+
   setGlobalAttributes: (attributes: SpanAttributes) => void;
 
   /**
@@ -307,12 +310,6 @@ export const SplunkRum: SplunkOtelWebType = {
     }
 
     const provider = new SplunkWebTracerProvider({
-      app,
-      instanceId,
-      globalAttributes: {
-        ...environment ? { environment } : {},
-        ...processedOptions.globalAttributes || {},
-      },
       resource: new Resource(resourceAttrs),
     });
     const instrumentations = INSTRUMENTATIONS.map(({ Instrument, confKey, disable }) => {
@@ -328,6 +325,12 @@ export const SplunkRum: SplunkOtelWebType = {
 
       return null;
     }).filter(a => a);
+
+    this.attributesProcessor = new SplunkSpanAttributesProcessor({
+      ...environment ? { environment } : {},
+      ...processedOptions.globalAttributes || {},
+    });
+    provider.addSpanProcessor(this.attributesProcessor);
 
     if (processedOptions.beaconUrl) {
       const exporter = buildExporter(processedOptions);
@@ -393,14 +396,14 @@ export const SplunkRum: SplunkOtelWebType = {
   },
 
   setGlobalAttributes(this: SplunkOtelWebType, attributes) {
-    this.provider?.setGlobalAttributes(attributes);
+    this.attributesProcessor?.setGlobalAttributes(attributes);
     eventTarget?.emit('global-attributes-changed', {
-      attributes: this.provider?._experimental_getGlobalAttributes() || {},
+      attributes: this.attributesProcessor?._experimental_getGlobalAttributes() || {},
     });
   },
 
   _experimental_getGlobalAttributes(this: SplunkOtelWebType) {
-    return this.provider?._experimental_getGlobalAttributes();
+    return this.attributesProcessor?._experimental_getGlobalAttributes();
   },
 
   error(...args) {
