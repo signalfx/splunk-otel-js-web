@@ -14,6 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+function browserIsCompatible(browser) {
+  return browser.globals.isBrowser({ chrome: true, microsoftedge: true });
+}
+
 module.exports = {
   '@tags': ['skip-ie11'],
   beforeEach: function(browser) {
@@ -23,7 +27,7 @@ module.exports = {
     await browser.url(browser.globals.getUrl('/longtask/index.ejs'));
     await browser.click('#btnLongtask');
 
-    if (browser.globals.isBrowser({ chrome: true, microsoftedge: true })) {
+    if (browserIsCompatible(browser)) {
       const longtaskSpan = await browser.globals.findSpan(span => span.name === 'longtask');
       await browser.assert.ok(!!longtaskSpan, 'Checking longtask span presence.');
       await browser.assert.strictEqual(longtaskSpan.tags['component'], 'splunk-longtask', 'component');
@@ -42,12 +46,23 @@ module.exports = {
       await browser.assert.ok(duration >  50, `Duration (${duration}) must be over 50ms by definition.`);
       // note: our longtask simulator targets 55ms, but headless chrome doesn't understand throttling
       await browser.assert.ok(duration < 1000, `Duration (${duration}) must be less than 1s by definition.`);
+      await browser.assert.strictEqual(longtaskSpan.duration, duration * 1000, 'Span duration matches longtask duration');
     }
 
     await browser.globals.assertNoErrorSpans();
   },
+  'reports buffered longtask': async function(browser) {
+    if (!browserIsCompatible(browser)) {
+      return; // Skip this test
+    }
+
+    await browser.url(browser.globals.getUrl('/longtask/buffered.ejs'));
+    const longtaskSpan = await browser.globals.findSpan(span => span.name === 'longtask');
+    const duration = parseFloat(longtaskSpan.tags['longtask.duration']);
+    await browser.assert.strictEqual(longtaskSpan.duration, duration * 1000, 'Span duration matches longtask duration');
+  },
   'can be disabled': async function(browser) {
-    if (!browser.globals.isBrowser({ chrome: true, microsoftedge: true })) {
+    if (!browserIsCompatible(browser)) {
       return; // Skip this test
     }
 

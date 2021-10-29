@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Longtask tracking test</title>
+  <script id="scenario">
+    const LONGTASK_DURATION = 50 * 1.1; // add 10% margin
+    function generateLongTask() {
+      const startingTimestamp = performance.now();
+      while (performance.now() - startingTimestamp < LONGTASK_DURATION) {}
+    };
+
+    generateLongTask();
+  </script>
+  <%- renderAgent() %>
+</head>
+<body>
+  <h1>Longtask tracking test</h1>
+
+  <pre id="scenarioDisplay"></pre>
+  <script>scenarioDisplay.innerHTML = scenario.innerHTML;</script>
+</body>
+</html>
