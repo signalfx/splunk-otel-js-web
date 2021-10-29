@@ -115,6 +115,7 @@ function getSpans(spanOrSpans) {
   return [{
     name: spanOrSpans.name,
     timestamp: spanOrSpans.timestamp,
+    duration: spanOrSpans.duration,
     tags: spanOrSpans.tags,
     kind: spanOrSpans.kind,
     annotations: spanOrSpans.annotations,
