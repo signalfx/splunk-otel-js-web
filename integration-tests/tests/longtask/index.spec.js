@@ -46,7 +46,7 @@ module.exports = {
       await browser.assert.ok(duration >  50, `Duration (${duration}) must be over 50ms by definition.`);
       // note: our longtask simulator targets 55ms, but headless chrome doesn't understand throttling
       await browser.assert.ok(duration < 1000, `Duration (${duration}) must be less than 1s by definition.`);
-      await browser.assert.strictEqual(longtaskSpan.duration, duration, 'Span duration matches longtask duration');
+      await browser.assert.strictEqual(longtaskSpan.duration, duration * 1000, 'Span duration matches longtask duration');
     }
 
     await browser.globals.assertNoErrorSpans();
@@ -59,7 +59,7 @@ module.exports = {
     await browser.url(browser.globals.getUrl('/longtask/buffered.ejs'));
     const longtaskSpan = await browser.globals.findSpan(span => span.name === 'longtask');
     const duration = parseFloat(longtaskSpan.tags['longtask.duration']);
-    await browser.assert.strictEqual(longtaskSpan.duration, duration, 'Span duration matches longtask duration');
+    await browser.assert.strictEqual(longtaskSpan.duration, duration * 1000, 'Span duration matches longtask duration');
   },
   'can be disabled': async function(browser) {
     if (!browserIsCompatible(browser)) {
