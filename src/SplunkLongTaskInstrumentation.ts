@@ -77,7 +77,7 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
       });
     }
 
-    span.end();
+    span.end(hrTime(entry.startTime + entry.duration));
   }
 
   // TODO: change name, _isSupported is taken by parent
