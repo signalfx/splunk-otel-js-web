@@ -19,6 +19,11 @@ const chromeDriver = require('chromedriver');
 const geckoDriver = require('geckodriver');
 const seleniumServer = require('selenium-server');
 
+console.log('drivers', {
+  chrome: process.env.CHROMEWEBDRIVER,
+  gecko: process.env.GECKOWEBDRIVER
+});
+
 const nightwatch_config = {
   src_folders: ['integration-tests/tests'],
   globals_path: path.join(__dirname, 'globals.js'),
