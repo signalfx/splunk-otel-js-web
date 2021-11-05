@@ -31,8 +31,8 @@ const nightwatch_config = {
     port: 9515,
     check_process_delay: 5000,
     cli_args: {
-      'webdriver.chrome.driver': chromeDriver.path,
-      'webdriver.gecko.driver': geckoDriver.path,
+      'webdriver.chrome.driver': process.env.CHROMEWEBDRIVER ?? chromeDriver.path,
+      'webdriver.gecko.driver': process.env.GECKOWEBDRIVER ?? geckoDriver.path,
     }
   },
 
