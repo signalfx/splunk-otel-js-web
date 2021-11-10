@@ -16,8 +16,8 @@ limitations under the License.
 
 import {
   toZipkinSpan,
-  statusCodeTagName,
-  statusDescriptionTagName,
+  defaultStatusCodeTagName,
+  defaultStatusDescriptionTagName,
 } from '@opentelemetry/exporter-zipkin/build/src/transform.js';
 import { ExportResult, ExportResultCode } from '@opentelemetry/core';
 import { limitLen } from './utils';
@@ -139,7 +139,7 @@ export class SplunkExporter implements SpanExporter {
 
   private _mapToZipkinSpan(span: ReadableSpan): ZipkinSpan {
     const preparedSpan = this._preTranslateSpan(span);
-    const zspan = toZipkinSpan(preparedSpan, SERVICE_NAME, statusCodeTagName, statusDescriptionTagName);
+    const zspan = toZipkinSpan(preparedSpan, SERVICE_NAME, defaultStatusCodeTagName, defaultStatusDescriptionTagName);
     return this._postTranslateSpan(zspan);
   }
 
