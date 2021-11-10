@@ -3,6 +3,10 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## Unreleased
 
+| Open Telemetry API | Core   | Contrib & Instrumentations |
+|--------------------|--------|----------------------------|
+| 1.0.3              | 1.0.0  | 0.26.0                     |
+
 ## 0.9.3
 
 - Correct longtask span end for buffered spans ([#280](https://github.com/signalfx/splunk-otel-js-web/pull/280))
