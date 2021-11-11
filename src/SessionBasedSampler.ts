@@ -62,6 +62,9 @@ export class SessionBasedSampler implements Sampler {
   }
 
   shouldSample(context: Context, traceId: string, spanName: string, spanKind: SpanKind, attributes: SpanAttributes, links: Link[]): SamplingResult {
+    // Implementation based on @opentelemetry/core TraceIdRatioBasedSampler
+    // but replacing deciding based on traceId with sessionId
+    // (not extended from due to private methods)
     const currentSession = getRumSessionId();
     if (this._currentSession !== currentSession) {
       this._currentSessionSampled = this._accumulate(currentSession) < this._upperBound;
