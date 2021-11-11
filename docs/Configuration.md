@@ -17,6 +17,8 @@ Below are the different initialization options available for the Agent:
 |`context.async`|`boolean`|`false`|Enables [asyncronous context manager](Async-Traces.md)|
 |`exporter.onAttributesSerializing`|`(a: SpanAttributes, s?: Span) => SpanAttributes`|`(attrs) => attrs`|Provides a callback for modifying span attributes before exporting. An example use case of the serializer is to filter out PII.|
 |`instrumentations`|`object`|See the following chapter|Enables or disables specific instrumentations. More details how to enable or disable the instrumentations in the next chapter.|
+|`tracer`|`object`|[`TracerConfig`](https://github.com/open-telemetry/opentelemetry-js/blob/main/packages/opentelemetry-sdk-trace-base/src/types.ts)|Configuration options passed to WebTracerProvider. Can be used [to configure sampling](./Sampling.md)|
+
 ## Configuring instrumentations
 In order to enable or disable specific instrumentations in the Browser Agent, you need to change the `capture` configuration parameter. This parameter accepts an object  enabling or disabling specific instrumentations. In addition the `capture` can be used to configure instrumentations. The object structure is simple, consisting of:
 

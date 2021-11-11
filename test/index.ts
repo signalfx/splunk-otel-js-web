@@ -23,6 +23,7 @@ import './servertiming.test';
 import './utils.test';
 import './session.test';
 import './websockets.test';
+import './SessionBasedSampler.test';
 import './SplunkExporter.test';
 import './api.test';
 import './SplunkContextManager.test';
