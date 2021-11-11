@@ -63,20 +63,10 @@ export class SessionBasedSampler implements Sampler {
 
   shouldSample(context: Context, traceId: string, spanName: string, spanKind: SpanKind, attributes: SpanAttributes, links: Link[]): SamplingResult {
     const currentSession = getRumSessionId();
-    console.log('old sample?', {
-      currentSession,
-      prevSession: this._currentSession,
-      prevSessionSampled: this._currentSessionSampled,
-    });
     if (this._currentSession !== currentSession) {
       this._currentSessionSampled = this._accumulate(currentSession) < this._upperBound;
       this._currentSession = currentSession;
     }
-    console.log('new sample!', {
-      currentSession,
-      prevSession: this._currentSession,
-      prevSessionSampled: this._currentSessionSampled,
-    });
 
     const sampler = (this._currentSessionSampled ? this._sampled : this._notSampled);
 
