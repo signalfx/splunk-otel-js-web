@@ -3,9 +3,14 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## Unreleased
 
+## 0.10.0
+
 | Open Telemetry API | Core   | Contrib & Instrumentations |
 |--------------------|--------|----------------------------|
 | 1.0.3              | 1.0.0  | 0.26.0                     |
+
+- Expose tracer config ([#287](https://github.com/signalfx/splunk-otel-js-web/pull/287))
+- Add session based sampler ([#287](https://github.com/signalfx/splunk-otel-js-web/pull/287))
 
 ## 0.9.3
 
