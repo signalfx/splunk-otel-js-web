@@ -25,6 +25,7 @@ import {
   SpanProcessor,
   BufferConfig,
 } from '@opentelemetry/sdk-trace-base';
+import { WebTracerConfig } from '@opentelemetry/sdk-trace-web';
 import { diag, DiagConsoleLogger, DiagLogLevel, SpanAttributes } from '@opentelemetry/api';
 import { SplunkDocumentLoadInstrumentation } from './SplunkDocumentLoadInstrumentation';
 import { SplunkXhrPlugin } from './SplunkXhrPlugin';
@@ -58,13 +59,15 @@ import {
 import { ContextManagerConfig, SplunkContextManager } from './SplunkContextManager';
 import { Resource, ResourceAttributes } from '@opentelemetry/resources';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
-import { SDK_INFO } from '@opentelemetry/core';
+import { AlwaysOffSampler, AlwaysOnSampler, ParentBasedSampler, SDK_INFO } from '@opentelemetry/core';
 import { VERSION } from './version';
 import { getSyntheticsRunId, SYNTHETICS_RUN_ID_ATTRIBUTE } from './synthetics';
 import { SplunkSpanAttributesProcessor } from './SplunkSpanAttributesProcessor';
+import { SessionBasedSampler } from './SessionBasedSampler';
 
 export * from './SplunkExporter';
 export * from './SplunkWebTracerProvider';
+export * from './SessionBasedSampler';
 
 interface SplunkOtelWebOptionsInstrumentations {
   document?:     boolean | InstrumentationConfig;
@@ -134,6 +137,11 @@ export interface SplunkOtelWebConfig {
    * will be visible to every user of your app
    * */
   rumAuth: string | undefined;
+
+  /**
+   * Config options passed to web tracer
+   */
+  tracer?: WebTracerConfig;
 }
 
 interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
@@ -224,6 +232,11 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 
   DEFAULT_AUTO_INSTRUMENTED_EVENTS: UserInteractionEventsConfig;
 
+  AlwaysOnSampler: typeof AlwaysOnSampler;
+  AlwaysOffSampler: typeof AlwaysOffSampler;
+  ParentBasedSampler: typeof ParentBasedSampler;
+  SessionBasedSampler: typeof SessionBasedSampler;
+
   readonly inited: boolean;
 }
 
@@ -234,6 +247,12 @@ let _errorInstrumentation: SplunkErrorInstrumentation | undefined;
 let eventTarget: InternalEventTarget | undefined;
 export const SplunkRum: SplunkOtelWebType = {
   DEFAULT_AUTO_INSTRUMENTED_EVENTS,
+
+  // Re-export samplers as properties for easier use in CDN build
+  AlwaysOnSampler,
+  AlwaysOffSampler,
+  ParentBasedSampler,
+  SessionBasedSampler,
 
   get inited(): boolean {
     return inited;
@@ -310,6 +329,7 @@ export const SplunkRum: SplunkOtelWebType = {
     }
 
     const provider = new SplunkWebTracerProvider({
+      ...processedOptions.tracer,
       resource: new Resource(resourceAttrs),
     });
     const instrumentations = INSTRUMENTATIONS.map(({ Instrument, confKey, disable }) => {
