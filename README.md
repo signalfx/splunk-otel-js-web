@@ -62,6 +62,7 @@ Please read [Installation.md](./docs/Installation.md) for more info on different
 - [Identifying users](./docs/IdentifyingUsers.md)
 - [Asyncronous traces](./docs/Async-Traces.md)
 - [Exporters](./docs/Exporters.md)
+- [Sampling](./docs/Sampling.md)
 - [Context propagation](./docs/ContextPropagation.md)
 - [Data sending](./docs/DataSending.md)
 - [Cookies](./docs/Cookies.md)
