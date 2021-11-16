@@ -14,6 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { AlwaysOffSampler, AlwaysOnSampler, ParentBasedSampler } from '@opentelemetry/core';
+import { SessionBasedSampler } from './SessionBasedSampler';
+
 if( typeof Symbol !== 'function') {
   const noop = function(){};
   window.SplunkRum = {
@@ -23,6 +26,10 @@ if( typeof Symbol !== 'function') {
     error: noop,
     setGlobalAttributes: noop,
     deinit: noop,
+    AlwaysOnSampler,
+    AlwaysOffSampler,
+    ParentBasedSampler,
+    SessionBasedSampler,
     _internalInit: noop,
     _experimental_addEventListener: noop,
     _experimental_getGlobalAttributes: () => ({}),
