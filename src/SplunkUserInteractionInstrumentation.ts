@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { context, diag, Span, trace, Tracer, TracerProvider } from '@opentelemetry/api';
+import { Span, trace, Tracer, TracerProvider } from '@opentelemetry/api';
 import { hrTime } from '@opentelemetry/core';
-import { InstrumentationConfig, isWrapped } from '@opentelemetry/instrumentation';
+import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import { UserInteractionInstrumentation } from '@opentelemetry/instrumentation-user-interaction';
 
 export type UserInteractionEventsConfig = {
