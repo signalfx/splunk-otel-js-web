@@ -3,6 +3,10 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## Unreleased
 
+## 0.10.1
+
+- Cleanup upstreamed patches & fix angular ([#291](https://github.com/signalfx/splunk-otel-js-web/pull/291))
+
 ## 0.10.0
 
 | Open Telemetry API | Core   | Contrib & Instrumentations |
