@@ -494,6 +494,23 @@ describe('can remove wrapped event listeners', () => {
   });
 });
 
+describe('event listener shenanigans', () => {
+  const capturer = new SpanCapturer();
+  beforeEach(() => {
+    initWithDefaultConfig(capturer);
+  });
+  afterEach(() => {
+    deinit();
+  });
+
+  // https://github.com/angular/components/blob/59002e1649123922df3532f4be78c485a73c5bc1/src/cdk/platform/features/passive-listeners.ts#L21
+  it('doesn\'t break on null listener', () => {
+    document.body.addEventListener('test', null);
+    // fails on throwing error
+    document.body.removeEventListener('test', null);
+  });
+});
+
 describe('can produce click events', () => {
   const capturer = new SpanCapturer();
   beforeEach(() => {
