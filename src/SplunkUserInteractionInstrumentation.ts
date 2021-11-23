@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { context, diag, Span, trace, Tracer, TracerProvider } from '@opentelemetry/api';
+import { Span, trace, Tracer, TracerProvider } from '@opentelemetry/api';
 import { hrTime } from '@opentelemetry/core';
-import { InstrumentationConfig, isWrapped } from '@opentelemetry/instrumentation';
+import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import { UserInteractionInstrumentation } from '@opentelemetry/instrumentation-user-interaction';
 
 export type UserInteractionEventsConfig = {
@@ -75,52 +75,22 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
       return _superCreateSpan(element, eventName, parentSpan);
     };
 
-    // open-telemetry/opentelemetry-js-contrib#643 - wrong this in event listeners
-    (this as any)._patchAddEventListener = function() {
-      // eslint-disable-next-line @typescript-eslint/no-this-alias
-      const plugin = this;
-      return (original: EventTarget['addEventListener']) => {
-        // eslint-disable-next-line consistent-return
-        return function addEventListenerPatched(
-          this: HTMLElement,
-          type: any,
-          listener: any,
-          useCapture: any
-        ) {
-          const once = useCapture && useCapture.once;
-          const patchedListener = function (this: HTMLElement, ...args: any[]) {
-            let parentSpan: Span | undefined;
-            const event: Event | undefined = args[0];
-            const target = event?.target;
-            if (event) {
-              parentSpan = plugin._eventsSpanMap.get(event);
-            }
-            if (once) {
-              plugin.removePatchedListener(this, type, listener);
-            }
-            const span = plugin._createSpan(target, type, parentSpan);
-            if (span) {
-              if (event) {
-                plugin._eventsSpanMap.set(event, span);
-              }
-              return context.with(
-                trace.setSpan(context.active(), span),
-                () => {
-                  const result = plugin._invokeListener(listener, this, args);
-                  // no zone so end span immediately
-                  span.end();
-                  return result;
-                }
-              );
-            } else {
-              return plugin._invokeListener(listener, this, args);
-            }
-          };
-          if (plugin.addPatchedListener(this, type, listener, patchedListener)) {
-            return original.call(this, type, patchedListener, useCapture);
-          }
-        };
-      };
+    // fix bug: angular checks passive event listener support with "null" event listener,
+    // which cannot be used as a WeakMap key
+    const _origAddPatchedListener = (this as any).addPatchedListener.bind(this);
+    (this as any).addPatchedListener = (
+      on: HTMLElement,
+      type: string,
+      // eslint-disable-next-line @typescript-eslint/ban-types
+      listener: Function | EventListenerObject,
+      // eslint-disable-next-line @typescript-eslint/ban-types
+      wrappedListener: Function
+    ) => {
+      if (!listener) {
+        return true;
+      }
+
+      return _origAddPatchedListener(on, type, listener, wrappedListener);
     };
   }
 
@@ -142,42 +112,11 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
     // Hash can be changed with location.hash = '#newThing', no way to hook that directly...
     window.addEventListener('hashchange', this.__hashChangeHandler);
 
-    // Current parent implementation patches HTMLElement's prototype, which causes it to miss document.addEvenetListener:
-    // HTMLElementPrototype -> ElementPrototype -> NodePrototype -> EventTargetPrototype -> Object
-    // HTMLDocumentPrototype -> DocumentPrototype -> NodePrototype -> EventTargetPrototype -> Object
-    // Most browsers have addEventListener on EventTargetPrototype, except for IE for which it doesn't exist and uses NodePrototype
-    if (this.getZoneWithPrototype()) {
-      super.enable();
-    } else {
-      (this as any)._zonePatched = false;
-      if (isWrapped(Node.prototype.addEventListener)) {
-        this._unwrap(Node.prototype, 'addEventListener');
-        diag.debug('removing previous patch from method addEventListener');
-      }
-      if (isWrapped(Node.prototype.removeEventListener)) {
-        this._unwrap(Node.prototype, 'removeEventListener');
-        diag.debug('removing previous patch from method removeEventListener');
-      }
-      this._wrap(Node.prototype, 'addEventListener', (this as any)._patchAddEventListener());
-      this._wrap(Node.prototype, 'removeEventListener', (this as any)._patchRemoveEventListener());
-
-      this._patchHistoryApi();
-    }
+    super.enable();
   }
 
   disable(): void {
-    // parent unwraps calls to addEventListener so call before us
-    if ((this as any)._zonePatched) {
-      super.disable();
-    } else {
-      if (isWrapped(Node.prototype.addEventListener)) {
-        this._unwrap(Node.prototype, 'addEventListener');
-      }
-      if (isWrapped(Node.prototype.removeEventListener)) {
-        this._unwrap(Node.prototype, 'removeEventListener');
-      }
-      this._unpatchHistoryApi();
-    }
+    super.disable();
 
     window.removeEventListener('hashchange', this.__hashChangeHandler);
   }

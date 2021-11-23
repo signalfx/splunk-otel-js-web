@@ -20,9 +20,13 @@ module.exports = {
   },
   'handles causality of a mouse click': async function(browser) {
     await browser.url(browser.globals.getUrl('/user-interaction/causality.ejs'));
+
+    // Do a click so web-vitals can run and then remove it's event listeners
+    await browser.click('body');
+
     await browser.click('#btn1');
 
-    const clickSpan = await browser.globals.findSpan(span => span.name === 'click');
+    const clickSpan = await browser.globals.findSpan(span => span.name === 'click' && span.tags['target_xpath'] === '//*[@id="btn1"]');
     await browser.assert.ok(!!clickSpan, 'Checking click span presence.');
 
     const fetchSpan = await browser.globals.findSpan(span => span.tags['http.url'] === '/some-data');
