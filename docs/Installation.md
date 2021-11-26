@@ -99,24 +99,11 @@ refers to the `MAJOR.MINOR` version of `0.1`, receiving bugfix patches such as `
 
 ## Linking with APM traces
 
-In order to link the Splunk RUM information with the distributed traces in the APM, certain configuration changes need to be applied to the APM agents monitoring the backend of the application. The changes are required to enable sending the `server-timing` header from the back-end which is then used to stitch together the spans from the browser with the backend trace. 
+By default, the Splunk Distributions of OpenTeletry for Splunk APM already send the `server-timing` header. The header is used to link spans from the browser with back-end spans and traces. The environment variable for the setting is `SPLUNK_TRACE_RESPONSE_HEADER_ENABLED`.
 
-To enable this, you need to adjust the configuration in the service the browser connects to that is monitored by Splunk APM agents and set `SPLUNK_CONTEXT_SERVER_TIMING_ENABLED` or  environmental variable to `true` for all agents that do not automatically enable this. Currently only OpenTelemetry-based Java and Node.js agents ship with the configuration option enabled by default.  See manuals for corresponding APM agents for more information.
+To enable RUM-APM linkage in SignalFx tracing libraries, check the documentation for each tracing library.
 
-Trace linkage with APM is currently supported for following Splunk APM agents:
-
-1. OpenTelemetry - based agents:
-   - [splunk-otel-java](https://github.com/signalfx/splunk-otel-java)
-   - [splunk-otel-python](https://github.com/signalfx/splunk-otel-python)
-   - [splunk-otel-js](https://github.com/signalfx/splunk-otel-js)
-   - [splunk-otel-go](https://github.com/signalfx/splunk-otel-go)
-1. SignalFX agents:
-   - [signalfx-java-tracing](https://github.com/signalfx/signalfx-java-tracing)
-   - [signalfx-python-tracing](https://github.com/signalfx/signalfx-python-tracing)
-   - [signalfx-dotnet-tracing](https://github.com/signalfx/signalfx-dotnet-tracing)
-   - [signalfx-nodejs-tracing](https://github.com/signalfx/signalfx-nodejs-tracing)
-
-If your configuration is unsupported, you can still stitch the APM trace with the RUM information by [enabling the trace linking manually](https://github.com/signalfx/splunk-otel-js-browser/blob/main/docs/ServerTraceContext.md).
+> If your configuration is unsupported, you can still stitch the APM trace with the RUM information by [enabling the trace linking manually](https://github.com/signalfx/splunk-otel-js-browser/blob/main/docs/ServerTraceContext.md).
 
 ## Miscellaneous
 
