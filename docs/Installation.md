@@ -101,7 +101,9 @@ refers to the `MAJOR.MINOR` version of `0.1`, receiving bugfix patches such as `
 
 By default, the Splunk Distributions of OpenTeletry for Splunk APM already send the `server-timing` header. The header is used to link spans from the browser with back-end spans and traces. The environment variable for the setting is `SPLUNK_TRACE_RESPONSE_HEADER_ENABLED`.
 
-To enable the link between RUM and APM for older tracing libraries, set `SPLUNK_CONTEXT_SERVER_TIMING_ENABLED` to `true`. If your configuration is unsupported, you can still stitch the APM trace with the RUM information by [enabling the trace linking manually](https://github.com/signalfx/splunk-otel-js-browser/blob/main/docs/ServerTraceContext.md).
+To enable RUM-APM linkage in SignalFx tracing libraries, check the documentation for each tracing library.
+
+> If your configuration is unsupported, you can still stitch the APM trace with the RUM information by [enabling the trace linking manually](https://github.com/signalfx/splunk-otel-js-browser/blob/main/docs/ServerTraceContext.md).
 
 ## Miscellaneous
 
