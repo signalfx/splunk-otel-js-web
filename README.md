@@ -84,3 +84,5 @@ of the [OpenTelemetry JavaScript
 Browser](https://github.com/open-telemetry/opentelemetry-js) project. It is
 released under the terms of the Apache Software License version 2.0. See [the
 license file](./LICENSE) for more details.
+
+>ℹ️&nbsp;&nbsp;SignalFx was acquired by Splunk in October 2019. See [Splunk SignalFx](https://www.splunk.com/en_us/investor-relations/acquisitions/signalfx.html) for more information.
