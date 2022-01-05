@@ -1,6 +1,1 @@
-# Index
-- [Installation](/splunk-otel-js-web/installation.html)
-  - [CDN](/splunk-otel-js-web/installation.html) 
-- [Configuration](/splunk-otel-js-web/configuration.html)
-- [Supported browsers](/splunk-otel-js-web/configuration.html)
-- [Data model](/splunk-otel-js-web/data-model.html)
+The official Splunk documentation for this page is [Instrument browser-based web applications for Splunk RUM](https://quickdraw.splunk.com/redirect/?product=Observability&location=github.browser.rum&version=current). For instructions on how to contribute to the docs, see [CONTRIBUTING.md](../CONTRIBUTING.md#documentation).

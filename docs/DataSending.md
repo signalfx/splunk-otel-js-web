@@ -1,3 +1,5 @@
+> The official Splunk documentation for this page is [RUM data model for browser-based web applications](https://quickdraw.splunk.com/redirect/?product=Observability&location=github.rum.browser.data&version=current). For instructions on how to contribute to the docs, see [CONTRIBUTING.md](../CONTRIBUTING.md#documentation).
+
 # Data sending
 
 Data is sent to `beaconUrl` in every five seconds using `beacon` or `XHR` depending on each browser's capabilities and limits. 

@@ -1,3 +1,5 @@
+> The official Splunk documentation for this page is [Errors collected by the Splunk Browser RUM agent](https://quickdraw.splunk.com/redirect/?product=Observability&location=github.rum.errors&version=current). For instructions on how to contribute to the docs, see [CONTRIBUTING.md](../CONTRIBUTING.md#documentation).
+
 # Collecting errors
 
 Errors are collected by the Splunk RUM Agent as spans with zero duration. The errors are timestamped, based on the moment the error occurred.

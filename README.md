@@ -1,6 +1,6 @@
 <p align="center">
   <strong>
-    <a href="./docs/Installation.md">Getting Started</a>
+    <a href="https://quickdraw.splunk.com/redirect/?product=Observability&location=github.rum.get.started&version=current">Getting Started</a>
     &nbsp;&nbsp;&bull;&nbsp;&nbsp;
     <a href="./CONTRIBUTING.md">Getting Involved</a>
   </strong>
@@ -52,22 +52,7 @@ Please read [Installation.md](./docs/Installation.md) for more info on different
 
 ## Documentation
 
-- [Installation](./docs/Installation.md)
-- [Configuration](./docs/Configuration.md)
-- [Supported browsers](./docs/SupportedBrowsers.md)
-- [Data model](./docs/DataModel.md)
-- [Instrumentations](./docs/Instrumentations.md)
-- [Collecting errors](./docs/Errors.md)
-- [Manual instrumentation](./docs/ManualInstrumentation.md)
-- [Identifying users](./docs/IdentifyingUsers.md)
-- [Asyncronous traces](./docs/Async-Traces.md)
-- [Exporters](./docs/Exporters.md)
-- [Sampling](./docs/Sampling.md)
-- [Context propagation](./docs/ContextPropagation.md)
-- [Data sending](./docs/DataSending.md)
-- [Cookies](./docs/Cookies.md)
-- [Content security policy](./docs/ContentSecurityPolicy.md)
-- [Redacting PII](./docs/PII.md)
+The official Splunk documentation for this page is [Instrument browser-based web applications for Splunk RUM](https://quickdraw.splunk.com/redirect/?product=Observability&location=github.browser.rum&version=current).
 
 ## Open Telemetry version
 

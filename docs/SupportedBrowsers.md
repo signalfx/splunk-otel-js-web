@@ -1,3 +1,5 @@
+> The official Splunk documentation for this page is [Install the Browser RUM agent for Splunk RUM](https://quickdraw.splunk.com/redirect/?product=Observability&location=github.rum.get.started&version=current). For instructions on how to contribute to the docs, see [CONTRIBUTING.md](../CONTRIBUTING.md#documentation).
+
 # Supported browsers
 
 Splunk RUM Agent supports all the modern browsers. The support is available for the following browser families that embed support for `ES6` and `ResourceTiming API`:
