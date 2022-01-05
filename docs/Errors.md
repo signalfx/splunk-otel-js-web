@@ -1,4 +1,4 @@
-> The official Splunk documentation for this page is [Errors collected by the Splunk Browser RUM agent](https://quickdraw.splunk.com/redirect/?product=Observability&location=github.rum.errors&version=current). For instructions on how to contribute to the docs, see [CONTRIBUTING.md](../CONTRIBUTING#documentation.md).
+> The official Splunk documentation for this page is [Errors collected by the Splunk Browser RUM agent](https://quickdraw.splunk.com/redirect/?product=Observability&location=github.rum.errors&version=current). For instructions on how to contribute to the docs, see [CONTRIBUTING.md](../CONTRIBUTING.md#documentation).
 
 # Collecting errors
 
