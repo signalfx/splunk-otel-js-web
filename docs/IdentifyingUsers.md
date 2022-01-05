@@ -1,3 +1,5 @@
+> The official Splunk documentation for this page is [Manually instrument browser-based web applications](https://quickdraw.splunk.com/redirect/?product=Observability&location=github.rum.manual.instrumentation&version=current). For instructions on how to contribute to the docs, see [CONTRIBUTING.md](../CONTRIBUTING#documentation.md).
+
 # Identifying Users
 
 RUM does not do anything automatically to link traces to the user visiting the site. However it can be useful to use user information to filter or debug traces. This information can be added using global attributes - attributes that get attached to every span.

@@ -1,3 +1,5 @@
+> The official Splunk documentation for this page is [RUM data model for browser-based web applications](https://quickdraw.splunk.com/redirect/?product=Observability&location=github.rum.browser.data&version=current). For instructions on how to contribute to the docs, see [CONTRIBUTING.md](../CONTRIBUTING#documentation.md).
+
 # Instrumentations
 
 In this section, all instrumentations are described, along with their purpose and the description of the data model produced. 

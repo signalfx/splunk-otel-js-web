@@ -1,3 +1,5 @@
+> The official Splunk documentation for this page is [Configure the Splunk Browser RUM instrumentation](https://quickdraw.splunk.com/redirect/?product=Observability&location=github.rum.configuration&version=current). For instructions on how to contribute to the docs, see [CONTRIBUTING.md](../CONTRIBUTING#documentation.md).
+
 # Exporters
 
 Splunk's RUM uses Zipkin exporter for sending data to `beaconUrl` endpoint. Other exporters can be registered to the OpenTelemetry provider available on `SplunkRum.provider`:

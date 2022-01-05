@@ -1,3 +1,5 @@
+> The official Splunk documentation for this page is [Manually instrument browser-based web applications](https://quickdraw.splunk.com/redirect/?product=Observability&location=github.rum.manual.instrumentation&version=current). For instructions on how to contribute to the docs, see [CONTRIBUTING.md](../CONTRIBUTING#documentation.md).
+
 # Manual instrumentation using API
 
 In case when auto-instrumentations do not capture all the information needed, you can capture additional telemetry by manually instrumenting your application (for example, to report timings for actions that take multiple requests), you can use the [OpenTelemetry API](https://open-telemetry.github.io/opentelemetry-js-api/). Splunk Browser Agent automatically registers it's TraceProvider with `@opentelemetry/api`, allowing you or any other instrumentations you want to use to access it via standard methods.

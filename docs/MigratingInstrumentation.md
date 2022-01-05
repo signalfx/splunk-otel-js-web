@@ -1,3 +1,5 @@
+> The official Splunk documentation for this page is [Manually instrument browser-based web applications](https://quickdraw.splunk.com/redirect/?product=Observability&location=github.rum.manual.instrumentation&version=current). For instructions on how to contribute to the docs, see [CONTRIBUTING.md](../CONTRIBUTING#documentation.md).
+
 # Migrating Manual Instrumentation
 
 If you have some existing manual instrumentation of your app with, e.g., another
