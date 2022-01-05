@@ -1,3 +1,5 @@
+> The official Splunk documentation for this page is [Configure the Splunk Browser RUM instrumentation](https://quickdraw.splunk.com/redirect/?product=Observability&location=github.rum.configuration&version=current). For instructions on how to contribute to the docs, see [CONTRIBUTING.md](../CONTRIBUTING.md#documentation).
+
 # Asyncronous traces
 
 Usually traces that happen asyncronously (for example user interactions that result in a promise chain) get disconnected from parent activity. Splunk RUM Agent includes a custom context manager that connects parent traces with traces that happen in:

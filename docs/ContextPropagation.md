@@ -1,3 +1,5 @@
+> The official Splunk documentation for this page is [Configure the Splunk Browser RUM instrumentation](https://quickdraw.splunk.com/redirect/?product=Observability&location=github.rum.configuration&version=current). For instructions on how to contribute to the docs, see [CONTRIBUTING.md](../CONTRIBUTING.md#documentation).
+
 # Context propagation
 
 Splunk RUM browser agent doesn't register any context propagators as capturing `traceparent` from `server-timing` headers is done by extending existing OpenTelemetry instrumentations. However, you can register a context propagators by using OpenTelemetry API:

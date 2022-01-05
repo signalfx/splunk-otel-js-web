@@ -1,3 +1,5 @@
+> The official Splunk documentation for this page is [Manually instrument browser-based web applications](https://quickdraw.splunk.com/redirect/?product=Observability&location=github.rum.manual.instrumentation&version=current). For instructions on how to contribute to the docs, see [CONTRIBUTING.md](../CONTRIBUTING.md#documentation).
+
 # Personally Identifiable Information
 
 In certain situations, metadata collected by our instrumentation may include Personally Identifiable Information (PII). We'd advise that you pay attention to the following cases:
