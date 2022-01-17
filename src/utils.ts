@@ -121,3 +121,45 @@ export function getOriginalFunction<T extends CallableFunction>(func: T): T {
 
   return func;
 }
+
+/**
+ * Wait for a variable to be set globally
+ * 
+ * @param {string} identifier Name of the variable (window[identifier])
+ * @param {function} callback Fired when such value is available
+ * @returns {function} cleanup to call in disable (in case not defined before instrumentation is disabled)
+ */
+export function waitForGlobal(identifier: string, callback: (value: unknown) => void): () => void {
+  if (window[identifier]) {
+    callback(window[identifier]);
+    return () => {};
+  }
+
+  const value = window[identifier]; // most cases undefined
+  let used = false;
+  Object.defineProperty(window, identifier, {
+    get() {
+      return value;
+    },
+    set(newVal) {
+      delete window[identifier];
+      used = true;
+      window[identifier] = newVal;
+      callback(newVal);
+    },
+    configurable: true,
+    enumerable: false,
+  });
+
+  return () => {
+    // Don't touch if value is used or another defineProperty used it
+    if (used || window[identifier] !== value) {
+      return;
+    }
+
+    delete window[identifier];
+    if (value !== undefined) {
+      window[identifier];
+    }
+  };
+}

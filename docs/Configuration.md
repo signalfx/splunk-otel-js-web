@@ -34,6 +34,7 @@ In order to enable or disable specific instrumentations in the Browser Agent, yo
 |`instrumentations.fetch`|`true`|Enables capturing [fetch requests](Instrumentations.md#instrumentation-xhrfetch) requests.|
 |`instrumentations.interactions`|`true`|Enables capturing [user interactions](Instrumentations.md#instrumentation-user-interactions) (such as clicks or keyboard events).|
 |`instrumentations.longtask`|`true`|Enables capturing [long tasks](Instrumentations.md#instrumentation-long-tasks).|
+|`instrumentations.socketio`|`false`|Enables capturing [socket.io messages](Instrumentations.md#instrumentation-socketio-client).|
 |`instrumentations.postload`|`true`|Enables capturing [resources loaded after load event](Instrumentations.md#instrumentation-post-document-load).|
 |`instrumentations.visibility`|`false`|Enables capturing [visibility events](Instrumentations.md#instrumentation-visibility).|
 |`instrumentations.websockets`|`false`|Enables capturing [websockets](Instrumentations.md#instrumentation-websockets).|
@@ -45,6 +46,7 @@ Some instrumentations, such as interactions module, have additional configuratio
 |Option|Type|Default value|Description|
 |---|---|---|---|
 |`instrumentations.interactions.events`|`{[DOM Event Name]: boolean}`|<pre>{<br>click: true,<br>dblclick: true,<br>mousedown: true,<br>mouseup: true,<br><br>submit: true,<br>reset: true,<br>change: true,<br><br>dragend: true,<br>drop: true,<br><br>ended: true,<br>pause: true,<br>play: true,<br>}<br></pre>|[DOM events](https://developer.mozilla.org/en-US/docs/Web/Events#event_listing) that are captured as user interactions, as captured from `SplunkRum.DEFAULT_AUTO_INSTRUMENTED_EVENTS`|
+|`instrumentations.socketio.target`|`string | socket.io client`|`'io'`|Either the global variable name to which the socket.io client will be loaded, or the io object directly (see the documentation for [socket.io instrumentation](Instrumentations.md#instrumentation-socketio-client))|
 
 ## Changing the configuration: examples
 In situation, where you need to change the default configuration, you need to change the object passed to `SplunkRum.init()` call:

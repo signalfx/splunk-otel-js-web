@@ -30,3 +30,4 @@ import './SplunkContextManager.test';
 import './SplunkSpanAttributesProcessor.test';
 import './SplunkOtelWeb.test';
 import './synthetics.test';
+import './socketio.test';

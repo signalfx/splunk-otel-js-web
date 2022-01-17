@@ -208,3 +208,99 @@ Captures information from `send` and `onmessage` events.
 |---|---|---|
 |`http.url`|`string`|Websocket URL.|
 |`response_content_length`|`number`|Payload size in bytes.|
+
+## Instrumentation: Socket.io client
+
+This instrumentation generates spans from messages sent using [socket.io](https://socket.io/) client library. The generated spans conform to [OpenTelemetry specifications on messaging systems](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/messaging.md). This instrumentation is disabled by default as it requires a bit more advanced setup.
+
+> Enabling websocket instrumentation when using socket.io isn't generally recommended.
+
+### Setup
+
+#### Socket.io client library served by Socket.io server
+
+When using [the standalone build server by socket.io server](https://socket.io/docs/v4/client-installation/#standalone-build), instrumentation can be just enabled by passing `true` to configuration.
+
+```html
+<script src="/location/to/splunk-otel-web.js"></script>
+<script>
+  SplunkRum.init({
+    // ...
+    instrumentations: {
+      socketio: true
+    }
+  });
+</script>
+<script src="/socket.io/socket.io.js"></script>
+```
+
+#### Bundled socket.io client with NPM Splunk RUM installation
+
+When using both `@splunk/otel-web` and `socket.io-client` by bundling together, socket.io client should be passed to the instrumentation via `target` config option:
+
+```js
+import SplunkOtelWeb from '@splunk/otel-web';
+import { io } from 'socket.io-client';
+
+SplunkRum.init({
+  // ...
+  instrumentations: {
+    socketio: {
+      target: io,
+    },
+  },
+});
+```
+
+#### Bundled socket.io client with CDN Splunk RUM installation
+
+When using CDN distribution of Splunk RUM, socket.io instrumentation should be enabled expecting a global object and inside the bundle `io` function should be exposed as `window.io` 
+
+```html
+<script src="/location/to/splunk-otel-web.js"></script>
+<script>
+  SplunkRum.init({
+    // ...
+    instrumentations: {
+      socketio: true
+    }
+  });
+</script>
+<script src="/app.min.js"></script>
+```
+
+```js
+import { io } from 'socket.io-client';
+
+window.io = io;
+
+const socket = io();
+// ...
+```
+
+A different global variable name can be used by specifying it as target:
+
+```js
+SplunkRum.init({
+  // ...
+  instrumentations: {
+    socketio: {
+      target: 'socketIoClient',
+    },
+  },
+});
+
+// Then expose the io object in your bundle by doing:
+window.socketIoClient = io;
+```
+
+### Spans
+
+Messages sent between socket.io client and server are sent as `EVENT_NAME send` (client -> server) or `EVENT_NAME receive` (server -> client) spans with the following tags:
+
+|Name|Type|Description|
+|---|---|---|
+|`messaging.system`|`string`|Value: `socket.io`|
+|`messaging.destination`<br />`messaging.socket.io.namespace`|`string`|[socket.io namespace value](https://socket.io/docs/v4/namespaces/)|
+|`messaging.destination_kind`|`string`|Value: `topic`|
+|`messaging.socket.io.event_name`|`string`|Event name (the first argument of `emit` or `on` function)|

@@ -19,6 +19,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const WebSocket = require('ws');
+const { Server: SIOServer } = require('socket.io');
 const { renderFile } = require('ejs');
 const { buildBasicLocalServer } = require('../../utils/server');
 const { 
@@ -67,6 +68,7 @@ function startHttpServer({ enableHttps, listener, port }) {
         close,
         address: server.address(),
         serverOptions,
+        server,
       });
     });
 
@@ -92,6 +94,7 @@ function startWebsocketServer({ enableHttps, listener, port }) {
         close,
         address: server.address(),
         serverOptions,
+        server,
         websocketServer,
       });
     });
@@ -201,6 +204,7 @@ exports.runIntegrationDevelopmentServer = async function run({
   const { 
     close: closeHttpServer, 
     address: { port: httpPort }, 
+    server: httpServer,
     serverOptions: httpOptions,
   } = await startHttpServer({ enableHttps, listener: app, port: requestedHttpPort });
   app.set('httpPort', httpPort);
@@ -220,6 +224,17 @@ exports.runIntegrationDevelopmentServer = async function run({
     });
   });
 
+  const io = new SIOServer(httpServer);
+
+  io.on('connection', function (socket) {
+    console.log('socket.io connected', socket.id);
+    socket.on('hello', () => {
+      // Nothing
+    });
+    socket.on('ping', () => {
+      socket.emit('pong');
+    });
+  });
 
   return {
     close: () => Promise.all([closeHttpServer(), closeWebsocketServer()]),

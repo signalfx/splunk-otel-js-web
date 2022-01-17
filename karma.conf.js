@@ -31,10 +31,20 @@ module.exports = function (config) {
     // base path that will be used to resolve all patterns (eg. files, exclude)
     basePath: '',
 
+    plugins: [
+      'karma-chrome-launcher',
+      'karma-coverage-istanbul-reporter',
+      'karma-firefox-launcher',
+      'karma-mocha',
+      'karma-rollup-preprocessor',
+      'karma-spec-reporter',
+      'karma-websocket-server',
+      require('./test/plugins/socketio-server.js')
+    ],
 
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['mocha', 'websocket-server'],
+    frameworks: ['mocha', 'websocket-server', 'socketio-server'],
     client: {
       mocha: {
         timeout: 6000
