@@ -213,7 +213,6 @@ Captures information from `send` and `onmessage` events.
 
 This instrumentation generates spans from messages sent using the [socket.io](https://socket.io/) client library. Generated spans conform to the [OpenTelemetry specifications on messaging systems](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/messaging.md). This instrumentation is disabled by default.
 
-> Enabling websocket instrumentation when using socket.io isn't generally recommended.
 
 ### Setup
 
@@ -268,6 +267,9 @@ When using the CDN distribution of Splunk RUM, enable the socket.io instrumentat
 </script>
 <script src="/app.min.js"></script>
 ```
+
+
+The content of the `app.min.js` file in this example is the following:
 
 ```js
 import { io } from 'socket.io-client';
