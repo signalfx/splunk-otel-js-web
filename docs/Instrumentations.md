@@ -211,7 +211,7 @@ Captures information from `send` and `onmessage` events.
 
 ## Instrumentation: Socket.io client
 
-This instrumentation generates spans from messages sent using [socket.io](https://socket.io/) client library. The generated spans conform to [OpenTelemetry specifications on messaging systems](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/messaging.md). This instrumentation is disabled by default as it requires a bit more advanced setup.
+This instrumentation generates spans from messages sent using the [socket.io](https://socket.io/) client library. Generated spans conform to the [OpenTelemetry specifications on messaging systems](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/messaging.md). This instrumentation is disabled by default.
 
 > Enabling websocket instrumentation when using socket.io isn't generally recommended.
 
@@ -219,7 +219,7 @@ This instrumentation generates spans from messages sent using [socket.io](https:
 
 #### Socket.io client library served by Socket.io server
 
-When using [the standalone build server by socket.io server](https://socket.io/docs/v4/client-installation/#standalone-build), instrumentation can be just enabled by passing `true` to configuration.
+When using [the standalone build by socket.io server](https://socket.io/docs/v4/client-installation/#standalone-build), you can enable instrumentation by passing `true` to the configuration setting, like in the following snippet:
 
 ```html
 <script src="/location/to/splunk-otel-web.js"></script>
@@ -236,7 +236,7 @@ When using [the standalone build server by socket.io server](https://socket.io/d
 
 #### Bundled socket.io client with NPM Splunk RUM installation
 
-When using both `@splunk/otel-web` and `socket.io-client` by bundling together, socket.io client should be passed to the instrumentation via `target` config option:
+When using both the `@splunk/otel-web` and the `socket.io-client` packages bundled together, pass the socket.io client to the instrumentation using the `target` config option:
 
 ```js
 import SplunkOtelWeb from '@splunk/otel-web';
@@ -290,13 +290,13 @@ SplunkRum.init({
   },
 });
 
-// Then expose the io object in your bundle by doing:
+// Expose the io object in your bundle
 window.socketIoClient = io;
 ```
 
 ### Spans
 
-Messages sent between socket.io client and server are sent as `EVENT_NAME send` (client -> server) or `EVENT_NAME receive` (server -> client) spans with the following tags:
+Messages sent between socket.io clients and servers are `EVENT_NAME send` (client to server) or `EVENT_NAME receive` (server to client) spans with the following tags:
 
 |Name|Type|Description|
 |---|---|---|
