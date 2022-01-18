@@ -254,7 +254,7 @@ SplunkRum.init({
 
 #### Bundled socket.io client with CDN Splunk RUM installation
 
-When using CDN distribution of Splunk RUM, socket.io instrumentation should be enabled expecting a global object and inside the bundle `io` function should be exposed as `window.io` 
+When using the CDN distribution of Splunk RUM, enable the socket.io instrumentation and expose the `io` function as `window.io`, as in the following example:
 
 ```html
 <script src="/location/to/splunk-otel-web.js"></script>
