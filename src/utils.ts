@@ -159,7 +159,7 @@ export function waitForGlobal(identifier: string, callback: (value: unknown) => 
 
     delete window[identifier];
     if (value !== undefined) {
-      window[identifier];
+      window[identifier] = value;
     }
   };
 }

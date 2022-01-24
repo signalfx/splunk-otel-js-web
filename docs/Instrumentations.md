@@ -211,7 +211,7 @@ Captures information from `send` and `onmessage` events.
 
 ## Instrumentation: Socket.io client
 
-This instrumentation generates spans from messages sent using the [socket.io](https://socket.io/) client library. Generated spans conform to the [OpenTelemetry specifications on messaging systems](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/messaging.md). This instrumentation is disabled by default.
+This instrumentation generates spans from messages sent using the [socket.io](https://socket.io/) client library. Generated spans conform to the [OpenTelemetry specifications on messaging systems](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/messaging.md). This instrumentation is disabled by default and versions from v1 to v4 of socket.io-client are supported.
 
 ### Setup
 
