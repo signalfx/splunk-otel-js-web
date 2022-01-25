@@ -64,6 +64,7 @@ import { VERSION } from './version';
 import { getSyntheticsRunId, SYNTHETICS_RUN_ID_ATTRIBUTE } from './synthetics';
 import { SplunkSpanAttributesProcessor } from './SplunkSpanAttributesProcessor';
 import { SessionBasedSampler } from './SessionBasedSampler';
+import { SocketIoClientInstrumentationConfig, SplunkSocketIoClientInstrumentation } from './SplunkSocketIoClientInstrumentation';
 
 export * from './SplunkExporter';
 export * from './SplunkWebTracerProvider';
@@ -78,6 +79,7 @@ interface SplunkOtelWebOptionsInstrumentations {
   visibility?:   boolean | InstrumentationConfig;
   connectivity?: boolean | InstrumentationConfig;
   postload?:     boolean | SplunkPostDocLoadResourceInstrumentationConfig;
+  socketio?:     boolean | SocketIoClientInstrumentationConfig;
   websocket?:    boolean | InstrumentationConfig;
   webvitals?:    boolean;
   xhr?:          boolean | XMLHttpRequestInstrumentationConfig;
@@ -182,7 +184,8 @@ const INSTRUMENTATIONS = [
   { Instrument: SplunkLongTaskInstrumentation, confKey: 'longtask', disable: false },
   { Instrument: SplunkErrorInstrumentation, confKey: ERROR_INSTRUMENTATION_NAME, disable: false },
   { Instrument: SplunkPageVisibilityInstrumentation, confKey: 'visibility', disable: true },
-  { Instrument: SplunkConnectivityInstrumentation, confKey: 'connectivity', disable: true }
+  { Instrument: SplunkConnectivityInstrumentation, confKey: 'connectivity', disable: true },
+  { Instrument: SplunkSocketIoClientInstrumentation, confKey: 'socketio', disable: true },
 ] as const;
 
 export const INSTRUMENTATIONS_ALL_DISABLED: SplunkOtelWebOptionsInstrumentations = INSTRUMENTATIONS

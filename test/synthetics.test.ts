@@ -44,5 +44,6 @@ describe('synthetics integration', () => {
     const spans = getFinishedSpans();
     expect(spans.length).to.eq(1);
     expect(spans[0].tags[SYNTHETICS_RUN_ID_ATTRIBUTE]).to.eq(undefined);
+    deinit();
   });
 });
