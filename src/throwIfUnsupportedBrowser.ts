@@ -21,6 +21,7 @@ if( typeof Symbol !== 'function') {
   const noop = function(){};
   window.SplunkRum = {
     DEFAULT_AUTO_INSTRUMENTED_EVENTS: {},
+    DEFAULT_AUTO_INSTRUMENTED_EVENT_NAMES: [],
     init: noop,
     inited: false,
     error: noop,

@@ -146,11 +146,11 @@ describe('SplunkExporter', () => {
 
     const sentSpan = JSON.parse(beaconSenderMock.getCall(0).args[1])[0];
     expect(sentSpan.name).to.eq('<name>');
+    console.log(sentSpan.tags);
     expect(sentSpan.tags).to.deep.eq({
       key1: 'new value 1',
       key2: 'value 2',
-      key3: 'null',
-      'ot.status_code': 'UNSET'
+      key3: 'null'
     });
   });
 });

@@ -34,6 +34,7 @@ import {
   SplunkUserInteractionInstrumentation,
   SplunkUserInteractionInstrumentationConfig,
   DEFAULT_AUTO_INSTRUMENTED_EVENTS,
+  DEFAULT_AUTO_INSTRUMENTED_EVENT_NAMES,
   UserInteractionEventsConfig,
 } from './SplunkUserInteractionInstrumentation';
 import { SplunkExporter, SplunkExporterConfig } from './SplunkExporter';
@@ -234,6 +235,7 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
   _experimental_getSessionId: () => SessionIdType;
 
   DEFAULT_AUTO_INSTRUMENTED_EVENTS: UserInteractionEventsConfig;
+  DEFAULT_AUTO_INSTRUMENTED_EVENT_NAMES: (keyof HTMLElementEventMap)[];
 
   AlwaysOnSampler: typeof AlwaysOnSampler;
   AlwaysOffSampler: typeof AlwaysOffSampler;
@@ -250,6 +252,7 @@ let _errorInstrumentation: SplunkErrorInstrumentation | undefined;
 let eventTarget: InternalEventTarget | undefined;
 export const SplunkRum: SplunkOtelWebType = {
   DEFAULT_AUTO_INSTRUMENTED_EVENTS,
+  DEFAULT_AUTO_INSTRUMENTED_EVENT_NAMES,
 
   // Re-export samplers as properties for easier use in CDN build
   AlwaysOnSampler,
