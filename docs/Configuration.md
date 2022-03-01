@@ -48,7 +48,7 @@ Some instrumentations, such as interactions module, have additional configuratio
 
 |Option|Type|Default value|Description|
 |---|---|---|---|
-|`instrumentations.interactions.eventNames`|`[ [DOM Event Name] ]`|<pre>[<br />'click', 'dblclick', 'mousedown', 'mouseup', 'submit', 'reset', 'change', 'dragend', 'drop','ended', 'pause', 'play'<br>]<br></pre>|An array of [DOM events](https://developer.mozilla.org/en-US/docs/Web/Events#event_listing) that are captured as user interactions. Current default values are availabl from `SplunkRum.DEFAULT_AUTO_INSTRUMENTED_EVENT_NAMES`|
+|`instrumentations.interactions.eventNames`|`[ [DOM Event Name] ]`|<pre>[<br />'click', 'dblclick',<br>'mousedown', 'mouseup',<br>'submit', 'reset',<br>'change', 'dragend',<br>'drop','ended',<br>'pause', 'play'<br>]<br></pre>|An array of [DOM events](https://developer.mozilla.org/en-US/docs/Web/Events#event_listing) that are captured as user interactions. Current default values are availabl from `SplunkRum.DEFAULT_AUTO_INSTRUMENTED_EVENT_NAMES`|
 |`instrumentations.socketio.target`|`string | socket.io client`|`'io'`| Either the global variable name to which the socket.io client will be loaded, or the `io` object. See the documentation for [socket.io instrumentation](Instrumentations.md#instrumentation-socketio-client))|
 
 ## Changing the configuration: examples
