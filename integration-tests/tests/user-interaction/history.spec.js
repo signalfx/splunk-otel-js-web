@@ -32,7 +32,6 @@ module.exports = {
       await browser.assert.strictEqual(navigationSpan.tags['prev.href'], startUrl);
     }
     await browser.assert.strictEqual(navigationSpan.tags['location.href'], startUrl + '#another-page');
-    await browser.assert.strictEqual(navigationSpan.tags['ot.status_code'], 'UNSET');
 
     await browser.globals.assertNoErrorSpans();
   },
@@ -53,7 +52,6 @@ module.exports = {
     await browser.assert.strictEqual(navigationBackSpan.tags['component'], 'user-interaction');
     await browser.assert.strictEqual(navigationBackSpan.tags['prev.href'], startUrl + '#another-page');
     await browser.assert.strictEqual(navigationBackSpan.tags['location.href'], startUrl);
-    await browser.assert.strictEqual(navigationBackSpan.tags['ot.status_code'], 'UNSET');
 
     browser.globals.clearReceivedSpans();
     await browser.click('#btnGoForward');
@@ -64,6 +62,5 @@ module.exports = {
     await browser.assert.strictEqual(navigationForwardSpan.tags['component'], 'user-interaction');
     await browser.assert.strictEqual(navigationForwardSpan.tags['prev.href'], startUrl);
     await browser.assert.strictEqual(navigationForwardSpan.tags['location.href'], startUrl + '#another-page');
-    await browser.assert.strictEqual(navigationForwardSpan.tags['ot.status_code'], 'UNSET');
   },
 };

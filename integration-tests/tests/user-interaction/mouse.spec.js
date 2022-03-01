@@ -27,7 +27,6 @@ module.exports = {
     await browser.assert.strictEqual(clickSpan.tags['event_type'], 'click');
     await browser.assert.strictEqual(clickSpan.tags['target_element'], 'BUTTON');
     await browser.assert.strictEqual(clickSpan.tags['target_xpath'], '//*[@id="btn1"]');
-    await browser.assert.strictEqual(clickSpan.tags['ot.status_code'], 'UNSET');
 
     await browser.globals.assertNoErrorSpans();
   },
@@ -43,7 +42,6 @@ module.exports = {
     await browser.assert.strictEqual(mouseDownSpan.tags['event_type'], 'mousedown');
     await browser.assert.strictEqual(mouseDownSpan.tags['target_element'], 'BUTTON');
     await browser.assert.strictEqual(mouseDownSpan.tags['target_xpath'], '//*[@id="btn1"]');
-    await browser.assert.strictEqual(mouseDownSpan.tags['ot.status_code'], 'UNSET');
   },
   'handles mouse up': async function(browser) {
     browser.globals.clearReceivedSpans();
@@ -57,7 +55,6 @@ module.exports = {
     await browser.assert.strictEqual(mouseUpSpan.tags['event_type'], 'mouseup');
     await browser.assert.strictEqual(mouseUpSpan.tags['target_element'], 'BUTTON');
     await browser.assert.strictEqual(mouseUpSpan.tags['target_xpath'], '//*[@id="btn1"]');
-    await browser.assert.strictEqual(mouseUpSpan.tags['ot.status_code'], 'UNSET');
   },
   'handles disabling of mouse events': async function(browser) {
     browser.globals.clearReceivedSpans();
@@ -93,7 +90,6 @@ module.exports = {
     await browser.assert.strictEqual(clickSpan.tags['event_type'], 'click');
     await browser.assert.strictEqual(clickSpan.tags['target_element'], 'BUTTON');
     await browser.assert.strictEqual(clickSpan.tags['target_xpath'], '//*[@id="btn1"]');
-    await browser.assert.strictEqual(clickSpan.tags['ot.status_code'], 'UNSET');
 
     await browser.globals.assertNoErrorSpans();
   },
