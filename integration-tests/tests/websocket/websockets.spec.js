@@ -43,7 +43,6 @@ module.exports = {
     await browser.assert.strictEqual(wsConnectionSpan.tags['location.href'], url);
     await browser.assert.strictEqual(wsConnectionSpan.tags['app'], 'splunk-otel-js-dummy-app');
     await browser.assert.strictEqual(wsConnectionSpan.tags['component'], 'websocket');
-    await browser.assert.strictEqual(wsConnectionSpan.tags['ot.status_code'], 'UNSET');
     await browser.assert.strictEqual(wsConnectionSpan.tags['error'], undefined);
 
     await browser.globals.assertNoErrorSpans();

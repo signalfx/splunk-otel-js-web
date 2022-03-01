@@ -16,8 +16,8 @@ limitations under the License.
 
 import { Span, trace, Tracer, TracerProvider } from '@opentelemetry/api';
 import { hrTime } from '@opentelemetry/core';
-import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import { UserInteractionInstrumentation } from '@opentelemetry/instrumentation-user-interaction';
+import { UserInteractionInstrumentationConfig } from '@opentelemetry/instrumentation-user-interaction/build/src/types';
 
 export type UserInteractionEventsConfig = {
   [type: string]: boolean;
@@ -48,20 +48,24 @@ export const DEFAULT_AUTO_INSTRUMENTED_EVENTS: UserInteractionEventsConfig = {
 const ROUTING_INSTRUMENTATION_NAME = 'route';
 const ROUTING_INSTRUMENTATION_VERSION = '1';
 
-export interface SplunkUserInteractionInstrumentationConfig extends InstrumentationConfig {
+export interface SplunkUserInteractionInstrumentationConfig extends UserInteractionInstrumentationConfig {
   events?: UserInteractionEventsConfig;
 }
 
 export class SplunkUserInteractionInstrumentation extends UserInteractionInstrumentation {
-  private readonly _autoInstrumentedEvents: UserInteractionEventsConfig;
   private _routingTracer: Tracer;
-  private __hashChangeHandler: (ev: HashChangeEvent) => void;
+  private __hashChangeHandler: (ev: Event) => void;
 
   constructor(config: SplunkUserInteractionInstrumentationConfig = {}) {
-    super(config);
+    // Prefer otel's eventNames property
+    if (!config.eventNames) {
+      const eventMap = Object.assign({}, DEFAULT_AUTO_INSTRUMENTED_EVENTS, config.events);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const eventNames = Object.entries(eventMap).filter(([_eventName, enabled]) => enabled).map(([eventName]) => eventName) as (keyof HTMLElementEventMap)[];
+      config.eventNames = eventNames;
+    }
 
-    const { events } = config;
-    this._autoInstrumentedEvents = Object.assign({}, DEFAULT_AUTO_INSTRUMENTED_EVENTS, events);
+    super(config);
 
     this._routingTracer = trace.getTracer(ROUTING_INSTRUMENTATION_NAME, ROUTING_INSTRUMENTATION_VERSION);
 
@@ -73,24 +77,6 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
       }
 
       return _superCreateSpan(element, eventName, parentSpan);
-    };
-
-    // fix bug: angular checks passive event listener support with "null" event listener,
-    // which cannot be used as a WeakMap key
-    const _origAddPatchedListener = (this as any).addPatchedListener.bind(this);
-    (this as any).addPatchedListener = (
-      on: HTMLElement,
-      type: string,
-      // eslint-disable-next-line @typescript-eslint/ban-types
-      listener: Function | EventListenerObject,
-      // eslint-disable-next-line @typescript-eslint/ban-types
-      wrappedListener: Function
-    ) => {
-      if (!listener) {
-        return true;
-      }
-
-      return _origAddPatchedListener(on, type, listener, wrappedListener);
     };
   }
 
@@ -105,8 +91,8 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
   }
 
   enable(): void {
-    this.__hashChangeHandler = (event) => {
-      this._emitRouteChangeSpan(event.oldURL);
+    this.__hashChangeHandler = (event: Event) => {
+      this._emitRouteChangeSpan((event as HashChangeEvent).oldURL);
     };
 
     // Hash can be changed with location.hash = '#newThing', no way to hook that directly...
@@ -135,10 +121,6 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
         return result;
       };
     };
-  }
-
-  protected _allowEventType(eventType: string): boolean {
-    return !!this._autoInstrumentedEvents[eventType];
   }
 
   private _emitRouteChangeSpan(oldHref) {

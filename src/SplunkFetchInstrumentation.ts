@@ -31,11 +31,6 @@ type ExposedSuper = {
   _patchConstructor: () => (orig: Window['fetch']) => Window['fetch'];
 };
 
-interface FetchError {
-  status?: number;
-  message: string;
-}
-
 export class SplunkFetchInstrumentation extends FetchInstrumentation {
   constructor(config: FetchInstrumentationConfig = {}) {
     super(config);
@@ -49,110 +44,6 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
         }
       }
       return _superAddFinalSpanAttributes(span, fetchResponse);
-    };
-
-    // Remove with 0.25 release
-    (this as any as ExposedSuper)._patchConstructor = function(): (original: Window['fetch']) => Window['fetch'] {
-      return original => {
-        const plugin = this;
-        return function patchConstructor(
-          this: Window,
-          ...args: Parameters<Window['fetch']>
-        ): Promise<Response> {
-          const url = args[0] instanceof Request ? args[0].url : args[0];
-          const options = args[0] instanceof Request ? args[0] : args[1] || {};
-          const createdSpan = plugin._createSpan(url, options);
-          if (!createdSpan) {
-            return original.apply(this, args);
-          }
-          const spanData = plugin._prepareSpanData(url);
-  
-          function endSpanOnError(span: api.Span, error: FetchError) {
-            plugin._applyAttributesAfterFetch(span, options, error);
-            plugin._endSpan(span, spanData, {
-              status: error.status || 0,
-              statusText: error.message,
-              url,
-            });
-          }
-  
-          function endSpanOnSuccess(span: api.Span, response: Response) {
-            plugin._applyAttributesAfterFetch(span, options, response);
-            if (response.status >= 200 && response.status < 400) {
-              plugin._endSpan(span, spanData, response);
-            } else {
-              plugin._endSpan(span, spanData, {
-                status: response.status,
-                statusText: response.statusText,
-                url,
-              });
-            }
-          }
-          function onSuccess(
-            span: api.Span,
-            resolve: (
-              value?: Response | PromiseLike<Response> | undefined
-            ) => void,
-            response: Response
-          ) {
-            try {
-              const resClone = response.clone();
-              const body = resClone.body;
-              if (body) {
-                const reader = body.getReader();
-                const read = (): void => {
-                  reader.read().then(
-                    ({ done }) => {
-                      if (done) {
-                        endSpanOnSuccess(span, response);
-                      } else {
-                        read();
-                      }
-                    },
-                    error => {
-                      endSpanOnError(span, error);
-                    }
-                  );
-                };
-                read();
-              } else {
-                // some older browsers don't have .body implemented
-                endSpanOnSuccess(span, response);
-              }
-            } finally {
-              resolve(response);
-            }
-          }
-  
-          function onError(
-            span: api.Span,
-            reject: (reason?: unknown) => void,
-            error: FetchError
-          ) {
-            try {
-              endSpanOnError(span, error);
-            } finally {
-              reject(error);
-            }
-          }
-  
-          return new Promise((resolve, reject) => {
-            return api.context.with(
-              api.trace.setSpan(api.context.active(), createdSpan),
-              () => {
-                plugin._addHeaders(options, url);
-                plugin._tasksCount++;
-                return original
-                  .apply(this, options instanceof Request ? [options] : [url, options])
-                  .then(
-                    (onSuccess as any).bind(this, createdSpan, resolve),
-                    onError.bind(this, createdSpan, reject)
-                  );
-              }
-            );
-          });
-        };
-      };
     };
   }
 
