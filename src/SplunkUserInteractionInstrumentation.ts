@@ -44,6 +44,7 @@ export const DEFAULT_AUTO_INSTRUMENTED_EVENTS: UserInteractionEventsConfig = {
   pause: true,
   play: true,
 };
+export const DEFAULT_AUTO_INSTRUMENTED_EVENT_NAMES = Object.keys(DEFAULT_AUTO_INSTRUMENTED_EVENTS) as (keyof HTMLElementEventMap)[];
 
 const ROUTING_INSTRUMENTATION_NAME = 'route';
 const ROUTING_INSTRUMENTATION_VERSION = '1';
