@@ -1,7 +1,16 @@
 # Changelog
+
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
 ## Unreleased
+
+## 0.10.3
+
+| Open Telemetry API | Core  | Contrib & Instrumentations |
+| ------------------ | ----- | -------------------------- |
+| 1.0.4              | 1.0.1 | 0.27.0                     |
+
+- Cleanup upstreamed patches and update OTEL components
 
 ## 0.10.2
 
@@ -13,9 +22,9 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## 0.10.0
 
-| Open Telemetry API | Core   | Contrib & Instrumentations |
-|--------------------|--------|----------------------------|
-| 1.0.3              | 1.0.0  | 0.26.0                     |
+| Open Telemetry API | Core  | Contrib & Instrumentations |
+| ------------------ | ----- | -------------------------- |
+| 1.0.3              | 1.0.0 | 0.26.0                     |
 
 - Expose tracer config ([#287](https://github.com/signalfx/splunk-otel-js-web/pull/287))
 - Add session based sampler ([#287](https://github.com/signalfx/splunk-otel-js-web/pull/287))
@@ -26,12 +35,13 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 - Move span attribute setting to spanprocessor / fix stack overflow bug ([#279](https://github.com/signalfx/splunk-otel-js-web/pull/279))
 
 ## 0.9.2
+
 - Use SplunkRumNative.getNativeSessionId when present
 
 ## 0.9.0 & 0.9.1
 
 | Open Telemetry API | Core   | Contrib |
-|--------------------|--------|---------|
+| ------------------ | ------ | ------- |
 | 1.0.2              | 0.25.0 | 0.25.0  |
 
 Changes:
@@ -52,7 +62,7 @@ Changes:
 ## 0.8.0
 
 | Open Telemetry API | Core   | Contrib |
-|--------------------|--------|---------|
+| ------------------ | ------ | ------- |
 | 1.0.2              | 0.24.0 | 0.24.0  |
 
 Changes:
@@ -70,13 +80,15 @@ Changes:
 - Move common attributes to resource attributes [#212](https://github.com/signalfx/splunk-otel-js-web/pull/212)
 
 ## 0.7.0
+
 | Open Telemetry API | Core   | Contrib |
-|--------------------|--------|---------|
-| 1.0.0             | 0.22.0 | 0.22.0  |
+| ------------------ | ------ | ------- |
+| 1.0.0              | 0.22.0 | 0.22.0  |
 
 ## 0.6.0
+
 | Open Telemetry API | Core   | Contrib |
-|--------------------|--------|---------|
+| ------------------ | ------ | ------- |
 | 0.21.0             | 0.21.0 | 0.21.0  |
 
 Changes:
@@ -85,30 +97,36 @@ Changes:
 - New `SplunkContextManager` for limited causality support in Promise-based, React, and Vue frameworks
 
 ## 0.5.1
+
 - Include TS types and esm in release
 
 ## 0.5.0
+
 | Open Telemetry API | Core   | Contrib |
-|--------------------|--------|---------|
+| ------------------ | ------ | ------- |
 | 1.0.0-rc.0         | 0.19.0 | 0.16.0  |
 
 Changes:
 
 - `@opentelemetry/*` core packages updated to `0.19` or latest compatible versions
-- Expose *_experimental_*-prefixed API for accessing and watching global attributes and session ID
+- Expose _*experimental*_-prefixed API for accessing and watching global attributes and session ID
 
 ## 0.4.3
+
 - Added legacy build for IE
 
 ## 0.4.2
+
 - Fixed environment setting
 
 ## 0.4.1
+
 - Fixed TypeScript definitions
 
 ## 0.4.0
+
 | Open Telemetry API | Core   | Contrib |
-|--------------------|--------|---------|
+| ------------------ | ------ | ------- |
 | 0.18.1             | 0.18.2 | 0.15.0  |
 
 Changes:
@@ -119,8 +137,9 @@ Changes:
 - Upgrade to Otel 0.18.2
 
 ## 0.3.1
+
 | Open Telemetry API | Core   | Contrib |
-|--------------------|--------|---------|
+| ------------------ | ------ | ------- |
 | 0.18.1             | 0.18.0 | 0.14.0  |
 
 Changes:
@@ -129,18 +148,22 @@ Changes:
 - Fix for issues in Safari 10 caused by array-like non-iterable types
 
 ## 0.3.0-rc.1
+
 - New configuration format <https://github.com/signalfx/splunk-otel-js-web#all-configuration-options>
 
 ## 0.2.0-rc.3
+
 - Transpile runtime to es2015 in browser build (#82)
 
 ## 0.2.0-rc.2
 
 ## 0.2.0-rc.1
+
 - Upgrade to OTel 0.18 and convert dependencies from git submodules to NPM (#80)
 - Safety check before asking for xhr headers (#77)
 
 ## earlier versions
+
 | Open Telemetry API | Core   | Contrib |
-|--------------------|--------|---------|
+| ------------------ | ------ | ------- |
 | n/a                | 0.15.0 | 0.12.1  |
