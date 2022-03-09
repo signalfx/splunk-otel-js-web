@@ -31,7 +31,8 @@ module.exports = {
       const longtaskSpan = await browser.globals.findSpan(span => span.name === 'longtask');
       await browser.assert.ok(!!longtaskSpan, 'Checking longtask span presence.');
       await browser.assert.strictEqual(longtaskSpan.tags['component'], 'splunk-longtask', 'component');
-      await browser.assert.strictEqual(longtaskSpan.tags['longtask.name'], 'self', 'longtask.name');
+      // Edge can also report this with unknown value
+      await browser.assert.strictEqual(['self', 'unknown'].includes(longtaskSpan.tags['longtask.name']), true, 'longtask.name');
       await browser.assert.strictEqual(longtaskSpan.tags['longtask.entry_type'], 'longtask', 'longtask.entry_type');
       await browser.assert.strictEqual(longtaskSpan.tags['longtask.attribution.name'], 'unknown', 'longtask.attribution.name');
       await browser.assert.strictEqual(longtaskSpan.tags['longtask.attribution.entry_type'], 'taskattribution', 'longtask.attribution.entry_type');
