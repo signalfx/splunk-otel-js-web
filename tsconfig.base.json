@@ -11,7 +11,7 @@
     ],
   },
   "include": [
-    "src/*.ts",
+    "src/**/*.ts",
   ],
   "files": [
     "node_modules/zone.js/dist/zone.js.d.ts"

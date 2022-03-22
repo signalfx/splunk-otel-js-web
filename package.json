@@ -48,6 +48,7 @@
     "@opentelemetry/sdk-trace-base": "1.0.1",
     "@opentelemetry/sdk-trace-web": "1.0.1",
     "@opentelemetry/semantic-conventions": "1.0.1",
+    "rrweb": "^1.1.2",
     "shimmer": "~1.2.1",
     "web-vitals": "~2.1.0"
   },
