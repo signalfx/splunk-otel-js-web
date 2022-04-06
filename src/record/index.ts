@@ -14,7 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { record } from 'rrweb';
+import { record } from "rrweb";
+import OTLPLogExporter from "./OTLPLogExporter";
+import { BatchLogProcessor, convert } from "./BatchLogProcessor";
 
 type RRWebOptions = Parameters<typeof record>[0];
 
@@ -24,7 +26,7 @@ export type SplunkRumRecorderConfig = RRWebOptions & {
 
   /** Temporary! Auth token */
   apiToken?: string;
-}
+};
 
 let inited: (() => void) | false = false;
 
@@ -41,11 +43,15 @@ const SplunkRumRecorder = {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { beaconUrl, ...rrwebConf } = config;
 
+    const exporter = new OTLPLogExporter({ beaconUrl });
+    const processor = new BatchLogProcessor(exporter, {});
+
     inited = record({
       ...rrwebConf,
       emit(event) {
-        console.log('Event from rrweb', event);
-      }
+        console.log("Event from rrweb", event);
+        processor.onLog(convert(event));
+      },
     });
   },
   deinit(): void {
@@ -55,7 +61,7 @@ const SplunkRumRecorder = {
 
     inited();
     inited = false;
-  }
+  },
 };
 
 export default SplunkRumRecorder;
