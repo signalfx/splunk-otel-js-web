@@ -9,6 +9,9 @@
     "compile": "npm-run-all -s compile:*",
     "compile:browser": "rollup -c",
     "compile:tsc": "tsc --build tsconfig.cjs.json tsconfig.esm.json",
+    "otlp:compile": "npm-run-all otlp:compile:pbjs otlp:compile:pbts",
+    "otlp:compile:pbjs": "pbjs -t static-module -w es6 -o src/record/LogsProto.js --no-create --no-decode --no-verify --no-convert --no-delimited --force-number opentelemetry-proto/opentelemetry/proto/common/v1/common.proto opentelemetry-proto/opentelemetry/proto/resource/v1/resource.proto opentelemetry-proto/opentelemetry/proto/logs/v1/logs.proto",
+    "otlp:compile:pbts": "pbts -o src/record/LogsProto.d.ts src/record/LogsProto.js",
     "test:unit:watch": "karma start",
     "test:unit:ci": "nyc karma start --single-run --no-auto-watch --browsers ChromeHeadless",
     "lint": "eslint --quiet src/ test/ integration-tests/",
@@ -51,6 +54,7 @@
     "protobufjs": "~6.11.2",
     "rrweb": "^1.1.2",
     "shimmer": "~1.2.1",
+    "type-fest": "^2.12.2",
     "web-vitals": "~2.1.0"
   },
   "browser": "dist/cjs/index.js",

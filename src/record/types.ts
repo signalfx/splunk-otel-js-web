@@ -14,8 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { JsonValue } from 'type-fest';
+
 export interface Log {
-  body?: any;
+  body?: JsonValue;
 }
 
 export interface LogExporter {

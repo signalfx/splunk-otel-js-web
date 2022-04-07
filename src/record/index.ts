@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { record } from "rrweb";
-import OTLPLogExporter from "./OTLPLogExporter";
-import { BatchLogProcessor, convert } from "./BatchLogProcessor";
+import { record } from 'rrweb';
+import OTLPLogExporter from './OTLPLogExporter';
+import { BatchLogProcessor, convert } from './BatchLogProcessor';
 
 type RRWebOptions = Parameters<typeof record>[0];
 
@@ -49,7 +49,7 @@ const SplunkRumRecorder = {
     inited = record({
       ...rrwebConf,
       emit(event) {
-        console.log("Event from rrweb", event);
+        console.log('Event from rrweb', event);
         processor.onLog(convert(event));
       },
     });

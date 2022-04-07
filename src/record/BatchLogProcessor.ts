@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Log, LogExporter } from "./types";
-import { context } from "@opentelemetry/api";
-import { suppressTracing } from "@opentelemetry/core";
+import { Log, LogExporter } from './types';
+import { context } from '@opentelemetry/api';
+import { suppressTracing } from '@opentelemetry/core';
 
 export class BatchLogProcessor {
   private logs: Log[] = [];
@@ -54,16 +54,14 @@ export class BatchLogProcessor {
 
     context.with(suppressTracing(context.active()), () => {
       const logsToExport = this.logs.splice(0, this.logs.length);
-      console.log("Exporting log events: ", logsToExport.length);
+      console.log('Exporting log events: ', logsToExport.length);
       this.exporter.export(logsToExport);
     });
   }
 }
 
-export function convert(rrwebEvent: any): Log {
+export function convert(rrwebEvent: unknown): Log {
   return {
-    body: {
-      stringValue: JSON.stringify(rrwebEvent),
-    },
+    body: rrwebEvent,
   } as Log;
 }
