@@ -30,12 +30,12 @@ const defaultHeaders = {
 
 const { LogsData } = proto.opentelemetry.proto.logs.v1;
 
-function isObject(value: JsonValue): value is JsonObject {
-  return typeof value === 'object';
-}
-
 function isArray(value: JsonValue): value is JsonArray {
   return Array.isArray(value);
+}
+
+function isObject(value: JsonValue): value is JsonObject {
+  return value && typeof value === 'object' && !isArray(value);
 }
 
 function convertToAnyValue(value: JsonValue): proto.opentelemetry.proto.common.v1.IAnyValue {
