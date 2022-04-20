@@ -18,6 +18,7 @@ import { JsonValue } from 'type-fest';
 
 export interface Log {
   body?: JsonValue;
+  timeUnixNano: number;
 }
 
 export interface LogExporter {

@@ -17,6 +17,7 @@ limitations under the License.
 import { Log, LogExporter } from './types';
 import { context } from '@opentelemetry/api';
 import { suppressTracing } from '@opentelemetry/core';
+import type { eventWithTime } from 'rrweb/typings/types';
 
 export class BatchLogProcessor {
   private logs: Log[] = [];
@@ -60,10 +61,11 @@ export class BatchLogProcessor {
   }
 }
 
-export function convert(rrwebEvent: unknown): Log {
+export function convert(rrwebEvent: eventWithTime): Log {
   return {
     // Research found that stringifying the rr-web event here is
     // more efficient for otlp + gzip exporting
     body: JSON.stringify(rrwebEvent),
+    timeUnixNano: rrwebEvent.timestamp,
   } as Log;
 }

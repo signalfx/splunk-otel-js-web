@@ -59,7 +59,12 @@ const SplunkRumRecorder = {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { beaconUrl, ...rrwebConf } = config;
 
-    const exporter = new OTLPLogExporter({ beaconUrl, resource });
+    const headers = {};
+    if (config.apiToken) {
+      headers['X-SF-Token'] = config.apiToken;
+    }
+
+    const exporter = new OTLPLogExporter({ beaconUrl, headers, resource });
     const processor = new BatchLogProcessor(exporter, {});
 
     startTime = Date.now();
