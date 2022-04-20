@@ -62,6 +62,8 @@ export class BatchLogProcessor {
 
 export function convert(rrwebEvent: unknown): Log {
   return {
-    body: rrwebEvent,
+    // Research found that stringifying the rr-web event here is
+    // more efficient for otlp + gzip exporting
+    body: JSON.stringify(rrwebEvent),
   } as Log;
 }

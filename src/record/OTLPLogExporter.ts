@@ -15,17 +15,22 @@ limitations under the License.
 */
 
 import { JsonArray, JsonObject, JsonValue } from 'type-fest';
+import { gzipSync } from 'fflate';
 import * as proto from './LogsProto.js';
 
 import { Log } from './types';
+import { Resource } from '@opentelemetry/resources';
 
 interface OTLPLogExporterConfig {
   headers?: Record<string, string>;
   beaconUrl: string;
+  resource: Resource;
 }
 
 const defaultHeaders = {
   'Content-Type': 'application/x-protobuf',
+  'Content-Encoding': 'gzip',
+  'X-Rum-Magic': '1'
 };
 
 const { LogsData } = proto.opentelemetry.proto.logs.v1;
@@ -91,12 +96,10 @@ export default class OTLPLogExporter {
     return {
       resourceLogs: [{
         resource: {
-          attributes: [
-            { key: 'telemetry.sdk.name', value: { stringValue: 'webjs' } },
-          ]
+          attributes: convertToAnyValue(this.config.resource?.attributes || {}).kvlistValue.values,
         },
         scopeLogs: [{
-          scope: { name: 'webjs.replay', version: '0.0.1' },
+          scope: { name: 'splunk.rr-web', version: '0.0.1' },
           logRecords: logs.map(log => ({
             body: convertToAnyValue(log.body),
           }))
@@ -112,6 +115,7 @@ export default class OTLPLogExporter {
 
     const logsData = this.constructLogData(logs);
     const buffer = LogsData.encode(logsData).finish();
+    const compressed = gzipSync(buffer);
 
     const updatedHeaders = this.config.headers
       ? Object.assign({}, defaultHeaders, this.config.headers)
@@ -119,7 +123,7 @@ export default class OTLPLogExporter {
 
     fetch(this.config.beaconUrl, {
       method: 'POST',
-      body: buffer,
+      body: compressed,
       headers: updatedHeaders,
     });
   }

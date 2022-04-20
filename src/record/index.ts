@@ -14,9 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { ProxyTracerProvider, trace } from '@opentelemetry/api';
 import { record } from 'rrweb';
 import OTLPLogExporter from './OTLPLogExporter';
 import { BatchLogProcessor, convert } from './BatchLogProcessor';
+import { BasicTracerProvider } from '@opentelemetry/sdk-trace-base/build/src/BasicTracerProvider';
 
 type RRWebOptions = Parameters<typeof record>[0];
 
@@ -28,7 +30,10 @@ export type SplunkRumRecorderConfig = RRWebOptions & {
   apiToken?: string;
 };
 
+const MAX_RECORDING_LENGTH = 5 * 60 * 1000;
+
 let inited: (() => void) | false = false;
+let startTime = 0;
 
 const SplunkRumRecorder = {
   get inited(): boolean {
@@ -40,15 +45,35 @@ const SplunkRumRecorder = {
       return;
     }
 
+    let tracerProvider: BasicTracerProvider | ProxyTracerProvider = trace.getTracerProvider() as BasicTracerProvider;
+    if (tracerProvider && 'getDelegate' in tracerProvider) {
+      tracerProvider = (tracerProvider as ProxyTracerProvider).getDelegate() as BasicTracerProvider;
+    }
+    if (!(tracerProvider?.resource)) {
+      console.error('Splunk OTEL Web must be inited before recorder.');
+      return;
+    }
+
+    const resource = tracerProvider.resource;
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { beaconUrl, ...rrwebConf } = config;
 
-    const exporter = new OTLPLogExporter({ beaconUrl });
+    const exporter = new OTLPLogExporter({ beaconUrl, resource });
     const processor = new BatchLogProcessor(exporter, {});
 
+    startTime = Date.now();
     inited = record({
       ...rrwebConf,
       emit(event) {
+        if (event.timestamp > startTime + MAX_RECORDING_LENGTH) {
+          if (inited) {
+            inited();
+            inited = false;
+          }
+
+          return;
+        }
         console.log('Event from rrweb', event);
         processor.onLog(convert(event));
       },

@@ -51,6 +51,7 @@
     "@opentelemetry/sdk-trace-base": "1.0.1",
     "@opentelemetry/sdk-trace-web": "1.0.1",
     "@opentelemetry/semantic-conventions": "1.0.1",
+    "fflate": "^0.7.3",
     "protobufjs": "~6.11.2",
     "rrweb": "^1.1.2",
     "shimmer": "~1.2.1",
