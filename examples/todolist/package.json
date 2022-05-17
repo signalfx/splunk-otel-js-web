@@ -4,14 +4,14 @@
   "private": true,
   "dependencies": {
     "@opentelemetry/instrumentation-express": "^0.28.0",
-    "@opentelemetry/instrumentation-http": "^0.27.0",
-    "@splunk/otel": "^0.17.0",
-    "body-parser": "^1.19.0",
+    "@opentelemetry/instrumentation-http": "^0.28.0",
+    "@splunk/otel": "^0.18.0",
+    "body-parser": "^1.20.0",
     "cors": "^2.8.5",
-    "express": "^4.17.3",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
-    "react-scripts": "5.0.0"
+    "express": "^4.18.1",
+    "react": "^18.1.0",
+    "react-dom": "^18.1.0",
+    "react-scripts": "5.0.1"
   },
   "scripts": {
     "backend": "node server/index.js",
