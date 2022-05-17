@@ -25,21 +25,25 @@ function TodoList() {
   const [isLoading, setIsLoading] = useState(false);
   const [todos, setTodos] = useState([]);
 
-  useEffect(async () => {
-    const tracer = window.SplunkRum.provider.getTracer('todoList');
-    const span = tracer.startSpan('todoList.load', {
-      attributes: {
-        'workflow.id': 1,
-        'workflow.name': 'todoList.load'
-      }
-    });
+  useEffect(() => {
+    async function fetchData() {
+      const tracer = window.SplunkRum.provider.getTracer('todoList');
+      const span = tracer.startSpan('todoList.load', {
+        attributes: {
+          'workflow.id': 1,
+          'workflow.name': 'todoList.load'
+        }
+      });
 
-    setIsLoading(true);
-    const res = await fetch(ENDPOINT + (token ? '?token=' + token : ''));
-    setTodos(await res.json());
-    setIsLoading(false);
+      setIsLoading(true);
+      const res = await fetch(ENDPOINT + (token ? '?token=' + token : ''));
+      setTodos(await res.json());
+      setIsLoading(false);
 
-    span.end();
+      span.end();
+    }
+
+    fetchData();
   }, [token]);
 
   const login = useCallback(async () => {
