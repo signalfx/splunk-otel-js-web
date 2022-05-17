@@ -29,6 +29,10 @@ export class BatchLogProcessor {
   constructor(exporter: LogExporter, config: any) {
     this.scheduledDelayMillis = config?.scheduledDelayMillis || 10000;
     this.exporter = exporter;
+
+    window.addEventListener('unload', () => {
+      this._flushAll();
+    });
   }
 
   onLog(log: Log): void {
