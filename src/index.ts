@@ -249,6 +249,7 @@ let inited = false;
 let _deregisterInstrumentations: () => void | undefined;
 let _deinitSessionTracking: () => void | undefined;
 let _errorInstrumentation: SplunkErrorInstrumentation | undefined;
+let _postDocLoadInstrumentation: SplunkPostDocLoadResourceInstrumentation | undefined;
 let eventTarget: InternalEventTarget | undefined;
 export const SplunkRum: SplunkOtelWebType = {
   DEFAULT_AUTO_INSTRUMENTED_EVENTS,
@@ -346,6 +347,9 @@ export const SplunkRum: SplunkOtelWebType = {
         if (confKey === ERROR_INSTRUMENTATION_NAME && instrumentation instanceof SplunkErrorInstrumentation) {
           _errorInstrumentation = instrumentation;
         }
+        if (confKey === 'postload' && instrumentation instanceof SplunkPostDocLoadResourceInstrumentation) {
+          _postDocLoadInstrumentation = instrumentation;
+        }
         return instrumentation;
       }
 
@@ -380,9 +384,11 @@ export const SplunkRum: SplunkOtelWebType = {
     });
 
     provider.register({
-      contextManager: new SplunkContextManager(
-        processedOptions.context
-      )
+      contextManager: new SplunkContextManager({
+        ...processedOptions.context,
+        onContextStart: () => _postDocLoadInstrumentation.flushMutationObserver(),
+        onContextEnd: () => _postDocLoadInstrumentation.flushMutationObserver(),
+      })
     });
 
     // After context manager registration so instrumentation event listeners are affected accordingly
