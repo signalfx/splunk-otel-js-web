@@ -136,5 +136,52 @@ module.exports = {
     const afterLoadImage = imageSpans.find( span => span.tags['component'] === 'splunk-post-doc-load-resource');
 
     await browser.assert.notEqual(docLoadImage.traceId, afterLoadImage.traceId);
+  },
+  'should propagate tracing context to created spans': async function(browser) {
+    if (isBrowser(browser, {
+      safari: true,
+      edge: true,
+      ie: true,
+    })) {
+      return;
+    }
+    await browser.url(browser.globals.getUrl('/resource-observer/resources-custom-context.ejs'));
+    await browser.globals.findSpan(span => span.name === 'guard-span');
+
+    const plImageRootSpan = await browser.globals.getReceivedSpans().find(
+      span => span.tags['http.url'] && span.tags['http.url'].endsWith('splunk-black.png')
+    );
+    const plImageParentSpan = await browser.globals.getReceivedSpans().find(
+      span => span.name === 'image-parent'
+    );
+    const plImageChildSpan = await browser.globals.getReceivedSpans().find(
+      span => span.tags['http.url'] && span.tags['http.url'].endsWith('splunk-black.svg')
+    );
+    await browser.assert.ok(plImageRootSpan);
+    await browser.assert.ok(plImageParentSpan);
+    await browser.assert.ok(plImageChildSpan);
+
+    await browser.assert.notEqual(plImageRootSpan.traceId, plImageParentSpan.traceId);
+    await browser.assert.not.ok(plImageRootSpan.parentId);
+    await browser.assert.equal(plImageParentSpan.traceId, plImageChildSpan.traceId);
+    await browser.assert.equal(plImageChildSpan.parentId, plImageParentSpan.id);
+
+    const plScriptRootSpan = await browser.globals.getReceivedSpans().find(
+      span => span.tags['http.url'] && span.tags['http.url'].endsWith('test.js')
+    );
+    const plScriptParentSpan = await browser.globals.getReceivedSpans().find(
+      span => span.name === 'script-parent'
+    );
+    const plScriptChildSpan = await browser.globals.getReceivedSpans().find(
+      span => span.tags['http.url'] && span.tags['http.url'].endsWith('test-alt.js')
+    );
+    await browser.assert.ok(plScriptRootSpan);
+    await browser.assert.ok(plScriptParentSpan);
+    await browser.assert.ok(plScriptChildSpan);
+
+    await browser.assert.notEqual(plScriptRootSpan.traceId, plScriptParentSpan.traceId);
+    await browser.assert.not.ok(plScriptRootSpan.parentId);
+    await browser.assert.equal(plScriptParentSpan.traceId, plScriptChildSpan.traceId);
+    await browser.assert.equal(plScriptChildSpan.parentId, plScriptParentSpan.id);
   }
 };
