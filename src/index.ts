@@ -26,7 +26,7 @@ import {
   BufferConfig,
 } from '@opentelemetry/sdk-trace-base';
 import { WebTracerConfig } from '@opentelemetry/sdk-trace-web';
-import { diag, DiagConsoleLogger, DiagLogLevel, SpanAttributes } from '@opentelemetry/api';
+import { diag, DiagConsoleLogger, DiagLogLevel, SpanAttributes, trace, context } from '@opentelemetry/api';
 import { SplunkDocumentLoadInstrumentation } from './SplunkDocumentLoadInstrumentation';
 import { SplunkXhrPlugin } from './SplunkXhrPlugin';
 import { SplunkFetchInstrumentation } from './SplunkFetchInstrumentation';
@@ -386,8 +386,8 @@ export const SplunkRum: SplunkOtelWebType = {
     provider.register({
       contextManager: new SplunkContextManager({
         ...processedOptions.context,
-        onContextStart: () => _postDocLoadInstrumentation.flushMutationObserver(),
-        onContextEnd: () => _postDocLoadInstrumentation.flushMutationObserver(),
+        onBeforeContextStart: () => _postDocLoadInstrumentation.onBeforeContextChange(),
+        onBeforeContextEnd: () => _postDocLoadInstrumentation.onBeforeContextChange(),
       })
     });
 
@@ -398,6 +398,9 @@ export const SplunkRum: SplunkOtelWebType = {
     });
 
     this.provider = provider;
+    // TODO: this is so that integration tests can access these APIs, should find a better way
+    this._context = context;
+    this._trace = trace;
 
     const vitalsConf = getPluginConfig(processedOptions.instrumentations.webvitals);
     if (vitalsConf !== false) {

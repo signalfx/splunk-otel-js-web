@@ -35,8 +35,8 @@ const defaultAllowedInitiatorTypes = ['img', 'script']; //other, css, link
 const nodeHasSrcAttribute = (node: Node): node is HTMLScriptElement | HTMLImageElement => (node instanceof HTMLScriptElement || node instanceof HTMLImageElement);
 
 export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBase {
-  private observer: PerformanceObserver | undefined;
-  private mutationObserver: MutationObserver | undefined;
+  private performanceObserver: PerformanceObserver | undefined;
+  private headMutationObserver: MutationObserver | undefined;
   private urlToContextMap: Record<string, Context>;
   private config: SplunkPostDocLoadResourceInstrumentationConfig;
 
@@ -56,25 +56,29 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
   enable(): void {
     if (window.PerformanceObserver) {
       window.addEventListener('load', () => {
-        this._startObserver();
+        this._startPerformanceObserver();
       });
     }
     if (window.MutationObserver) {
-      this._startMutationObserver();
+      this._startHeadMutationObserver();
     }
   }
 
   disable(): void {
-    if (this.observer) {
-      this.observer.disconnect();
+    if (this.performanceObserver) {
+      this.performanceObserver.disconnect();
     }
-    if (this.mutationObserver) {
-      this.mutationObserver.disconnect();
+    if (this.headMutationObserver) {
+      this.headMutationObserver.disconnect();
     }
   }
 
-  private _startObserver() {
-    this.observer = new PerformanceObserver((list) => {
+  public onBeforeContextChange(): void {
+    this._processHeadMutationObserverRecords(this.headMutationObserver.takeRecords());
+  }
+
+  private _startPerformanceObserver() {
+    this.performanceObserver = new PerformanceObserver((list) => {
       if (window.document.readyState === 'complete') {
         list.getEntries().forEach(entry => {
           // TODO: check how we can amend TS base typing to fix this
@@ -85,19 +89,17 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
       }
     });
     //apparently safari 13.1 only supports entryTypes
-    this.observer.observe({ entryTypes: ['resource'] });
+    this.performanceObserver.observe({ entryTypes: ['resource'] });
   }
 
-  private _startMutationObserver() {
-    this.mutationObserver = new MutationObserver(this._processMutationObserverRecords.bind(this));
-    this.mutationObserver.observe(document.head, { childList: true });
+  private _startHeadMutationObserver() {
+    this.headMutationObserver = new MutationObserver(this._processHeadMutationObserverRecords.bind(this));
+    this.headMutationObserver.observe(document.head, { childList: true });
   }
 
-  public flushMutationObserver(): void {
-    this._processMutationObserverRecords(this.mutationObserver.takeRecords());
-  }
-
-  private _processMutationObserverRecords(mutations: MutationRecord[]) {
+  // for each added node that corresponds to a resource load, create an entry in `this.urlToContextMap`
+  // that associates its fully-qualified URL to the tracing context at the time that it was added
+  private _processHeadMutationObserverRecords(mutations: MutationRecord[]) {
     if (context.active() === ROOT_CONTEXT) {
       return;
     }
