@@ -53,7 +53,7 @@ const nightwatch_config = {
         browserName: 'chrome',
         chromeOptions: {
           w3c: false,
-          args: ['headless', 'disable-gpu']
+          args: ['headless', 'disable-gpu', 'no-sandbox']
         }
       }
     },
@@ -62,7 +62,7 @@ const nightwatch_config = {
         browserName: 'chrome',
         chromeOptions: {
           w3c: false,
-          args: ['disable-gpu', 'auto-open-devtools-for-tabs']
+          args: ['disable-gpu', 'no-sandbox', 'auto-open-devtools-for-tabs']
         }
       }
     },
