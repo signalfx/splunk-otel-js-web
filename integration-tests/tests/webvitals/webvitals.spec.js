@@ -32,6 +32,8 @@ module.exports = {
       Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
       document.dispatchEvent(new Event('visibilitychange'));
     });
+    // force a sync
+    await browser.globals.waitForTestToFinish();
 
     const lcp = await browser.globals.findSpan(span => span.tags.lcp !== undefined);
     const cls = await browser.globals.findSpan(span => span.tags.cls !== undefined);
