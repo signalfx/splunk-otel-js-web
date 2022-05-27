@@ -15,26 +15,27 @@ limitations under the License.
 */
 
 const path = require('path');
-const chromeDriver = require('chromedriver');
-const geckoDriver = require('geckodriver');
-const seleniumServer = require('selenium-server');
 
 const nightwatch_config = {
   src_folders: ['integration-tests/tests'],
   globals_path: path.join(__dirname, 'globals.js'),
   filter: '**/*.spec.js',
 
+  webdriver: {},
+  // Selenium Server is running locally and is managed by Nightwatch
+  /*
   selenium: {
     start_process: true,
-    start_session: false,
-    server_path: seleniumServer.path,
     port: 9515,
+    server_path: '', // Leave empty if @nightwatch/selenium-server is installed
+    command: 'standalone', // Selenium 4 only
     check_process_delay: 5000,
     cli_args: {
       'webdriver.chrome.driver': chromeDriver.path,
       'webdriver.gecko.driver': geckoDriver.path,
     }
   },
+  */
 
   // detailed_output: false,
   test_settings: {
@@ -48,55 +49,115 @@ const nightwatch_config = {
         enableHttps: true,
       },
     },
-    headlessChrome: {
-      desiredCapabilities: {
-        browserName: 'chrome',
-        chromeOptions: {
-          w3c: false,
-          args: ['headless', 'disable-gpu']
-        }
-      }
-    },
     chrome: {
-      desiredCapabilities: {
-        browserName: 'chrome',
-        chromeOptions: {
-          w3c: false,
-          args: ['disable-gpu', 'auto-open-devtools-for-tabs']
+      desiredCapabilities : {
+        browserName : 'chrome',
+        'goog:chromeOptions' : {
+          // More info on Chromedriver: https://sites.google.com/a/chromium.org/chromedriver/
+          //
+          // w3c:false tells Chromedriver to run using the legacy JSONWire protocol (not required in Chrome 78)
+          w3c: true,
+          args: [
+            //'--no-sandbox',
+            '--ignore-certificate-errors',
+            //'--allow-insecure-localhost',
+            // '--headless'
+          ]
         }
+      },
+      webdriver: {
+        start_process: true,
+        server_path: '',
+        cli_args: [
+          // --verbose
+        ]
       }
     },
+    headlessChrome: {
+      desiredCapabilities : {
+        browserName : 'chrome',
+        'goog:chromeOptions' : {
+          // More info on Chromedriver: https://sites.google.com/a/chromium.org/chromedriver/
+          //
+          // w3c:false tells Chromedriver to run using the legacy JSONWire protocol (not required in Chrome 78)
+          w3c: true,
+          args: [
+            //'--no-sandbox',
+            '--ignore-certificate-errors',
+            //'--allow-insecure-localhost',
+            '--headless'
+          ]
+        }
+      },
+      webdriver: {
+        start_process: true,
+        server_path: '',
+        cli_args: [
+          // --verbose
+        ]
+      }
+    },
+
     firefox: {
-      desiredCapabilities: {
+      desiredCapabilities : {
         browserName: 'firefox',
-        marionette: true,
+        alwaysMatch: {
+          'moz:firefoxOptions': {
+            args: [
+              // '-headless',
+              // '-verbose'
+            ]
+          }
+        }
+      },
+      webdriver: {
+        start_process: true,
+        server_path: '',
+        cli_args: [
+          // very verbose geckodriver logs
+          // '-vv'
+        ]
       }
     },
+
     headlessFirefox: {
-      desiredCapabilities: {
+      desiredCapabilities : {
         browserName: 'firefox',
-        marionette: true,
-        'moz:firefoxOptions': {
-          'args': ['--headless']
+        alwaysMatch: {
+          'moz:firefoxOptions': {
+            args: [
+              '-headless',
+              // '-verbose'
+            ]
+          }
         },
+        'moz:firefoxOptions': {
+          args: [
+            '-headless',
+            // '-verbose'
+          ]
+        }
+      },
+      webdriver: {
+        start_process: true,
+        server_path: '',
+        cli_args: [
+          // very verbose geckodriver logs
+          // '-vv'
+        ]
       }
     },
     safari: {
+      desiredCapabilities : {
+        browserName : 'safari',
+        alwaysMatch: {
+          acceptInsecureCerts: false
+        }
+      },
       webdriver: {
-        use_legacy_jsonwire: false,
         start_process: true,
-        server_path: '/usr/bin/safaridriver',
-        port: 4445,
-      },
-      desiredCapabilities: {
-        browserName: 'safari',
-        acceptSslCerts: false,
-        acceptInsecureCerts: false,
-      },
-      globals: {
-        hostname: 'localhost',
-        enableHttps: false,
-      },
+        server_path: ''
+      }
     },
   }
 };
