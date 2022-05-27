@@ -41,15 +41,18 @@ module.exports = {
 
     await browser.assert.ok(lcp);
     await browser.assert.ok(cls);
-    await browser.assert.ok(fid);
       
     await browser.assert.strictEqual(lcp.name, 'webvitals');
     await browser.assert.strictEqual(cls.name, 'webvitals');
-    await browser.assert.strictEqual(fid.name, 'webvitals');
 
     await browser.assert.ok(lcp.tags.lcp > 0);
     await browser.assert.ok(cls.tags.cls >= 0);
-    await browser.assert.ok(fid.tags.fid > 0);
+
+    // sometimes missing in automated tests
+    if (fid) {
+      await browser.assert.strictEqual(fid.name, 'webvitals');
+      await browser.assert.ok(fid.tags.fid > 0);
+    }
 
     await browser.globals.assertNoErrorSpans();
   }
