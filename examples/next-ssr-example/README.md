@@ -9,7 +9,7 @@ Next.js uses [static generation](https://nextjs.org/docs/basic-features/pages#pr
 1. Install Splunk RUM for Browser: `npm install @splunk/otel-web --save`
 2. Create file `src/instrument.js` that imports `@splunk/otel-web` and calls `SplunkOtelWeb.init()`. You can use the Data Setup guided setup in Splunk Observability to get the correct values for your organization.
 3. (Optional) Set the values in environment variables that are replaced at build time with values in the `.env` file. This lets you set [different values for different environments](https://nextjs.org/docs/basic-features/environment-variables). See [`src/instrument.js`](src/instrument.js) and [`.env.example`](.env.example) files as an example.
-4. Create or edit `next.config.js` to prepend `src/instrument.js` to webpack's `main` entryfile. See [`next.config.js`](`next.config.js`) in this folder as an example.
+4. Create or edit `next.config.js` to prepend `src/instrument.js` to webpack's `main` entryfile. See [`next.config.js`](next.config.js) in this folder as an example.
 
 ## Adding Splunk APM
 

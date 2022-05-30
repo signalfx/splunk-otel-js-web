@@ -22,13 +22,12 @@ module.exports = {
   'span created for fetch includes all properties': async function(browser) {
     await browser.url(browser.globals.getUrl('/fetch/fetch.ejs'));
 
-    const fetchSpan = await browser.globals.findSpan(span => span.tags['http.url'] === '/some-data');
+    const fetchSpan = await browser.globals.findSpan(span => span.tags['http.url'] && span.tags['http.url'].endsWith('/some-data'));
     await browser.assert.ok(!!fetchSpan, 'Fetch span found.');
     await browser.assert.strictEqual(fetchSpan.tags['component'], 'fetch');
     await browser.assert.strictEqual(fetchSpan.tags['http.status_code'], '200');
     await browser.assert.strictEqual(fetchSpan.tags['http.status_text'], 'OK');
     await browser.assert.strictEqual(fetchSpan.tags['http.method'], 'GET');
-    await browser.assert.strictEqual(fetchSpan.tags['http.url'], '/some-data');
 
     if (browser.options.desiredCapabilities.browserName !==  'Safari') {
       await browser.assert.strictEqual(fetchSpan.tags['http.response_content_length'], '49');
@@ -51,20 +50,19 @@ module.exports = {
     await browser.globals.findSpan(span => span.name === 'guard-span');
     await browser.globals.assertNoErrorSpans();
 
-    await browser.assert.not.ok(browser.globals.getReceivedSpans().find(span => span.tags['http.url'] === '/some-data'));
-    await browser.assert.not.ok(browser.globals.getReceivedSpans().find(span => span.tags['http.url'] === '/no-server-timings'));
+    await browser.assert.not.ok(browser.globals.getReceivedSpans().find(span => span.tags['http.url'] && span.tags['http.url'].endsWith('/some-data')));
+    await browser.assert.not.ok(browser.globals.getReceivedSpans().find(span => span.tags['http.url'] && span.tags['http.url'].endsWith('/no-server-timings')));
   },
   'fetch reported over CORS': async function(browser) {
     const backend2 = await browser.globals.buildInstrumentationBackend();
     await browser.url(backend2.getUrl('/fetch/fetch.ejs', undefined, { beaconPort: browser.globals.httpPort }).toString());
 
-    const fetchSpan = await browser.globals.findSpan(span => span.tags['http.url'] === '/some-data');
+    const fetchSpan = await browser.globals.findSpan(span => span.tags['http.url'] && span.tags['http.url'].endsWith('/some-data'));
     await browser.assert.ok(!!fetchSpan, 'Fetch span found.');
     await browser.assert.strictEqual(fetchSpan.tags['component'], 'fetch');
     await browser.assert.strictEqual(fetchSpan.tags['http.status_code'], '200');
     await browser.assert.strictEqual(fetchSpan.tags['http.status_text'], 'OK');
     await browser.assert.strictEqual(fetchSpan.tags['http.method'], 'GET');
-    await browser.assert.strictEqual(fetchSpan.tags['http.url'], '/some-data');
     await browser.assert.strictEqual(fetchSpan.tags['http.host'], `${backend2.httpHostname}:${backend2.httpPort}`);
 
     await browser.globals.assertNoErrorSpans();
@@ -72,7 +70,7 @@ module.exports = {
   },
   'request body exists in request object (open-telemetry/opentelemetry-js#2411)': async function(browser) {
     await browser.url(browser.globals.getUrl('/fetch/fetch-post.ejs'));
-    await browser.globals.findSpan(span => span.tags['http.url'] === '/echo');
+    await browser.globals.findSpan(span => span.tags['http.url'] && span.tags['http.url'].endsWith('/echo'));
 
     browser.expect.element('#result').text.to.equal('{"test":true}');
   },
@@ -80,12 +78,12 @@ module.exports = {
     await browser.url(browser.globals.getUrl('/fetch/fetch.ejs'));
     await browser.globals.waitForTestToFinish();
 
-    await browser.assert.ok(!!browser.globals.getReceivedSpans().find(span => span.tags['http.url'] === '/some-data'));
+    await browser.assert.ok(!!browser.globals.getReceivedSpans().find(span => span.tags['http.url'] && span.tags['http.url'].endsWith('/some-data')));
 
     browser.globals.clearReceivedSpans();
     await browser.url(browser.globals.getUrl('/fetch/fetch.ejs?disableInstrumentation=xhr,fetch'));
     await browser.globals.waitForTestToFinish();
 
-    await browser.assert.not.ok(browser.globals.getReceivedSpans().find(span => span.tags['http.url'] === '/some-data'));
+    await browser.assert.not.ok(browser.globals.getReceivedSpans().find(span => span.tags['http.url'] && span.tags['http.url'].endsWith('/some-data')));
   }
 };

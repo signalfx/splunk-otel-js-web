@@ -8,12 +8,16 @@ export default function List() {
   const [isLoading, setIsLoading] = useState(false);
   const [items, setItems] = useState([]);
 
-  useEffect(async () => {
-    setIsLoading(true);
-    const res = await fetch('/api/items');
-    const { items: newItems } = await res.json();
-    setItems(newItems);
-    setIsLoading(false);
+  useEffect(() => {
+    async function fetchData() {
+      setIsLoading(true);
+      const res = await fetch('/api/items');
+      const { items: newItems } = await res.json();
+      setItems(newItems);
+      setIsLoading(false);
+    }
+
+    fetchData();
   }, []);
 
   return (
@@ -35,8 +39,8 @@ export default function List() {
               Loading...
             </div> :
             <ul>
-              {items.map(item => (
-                <li>
+              {items.map((item, i) => (
+                <li key={i}>
                   {item}
                 </li>
               ))}

@@ -7,7 +7,7 @@
 	<%- renderAgent({}, true) %>
 	<script>
 			//this is done because you can't inject RegExp to template via JSON.stringify
-			window.SplunkRumOptions.ignoreUrls = ['/some-data', /server/];
+			window.SplunkRumOptions.ignoreUrls = [location.origin + '/some-data', /server/];
 			window.SplunkRum && window.SplunkRum.init(window.SplunkRumOptions);
 	</script>
 </head>
