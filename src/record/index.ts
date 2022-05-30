@@ -34,6 +34,7 @@ const MAX_RECORDING_LENGTH = 5 * 60 * 1000;
 
 let inited: (() => void) | false = false;
 let startTime = 0;
+let capturing = false;
 
 const SplunkRumRecorder = {
   get inited(): boolean {
@@ -56,7 +57,6 @@ const SplunkRumRecorder = {
 
     const resource = tracerProvider.resource;
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { beaconUrl, ...rrwebConf } = config;
 
     const headers = {};
@@ -68,21 +68,39 @@ const SplunkRumRecorder = {
     const processor = new BatchLogProcessor(exporter, {});
 
     startTime = Date.now();
+    capturing = true;
+
     inited = record({
       ...rrwebConf,
       emit(event) {
+        if (!capturing) {
+          return;
+        }
+
         if (event.timestamp > startTime + MAX_RECORDING_LENGTH) {
-          if (inited) {
-            inited();
-            inited = false;
-          }
+          capturing = false;
 
           return;
         }
-        console.log('Event from rrweb', event);
+
         processor.onLog(convert(event));
       },
     });
+  },
+  resume(): void {
+    if (!inited) {
+      return;
+    }
+
+    const oldCapturing = capturing;
+    startTime = Date.now();
+    capturing = true;
+    if (!oldCapturing) {
+      record.takeFullSnapshot();
+    }
+  },
+  stop(): void {
+    capturing = false;
   },
   deinit(): void {
     if (!inited) {
