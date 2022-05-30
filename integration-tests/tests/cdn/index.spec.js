@@ -15,56 +15,56 @@ limitations under the License.
 */
 
 module.exports = {
-  "@tags": ["skip-ie11"],
-  "JS unhandled error": async function (browser) {
+  '@tags': ['skip-ie11'],
+  'JS unhandled error': async function (browser) {
     browser.globals.clearReceivedSpans();
-    await browser.url(browser.globals.getUrl("/cdn/index.ejs"));
+    await browser.url(browser.globals.getUrl('/cdn/index.ejs'));
 
     const errorSpan = await browser.globals.findSpan(
-      (s) => s.name === "onerror"
+      (s) => s.name === 'onerror'
     );
-    await browser.assert.ok(!!errorSpan, "Checking presence of error span.");
+    await browser.assert.ok(!!errorSpan, 'Checking presence of error span.');
 
     const tags = errorSpan.tags;
-    await browser.assert.strictEqual(tags["component"], "error");
-    await browser.assert.strictEqual(tags["error"], "true");
-    await browser.assert.strictEqual(tags["error.object"], "TypeError");
+    await browser.assert.strictEqual(tags['component'], 'error');
+    await browser.assert.strictEqual(tags['error'], 'true');
+    await browser.assert.strictEqual(tags['error.object'], 'TypeError');
 
     switch (browser.options.desiredCapabilities.browserName.toLowerCase()) {
-      case "chrome":
-        await browser.assert.strictEqual(
-          tags["error.message"],
-          "Cannot set properties of null (setting 'prop1')"
-        );
-        break;
-      case "firefox":
-        await browser.assert.strictEqual(tags["error.message"], "test is null");
-        break;
-      case "safari":
-        await browser.assert.strictEqual(
-          tags["error.message"],
-          "null is not an object (evaluating 'test.prop1 = true')"
-        );
-        break;
+    case 'chrome':
+      await browser.assert.strictEqual(
+        tags['error.message'],
+        'Cannot set properties of null (setting \'prop1\')'
+      );
+      break;
+    case 'firefox':
+      await browser.assert.strictEqual(tags['error.message'], 'test is null');
+      break;
+    case 'safari':
+      await browser.assert.strictEqual(
+        tags['error.message'],
+        'null is not an object (evaluating \'test.prop1 = true\')'
+      );
+      break;
     }
 
     const rumScriptFetchSpan = await browser.globals.findSpan(
-      (s) => s.name === "resourceFetch"
+      (s) => s.name === 'resourceFetch'
     );
     await browser.assert.ok(
       !!rumScriptFetchSpan,
-      "Checking presence of splunk-otel-web fetch span."
+      'Checking presence of splunk-otel-web fetch span.'
     );
 
     const cdnUrl =
-      "https://cdn.signalfx.com/o11y-gdi-rum/latest/splunk-otel-web.js";
+      'https://cdn.signalfx.com/o11y-gdi-rum/latest/splunk-otel-web.js';
     await browser.assert.strictEqual(
-      rumScriptFetchSpan.tags["http.url"],
+      rumScriptFetchSpan.tags['http.url'],
       cdnUrl
     );
     await browser.assert.strictEqual(
-      rumScriptFetchSpan.tags["splunk.rumVersion"],
-      "0.11.0"
+      rumScriptFetchSpan.tags['splunk.rumVersion'],
+      '0.11.0'
     );
   },
 };
