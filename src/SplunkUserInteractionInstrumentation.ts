@@ -53,6 +53,16 @@ export interface SplunkUserInteractionInstrumentationConfig extends UserInteract
   events?: UserInteractionEventsConfig;
 }
 
+type EventName = keyof HTMLElementEventMap;
+type ExposedSuper = {
+  _createSpan: (
+    element: EventTarget | null | undefined,
+    eventName: EventName,
+    parentSpan?: Span | undefined
+  ) => Span | undefined;
+  _patchAddEventListener: () => ((original: EventTarget['addEventListener']) => EventTarget['addEventListener']);
+};
+
 export class SplunkUserInteractionInstrumentation extends UserInteractionInstrumentation {
   private _routingTracer: Tracer;
   private __hashChangeHandler: (ev: Event) => void;
@@ -70,14 +80,35 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 
     this._routingTracer = trace.getTracer(ROUTING_INSTRUMENTATION_NAME, ROUTING_INSTRUMENTATION_VERSION);
 
-    const _superCreateSpan = (this as any)._createSpan.bind(this);
-    (this as any)._createSpan = (element: HTMLElement | Document, eventName: string, parentSpan: Span) => {
+    const _superCreateSpan = (this as unknown as ExposedSuper)._createSpan.bind(this) as ExposedSuper['_createSpan'];
+    (this as unknown as ExposedSuper)._createSpan = (element: EventTarget | HTMLElement | Document, eventName: EventName, parentSpan: Span) => {
       // Fix: No span is created when event is captured from document
       if (element === document) {
         element = document.documentElement;
       }
 
       return _superCreateSpan(element, eventName, parentSpan);
+    };
+
+    const _superPatchAddEventListener = (this as unknown as ExposedSuper)._patchAddEventListener.bind(this);
+    (this as unknown as ExposedSuper)._patchAddEventListener = () => {
+      const patcher = _superPatchAddEventListener();
+
+      return (original) => {
+        const patchedListener = patcher(original) as EventTarget['addEventListener'];
+        // Fix: Error when .addEventListener(type, listener, null)
+        return function (
+          this: EventTarget,
+          type: keyof HTMLElementEventMap,
+          listener: EventListenerOrEventListenerObject | null,
+          useCapture?: boolean | AddEventListenerOptions | null
+        ) {
+          if (useCapture === null) {
+            useCapture = undefined;
+          }
+          return patchedListener.call(this, type, listener, useCapture);
+        };
+      };
     };
   }
 
