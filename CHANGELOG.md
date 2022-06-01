@@ -4,6 +4,10 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## Unreleased
 
+## 0.11.1
+
+- Hotfix: Fix event listeners throwing when useCapture = null ([#374](https://github.com/signalfx/splunk-otel-js-web/pull/374)) 
+
 ## 0.11.0
 
 | Open Telemetry API | Core  | Contrib & Instrumentations |
