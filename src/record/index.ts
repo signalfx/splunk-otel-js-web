@@ -71,6 +71,8 @@ const SplunkRumRecorder = {
     capturing = true;
 
     inited = record({
+      maskAllInputs: true,
+      maskTextSelector: '*',
       ...rrwebConf,
       emit(event) {
         if (!capturing) {
