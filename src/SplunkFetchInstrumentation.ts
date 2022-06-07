@@ -14,8 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { HrTime } from '@opentelemetry/api';
+import { hrTime } from '@opentelemetry/core';
 import { FetchInstrumentation, FetchInstrumentationConfig } from '@opentelemetry/instrumentation-fetch';
 import { captureTraceParent } from './servertiming';
+
+interface SpanData {
+  entries: PerformanceResourceTiming[];
+  observer?: PerformanceObserver;
+  spanUrl: string;
+  startTime: HrTime;
+}
+
+type ExposedSuper = {
+  _prepareSpanData: (spanUrl: string) => SpanData;
+};
 
 export class SplunkFetchInstrumentation extends FetchInstrumentation {
   constructor(config: FetchInstrumentationConfig = {}) {
@@ -33,6 +46,21 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
     };
 
     super(config);
+
+    const _superPrepareSpanData = (this as unknown as ExposedSuper)._prepareSpanData.bind(this) as ExposedSuper['_prepareSpanData'];
+    (this as any as ExposedSuper)._prepareSpanData = (spanUrl: string) => {
+      // Fix: PerformanceObserver feature detection is broken and crashes in IE
+      // Is fixed in 0.29.0 but contrib isn't updated yet
+      if (
+        typeof PerformanceObserver !== 'function'
+      ) {
+        const startTime = hrTime();
+        const entries: PerformanceResourceTiming[] = [];
+        return { entries, startTime, spanUrl };
+      }
+
+      return _superPrepareSpanData(spanUrl);
+    };
   }
 
   enable(): void {
