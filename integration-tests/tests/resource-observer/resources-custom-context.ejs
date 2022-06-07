@@ -41,8 +41,8 @@
 
     function loadScriptCustomContext() {
       var span = SplunkRum.provider.getTracer('default').startSpan('script-parent');
-      var context = SplunkRum._context;
-      var trace = SplunkRum._trace;
+      var context = OtelApiGlobals.context;
+      var trace = OtelApiGlobals.trace
       return context.with(trace.setSpan(context.active(), span), function() {
         return loadScript('/utils/devServer/assets/test-alt.js').finally(() => span.end());
       });
@@ -50,8 +50,8 @@
 
     function loadImageCustomContext() {
       var span = SplunkRum.provider.getTracer('default').startSpan('image-parent');
-      var context = SplunkRum._context;
-      var trace = SplunkRum._trace;
+      var context = OtelApiGlobals.context;
+      var trace = OtelApiGlobals.trace;
       return context.with(trace.setSpan(context.active(), span), function() {
         return loadImg('/utils/devServer/assets/splunk-black.svg').finally(() => span.end());
       });
