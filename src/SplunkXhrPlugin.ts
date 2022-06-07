@@ -58,9 +58,8 @@ export class SplunkXhrPlugin extends XMLHttpRequestInstrumentation {
       // Fix: PerformanceObserver feature detection is broken and crashes in IE
       // Is fixed in 0.29.0 but contrib isn't updated yet
       if (
-        false ||
-        typeof window.PerformanceObserver !== 'function' ||
-        typeof window.PerformanceResourceTiming !== 'function'
+        typeof PerformanceObserver !== 'function' ||
+        typeof PerformanceResourceTiming !== 'function'
       ) {
         return;
       }
