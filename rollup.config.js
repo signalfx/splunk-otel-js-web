@@ -68,4 +68,31 @@ export default [
     ],
     context: 'window',
   },
+  {
+    input: 'integration-tests/otel-api-globals.ts',
+    output: {
+      file: 'dist/artifacts/otel-api-globals.js',
+      format: 'iife',
+      name: 'OtelApiGlobals',
+      sourcemap: true,
+    },
+    plugins: [
+      json(),
+      nodeResolvePlugin,
+      commonjs({
+        include: /node_modules/,
+        sourceMap: true,
+        transformMixedEsModules: true,
+      }),
+      typescript({ tsconfig: './tsconfig.base.json' }),
+      babelPlugin,
+      terser({
+        ecma: 5,
+        output: {
+          comments: false
+        }
+      }),
+    ],
+    context: 'window',
+  }
 ];

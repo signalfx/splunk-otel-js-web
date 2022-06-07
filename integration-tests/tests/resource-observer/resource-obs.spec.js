@@ -149,13 +149,15 @@ module.exports = {
     await browser.globals.findSpan(span => span.name === 'guard-span');
 
     const plImageRootSpan = await browser.globals.getReceivedSpans().find(
-      span => span.tags['http.url'] && span.tags['http.url'].endsWith('splunk-black.png')
+      span => span.tags['http.url'] && span.tags['http.url'].endsWith('splunk-black.png') 
+        && span.tags['component'] === 'splunk-post-doc-load-resource'
     );
     const plImageParentSpan = await browser.globals.getReceivedSpans().find(
       span => span.name === 'image-parent'
     );
     const plImageChildSpan = await browser.globals.getReceivedSpans().find(
-      span => span.tags['http.url'] && span.tags['http.url'].endsWith('splunk-black.svg')
+      span => span.tags['http.url'] && span.tags['http.url'].endsWith('splunk-black.svg') 
+        && span.tags['component'] === 'splunk-post-doc-load-resource'
     );
     await browser.assert.ok(plImageRootSpan);
     await browser.assert.ok(plImageParentSpan);
@@ -167,13 +169,15 @@ module.exports = {
     await browser.assert.equal(plImageChildSpan.parentId, plImageParentSpan.id);
 
     const plScriptRootSpan = await browser.globals.getReceivedSpans().find(
-      span => span.tags['http.url'] && span.tags['http.url'].endsWith('test.js')
+      span => span.tags['http.url'] && span.tags['http.url'].endsWith('test.js') 
+        && span.tags['component'] === 'splunk-post-doc-load-resource'
     );
     const plScriptParentSpan = await browser.globals.getReceivedSpans().find(
       span => span.name === 'script-parent'
     );
     const plScriptChildSpan = await browser.globals.getReceivedSpans().find(
-      span => span.tags['http.url'] && span.tags['http.url'].endsWith('test-alt.js')
+      span => span.tags['http.url'] && span.tags['http.url'].endsWith('test-alt.js') 
+        && span.tags['component'] === 'splunk-post-doc-load-resource'
     );
     await browser.assert.ok(plScriptRootSpan);
     await browser.assert.ok(plScriptParentSpan);

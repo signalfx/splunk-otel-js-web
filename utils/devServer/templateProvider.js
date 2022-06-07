@@ -20,6 +20,7 @@ const fs = require('fs');
 const { render } = require('ejs');
 
 const INJECT_TEMPLATE = `<script src="<%= file -%>" crossorigin="anonymous"></script>
+  <script src="<%= otelApiGlobalsFile -%>" crossorigin="anonymous"></script>
   <script>
     <%if (noInit) { %>
       window.SplunkRumOptions = <%- options -%>;
@@ -118,7 +119,8 @@ exports.registerTemplateProvider = ({ app, addHeaders, enableHttps }) => {
           return render(INJECT_TEMPLATE, {
             file,
             noInit,
-            options: JSON.stringify(options)
+            options: JSON.stringify(options),
+            otelApiGlobalsFile: '/dist/artifacts/otel-api-globals.js'
           });
         },
       });
