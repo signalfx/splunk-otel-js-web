@@ -22,7 +22,6 @@ Delete options that are not relevant.
 - Added unit tests
 - Added integration tests
 
-# Checklist:
 <!--
 Checklist:
 
