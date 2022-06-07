@@ -16,13 +16,16 @@ Delete options that are not relevant.
 
 # How has this been tested?
 
-- [ ] Manual testing
-- [ ] Added unit tests
-- [ ] Added integration tests
+Delete options that are not relevant.
 
-# Checklist:
+- Manual testing
+- Added unit tests
+- Added integration tests
 
-- [ ] Changelogs have been updated
-- [ ] Unit tests have been added/updated
-- [ ] Documentation has been updated
-- [ ] Team's resident technical writer tagged on the PR (if there are changes to the documentation)
+<!--
+Checklist:
+
+- Unit tests have been added/updated
+- Integration tests if it's browser specific quirk
+- Documentation has been updated
+-->
