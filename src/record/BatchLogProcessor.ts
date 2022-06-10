@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Log, LogExporter } from './types';
 import { context } from '@opentelemetry/api';
 import { suppressTracing } from '@opentelemetry/core';
-import type { eventWithTime } from 'rrweb/typings/types';
+import { JsonValue, JsonObject } from 'type-fest';
+import { Log, LogExporter } from './types';
 
 export class BatchLogProcessor {
   private logs: Log[] = [];
@@ -37,18 +37,10 @@ export class BatchLogProcessor {
 
   onLog(log: Log): void {
     this.logs.push(log);
-    const shouldForceFlush =
-      Date.now() - this.lastBatchSent >= this.scheduledDelayMillis;
-
-    //TODO probably buggy
-    if (this.logs.length !== 0 && shouldForceFlush) {
-      clearTimeout(this.timeout);
-      this.timeout = undefined;
-      this._flushAll();
-    }
 
     if (this.timeout === undefined) {
       this.timeout = setTimeout(() => {
+        this.timeout = undefined;
         this._flushAll();
       }, this.scheduledDelayMillis);
     }
@@ -59,17 +51,16 @@ export class BatchLogProcessor {
 
     context.with(suppressTracing(context.active()), () => {
       const logsToExport = this.logs.splice(0, this.logs.length);
-      console.log('Exporting log events: ', logsToExport.length);
+      console.log('Exporting log events: ', logsToExport.length, logsToExport);
       this.exporter.export(logsToExport);
     });
   }
 }
 
-export function convert(rrwebEvent: eventWithTime): Log {
+export function convert(body: JsonValue, timeUnixNano: number, attributes?: JsonObject): Log {
   return {
-    // Research found that stringifying the rr-web event here is
-    // more efficient for otlp + gzip exporting
-    body: JSON.stringify(rrwebEvent),
-    timeUnixNano: rrwebEvent.timestamp,
+    body,
+    timeUnixNano,
+    attributes
   } as Log;
 }

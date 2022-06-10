@@ -102,7 +102,8 @@ export default class OTLPLogExporter {
           scope: { name: 'splunk.rr-web', version: '0.0.1' },
           logRecords: logs.map(log => ({
             body: convertToAnyValue(log.body),
-            timeUnixNano: log.timeUnixNano
+            timeUnixNano: log.timeUnixNano,
+            attributes: convertToAnyValue(log.attributes || {}).kvlistValue.values,
           }))
         }]
       }],

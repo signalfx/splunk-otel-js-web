@@ -14,11 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { JsonValue } from 'type-fest';
+import { JsonObject, JsonValue } from 'type-fest';
 
 export interface Log {
   body?: JsonValue;
   timeUnixNano: number;
+  attributes?: JsonObject;
 }
 
 export interface LogExporter {
