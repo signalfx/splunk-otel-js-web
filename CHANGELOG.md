@@ -4,6 +4,18 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## Unreleased
 
+## 0.11.3
+
+- Fix polyfilled fetch in IE ([#383](https://github.com/signalfx/splunk-otel-js-web/pull/383))
+
+## 0.11.2
+
+- Add extra check for IE compatibility in xhr instrumentation ([#380](https://github.com/signalfx/splunk-otel-js-web/pull/380))
+
+## 0.11.1
+
+- Hotfix: Fix event listeners throwing when useCapture = null ([#374](https://github.com/signalfx/splunk-otel-js-web/pull/374)) 
+
 ## 0.11.0
 
 | Open Telemetry API | Core  | Contrib & Instrumentations |

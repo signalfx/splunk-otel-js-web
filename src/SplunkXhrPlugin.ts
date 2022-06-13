@@ -18,16 +18,19 @@ import { XMLHttpRequestInstrumentation, XMLHttpRequestInstrumentationConfig } fr
 import { captureTraceParent } from './servertiming';
 import * as api from '@opentelemetry/api';
 
-type CreateSpanFn = (xhr: XMLHttpRequest, url: string, method: string) => api.Span | undefined;
-type CanCreateSpan = { _createSpan: CreateSpanFn; };
+type ExposedSuper = {
+  _addResourceObserver: (xhr: XMLHttpRequest, spanUrl: string) => void;
+  _createSpan: (xhr: XMLHttpRequest, url: string, method: string) => api.Span | undefined;
+};
+
 
 export class SplunkXhrPlugin extends XMLHttpRequestInstrumentation {
   constructor(config: XMLHttpRequestInstrumentationConfig = {}) {
     super(config);
 
     // TODO: fix when upstream exposes this method
-    const _superCreateSpan: CreateSpanFn = (this as any as CanCreateSpan)._createSpan.bind(this);
-    (this as any as CanCreateSpan)._createSpan = (xhr, url, method) => {
+    const _superCreateSpan = (this as any as ExposedSuper)._createSpan.bind(this) as ExposedSuper['_createSpan'];
+    (this as any as ExposedSuper)._createSpan = (xhr, url, method) => {
       const span = _superCreateSpan(xhr, url, method);
 
       if (span) {
@@ -48,6 +51,20 @@ export class SplunkXhrPlugin extends XMLHttpRequestInstrumentation {
       }
 
       return span;
+    };
+
+    const _superAddResourceObserver = (this as unknown as ExposedSuper)._addResourceObserver.bind(this) as ExposedSuper['_addResourceObserver'];
+    (this as any as ExposedSuper)._addResourceObserver = (xhr: XMLHttpRequest, spanUrl: string) => {
+      // Fix: PerformanceObserver feature detection is broken and crashes in IE
+      // Is fixed in 0.29.0 but contrib isn't updated yet
+      if (
+        typeof PerformanceObserver !== 'function' ||
+        typeof PerformanceResourceTiming !== 'function'
+      ) {
+        return;
+      }
+
+      _superAddResourceObserver(xhr, spanUrl);
     };
   }
 }

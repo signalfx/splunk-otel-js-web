@@ -509,6 +509,14 @@ describe('event listener shenanigans', () => {
     // fails on throwing error
     document.body.removeEventListener('test', null);
   });
+
+  // https://github.com/Pomax/react-onclickoutside/blob/15c3cdaed0d8314ac68bc53c7fad7b2c2f3c4ae2/src/index.js#L19
+  it('doesn\'t break on null capture arg', () => {
+    const listener = () => {};
+    // fails on throwing error
+    document.body.addEventListener('test', listener, null);
+    document.body.removeEventListener('test', listener, null);
+  });
 });
 
 describe('can produce click events', () => {
