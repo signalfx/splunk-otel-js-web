@@ -14,11 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { ProxyTracerProvider, trace } from '@opentelemetry/api';
+import { ProxyTracerProvider, trace, Tracer } from '@opentelemetry/api';
 import { record } from 'rrweb';
 import OTLPLogExporter from './OTLPLogExporter';
 import { BatchLogProcessor, convert } from './BatchLogProcessor';
 import { BasicTracerProvider } from '@opentelemetry/sdk-trace-base/build/src/BasicTracerProvider';
+import { VERSION } from '../version';
 
 type RRWebOptions = Parameters<typeof record>[0];
 
@@ -39,6 +40,7 @@ const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
 let inited: (() => void) | false = false;
+let tracer: Tracer;
 let startTime = 0;
 let capturing = false;
 let lastChunkTime = 0;
@@ -66,6 +68,14 @@ const SplunkRumRecorder = {
     const resource = tracerProvider.resource;
 
     const { apiToken, beaconUrl, debug, ...rrwebConf } = config;
+    tracer = trace.getTracer('splunk.rr-web', VERSION);
+    const span = tracer.startSpan('record init');
+
+    // Check if sampler is ignoring this
+    if (!span.isRecording()) {
+      return;
+    }
+    span.end();
 
     const headers = {};
     if (apiToken) {
@@ -128,9 +138,18 @@ const SplunkRumRecorder = {
     capturing = true;
     if (!oldCapturing) {
       record.takeFullSnapshot();
+      tracer.startSpan('record resume').end();
     }
   },
   stop(): void {
+    if (!inited) {
+      return;
+    }
+
+    if (capturing) {
+      tracer.startSpan('record stop').end();
+    }
+
     capturing = false;
   },
   deinit(): void {

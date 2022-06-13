@@ -14,12 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { JsonArray, JsonObject, JsonValue } from 'type-fest';
-import { gzipSync } from 'fflate';
-import * as proto from './LogsProto.js';
-
-import { Log } from './types';
 import { Resource } from '@opentelemetry/resources';
+import { gzipSync } from 'fflate';
+import { JsonArray, JsonObject, JsonValue } from 'type-fest';
+
+import * as proto from './LogsProto.js';
+import { Log } from './types';
+import { VERSION } from '../version.js';
 
 interface OTLPLogExporterConfig {
   headers?: Record<string, string>;
@@ -99,7 +100,7 @@ export default class OTLPLogExporter {
           attributes: convertToAnyValue(this.config.resource?.attributes || {}).kvlistValue.values,
         },
         scopeLogs: [{
-          scope: { name: 'splunk.rr-web', version: '0.0.1' },
+          scope: { name: 'splunk.rr-web', version: VERSION },
           logRecords: logs.map(log => ({
             body: convertToAnyValue(log.body),
             timeUnixNano: log.timeUnixNano,
