@@ -27,7 +27,7 @@ export class BatchLogProcessor {
   lastBatchSent: number;
 
   constructor(exporter: LogExporter, config: any) {
-    this.scheduledDelayMillis = config?.scheduledDelayMillis || 10000;
+    this.scheduledDelayMillis = config?.scheduledDelayMillis || 5000;
     this.exporter = exporter;
 
     window.addEventListener('unload', () => {
@@ -51,7 +51,6 @@ export class BatchLogProcessor {
 
     context.with(suppressTracing(context.active()), () => {
       const logsToExport = this.logs.splice(0, this.logs.length);
-      console.log('Exporting log events: ', logsToExport.length, logsToExport);
       this.exporter.export(logsToExport);
     });
   }

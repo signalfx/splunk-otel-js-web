@@ -82,7 +82,7 @@ const SplunkRumRecorder = {
       headers['X-SF-Token'] = apiToken;
     }
 
-    const exporter = new OTLPLogExporter({ beaconUrl, headers, resource });
+    const exporter = new OTLPLogExporter({ beaconUrl, debug, headers, resource });
     const processor = new BatchLogProcessor(exporter, {});
 
     startTime = Date.now();

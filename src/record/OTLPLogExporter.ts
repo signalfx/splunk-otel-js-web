@@ -26,6 +26,7 @@ interface OTLPLogExporterConfig {
   headers?: Record<string, string>;
   beaconUrl: string;
   resource: Resource;
+  debug?: boolean;
 }
 
 const defaultHeaders = {
@@ -117,6 +118,9 @@ export default class OTLPLogExporter {
     }
 
     const logsData = this.constructLogData(logs);
+    if (this.config.debug) {
+      console.log('otlp request', logsData);
+    }
     const buffer = LogsData.encode(logsData).finish();
     const compressed = gzipSync(buffer);
 
