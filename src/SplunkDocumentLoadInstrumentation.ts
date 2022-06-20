@@ -80,10 +80,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 
     const _superInitResourceSpan: ExposedSuper['_initResourceSpan'] = exposedSuper._initResourceSpan.bind(this);
     exposedSuper._initResourceSpan = (resource, parentSpan) => {
-      if (excludedInitiatorTypes.indexOf(resource.initiatorType) !== -1) {
-        return;
-      }
-      if (config.ignoreUrls && isUrlIgnored(resource.name, config.ignoreUrls)) {
+      if (excludedInitiatorTypes.indexOf(resource.initiatorType) !== -1 || isUrlIgnored(resource.name, config.ignoreUrls)) {
         return;
       }
       _superInitResourceSpan(resource, parentSpan);
