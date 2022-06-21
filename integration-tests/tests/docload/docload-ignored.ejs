@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Test init</title>
+
+	<%- renderAgent({}, true) %>
+	<script>
+		window.SplunkRumOptions.ignoreUrls = [
+			window.location.origin + '/non-impactful-resource.jpg'
+		];
+		window.SplunkRum && window.SplunkRum.init(window.SplunkRumOptions);
+	</script>
+</head>
+<body>
+	<p>Docload</p>
+	<img src="/non-impactful-resource.jpg">
+</body>
+</html>
