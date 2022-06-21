@@ -49,7 +49,7 @@ module.exports = {
     }
 
     const rumScriptFetchSpan = await browser.globals.findSpan(
-      (s) => s.name === 'resourceFetch'
+      (s) => s.name === 'resourceFetch' && s.tags['http.url'].includes('cdn.signalfx.com')
     );
     await browser.assert.ok(
       !!rumScriptFetchSpan,
