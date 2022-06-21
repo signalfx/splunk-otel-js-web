@@ -79,6 +79,15 @@ module.exports = {
 
     await browser.globals.assertNoErrorSpans();
   },
+  'ignoring resource URLs': async function(browser) {
+    await browser.url(browser.globals.getUrl('/docload/docload-ignored.ejs'));
+
+    await browser.globals.findSpan(span => span.name === 'documentFetch');
+    const url = browser.globals.getUrl('/', []);
+    await browser.assert.not.ok(browser.globals.getReceivedSpans().find(
+      span => span.tags['http.url'] === url + 'non-impactful-resource.jpg'
+    ));
+  },
   'module can be disabled': async function(browser) {
     await browser.url(browser.globals.getUrl('/docload/docload.ejs?disableInstrumentation=document'));
     await browser.globals.waitForTestToFinish();
