@@ -21,6 +21,8 @@ import { getOriginalFunction, isFunction, wrapNatively } from './utils';
 export interface ContextManagerConfig {
   /** Enable async tracking of span parents */
   async?: boolean;
+  onBeforeContextStart?: () => void;
+  onBeforeContextEnd?: () => void;
 }
 
 type EventListenerWithOrig = EventListener & {_orig?: EventListener};
@@ -621,13 +623,20 @@ export class SplunkContextManager implements ContextManager {
     thisArg?: ThisParameterType<F>,
     ...args: A
   ): ReturnType<F> {
+    try {
+      this._config.onBeforeContextStart?.();
+    } catch (e) {
+      // ignore any exceptions thrown by context hooks
+    }
     const previousContext = this._currentContext;
     this._currentContext = context || ROOT_CONTEXT;
 
     // Observe for location.hash changes (as it isn't a (re)configurable property))
     const preLocationHash = location.hash;
     try {
-      return fn.call(thisArg, ...args);
+      const result = fn.call(thisArg, ...args);
+      this._config.onBeforeContextEnd?.();
+      return result;
     } finally {
       this._currentContext = previousContext;
       if (preLocationHash !== location.hash) {
