@@ -82,7 +82,7 @@ LiveChat.onChatStarted(() => {
 
 # Events
 
-Event listeners can be registered with `addEventListener` and removed with `removeEventListener`. Event listeners recieve an object `{ payload: { /* Depending on event */ }}` as the first parameter
+Event listeners can be registered with `addEventListener` and removed with `removeEventListener`. Event listeners receive an object `{ payload: { /* Depending on event */ }}` as the first parameter
 
 ```ts
 SplunkRum.addEventListener(type: string, listener: Function): void
