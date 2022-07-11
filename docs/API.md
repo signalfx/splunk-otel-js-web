@@ -1,4 +1,4 @@
-Generally when using the API npm installation or try...catch blocks are encouraged to not break your app in case RUM library isn't loaded for some reason.
+When using the API with CDN installation, usage of try...catch blocks is encouraged to not break your app in case RUM library isn't loaded for some reason. This does not apply when bundling RUM with your application (using a npm installation).
 
 # setGlobalAttributes
 
@@ -12,7 +12,7 @@ Update attributes that will be set on every new span. For example this can be us
 
 Returns nothing
 
-## Example:
+**Example:**
 
 ```js
 SplunkRum.setGlobalAttributes({
@@ -41,7 +41,7 @@ No parameters
 
 Returns [Attributes](https://open-telemetry.github.io/opentelemetry-js-api/interfaces/attributes.html) object with attributes that are set on all new spans
 
-## Example:
+**Example:**
 
 ```js
 SplunkRum.setGlobalAttributes({
@@ -72,7 +72,7 @@ No parameters
 
 Returns string
 
-## Example:
+**Example:**
 
 ```js
 LiveChat.onChatStarted(() => {
@@ -98,7 +98,7 @@ Events:
   * Payload:
     * `attributes`: [Attributes](https://open-telemetry.github.io/opentelemetry-js-api/interfaces/attributes.html) - New global attributes
 
-Example:
+**Example:**
 
 ```js
 SplunkRum.addEventListener('session-changed', (event) => {
