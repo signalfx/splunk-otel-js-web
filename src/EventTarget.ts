@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { SpanAttributes } from '@opentelemetry/api';
+import { Attributes } from '@opentelemetry/api';
 
 export interface SplunkOtelWebEventTypes {
   'session-changed': {
     sessionId: string
   };
   'global-attributes-changed': {
-    attributes: SpanAttributes
+    attributes: Attributes
   }
 }
 
@@ -46,7 +46,8 @@ export class InternalEventTarget {
     const i = (this.events[type] as SplunkEventListener<T>[]).indexOf(listener);
 
     if (i >= 0) {
-      this.events[type].splice(i, 1);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      this.events[type]!.splice(i, 1);
     }
   }
 
@@ -66,6 +67,14 @@ export class InternalEventTarget {
 
 
 export interface SplunkOtelWebEventTarget {
+  addEventListener: InternalEventTarget['addEventListener'];
+  /**
+   * @deprecated Use {@link addEventListener}
+   */
   _experimental_addEventListener: InternalEventTarget['addEventListener'];
+  removeEventListener: InternalEventTarget['removeEventListener'];
+  /**
+   * @deprecated Use {@link removeEventListener}
+   */
   _experimental_removeEventListener: InternalEventTarget['removeEventListener'];
 }

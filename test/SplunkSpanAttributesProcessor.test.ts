@@ -24,7 +24,7 @@ describe('SplunkSpanAttributesProcessor', () => {
         key1: 'value1',
       });
 
-      expect(processor._experimental_getGlobalAttributes()).to.deep.eq({
+      expect(processor.getGlobalAttributes()).to.deep.eq({
         key1: 'value1',
       });
     });
@@ -40,7 +40,7 @@ describe('SplunkSpanAttributesProcessor', () => {
         key3: 'value3',
       });
 
-      expect(processor._experimental_getGlobalAttributes()).to.deep.eq({
+      expect(processor.getGlobalAttributes()).to.deep.eq({
         key1: 'value1',
         key2: 'value2-updaged',
         key3: 'value3',
