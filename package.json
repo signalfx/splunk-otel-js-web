@@ -1,6 +1,6 @@
 {
   "name": "@splunk/otel-web",
-  "version": "0.11.3-rrweb.1",
+  "version": "0.11.3-rrweb.2",
   "description": "Splunk distribution of Open Telemetry for browser environment.",
   "repository": "github:signalfx/splunk-otel-js-browser",
   "scripts": {
@@ -62,12 +62,12 @@
   "module": "dist/esm/index.js",
   "types": "dist/cjs/index.d.ts",
   "files": [
-    "dist/cjs/*.js",
-    "dist/cjs/*.js.map",
-    "dist/cjs/*.d.ts",
-    "dist/esm/*.js",
-    "dist/esm/*.js.map",
-    "dist/esm/*.d.ts"
+    "dist/cjs/**/*.js",
+    "dist/cjs/**/*.js.map",
+    "dist/cjs/**/*.d.ts",
+    "dist/esm/**/*.js",
+    "dist/esm/**/*.js.map",
+    "dist/esm/**/*.d.ts"
   ],
   "devDependencies": {
     "@aws-sdk/client-cloudfront": "^3.92.0",
