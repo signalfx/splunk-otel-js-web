@@ -16,6 +16,7 @@ limitations under the License.
 
 import { Resource } from '@opentelemetry/resources';
 import { gzipSync } from 'fflate';
+import type { Root } from 'protobufjs';
 import { JsonArray, JsonObject, JsonValue } from 'type-fest';
 
 import * as proto from './LogsProto.js';
@@ -35,14 +36,14 @@ const defaultHeaders = {
   'X-Rum-Magic': '1'
 };
 
-const { LogsData } = proto.opentelemetry.proto.logs.v1;
+const LogsData = (proto as unknown as {default: Root}).default.lookupType('opentelemetry.proto.logs.v1.LogsData') as unknown as typeof proto.opentelemetry.proto.logs.v1.LogsData;
 
 function isArray(value: JsonValue): value is JsonArray {
   return Array.isArray(value);
 }
 
 function isObject(value: JsonValue): value is JsonObject {
-  return value && typeof value === 'object' && !isArray(value);
+  return !!value && typeof value === 'object' && !isArray(value);
 }
 
 function convertToAnyValue(value: JsonValue): proto.opentelemetry.proto.common.v1.IAnyValue {

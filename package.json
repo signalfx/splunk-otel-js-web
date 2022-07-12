@@ -1,6 +1,6 @@
 {
   "name": "@splunk/otel-web",
-  "version": "0.11.3-rrweb.2",
+  "version": "0.11.3-rrweb.3",
   "description": "Splunk distribution of Open Telemetry for browser environment.",
   "repository": "github:signalfx/splunk-otel-js-browser",
   "scripts": {
@@ -10,8 +10,8 @@
     "compile:browser": "rollup -c",
     "compile:tsc": "tsc --build tsconfig.cjs.json tsconfig.esm.json",
     "otlp:compile": "npm-run-all otlp:compile:pbjs otlp:compile:pbts",
-    "otlp:compile:pbjs": "pbjs -t static-module -w es6 -o src/record/LogsProto.js --no-create --no-decode --no-verify --no-convert --no-delimited --force-number opentelemetry-proto/opentelemetry/proto/common/v1/common.proto opentelemetry-proto/opentelemetry/proto/resource/v1/resource.proto opentelemetry-proto/opentelemetry/proto/logs/v1/logs.proto",
-    "otlp:compile:pbts": "pbts -o src/record/LogsProto.d.ts src/record/LogsProto.js",
+    "otlp:compile:pbjs": "pbjs -t json-module -w es6 -o src/record/LogsProto.js --force-number opentelemetry-proto/opentelemetry/proto/common/v1/common.proto opentelemetry-proto/opentelemetry/proto/resource/v1/resource.proto opentelemetry-proto/opentelemetry/proto/logs/v1/logs.proto",
+    "otlp:compile:pbts": "pbjs -t static-module --force-number opentelemetry-proto/opentelemetry/proto/common/v1/common.proto opentelemetry-proto/opentelemetry/proto/resource/v1/resource.proto opentelemetry-proto/opentelemetry/proto/logs/v1/logs.proto | pbts -o src/record/LogsProto.d.ts -",
     "test:unit:watch": "karma start",
     "test:unit:ci": "nyc karma start --single-run --no-auto-watch --browsers ChromeHeadless",
     "lint": "eslint --quiet src/ test/ integration-tests/",

@@ -1,5 +1,7 @@
 {
   "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "node",
     "noEmitOnError": true,
@@ -8,10 +10,11 @@
     "target": "ES2017",
     "types": [
       "node"
-    ],
+    ]
   },
   "include": [
     "src/**/*.ts",
+    "src/**/*.js",
   ],
   "files": [
     "node_modules/zone.js/dist/zone.js.d.ts"
