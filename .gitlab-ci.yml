@@ -82,11 +82,11 @@ release_production:
 
     # release to NPM
     - echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
-    - npm publish ./dist/artifacts/splunk-otel-web-${CI_COMMIT_REF_NAME:1}.tgz
+    - npm publish --tag rrweb ./dist/artifacts/splunk-otel-web-${CI_COMMIT_REF_NAME:1}.tgz
     - rm -f ~/.npmrc
 
     # release in Github
-    - gh release create v${CI_COMMIT_REF_NAME:1} ./dist/artifacts/* --target $CI_COMMIT_SHA --repo $GITHUB_REPOSITORY
+    - gh release create v${CI_COMMIT_REF_NAME:1} ./dist/artifacts/* --target $CI_COMMIT_SHA --repo $GITHUB_REPOSITORY --draft --prerelease
 
     # authenticate and release to CDN
     - creds-helper init && eval $(creds-helper aws --eval aws:v1/o11y-infra/role/o11y_gdi_otel_js_web_releaser_role)

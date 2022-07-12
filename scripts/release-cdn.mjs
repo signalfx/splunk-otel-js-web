@@ -18,13 +18,13 @@ import crypto from 'crypto';
 
 import { default as dotenv } from 'dotenv';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-import { CloudFrontClient, CreateInvalidationCommand } from "@aws-sdk/client-cloudfront";
+import { CloudFrontClient, CreateInvalidationCommand } from '@aws-sdk/client-cloudfront';
 import fetch from 'node-fetch';
 import { request } from '@octokit/request';
 
 const OWNER = 'signalfx';
 const REPO = 'splunk-otel-js-browser';
-const PRERELEASE_KEYWORDS = ['alpha', 'beta', 'rc'];
+const PRERELEASE_KEYWORDS = ['alpha', 'beta', 'rc', 'rrweb'];
 
 const isDryRun = process.argv.some(arg => arg === '--dry-run');
 if (isDryRun) {
@@ -61,7 +61,7 @@ if (!latestRelease) {
 console.log(`I have found the latest version to be: ${latestRelease.tag_name} named "${latestRelease.name}."`);
 
 const { data: assets } = await requestWithAuth(`GET /repos/${OWNER}/${REPO}/releases/${latestRelease.id}/assets`);
-console.log(`This release has ${assets.length} release artifacts: ${assets.map(({name}) => name).join(', ')}.`);
+console.log(`This release has ${assets.length} release artifacts: ${assets.map(({ name }) => name).join(', ')}.`);
 
 const baseVersion = latestRelease.tag_name;
 if (!baseVersion.startsWith('v')) {
@@ -71,9 +71,9 @@ if (!baseVersion.startsWith('v')) {
 const versions = Array.from(generateAllVersions(baseVersion));
 console.log(`This release will update following versions in CDN: ${versions.map(([version]) => version).join(', ')}`);
 
-console.log(`I will now process the files:`);
-const s3Client = new S3Client({region: 'us-east-1'});
-const cfClient = new CloudFrontClient({region: 'us-east-1'});
+console.log('I will now process the files:');
+const s3Client = new S3Client({ region: 'us-east-1' });
+const cfClient = new CloudFrontClient({ region: 'us-east-1' });
 const cdnLinks = ['\n## CDN'];
 for (const asset of assets) {
   console.log(`\t- ${asset.name}`);
@@ -81,7 +81,7 @@ for (const asset of assets) {
   
   const response = await fetch(asset.browser_download_url);
   const assetBuffer = await response.buffer();
-  console.log(`\t\t- fetched`);
+  console.log('\t\t- fetched');
 
   const sha384Sum = crypto.createHash('sha384').update(assetBuffer, 'utf-8').digest('base64');
   const integrityValue = `sha384-${sha384Sum}`;
@@ -95,21 +95,21 @@ for (const asset of assets) {
 
     const publicUrl = `https://cdn.signalfx.com/${key}`;
     if (!isDryRun) {
-      await uploadToS3(key, assetBuffer, { contentType: asset.content_type })
+      await uploadToS3(key, assetBuffer, { contentType: asset.content_type });
       console.log(`\t\t\t\t- uploaded as ${publicUrl}`);
     } else {
       console.log(`\t\t\t\t- would be uploaded as ${publicUrl}`);
     }
 
     if (asset.name.endsWith('splunk-otel-web.js')) {
-      console.log(`\t\t\t\t- generating script snippet`);
+      console.log('\t\t\t\t- generating script snippet');
 
       const snippet = generateScriptSnippet({ version, isAutoUpdating, integrityValue, publicUrl });
       if (!isDryRun) {
         cdnLinks.push(snippet);
       } else {
         console.log(snippet);
-        console.log(`\t\t\t\t- above would be added to the release description`);
+        console.log('\t\t\t\t- above would be added to the release description');
       }
     }
   }
