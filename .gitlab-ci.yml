@@ -86,7 +86,7 @@ release_production:
     - rm -f ~/.npmrc
 
     # release in Github
-    - gh release create v${CI_COMMIT_REF_NAME:1} ./dist/artifacts/* --target $CI_COMMIT_SHA --repo $GITHUB_REPOSITORY --draft --prerelease
+    - gh release create v${CI_COMMIT_REF_NAME:1} ./dist/artifacts/* --target $CI_COMMIT_SHA --repo $GITHUB_REPOSITORY --prerelease
 
     # authenticate and release to CDN
     - creds-helper init && eval $(creds-helper aws --eval aws:v1/o11y-infra/role/o11y_gdi_otel_js_web_releaser_role)
