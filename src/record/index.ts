@@ -45,6 +45,7 @@ let startTime = 0;
 let capturing = false;
 let lastChunkTime = 0;
 let chunkI = 1;
+let eventI = 1;
 
 const SplunkRumRecorder = {
   get inited(): boolean {
@@ -109,6 +110,7 @@ const SplunkRumRecorder = {
           lastChunkTime = time;
         }
         const chunk = chunkI++;
+        const lifeChunk = eventI++;
         // Research found that stringifying the rr-web event here is
         // more efficient for otlp + gzip exporting
 
@@ -118,7 +120,7 @@ const SplunkRumRecorder = {
           const log = convert(
             decoder.decode(body.slice(i, i + MAX_CHUNK_SIZE)),
             time,
-            { 'splunk.rr-web.chunk': chunk }
+            { 'splunk.rr-web.chunk': chunk, 'splunk.rr-web.life': lifeChunk }
           );
           if (debug) {
             console.log(log);
