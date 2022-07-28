@@ -43,9 +43,7 @@ let inited: (() => void) | false = false;
 let tracer: Tracer;
 let startTime = 0;
 let capturing = false;
-let lastChunkTime = 0;
-let chunkI = 1;
-let eventI = 1;
+let eventCounter = 1;
 
 const SplunkRumRecorder = {
   get inited(): boolean {
@@ -105,22 +103,24 @@ const SplunkRumRecorder = {
         }
 
         const time = event.timestamp;
-        if (time > lastChunkTime) {
-          chunkI = 1;
-          lastChunkTime = time;
-        }
-        const chunk = chunkI++;
-        const lifeChunk = eventI++;
+        const eventI = eventCounter++;
         // Research found that stringifying the rr-web event here is
         // more efficient for otlp + gzip exporting
 
         // Blob is unicode aware for size calculation (eg emoji.length = 1 vs blob.size() = 4)
         const body = encoder.encode(JSON.stringify(event));
-        for (let i = 0; i < body.byteLength; i += MAX_CHUNK_SIZE) {
+        const totalC = Math.ceil(body.byteLength / MAX_CHUNK_SIZE);
+        for (let i = 0; i < totalC; i++) {
+          const start = i * MAX_CHUNK_SIZE;
+          const end = (i + 1) * MAX_CHUNK_SIZE;
           const log = convert(
-            decoder.decode(body.slice(i, i + MAX_CHUNK_SIZE)),
+            decoder.decode(body.slice(start, end)),
             time,
-            { 'splunk.rr-web.chunk': chunk, 'splunk.rr-web.life': lifeChunk }
+            {
+              'rr-web.event': eventI,
+              'rr-web.chunk': i + 1,
+              'rr-web.total-chunks': totalC
+            }
           );
           if (debug) {
             console.log(log);
