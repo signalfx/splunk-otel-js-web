@@ -133,6 +133,8 @@ export default class OTLPLogExporter {
       method: 'POST',
       body: compressed,
       headers: updatedHeaders,
+    }).catch(() => {
+      // TODO remove this once we have ingest with correct cors headers
     });
   }
 }
