@@ -1,6 +1,11 @@
 default:
   image: 'cimg/node:current-browsers'
 
+include:
+  - project: 'ci-cd/templates'
+    ref: master
+    file: '/prodsec/.oss-scan.yml'
+
 cache:
   key:
     files:
@@ -66,6 +71,10 @@ unit_test:
   stage: test
   script:
     - npm run test:unit:ci
+
+oss-scan:
+  stage: test
+  extends: .oss-scan
 
 release_production:
   artifacts:
