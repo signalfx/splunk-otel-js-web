@@ -4,6 +4,11 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## Unreleased
 
+## 0.12.0
+
+- make SplunkPostDocLoadResourceInstrumentation aware of upstream context ([#398](https://github.com/signalfx/splunk-otel-js-web/pull/398))
+- Graduate experimental APIs ([#403](https://github.com/signalfx/splunk-otel-js-web/pull/403))
+
 ## 0.11.4
 
 - add ignoreUrls config in docload instrumentation ([#392](https://github.com/signalfx/splunk-otel-js-web/pull/392))
@@ -18,7 +23,7 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## 0.11.1
 
-- Hotfix: Fix event listeners throwing when useCapture = null ([#374](https://github.com/signalfx/splunk-otel-js-web/pull/374)) 
+- Hotfix: Fix event listeners throwing when useCapture = null ([#374](https://github.com/signalfx/splunk-otel-js-web/pull/374))
 
 ## 0.11.0
 
