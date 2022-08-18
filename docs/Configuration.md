@@ -12,6 +12,7 @@ Below are the different initialization options available for the Agent:
 |`rumAuth`|`string [required]`|Provided by installation wizard|Defines a token authorizing the Agent to send the telemetry to the backend. You can find (or generate) the token [here](https://app.signalfx.com/o11y/#/organization/current?selectedKeyValue=sf_section:accesstokens). Notice that RUM and APM auth tokens are different.|
 |`app`|`string`|`"unknown-browser-app"`|Application name, used to distinguish the telemetry from different applications.|
 |`environment`|`string`|`(none)`|Sets environment for all the spans, used to distinguish between different environments such as `dev`,  `test` or `prod`. |
+|`version`|`string`|`(none)`|Sets app version for all the spans, used to distinguish between different version deployments. (eg. `1.0.1`, `20220820`) |
 |`globalAttributes`|`object`|`{} empty object`|Sets additional attributes added to all spans (such as version, user id, ...)|
 |`allowInsecureBeacon`|`boolean`|`false`|Allows sending data to insecure endpoints not using `https`. It is not recommended to enable this. |
 |`debug`|`boolean`|`false`|Enables debug logging in developer console|
