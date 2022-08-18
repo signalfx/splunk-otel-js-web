@@ -44,6 +44,7 @@ let tracer: Tracer;
 let startTime = 0;
 let capturing = false;
 let eventCounter = 1;
+let logCounter = 1;
 
 const SplunkRumRecorder = {
   get inited(): boolean {
@@ -117,6 +118,7 @@ const SplunkRumRecorder = {
             decoder.decode(body.slice(start, end)),
             time,
             {
+              'rr-web.offset': logCounter++,
               'rr-web.event': eventI,
               'rr-web.chunk': i + 1,
               'rr-web.total-chunks': totalC
