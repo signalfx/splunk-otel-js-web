@@ -173,7 +173,6 @@ describe('creating spans is possible', () => {
     const exposedSpan = span as tracing.Span;
     assert.ok(exposedSpan.attributes['location.href'], 'Checking location.href');
     assert.strictEqual(exposedSpan.attributes['environment'], 'my-env');
-    console.log('attrs', exposedSpan.attributes);
     assert.strictEqual(exposedSpan.attributes['app.version'], '1.2-test.3');
     assert.strictEqual(exposedSpan.attributes.customerType, 'GOLD');
     // Attributes set on resource that zipkin exporter merges to span tags
