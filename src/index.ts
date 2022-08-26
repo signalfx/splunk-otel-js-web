@@ -118,6 +118,11 @@ export interface SplunkOtelWebConfig {
    * */
   environment?: string;
 
+  /**
+   * Sets a value for the 'app.version' attribute
+   */
+  version?: string;
+
   /** Allows configuring how telemetry data is sent to the backend */
   exporter?: SplunkOtelWebExporterOptions;
 
@@ -314,7 +319,7 @@ export const SplunkRum: SplunkOtelWebType = {
       processedOptions.cookieDomain,
     ).deinit;
 
-    const { ignoreUrls, app, environment } = processedOptions;
+    const { ignoreUrls, app, environment, version } = processedOptions;
     // enabled: false prevents registerInstrumentations from enabling instrumentations in constructor
     // they will be enabled in registerInstrumentations
     const pluginDefaults = { ignoreUrls, enabled: false };
@@ -364,6 +369,7 @@ export const SplunkRum: SplunkOtelWebType = {
 
     this.attributesProcessor = new SplunkSpanAttributesProcessor({
       ...environment ? { environment } : {},
+      ...version ? { 'app.version': version } : {},
       ...processedOptions.globalAttributes || {},
     });
     provider.addSpanProcessor(this.attributesProcessor);
