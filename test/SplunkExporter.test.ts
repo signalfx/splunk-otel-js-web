@@ -38,7 +38,7 @@ function buildDummySpan({
     duration: timeInputToHrTime(1000),
     status: { code: api.SpanStatusCode.UNSET },
     resource: { attributes: {} },
-    events: [],
+    events: [] as ({time: api.HrTime; name: string})[],
   };
 }
 
@@ -123,6 +123,39 @@ describe('SplunkExporter', () => {
     expect(sentSpan.name).to.eq('a'.repeat(4096));
     expect(sentSpan.tags['longValue']).to.eq('b'.repeat(4096));
     expect(sentSpan.tags['shortValue']).to.eq('c'.repeat(4000));
+  });
+
+  it('filters out missing cors timings', () => {
+    exporter = new SplunkExporter({
+      beaconUrl: 'https://localhost',
+    });
+
+    const dummySpan = buildDummySpan({
+      name: 'asd',
+      attributes: {
+        'http.url': 'https://example.com/resource.png'
+      },
+    });
+    dummySpan.events.push({
+      time: dummySpan.startTime,
+      name: 'fetchStart'
+    });
+    dummySpan.events.push({
+      time: timeInputToHrTime(0),
+      name: 'connectStart'
+    });
+    dummySpan.events.push({
+      time: timeInputToHrTime(0),
+      name: 'connectEnd'
+    });
+    dummySpan.events.push({
+      time: dummySpan.startTime,
+      name: 'responseEnd'
+    });
+    exporter.export([dummySpan], () => {});
+
+    const sentSpan = JSON.parse(beaconSenderMock.getCall(0).args[1])[0];
+    expect(sentSpan.annotations.length).to.eq(2);
   });
 
   it('allows hooking into serialization', () => {
