@@ -21,6 +21,7 @@ import { captureTraceParentFromPerformanceEntries } from './servertiming';
 import { PerformanceEntries } from '@opentelemetry/sdk-trace-web';
 import { Span } from '@opentelemetry/sdk-trace-base';
 import { isUrlIgnored } from '@opentelemetry/core';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 export interface SplunkDocLoadInstrumentationConfig extends InstrumentationConfig {
   ignoreUrls?: (string|RegExp)[];
@@ -71,6 +72,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
         }
 
         captureTraceParentFromPerformanceEntries(entries, span);
+        span.setAttribute(SemanticAttributes.HTTP_METHOD, 'GET');
       }
       if (span && exposedSpan.name === 'documentLoad') {
         addExtraDocLoadTags(span);
