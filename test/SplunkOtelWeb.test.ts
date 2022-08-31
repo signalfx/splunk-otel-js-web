@@ -34,7 +34,7 @@ describe('SplunkOtelWeb', () => {
           key1: 'value1',
         },
       });
-      expect(SplunkRum._experimental_getGlobalAttributes()).to.deep.eq({
+      expect(SplunkRum.getGlobalAttributes()).to.deep.eq({
         key1: 'value1',
       });
     });
@@ -55,7 +55,7 @@ describe('SplunkOtelWeb', () => {
         key3: 'value3',
       });
 
-      expect(SplunkRum._experimental_getGlobalAttributes()).to.deep.eq({
+      expect(SplunkRum.getGlobalAttributes()).to.deep.eq({
         key1: 'value1',
         key2: 'value2-changed',
         key3: 'value3',
@@ -74,7 +74,7 @@ describe('SplunkOtelWeb', () => {
       });
 
       let receivedAttributes: SpanAttributes | undefined;
-      SplunkRum._experimental_addEventListener(
+      SplunkRum.addEventListener(
         'global-attributes-changed',
         ({ payload }) => {
           receivedAttributes = payload.attributes;
@@ -99,17 +99,17 @@ describe('SplunkOtelWeb', () => {
 
   describe('session ID', () => {
     it('should be readable', () => {
-      expect(SplunkRum._experimental_getSessionId()).to.eq(undefined);
+      expect(SplunkRum.getSessionId()).to.eq(undefined);
 
       SplunkRum.init({
         app: 'app-name',
         beaconUrl: 'https://beacon',
         rumAuth: '<token>'
       });
-      expect(SplunkRum._experimental_getSessionId()).to.match(/[0-9a-f]{32}/);
+      expect(SplunkRum.getSessionId()).to.match(/[0-9a-f]{32}/);
 
       SplunkRum.deinit();
-      expect(SplunkRum._experimental_getSessionId()).to.eq(undefined);
+      expect(SplunkRum.getSessionId()).to.eq(undefined);
     });
 
     it('should produce notifications when updated', async () => {
@@ -120,7 +120,7 @@ describe('SplunkOtelWeb', () => {
         beaconUrl: 'https://beacon',
         rumAuth: '<token>'
       });
-      SplunkRum._experimental_addEventListener(
+      SplunkRum.addEventListener(
         'session-changed',
         (ev) => { sessionId = ev.payload.sessionId; },
       );

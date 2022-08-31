@@ -5,8 +5,14 @@
 	<title>Errors test</title>
   <%- renderAgent({}) %>
   <script id="scenario">
+    window.testing = true;
+
     var test = null;
     setTimeout(function() {
+      setTimeout(function () {
+        window.testing = false;
+      });
+
       test.prop1 = true;
     });
   </script>

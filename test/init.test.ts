@@ -145,6 +145,7 @@ describe('test init', () => {
       SplunkRum.provider.getTracer('test').startSpan('testSpan').end();
       setTimeout(() => {
         expect(exportMock.called).to.eq(true);
+        SplunkRum.deinit();
         done();
       });
     });
@@ -172,6 +173,7 @@ describe('creating spans is possible', () => {
     const exposedSpan = span as tracing.Span;
     assert.ok(exposedSpan.attributes['location.href'], 'Checking location.href');
     assert.strictEqual(exposedSpan.attributes['environment'], 'my-env');
+    assert.strictEqual(exposedSpan.attributes['app.version'], '1.2-test.3');
     assert.strictEqual(exposedSpan.attributes.customerType, 'GOLD');
     // Attributes set on resource that zipkin exporter merges to span tags
     assert.ok(exposedSpan.resource.attributes['telemetry.sdk.name'], 'Checking telemetry.sdk.name');

@@ -171,6 +171,13 @@ export class SplunkExporter implements SpanExporter {
     for (const [key, value] of Object.entries(span.tags)) {
       span.tags[key] = limitLen(value.toString(), MAX_VALUE_LIMIT);
     }
+    // Remove inaccurate CORS timings
+    const zero = performance.timeOrigin * 1000;
+    if (span.tags['http.url'] && !(span.tags['http.url'] as string).startsWith(location.origin) && span.timestamp > zero && span.annotations) {
+      span.annotations = span.annotations.filter(({ timestamp }) => {
+        return timestamp !== zero;
+      });
+    }
     return span;
   }
 }

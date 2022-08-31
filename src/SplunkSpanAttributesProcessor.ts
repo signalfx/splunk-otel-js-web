@@ -14,17 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { SpanAttributes } from '@opentelemetry/api';
+import { Attributes } from '@opentelemetry/api';
 import { Span, SpanProcessor } from '@opentelemetry/sdk-trace-base';
 
 export class SplunkSpanAttributesProcessor implements SpanProcessor {
-  private readonly _globalAttributes: SpanAttributes;
+  private readonly _globalAttributes: Attributes;
 
-  constructor(globalAttributes: SpanAttributes) {
+  constructor(globalAttributes: Attributes) {
     this._globalAttributes = globalAttributes ?? {};
   }
 
-  setGlobalAttributes(attributes: SpanAttributes): void {
+  setGlobalAttributes(attributes?: Attributes): void {
     if (attributes) {
       Object.assign(this._globalAttributes, attributes);
     } else {
@@ -34,7 +34,7 @@ export class SplunkSpanAttributesProcessor implements SpanProcessor {
     }
   }
 
-  _experimental_getGlobalAttributes(): SpanAttributes {
+  getGlobalAttributes(): Attributes {
     return this._globalAttributes;
   }
 

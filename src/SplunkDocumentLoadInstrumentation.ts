@@ -20,6 +20,12 @@ import * as api from '@opentelemetry/api';
 import { captureTraceParentFromPerformanceEntries } from './servertiming';
 import { PerformanceEntries } from '@opentelemetry/sdk-trace-web';
 import { Span } from '@opentelemetry/sdk-trace-base';
+import { isUrlIgnored } from '@opentelemetry/core';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+
+export interface SplunkDocLoadInstrumentationConfig extends InstrumentationConfig {
+  ignoreUrls?: (string|RegExp)[];
+}
 
 const excludedInitiatorTypes = ['beacon', 'fetch', 'xmlhttprequest'];
 
@@ -40,7 +46,7 @@ type ExposedSuper = {
 }
 
 export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentation {
-  constructor(config: InstrumentationConfig = {}) {
+  constructor(config: SplunkDocLoadInstrumentationConfig = {}) {
     super(config);
 
     const exposedSuper = this as any as ExposedSuper;
@@ -66,6 +72,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
         }
 
         captureTraceParentFromPerformanceEntries(entries, span);
+        span.setAttribute(SemanticAttributes.HTTP_METHOD, 'GET');
       }
       if (span && exposedSpan.name === 'documentLoad') {
         addExtraDocLoadTags(span);
@@ -75,7 +82,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 
     const _superInitResourceSpan: ExposedSuper['_initResourceSpan'] = exposedSuper._initResourceSpan.bind(this);
     exposedSuper._initResourceSpan = (resource, parentSpan) => {
-      if (excludedInitiatorTypes.indexOf(resource.initiatorType) !== -1) {
+      if (excludedInitiatorTypes.indexOf(resource.initiatorType) !== -1 || isUrlIgnored(resource.name, config.ignoreUrls)) {
         return;
       }
       _superInitResourceSpan(resource, parentSpan);

@@ -26,7 +26,7 @@ import {
   BufferConfig,
 } from '@opentelemetry/sdk-trace-base';
 import { WebTracerConfig } from '@opentelemetry/sdk-trace-web';
-import { diag, DiagConsoleLogger, DiagLogLevel, SpanAttributes } from '@opentelemetry/api';
+import { Attributes, diag, DiagConsoleLogger, DiagLogLevel, SpanAttributes } from '@opentelemetry/api';
 import { SplunkDocumentLoadInstrumentation } from './SplunkDocumentLoadInstrumentation';
 import { SplunkXhrPlugin } from './SplunkXhrPlugin';
 import { SplunkFetchInstrumentation } from './SplunkFetchInstrumentation';
@@ -117,6 +117,11 @@ export interface SplunkOtelWebConfig {
    * Sets a value for the `environment` attribute (persists through calls to `setGlobalAttributes()`)
    * */
   environment?: string;
+
+  /**
+   * Sets a value for the 'app.version' attribute
+   */
+  version?: string;
 
   /** Allows configuring how telemetry data is sent to the backend */
   exporter?: SplunkOtelWebExporterOptions;
@@ -220,17 +225,23 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 
   attributesProcessor?: SplunkSpanAttributesProcessor;
 
-  setGlobalAttributes: (attributes: SpanAttributes) => void;
+  setGlobalAttributes: (attributes: Attributes) => void;
 
   /**
    * This method provides access to computed, final value of global attributes, which are applied to all created spans.
-   * It is exposed as *experimental*, and could be changed or removed without notice.
    */
-  _experimental_getGlobalAttributes: () => SpanAttributes;
+  getGlobalAttributes: () => Attributes;
+  /**
+   * @deprecated Use {@link getGlobalAttributes()}
+   */
+  _experimental_getGlobalAttributes: () => Attributes;
 
   /**
-   * This method returns current session ID. It is exposed as *experimental*, and could be changed or removed without
-   * notice.
+   * This method returns current session ID
+   */
+  getSessionId: () => SessionIdType;
+  /**
+   * @deprecated Use {@link getSessionId()}
    */
   _experimental_getSessionId: () => SessionIdType;
 
@@ -249,6 +260,7 @@ let inited = false;
 let _deregisterInstrumentations: () => void | undefined;
 let _deinitSessionTracking: () => void | undefined;
 let _errorInstrumentation: SplunkErrorInstrumentation | undefined;
+let _postDocLoadInstrumentation: SplunkPostDocLoadResourceInstrumentation | undefined;
 let eventTarget: InternalEventTarget | undefined;
 export const SplunkRum: SplunkOtelWebType = {
   DEFAULT_AUTO_INSTRUMENTED_EVENTS,
@@ -307,7 +319,7 @@ export const SplunkRum: SplunkOtelWebType = {
       processedOptions.cookieDomain,
     ).deinit;
 
-    const { ignoreUrls, app, environment } = processedOptions;
+    const { ignoreUrls, app, environment, version } = processedOptions;
     // enabled: false prevents registerInstrumentations from enabling instrumentations in constructor
     // they will be enabled in registerInstrumentations
     const pluginDefaults = { ignoreUrls, enabled: false };
@@ -346,6 +358,9 @@ export const SplunkRum: SplunkOtelWebType = {
         if (confKey === ERROR_INSTRUMENTATION_NAME && instrumentation instanceof SplunkErrorInstrumentation) {
           _errorInstrumentation = instrumentation;
         }
+        if (confKey === 'postload' && instrumentation instanceof SplunkPostDocLoadResourceInstrumentation) {
+          _postDocLoadInstrumentation = instrumentation;
+        }
         return instrumentation;
       }
 
@@ -354,6 +369,7 @@ export const SplunkRum: SplunkOtelWebType = {
 
     this.attributesProcessor = new SplunkSpanAttributesProcessor({
       ...environment ? { environment } : {},
+      ...version ? { 'app.version': version } : {},
       ...processedOptions.globalAttributes || {},
     });
     provider.addSpanProcessor(this.attributesProcessor);
@@ -380,9 +396,11 @@ export const SplunkRum: SplunkOtelWebType = {
     });
 
     provider.register({
-      contextManager: new SplunkContextManager(
-        processedOptions.context
-      )
+      contextManager: new SplunkContextManager({
+        ...processedOptions.context,
+        onBeforeContextStart: () => _postDocLoadInstrumentation.onBeforeContextChange(),
+        onBeforeContextEnd: () => _postDocLoadInstrumentation.onBeforeContextChange(),
+      })
     });
 
     // After context manager registration so instrumentation event listeners are affected accordingly
@@ -421,15 +439,19 @@ export const SplunkRum: SplunkOtelWebType = {
     inited = false;
   },
 
-  setGlobalAttributes(this: SplunkOtelWebType, attributes) {
+  setGlobalAttributes(this: SplunkOtelWebType, attributes?: Attributes) {
     this.attributesProcessor?.setGlobalAttributes(attributes);
     eventTarget?.emit('global-attributes-changed', {
-      attributes: this.attributesProcessor?._experimental_getGlobalAttributes() || {},
+      attributes: this.attributesProcessor?.getGlobalAttributes() || {},
     });
   },
 
-  _experimental_getGlobalAttributes(this: SplunkOtelWebType) {
-    return this.attributesProcessor?._experimental_getGlobalAttributes();
+  getGlobalAttributes(this: SplunkOtelWebType) {
+    return this.attributesProcessor?.getGlobalAttributes() || {};
+  },
+
+  _experimental_getGlobalAttributes() {
+    return this.getGlobalAttributes();
   },
 
   error(...args) {
@@ -441,16 +463,27 @@ export const SplunkRum: SplunkOtelWebType = {
     _errorInstrumentation.report('SplunkRum.error', args);
   },
 
-  _experimental_addEventListener(name, callback): void {
+  addEventListener(name, callback): void {
     eventTarget?.addEventListener(name, callback);
   },
 
-  _experimental_removeEventListener(name, callback): void {
+  removeEventListener(name, callback): void {
     eventTarget?.removeEventListener(name, callback);
   },
 
-  _experimental_getSessionId() {
+  _experimental_addEventListener(name, callback): void {
+    return this.addEventListener(name, callback);
+  },
+
+  _experimental_removeEventListener(name, callback): void {
+    return this.removeEventListener(name, callback);
+  },
+
+  getSessionId() {
     return getRumSessionId();
+  },
+  _experimental_getSessionId() {
+    return this.getSessionId();
   },
 };
 
