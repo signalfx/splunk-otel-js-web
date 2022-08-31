@@ -134,6 +134,7 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
     );
     span.setAttribute('component', MODULE_NAME);
     span.setAttribute(SemanticAttributes.HTTP_URL, entry.name);
+    span.setAttribute(SemanticAttributes.HTTP_METHOD, 'GET');
 
     addSpanNetworkEvents(span, entry);
     //TODO look for server-timings? captureTraceParentFromPerformanceEntries(entry)
