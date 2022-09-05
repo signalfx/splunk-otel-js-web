@@ -62,7 +62,7 @@ Compatibility between the versions of this project and Open Telemetry is specifi
 
 Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for instructions on building, running tests, and so forth.
 
-## License and versioning
+## License
 
 The Splunk distribution of OpenTelemetry JavaScript Browser is a distribution
 of the [OpenTelemetry JavaScript
