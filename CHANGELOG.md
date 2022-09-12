@@ -4,7 +4,7 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## Unreleased
 
-## 0.12.2
+## 0.12.3 & 0.12.2
 
 - Fix errors caused by disabled postload instrumentation ([#433](https://github.com/signalfx/splunk-otel-js-web/pull/433))
 
