@@ -1,6 +1,6 @@
 {
   "name": "@splunk/otel-web",
-  "version": "0.12.1-rrweb.0",
+  "version": "0.12.3-rrweb.0",
   "description": "Splunk distribution of Open Telemetry for browser environment.",
   "repository": "github:signalfx/splunk-otel-js-browser",
   "scripts": {
@@ -92,7 +92,7 @@
     "browserstack-local": "^1.4.8",
     "chai": "^4.3.4",
     "chrome-launcher": "^0.15.0",
-    "chromedriver": "^103.0.0",
+    "chromedriver": "^105.0.0",
     "codecov": "^3.8.2",
     "compression": "^1.7.4",
     "cors": "^2.8.5",

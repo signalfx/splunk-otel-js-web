@@ -187,5 +187,13 @@ module.exports = {
     await browser.assert.not.ok(plScriptRootSpan.parentId);
     await browser.assert.equal(plScriptParentSpan.traceId, plScriptChildSpan.traceId);
     await browser.assert.equal(plScriptChildSpan.parentId, plScriptParentSpan.id);
+  },
+  'doesn\'t crash when postload instrumentation is disabled': async function(browser) {
+    await browser.url(browser.globals.getUrl('/resource-observer/resources-custom-context.ejs'));
+    await browser.click('#btn1');
+
+    const click = await browser.globals.findSpan(span => span.name === 'click');
+    await browser.assert.ok(click);
+    await browser.global.assertNoErrorSpans();
   }
 };
