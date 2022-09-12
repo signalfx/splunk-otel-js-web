@@ -1,6 +1,6 @@
 {
   "name": "@splunk/otel-web",
-  "version": "0.12.2",
+  "version": "0.12.3",
   "description": "Splunk distribution of Open Telemetry for browser environment.",
   "repository": "github:signalfx/splunk-otel-js-browser",
   "scripts": {
