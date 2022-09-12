@@ -398,8 +398,8 @@ export const SplunkRum: SplunkOtelWebType = {
     provider.register({
       contextManager: new SplunkContextManager({
         ...processedOptions.context,
-        onBeforeContextStart: () => _postDocLoadInstrumentation.onBeforeContextChange(),
-        onBeforeContextEnd: () => _postDocLoadInstrumentation.onBeforeContextChange(),
+        onBeforeContextStart: () => _postDocLoadInstrumentation?.onBeforeContextChange(),
+        onBeforeContextEnd: () => _postDocLoadInstrumentation?.onBeforeContextChange(),
       })
     });
 
