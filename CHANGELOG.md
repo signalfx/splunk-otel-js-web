@@ -11,7 +11,7 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 | ^1.2.0             | ^1.7.0 | ^0.33.0 & compatible       |
 
 - Updated versioning strategy to use caret version range ([#432](https://github.com/signalfx/splunk-otel-js-web/pull/432))  
-  This will reduce the amount of duplicate packages in NPM installations (= larger app bundle size) and improve compatibility with otel API package version used for custom instrumenting applications
+  This will reduce the amount of duplicate packages in NPM installations (which would lead to larger app bundle size) and improve compatibility with otel API package version used for custom instrumentations in applications
 
 ## 0.12.3 & 0.12.2
 
