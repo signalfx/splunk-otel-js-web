@@ -25,7 +25,7 @@ type RRWebOptions = Parameters<typeof record>[0];
 
 export type SplunkRumRecorderConfig = RRWebOptions & {
   /** Destination for the captured data */
-  beaconUrl?: string;
+  beaconUrl: string;
 
   /** Temporary! Auth token */
   apiToken?: string;
@@ -34,15 +34,17 @@ export type SplunkRumRecorderConfig = RRWebOptions & {
   debug?: boolean;
 };
 
-const MAX_RECORDING_LENGTH = 5 * 60 * 1000;
+// Hard limit of 4 hours of maximum recording during one session
+const MAX_RECORDING_LENGTH = ((4 * 60) + 1) * 60 * 1000;
 const MAX_CHUNK_SIZE = 950 * 1024; // ~950KB
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
-let inited: (() => void) | false = false;
+let inited: (() => void) | false | undefined = false;
 let tracer: Tracer;
-let startTime = 0;
-let capturing = false;
+let lastKnownSession: string;
+let sessionStartTime = 0;
+let paused = false;
 let eventCounter = 1;
 let logCounter = 1;
 
@@ -53,6 +55,11 @@ const SplunkRumRecorder = {
 
   init(config: SplunkRumRecorderConfig): void {
     if (inited) {
+      return;
+    }
+
+    if (typeof window === 'undefined') {
+      console.error('Session recorder can\'t be ran in non-browser environments');
       return;
     }
 
@@ -85,21 +92,31 @@ const SplunkRumRecorder = {
     const exporter = new OTLPLogExporter({ beaconUrl, debug, headers, resource });
     const processor = new BatchLogProcessor(exporter, {});
 
-    startTime = Date.now();
-    capturing = true;
+    lastKnownSession = resource.attributes['splunk.rumSessionId'] as string;
+    sessionStartTime = Date.now();
 
     inited = record({
       maskAllInputs: true,
       maskTextSelector: '*',
       ...rrwebConf,
       emit(event) {
-        if (!capturing) {
+        if (paused) {
           return;
         }
 
-        if (event.timestamp > startTime + MAX_RECORDING_LENGTH) {
-          capturing = false;
+        // Safeguards from our ingest getting DDOSed:
+        // 1. A session can send up to 4 hours of data
+        // 2. Recording resumes on session change if it isn't a background tab (session regenerated in an another tab)
+        if (resource.attributes['splunk.rumSessionId'] !== lastKnownSession) {
+          if (document.hidden) {
+            return;
+          }
+          lastKnownSession = resource.attributes['splunk.rumSessionId'] as string;
+          sessionStartTime = Date.now();
+          record.takeFullSnapshot();
+        }
 
+        if (event.timestamp > sessionStartTime + MAX_RECORDING_LENGTH) {
           return;
         }
 
@@ -137,10 +154,10 @@ const SplunkRumRecorder = {
       return;
     }
 
-    const oldCapturing = capturing;
-    startTime = Date.now();
-    capturing = true;
-    if (!oldCapturing) {
+    // TODO
+    const oldPaused = paused;
+    paused = false;
+    if (!oldPaused) {
       record.takeFullSnapshot();
       tracer.startSpan('record resume').end();
     }
@@ -150,11 +167,11 @@ const SplunkRumRecorder = {
       return;
     }
 
-    if (capturing) {
+    if (paused) {
       tracer.startSpan('record stop').end();
     }
 
-    capturing = false;
+    paused = true;
   },
   deinit(): void {
     if (!inited) {

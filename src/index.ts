@@ -333,13 +333,6 @@ export const SplunkRum: SplunkOtelWebType = {
       'splunk.scriptInstance': instanceId,
       'app': app,
     };
-    Object.defineProperty(resourceAttrs, 'splunk.rumSessionId', {
-      get() {
-        return getRumSessionId();
-      },
-      configurable: true,
-      enumerable: true,
-    });
 
     const syntheticsRunId = getSyntheticsRunId();
     if (syntheticsRunId) {
@@ -350,6 +343,15 @@ export const SplunkRum: SplunkOtelWebType = {
       ...processedOptions.tracer,
       resource: new Resource(resourceAttrs),
     });
+
+    Object.defineProperty(provider.resource.attributes, 'splunk.rumSessionId', {
+      get() {
+        return getRumSessionId();
+      },
+      configurable: true,
+      enumerable: true,
+    });
+
     const instrumentations = INSTRUMENTATIONS.map(({ Instrument, confKey, disable }) => {
       const pluginConf = getPluginConfig(processedOptions.instrumentations[confKey], pluginDefaults, disable);
       if (pluginConf) {
