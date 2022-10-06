@@ -113,6 +113,9 @@ const SplunkRumRecorder = {
           }
           lastKnownSession = resource.attributes['splunk.rumSessionId'] as string;
           sessionStartTime = Date.now();
+          // reset counters
+          eventCounter = 1;
+          logCounter = 1;
           record.takeFullSnapshot();
         }
 
