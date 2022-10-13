@@ -53,6 +53,10 @@ export interface SplunkUserInteractionInstrumentationConfig extends UserInteract
   events?: UserInteractionEventsConfig;
 }
 
+function isPatchableEventListner(listener: Parameters<EventTarget['addEventListener']>[1]) {
+  return listener && (typeof listener === 'function' || (typeof listener === 'object' && typeof listener.handleEvent === 'function'));
+}
+
 type EventName = keyof HTMLElementEventMap;
 type ExposedSuper = {
   _createSpan: (
@@ -103,6 +107,11 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
           listener: EventListenerOrEventListenerObject | null,
           useCapture?: boolean | AddEventListenerOptions | null
         ) {
+          // Only forward to otel if it can patch it
+          if (!isPatchableEventListner(listener)) {
+            return original.call(this, type, listener, useCapture);
+          }
+
           if (useCapture === null) {
             useCapture = undefined;
           }
