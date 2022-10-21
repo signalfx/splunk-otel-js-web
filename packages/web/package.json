@@ -11,9 +11,6 @@
     "compile:tsc": "tsc --build tsconfig.cjs.json tsconfig.esm.json",
     "test:unit:watch": "karma start",
     "test:unit:ci": "nyc karma start --single-run --no-auto-watch --browsers ChromeHeadless",
-    "lint": "eslint --quiet src/ test/ integration-tests/",
-    "lint:markdown": "markdownlint *.md docs/*.md",
-    "lint:fix": "eslint --fix src/ test/ integration-tests/",
     "test:integration:local": "npm-run-all -s compile test:integration:local:headlessChrome:_execute",
     "test:integration:local:firefox": "npm-run-all -s compile test:integration:local:firefox:_execute",
     "test:integration:local:chrome": "npm-run-all -s compile test:integration:local:chrome:_execute",
@@ -27,10 +24,7 @@
     "test:integration:local:safari:_execute": "nightwatch -c ./integration-tests/utils/local.conf.js -e safari",
     "test:integration:remote": "nightwatch --config ./integration-tests/utils/saucelabs.conf.js",
     "test:integration:_selfSignCerts": "(cd utils && cd certs && openssl req -nodes -new -x509 -keyout server.key -out server.cert)",
-    "test:performance": "node ./performance-tests/runner.js",
-    "version:check": "node ./scripts/version-check.js",
-    "version:update": "node ./scripts/version-update.js",
-    "tag:check": "node ./scripts/tag-check.js"
+    "test:performance": "node ./performance-tests/runner.js"
   },
   "author": "Splunk Observability Instrumentals Team <ssg-observability-instrumentals-npm@splunk.com>",
   "license": "Apache-2.0",
@@ -114,5 +108,8 @@
     "socket.io-client": "^4.5.2",
     "ws": "^8.8.1",
     "zone.js": "0.11.4"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

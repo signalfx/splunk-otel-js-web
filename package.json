@@ -1,5 +1,7 @@
 {
+  "name": "@splunk/otel-web-dev-root",
   "private": true,
+  "version": "0.13.0",
   "workspaces": [
     "packages/*"
   ],
@@ -9,9 +11,28 @@
     "npm": ">=8"
   },
   "scripts": {
-    "lint": "eslint --ignore-path .gitignore .",
+    "compile": "npm run --ws compile",
+    "lint": "eslint --ignore-path .gitignore packages/*/src/ packages/*/test/ packages/*/integration-tests/",
     "lint:markdown": "markdownlint *.md docs/*.md",
-    "lint:fix": "eslint --ignore-path .gitignore --fix ."
+    "lint:fix": "eslint --ignore-path .gitignore --fix  packages/*/src/ packages/*/test/ packages/*/integration-tests/",
+    "test:integration:local": "npm run --ws test:integration:local",
+    "test:integration:local:all": "npm run --ws test:integration:local:all",
+    "test:integration:local:chrome": "npm run --ws test:integration:local:chrome",
+    "test:integration:local:firefox": "npm run --ws test:integration:local:firefox",
+    "test:integration:local:safari": "npm run --ws test:integration:local:safari",
+    "test:integration:local:all:_execute": "npm run --ws test:integration:local:all:_execute",
+    "test:integration:local:chrome:_execute": "npm run --ws test:integration:local:chrome:_execute",
+    "test:integration:local:firefox:_execute": "npm run --ws test:integration:local:firefox:_execute",
+    "test:integration:local:headlessChrome:_execute": "npm run --ws test:integration:local:firefox:_execute",
+    "test:integration:local:headlessFirefox:_execute": "npm run --ws test:integration:local:chrome:_execute",
+    "test:integration:local:safari:_execute": "npm run --ws test:integration:local:safari:_execute",
+    "test:integration:remote": "npm run --ws test:integration:remote",
+    "test:performance": "npm run --ws test:performance",
+    "test:unit:ci": "npm run --ws test:unit:ci",
+    "version": "node ./scripts/version-update.mjs",
+    "version:bump": "npm version --workspaces --include-workspace-root",
+    "version:check": "node ./scripts/version-check.js",
+    "tag:check": "node ./scripts/tag-check.js"
   },
   "devDependencies": {
     "@aws-sdk/client-cloudfront": "^3.171.0",

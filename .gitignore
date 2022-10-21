@@ -1,8 +1,10 @@
+artifacts/
 dist/
 build/
 /node_modules/
 .idea/
 .vscode/
+.npm/
 .nyc_output/
 .DS_Store
 .rollup.cache/
