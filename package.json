@@ -31,7 +31,7 @@
     "test:unit:ci": "npm run --ws test:unit:ci",
     "version": "node ./scripts/version-update.mjs",
     "version:bump": "npm version --workspaces --include-workspace-root",
-    "version:check": "node ./scripts/version-check.js",
+    "version:check": "node ./scripts/version-check.mjs",
     "tag:check": "node ./scripts/tag-check.js"
   },
   "devDependencies": {
