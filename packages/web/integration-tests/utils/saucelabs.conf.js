@@ -42,7 +42,7 @@ module.exports = {
       access_key: process.env.SAUCE_ACCESS_KEY,
       desiredCapabilities: {
         build,
-        tunnelIdentifier: process.env.SAUCE_TUNNEL_ID,
+        tunnelName: process.env.SAUCE_TUNNEL_ID,
         screenResolution: '1600x1200',
         seleniumVersion: '3.141.59',
       },

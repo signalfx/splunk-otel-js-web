@@ -43,7 +43,7 @@ jobs:
         with:
           username: ${{ secrets.SAUCE_USERNAME }}
           accessKey: ${{ secrets.SAUCE_ACCESS_KEY }}
-          tunnelIdentifier: ${{ secrets.SAUCE_TUNNEL_ID }}
+          tunnelName: ${{ secrets.SAUCE_TUNNEL_ID }}
       - name: Checkout
         uses: actions/checkout@v3
       - uses: actions/setup-node@v3
