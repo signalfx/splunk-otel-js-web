@@ -97,4 +97,6 @@ jobs:
         if: ${{ failure() }}
         with:
           name: test-results ${{ matrix.browser }}
-          path: packages/web/tests_output/
+          path: |
+            packages/web/tests_output/
+            packages/web/logs/
