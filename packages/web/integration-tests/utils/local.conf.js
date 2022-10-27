@@ -143,6 +143,7 @@ const nightwatch_config = {
       webdriver: {
         start_process: true,
         server_path: process.env.GECKOWEBDRIVER ? `${process.env.GECKOWEBDRIVER}/geckodriver` : (geckodriver.path ?? ''),
+        host: '127.0.0.1',
         cli_args: [
           // very verbose geckodriver logs
           '-vv'
