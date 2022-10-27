@@ -17,7 +17,6 @@ limitations under the License.
 const path = require('path');
 
 const geckodriver = require('geckodriver');
-console.log('driver path', geckodriver.path, process.env.GECKOWEBDRIVER);
 
 const nightwatch_config = {
   src_folders: ['integration-tests/tests'],
@@ -143,7 +142,7 @@ const nightwatch_config = {
       },
       webdriver: {
         start_process: true,
-        server_path: '',
+        server_path: process.env.GECKOWEBDRIVER ?? geckodriver.path ?? '',
         cli_args: [
           // very verbose geckodriver logs
           '-vv'
