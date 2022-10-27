@@ -44,7 +44,6 @@ jobs:
           username: ${{ secrets.SAUCE_USERNAME }}
           accessKey: ${{ secrets.SAUCE_ACCESS_KEY }}
           tunnelIdentifier: ${{ secrets.SAUCE_TUNNEL_ID }}
-          verbose: true
       - name: Checkout
         uses: actions/checkout@v3
       - uses: actions/setup-node@v3
@@ -58,11 +57,6 @@ jobs:
       - name: Run integration tests in Saucelabs
         run: npm run test:integration:remote -- --env ${{ matrix.browser }}
         timeout-minutes: 10
-      - uses: actions/upload-artifact@v3
-        if: ${{ failure() }}
-        with:
-          name: sauce-connect-log
-          path: ${{ env.SAUCE_CONNECT_DIR_IN_HOST }}/sauce-connect.log
 
   local-integration-tests:
     runs-on: ubuntu-latest

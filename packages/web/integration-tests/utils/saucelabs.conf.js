@@ -17,6 +17,8 @@ limitations under the License.
 const { join } = require('path');
 const build = `Nightwatch Desktop Web build-${ new Date().getTime() }`;
 
+console.log('Has tunnel?', Boolean(process.env.SAUCE_TUNNEL_ID));
+
 // More information about the configuration file can be found here
 // https://nightwatchjs.org/gettingstarted/configuration/
 module.exports = {
