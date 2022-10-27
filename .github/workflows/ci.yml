@@ -44,7 +44,6 @@ jobs:
             username: ${{ secrets.SAUCE_USERNAME }}
             accessKey: ${{ secrets.SAUCE_ACCESS_KEY }}
             tunnelIdentifier: ${{ secrets.SAUCE_TUNNEL_ID }}
-            scVersion: 4.6.4
       - name: Checkout
         uses: actions/checkout@v3
       - uses: actions/setup-node@v3
@@ -57,7 +56,7 @@ jobs:
         run: echo "127.0.0.1 local.test" | sudo tee -a /etc/hosts          
       - name: Run integration tests in Saucelabs
         run: npm run test:integration:remote -- --env ${{ matrix.browser }}
-        timeout-minutes: 5
+        timeout-minutes: 10
 
   local-integration-tests:
     runs-on: ubuntu-latest
