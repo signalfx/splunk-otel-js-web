@@ -39,11 +39,12 @@ jobs:
         browser: [edge]
     steps:
       - name: Setup sauce connect
-        uses: saucelabs/sauce-connect-action@v2.0.0
+        uses: saucelabs/sauce-connect-action@v2
         with:
-            username: ${{ secrets.SAUCE_USERNAME }}
-            accessKey: ${{ secrets.SAUCE_ACCESS_KEY }}
-            tunnelIdentifier: ${{ secrets.SAUCE_TUNNEL_ID }}
+          username: ${{ secrets.SAUCE_USERNAME }}
+          accessKey: ${{ secrets.SAUCE_ACCESS_KEY }}
+          tunnelIdentifier: ${{ secrets.SAUCE_TUNNEL_ID }}
+          verbose: true
       - name: Checkout
         uses: actions/checkout@v3
       - uses: actions/setup-node@v3
