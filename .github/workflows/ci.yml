@@ -57,6 +57,11 @@ jobs:
       - name: Run integration tests in Saucelabs
         run: npm run test:integration:remote -- --env ${{ matrix.browser }}
         timeout-minutes: 10
+      - uses: actions/upload-artifact@v3
+        if: ${{ failure() }}
+        with:
+          name: sauce-connect-log
+          path: ${{ env.SAUCE_CONNECT_DIR_IN_HOST }}/sauce-connect.log
 
   local-integration-tests:
     runs-on: ubuntu-latest
