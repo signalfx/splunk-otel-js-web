@@ -16,6 +16,9 @@ limitations under the License.
 
 const path = require('path');
 
+const geckodriver = require('geckodriver');
+console.log('driver path', geckodriver.path, process.env.GECKOWEBDRIVER);
+
 const nightwatch_config = {
   src_folders: ['integration-tests/tests'],
   globals_path: path.join(__dirname, 'globals.js'),
