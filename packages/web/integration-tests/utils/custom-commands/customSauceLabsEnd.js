@@ -24,7 +24,8 @@ exports.command = async function () {
     region: process.env.REGION === 'eu' ? 'eu' : 'us',
   });
     // 3a. Get the sessionId
-  const sessionId = this.capabilities['webdriver.remote.sessionid'];
+  console.log('caps', this.capabilities);
+  const sessionId = this.capabilities['webdriver.remote.sessionId'];
   // 3b. Get the jobName
   const jobName = this.currentTest.name;
   // 3c. Get the status  
