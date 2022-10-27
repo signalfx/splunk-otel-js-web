@@ -146,7 +146,7 @@ const nightwatch_config = {
         server_path: '',
         cli_args: [
           // very verbose geckodriver logs
-          // '-vv'
+          '-vv'
         ]
       }
     },

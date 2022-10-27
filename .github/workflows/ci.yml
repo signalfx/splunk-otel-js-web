@@ -92,3 +92,8 @@ jobs:
       - run: npm run compile
       - name: Local integration tests using ${{ matrix.browser }}
         run: npm run test:integration:local:${{ matrix.browser }}:_execute
+      - name: Upload test logs
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results ${{ matrix.browser }}
+          path: packages/web/tests_output/
