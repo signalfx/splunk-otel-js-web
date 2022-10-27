@@ -99,7 +99,7 @@ release_github:
     - /^v[0-9]+\..*/
   script:
     - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-key 23F3D4EA75716059
-    - sudo apt-add-repository https://cli.github.com/packages
+    - echo "deb [arch=$(dpkg --print-architecture)] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
     - sudo apt update
     - sudo apt install gh
 
@@ -113,6 +113,7 @@ release_cdn:
   stage: release
   only:
     - /^v[0-9]+\..*/
+  needs: ["release_github"]
   script:
     # authenticate and release to CDN
     - creds-helper init && eval $(creds-helper aws --eval aws:v1/o11y-infra/role/o11y_gdi_otel_js_web_releaser_role)
