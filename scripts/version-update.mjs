@@ -14,14 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-const fs = require('fs');
-const path = require('path');
+import { readFileSync, writeFileSync } from 'fs';
+import { resolve } from 'path';
+import { getPackageRoots } from './_utils.mjs';
 
-const appRoot = process.cwd();
-const packageJsonUrl = path.resolve(`${appRoot}/package.json`);
-const packageJson = require(packageJsonUrl);
+getPackageRoots().forEach(packagePath => {
+  const packageJsonUrl = resolve(packagePath, 'package.json');
+  const packageJson = JSON.parse(readFileSync(packageJsonUrl));
 
-const content = `/*
+  const content = `/*
 Copyright ${new Date().getFullYear()} Splunk Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -41,5 +42,6 @@ limitations under the License.
 export const VERSION = '${packageJson.version}';
 `;
 
-const fileUrl = path.join(appRoot, 'src', 'version.ts');
-fs.writeFileSync(fileUrl, content);
+  const fileUrl = resolve(packagePath, 'src', 'version.ts');
+  writeFileSync(fileUrl, content);
+});
