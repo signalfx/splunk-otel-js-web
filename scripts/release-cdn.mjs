@@ -24,7 +24,9 @@ import { request } from '@octokit/request';
 
 const OWNER = 'signalfx';
 const REPO = 'splunk-otel-js-browser';
-const PRERELEASE_KEYWORDS = ['alpha', 'beta', 'rc', 'rrweb'];
+const CDN_LISTED_FILES = [
+  'splunk-otel-web.js'
+];
 
 const isDryRun = process.argv.some(arg => arg === '--dry-run');
 if (isDryRun) {
@@ -43,10 +45,23 @@ if (!process.env.CDN_BUCKET_NAME) {
 }
 const { CDN_BUCKET_NAME } = process.env;
 
+if (!process.env.GITHUB_TOKEN && !isDryRun) {
+  throw new Error('You are missing an environment variable GITHUB_TOKEN.');
+}
+
 const requestWithAuth = request.defaults({
   headers: {
-    authorization: `token ${process.env.GITHUB_TOKEN}`,
+    authorization: process.env.GITHUB_TOKEN ? `token ${process.env.GITHUB_TOKEN}` : undefined,
   },
+});
+
+const targetVersion = process.argv.find((arg, i) => {
+  // skip first 2 args (node, release-cdn.mjs) and any flags
+  if (i < 2 || arg.startsWith('-')) {
+    return false;
+  }
+
+  return true;
 });
 
 const { data: releases, status } = await requestWithAuth(`GET /repos/${OWNER}/${REPO}/releases`);
@@ -54,16 +69,21 @@ if (status >= 400) {
   throw new Error('There was an error while trying to fetch the list of releases.');
 }
 
-const latestRelease = releases[0];
-if (!latestRelease) {
+let ghRelease;
+if (targetVersion) {
+  ghRelease = releases.find(({ tag_name }) => tag_name === targetVersion);
+} else {
+  ghRelease = releases[0];
+}
+if (!ghRelease) {
   throw new Error('Latest release not found.');
 }
-console.log(`I have found the latest version to be: ${latestRelease.tag_name} named "${latestRelease.name}."`);
+console.log(`I have found the latest version to be: ${ghRelease.tag_name} named "${ghRelease.name}."`);
 
-const { data: assets } = await requestWithAuth(`GET /repos/${OWNER}/${REPO}/releases/${latestRelease.id}/assets`);
+const { data: assets } = await requestWithAuth(`GET /repos/${OWNER}/${REPO}/releases/${ghRelease.id}/assets`);
 console.log(`This release has ${assets.length} release artifacts: ${assets.map(({ name }) => name).join(', ')}.`);
 
-const baseVersion = latestRelease.tag_name;
+const baseVersion = ghRelease.tag_name;
 if (!baseVersion.startsWith('v')) {
   throw new Error('Release version tag must start with the letter "v".');
 }
@@ -74,9 +94,14 @@ console.log(`This release will update following versions in CDN: ${versions.map(
 console.log('I will now process the files:');
 const s3Client = new S3Client({ region: 'us-east-1' });
 const cfClient = new CloudFrontClient({ region: 'us-east-1' });
-const cdnLinks = ['\n## CDN'];
+const cdnLinksByVersion = {};
+versions.forEach(([version]) => {
+  cdnLinksByVersion[version] = [];
+});
+
 for (const asset of assets) {
-  console.log(`\t- ${asset.name}`);
+  const filename = asset.name;
+  console.log(`\t- ${filename}`);
   console.log(`\t\t- fetching from ${asset.browser_download_url}.`);
   
   const response = await fetch(asset.browser_download_url);
@@ -90,7 +115,7 @@ for (const asset of assets) {
   for (const [version, isAutoUpdating] of versions) {
     console.log(`\t\t\t- version: ${version}`);
 
-    const key = `o11y-gdi-rum/${version}/${asset.name}`;
+    const key = `o11y-gdi-rum/${version}/${filename}`;
     console.log(`\t\t\t\t- key: ${key}`);
 
     const publicUrl = `https://cdn.signalfx.com/${key}`;
@@ -101,18 +126,53 @@ for (const asset of assets) {
       console.log(`\t\t\t\t- would be uploaded as ${publicUrl}`);
     }
 
-    if (asset.name.endsWith('splunk-otel-web.js')) {
+    if (CDN_LISTED_FILES.includes(asset.name)) {
       console.log('\t\t\t\t- generating script snippet');
 
-      const snippet = generateScriptSnippet({ version, isAutoUpdating, integrityValue, publicUrl });
-      if (!isDryRun) {
-        cdnLinks.push(snippet);
-      } else {
-        console.log(snippet);
-        console.log('\t\t\t\t- above would be added to the release description');
-      }
+      cdnLinksByVersion[version].push(generateScriptSnippet({ version, isAutoUpdating, filename, integrityValue, publicUrl }));
     }
   }
+}
+
+/* TODO GENERATE LIST */
+const cdnLinks = ['\n## CDN', ...versions.map(([version, isAutoUpdating]) => {
+  if (cdnLinksByVersion[version].length === 0) {
+    return '';
+  }
+
+  const lines = [];
+  let footer = '';
+
+  if (!isAutoUpdating || version === 'latest') {
+    lines.push(`### Version ${version}`, '');
+  } else {
+    lines.push(`<details><summary>Version ${version}</summary>`, '');
+    footer = '</details>\n';
+  }
+
+  if (isAutoUpdating) {
+    lines.push(
+      '**WARNING: Content behind this URL might be updated when we release a new version.**',
+      'For this reason we do not provide `integrity` attribute.',
+      '',
+    );
+  }
+
+  lines.push(
+    '```html',
+    ...cdnLinksByVersion[version],
+    '```\n',
+    footer,
+  );
+
+  return lines.join('\n');
+})];
+
+if (isDryRun) {
+  console.log('Following would be added to the relase notes:');
+  console.log('------');
+  console.log(cdnLinks.join('\n'));
+  console.log('------');
 }
 
 if (!isDryRun) {
@@ -131,11 +191,11 @@ if (!isDryRun) {
   console.log(`Invalidation ${Invalidation.Id} sent. Typically it takes about 5 minutes to execute.`);
 
   console.log('Appending CDN instructions to release description.');
-  await requestWithAuth(`PATCH ${latestRelease.url}`, {
-    body: latestRelease.body + cdnLinks.join('\n'),
+  await requestWithAuth(`PATCH ${ghRelease.url}`, {
+    body: ghRelease.body + cdnLinks.join('\n'),
   });
 
-  console.log(`Please verify that instructions are correct by navigating to: ${latestRelease.html_url}`);
+  console.log(`Please verify that instructions are correct by navigating to: ${ghRelease.html_url}`);
 }
 
 function* generateAllVersions(baseVersion) {
@@ -144,10 +204,11 @@ function* generateAllVersions(baseVersion) {
   let isAutoUpdating = false, isPreRelease = false;
   while (versionParts.length) {
     yield [`${versionParts.join('.')}`, isAutoUpdating];
-    const lastSegment = versionParts.pop(); // 1.2.3 -> 1.2
+    const lastSegment = versionParts.pop(); // v1.2.3 -> v1.2
 
-    if (PRERELEASE_KEYWORDS.some(keyword => lastSegment.includes(keyword))) {
-      // if version was 1.2.3-beta, then don't update 1.2
+    if (lastSegment.search(/[\D-]/) > -1 && versionParts.length > 0) {
+      // If any suffix is included in version, then don't update parent
+      // eg. if version was v1.2.3-beta, then don't update v1.2
       isPreRelease = true;
       break;
     }
@@ -170,23 +231,15 @@ async function uploadToS3(key, buffer, { contentType }) {
   }));
 }
 
-function generateScriptSnippet({ version, isAutoUpdating, publicUrl, integrityValue }) {
+function generateScriptSnippet({ isAutoUpdating, filename, publicUrl, integrityValue }) {
   const lines = [];
 
-  lines.push(`### Version ${version}`);
-
-  if (isAutoUpdating) {
-    lines.push('**WARNING: Content behind this URL might be updated when we release a new version.**');
-    lines.push('For this reason we do not provide `integrity` attribute.');
-  }
-
-  lines.push('```html');
+  lines.push(`${filename}:`);
   if (isAutoUpdating) {
     lines.push(`<script src="${publicUrl}" crossorigin="anonymous"></script>`);
   } else {
     lines.push(`<script src="${publicUrl}" integrity="${integrityValue}" crossorigin="anonymous"></script>`);
   }
-  lines.push('```\n');
 
   return lines.join('\n');
 }

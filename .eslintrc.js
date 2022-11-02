@@ -21,6 +21,7 @@ module.exports = {
   'env': {
     'es2015': true,
     'commonjs': true,
+    browser: true,
   },
   parser: '@typescript-eslint/parser',
   'parserOptions': {
@@ -97,7 +98,7 @@ module.exports = {
   },
   'overrides': [
     {
-      files: ['src/**/*.ts', 'test/**/*.ts'],
+      files: ['packages/*/src/**/*.ts', 'packages/*/test/**/*.ts'],
       env: {
         'browser': true,
       },
@@ -120,12 +121,16 @@ module.exports = {
       }
     },
     {
-      'files': ['integration-tests/**/*.js'],
+      'files': [
+        'packages/*/integration-tests/**/*.js',
+        'scripts/**/*',
+        'utils/**/*',
+      ],
 
       'env': {
         'node': true,
         'browser': true,
-      },
+      }
     },
     {
       'files': ['test/**/*.ts'],

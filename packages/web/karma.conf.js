@@ -16,7 +16,7 @@ limitations under the License.
 
 const json = require('@rollup/plugin-json');
 const istanbulrollup = require('rollup-plugin-istanbul');
-const rollupPolyfills = require('rollup-plugin-node-polyfills');
+const rollupPolyfills = require('rollup-plugin-polyfill-node');
 const typescript = require('@rollup/plugin-typescript');
 
 const {
@@ -120,7 +120,10 @@ module.exports = function (config) {
         nodeResolvePlugin,
         commonjsPlugin,
         typescript({ tsconfig: './tsconfig.test.json' }),
-        rollupPolyfills(),
+        rollupPolyfills({
+          // Needed to make sure even upper dir node_modules are included
+          include: [/node_modules/]
+        }),
         istanbulrollup({
           exclude: [
             /node_modules/,

@@ -9,16 +9,11 @@ jobs:
     permissions: read-all
     steps:
       - name: Checkout
-        uses: actions/checkout@v1
-      - uses: actions/setup-node@v2
+        uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
-          node-version: '14'
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: ~/.npm
-          key: npm-${{ hashFiles('package-lock.json') }}
-          restore-keys: npm-
+          node-version: '18'
+          cache: 'npm'
       - run: npm ci
       - run: npm run version:check
       - name: Lint code
@@ -44,30 +39,24 @@ jobs:
         browser: [edge]
     steps:
       - name: Setup sauce connect
-        uses: saucelabs/sauce-connect-action@v2.0.0
+        uses: saucelabs/sauce-connect-action@v2
         with:
-            username: ${{ secrets.SAUCE_USERNAME }}
-            accessKey: ${{ secrets.SAUCE_ACCESS_KEY }}
-            tunnelIdentifier: ${{ secrets.SAUCE_TUNNEL_ID }}
-            scVersion: 4.6.4
+          username: ${{ secrets.SAUCE_USERNAME }}
+          accessKey: ${{ secrets.SAUCE_ACCESS_KEY }}
+          tunnelName: ${{ secrets.SAUCE_TUNNEL_ID }}
       - name: Checkout
-        uses: actions/checkout@v1
-      - uses: actions/setup-node@v2
+        uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
-          node-version: '14'
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: ~/.npm
-          key: npm-${{ hashFiles('package-lock.json') }}
-          restore-keys: npm-
+          node-version: '18'
+          cache: 'npm'
       - run: npm ci
       - run: npm run compile
       - name: Add to hosts file
         run: echo "127.0.0.1 local.test" | sudo tee -a /etc/hosts          
       - name: Run integration tests in Saucelabs
         run: npm run test:integration:remote -- --env ${{ matrix.browser }}
-        timeout-minutes: 5
+        timeout-minutes: 10
 
   local-integration-tests:
     runs-on: ubuntu-latest
@@ -78,17 +67,20 @@ jobs:
         browser: [headlessChrome, headlessFirefox]
     steps:
       - name: Checkout
-        uses: actions/checkout@v1
-      - uses: actions/setup-node@v2
+        uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
-          node-version: '14'
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: ~/.npm
-          key: npm-${{ hashFiles('package-lock.json') }}
-          restore-keys: npm-
+          node-version: '18'
+          cache: 'npm'
       - run: npm ci
       - run: npm run compile
-      - name: Local integration tests using Headless Chrome
+      - name: Local integration tests using ${{ matrix.browser }}
         run: npm run test:integration:local:${{ matrix.browser }}:_execute
+      - name: Upload test logs
+        uses: actions/upload-artifact@v3
+        if: ${{ failure() }}
+        with:
+          name: test-results ${{ matrix.browser }}
+          path: |
+            packages/web/tests_output/
+            packages/web/logs/

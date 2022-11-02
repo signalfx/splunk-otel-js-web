@@ -58,14 +58,15 @@ build_artifacts:
   - /^v[0-9]+\..*/
   artifacts:
     paths:
-      - dist/artifacts/
+      - artifacts/
   script:
+    - if [ ! -d "artifacts" ]; then mkdir artifacts; fi
     - npm run compile
-    - npm pack
+    - npm pack --pack-destination dist/artifcats -ws
 
     # complete artifacts & checksums
-    - mv splunk-otel-web-${CI_COMMIT_REF_NAME:1}.tgz dist/artifacts/
-    - shasum -a 256 dist/artifacts/* > dist/artifacts/checksums.txt
+    - cp packages/*/dist/artifacts/* artifacts/
+    - shasum -a 256 artifacts/* > artifacts/checksums.txt
 
 unit_test:
   stage: test
@@ -76,10 +77,23 @@ oss-scan:
   stage: test
   extends: .oss-scan
 
-release_production:
+release_npm:
   artifacts:
     paths:
-      - dist/artifacts/
+      - artifacts/
+  stage: release
+  only:
+    - /^v[0-9]+\..*/
+  script:
+    # release to NPM
+    - echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
+    - for f in artifcats/*.tgz; do npm publish $f; done;
+    - rm -f ~/.npmrc
+
+release_github:
+  artifacts:
+    paths:
+      - artifacts/
   stage: release
   only:
     - /^v[0-9]+\..*/
@@ -89,14 +103,18 @@ release_production:
     - sudo apt update
     - sudo apt install gh
 
-    # release to NPM
-    - echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
-    - npm publish --tag rrweb ./dist/artifacts/splunk-otel-web-${CI_COMMIT_REF_NAME:1}.tgz
-    - rm -f ~/.npmrc
-
     # release in Github
     - gh release create v${CI_COMMIT_REF_NAME:1} ./dist/artifacts/* --target $CI_COMMIT_SHA --repo $GITHUB_REPOSITORY --prerelease
 
+release_cdn:
+  artifacts:
+    paths:
+      - artifacts/
+  stage: release
+  only:
+    - /^v[0-9]+\..*/
+  needs: ["release_github"]
+  script:
     # authenticate and release to CDN
     - creds-helper init && eval $(creds-helper aws --eval aws:v1/o11y-infra/role/o11y_gdi_otel_js_web_releaser_role)
-    - node scripts/release-cdn.mjs
+    - node scripts/release-cdn.mjs v${CI_COMMIT_REF_NAME:1}
