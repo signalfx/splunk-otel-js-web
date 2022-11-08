@@ -104,7 +104,7 @@ release_github:
     - sudo apt install gh
 
     # release in Github
-    - gh release create v${CI_COMMIT_REF_NAME:1} ./dist/artifacts/* --target $CI_COMMIT_SHA --repo $GITHUB_REPOSITORY --prerelease
+    - gh release create v${CI_COMMIT_REF_NAME:1} ./dist/artifacts/* --target $CI_COMMIT_SHA --repo $GITHUB_REPOSITORY
 
 release_cdn:
   artifacts:
