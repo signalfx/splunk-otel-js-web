@@ -1,17 +1,12 @@
 <html>
 <head>
   <script src="/dist/artifacts/splunk-otel-web.js"></script>
-  <script src="/dist/artifacts/splunk-otel-web-record.js"></script>
   <script>
     window.SplunkRum && window.SplunkRum.init({
       beaconUrl: '/api/v2/spans',
       app: 'splunk-otel-js-dummy-app',
       debug: true
     });
-    SplunkRumRecorder.init({
-      beaconUrl: '/api/v3/event',
-      debug: true
-    })
   </script>
 </head>
 <body>

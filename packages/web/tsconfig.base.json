@@ -1,7 +1,5 @@
 {
   "compilerOptions": {
-    "allowJs": true,
-    "checkJs": false,
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "node",
     "noEmitOnError": true,
