@@ -1,0 +1,38 @@
+{
+  "presets": [
+    [
+      "@babel/env",
+      {
+        "targets": {
+          "ie": "11",
+          "chrome": "52",
+          "safari": "11",
+          "firefox": "57",
+          "edge": "79"
+        }
+      }
+    ]
+  ],
+  "plugins": [
+    [
+      "@babel/plugin-transform-runtime",
+      {
+        "absoluteRuntime": false,
+        "corejs": false,
+        "helpers": true,
+        "regenerator": true
+      }
+    ]
+  ],
+  "env": {
+    "legacy": {
+      "plugins": [
+        ["@babel/plugin-transform-runtime",
+          {
+            "corejs": 3
+          }
+        ]
+      ]
+    }
+  }
+}

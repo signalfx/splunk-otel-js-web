@@ -17,11 +17,11 @@ limitations under the License.
 import { Resource } from '@opentelemetry/resources';
 import { gzipSync } from 'fflate';
 import type { Root } from 'protobufjs';
-import { JsonArray, JsonObject, JsonValue } from 'type-fest';
+import type { JsonArray, JsonObject, JsonValue } from 'type-fest';
 
 import * as proto from './LogsProto.js';
 import { Log } from './types';
-import { VERSION } from '../version.js';
+import { VERSION } from './version.js';
 
 interface OTLPLogExporterConfig {
   headers?: Record<string, string>;

@@ -21,7 +21,7 @@ const typescript = require('@rollup/plugin-typescript');
 
 const {
   nodeResolvePlugin, commonjsPlugin,
-} = require('./rollup.shared');
+} = require('../../rollup.shared');
 
 process.env.CHROME_BIN = require('puppeteer').executablePath();
 

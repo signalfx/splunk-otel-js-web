@@ -1,0 +1,62 @@
+{
+  "name": "@splunk/otel-web-session-recorder",
+  "version": "0.13.0",
+  "description": "Splunk distribution of rrweb for recording session",
+  "repository": "github:signalfx/splunk-otel-js-browser",
+  "scripts": {
+    "compile": "npm-run-all -s compile:*",
+    "compile:browser": "rollup -c",
+    "compile:tsc": "tsc --build tsconfig.cjs.json tsconfig.esm.json",
+    "otlp:compile": "npm-run-all otlp:compile:pbjs otlp:compile:pbts",
+    "otlp:compile:pbjs": "pbjs -t json-module -w es6 -o src/record/LogsProto.js --force-number opentelemetry-proto/opentelemetry/proto/common/v1/common.proto opentelemetry-proto/opentelemetry/proto/resource/v1/resource.proto opentelemetry-proto/opentelemetry/proto/logs/v1/logs.proto",
+    "otlp:compile:pbts": "pbjs -t static-module --force-number opentelemetry-proto/opentelemetry/proto/common/v1/common.proto opentelemetry-proto/opentelemetry/proto/resource/v1/resource.proto opentelemetry-proto/opentelemetry/proto/logs/v1/logs.proto | pbts -o src/record/LogsProto.d.ts -"
+  },
+  "author": "Splunk Observability Instrumentals Team <ssg-observability-instrumentals-npm@splunk.com>",
+  "license": "Apache-2.0",
+  "main": "dist/cjs/index.js",
+  "browser": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/cjs/index.d.ts",
+  "files": [
+    "dist/cjs/*.js",
+    "dist/cjs/*.js.map",
+    "dist/cjs/*.d.ts",
+    "dist/esm/*.js",
+    "dist/esm/*.js.map",
+    "dist/esm/*.d.ts"
+  ],
+  "dependencies": {
+    "@babel/runtime": "~7.18.3",
+    "@opentelemetry/api": "^1.2.0",
+    "@opentelemetry/core": "^1.7.0",
+    "@opentelemetry/resources": "^1.7.0",
+    "fflate": "^0.7.3",
+    "protobufjs": "~6.11.2",
+    "rrweb": "^1.1.2",
+    "type-fest": "^3.2.0"
+  },
+  "peerDependencies": {
+    "@splunk/otel-web": "^0.13.0"
+  },
+  "devDependencies": {
+    "@babel/plugin-transform-runtime": "^7.19.1",
+    "@babel/preset-env": "^7.19.1",
+    "@babel/runtime-corejs3": "^7.19.1",
+    "@rollup/plugin-commonjs": "^22.0.2",
+    "@rollup/plugin-json": "^4.1.0",
+    "@rollup/plugin-node-resolve": "^14.1.0",
+    "@rollup/plugin-typescript": "^8.5.0",
+    "npm-run-all": "^4.1.5",
+    "rollup": "^2.79.0",
+    "rollup-plugin-istanbul": "^3.0.0",
+    "rollup-plugin-polyfill-node": "^0.10.2",
+    "rollup-plugin-terser": "^7.0.2"
+  },
+  "bugs": {
+    "url": "https://github.com/signalfx/splunk-otel-js-web/issues"
+  },
+  "homepage": "https://github.com/signalfx/splunk-otel-js-web#readme",
+  "publishConfig": {
+    "access": "public"
+  }
+}

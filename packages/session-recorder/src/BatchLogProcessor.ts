@@ -16,8 +16,12 @@ limitations under the License.
 
 import { context } from '@opentelemetry/api';
 import { suppressTracing } from '@opentelemetry/core';
-import { JsonValue, JsonObject } from 'type-fest';
-import { Log, LogExporter } from './types';
+import type { JsonValue, JsonObject } from 'type-fest';
+import type { Log, LogExporter } from './types';
+
+export interface BatchLogProcessorConfig {
+  scheduledDelayMillis?: number;
+}
 
 export class BatchLogProcessor {
   private logs: Log[] = [];
@@ -26,7 +30,7 @@ export class BatchLogProcessor {
   exporter: LogExporter;
   lastBatchSent: number;
 
-  constructor(exporter: LogExporter, config: any) {
+  constructor(exporter: LogExporter, config: BatchLogProcessorConfig) {
     this.scheduledDelayMillis = config?.scheduledDelayMillis || 5000;
     this.exporter = exporter;
 

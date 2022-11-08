@@ -14,12 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { ProxyTracerProvider, trace, Tracer } from '@opentelemetry/api';
+import { ProxyTracerProvider, TracerProvider, trace, Tracer } from '@opentelemetry/api';
 import { record } from 'rrweb';
 import OTLPLogExporter from './OTLPLogExporter';
 import { BatchLogProcessor, convert } from './BatchLogProcessor';
-import { BasicTracerProvider } from '@opentelemetry/sdk-trace-base/build/src/BasicTracerProvider';
-import { VERSION } from '../version';
+import { VERSION } from './version';
+
+import type { Resource } from '@opentelemetry/resources';
+
+
+interface BasicTracerProvider extends TracerProvider {
+  readonly resource: Resource;
+}
 
 type RRWebOptions = Parameters<typeof record>[0];
 
