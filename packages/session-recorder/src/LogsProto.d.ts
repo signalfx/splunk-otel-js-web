@@ -1,3 +1,4 @@
+/* eslint-disable */
 import * as $protobuf from "protobufjs";
 /** Namespace opentelemetry. */
 export namespace opentelemetry {
