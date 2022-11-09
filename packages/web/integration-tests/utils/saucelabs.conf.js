@@ -17,8 +17,6 @@ limitations under the License.
 const { join } = require('path');
 const build = `Nightwatch Desktop Web build-${ new Date().getTime() }`;
 
-console.log('Has tunnel ID?', Boolean(process.env.SAUCE_TUNNEL_ID));
-
 // More information about the configuration file can be found here
 // https://nightwatchjs.org/gettingstarted/configuration/
 module.exports = {
@@ -41,10 +39,12 @@ module.exports = {
       username: process.env.SAUCE_USERNAME,
       access_key: process.env.SAUCE_ACCESS_KEY,
       desiredCapabilities: {
-        build,
-        tunnelName: process.env.SAUCE_TUNNEL_ID,
-        screenResolution: '1600x1200',
-        seleniumVersion: '3.141.59',
+        'sauce:options': {
+          build,
+          tunnelName: process.env.SAUCE_TUNNEL_ID,
+          screenResolution: '1600x1200',
+          seleniumVersion: '3.141.59',
+        },
       },
       globals: {
         hostname: 'local.test',
