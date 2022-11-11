@@ -163,7 +163,6 @@ const SplunkRumRecorder = {
       return;
     }
 
-    // TODO
     const oldPaused = paused;
     paused = false;
     if (!oldPaused) {
