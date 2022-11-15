@@ -9,7 +9,7 @@ import typescript from '@rollup/plugin-typescript';
 const {
   babelPlugin,
   nodeResolvePlugin,
-} = require('./rollup.shared');
+} = require('../../rollup.shared');
 
 export default [
   {

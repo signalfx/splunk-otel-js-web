@@ -28,6 +28,17 @@
   },
   "author": "Splunk Observability Instrumentals Team <ssg-observability-instrumentals-npm@splunk.com>",
   "license": "Apache-2.0",
+  "browser": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/cjs/index.d.ts",
+  "files": [
+    "dist/cjs/*.js",
+    "dist/cjs/*.js.map",
+    "dist/cjs/*.d.ts",
+    "dist/esm/*.js",
+    "dist/esm/*.js.map",
+    "dist/esm/*.d.ts"
+  ],
   "dependencies": {
     "@babel/runtime": "~7.18.3",
     "@opentelemetry/api": "^1.2.0",
@@ -45,17 +56,6 @@
     "shimmer": "~1.2.1",
     "web-vitals": "~2.1.0"
   },
-  "browser": "dist/cjs/index.js",
-  "module": "dist/esm/index.js",
-  "types": "dist/cjs/index.d.ts",
-  "files": [
-    "dist/cjs/*.js",
-    "dist/cjs/*.js.map",
-    "dist/cjs/*.d.ts",
-    "dist/esm/*.js",
-    "dist/esm/*.js.map",
-    "dist/esm/*.d.ts"
-  ],
   "devDependencies": {
     "@babel/plugin-transform-runtime": "^7.19.1",
     "@babel/preset-env": "^7.19.1",
@@ -73,7 +73,7 @@
     "browserstack-local": "^1.4.8",
     "chai": "^4.3.4",
     "chrome-launcher": "^0.15.1",
-    "chromedriver": "^105.0.0",
+    "chromedriver": "^107.0.3",
     "codecov": "^3.8.2",
     "compression": "^1.7.4",
     "cors": "^2.8.5",
@@ -101,7 +101,6 @@
     "rollup-plugin-istanbul": "^3.0.0",
     "rollup-plugin-polyfill-node": "^0.10.2",
     "rollup-plugin-terser": "^7.0.2",
-    "rollup-plugin-typescript2": "^0.34.0",
     "saucelabs": "^7.0.1",
     "sinon": "^14.0.0",
     "socket.io": "^4.5.2",
@@ -114,6 +113,10 @@
       "selenium-webdriver": "4.5.0"
     }
   },
+  "bugs": {
+    "url": "https://github.com/signalfx/splunk-otel-js-web/issues"
+  },
+  "homepage": "https://github.com/signalfx/splunk-otel-js-web#readme",
   "publishConfig": {
     "access": "public"
   }

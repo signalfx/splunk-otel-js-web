@@ -1,5 +1,7 @@
 {
   "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "node",
     "noEmitOnError": true,
@@ -12,9 +14,7 @@
   },
   "include": [
     "src/**/*.ts",
-  ],
-  "files": [
-    "../../node_modules/zone.js/dist/zone.js.d.ts"
+    "src/**/*.js",
   ],
   "exclude": [
     "node_modules"

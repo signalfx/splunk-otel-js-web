@@ -25,7 +25,8 @@ import { request } from '@octokit/request';
 const OWNER = 'signalfx';
 const REPO = 'splunk-otel-js-browser';
 const CDN_LISTED_FILES = [
-  'splunk-otel-web.js'
+  'splunk-otel-web.js',
+  'splunk-otel-web-session-recorder.js'
 ];
 
 const isDryRun = process.argv.some(arg => arg === '--dry-run');

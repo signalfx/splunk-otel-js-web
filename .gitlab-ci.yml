@@ -12,6 +12,7 @@ cache:
       - package-lock.json
   paths:
     - "./node_modules"
+    - "./packages/session-recorder/node_modules"
 
 stages:
   - setup
@@ -62,7 +63,7 @@ build_artifacts:
   script:
     - if [ ! -d "artifacts" ]; then mkdir artifacts; fi
     - npm run compile
-    - npm pack --pack-destination dist/artifcats -ws
+    - npm pack --pack-destination artifacts -ws
 
     # complete artifacts & checksums
     - cp packages/*/dist/artifacts/* artifacts/

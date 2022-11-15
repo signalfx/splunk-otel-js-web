@@ -1,0 +1,3 @@
+[submodule "packages/session-recorder/opentelemetry-proto"]
+	path = packages/session-recorder/opentelemetry-proto
+	url = https://github.com/open-telemetry/opentelemetry-proto.git
