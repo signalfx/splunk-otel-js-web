@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { AlwaysOffSampler, AlwaysOnSampler, ParentBasedSampler } from '@opentelemetry/core';
+import { AlwaysOffSampler, AlwaysOnSampler, ParentBasedSampler } from '@opentelemetry/sdk-trace-base';
 import { SessionBasedSampler } from './SessionBasedSampler';
 
 if( typeof Symbol !== 'function') {

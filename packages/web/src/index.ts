@@ -24,9 +24,10 @@ import {
   SpanExporter,
   SpanProcessor,
   BufferConfig,
+  AlwaysOffSampler, AlwaysOnSampler, ParentBasedSampler, 
 } from '@opentelemetry/sdk-trace-base';
 import { WebTracerConfig } from '@opentelemetry/sdk-trace-web';
-import { Attributes, diag, DiagConsoleLogger, DiagLogLevel, SpanAttributes } from '@opentelemetry/api';
+import { Attributes, diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
 import { SplunkDocumentLoadInstrumentation } from './SplunkDocumentLoadInstrumentation';
 import { SplunkXhrPlugin } from './SplunkXhrPlugin';
 import { SplunkFetchInstrumentation } from './SplunkFetchInstrumentation';
@@ -60,7 +61,7 @@ import {
 import { ContextManagerConfig, SplunkContextManager } from './SplunkContextManager';
 import { Resource, ResourceAttributes } from '@opentelemetry/resources';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
-import { AlwaysOffSampler, AlwaysOnSampler, ParentBasedSampler, SDK_INFO } from '@opentelemetry/core';
+import { SDK_INFO, _globalThis } from '@opentelemetry/core';
 import { VERSION } from './version';
 import { getSyntheticsRunId, SYNTHETICS_RUN_ID_ATTRIBUTE } from './synthetics';
 import { SplunkSpanAttributesProcessor } from './SplunkSpanAttributesProcessor';
@@ -91,7 +92,7 @@ export interface SplunkOtelWebExporterOptions {
    * Allows remapping Span's attributes right before they're serialized.
    * One potential use case of this method is to remove PII from the attributes.
    */
-  onAttributesSerializing?: (attributes: SpanAttributes, span: ReadableSpan) => SpanAttributes;
+  onAttributesSerializing?: (attributes: Attributes, span: ReadableSpan) => Attributes;
 }
 
 export interface SplunkOtelWebConfig {
@@ -284,6 +285,11 @@ export const SplunkRum: SplunkOtelWebType = {
   },
 
   init: function (options) {
+    // "env" based config still a bad idea for web
+    if (!('OTEL_TRACES_EXPORTER' in _globalThis)) {
+      _globalThis.OTEL_TRACES_EXPORTER = 'none';
+    }
+
     diag.setLogger(new DiagConsoleLogger(), options?.debug ? DiagLogLevel.DEBUG : DiagLogLevel.ERROR);
     eventTarget = new InternalEventTarget();
 
