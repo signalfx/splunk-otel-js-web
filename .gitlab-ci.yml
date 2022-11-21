@@ -12,7 +12,7 @@ cache:
       - package-lock.json
   paths:
     - "./node_modules"
-    - "./packages/session-recorder/node_modules"
+    - "./packages/*/node_modules"
 
 stages:
   - setup
