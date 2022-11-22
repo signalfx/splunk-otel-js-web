@@ -88,7 +88,7 @@ release_npm:
   script:
     # release to NPM
     - echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
-    - for f in artifacts/*.tgz; do npm publish --tag beta $f; done;
+    - for f in artifacts/*.tgz; do npm publish --tag beta ./$f; done;
     - rm -f ~/.npmrc
 
 release_github:
