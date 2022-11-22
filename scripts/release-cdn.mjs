@@ -23,7 +23,7 @@ import fetch from 'node-fetch';
 import { request } from '@octokit/request';
 
 const OWNER = 'signalfx';
-const REPO = 'splunk-otel-js-browser';
+const REPO = 'splunk-otel-js-web';
 const CDN_LISTED_FILES = [
   'splunk-otel-web.js',
   'splunk-otel-web-session-recorder.js'
@@ -46,7 +46,7 @@ if (!process.env.CDN_BUCKET_NAME) {
 }
 const { CDN_BUCKET_NAME } = process.env;
 
-if (!process.env.GITHUB_TOKEN && !isDryRun) {
+if (!process.env.GITHUB_TOKEN) {
   throw new Error('You are missing an environment variable GITHUB_TOKEN.');
 }
 
