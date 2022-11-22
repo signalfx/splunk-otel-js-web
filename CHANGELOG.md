@@ -4,6 +4,14 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## Unreleased
 
+## 0.14.0-rc.0
+
+| Open Telemetry API | Core   | Instrumentations & Contrib |
+| ------------------ | ------ | -------------------------- |
+| ^1.3.0             | ^1.8.0 | ^0.34.0 & compatible       |
+
+- Update OpenTelemetry JS packages
+
 ## 0.13.0
 
 | Open Telemetry API | Core   | Instrumentations & Contrib |
