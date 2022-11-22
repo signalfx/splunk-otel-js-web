@@ -1,7 +1,7 @@
 {
   "name": "@splunk/otel-web-dev-root",
   "private": true,
-  "version": "0.14.0-rc.0",
+  "version": "0.14.0-rc.1",
   "workspaces": [
     "packages/*"
   ],
@@ -29,7 +29,7 @@
     "test:integration:remote": "npm run --ws test:integration:remote --",
     "test:performance": "npm run --ws test:performance --",
     "test:unit:ci": "npm run --ws test:unit:ci --",
-    "version": "node ./scripts/version-update.mjs",
+    "postversion": "node ./scripts/version-update.mjs",
     "version:bump": "npm version --workspaces --include-workspace-root",
     "version:check": "node ./scripts/version-check.mjs",
     "tag:check": "node ./scripts/tag-check.js"
