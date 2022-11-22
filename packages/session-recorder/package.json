@@ -36,7 +36,7 @@
     "type-fest": "^3.2.0"
   },
   "peerDependencies": {
-    "@splunk/otel-web": "^0.14.0-rc.0"
+    "@splunk/otel-web": "^0.14.0-rc.1"
   },
   "devDependencies": {
     "@babel/plugin-transform-runtime": "^7.19.1",
