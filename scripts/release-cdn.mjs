@@ -46,7 +46,7 @@ if (!process.env.CDN_BUCKET_NAME) {
 }
 const { CDN_BUCKET_NAME } = process.env;
 
-if (!process.env.GITHUB_TOKEN) {
+if (!process.env.GITHUB_TOKEN && !isDryRun) {
   throw new Error('You are missing an environment variable GITHUB_TOKEN.');
 }
 
