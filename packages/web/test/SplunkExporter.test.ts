@@ -77,7 +77,7 @@ describe('SplunkExporter', () => {
   it('uses XHR if Beacon API is unavailable', () => {
     exporter = new SplunkExporter({
       beaconUrl: 'https://domain2',
-      beaconSender: null,
+      beaconSender: undefined,
       xhrSender: xhrSenderMock,
     });
 
@@ -97,7 +97,7 @@ describe('SplunkExporter', () => {
     });
 
     const dummySpan = buildDummySpan();
-    const spans = [];
+    const spans: (typeof dummySpan)[] = [];
     for (let i = 0; i < 110; i++) { spans.push(dummySpan); }
     exporter.export(spans, () => {});
 
@@ -185,7 +185,7 @@ describe('SplunkExporter', () => {
       onAttributesSerializing: (attributes) => ({
         ...attributes,
         key1: 'new value 1',
-        key3: null,
+        key3: undefined,
       }),
     });
 
