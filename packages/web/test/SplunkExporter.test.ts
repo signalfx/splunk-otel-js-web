@@ -30,7 +30,7 @@ function buildDummySpan({
       traceId: '0000',
       spanId: '0001',
     }),
-    parentSpanId: '0002',
+    parentSpanId: '0002' as string | undefined,
     name,
     attributes,
     kind: api.SpanKind.CLIENT,
@@ -103,6 +103,27 @@ describe('SplunkExporter', () => {
 
     const sentSpans = JSON.parse(beaconSenderMock.getCall(0).args[1]);
     expect(sentSpans).to.have.lengthOf(100);
+  });
+
+  it('still exports parent spans', () => {
+    exporter = new SplunkExporter({
+      beaconUrl: 'https://localhost',
+    });
+
+    const dummySpan = buildDummySpan();
+    const spans: (typeof dummySpan)[] = [];
+    for (let i = 0; i < 110; i++) { spans.push(dummySpan); }
+    const parentSpan = buildDummySpan();
+    parentSpan.spanContext = () => ({
+      traceId: '0000',
+      spanId: '0002',
+    });
+    parentSpan.parentSpanId = undefined;
+    spans.push(parentSpan);
+    exporter.export(spans, () => {});
+
+    const sentSpans = JSON.parse(beaconSenderMock.getCall(0).args[1]);
+    expect(sentSpans).to.have.lengthOf(101);
   });
 
   it('truncates long values', () => {
