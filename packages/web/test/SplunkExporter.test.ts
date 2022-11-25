@@ -77,7 +77,7 @@ describe('SplunkExporter', () => {
   it('uses XHR if Beacon API is unavailable', () => {
     exporter = new SplunkExporter({
       beaconUrl: 'https://domain2',
-      beaconSender: undefined,
+      beaconSender: null,
       xhrSender: xhrSenderMock,
     });
 
@@ -185,7 +185,7 @@ describe('SplunkExporter', () => {
       onAttributesSerializing: (attributes) => ({
         ...attributes,
         key1: 'new value 1',
-        key3: undefined,
+        key3: null,
       }),
     });
 
