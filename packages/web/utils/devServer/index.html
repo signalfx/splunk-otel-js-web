@@ -1,5 +1,23 @@
 <html>
 <head>
+  <!-- Uncomment to test for time drift-->
+  <!--
+  <script>
+  var basis = performance.timeOrigin;
+  var drift = 21600000;
+
+  Object.defineProperty(performance, "timeOrigin", {
+    get() {
+      return basis - drift;
+    },
+    set(value) {
+      drift = value - basis;
+    },
+    configurable: true,
+    enumerable: true
+  });
+  </script>
+  -->
   <script src="/dist/artifacts/splunk-otel-web.js"></script>
   <script>
     window.SplunkRum && window.SplunkRum.init({
