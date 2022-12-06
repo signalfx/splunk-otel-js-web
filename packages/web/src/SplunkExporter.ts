@@ -90,6 +90,7 @@ export class SplunkExporter implements SpanExporter {
   private readonly _xhrSender: SplunkExporterConfig['xhrSender'];
   private readonly _beaconSender: SplunkExporterConfig['beaconSender'];
   private readonly _spanCounts = new Map<string, number>();
+  private readonly _parents = new Map<string, boolean>();
   private readonly _limiterHandle: number;
 
   constructor({
@@ -128,12 +129,21 @@ export class SplunkExporter implements SpanExporter {
   }
 
   private _filter(span: ReadableSpan) {
+    if (span.parentSpanId) {
+      this._parents.set(span.parentSpanId, true);
+    }
     const component = (span.attributes?.component ?? 'unknown').toString();
     if (!this._spanCounts.has(component)) {
       this._spanCounts.set(component, -1);
     }
     const counter = this._spanCounts.get(component) + 1;
     this._spanCounts.set(component, counter);
+
+    const { spanId } = span.spanContext();
+    if (this._parents.has(spanId)) {
+      this._parents.delete(spanId);
+      return true;
+    }
     return counter < MAX_SPANS_PER_PERIOD_PER_COMPONENT;
   }
 
