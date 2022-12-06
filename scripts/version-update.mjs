@@ -18,10 +18,11 @@ import { readFileSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
 import { getPackageRoots } from './_utils.mjs';
 
-getPackageRoots().forEach(packagePath => {
-  const packageJsonUrl = resolve(packagePath, 'package.json');
-  const packageJson = JSON.parse(readFileSync(packageJsonUrl));
+// This script is ran when the root package is updated (which happens before child packages)
+const packageJsonUrl = resolve(process.cwd(), 'package.json');
+const packageJson = JSON.parse(readFileSync(packageJsonUrl));
 
+getPackageRoots().forEach(packagePath => {
   const content = `/*
 Copyright ${new Date().getFullYear()} Splunk Inc.
 
