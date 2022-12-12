@@ -12,3 +12,25 @@ Splunk session recorder combines [rr-web](https://github.com/rrweb-io/rrweb) wit
 Web](https://github.com/open-telemetry/opentelemetry-js)
 
 > :construction: This project is currently in **BETA**. It is **officially supported** by Splunk. However, breaking changes **MAY** be introduced.
+
+## Installation
+
+### Via NPM package manager
+
+Splunk session recorder can be installed via the `@splunk/otel-web-session-recorder` npm package:
+
+```
+npm install @splunk/otel-web-session-recorder
+```
+
+Then start the recording by importing the package and calling `SplunkSessionRecorder.init`:
+
+```js
+import SplunkSessionRecorder from '@splunk/otel-web-session-recorder'
+
+// This must be called after initializing splunk rum
+SplunkSessionRecorder.init({
+  beaconUrl: 'https://rum-ingest.<realm>.signalfx.com/v1/rumreplay',
+  rumAuth: '<auth token>'
+});
+```
