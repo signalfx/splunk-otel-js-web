@@ -4,6 +4,11 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## Unreleased
 
+## 0.14.0-rc.5
+
+- Session recorder:
+  - Updates to data transport ([#503](https://github.com/signalfx/splunk-otel-js-web/pull/503))
+
 ## 0.14.0-rc.4
 
 - Don't count parent spans against 100 spans per component limit ([#493](https://github.com/signalfx/splunk-otel-js-web/pull/493))
