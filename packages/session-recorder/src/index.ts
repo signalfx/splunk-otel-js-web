@@ -33,6 +33,12 @@ export type SplunkRumRecorderConfig = RRWebOptions & {
   /** Destination for the captured data */
   beaconUrl: string;
 
+  /**
+   * RUM authorization token for data sending. Please make sure this is a token
+   * with only RUM scope as it's visible to every user of your app
+   * */
+  rumAuth?: string;
+
   /** Temporary! Auth token */
   apiToken?: string;
 
@@ -80,7 +86,7 @@ const SplunkRumRecorder = {
 
     const resource = tracerProvider.resource;
 
-    const { apiToken, beaconUrl, debug, ...rrwebConf } = config;
+    const { apiToken, beaconUrl, debug, rumAuth, ...rrwebConf } = config;
     tracer = trace.getTracer('splunk.rr-web', VERSION);
     const span = tracer.startSpan('record init');
 
@@ -90,12 +96,16 @@ const SplunkRumRecorder = {
     }
     span.end();
 
+    let exportUrl = beaconUrl;
     const headers = {};
     if (apiToken) {
       headers['X-SF-Token'] = apiToken;
     }
+    if (rumAuth) {
+      exportUrl += `?auth=${rumAuth}`;
+    }
 
-    const exporter = new OTLPLogExporter({ beaconUrl, debug, headers, resource });
+    const exporter = new OTLPLogExporter({ beaconUrl: exportUrl, debug, headers, resource });
     const processor = new BatchLogProcessor(exporter, {});
 
     lastKnownSession = resource.attributes['splunk.rumSessionId'] as string;
