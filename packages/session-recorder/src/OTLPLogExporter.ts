@@ -32,8 +32,7 @@ interface OTLPLogExporterConfig {
 
 const defaultHeaders = {
   'Content-Type': 'application/x-protobuf',
-  'Content-Encoding': 'gzip',
-  'X-Rum-Magic': '1'
+  'Content-Encoding': 'gzip'
 };
 
 const LogsData = (proto as unknown as {default: Root}).default.lookupType('opentelemetry.proto.logs.v1.LogsData') as unknown as typeof proto.opentelemetry.proto.logs.v1.LogsData;
