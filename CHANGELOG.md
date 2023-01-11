@@ -4,6 +4,18 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## Unreleased
 
+## 0.14.0
+
+Changelog since last general release:
+
+| Open Telemetry API | Core   | Instrumentations & Contrib |
+| ------------------ | ------ | -------------------------- |
+| ^1.3.0             | ^1.8.0 | ^0.34.0 & compatible       |
+
+- Don't count parent spans against 100 spans per component limit ([#493](https://github.com/signalfx/splunk-otel-js-web/pull/493))
+- Integrate otel's performance clock drift fix ([#498](https://github.com/signalfx/splunk-otel-js-web/pull/498))
+- Session recorder package
+
 ## 0.14.0-rc.5
 
 - Session recorder:
