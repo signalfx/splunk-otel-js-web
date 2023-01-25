@@ -290,7 +290,7 @@ export const SplunkRum: SplunkOtelWebType = {
       _globalThis.OTEL_TRACES_EXPORTER = 'none';
     }
 
-    diag.setLogger(new DiagConsoleLogger(), options?.debug ? DiagLogLevel.DEBUG : DiagLogLevel.ERROR);
+    diag.setLogger(new DiagConsoleLogger(), options?.debug ? DiagLogLevel.DEBUG : DiagLogLevel.WARN);
     eventTarget = new InternalEventTarget();
 
     const processedOptions: SplunkOtelWebConfigInternal = Object.assign(
@@ -303,7 +303,7 @@ export const SplunkRum: SplunkOtelWebType = {
     );
 
     if (inited) {
-      diag.error('SplunkRum already init()ed.');
+      diag.warn('SplunkRum already init()ed.');
       return;
     }
 
