@@ -57,14 +57,25 @@ describe('SplunkExporter', () => {
     beaconSenderMock.restore();
   });
 
-  it('uses Beacon API if available', () => {
+  it('uses Beacon API if in background', () => {
     exporter = new SplunkExporter({
       beaconUrl: 'https://domain1',
       xhrSender: xhrSenderMock,
     });
 
+    const targetDocProto = Object.getPrototypeOf(Object.getPrototypeOf(document));
+    const oldDef = Object.getOwnPropertyDescriptor(targetDocProto, 'hidden');
+    Object.defineProperty(targetDocProto, 'hidden', {
+      get() {
+        return true;
+      },
+      configurable: true,
+      enumerable: true,
+    });
     const dummySpan = buildDummySpan();
     exporter.export([dummySpan], () => {});
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    Object.defineProperty(targetDocProto, 'hidden', oldDef!);
 
     expect(beaconSenderMock.args[0][0]).to.eq('https://domain1');
     const sentSpan = JSON.parse(beaconSenderMock.args[0][1])[0];
@@ -94,6 +105,7 @@ describe('SplunkExporter', () => {
   it('limits spans sent', () => {
     exporter = new SplunkExporter({
       beaconUrl: 'https://localhost',
+      xhrSender: xhrSenderMock,
     });
 
     const dummySpan = buildDummySpan();
@@ -101,13 +113,14 @@ describe('SplunkExporter', () => {
     for (let i = 0; i < 110; i++) { spans.push(dummySpan); }
     exporter.export(spans, () => {});
 
-    const sentSpans = JSON.parse(beaconSenderMock.getCall(0).args[1]);
+    const sentSpans = JSON.parse(xhrSenderMock.getCall(0).args[1]);
     expect(sentSpans).to.have.lengthOf(100);
   });
 
   it('still exports parent spans', () => {
     exporter = new SplunkExporter({
       beaconUrl: 'https://localhost',
+      xhrSender: xhrSenderMock,
     });
 
     const dummySpan = buildDummySpan();
@@ -122,13 +135,14 @@ describe('SplunkExporter', () => {
     spans.push(parentSpan);
     exporter.export(spans, () => {});
 
-    const sentSpans = JSON.parse(beaconSenderMock.getCall(0).args[1]);
+    const sentSpans = JSON.parse(xhrSenderMock.getCall(0).args[1]);
     expect(sentSpans).to.have.lengthOf(101);
   });
 
   it('truncates long values', () => {
     exporter = new SplunkExporter({
       beaconUrl: 'https://localhost',
+      xhrSender: xhrSenderMock,
     });
 
     const dummySpan = buildDummySpan({
@@ -140,7 +154,7 @@ describe('SplunkExporter', () => {
     });
     exporter.export([dummySpan], () => {});
 
-    const sentSpan = JSON.parse(beaconSenderMock.getCall(0).args[1])[0];
+    const sentSpan = JSON.parse(xhrSenderMock.getCall(0).args[1])[0];
     expect(sentSpan.name).to.eq('a'.repeat(4096));
     expect(sentSpan.tags['longValue']).to.eq('b'.repeat(4096));
     expect(sentSpan.tags['shortValue']).to.eq('c'.repeat(4000));
@@ -149,6 +163,7 @@ describe('SplunkExporter', () => {
   it('filters out missing cors timings', () => {
     exporter = new SplunkExporter({
       beaconUrl: 'https://localhost',
+      xhrSender: xhrSenderMock,
     });
 
     const dummySpan = buildDummySpan({
@@ -175,13 +190,14 @@ describe('SplunkExporter', () => {
     });
     exporter.export([dummySpan], () => {});
 
-    const sentSpan = JSON.parse(beaconSenderMock.getCall(0).args[1])[0];
+    const sentSpan = JSON.parse(xhrSenderMock.getCall(0).args[1])[0];
     expect(sentSpan.annotations.length).to.eq(2);
   });
 
   it('allows hooking into serialization', () => {
     exporter = new SplunkExporter({
       beaconUrl: 'https://localhost',
+      xhrSender: xhrSenderMock,
       onAttributesSerializing: (attributes) => ({
         ...attributes,
         key1: 'new value 1',
@@ -198,7 +214,7 @@ describe('SplunkExporter', () => {
     });
     exporter.export([dummySpan], () => {});
 
-    const sentSpan = JSON.parse(beaconSenderMock.getCall(0).args[1])[0];
+    const sentSpan = JSON.parse(xhrSenderMock.getCall(0).args[1])[0];
     expect(sentSpan.name).to.eq('<name>');
     console.log(sentSpan.tags);
     expect(sentSpan.tags).to.deep.eq({
