@@ -169,8 +169,8 @@ interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
 const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
   app: 'unknown-browser-app',
   beaconUrl: undefined,
-  bufferTimeout: 5000, //millis, tradeoff between batching and loss of spans by not sending before page close
-  bufferSize: 20, // spans, tradeoff between batching and hitting sendBeacon invididual limits
+  bufferTimeout: 4000, //millis, tradeoff between batching and loss of spans by not sending before page close
+  bufferSize: 50, // spans, tradeoff between batching and hitting sendBeacon invididual limits
   instrumentations: {},
   exporter: {
     factory: (options) => new SplunkExporter(options),
