@@ -38,6 +38,7 @@ module.exports = {
     const lcp = await browser.globals.findSpan(span => span.tags.lcp !== undefined);
     const cls = await browser.globals.findSpan(span => span.tags.cls !== undefined);
     const fid = await browser.globals.findSpan(span => span.tags.fid !== undefined);
+    const inp = await browser.globals.findSpan(span => span.tags.inp !== undefined);
 
     await browser.assert.ok(lcp);
     await browser.assert.ok(cls);
@@ -52,6 +53,10 @@ module.exports = {
     if (fid) {
       await browser.assert.strictEqual(fid.name, 'webvitals');
       await browser.assert.ok(fid.tags.fid > 0);
+    }
+    if (inp) {
+      await browser.assert.strictEqual(inp.name, 'webvitals');
+      await browser.assert.ok(inp.tags.inp > 0);
     }
 
     await browser.globals.assertNoErrorSpans();
