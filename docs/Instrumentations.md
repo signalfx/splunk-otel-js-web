@@ -105,6 +105,7 @@ Following tags are captured from the information captured by the `webVitals` ins
 |`lcp`|[Largest Contentful Paint](https://web.dev/lcp/)|Measures loading performance by capturing the render time of the largest image or text block visible within the viewport.|
 |`fid`|[First Input Delay](https://web.dev/fid/)|Measures interactivity by capturing the timestamp between user interaction (i.e. click on a link, tap on a button, etc) to the time when the browser is actually able to begin processing event handlers in response to that interaction.|
 |`cls`|[Cumulative Layout Shift](https://web.dev/cls/)|Measures visual stability by capturing the sum of all individual layout shift scores for every unexpected layout shift that occurs during the entire lifespan of the page. A layout shift occurs any time a visible element changes its position from one rendered frame to the next.|
+|`inp`|[Interaction to Next Paint](https://web.dev/inp/)|Measures responsiveness by observing the latency of all interactions a user has made with the page, and reports the maximum (or ~98%)|
 
 ## Instrumentation: Post document load
 
