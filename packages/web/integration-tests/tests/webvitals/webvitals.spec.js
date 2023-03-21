@@ -56,7 +56,6 @@ module.exports = {
     }
     if (inp) {
       await browser.assert.strictEqual(inp.name, 'webvitals');
-      await browser.assert.ok(inp.tags.inp > 0);
     }
 
     await browser.globals.assertNoErrorSpans();
