@@ -38,7 +38,7 @@ function addExtraDocLoadTags(span: api.Span) {
   }
 }
 
-type PerformanceEntriesWithServerTiming = PerformanceEntries & {serverTiming?: ({name: string, duration: number, description: string})[]}
+type PerformanceEntriesWithServerTiming = PerformanceEntries & {serverTiming?: ReadonlyArray<({name: string, duration: number, description: string})>}
 
 type ExposedSuper = {
   _endSpan(span: api.Span | undefined, performanceName: string, entries: PerformanceEntries): void;
@@ -65,7 +65,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
           !(entries as PerformanceEntriesWithServerTiming).serverTiming &&
           performance.getEntriesByType
         ) {
-          const navEntries = performance.getEntriesByType('navigation') as PerformanceEntriesWithServerTiming[];
+          const navEntries = performance.getEntriesByType('navigation');
           if (navEntries[0]?.serverTiming) {
             (entries as PerformanceEntriesWithServerTiming).serverTiming = navEntries[0].serverTiming;
           }
