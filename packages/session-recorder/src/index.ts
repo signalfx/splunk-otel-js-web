@@ -77,7 +77,7 @@ const SplunkRumRecorder = {
 
     let tracerProvider: BasicTracerProvider | ProxyTracerProvider = trace.getTracerProvider() as BasicTracerProvider;
     if (tracerProvider && 'getDelegate' in tracerProvider) {
-      tracerProvider = (tracerProvider as ProxyTracerProvider).getDelegate() as BasicTracerProvider;
+      tracerProvider = (tracerProvider as unknown as ProxyTracerProvider).getDelegate() as BasicTracerProvider;
     }
     if (!(tracerProvider?.resource)) {
       console.error('Splunk OTEL Web must be inited before recorder.');
