@@ -22,10 +22,10 @@ limitations under the License.
  * This is a good-enough solution for now. If there's more polyfills needed, we should migrate to corejs.
  */
 
-if (!NodeList.prototype[Symbol.iterator]) {
+if (typeof NodeList !== 'undefined' && !NodeList.prototype[Symbol.iterator]) {
   NodeList.prototype[Symbol.iterator] = [][Symbol.iterator];
 }
 
-if (!HTMLCollection.prototype[Symbol.iterator]) {
+if (typeof HTMLCollection !== 'undefined' && !HTMLCollection.prototype[Symbol.iterator]) {
   HTMLCollection.prototype[Symbol.iterator] = [][Symbol.iterator];
 }

@@ -106,6 +106,7 @@ function hrTime(performanceNow?: number): HrTime {
 }
 
 // packages/opentelemetry-sdk-trace-base/src/Span.ts
+// @ts-expect-error Privates
 class Span extends BaseSpan {
   private readonly _performanceStartTime: number;
   private readonly _performanceOffset: number;

@@ -13,7 +13,7 @@ const {
 
 export default [
   {
-    input: 'src/indexBrowser.ts',
+    input: 'src/index.ts',
     output: {
       file: 'dist/artifacts/splunk-otel-web.js',
       format: 'iife',
@@ -35,7 +35,7 @@ export default [
     context: 'window',
   },
   {
-    input: 'src/indexBrowser.ts',
+    input: 'src/index.ts',
     output: {
       file: 'dist/artifacts/splunk-otel-web-legacy.js',
       format: 'iife',

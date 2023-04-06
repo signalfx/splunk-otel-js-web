@@ -131,7 +131,7 @@ export function updateSessionStatus(): void {
 }
 
 function hasNativeSessionId(): boolean {
-  return window['SplunkRumNative'] && window['SplunkRumNative'].getNativeSessionId;
+  return typeof window !== 'undefined' && window['SplunkRumNative'] && window['SplunkRumNative'].getNativeSessionId;
 }
 
 export function initSessionTracking(
@@ -174,7 +174,7 @@ export function initSessionTracking(
   };
 }
 
-export function getRumSessionId(): SessionIdType {
+export function getRumSessionId(): SessionIdType | undefined {
   if (hasNativeSessionId()) {
     return window['SplunkRumNative'].getNativeSessionId();
   }

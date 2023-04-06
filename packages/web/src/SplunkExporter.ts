@@ -44,7 +44,7 @@ export const NATIVE_XHR_SENDER: SplunkExporterConfig['xhrSender'] = (url: string
   xhr.setRequestHeader('Content-Type', 'text/plain;charset=UTF-8');
   xhr.send(data);
 };
-export const NATIVE_BEACON_SENDER: SplunkExporterConfig['beaconSender'] = navigator.sendBeacon ? (url, data) => navigator.sendBeacon(url, data) : null;
+export const NATIVE_BEACON_SENDER: SplunkExporterConfig['beaconSender'] = typeof navigator !== 'undefined' && navigator.sendBeacon ? (url, data) => navigator.sendBeacon(url, data) : undefined;
 
 // TODO: upstream proper exports from ZipkinExporter
 export interface ZipkinAnnotation {
@@ -171,7 +171,11 @@ export class SplunkExporter implements SpanExporter {
       instrumentationLibrary: span.instrumentationLibrary,
 
       resource: span.resource,
-      attributes: this._onAttributesSerializing(span.attributes, span),
+      attributes: this._onAttributesSerializing ? this._onAttributesSerializing(span.attributes, span) : span.attributes,
+
+      droppedAttributesCount: span.droppedAttributesCount,
+      droppedEventsCount: span.droppedEventsCount,
+      droppedLinksCount: span.droppedLinksCount,
     };
   }
 
