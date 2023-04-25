@@ -29,7 +29,7 @@ module.exports = {
     const clickSpan = await browser.globals.findSpan(span => span.name === 'click' && span.tags['target_xpath'] === '//*[@id="btn1"]');
     await browser.assert.ok(!!clickSpan, 'Checking click span presence.');
 
-    const fetchSpan = await browser.globals.findSpan(span => span.tags['http.url'] === '/some-data');
+    const fetchSpan = await browser.globals.findSpan(span => span.tags['http.url'] === browser.globals.getUrl('/some-data', []));
     await browser.assert.ok(!!fetchSpan, 'Checking fetch span presence.');
 
     await browser.assert.not.ok(clickSpan.parentId, 'Click span does not have a parent.');

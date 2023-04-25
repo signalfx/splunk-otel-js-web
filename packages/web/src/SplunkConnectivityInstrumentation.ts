@@ -62,4 +62,3 @@ export class SplunkConnectivityInstrumentation extends InstrumentationBase {
     span.end(startTime);
   }
 }
- 
