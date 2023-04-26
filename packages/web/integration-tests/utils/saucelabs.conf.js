@@ -39,6 +39,8 @@ module.exports = {
       username: process.env.SAUCE_USERNAME,
       access_key: process.env.SAUCE_ACCESS_KEY,
       desiredCapabilities: {
+        acceptSslCerts: true,
+        acceptInsecureCerts: true,
         'sauce:options': {
           build,
           tunnelName: process.env.SAUCE_TUNNEL_ID,
