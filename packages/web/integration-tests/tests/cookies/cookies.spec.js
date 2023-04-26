@@ -57,7 +57,7 @@ module.exports = {
       await browser.assert.ok(cookie.secure);
     }
     if (!isBrowser(browser, { 'internet explorer': true, safari: true })) {
-      await browser.assert.equal(cookie.sameSite, 'None');
+      await browser.assert.equal(cookie.sameSite, browser.globals.enableHttps ? 'None' : 'Strict');
     }
   },
   'setting cookieDomain via config sets it on subdomains also': async function(browser) {  
