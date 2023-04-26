@@ -50,8 +50,8 @@ module.exports = {
         },
       },
       globals: {
-        hostname: 'bs-local.com',
-        enableHttps: true
+        hostname: 'local.test',
+        enableHttps: false
       }
     },
     localChrome: {
