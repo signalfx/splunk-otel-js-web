@@ -44,6 +44,7 @@ module.exports = {
           tunnelName: process.env.SAUCE_TUNNEL_ID,
           screenResolution: '1600x1200',
           seleniumVersion: '3.141.59',
+          extendedDebugging: true,
         },
       },
       globals: {

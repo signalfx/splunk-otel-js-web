@@ -38,7 +38,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        browser: [edge]
+        browser: [chrome, edge]
     steps:
       - name: Setup sauce connect
         uses: saucelabs/sauce-connect-action@v2
