@@ -47,7 +47,7 @@ module.exports = {
         },
       },
       globals: {
-        hostname: 'local.test',
+        hostname: 'bs-local.com',
         enableHttps: true
       }
     },
