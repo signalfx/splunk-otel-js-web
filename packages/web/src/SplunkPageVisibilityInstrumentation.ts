@@ -64,4 +64,3 @@ export class SplunkPageVisibilityInstrumentation extends InstrumentationBase {
     span.end(now);
   }
 }
- 

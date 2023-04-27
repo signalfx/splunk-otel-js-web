@@ -24,6 +24,8 @@ jobs:
         run: npm run compile
       - name: Unit test
         run: npm run test:unit:ci
+      - name: Unit test (nodejs)
+        run: npm run test:unit:ci-node
 
   saucelabs-integration-tests:
     runs-on: ubuntu-latest

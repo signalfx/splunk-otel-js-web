@@ -48,6 +48,8 @@ export class SplunkXhrPlugin extends XMLHttpRequestInstrumentation {
         });
         // FIXME long-term answer for deprecating attributes.component?
         span.setAttribute('component', this.moduleName);
+        // Temporary return to old span name until cleared by backend
+        span.updateName(`HTTP ${method.toUpperCase()}`);
       }
 
       return span;

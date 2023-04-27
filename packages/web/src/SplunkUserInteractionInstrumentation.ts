@@ -85,13 +85,18 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
     this._routingTracer = trace.getTracer(ROUTING_INSTRUMENTATION_NAME, ROUTING_INSTRUMENTATION_VERSION);
 
     const _superCreateSpan = (this as unknown as ExposedSuper)._createSpan.bind(this) as ExposedSuper['_createSpan'];
-    (this as unknown as ExposedSuper)._createSpan = (element: EventTarget | HTMLElement | Document, eventName: EventName, parentSpan: Span) => {
+    (this as unknown as ExposedSuper)._createSpan = (element: EventTarget | HTMLElement | Document | null | undefined, eventName: EventName, parentSpan?: Span) => {
       // Fix: No span is created when event is captured from document
       if (element === document) {
         element = document.documentElement;
       }
 
-      return _superCreateSpan(element, eventName, parentSpan);
+      const span = _superCreateSpan(element, eventName, parentSpan);
+      if (span) {
+        span.setAttribute('component', this.moduleName);
+      }
+
+      return span;
     };
 
     const _superPatchAddEventListener = (this as unknown as ExposedSuper)._patchAddEventListener.bind(this);

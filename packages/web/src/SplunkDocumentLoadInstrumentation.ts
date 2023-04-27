@@ -56,6 +56,10 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
       // TODO: upstream exposed name on api.Span, then fix
       const exposedSpan = span as any as Span;
 
+      if (span) {
+        span.setAttribute('component', this.component);
+      }
+
       if (span && exposedSpan.name !== 'documentLoad') { // only apply links to document/resource fetch
         // To maintain compatibility, getEntries copies out select items from
         // different versions of the performance API into its own structure for the

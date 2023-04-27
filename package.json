@@ -29,6 +29,7 @@
     "test:integration:remote": "npm run --ws test:integration:remote --",
     "test:performance": "npm run --ws test:performance --",
     "test:unit:ci": "npm run --ws test:unit:ci --",
+    "test:unit:ci-node": "npm run --ws test:unit:ci-node --",
     "postversion": "node ./scripts/version-update.mjs",
     "version:bump": "npm version --workspaces --include-workspace-root",
     "version:check": "node ./scripts/version-check.mjs",

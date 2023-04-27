@@ -161,6 +161,8 @@ interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
     factory: (config: SplunkExporterConfig) => SpanExporter;
   };
 
+  instrumentations: SplunkOtelWebOptionsInstrumentations;
+
   spanProcessor: {
     factory: <T extends BufferConfig> (exporter: SpanExporter, config: T) => SpanProcessor;
   };
@@ -240,11 +242,11 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
   /**
    * This method returns current session ID
    */
-  getSessionId: () => SessionIdType;
+  getSessionId: () => SessionIdType | undefined;
   /**
    * @deprecated Use {@link getSessionId()}
    */
-  _experimental_getSessionId: () => SessionIdType;
+  _experimental_getSessionId: () => SessionIdType | undefined;
 
   DEFAULT_AUTO_INSTRUMENTED_EVENTS: UserInteractionEventsConfig;
   DEFAULT_AUTO_INSTRUMENTED_EVENT_NAMES: (keyof HTMLElementEventMap)[];
@@ -291,6 +293,16 @@ export const SplunkRum: SplunkOtelWebType = {
     }
 
     diag.setLogger(new DiagConsoleLogger(), options?.debug ? DiagLogLevel.DEBUG : DiagLogLevel.WARN);
+
+    if (typeof window !== 'object') {
+      diag.error('SplunkRum: Non-browser environment detected, aborting');
+      return;
+    }
+    if (typeof Symbol !== 'function') {
+      diag.error('SplunkRum: browser not supported, disabling instrumentation.');
+      return;
+    }
+
     eventTarget = new InternalEventTarget();
 
     const processedOptions: SplunkOtelWebConfigInternal = Object.assign(
@@ -373,7 +385,7 @@ export const SplunkRum: SplunkOtelWebType = {
       }
 
       return null;
-    }).filter(a => a);
+    }).filter((a): a is Exclude<typeof a, null> => Boolean(a));
 
     this.attributesProcessor = new SplunkSpanAttributesProcessor({
       ...environment ? { environment } : {},
@@ -463,6 +475,10 @@ export const SplunkRum: SplunkOtelWebType = {
   },
 
   error(...args) {
+    if (!inited) {
+      diag.debug('SplunkRum not inited');
+      return;
+    }
     if (!_errorInstrumentation) {
       diag.error('Error was reported, but error instrumentation is disabled.');
       return;

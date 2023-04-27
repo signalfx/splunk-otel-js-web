@@ -34,6 +34,10 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
   constructor(config: FetchInstrumentationConfig = {}) {
     const origCustomAttrs = config.applyCustomAttributesOnSpan;
     config.applyCustomAttributesOnSpan = function (span, request, result) {
+      // Temporary return to old span name until cleared by backend
+      span.updateName(`HTTP ${(request.method || 'GET').toUpperCase()}`);
+      span.setAttribute('component', 'fetch');
+
       if (span && result instanceof Response && result.headers) {
         const st = result.headers.get('Server-Timing');
         if (st) {

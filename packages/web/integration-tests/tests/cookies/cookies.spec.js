@@ -53,11 +53,11 @@ module.exports = {
     const cookie = await browser.getCookie('_splunk_rum_sid');
     await browser.assert.ok(cookie);
     await browser.assert.ok(fetchSpan);
-    if (!isBrowser(browser, 'internet explorer')) {
+    if (!isBrowser(browser, 'internet explorer') && browser.globals.enableHttps) {
       await browser.assert.ok(cookie.secure);
     }
     if (!isBrowser(browser, { 'internet explorer': true, safari: true })) {
-      await browser.assert.equal(cookie.sameSite, 'None');
+      await browser.assert.equal(cookie.sameSite, browser.globals.enableHttps ? 'None' : 'Strict');
     }
   },
   'setting cookieDomain via config sets it on subdomains also': async function(browser) {  
