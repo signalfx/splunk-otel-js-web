@@ -4,6 +4,20 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## Unreleased
 
+## 0.15.0 (& 0.15.0-rc.0)
+
+Changelog since last general release:
+
+| Open Telemetry API | Core    | Instrumentations & Contrib |
+| ------------------ | ------- | -------------------------- |
+| ^1.4.1             | ^1.12.0 | ^0.38.0 & compatible       |
+
+- Compatibility with importing in node (/ apps with SSR support) ([#557](https://github.com/signalfx/splunk-otel-js-web/pull/557))
+- Use XHR sender by default, increase throughput ([#537](https://github.com/signalfx/splunk-otel-js-web/pull/537))
+- Add web-vitals INP ([#548](https://github.com/signalfx/splunk-otel-js-web/pull/548))
+- Enable async context manager by default ([#539](https://github.com/signalfx/splunk-otel-js-web/pull/539))
+- Downgrade error when init is called multiple times to warning ([#526](https://github.com/signalfx/splunk-otel-js-web/pull/526))
+
 ## 0.14.0
 
 Changelog since last general release:
