@@ -18,7 +18,7 @@ Changelog since last general release:
 - Enable async context manager by default ([#539](https://github.com/signalfx/splunk-otel-js-web/pull/539))
 - Downgrade error when init is called multiple times to warning ([#526](https://github.com/signalfx/splunk-otel-js-web/pull/526))
 
-_0.15.0 & 0.15.0-rc.0 were released under beta tag in npm, while 0.15.1 was released as latest version_
+> 0.15.0 & 0.15.0-rc.0 were released under beta tag in npm, while 0.15.1 was released as latest version
 
 ## 0.14.0
 
