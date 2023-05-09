@@ -398,10 +398,16 @@ export class SplunkContextManager implements ContextManager {
 
     ['onabort', 'onerror', 'onload', 'onloadend', 'onloadstart', 'onprogress', 'ontimeout'].forEach(prop => {
       const desc = Object.getOwnPropertyDescriptor(XMLHttpRequestEventTarget.prototype, prop);
+      if (!desc) {
+        return;
+      }
+
       wrapNatively(desc, 'get', original =>
         function () {
-          const val = original.call(this);
-          if (val._orig) {
+          const val = original!.call(this);
+          // @ts-expect-error we set function._orig bellow
+          if (isFunction(val) && val._orig) {
+            // @ts-expect-error we set function._orig bellow
             return val._orig;
           }
   
@@ -418,7 +424,7 @@ export class SplunkContextManager implements ContextManager {
             value = wrapped;
           }
   
-          return original.call(this, value);
+          return original!.call(this, value);
         }
       );
       Object.defineProperty(XMLHttpRequestEventTarget.prototype, prop, desc);
@@ -447,7 +453,9 @@ export class SplunkContextManager implements ContextManager {
     wrapNatively(desc, 'get', original =>
       function () {
         const val = original.call(this);
-        if (val._orig) {
+        // @ts-expect-error we set function._orig bellow
+        if (isFunction(val) && val._orig) {
+          // @ts-expect-error we set function._orig bellow
           return val._orig;
         }
 
@@ -563,7 +571,9 @@ export class SplunkContextManager implements ContextManager {
     wrapNatively(desc, 'get', original =>
       function () {
         const val = original.call(this);
-        if (val._orig) {
+        // @ts-expect-error we set function._orig bellow
+        if (isFunction(val) && val._orig) {
+          // @ts-expect-error we set function._orig bellow
           return val._orig;
         }
 

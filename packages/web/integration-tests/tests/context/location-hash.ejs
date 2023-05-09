@@ -12,6 +12,9 @@
   <button type="button" id="btn1">Button</button>
 
   <script>
+    // Check that getter doesn't throw if none set
+    window.onhashchange;
+
     window.addEventListener('hashchange', function () {
       SplunkRum.provider.getTracer('default').startSpan('context-child').end();
       window.testing = false;

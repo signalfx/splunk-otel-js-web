@@ -15,6 +15,10 @@
     btn1.addEventListener('click', function () {
       window.testing = true;
       var req = new XMLHttpRequest();
+
+      // Ensure no error if no listener defined yet
+      req.onload;
+
       req.open('GET', '/some-data');
       req.setRequestHeader('Content-Type', 'text/plain');
       req.send();
