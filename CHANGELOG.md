@@ -4,7 +4,7 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## Unreleased
 
-## 0.15.0 (& 0.15.0-rc.0)
+## 0.15.1 (& 0.15.0 & 0.15.0-rc.0)
 
 Changelog since last general release:
 
@@ -17,6 +17,8 @@ Changelog since last general release:
 - Add web-vitals INP ([#548](https://github.com/signalfx/splunk-otel-js-web/pull/548))
 - Enable async context manager by default ([#539](https://github.com/signalfx/splunk-otel-js-web/pull/539))
 - Downgrade error when init is called multiple times to warning ([#526](https://github.com/signalfx/splunk-otel-js-web/pull/526))
+
+_0.15.0 & 0.15.0-rc.0 were released under beta tag in npm, while 0.15.1 was released as latest version_
 
 ## 0.14.0
 
