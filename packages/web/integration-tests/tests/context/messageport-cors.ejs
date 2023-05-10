@@ -4,7 +4,11 @@
   <meta charset="UTF-8">
   <title>MessagePort Iframe</title>
 
-  <%- renderAgent() %>
+  <%- renderAgent({
+    context: {
+      async: true
+    }
+  }) %>
 </head>
 <body>
   <h1>MessagePort Iframe</h1>
