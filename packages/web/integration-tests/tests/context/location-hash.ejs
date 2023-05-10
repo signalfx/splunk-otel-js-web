@@ -4,7 +4,11 @@
   <meta charset="UTF-8">
   <title>location.hash</title>
 
-  <%- renderAgent() %>
+  <%- renderAgent({
+    context: {
+      async: true
+    }
+  }) %>
 </head>
 <body>
   <h1>location.hash</h1>

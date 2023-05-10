@@ -18,7 +18,7 @@ Below are the different initialization options available for the Agent:
 |`debug`|`boolean`|`false`|Enables debug logging in developer console|
 |`ignoreUrls`|`(string\|regex)[]`|`[]`|Sets a list of URLs to be ignored. Any URLs that XHR/Fetch or websocket connect that match the rules will not produce a span. Two different rules can be provided: equals match to a specified string or a regex match.|
 |`cookieDomain`|`string`|`(none)`|Configures the domain used for [session tracking](Cookies.md). For example, if you have sites `foo.example.com` and `bar.example.com`, setting `cookieDomain` to `example.com` allows both sites to use the same session identifier.|
-|`context.async`|`boolean`|`true`|Enables [asyncronous context manager](Async-Traces.md)|
+|`context.async`|`boolean`|`false`|Enables [asyncronous context manager](Async-Traces.md)|
 |`exporter.onAttributesSerializing`|`(a: SpanAttributes, s?: Span) => SpanAttributes`|`(attrs) => attrs`|Provides a callback for modifying span attributes before exporting. An example use case of the serializer is to filter out PII.|
 |`instrumentations`|`object`|See the following chapter|Enables or disables specific instrumentations. More details how to enable or disable the instrumentations in the next chapter.|
 |`tracer`|`object`|[`TracerConfig`](https://github.com/open-telemetry/opentelemetry-js/blob/main/packages/opentelemetry-sdk-trace-base/src/types.ts)|Configuration options passed to WebTracerProvider. Can be used [to configure sampling](./Sampling.md)|

@@ -3,8 +3,12 @@
 <head>
 	<meta charset="UTF-8">
 	<title>Mouse events test</title>
-  <%- renderAgent() %>
-  
+  <!-- Webvitals has an extra click event listener that confuses the tests -->
+  <%- renderAgent({
+    instrumentations: {
+      webvitals: false
+    }
+  }) %>
 </head>
 <body>
   <h1>Mouse events test</h1>

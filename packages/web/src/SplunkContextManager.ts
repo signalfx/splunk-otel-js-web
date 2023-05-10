@@ -46,11 +46,10 @@ export class SplunkContextManager implements ContextManager {
 
   protected _hashChangeContext: Context = null;
 
-  protected _config: ContextManagerConfig;
   // eslint-disable-next-line no-useless-constructor
-  constructor(config: ContextManagerConfig = {}) {
-    this._config = Object.assign({ async: true }, config);
-  }
+  constructor(
+    protected _config: ContextManagerConfig = {}
+  ) {}
 
   /**
    *

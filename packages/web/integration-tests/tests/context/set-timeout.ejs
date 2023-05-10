@@ -4,7 +4,11 @@
   <meta charset="UTF-8">
   <title>setTimeout</title>
 
-  <%- renderAgent() %>
+  <%- renderAgent({
+    context: {
+      async: true
+    }
+  }) %>
 </head>
 <body>
   <h1>setTimeout</h1>

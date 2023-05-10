@@ -4,7 +4,11 @@
   <meta charset="UTF-8">
   <title>Promise</title>
 
-  <%- renderAgent() %>
+  <%- renderAgent({
+    context: {
+      async: true
+    }
+  }) %>
 </head>
 <body>
   <h1>Promise</h1>
