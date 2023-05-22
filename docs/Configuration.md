@@ -8,7 +8,8 @@ Below are the different initialization options available for the Agent:
 
 |Option|Type|Default value|Description|
 |---|---|---|---|
-|`beaconUrl`|`string [required]`|Provided by installation wizard|Sets the destination URL to which captured telemetry is sent to be ingested. Notice that the URL is specific to the actual realm you are using (i.e. us0, us1).|
+|`realm`|`string`|Provided by installation wizard|The name of your organization’s realm, for example, `us0` or `us1`. This automatically sets the `beaconUrl` value to the correct rum ingest endpoint of your Splunk Observability Cloud realm|
+|`beaconUrl`|`string`|Based on `realm`|Sets the destination URL to which captured telemetry is sent to be ingested. If you use `realm` this is automatically set to the correct value based on the realm you've set.|
 |`rumAuth`|`string [required]`|Provided by installation wizard|Defines a token authorizing the Agent to send the telemetry to the backend. You can find (or generate) the token [here](https://app.signalfx.com/o11y/#/organization/current?selectedKeyValue=sf_section:accesstokens). Notice that RUM and APM auth tokens are different.|
 |`app`|`string`|`"unknown-browser-app"`|Application name, used to distinguish the telemetry from different applications.|
 |`environment`|`string`|`(none)`|Sets environment for all the spans, used to distinguish between different environments such as `dev`,  `test` or `prod`. |

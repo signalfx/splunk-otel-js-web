@@ -70,6 +70,16 @@ describe('test init', () => {
       doesBeaconUrlEndWith(path);
       SplunkRum.deinit();
     });
+    it('can use realm config option', () => {
+      SplunkRum.init({
+        realm: 'test',
+        app: 'app',
+        rumAuth: undefined,
+      });
+      assert.ok(SplunkRum.inited);
+      doesBeaconUrlEndWith('https://rum-ingest.test.signalfx.com/v1/rum');
+      SplunkRum.deinit();
+    });
   });
   describe('successful', () => {
     it('should have been inited properly with doc load spans', (done) => {
