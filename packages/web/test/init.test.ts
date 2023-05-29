@@ -16,7 +16,7 @@ limitations under the License.
 
 import * as assert from 'assert';
 import SplunkRum from '../src/index';
-import { context, trace } from '@opentelemetry/api';
+import { context, diag, trace } from '@opentelemetry/api';
 import * as tracing from '@opentelemetry/sdk-trace-base';
 import { deinit, initWithDefaultConfig, SpanCapturer } from './utils';
 import sinon from 'sinon';
@@ -35,10 +35,12 @@ describe('test init', () => {
   describe('not specifying beaconUrl', () => {
     it('should not be inited', () => {
       try {
-        SplunkRum.init({ beaconUrl: undefined, app: 'app', rumAuth: undefined });
+        SplunkRum.init({ beaconEndpoint: undefined, applicationName: 'app', rumAccessToken: undefined });
         assert.ok(false, 'Initializer finished.'); // should not get here
       } catch (expected) {
         assert.ok(SplunkRum.inited === false, 'SplunkRum should not be inited.');
+      } finally {
+        diag.disable();
       }
     });
   });
@@ -49,6 +51,8 @@ describe('test init', () => {
         assert.ok(false);
       } catch(e) {
         assert.ok(SplunkRum.inited === false);
+      } finally {
+        diag.disable();
       }
     });
     it('should init with https', () => {
@@ -84,14 +88,14 @@ describe('test init', () => {
   describe('successful', () => {
     it('should have been inited properly with doc load spans', (done) => {
       SplunkRum.init({
-        beaconUrl: 'https://127.0.0.1:9999/foo',
-        app: 'my-app',
-        environment: 'my-env',
+        beaconEndpoint: 'https://127.0.0.1:9999/foo',
+        applicationName: 'my-app',
+        deploymentEnvironment: 'my-env',
         globalAttributes: { customerType: 'GOLD' },
         instrumentations:{
           websocket: true
         },
-        rumAuth: undefined,
+        rumAccessToken: undefined,
       });
       assert.ok(SplunkRum.inited);
       SplunkRum.provider.addSpanProcessor(capturer);
@@ -119,6 +123,18 @@ describe('test init', () => {
         SplunkRum.deinit();
         done();
       }, 1000);
+    });
+    it('is backwards compatible with 0.15.3 and earlier config options', () => {
+      SplunkRum.init({
+        beaconUrl: 'https://127.0.0.1:9999/foo',
+        app: 'my-app',
+        environment: 'my-env',
+        rumAuth: 'test123',
+      });
+
+      assert.ok(SplunkRum.inited);
+      doesBeaconUrlEndWith('/foo?auth=test123');
+      SplunkRum.deinit();
     });
   });
   describe('double-init has no effect', () => {
@@ -150,7 +166,7 @@ describe('test init', () => {
             };
           },
         },
-        rumAuth: undefined,
+        rumAuth: '123-no-warn-spam-in-console',
       });
       SplunkRum.provider.getTracer('test').startSpan('testSpan').end();
       setTimeout(() => {

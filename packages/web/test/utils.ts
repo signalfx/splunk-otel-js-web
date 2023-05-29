@@ -61,7 +61,7 @@ export function initWithDefaultConfig(capturer: SpanCapturer, additionalOptions 
     version: '1.2-test.3',
     globalAttributes: { customerType: 'GOLD' },
     bufferTimeout: 0,
-    rumAuth: undefined,
+    rumAuth: '123-no-warn-spam-in-console',
     ...additionalOptions,
   });
   SplunkRum.provider.addSpanProcessor(capturer);
@@ -81,7 +81,7 @@ export function initWithSyncPipeline(additionalOptions = {}): {
     environment: 'my-env',
     version: '1.2-test.3',
     bufferTimeout: 0,
-    rumAuth: undefined,
+    rumAuth: '123-no-warn-spam-in-console',
     exporter: { factory: () => exporter },
     spanProcessor: { factory: () => processor },
     ...additionalOptions,
