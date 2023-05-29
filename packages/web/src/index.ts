@@ -103,7 +103,7 @@ export interface SplunkOtelWebConfig {
   app: string;
 
   /** Destination for the captured data */
-  beaconUrl: string | undefined;
+  beaconUrl?: string;
 
   /** Options for context manager */
   context?: ContextManagerConfig;
@@ -140,6 +140,11 @@ export interface SplunkOtelWebConfig {
 
   /** Configuration for instrumentation modules. */
   instrumentations?: SplunkOtelWebOptionsInstrumentations;
+
+  /**
+   * The name of your organization’s realm. Automatically configures beaconUrl with correct URL
+   */
+  realm?: string;
 
   /**
    * Publicly-visible `rumAuth` value.  Please do not paste any other access token or auth value into here, as this
@@ -317,6 +322,14 @@ export const SplunkRum: SplunkOtelWebType = {
     if (inited) {
       diag.warn('SplunkRum already init()ed.');
       return;
+    }
+
+    if (processedOptions.realm) {
+      if (!processedOptions.beaconUrl) {
+        processedOptions.beaconUrl = `https://rum-ingest.${processedOptions.realm}.signalfx.com/v1/rum`;
+      } else {
+        diag.warn('SplunkRum: Realm value ignored (beaconURL has been specified)');
+      }
     }
 
     if (!processedOptions.debug) {
