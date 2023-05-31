@@ -20,9 +20,9 @@ import SplunkRum from '../src/index';
 describe('Node.js basic support', () => {
   it('Can call init', () => {
     SplunkRum.init({
-      app: 'test-app',
-      beaconUrl: 'https://localhost/events',
-      rumAuth: 'example1234'
+      applicationName: 'test-app',
+      beaconEndpoint: 'https://localhost/events',
+      rumAccessToken: 'example1234'
     });
   });
 

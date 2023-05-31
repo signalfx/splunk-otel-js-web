@@ -27,9 +27,9 @@ describe('SplunkOtelWeb', () => {
   describe('global attributes', () => {
     it('should be settable via constructor and then readable', () => {
       SplunkRum.init({
-        app: 'app-name',
-        beaconUrl: 'https://beacon',
-        rumAuth: '<token>',
+        applicationName: 'app-name',
+        beaconEndpoint: 'https://beacon',
+        rumAccessToken: '<token>',
         globalAttributes: {
           key1: 'value1',
         },
@@ -41,9 +41,9 @@ describe('SplunkOtelWeb', () => {
 
     it('should be patchable via setGlobalAttributes and then readable', () => {
       SplunkRum.init({
-        app: 'app-name',
-        beaconUrl: 'https://beacon',
-        rumAuth: '<token>',
+        applicationName: 'app-name',
+        beaconEndpoint: 'https://beacon',
+        rumAccessToken: '<token>',
         globalAttributes: {
           key1: 'value1',
           key2: 'value2',
@@ -64,9 +64,9 @@ describe('SplunkOtelWeb', () => {
 
     it('should notify about changes via setGlobalAttributes', async () => {
       SplunkRum.init({
-        app: 'app-name',
-        beaconUrl: 'https://beacon',
-        rumAuth: '<token>',
+        applicationName: 'app-name',
+        beaconEndpoint: 'https://beacon',
+        rumAccessToken: '<token>',
         globalAttributes: {
           key1: 'value1',
           key2: 'value2',
@@ -102,9 +102,9 @@ describe('SplunkOtelWeb', () => {
       expect(SplunkRum.getSessionId()).to.eq(undefined);
 
       SplunkRum.init({
-        app: 'app-name',
-        beaconUrl: 'https://beacon',
-        rumAuth: '<token>'
+        applicationName: 'app-name',
+        beaconEndpoint: 'https://beacon',
+        rumAccessToken: '<token>'
       });
       expect(SplunkRum.getSessionId()).to.match(/[0-9a-f]{32}/);
 
@@ -116,9 +116,9 @@ describe('SplunkOtelWeb', () => {
       let sessionId: string | undefined;
 
       SplunkRum.init({
-        app: 'app-name',
-        beaconUrl: 'https://beacon',
-        rumAuth: '<token>'
+        applicationName: 'app-name',
+        beaconEndpoint: 'https://beacon',
+        rumAccessToken: '<token>'
       });
       SplunkRum.addEventListener(
         'session-changed',
@@ -140,9 +140,9 @@ describe('SplunkOtelWeb', () => {
       expect(SplunkRum.inited).to.eq(false, 'Should be false in the beginning.');
 
       SplunkRum.init({
-        app: 'app-name',
-        beaconUrl: 'https://beacon',
-        rumAuth: '<token>'
+        applicationName: 'app-name',
+        beaconEndpoint: 'https://beacon',
+        rumAccessToken: '<token>'
       });
       expect(SplunkRum.inited).to.eq(true, 'Should be true after creating.');
 

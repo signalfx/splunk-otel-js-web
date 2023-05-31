@@ -18,7 +18,7 @@ const path = require('path');
 const express = require('express');
 const bodyParser = require('body-parser');
 const WebSocket = require('ws');
-const {renderFile} = require('ejs');
+const { renderFile } = require('ejs');
 const {
   handleReactBundleRequest,
   generateReactBundleTags,
@@ -35,11 +35,11 @@ const {
 } = require('../../test-utils/server/index');
 const { generateServerTiming, setServerTimingHeader } = require('../../test-utils/server/serverTiming');
 
-function getRumScript({beaconHost, beaconPort}) {
+function getRumScript({ beaconHost, beaconPort }) {
   return `
     <script src="https://${beaconHost}:${beaconPort}/dist/splunk-otel-web.js"></script>
     <script>
-      SplunkRum.init({"beaconUrl":"https://${beaconHost}:${beaconPort}/api/v2/spans", app:"perf-test-app", debug:true});
+      SplunkRum.init({"beaconEndpoint":"https://${beaconHost}:${beaconPort}/api/v2/spans", applicationName:"perf-test-app", debug:true});
     </script>
   `;
 }
@@ -80,12 +80,12 @@ function getSpans(spanOrSpans) {
   }];
 }
 
-async function run({onSpanReceived, enableHttps, port}) {
+async function run({ onSpanReceived, enableHttps, port }) {
   enableHttps = enableHttps || false;
   let lastServerTiming;
   function addHeaders(response) {
     lastServerTiming = generateServerTiming();
-    setServerTimingHeader(response, lastServerTiming)
+    setServerTimingHeader(response, lastServerTiming);
   }
 
   if (!onSpanReceived) {
@@ -174,7 +174,7 @@ async function run({onSpanReceived, enableHttps, port}) {
     websocketsPort: wsPort,
     getLastServerTiming: () => lastServerTiming,
   };
-};
+}
 
 module.exports = {
   run,

@@ -47,7 +47,7 @@ describe('test init', () => {
   describe('should enforce secure beacon url', () => {
     it('should not be inited with http', () => {
       try {
-        SplunkRum.init({ beaconUrl: 'http://127.0.0.1:8888/insecure', app: 'app', rumAuth: undefined });
+        SplunkRum.init({ beaconEndpoint: 'http://127.0.0.1:8888/insecure', applicationName: 'app', rumAccessToken: undefined });
         assert.ok(false);
       } catch(e) {
         assert.ok(SplunkRum.inited === false);
@@ -57,7 +57,7 @@ describe('test init', () => {
     });
     it('should init with https', () => {
       const path = '/secure';
-      SplunkRum.init({ beaconUrl: `https://127.0.0.1:8888/${path}`, app: 'app', rumAuth: undefined });
+      SplunkRum.init({ beaconEndpoint: `https://127.0.0.1:8888/${path}`, applicationName: 'app', rumAccessToken: undefined });
       assert.ok(SplunkRum.inited);
       doesBeaconUrlEndWith(path);
       SplunkRum.deinit();
@@ -65,10 +65,10 @@ describe('test init', () => {
     it('can be forced via allowInsecureBeacon option', () => {
       const path = '/insecure';
       SplunkRum.init({
-        beaconUrl: `http://127.0.0.1:8888/${path}`,
+        beaconEndpoint: `http://127.0.0.1:8888/${path}`,
         allowInsecureBeacon: true,
-        app: 'app',
-        rumAuth: undefined,
+        applicationName: 'app',
+        rumAccessToken: undefined,
       });
       assert.ok(SplunkRum.inited);
       doesBeaconUrlEndWith(path);
@@ -77,8 +77,8 @@ describe('test init', () => {
     it('can use realm config option', () => {
       SplunkRum.init({
         realm: 'test',
-        app: 'app',
-        rumAuth: undefined,
+        applicationName: 'app',
+        rumAccessToken: undefined,
       });
       assert.ok(SplunkRum.inited);
       doesBeaconUrlEndWith('https://rum-ingest.test.signalfx.com/v1/rum');
@@ -139,8 +139,8 @@ describe('test init', () => {
   });
   describe('double-init has no effect', () => {
     it('should have been inited only once', () => {
-      SplunkRum.init({ beaconUrl: 'https://127.0.0.1:8888/foo', app: 'app', rumAuth: undefined });
-      SplunkRum.init({ beaconUrl: 'https://127.0.0.1:8888/bar', app: 'app', rumAuth: undefined });
+      SplunkRum.init({ beaconEndpoint: 'https://127.0.0.1:8888/foo', applicationName: 'app', rumAccessToken: undefined });
+      SplunkRum.init({ beaconEndpoint: 'https://127.0.0.1:8888/bar', applicationName: 'app', rumAccessToken: undefined });
       doesBeaconUrlEndWith('/foo');
       SplunkRum.deinit();
     });
@@ -150,10 +150,10 @@ describe('test init', () => {
       const exportMock = sinon.fake();
       const onAttributesSerializingMock = sinon.fake();
       SplunkRum._internalInit({
-        beaconUrl: 'https://domain1',
+        beaconEndpoint: 'https://domain1',
         allowInsecureBeacon: true,
-        app: 'my-app',
-        environment: 'my-env',
+        applicationName: 'my-app',
+        deploymentEnvironment: 'my-env',
         globalAttributes: { customerType: 'GOLD' },
         bufferTimeout: 0,
         exporter: {
@@ -166,7 +166,7 @@ describe('test init', () => {
             };
           },
         },
-        rumAuth: '123-no-warn-spam-in-console',
+        rumAccessToken: '123-no-warn-spam-in-console',
       });
       SplunkRum.provider.getTracer('test').startSpan('testSpan').end();
       setTimeout(() => {

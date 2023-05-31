@@ -27,9 +27,9 @@ describe('Transitive API', () => {
 
   beforeEach(() => {
     SplunkOtelWeb.init({
-      app: 'my-app',
-      beaconUrl: 'https://localhost:9411/api/traces',
-      rumAuth: 'xxx',
+      applicationName: 'my-app',
+      beaconEndpoint: 'https://localhost:9411/api/traces',
+      rumAccessToken: 'xxx',
       instrumentations: INSTRUMENTATIONS_ALL_DISABLED,
     });
 
