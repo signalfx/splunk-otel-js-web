@@ -6,4 +6,4 @@ If you're using [Content Security Policy (CSP)](https://developer.mozilla.org/en
 
 - If you use our CDN to load the agent make sure to allow `script-src` `cdn.signalfx.com`
   - Cases of self-hosting and npm installation should already be covered by your site, as otherwise interactivity on your site wouldn't work.
-- Add the host from `beaconUrl` value to `connect-src`, ie. `connect-src` `app.us1.signalfx.com`
+- Add the host from `beaconEndpoint` value to `connect-src`, ie. `connect-src` `app.us1.signalfx.com`

@@ -2,7 +2,7 @@
 
 # Exporters
 
-Splunk's RUM uses Zipkin exporter for sending data to `beaconUrl` endpoint. Other exporters can be registered to the OpenTelemetry provider available on `SplunkRum.provider`:
+Splunk's RUM uses Zipkin exporter for sending data to `beaconEndpoint` endpoint. Other exporters can be registered to the OpenTelemetry provider available on `SplunkRum.provider`:
 
 ```html
 import SplunkRum from '@splunk/otel-js-browser'

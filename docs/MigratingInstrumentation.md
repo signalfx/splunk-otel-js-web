@@ -41,8 +41,8 @@ If the relevant properties are known at the time the page is loaded, you can sim
 
 ```js
 SplunkRum.init( {
-    beaconUrl: '...',
-    rumAuth: '...',
+    beaconEndpoint: '...',
+    rumAccessToken: '...',
     globalAttributes: {
         'account.type': goldStatus,
         'app.release': getReleaseNumber(),

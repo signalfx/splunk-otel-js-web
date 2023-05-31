@@ -19,9 +19,9 @@ These are added to `SplunkRum.*` allowing use on CDN distribution. For example t
   var shouldTrace = isUserLoggedIn();
 
   SplunkRum.init({
-    beaconUrl: 'https://rum-ingest.<REALM>.signalfx.com/v1/rum',
-    rumAuth: '<RUM access token>',
-    app: '<application-name>',
+    beaconEndpoint: 'https://rum-ingest.<REALM>.signalfx.com/v1/rum',
+    rumAccessToken: '<RUM access token>',
+    applicationName: '<application-name>',
     tracer: {
       sampler: shouldTrace ? new SplunkRum.AlwaysOnSampler() : new SplunkRum.AlwaysOffSampler(),
     },
@@ -35,9 +35,9 @@ import {AlwaysOnSampler, AlwaysOffSampler} from '@opentelemetry/core';
 import SplunkOtelWeb from '@splunk/otel-web';
 
 SplunkOtelWeb.init({
-  beaconUrl: 'https://rum-ingest.<REALM>.signalfx.com/v1/rum',
-  rumAuth: '<RUM access token>',
-  app: '<application-name>',
+  beaconEndpoint: 'https://rum-ingest.<REALM>.signalfx.com/v1/rum',
+  rumAccessToken: '<RUM access token>',
+  applicationName: '<application-name>',
   tracer: {
     sampler: userShouldBeTraced() ? new SplunkRum.AlwaysOnSampler() : new SplunkRum.AlwaysOffSampler(),
   },
@@ -63,9 +63,9 @@ To capture data from half of the sessions:
 <script src="https://cdn.signalfx.com/o11y-gdi-rum/latest/splunk-otel-web.js" crossorigin="anonymous"></script>
 <script>
   SplunkRum.init({
-    beaconUrl: 'https://rum-ingest.<REALM>.signalfx.com/v1/rum',
-    rumAuth: '<RUM access token>',
-    app: '<application-name>',
+    beaconEndpoint: 'https://rum-ingest.<REALM>.signalfx.com/v1/rum',
+    rumAccessToken: '<RUM access token>',
+    applicationName: '<application-name>',
     tracer: {
       sampler: new SplunkRum.SessionBasedSampler({
         ratio: 0.5
@@ -80,9 +80,9 @@ To capture data from half of the sessions:
 import SplunkOtelWeb, {SessionBasedSampler} from '@splunk/otel-web';
 
 SplunkOtelWeb.init({
-  beaconUrl: 'https://rum-ingest.<REALM>.signalfx.com/v1/rum',
-  rumAuth: '<RUM access token>',
-  app: '<application-name>',
+  beaconEndpoint: 'https://rum-ingest.<REALM>.signalfx.com/v1/rum',
+  rumAccessToken: '<RUM access token>',
+  applicationName: '<application-name>',
   tracer: {
     sampler: new SessionBasedSampler({
       ratio: 0.5

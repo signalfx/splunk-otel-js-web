@@ -35,9 +35,9 @@ As we're currently still testing it you can opt in to using it by setting `conte
 
 ```js
 SplunkRum.init({
-  beaconUrl: 'https://rum-ingest.us0.signalfx.com/v1/rum',
-  rumAuth: 'ABC123...789',
-  app: 'my-awesome-app',
+  beaconEndpoint: 'https://rum-ingest.us0.signalfx.com/v1/rum',
+  rumAccessToken: 'ABC123...789',
+  applicationName: 'my-awesome-app',
   context: {
     async: true,
   },

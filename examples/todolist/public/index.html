@@ -33,9 +33,9 @@
     <script>
       SplunkRum.init({
         // Values here are injected from .env file by create-react-app
-        beaconUrl: '%REACT_APP_RUM_BEACON_URL%',
-        rumAuth: '%REACT_APP_RUM_TOKEN%',
-        app: 'enter-your-application-name',
+        beaconEndpoint: '%REACT_APP_RUM_BEACON_URL%',
+        rumAccessToken: '%REACT_APP_RUM_TOKEN%',
+        applicationName: 'enter-your-application-name',
         allowInsecureBeacon: true,
         // Ignore /ping request that is on a 30s interval
         ignoreUrls: [/\/ping/],
