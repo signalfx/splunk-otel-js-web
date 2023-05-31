@@ -441,7 +441,7 @@ export const SplunkRum: SplunkOtelWebType = {
     }).filter((a): a is Exclude<typeof a, null> => Boolean(a));
 
     this.attributesProcessor = new SplunkSpanAttributesProcessor({
-      ...deploymentEnvironment ? { environment: deploymentEnvironment } : {},
+      ...deploymentEnvironment ? { environment: deploymentEnvironment, 'deployment.environment': deploymentEnvironment } : {},
       ...version ? { 'app.version': version } : {},
       ...processedOptions.globalAttributes || {},
     });
