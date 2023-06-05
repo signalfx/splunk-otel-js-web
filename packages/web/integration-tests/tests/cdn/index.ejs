@@ -4,7 +4,14 @@
 	<meta charset="UTF-8">
 	<title>CDN test with an unhandled error</title>
 
-	<%- renderAgent({}, false, null, 'latest' ) %>
+	<%- renderAgent({}, true, null, 'latest' ) %>
+  <script>
+    // CHANGEME: Postrelease 0.16: Go back to auto init (true -> false above) and delete this
+    SplunkRumOptions.app = SplunkRumOptions.applicationName;
+    SplunkRumOptions.beaconUrl = SplunkRumOptions.beaconEndpoint;
+    SplunkRum.init(SplunkRumOptions);
+  </script>
+
   <script id="scenario">
     var test = null;
     setTimeout(() => {

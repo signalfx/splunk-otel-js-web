@@ -31,20 +31,50 @@ type RRWebOptions = Parameters<typeof record>[0];
 
 export type SplunkRumRecorderConfig = RRWebOptions & {
   /** Destination for the captured data */
+  beaconEndpoint: string;
+
+  /** Destination for the captured data 
+   * @deprecated Use beaconEndpoint
+   */
   beaconUrl: string;
 
   /**
    * RUM authorization token for data sending. Please make sure this is a token
    * with only RUM scope as it's visible to every user of your app
-   * */
+   **/
+  rumAccessToken?: string;
+
+  /**
+   * RUM authorization token for data sending. Please make sure this is a token
+   * with only RUM scope as it's visible to every user of your app
+   * @deprecated Renamed to `rumAccessToken`
+   **/
   rumAuth?: string;
 
-  /** Temporary! Auth token */
+  /**
+   * @deprecated Use RUM token in rumAccessToken
+  */
   apiToken?: string;
 
   /** Debug mode */
   debug?: boolean;
 };
+
+function migrateConfigOption(config: SplunkRumRecorderConfig, from: keyof SplunkRumRecorderConfig, to: keyof SplunkRumRecorderConfig) {
+  if (from in config && !(to in config)) {
+    // @ts-expect-error There's no way to type this right
+    config[to] = config[from];
+  }
+}
+
+/**
+ * Update configuration based on configuration option renames
+ */
+function migrateConfig(config: SplunkRumRecorderConfig) {
+  migrateConfigOption(config, 'beaconUrl', 'beaconEndpoint');
+  migrateConfigOption(config, 'rumAuth', 'rumAccessToken');
+  return config;
+}
 
 // Hard limit of 4 hours of maximum recording during one session
 const MAX_RECORDING_LENGTH = ((4 * 60) + 1) * 60 * 1000;
@@ -86,7 +116,9 @@ const SplunkRumRecorder = {
 
     const resource = tracerProvider.resource;
 
-    const { apiToken, beaconUrl, debug, rumAuth, ...rrwebConf } = config;
+    migrateConfig(config);
+
+    const { apiToken, beaconEndpoint, debug, rumAccessToken, ...rrwebConf } = config;
     tracer = trace.getTracer('splunk.rr-web', VERSION);
     const span = tracer.startSpan('record init');
 
@@ -96,13 +128,13 @@ const SplunkRumRecorder = {
     }
     span.end();
 
-    let exportUrl = beaconUrl;
+    let exportUrl = beaconEndpoint;
     const headers = {};
     if (apiToken) {
       headers['X-SF-Token'] = apiToken;
     }
-    if (rumAuth) {
-      exportUrl += `?auth=${rumAuth}`;
+    if (rumAccessToken) {
+      exportUrl += `?auth=${rumAccessToken}`;
     }
 
     const exporter = new OTLPLogExporter({ beaconUrl: exportUrl, debug, headers, resource });

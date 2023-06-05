@@ -99,11 +99,22 @@ export interface SplunkOtelWebConfig {
   /** Allows http beacon urls */
   allowInsecureBeacon?: boolean;
 
+  /** Application name
+   * @deprecated Renamed to `applicationName`
+   */
+  app?: string;
+
   /** Application name */
-  app: string;
+  applicationName?: string;
+
+  /**
+   * Destination for the captured data
+   * @deprecated Renamed to `beaconEndpoint`, or use realm
+   */
+  beaconUrl?: string;
 
   /** Destination for the captured data */
-  beaconUrl?: string;
+  beaconEndpoint?: string;
 
   /** Options for context manager */
   context?: ContextManagerConfig;
@@ -117,6 +128,12 @@ export interface SplunkOtelWebConfig {
   /**
    * Sets a value for the `environment` attribute (persists through calls to `setGlobalAttributes()`)
    * */
+  deploymentEnvironment?: string;
+
+  /**
+   * Sets a value for the `environment` attribute (persists through calls to `setGlobalAttributes()`)
+   * @deprecated Renamed to `deploymentEnvironment`
+   */
   environment?: string;
 
   /**
@@ -128,9 +145,7 @@ export interface SplunkOtelWebConfig {
   exporter?: SplunkOtelWebExporterOptions;
 
   /** Sets attributes added to every Span. */
-  globalAttributes?: {
-    [attributeKey: string]: string;
-  };
+  globalAttributes?: Attributes;
 
   /**
    * Applies for XHR, Fetch and Websocket URLs. URLs that partially match any regex in ignoreUrls will not be traced.
@@ -149,8 +164,15 @@ export interface SplunkOtelWebConfig {
   /**
    * Publicly-visible `rumAuth` value.  Please do not paste any other access token or auth value into here, as this
    * will be visible to every user of your app
-   * */
-  rumAuth: string | undefined;
+   * @deprecated Renamed to rumAccessToken
+   */
+  rumAuth?: string;
+
+  /**
+   * Publicly-visible rum access token value. Please do not paste any other access token or auth value into here, as this
+   * will be visible to every user of your app
+   */
+  rumAccessToken?: string;
 
   /**
    * Config options passed to web tracer
@@ -174,8 +196,8 @@ interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
 }
 
 const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
-  app: 'unknown-browser-app',
-  beaconUrl: undefined,
+  applicationName: 'unknown-browser-app',
+  beaconEndpoint: undefined,
   bufferTimeout: 4000, //millis, tradeoff between batching and loss of spans by not sending before page close
   bufferSize: 50, // spans, tradeoff between batching and hitting sendBeacon invididual limits
   instrumentations: {},
@@ -185,8 +207,26 @@ const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
   spanProcessor: {
     factory: (exporter, config) => new BatchSpanProcessor(exporter, config),
   },
-  rumAuth: undefined,
+  rumAccessToken: undefined,
 };
+
+function migrateConfigOption(config: SplunkOtelWebConfig, from: keyof SplunkOtelWebConfig, to: keyof SplunkOtelWebConfig) {
+  if (from in config && !(to in config && config[to] !== OPTIONS_DEFAULTS[to])) {
+    // @ts-expect-error There's no way to type this right
+    config[to] = config[from];
+  }
+}
+
+/**
+ * Update configuration based on configuration option renames
+ */
+function migrateConfig(config: SplunkOtelWebConfig) {
+  migrateConfigOption(config, 'app', 'applicationName');
+  migrateConfigOption(config, 'beaconUrl', 'beaconEndpoint');
+  migrateConfigOption(config, 'environment', 'deploymentEnvironment');
+  migrateConfigOption(config, 'rumAuth', 'rumAccessToken');
+  return config;
+}
 
 const INSTRUMENTATIONS = [
   { Instrument: SplunkDocumentLoadInstrumentation, confKey: 'document', disable: false },
@@ -209,10 +249,10 @@ export const INSTRUMENTATIONS_ALL_DISABLED: SplunkOtelWebOptionsInstrumentations
     { 'webvitals': false },
   );
 
-function buildExporter(options) {
-  const completeUrl = options.beaconUrl + (options.rumAuth ? '?auth='+options.rumAuth : '');
+function buildExporter(options: SplunkOtelWebConfigInternal) {
+  const beaconUrl = options.beaconEndpoint + (options.rumAccessToken ? '?auth='+options.rumAccessToken : '');
   return options.exporter.factory({
-    beaconUrl: completeUrl,
+    beaconUrl,
     onAttributesSerializing: options.exporter.onAttributesSerializing,
   });
 }
@@ -313,7 +353,7 @@ export const SplunkRum: SplunkOtelWebType = {
     const processedOptions: SplunkOtelWebConfigInternal = Object.assign(
       {},
       OPTIONS_DEFAULTS,
-      options,
+      migrateConfig(options),
       {
         exporter: Object.assign({}, OPTIONS_DEFAULTS.exporter, options.exporter),
       },
@@ -325,21 +365,21 @@ export const SplunkRum: SplunkOtelWebType = {
     }
 
     if (processedOptions.realm) {
-      if (!processedOptions.beaconUrl) {
-        processedOptions.beaconUrl = `https://rum-ingest.${processedOptions.realm}.signalfx.com/v1/rum`;
+      if (!processedOptions.beaconEndpoint) {
+        processedOptions.beaconEndpoint = `https://rum-ingest.${processedOptions.realm}.signalfx.com/v1/rum`;
       } else {
-        diag.warn('SplunkRum: Realm value ignored (beaconURL has been specified)');
+        diag.warn('SplunkRum: Realm value ignored (beaconEndpoint has been specified)');
       }
     }
 
     if (!processedOptions.debug) {
-      if (!processedOptions.beaconUrl) {
-        throw new Error('SplunkRum.init( {beaconUrl: \'https://something\'} ) is required.');
-      } else if(!processedOptions.beaconUrl.startsWith('https') && !processedOptions.allowInsecureBeacon) {
+      if (!processedOptions.beaconEndpoint) {
+        throw new Error('SplunkRum.init( {beaconEndpoint: \'https://something\'} ) is required.');
+      } else if(!processedOptions.beaconEndpoint.startsWith('https') && !processedOptions.allowInsecureBeacon) {
         throw new Error('Not using https is unsafe, if you want to force it use allowInsecureBeacon option.');
       }
-      if (!processedOptions.rumAuth) {
-        diag.warn('rumAuth will be required in the future');
+      if (!processedOptions.rumAccessToken) {
+        diag.warn('rumAccessToken will be required in the future');
       }
     }
 
@@ -350,7 +390,7 @@ export const SplunkRum: SplunkOtelWebType = {
       processedOptions.cookieDomain,
     ).deinit;
 
-    const { ignoreUrls, app, environment, version } = processedOptions;
+    const { ignoreUrls, applicationName, deploymentEnvironment, version } = processedOptions;
     // enabled: false prevents registerInstrumentations from enabling instrumentations in constructor
     // they will be enabled in registerInstrumentations
     const pluginDefaults = { ignoreUrls, enabled: false };
@@ -362,7 +402,7 @@ export const SplunkRum: SplunkOtelWebType = {
       // Splunk specific attributes
       'splunk.rumVersion': VERSION,
       'splunk.scriptInstance': instanceId,
-      'app': app,
+      'app': applicationName,
     };
 
     const syntheticsRunId = getSyntheticsRunId();
@@ -401,13 +441,13 @@ export const SplunkRum: SplunkOtelWebType = {
     }).filter((a): a is Exclude<typeof a, null> => Boolean(a));
 
     this.attributesProcessor = new SplunkSpanAttributesProcessor({
-      ...environment ? { environment } : {},
+      ...deploymentEnvironment ? { environment: deploymentEnvironment, 'deployment.environment': deploymentEnvironment } : {},
       ...version ? { 'app.version': version } : {},
       ...processedOptions.globalAttributes || {},
     });
     provider.addSpanProcessor(this.attributesProcessor);
 
-    if (processedOptions.beaconUrl) {
+    if (processedOptions.beaconEndpoint) {
       const exporter = buildExporter(processedOptions);
       const spanProcessor = processedOptions.spanProcessor.factory(exporter, {
         scheduledDelayMillis: processedOptions.bufferTimeout,

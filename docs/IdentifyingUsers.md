@@ -21,9 +21,9 @@ This is useful if you already have this information when the agent is being init
 <script src="https://cdn.signalfx.com/o11y-gdi-rum/latest/splunk-otel-web.js" crossorigin="anonymous"></script>
 <script>
   SplunkRum.init({
-    beaconUrl: 'https://rum-ingest.<REALM>.signalfx.com/v1/rum',
-    rumAuth: 'RUM access token',
-    app: 'enter-your-application-name',
+    beaconEndpoint: 'https://rum-ingest.<REALM>.signalfx.com/v1/rum',
+    rumAccessToken: 'RUM access token',
+    applicationName: 'enter-your-application-name',
     globalAttributes: {
       'enduser.id': 42,
       'enduser.role': 'admin',

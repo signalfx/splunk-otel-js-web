@@ -24,9 +24,9 @@ describe('async context propagation', () => {
   const capturer = new SpanCapturer();
   beforeEach(() => {
     SplunkOtelWeb.init({
-      app: 'my-app',
-      beaconUrl: 'https://localhost:9411/api/traces',
-      rumAuth: 'xxx',
+      applicationName: 'my-app',
+      beaconEndpoint: 'https://localhost:9411/api/traces',
+      rumAccessToken: 'xxx',
       context: {
         async: true,
       },

@@ -2,7 +2,7 @@
 
 # Data sending
 
-Data is sent to `beaconUrl` in every five seconds using `beacon` or `XHR` depending on each browser's capabilities and limits. 
+Data is sent to `beaconEndpoint` in every five seconds using `beacon` or `XHR` depending on each browser's capabilities and limits. 
 
 ## Limits
 

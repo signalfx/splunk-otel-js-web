@@ -54,14 +54,14 @@ export function buildInMemorySplunkExporter(): {
 
 export function initWithDefaultConfig(capturer: SpanCapturer, additionalOptions = {}): void {
   SplunkRum._internalInit({
-    beaconUrl: 'http://127.0.0.1:8888/v1/trace',
+    beaconEndpoint: 'http://127.0.0.1:8888/v1/trace',
     allowInsecureBeacon: true,
-    app: 'my-app',
-    environment: 'my-env',
+    applicationName: 'my-app',
+    deploymentEnvironment: 'my-env',
     version: '1.2-test.3',
     globalAttributes: { customerType: 'GOLD' },
     bufferTimeout: 0,
-    rumAuth: undefined,
+    rumAccessToken: '123-no-warn-spam-in-console',
     ...additionalOptions,
   });
   SplunkRum.provider.addSpanProcessor(capturer);
@@ -75,13 +75,13 @@ export function initWithSyncPipeline(additionalOptions = {}): {
   const processor = new SimpleSpanProcessor(exporter);
 
   SplunkRum._internalInit({
-    beaconUrl: 'http://127.0.0.1:8888/v1/trace',
+    beaconEndpoint: 'http://127.0.0.1:8888/v1/trace',
     allowInsecureBeacon: true,
-    app: 'my-app',
-    environment: 'my-env',
+    applicationName: 'my-app',
+    deploymentEnvironment: 'my-env',
     version: '1.2-test.3',
     bufferTimeout: 0,
-    rumAuth: undefined,
+    rumAccessToken: '123-no-warn-spam-in-console',
     exporter: { factory: () => exporter },
     spanProcessor: { factory: () => processor },
     ...additionalOptions,

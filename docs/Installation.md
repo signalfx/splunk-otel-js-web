@@ -10,18 +10,18 @@ To start monitoring with Splunk RUM distributed via CDN:
     <script src="https://cdn.signalfx.com/o11y-gdi-rum/latest/splunk-otel-web.js" crossorigin="anonymous"></script>
     <script>
       SplunkRum.init({
-          beaconUrl: 'https://rum-ingest.<REALM>.signalfx.com/v1/rum',
-          rumAuth: 'RUM access token',
-          app: 'enter-your-application-name'
+          beaconEndpoint: 'https://rum-ingest.<REALM>.signalfx.com/v1/rum',
+          rumAccessToken: 'RUM access token',
+          applicationName: 'enter-your-application-name'
         });
     </script>
     ```
 
 1. Modify the initialization parameters to specify:
-   - `beaconUrl` - the destination URL to which captured telemetry is sent to be ingested. Replace the `<REALM>` with the actual realm you are using (i.e. us0, us1). 
-   - `rumAuth` - token authorizing the Agent to send the telemetry to the backend. You can find (or generate) the token [here](https://app.signalfx.com/o11y/#/organization/current?selectedKeyValue=sf_section:accesstokens). 
+   - `beaconEndpoint` - the destination URL to which captured telemetry is sent to be ingested. Replace the `<REALM>` with the actual realm you are using (i.e. us0, us1). 
+   - `rumAccessToken` - token authorizing the Agent to send the telemetry to the backend. You can find (or generate) the token [here](https://app.signalfx.com/o11y/#/organization/current?selectedKeyValue=sf_section:accesstokens). 
      Notice that RUM and APM auth tokens are different.
-   - `app` - naming the application that will be monitored so it can be distinguished from other applications.
+   - `applicationName` - naming the application that will be monitored so it can be distinguished from other applications.
 1. Deploy the changes to your application and make sure that the application is being used.
 1. Verify that the data is appearing in the RUM dashboard. 
 
@@ -48,17 +48,17 @@ To start monitoring using Splunk RUM distributed via NPM:
     ```html
        import SplunkOtelWeb from '@splunk/otel-web';
        SplunkOtelWeb.init({
-         beaconUrl: 'https://rum-ingest.<REALM>.signalfx.com/v1/rum',
-         rumAuth: '<RUM access token>',
-         app: '<application-name>',
+         beaconEndpoint: 'https://rum-ingest.<REALM>.signalfx.com/v1/rum',
+         rumAccessToken: '<RUM access token>',
+         applicationName: '<application-name>',
        });
     ```
 
 1. Modify the initialization parameters to specify:
-   - `beaconUrl` - the destination URL to which captured telemetry is sent to be ingested. Replace the `<REALM>` with the actual realm you are using (i.e. us0, us1). 
-   - `rumAuth` - token authorizing the Agent to send the telemetry to the backend. You can find (or generate) the token [here](https://app.signalfx.com/o11y/#/organization/current?selectedKeyValue=sf_section:accesstokens). 
+   - `beaconEndpoint` - the destination URL to which captured telemetry is sent to be ingested. Replace the `<REALM>` with the actual realm you are using (i.e. us0, us1). 
+   - `rumAccessToken` - token authorizing the Agent to send the telemetry to the backend. You can find (or generate) the token [here](https://app.signalfx.com/o11y/#/organization/current?selectedKeyValue=sf_section:accesstokens). 
      Notice that RUM and APM auth tokens are different.
-   - `app` - naming the application that will be monitored so it can be distinguished from other applications.
+   - `applicationName` - naming the application that will be monitored so it can be distinguished from other applications.
 1. Import or require the file above other application code files in your bundle root ensuring the instrumentation runs before the application code. 
 
 You can find a sample NPM installation in our [Github examples](../examples/installing-npm).

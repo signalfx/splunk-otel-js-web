@@ -8,12 +8,12 @@ Run `npm start` to start the example app (requires another shell tab/instance).
 Open <http://localhost:9100/> to open the app and start producing telemetry data.
 
 ## Sending the data to Splunk Real User Monitoring <a name="backend-config"></a>
-Add `rumAuthToken` and change `beaconUrl` in the instrumentation initialisation object:
+Add `rumAccessToken` and change `beaconEndpoint` in the instrumentation initialisation object:
 ```js
 SplunkOtelWeb.init({
   ...
-  beaconUrl: 'https://rum-ingest.signalfx.com/api/v2/spans',
-  rumAuthToken: 'xxx', // TODO: describe how to get the token
+  beaconEndpoint: 'https://rum-ingest.us0.signalfx.com/api/v2/spans',
+  rumAccessToken: 'xxx', // TODO: describe how to get the token
   ...
 });
 ```
@@ -33,9 +33,9 @@ import SplunkOtelWeb from '@splunk/otel-web';
 
 SplunkOtelWeb.init({
   // we will provision a temporary local backend for testing in a few steps
-  beaconUrl: 'http://localhost:9411/api/v2/spans',
+  beaconEndpoint: 'http://localhost:9411/api/v2/spans',
   allowInsecureBeacon: true,
-  app: 'splunk-otel-web-example-npm',
+  applicationName: 'splunk-otel-web-example-npm',
 });
 ```
 

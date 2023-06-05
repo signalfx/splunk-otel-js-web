@@ -8,11 +8,11 @@ Below are the different initialization options available for the Agent:
 
 |Option|Type|Default value|Description|
 |---|---|---|---|
-|`realm`|`string`| Provided by the guided setup | Your Splunk Observability Cloud realm, for example, `us0` or `us1`. This automatically sets the `beaconUrl` value to the correct rum ingest endpoint of your Splunk Observability Cloud realm. |
-|`beaconUrl`|`string`|Based on `realm`|Sets the destination URL to which captured telemetry is sent to be ingested. If you use `realm` this is automatically set to the correct value based on the realm you've set.|
-|`rumAuth`|`string [required]`|Provided by installation wizard|Defines a token authorizing the Agent to send the telemetry to the backend. You can find (or generate) the token [here](https://app.signalfx.com/o11y/#/organization/current?selectedKeyValue=sf_section:accesstokens). Notice that RUM and APM auth tokens are different.|
-|`app`|`string`|`"unknown-browser-app"`|Application name, used to distinguish the telemetry from different applications.|
-|`environment`|`string`|`(none)`|Sets environment for all the spans, used to distinguish between different environments such as `dev`,  `test` or `prod`. |
+|`realm`|`string`| Provided by the guided setup | Your Splunk Observability Cloud realm, for example, `us0` or `us1`. This automatically sets the `beaconEndpoint` value to the correct rum ingest endpoint of your Splunk Observability Cloud realm. |
+|`beaconEndpoint`|`string`|Based on `realm`|Sets the destination URL to which captured telemetry is sent to be ingested. If you use `realm` this is automatically set to the correct value based on the realm you've set.|
+|`rumAccessToken`|`string [required]`|Provided by installation wizard|Defines a token authorizing the Agent to send the telemetry to the backend. You can find (or generate) the token [here](https://app.signalfx.com/o11y/#/organization/current?selectedKeyValue=sf_section:accesstokens). Notice that RUM and APM auth tokens are different.|
+|`applicationName`|`string`|`"unknown-browser-app"`|Application name, used to distinguish the telemetry from different applications.|
+|`deploymentEnvironment`|`string`|`(none)`|Sets environment for all the spans, used to distinguish between different environments such as `dev`,  `test` or `prod`. |
 |`version`|`string`|`(none)`|Sets app version for all the spans, used to distinguish between different version deployments. For example: `1.0.1` or `20220820` |
 |`globalAttributes`|`object`|`{} empty object`|Sets additional attributes added to all spans (such as version, user id, ...)|
 |`allowInsecureBeacon`|`boolean`|`false`|Allows sending data to insecure endpoints not using `https`. It is not recommended to enable this. |
@@ -61,9 +61,9 @@ In situation, where you need to change the default configuration, you need to ch
 <script>
   window.SplunkRum.init(
     {
-      beaconUrl: 'https://rum-ingest.us0.signalfx.com/v1/rum'
-      rumAuth: 'ABC123...789',
-      app: 'my-awesome-app',
+      beaconEndpoint: 'https://rum-ingest.us0.signalfx.com/v1/rum'
+      rumAccessToken: 'ABC123...789',
+      applicationName: 'my-awesome-app',
       // Any additional options
     });
 </script>
@@ -77,9 +77,9 @@ The following example changes three default configuration parameters:
 
 ```js
 SplunkRum.init({
-  beaconUrl: 'https://rum-ingest.us0.signalfx.com/v1/rum',
-  rumAuth: 'ABC123...789',
-  app: 'my-awesome-app',
+  beaconEndpoint: 'https://rum-ingest.us0.signalfx.com/v1/rum',
+  rumAccessToken: 'ABC123...789',
+  applicationName: 'my-awesome-app',
   instrumentations: {
     interactions: {
       eventNames: [
