@@ -4,6 +4,44 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## Unreleased
 
+## 0.16.0
+
+| Open Telemetry API | Core    | Instrumentations & Contrib |
+| ------------------ | ------- | -------------------------- |
+| ^1.4.1             | ^1.14.0 | ^0.40.0 & compatible       |
+
+The following configuration options have been renamed:
+
+Old | New
+-- | --
+`beaconUrl` | `beaconEndpoint`
+`rumAuth` | `rumAccessToken`
+`app` | `applicationName`
+`environment` | `deploymentEnvironment`
+
+While we'll keep the old keys working for near future it is recommended to change your init call to use the new keys:
+
+```diff
+SplunkRum.init({
+-  beaconUrl: 'https://rum-ingest.<REALM>.signalfx.com/v1/rum',
++  beaconEndpoint: 'https://rum-ingest.<REALM>.signalfx.com/v1/rum',
+   // Alternatively you can now use the realm option:
++  realm: '<REALM>',
+
+-  rumAuth: 'RUM access token',
++  rumAccessToken: 'RUM access token',
+
+-  app: 'enter-your-application-name',
++  applicationName: 'enter-your-application-name',
+
+-  environment: 'production',
++  deploymentEnvironment: 'production',
+});
+```
+
+- Renamed configuration options to match other Splunk RUM libraries & Splunk's GDI Specification
+- Added `realm` config option which can be used as shorthand instead of `beaconEndpoint`
+
 ## 0.15.3
 
 - Disable async context manager by default
