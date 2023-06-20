@@ -19,7 +19,7 @@ import {
 } from '@opentelemetry/instrumentation';
 
 import { VERSION } from './version';
-import { hrTime, isUrlIgnored } from '@opentelemetry/core';
+import { isUrlIgnored } from '@opentelemetry/core';
 import { addSpanNetworkEvents } from '@opentelemetry/sdk-trace-web';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { context, Context, ROOT_CONTEXT } from '@opentelemetry/api';

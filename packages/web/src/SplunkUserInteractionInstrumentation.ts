@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 import { Span, trace, Tracer, TracerProvider } from '@opentelemetry/api';
-import { hrTime } from '@opentelemetry/core';
 import { UserInteractionInstrumentation } from '@opentelemetry/instrumentation-user-interaction';
 import { UserInteractionInstrumentationConfig } from '@opentelemetry/instrumentation-user-interaction/build/src/types';
 
