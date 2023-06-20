@@ -128,7 +128,7 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
       // AttributeNames not exported currently
       'resourceFetch',
       {
-        startTime: hrTime(entry.fetchStart),
+        startTime: entry.fetchStart,
       },
       this.urlToContextMap[targetUrl.toString()]
     );

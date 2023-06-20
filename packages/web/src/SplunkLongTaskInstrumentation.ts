@@ -54,7 +54,7 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
     const span = this.tracer.startSpan(
       LONGTASK_PERFORMANCE_TYPE,
       {
-        startTime: hrTime(entry.startTime),
+        startTime: entry.startTime,
       }
     );
     span.setAttribute('component', MODULE_NAME);
@@ -77,7 +77,7 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
       });
     }
 
-    span.end(hrTime(entry.startTime + entry.duration));
+    span.end(entry.startTime + entry.duration);
   }
 
   // TODO: change name, _isSupported is taken by parent

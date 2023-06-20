@@ -58,7 +58,7 @@ export class SplunkPageVisibilityInstrumentation extends InstrumentationBase {
   }
 
   private _createSpan(hidden: boolean) {
-    const now = hrTime();
+    const now = Date.now();
     const span = this.tracer.startSpan('visibility', { startTime: now });
     span.setAttribute('hidden', hidden);
     span.end(now);

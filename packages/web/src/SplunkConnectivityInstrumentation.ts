@@ -24,26 +24,26 @@ const MODULE_NAME = 'splunk-connectivity';
 export class SplunkConnectivityInstrumentation extends InstrumentationBase {
   offlineListener: any;
   onlineListener: any;
-  offlineStart: HrTime;
+  offlineStart: number | null;
 
   constructor(config: InstrumentationConfig = {}) {
     super(MODULE_NAME, VERSION, Object.assign({}, config));
     // For apps with offline support 
-    this.offlineStart = navigator.onLine ? null : hrTime();
+    this.offlineStart = navigator.onLine ? null : Date.now();
   }
 
   init(): void {}
 
   enable(): void {
     this.offlineListener = () => {
-      this.offlineStart = hrTime();
+      this.offlineStart = Date.now();
     };
 
     this.onlineListener = () => {
       if (this.offlineStart) {
         // this could be a span but let's keep it as an "event" for now.
         this._createSpan(false, this.offlineStart);
-        this._createSpan(true, hrTime());
+        this._createSpan(true, Date.now());
       }
     };
 
@@ -56,7 +56,7 @@ export class SplunkConnectivityInstrumentation extends InstrumentationBase {
     window.removeEventListener('online', this.onlineListener);
   }
 
-  private _createSpan(online: boolean, startTime: HrTime) {
+  private _createSpan(online: boolean, startTime: number) {
     const span = this.tracer.startSpan('connectivity', { startTime });
     span.setAttribute('online', online);
     span.end(startTime);

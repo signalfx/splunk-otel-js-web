@@ -18,7 +18,6 @@ import * as shimmer from 'shimmer';
 import { getElementXPath } from '@opentelemetry/sdk-trace-web';
 import { limitLen } from './utils';
 import { Span } from '@opentelemetry/api';
-import { hrTime } from '@opentelemetry/core';
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation';
 
 // FIXME take timestamps from events?
@@ -93,7 +92,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
       return;
     }
 
-    const now = hrTime();
+    const now = Date.now();
     const span = this.tracer.startSpan(source, { startTime: now });
     span.setAttribute('component', 'error');
     span.setAttribute('error', true);
@@ -108,7 +107,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
       return;
     }
 
-    const now = hrTime();
+    const now = Date.now();
     const span = this.tracer.startSpan(source, { startTime: now });
     span.setAttribute('component', 'error');
     span.setAttribute('error', true);
@@ -134,7 +133,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
       return;
     }
 
-    const now = hrTime();
+    const now = Date.now();
     const span = this.tracer.startSpan(source, { startTime: now });
     span.setAttribute('component', 'error');
     span.setAttribute('error.type', ev.type);

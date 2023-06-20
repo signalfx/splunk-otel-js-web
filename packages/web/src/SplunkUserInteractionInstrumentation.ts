@@ -170,7 +170,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
   }
 
   private _emitRouteChangeSpan(oldHref) {
-    const now = hrTime();
+    const now = Date.now();
     const span = this._routingTracer.startSpan('routeChange', { startTime: now });
     span.setAttribute('component', this.moduleName);
     span.setAttribute('prev.href', oldHref);
