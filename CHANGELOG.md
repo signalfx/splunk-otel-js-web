@@ -4,6 +4,10 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## Unreleased
 
+## 0.16.1
+
+* Remove extranous time drift patches, preferring to use the ones released in otel ([#592](https://github.com/signalfx/splunk-otel-js-web/pull/592)) 
+
 ## 0.16.0
 
 | Open Telemetry API | Core    | Instrumentations & Contrib |
