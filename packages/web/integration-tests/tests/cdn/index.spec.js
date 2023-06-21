@@ -64,7 +64,7 @@ module.exports = {
     );
     await browser.assert.strictEqual(
       rumScriptFetchSpan.tags['splunk.rumVersion'],
-      '0.16.0'
+      '0.16.1'
     );
   },
 };
