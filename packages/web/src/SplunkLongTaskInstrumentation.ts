@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { hrTime } from '@opentelemetry/core';
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation';
 
 import { VERSION } from './version';
@@ -54,7 +53,7 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
     const span = this.tracer.startSpan(
       LONGTASK_PERFORMANCE_TYPE,
       {
-        startTime: hrTime(entry.startTime),
+        startTime: entry.startTime,
       }
     );
     span.setAttribute('component', MODULE_NAME);
@@ -77,7 +76,7 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
       });
     }
 
-    span.end(hrTime(entry.startTime + entry.duration));
+    span.end(entry.startTime + entry.duration);
   }
 
   // TODO: change name, _isSupported is taken by parent

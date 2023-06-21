@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 import { TracerProvider, Tracer } from '@opentelemetry/api';
-import { hrTime } from '@opentelemetry/core';
 import { onCLS, onLCP, onFID, onINP, Metric } from 'web-vitals';
 const reported = {};
 
@@ -26,7 +25,7 @@ function report(tracer: Tracer, name: string, metric: Metric): void {
   reported[name] = true;
 
   const value = metric.value;
-  const now = hrTime();
+  const now = Date.now();
 
   const span = tracer.startSpan('webvitals', { startTime: now });
   span.setAttribute(name, value);

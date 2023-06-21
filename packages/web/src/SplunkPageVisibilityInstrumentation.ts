@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { hrTime } from '@opentelemetry/core';
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation';
 import { VERSION } from './version';
 
@@ -58,7 +57,7 @@ export class SplunkPageVisibilityInstrumentation extends InstrumentationBase {
   }
 
   private _createSpan(hidden: boolean) {
-    const now = hrTime();
+    const now = Date.now();
     const span = this.tracer.startSpan('visibility', { startTime: now });
     span.setAttribute('hidden', hidden);
     span.end(now);
