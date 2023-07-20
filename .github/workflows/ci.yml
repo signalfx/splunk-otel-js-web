@@ -9,8 +9,8 @@ jobs:
     permissions: read-all
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+        uses: actions/checkout@v3.5.3
+      - uses: actions/setup-node@v3.7.0
         with:
           node-version: '18'
           cache: 'npm'
@@ -41,14 +41,14 @@ jobs:
         browser: [edge]
     steps:
       - name: Setup sauce connect
-        uses: saucelabs/sauce-connect-action@v2
+        uses: saucelabs/sauce-connect-action@v2.3.4
         with:
           username: ${{ secrets.SAUCE_USERNAME }}
           accessKey: ${{ secrets.SAUCE_ACCESS_KEY }}
           tunnelName: ${{ secrets.SAUCE_TUNNEL_ID }}
       - name: Checkout
-        uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+        uses: actions/checkout@v3.5.3
+      - uses: actions/setup-node@v3.7.0
         with:
           node-version: '18'
           cache: 'npm'
@@ -69,8 +69,8 @@ jobs:
         browser: [headlessChrome, headlessFirefox]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+        uses: actions/checkout@v3.5.3
+      - uses: actions/setup-node@v3.7.0
         with:
           node-version: '18'
           cache: 'npm'
@@ -79,7 +79,7 @@ jobs:
       - name: Local integration tests using ${{ matrix.browser }}
         run: npm run test:integration:local:${{ matrix.browser }}:_execute
       - name: Upload test logs
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3.1.2
         if: ${{ failure() }}
         with:
           name: test-results ${{ matrix.browser }}
