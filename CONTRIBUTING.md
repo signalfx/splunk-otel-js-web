@@ -1,23 +1,20 @@
 # Contributing Guidelines
 
 Thank you for your interest in contributing to our repository! Whether it's a bug
-report, new feature, question, or additional documentation, we greatly value
-feedback and contributions from our community. Read through this document
-before submitting any issues or pull requests to ensure we have all the
-necessary information to effectively respond to your bug report or
-contribution.
+report, new feature, or question, we greatly value feedback and contributions from
+our community. Read through this document before submitting any issues or pull
+requests to ensure we have all the necessary information to effectively respond
+to your bug report or contribution.
 
-In addition to this document, please review our [Code of
-Conduct](CODE_OF_CONDUCT.md). For any code of conduct questions or comments
-please email oss@splunk.com.
+In addition to this document, review our [Code of Conduct](CODE_OF_CONDUCT.md).
+For any code of conduct questions or comments, send an email to oss@splunk.com.
 
 ## Reporting Bugs/Feature Requests
 
 We welcome you to use the GitHub issue tracker to report bugs or suggest
-features. When filing an issue, please check existing open, or recently closed,
-issues to make sure somebody else hasn't already reported the issue. Please try
-to include as much information as you can. Details like these are incredibly
-useful:
+features. When filing an issue, check existing open, or recently closed,
+issues to make sure somebody else hasn't already reported the issue. Try
+to include as much information as you can. Details like these can be useful:
 
 - A reproducible test case or series of steps
 - The version of our code being used
@@ -25,30 +22,33 @@ useful:
 - Anything unusual about your environment or deployment
 - Any known workarounds
 
-When filing an issue, please do *NOT* include:
+When filing an issue, do *NOT* include:
 
-- Internal identifiers such as JIRA tickets
+- Internal identifiers such as Jira tickets
 - Any sensitive information related to your environment, users, etc.
-
-## Documentation
-
-The Splunk Observability documentation is hosted at [docs.splunk.com](https://docs.splunk.com/Observability),
-which contains all the prescriptive guidance for Splunk Observability products. 
-Prescriptive guidance consists of step-by-step instructions, conceptual material,
-and decision support for customers. Reference documentation and development 
-documentation is hosted on this repository.
-
-You can send feedback about Splunk Observability docs by clicking the "Feedback" 
-button on any of our documentation pages on the official docs site.
 
 ## Reporting Security Issues
 
-See [SECURITY.md](SECURITY.md#reporting-security-issues) for detailed instructions.
+See [SECURITY.md](SECURITY.md#reporting-security-issues) for instructions.
+
+## Documentation
+
+The Splunk Observability documentation is hosted on the [Splunk Observability
+Cloud docs site](https://docs.splunk.com/Observability), which contains all the
+prescriptive guidance for Splunk Observability products. Prescriptive guidance
+consists of step-by-step instructions, conceptual material, and decision support
+for customers. Reference documentation and development documentation is still
+hosted on this repository.
+
+To contribute documentation for this project, open a pull request in the
+[public-o11y-docs](https://github.com/splunk/public-o11y-docs) repository. See
+the [CONTRIBUTING.md](https://github.com/splunk/public-o11y-docs/blob/main/CONTRIBUTING.md)
+guide of the Splunk Observability Cloud documentation for more information.
 
 ## Contributing via Pull Requests
 
 Contributions via Pull Requests (PRs) are much appreciated. Before sending us a
-pull request, please ensure that:
+pull request, make sure that:
 
 1. You are working against the latest source on the `main` branch.
 2. You check existing open, and recently merged, pull requests to make sure
@@ -58,10 +58,10 @@ pull request, please ensure that:
 4. You submit PRs that are easy to review and ideally less 500 lines of code.
    Multiple PRs can be submitted for larger contributions.
 
-To send us a pull request, please:
+To send us a pull request:
 
 1. Fork the repository.
-2. Modify the source; please ensure a single change per PR. If you also
+2. Modify the source; a single change per PR is recommended. If you also
    reformat all the code, it will be hard for us to focus on your change.
 3. Ensure local tests pass and add new tests related to the contribution.
 4. Commit to your fork using clear commit messages.
@@ -118,6 +118,6 @@ $ /usr/bin/safaridriver --enable
 See the [LICENSE](LICENSE) file for our repository's licensing. We will ask you to
 confirm the licensing of your contribution.
 
-We may ask you to sign a [Contributor License Agreement
-(CLA)](http://en.wikipedia.org/wiki/Contributor_License_Agreement) for larger
-changes.
+### Contributor License Agreement
+
+Before contributing, you must sign the [Splunk Contributor License Agreement (CLA)](https://www.splunk.com/en_us/form/contributions.html).
