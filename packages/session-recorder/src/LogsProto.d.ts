@@ -139,6 +139,13 @@ export namespace opentelemetry {
                      * @returns JSON object
                      */
                     public toJSON(): { [k: string]: any };
+
+                    /**
+                     * Gets the default type url for AnyValue
+                     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+                     * @returns The default type url
+                     */
+                    public static getTypeUrl(typeUrlPrefix?: string): string;
                 }
 
                 /** Properties of an ArrayValue. */
@@ -229,6 +236,13 @@ export namespace opentelemetry {
                      * @returns JSON object
                      */
                     public toJSON(): { [k: string]: any };
+
+                    /**
+                     * Gets the default type url for ArrayValue
+                     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+                     * @returns The default type url
+                     */
+                    public static getTypeUrl(typeUrlPrefix?: string): string;
                 }
 
                 /** Properties of a KeyValueList. */
@@ -319,6 +333,13 @@ export namespace opentelemetry {
                      * @returns JSON object
                      */
                     public toJSON(): { [k: string]: any };
+
+                    /**
+                     * Gets the default type url for KeyValueList
+                     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+                     * @returns The default type url
+                     */
+                    public static getTypeUrl(typeUrlPrefix?: string): string;
                 }
 
                 /** Properties of a KeyValue. */
@@ -415,102 +436,13 @@ export namespace opentelemetry {
                      * @returns JSON object
                      */
                     public toJSON(): { [k: string]: any };
-                }
-
-                /** Properties of an InstrumentationLibrary. */
-                interface IInstrumentationLibrary {
-
-                    /** InstrumentationLibrary name */
-                    name?: (string|null);
-
-                    /** InstrumentationLibrary version */
-                    version?: (string|null);
-                }
-
-                /** Represents an InstrumentationLibrary. */
-                class InstrumentationLibrary implements IInstrumentationLibrary {
 
                     /**
-                     * Constructs a new InstrumentationLibrary.
-                     * @param [properties] Properties to set
+                     * Gets the default type url for KeyValue
+                     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+                     * @returns The default type url
                      */
-                    constructor(properties?: opentelemetry.proto.common.v1.IInstrumentationLibrary);
-
-                    /** InstrumentationLibrary name. */
-                    public name: string;
-
-                    /** InstrumentationLibrary version. */
-                    public version: string;
-
-                    /**
-                     * Creates a new InstrumentationLibrary instance using the specified properties.
-                     * @param [properties] Properties to set
-                     * @returns InstrumentationLibrary instance
-                     */
-                    public static create(properties?: opentelemetry.proto.common.v1.IInstrumentationLibrary): opentelemetry.proto.common.v1.InstrumentationLibrary;
-
-                    /**
-                     * Encodes the specified InstrumentationLibrary message. Does not implicitly {@link opentelemetry.proto.common.v1.InstrumentationLibrary.verify|verify} messages.
-                     * @param message InstrumentationLibrary message or plain object to encode
-                     * @param [writer] Writer to encode to
-                     * @returns Writer
-                     */
-                    public static encode(message: opentelemetry.proto.common.v1.IInstrumentationLibrary, writer?: $protobuf.Writer): $protobuf.Writer;
-
-                    /**
-                     * Encodes the specified InstrumentationLibrary message, length delimited. Does not implicitly {@link opentelemetry.proto.common.v1.InstrumentationLibrary.verify|verify} messages.
-                     * @param message InstrumentationLibrary message or plain object to encode
-                     * @param [writer] Writer to encode to
-                     * @returns Writer
-                     */
-                    public static encodeDelimited(message: opentelemetry.proto.common.v1.IInstrumentationLibrary, writer?: $protobuf.Writer): $protobuf.Writer;
-
-                    /**
-                     * Decodes an InstrumentationLibrary message from the specified reader or buffer.
-                     * @param reader Reader or buffer to decode from
-                     * @param [length] Message length if known beforehand
-                     * @returns InstrumentationLibrary
-                     * @throws {Error} If the payload is not a reader or valid buffer
-                     * @throws {$protobuf.util.ProtocolError} If required fields are missing
-                     */
-                    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): opentelemetry.proto.common.v1.InstrumentationLibrary;
-
-                    /**
-                     * Decodes an InstrumentationLibrary message from the specified reader or buffer, length delimited.
-                     * @param reader Reader or buffer to decode from
-                     * @returns InstrumentationLibrary
-                     * @throws {Error} If the payload is not a reader or valid buffer
-                     * @throws {$protobuf.util.ProtocolError} If required fields are missing
-                     */
-                    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): opentelemetry.proto.common.v1.InstrumentationLibrary;
-
-                    /**
-                     * Verifies an InstrumentationLibrary message.
-                     * @param message Plain object to verify
-                     * @returns `null` if valid, otherwise the reason why it is not
-                     */
-                    public static verify(message: { [k: string]: any }): (string|null);
-
-                    /**
-                     * Creates an InstrumentationLibrary message from a plain object. Also converts values to their respective internal types.
-                     * @param object Plain object
-                     * @returns InstrumentationLibrary
-                     */
-                    public static fromObject(object: { [k: string]: any }): opentelemetry.proto.common.v1.InstrumentationLibrary;
-
-                    /**
-                     * Creates a plain object from an InstrumentationLibrary message. Also converts values to other types if specified.
-                     * @param message InstrumentationLibrary
-                     * @param [options] Conversion options
-                     * @returns Plain object
-                     */
-                    public static toObject(message: opentelemetry.proto.common.v1.InstrumentationLibrary, options?: $protobuf.IConversionOptions): { [k: string]: any };
-
-                    /**
-                     * Converts this InstrumentationLibrary to JSON.
-                     * @returns JSON object
-                     */
-                    public toJSON(): { [k: string]: any };
+                    public static getTypeUrl(typeUrlPrefix?: string): string;
                 }
 
                 /** Properties of an InstrumentationScope. */
@@ -521,6 +453,12 @@ export namespace opentelemetry {
 
                     /** InstrumentationScope version */
                     version?: (string|null);
+
+                    /** InstrumentationScope attributes */
+                    attributes?: (opentelemetry.proto.common.v1.IKeyValue[]|null);
+
+                    /** InstrumentationScope droppedAttributesCount */
+                    droppedAttributesCount?: (number|null);
                 }
 
                 /** Represents an InstrumentationScope. */
@@ -537,6 +475,12 @@ export namespace opentelemetry {
 
                     /** InstrumentationScope version. */
                     public version: string;
+
+                    /** InstrumentationScope attributes. */
+                    public attributes: opentelemetry.proto.common.v1.IKeyValue[];
+
+                    /** InstrumentationScope droppedAttributesCount. */
+                    public droppedAttributesCount: number;
 
                     /**
                      * Creates a new InstrumentationScope instance using the specified properties.
@@ -607,6 +551,13 @@ export namespace opentelemetry {
                      * @returns JSON object
                      */
                     public toJSON(): { [k: string]: any };
+
+                    /**
+                     * Gets the default type url for InstrumentationScope
+                     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+                     * @returns The default type url
+                     */
+                    public static getTypeUrl(typeUrlPrefix?: string): string;
                 }
             }
         }
@@ -711,6 +662,13 @@ export namespace opentelemetry {
                      * @returns JSON object
                      */
                     public toJSON(): { [k: string]: any };
+
+                    /**
+                     * Gets the default type url for Resource
+                     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+                     * @returns The default type url
+                     */
+                    public static getTypeUrl(typeUrlPrefix?: string): string;
                 }
             }
         }
@@ -809,6 +767,13 @@ export namespace opentelemetry {
                      * @returns JSON object
                      */
                     public toJSON(): { [k: string]: any };
+
+                    /**
+                     * Gets the default type url for LogsData
+                     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+                     * @returns The default type url
+                     */
+                    public static getTypeUrl(typeUrlPrefix?: string): string;
                 }
 
                 /** Properties of a ResourceLogs. */
@@ -819,9 +784,6 @@ export namespace opentelemetry {
 
                     /** ResourceLogs scopeLogs */
                     scopeLogs?: (opentelemetry.proto.logs.v1.IScopeLogs[]|null);
-
-                    /** ResourceLogs instrumentationLibraryLogs */
-                    instrumentationLibraryLogs?: (opentelemetry.proto.logs.v1.IInstrumentationLibraryLogs[]|null);
 
                     /** ResourceLogs schemaUrl */
                     schemaUrl?: (string|null);
@@ -841,9 +803,6 @@ export namespace opentelemetry {
 
                     /** ResourceLogs scopeLogs. */
                     public scopeLogs: opentelemetry.proto.logs.v1.IScopeLogs[];
-
-                    /** ResourceLogs instrumentationLibraryLogs. */
-                    public instrumentationLibraryLogs: opentelemetry.proto.logs.v1.IInstrumentationLibraryLogs[];
 
                     /** ResourceLogs schemaUrl. */
                     public schemaUrl: string;
@@ -917,6 +876,13 @@ export namespace opentelemetry {
                      * @returns JSON object
                      */
                     public toJSON(): { [k: string]: any };
+
+                    /**
+                     * Gets the default type url for ResourceLogs
+                     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+                     * @returns The default type url
+                     */
+                    public static getTypeUrl(typeUrlPrefix?: string): string;
                 }
 
                 /** Properties of a ScopeLogs. */
@@ -1019,108 +985,13 @@ export namespace opentelemetry {
                      * @returns JSON object
                      */
                     public toJSON(): { [k: string]: any };
-                }
-
-                /** Properties of an InstrumentationLibraryLogs. */
-                interface IInstrumentationLibraryLogs {
-
-                    /** InstrumentationLibraryLogs instrumentationLibrary */
-                    instrumentationLibrary?: (opentelemetry.proto.common.v1.IInstrumentationLibrary|null);
-
-                    /** InstrumentationLibraryLogs logRecords */
-                    logRecords?: (opentelemetry.proto.logs.v1.ILogRecord[]|null);
-
-                    /** InstrumentationLibraryLogs schemaUrl */
-                    schemaUrl?: (string|null);
-                }
-
-                /** Represents an InstrumentationLibraryLogs. */
-                class InstrumentationLibraryLogs implements IInstrumentationLibraryLogs {
 
                     /**
-                     * Constructs a new InstrumentationLibraryLogs.
-                     * @param [properties] Properties to set
+                     * Gets the default type url for ScopeLogs
+                     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+                     * @returns The default type url
                      */
-                    constructor(properties?: opentelemetry.proto.logs.v1.IInstrumentationLibraryLogs);
-
-                    /** InstrumentationLibraryLogs instrumentationLibrary. */
-                    public instrumentationLibrary?: (opentelemetry.proto.common.v1.IInstrumentationLibrary|null);
-
-                    /** InstrumentationLibraryLogs logRecords. */
-                    public logRecords: opentelemetry.proto.logs.v1.ILogRecord[];
-
-                    /** InstrumentationLibraryLogs schemaUrl. */
-                    public schemaUrl: string;
-
-                    /**
-                     * Creates a new InstrumentationLibraryLogs instance using the specified properties.
-                     * @param [properties] Properties to set
-                     * @returns InstrumentationLibraryLogs instance
-                     */
-                    public static create(properties?: opentelemetry.proto.logs.v1.IInstrumentationLibraryLogs): opentelemetry.proto.logs.v1.InstrumentationLibraryLogs;
-
-                    /**
-                     * Encodes the specified InstrumentationLibraryLogs message. Does not implicitly {@link opentelemetry.proto.logs.v1.InstrumentationLibraryLogs.verify|verify} messages.
-                     * @param message InstrumentationLibraryLogs message or plain object to encode
-                     * @param [writer] Writer to encode to
-                     * @returns Writer
-                     */
-                    public static encode(message: opentelemetry.proto.logs.v1.IInstrumentationLibraryLogs, writer?: $protobuf.Writer): $protobuf.Writer;
-
-                    /**
-                     * Encodes the specified InstrumentationLibraryLogs message, length delimited. Does not implicitly {@link opentelemetry.proto.logs.v1.InstrumentationLibraryLogs.verify|verify} messages.
-                     * @param message InstrumentationLibraryLogs message or plain object to encode
-                     * @param [writer] Writer to encode to
-                     * @returns Writer
-                     */
-                    public static encodeDelimited(message: opentelemetry.proto.logs.v1.IInstrumentationLibraryLogs, writer?: $protobuf.Writer): $protobuf.Writer;
-
-                    /**
-                     * Decodes an InstrumentationLibraryLogs message from the specified reader or buffer.
-                     * @param reader Reader or buffer to decode from
-                     * @param [length] Message length if known beforehand
-                     * @returns InstrumentationLibraryLogs
-                     * @throws {Error} If the payload is not a reader or valid buffer
-                     * @throws {$protobuf.util.ProtocolError} If required fields are missing
-                     */
-                    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): opentelemetry.proto.logs.v1.InstrumentationLibraryLogs;
-
-                    /**
-                     * Decodes an InstrumentationLibraryLogs message from the specified reader or buffer, length delimited.
-                     * @param reader Reader or buffer to decode from
-                     * @returns InstrumentationLibraryLogs
-                     * @throws {Error} If the payload is not a reader or valid buffer
-                     * @throws {$protobuf.util.ProtocolError} If required fields are missing
-                     */
-                    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): opentelemetry.proto.logs.v1.InstrumentationLibraryLogs;
-
-                    /**
-                     * Verifies an InstrumentationLibraryLogs message.
-                     * @param message Plain object to verify
-                     * @returns `null` if valid, otherwise the reason why it is not
-                     */
-                    public static verify(message: { [k: string]: any }): (string|null);
-
-                    /**
-                     * Creates an InstrumentationLibraryLogs message from a plain object. Also converts values to their respective internal types.
-                     * @param object Plain object
-                     * @returns InstrumentationLibraryLogs
-                     */
-                    public static fromObject(object: { [k: string]: any }): opentelemetry.proto.logs.v1.InstrumentationLibraryLogs;
-
-                    /**
-                     * Creates a plain object from an InstrumentationLibraryLogs message. Also converts values to other types if specified.
-                     * @param message InstrumentationLibraryLogs
-                     * @param [options] Conversion options
-                     * @returns Plain object
-                     */
-                    public static toObject(message: opentelemetry.proto.logs.v1.InstrumentationLibraryLogs, options?: $protobuf.IConversionOptions): { [k: string]: any };
-
-                    /**
-                     * Converts this InstrumentationLibraryLogs to JSON.
-                     * @returns JSON object
-                     */
-                    public toJSON(): { [k: string]: any };
+                    public static getTypeUrl(typeUrlPrefix?: string): string;
                 }
 
                 /** SeverityNumber enum. */
@@ -1300,6 +1171,13 @@ export namespace opentelemetry {
                      * @returns JSON object
                      */
                     public toJSON(): { [k: string]: any };
+
+                    /**
+                     * Gets the default type url for LogRecord
+                     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+                     * @returns The default type url
+                     */
+                    public static getTypeUrl(typeUrlPrefix?: string): string;
                 }
             }
         }
