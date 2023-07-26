@@ -11,6 +11,7 @@ const $root = ($protobuf.roots["default"] || ($protobuf.roots["default"] = new $
             nested: {
               v1: {
                 options: {
+                  csharp_namespace: "OpenTelemetry.Proto.Common.V1",
                   java_multiple_files: true,
                   java_package: "io.opentelemetry.proto.common.v1",
                   java_outer_classname: "CommonProto",
@@ -92,21 +93,6 @@ const $root = ($protobuf.roots["default"] || ($protobuf.roots["default"] = new $
                       }
                     }
                   },
-                  InstrumentationLibrary: {
-                    options: {
-                      deprecated: true
-                    },
-                    fields: {
-                      name: {
-                        type: "string",
-                        id: 1
-                      },
-                      version: {
-                        type: "string",
-                        id: 2
-                      }
-                    }
-                  },
                   InstrumentationScope: {
                     fields: {
                       name: {
@@ -116,6 +102,15 @@ const $root = ($protobuf.roots["default"] || ($protobuf.roots["default"] = new $
                       version: {
                         type: "string",
                         id: 2
+                      },
+                      attributes: {
+                        rule: "repeated",
+                        type: "KeyValue",
+                        id: 3
+                      },
+                      droppedAttributesCount: {
+                        type: "uint32",
+                        id: 4
                       }
                     }
                   }
@@ -127,6 +122,7 @@ const $root = ($protobuf.roots["default"] || ($protobuf.roots["default"] = new $
             nested: {
               v1: {
                 options: {
+                  csharp_namespace: "OpenTelemetry.Proto.Resource.V1",
                   java_multiple_files: true,
                   java_package: "io.opentelemetry.proto.resource.v1",
                   java_outer_classname: "ResourceProto",
@@ -154,6 +150,7 @@ const $root = ($protobuf.roots["default"] || ($protobuf.roots["default"] = new $
             nested: {
               v1: {
                 options: {
+                  csharp_namespace: "OpenTelemetry.Proto.Logs.V1",
                   java_multiple_files: true,
                   java_package: "io.opentelemetry.proto.logs.v1",
                   java_outer_classname: "LogsProto",
@@ -180,44 +177,22 @@ const $root = ($protobuf.roots["default"] || ($protobuf.roots["default"] = new $
                         type: "ScopeLogs",
                         id: 2
                       },
-                      instrumentationLibraryLogs: {
-                        rule: "repeated",
-                        type: "InstrumentationLibraryLogs",
-                        id: 1000,
-                        options: {
-                          deprecated: true
-                        }
-                      },
                       schemaUrl: {
                         type: "string",
                         id: 3
                       }
-                    }
+                    },
+                    reserved: [
+                      [
+                        1000,
+                        1000
+                      ]
+                    ]
                   },
                   ScopeLogs: {
                     fields: {
                       scope: {
                         type: "opentelemetry.proto.common.v1.InstrumentationScope",
-                        id: 1
-                      },
-                      logRecords: {
-                        rule: "repeated",
-                        type: "LogRecord",
-                        id: 2
-                      },
-                      schemaUrl: {
-                        type: "string",
-                        id: 3
-                      }
-                    }
-                  },
-                  InstrumentationLibraryLogs: {
-                    options: {
-                      deprecated: true
-                    },
-                    fields: {
-                      instrumentationLibrary: {
-                        type: "opentelemetry.proto.common.v1.InstrumentationLibrary",
                         id: 1
                       },
                       logRecords: {
