@@ -2,7 +2,7 @@
   <strong>
     <a href="https://quickdraw.splunk.com/redirect/?product=Observability&location=github.rum.get.started&version=current">Getting Started</a>
     &nbsp;&nbsp;&bull;&nbsp;&nbsp;
-    <a href="./CONTRIBUTING.md">Getting Involved</a>
+    <a href="https://github.com/signalfx/splunk-otel-js-browser/blob/main/CONTRIBUTING.md">Getting Involved</a>
   </strong>
 </p>
 

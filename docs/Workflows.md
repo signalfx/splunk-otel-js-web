@@ -17,6 +17,6 @@ Creating workflow spans is the same as creating custom spans with correct attrib
 
 ### Errors
 
-In order to make workflow span errorful use the same attributes as our [autoinstrumentation](./docs/Errors.md) does.
+In order to make workflow span errorful use the same attributes as our [autoinstrumentation](./Errors.md) does.
 
 <pre>import {trace} from '@opentelemetry/api'<br><br>const tracer = trace.getTracer('appModuleLoader');<br>const span = tracer.startSpan('test.module.load', {<br>  attributes: {<br>    <em>'workflow.id'</em>: 1,<br>    <em>'workflow.name'</em>: 'test.module.load',<br>    <em>'error'</em>: true,<br>    <em>'error.message'</em>: 'Custom workflow error message'<br>}<br>});<br><br>span.end();</pre>
