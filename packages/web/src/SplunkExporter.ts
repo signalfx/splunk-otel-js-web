@@ -189,7 +189,9 @@ export class SplunkExporter implements SpanExporter {
     const zero = performance.timeOrigin * 1000;
     if (span.tags['http.url'] && !(span.tags['http.url'] as string).startsWith(location.origin) && span.timestamp > zero && span.annotations) {
       span.annotations = span.annotations.filter(({ timestamp }) => {
-        return timestamp !== zero;
+        // Chrome has increased precision on timeOrigin but otel may round it
+        // Due to multiple roundings and truncs it can be less than timeOrigin
+        return timestamp > zero;
       });
     }
     return span;
