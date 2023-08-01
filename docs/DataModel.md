@@ -32,7 +32,7 @@ All of the data is currently sent in batches, containing modified Zipkin spans e
 
 |Name|Type|Description|
 |---|---|---|
-|`app`|`string`|Application name, as set in [configuration](docs/Configuration.md).|
+|`app`|`string`|Application name, as set in [configuration](./Configuration.md).|
 |`component`|`string`|Instrumentation name that produced this span, such as `document-load`.|
 |`location.href`|`string`|Value of [`location.href`](https://developer.mozilla.org/en-US/docs/Web/API/Location/href) at the moment of creating the span.|
 |`splunk.rumSessionId`|`string`|Session ID, captured from the \_splunk_rum_sid cookie.|

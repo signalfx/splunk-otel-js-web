@@ -8,7 +8,7 @@ SplunkRum.setGlobalAttributes(attributes?: Attributes): void;
 
 Update attributes that will be set on every new span. For example this can be used to [update user information on logging in](./IdentifyingUsers.md#providing-it-after-initialisation-using-api)
 
-* `attributes`: [Attributes](https://open-telemetry.github.io/opentelemetry-js-api/interfaces/attributes.html) - Object of attributes that will be set on every span. If undefined, all currently set global attributes will be deleted and no longer added to any new spans.
+* `attributes`: [Attributes](https://open-telemetry.github.io/opentelemetry-js/interfaces/_opentelemetry_api.Attributes.html) - Object of attributes that will be set on every span. If undefined, all currently set global attributes will be deleted and no longer added to any new spans.
 
 Returns nothing
 
@@ -39,7 +39,7 @@ Get current set global attributes
 
 No parameters
 
-Returns [Attributes](https://open-telemetry.github.io/opentelemetry-js-api/interfaces/attributes.html) object with attributes that are set on all new spans
+Returns [Attributes](https://open-telemetry.github.io/opentelemetry-js/interfaces/_opentelemetry_api.Attributes.html) object with attributes that are set on all new spans
 
 **Example:**
 
@@ -96,7 +96,7 @@ Events:
     * `sessionId`: string - New session ID
 * `'global-attributes-changed'` - Emitted when setGlobalAttributes is called
   * Payload:
-    * `attributes`: [Attributes](https://open-telemetry.github.io/opentelemetry-js-api/interfaces/attributes.html) - New global attributes
+    * `attributes`: [Attributes](https://open-telemetry.github.io/opentelemetry-js/interfaces/_opentelemetry_api.Attributes.html) - New global attributes
 
 **Example:**
 
