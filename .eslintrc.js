@@ -118,6 +118,7 @@ module.exports = {
         '@typescript-eslint/explicit-module-boundary-types': ['error', {
           allowArgumentsExplicitlyTypedAsAny: true, // temporarily till code is completely migrated
         }],
+        '@typescript-eslint/no-explicit-any': 'off',
       }
     },
     {

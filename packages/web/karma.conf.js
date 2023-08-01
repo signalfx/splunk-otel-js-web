@@ -19,13 +19,13 @@ const istanbulrollup = require('rollup-plugin-istanbul');
 const rollupPolyfills = require('rollup-plugin-polyfill-node');
 const typescript = require('@rollup/plugin-typescript');
 
-const {
-  nodeResolvePlugin, commonjsPlugin,
-} = require('../../rollup.shared');
-
 process.env.CHROME_BIN = require('puppeteer').executablePath();
 
-module.exports = function (config) {
+module.exports = async function (config) {
+  const {
+    nodeResolvePlugin, commonjsPlugin,
+  } = await import('../../rollup.shared.mjs');  
+
   config.set({
 
     // base path that will be used to resolve all patterns (eg. files, exclude)

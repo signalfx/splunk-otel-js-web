@@ -7,7 +7,7 @@ requests to ensure we have all the necessary information to effectively respond
 to your bug report or contribution.
 
 In addition to this document, review our [Code of Conduct](CODE_OF_CONDUCT.md).
-For any code of conduct questions or comments, send an email to oss@splunk.com.
+For any code of conduct questions or comments, send an email to <oss@splunk.com>.
 
 ## Reporting Bugs/Feature Requests
 

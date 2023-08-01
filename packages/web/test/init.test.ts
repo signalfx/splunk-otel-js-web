@@ -252,7 +252,7 @@ describe('test xhr', () => {
         const span = capturer.spans[capturer.spans.length-1];
         assert.strictEqual(span.name, 'HTTP GET');
         assert.strictEqual(span.attributes.component, 'xml-http-request');
-        assert.ok(span.attributes['http.response_content_length'] > 0);
+        assert.ok(span.attributes['http.response_content_length'] as number > 0);
         assert.strictEqual(span.attributes['link.spanId'], '0000000000000002');
         assert.strictEqual(span.attributes['http.url'], location.href);
         done();
