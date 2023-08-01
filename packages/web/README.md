@@ -2,7 +2,7 @@
   <strong>
     <a href="https://quickdraw.splunk.com/redirect/?product=Observability&location=github.rum.get.started&version=current">Getting Started</a>
     &nbsp;&nbsp;&bull;&nbsp;&nbsp;
-    <a href="./CONTRIBUTING.md">Getting Involved</a>
+    <a href="https://github.com/signalfx/splunk-otel-js-browser/blob/main/CONTRIBUTING.md">Getting Involved</a>
   </strong>
 </p>
 
@@ -51,7 +51,7 @@ The easiest way to get started is to use Splunk RUM distributed via CDN
 The method above is the recommendation to get started with Splunk RUM. This approach picks up the latest stable version of the Browser Agent distributed via CDN and loads the agent synchronously.
 
 If you don't yet have a backend where to send data to you can set `debug: true` and see the created spans in browser console.
-Please read [Installation.md](./docs/Installation.md) for more info on different installation options.
+Please read [Installation.md](https://github.com/signalfx/splunk-otel-js-browser/blob/main/docs/Installation.md) for more info on different installation options.
 
 ## Documentation
 
@@ -59,11 +59,11 @@ The official Splunk documentation for this page is [Instrument browser-based web
 
 ## Open Telemetry version
 
-Compatibility between the versions of this project and Open Telemetry is specified in [CHANGELOG.md](./CHANGELOG.md).
+Compatibility between the versions of this project and Open Telemetry is specified in [CHANGELOG.md](https://github.com/signalfx/splunk-otel-js-browser/blob/main/CHANGELOG.md).
 
 ## Building and contributing
 
-Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for instructions on building, running tests, and so forth.
+Please read [CONTRIBUTING.md](https://github.com/signalfx/splunk-otel-js-browser/blob/main/CONTRIBUTING.md) for instructions on building, running tests, and so forth.
 
 ## License
 
