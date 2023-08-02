@@ -4,6 +4,17 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## Unreleased
 
+## 0.16.2
+
+| Open Telemetry API | Core    | Instrumentations & Contrib |
+| ------------------ | ------- | -------------------------- |
+| ^1.4.1             | ^1.15.1 | ^0.41.1 & compatible       |
+
+* `@splunk/otel-web`
+  * Filter inaccurate CORS timings in case of more precise timeOrigin ([#624](https://github.com/signalfx/splunk-otel-js-web/pull/624))
+* `@splunk/otel-web-session-recorder`
+  * Updated protobufjs to v7.2.4 to avoid warnings about CVE-2023-36665 ([#615](https://github.com/signalfx/splunk-otel-js-web/pull/615))
+
 ## 0.16.1
 
 * Remove extranous time drift patches, preferring to use the ones released in otel ([#592](https://github.com/signalfx/splunk-otel-js-web/pull/592)) 
