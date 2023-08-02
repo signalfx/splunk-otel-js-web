@@ -4,7 +4,7 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## Unreleased
 
-## 0.16.2
+## 0.16.3 (& 0.16.2)
 
 | Open Telemetry API | Core    | Instrumentations & Contrib |
 | ------------------ | ------- | -------------------------- |
