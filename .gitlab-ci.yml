@@ -14,7 +14,7 @@ cache:
     - "./node_modules"
     - "./packages/*/node_modules"
     # puppeteer cache
-    - "~/.cache"
+    - "/home/circleci/.cache"
 
 stages:
   - setup
