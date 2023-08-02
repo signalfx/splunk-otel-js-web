@@ -72,6 +72,7 @@ build_artifacts:
 unit_test:
   stage: test
   script:
+    - npm ci --include=dev
     - npm run test:unit:ci
 
 oss-scan:
