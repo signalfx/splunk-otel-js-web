@@ -13,6 +13,8 @@ cache:
   paths:
     - "./node_modules"
     - "./packages/*/node_modules"
+    # puppeteer cache
+    - "~/.cache"
 
 stages:
   - setup
