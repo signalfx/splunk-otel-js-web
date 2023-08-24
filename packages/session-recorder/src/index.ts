@@ -39,6 +39,11 @@ export type SplunkRumRecorderConfig = RRWebOptions & {
   beaconUrl: string;
 
   /**
+   * The name of your organization’s realm. Automatically configures beaconUrl with correct URL
+   */
+  realm: string;
+
+  /**
    * RUM authorization token for data sending. Please make sure this is a token
    * with only RUM scope as it's visible to every user of your app
    **/
@@ -118,7 +123,7 @@ const SplunkRumRecorder = {
 
     migrateConfig(config);
 
-    const { apiToken, beaconEndpoint, debug, rumAccessToken, ...rrwebConf } = config;
+    const { apiToken, beaconEndpoint, debug, realm, rumAccessToken, ...rrwebConf } = config;
     tracer = trace.getTracer('splunk.rr-web', VERSION);
     const span = tracer.startSpan('record init');
 
@@ -129,6 +134,13 @@ const SplunkRumRecorder = {
     span.end();
 
     let exportUrl = beaconEndpoint;
+    if (realm) {
+      if (!exportUrl) {
+        exportUrl = `https://rum-ingest.${realm}.signalfx.com/v1/rumreplay`;
+      } else {
+        console.warn('Splunk Session Recorder: Realm value ignored (beaconEndpoint has been specified)');
+      }
+    }
     const headers = {};
     if (apiToken) {
       headers['X-SF-Token'] = apiToken;
