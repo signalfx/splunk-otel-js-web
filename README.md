@@ -26,32 +26,7 @@ Web](https://github.com/open-telemetry/opentelemetry-js)
 
 ## Getting Started
 
-The easiest way to get started is to use Splunk RUM distributed via CDN
-
-1. Include & initialize the Splunk RUM by copying the following to HEAD section for all the HTML files or templates in your application
-
-    ```html
-    <script src="https://cdn.signalfx.com/o11y-gdi-rum/latest/splunk-otel-web.js" crossorigin="anonymous"></script>
-    <script>
-      SplunkRum.init({
-          beaconEndpoint: 'https://rum-ingest.<REALM>.signalfx.com/v1/rum',
-          rumAccessToken: 'RUM access token',
-          applicationName: 'enter-your-application-name'
-        });
-    </script>
-    ```
-
-1. Modify the initialization parameters to specify:
-   - `beaconEndpoint` - the destination URL to which captured telemetry is sent to be ingested. Replace the `<REALM>` with the actual realm you are using (i.e. us0, us1).
-   - `rumAccessToken` - token authorizing the Agent to send the telemetry to the backend. You can find (or generate) the token [here](https://app.signalfx.com/o11y/#/organization/current?selectedKeyValue=sf_section:accesstokens).
-     Notice that RUM and APM auth tokens are different.
-   - `applicationName` - naming the application that will be monitored so it can be distinguished from other applications.
-1. Deploy the changes to your application and make sure that the application is being used.
-
-The method above is the recommendation to get started with Splunk RUM. This approach picks up the latest stable version of the Browser Agent distributed via CDN and loads the agent synchronously.
-
-If you don't yet have a backend where to send data to you can set `debug: true` and see the created spans in browser console.
-Please read [Installation.md](./docs/Installation.md) for more info on different installation options.
+For complete instructions for how to get started with the Splunk distribution of OpenTelemetry JavaScript for Web, see [Install the Browser RUM agent for Splunk RUM](https://quickdraw.splunk.com/redirect/?product=Observability&location=github.rum.get.started&version=current)
 
 ## Documentation
 
@@ -60,6 +35,10 @@ The official Splunk documentation for this page is [Instrument browser-based web
 ## Open Telemetry version
 
 Compatibility between the versions of this project and Open Telemetry is specified in [CHANGELOG.md](./CHANGELOG.md).
+
+## Troubleshooting
+
+For troubleshooting issues with the Splunk Distribution of OpenTelemetry JS for Web, see [Troubleshoot browser instrumentation for Splunk Observability Cloud](https://quickdraw.splunk.com/redirect/?product=Observability&version=current&location=web.rum.troubleshooting) in the official documentation.
 
 ## Building and contributing
 
