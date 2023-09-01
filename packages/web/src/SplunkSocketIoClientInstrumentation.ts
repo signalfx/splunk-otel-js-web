@@ -155,7 +155,7 @@ export class SplunkSocketIoClientInstrumentation extends InstrumentationBase {
             });
 
             try {
-              listener.call(this, args);
+              listener.apply(this, args);
             } catch (error) {
               if (error instanceof Error) {
                 span.recordException(error);
