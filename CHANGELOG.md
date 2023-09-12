@@ -4,6 +4,13 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## Unreleased
 
+## 0.16.4
+
+* `@splunk/otel-web`
+  * fix(socketio-instrumentation): use apply instead of call method when invoking the 'on' callback ([#652](https://github.com/signalfx/splunk-otel-js-web/pull/652))
+* `@splunk/otel-web-session-recorder`
+  * session recorder: add realm config option ([#646](https://github.com/signalfx/splunk-otel-js-web/pull/646))
+
 ## 0.16.3 (& 0.16.2)
 
 | Open Telemetry API | Core    | Instrumentations & Contrib |
