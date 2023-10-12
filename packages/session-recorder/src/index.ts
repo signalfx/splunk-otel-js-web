@@ -31,17 +31,17 @@ type RRWebOptions = Parameters<typeof record>[0];
 
 export type SplunkRumRecorderConfig = RRWebOptions & {
   /** Destination for the captured data */
-  beaconEndpoint: string;
+  beaconEndpoint?: string;
 
   /** Destination for the captured data 
    * @deprecated Use beaconEndpoint
    */
-  beaconUrl: string;
+  beaconUrl?: string;
 
   /**
    * The name of your organization’s realm. Automatically configures beaconUrl with correct URL
    */
-  realm: string;
+  realm?: string;
 
   /**
    * RUM authorization token for data sending. Please make sure this is a token
@@ -141,10 +141,17 @@ const SplunkRumRecorder = {
         console.warn('Splunk Session Recorder: Realm value ignored (beaconEndpoint has been specified)');
       }
     }
+
+    if (!exportUrl) {
+      console.error('Session recorder could not determine `exportUrl`, please ensure that `realm` or `beaconEndpoint` is specified and try again');
+      return;
+    }
+
     const headers = {};
     if (apiToken) {
       headers['X-SF-Token'] = apiToken;
     }
+
     if (rumAccessToken) {
       exportUrl += `?auth=${rumAccessToken}`;
     }

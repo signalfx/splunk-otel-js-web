@@ -33,7 +33,7 @@ import SplunkSessionRecorder from '@splunk/otel-web-session-recorder'
 
 // This must be called after initializing splunk rum
 SplunkSessionRecorder.init({
-  beaconEndpoint: 'https://rum-ingest.<realm>.signalfx.com/v1/rumreplay',
+  realm: '<us0|us1>',
   rumAccessToken: '<auth token>'
 });
 ```
