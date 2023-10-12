@@ -11,7 +11,7 @@ Splunk RUM data model represents the following logical entities:
 |Interaction|Reflects the action the user conducts within the user interface. Common interaction types include mouse clicks, taps on a touchscreen and keyboard events.|
 |User|A representation of the user interacting with the application. An user can be represented with the username, email address or a synthetic identifier. Synthetic representation is preferred in situations where PII regulations do not allow identifying the real user. By default, Splunk Browser Agent is not detecting the identity. Mapping a trace to the specific user is possible via manual instrumentation using the Browser Agent API.|
 
-The data model closely follows OpenTelemetry’s [semantic conventions](https://github.com/open-telemetry/opentelemetry-specification/tree/main/specification/trace/semantic_conventions). Deviations are kept minimal. 
+The data model closely follows OpenTelemetry’s [semantic conventions](https://github.com/open-telemetry/semantic-conventions/tree/main/docs). Deviations are kept minimal. 
 
 All of the data is currently sent in batches, containing modified Zipkin spans encoded as JSON objects. A single batch can contain one or more spans. Spans have universal properties and in addition every instrumentation can add their own properties. 
 
@@ -36,11 +36,11 @@ All of the data is currently sent in batches, containing modified Zipkin spans e
 |`component`|`string`|Instrumentation name that produced this span, such as `document-load`.|
 |`location.href`|`string`|Value of [`location.href`](https://developer.mozilla.org/en-US/docs/Web/API/Location/href) at the moment of creating the span.|
 |`splunk.rumSessionId`|`string`|Session ID, captured from the \_splunk_rum_sid cookie.|
-|`splunk.rumVersion` [`telemetry.sdk.version`](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/semantic_conventions/README.md#telemetry-sdk)|`string`|Version of the Splunk RUM SDK instrumenting the application.|
+|`splunk.rumVersion` [`telemetry.sdk.version`](https://github.com/open-telemetry/semantic-conventions/tree/main/docs/resource#telemetry-sdk)|`string`|Version of the Splunk RUM SDK instrumenting the application.|
 |`splunk.scriptInstance`|`string`|64bit id. Every instance of splunk-otel-web.js gets assigned its own id eg. to distinguish between different open tabs within the same browser window sharing the same session. This is not persisted so every time page is reloaded it will have new value.|
 |`otel.status_code`|`string`|["OK" or "ERROR", if set](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/sdk_exporters/zipkin.md#status)|
-|[`telemetry.sdk.language`](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/semantic_conventions/README.md#telemetry-sdk)|`string`|Always `"webjs"`|
-|[`telemetry.sdk.name`](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/semantic_conventions/README.md#telemetry-sdk)|`string`|Always `"@splunk/otel-web"`|
+|[`telemetry.sdk.language`](https://github.com/open-telemetry/semantic-conventions/tree/main/docs/resource#telemetry-sdk)|`string`|Always `"webjs"`|
+|[`telemetry.sdk.name`](https://github.com/open-telemetry/semantic-conventions/tree/main/docs/resource#telemetry-sdk)|`string`|Always `"@splunk/otel-web"`|
 
 ## HTTP request timings annotations
 

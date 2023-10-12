@@ -4,7 +4,7 @@
 
 RUM does not do anything automatically to link traces to the user visiting the site. However it can be useful to use user information to filter or debug traces. This information can be added using global attributes - attributes that get attached to every span.
 
-[OpenTelemetry Specification](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/span-general.md#general-identity-attributes) provides some common attributes for identifying attributes. For RUM use we recommend: 
+[OpenTelemetry Specification](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/attributes.md#general-identity-attributes) provides some common attributes for identifying attributes. For RUM use we recommend: 
 
 | Attribute | Description | Examples |
 |---|---|---|

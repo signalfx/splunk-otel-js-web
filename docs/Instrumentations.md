@@ -68,18 +68,18 @@ The annotations captured by the `resourceFetch` instrumentation are described in
 
 This instrumentation prepends the span `name` with HTTP + HTTP method name (eg. `GET`, `POST`). If the `XHF/Fetch` maps to a backend providing a `server-timing` header in the response, the link with the backend trace is also created by this instrumentation. 
 
-All the tags captured by the instrumentation and exposed in next table follow OpenTelemetry [semantic conventions](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md#common-attributes): 
+All the tags captured by the instrumentation and exposed in next table follow OpenTelemetry [semantic conventions](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/http/http-spans.md#common-attributes): 
 
 |Name| Type and Description|
 |---|---|
-`http.method`|As specified in OpenTelemetry [semantic conventions](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md#common-attributes)|
-`http.response_content_length`|As specified in OpenTelemetry [semantic conventions](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md#common-attributes)|
-`http.host`|As specified in OpenTelemetry [semantic conventions](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md#common-attributes)|
-`http.scheme`|As specified in OpenTelemetry [semantic conventions](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md#common-attributes)|
-`http.status_code`|As specified in OpenTelemetry [semantic conventions](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md#common-attributes)|
-`http.status_text`|As specified in OpenTelemetry [semantic conventions](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md#common-attributes)|
-`http.user_agent`|As specified in OpenTelemetry [semantic conventions](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md#common-attributes)|
-`http.url`|As specified in OpenTelemetry [semantic conventions](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md#common-attributes)|
+`http.method`|As specified in OpenTelemetry [semantic conventions](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/http/http-spans.md#common-attributes)|
+`http.response_content_length`|As specified in OpenTelemetry [semantic conventions](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/http/http-spans.md#common-attributes)|
+`http.host`|As specified in OpenTelemetry [semantic conventions](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/http/http-spans.md#common-attributes)|
+`http.scheme`|As specified in OpenTelemetry [semantic conventions](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/http/http-spans.md#common-attributes)|
+`http.status_code`|As specified in OpenTelemetry [semantic conventions](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/http/http-spans.md#common-attributes)|
+`http.status_text`|As specified in OpenTelemetry [semantic conventions](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/http/http-spans.md#common-attributes)|
+`http.user_agent`|As specified in OpenTelemetry [semantic conventions](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/http/http-spans.md#common-attributes)|
+`http.url`|As specified in OpenTelemetry [semantic conventions](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/http/http-spans.md#common-attributes)|
 
 In addition, the `XHR/Fetch` instrumentation annotates the span with timestamps representing the time when the following XHR events fired:
 
@@ -214,7 +214,7 @@ Captures information from `send` and `onmessage` events.
 
 ## Instrumentation: Socket.io client
 
-This instrumentation generates spans from messages sent using the [socket.io](https://socket.io/) client library. Generated spans conform to the [OpenTelemetry specifications on messaging systems](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/messaging.md). This instrumentation is disabled by default and versions from v1 to v4 of socket.io-client are supported.
+This instrumentation generates spans from messages sent using the [socket.io](https://socket.io/) client library. Generated spans conform to the [OpenTelemetry specifications on messaging systems](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/messaging/messaging-spans.md). This instrumentation is disabled by default and versions from v1 to v4 of socket.io-client are supported.
 
 ### Setup
 
