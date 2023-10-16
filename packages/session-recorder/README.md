@@ -33,7 +33,7 @@ import SplunkSessionRecorder from '@splunk/otel-web-session-recorder'
 
 // This must be called after initializing splunk rum
 SplunkSessionRecorder.init({
-  realm: '<us0|us1>',
+  realm: '<realm>',
   rumAccessToken: '<auth token>'
 });
 ```
