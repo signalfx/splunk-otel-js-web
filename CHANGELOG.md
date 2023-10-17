@@ -4,6 +4,15 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## Unreleased
 
+## 0.16.5
+
+| Open Telemetry API | Core    | Instrumentations & Contrib |
+| ------------------ | ------- | -------------------------- |
+| ^1.6.0             | ^1.17.0 | ^0.44.1 & compatible       |
+
+* `@splunk/otel-web-session-recorder`
+  * Update SessionRecorder type-definitions to match their use ([#684](https://github.com/signalfx/splunk-otel-js-web/pull/684))
+
 ## 0.16.4
 
 * `@splunk/otel-web`
