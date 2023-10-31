@@ -42,7 +42,7 @@ In order to enable or disable specific instrumentations in the Browser Agent, yo
 |`instrumentations.socketio`|`false`|Enables capturing [socket.io messages](Instrumentations.md#instrumentation-socketio-client).|
 |`instrumentations.postload`|`true`|Enables capturing [resources loaded after load event](Instrumentations.md#instrumentation-post-document-load).|
 |`instrumentations.visibility`|`false`|Enables capturing [visibility events](Instrumentations.md#instrumentation-visibility).|
-|`instrumentations.websockets`|`false`|Enables capturing [websockets](Instrumentations.md#instrumentation-websockets).|
+|`instrumentations.websocket`|`false`|Enables capturing [websockets](Instrumentations.md#instrumentation-websockets).|
 |`instrumentations.webvitals`|`true`|Enables capturing [Web Vitals](Instrumentations.md#instrumentation-web-vitals) metrics.|
 |`instrumentations.xhr`|`true`|Enables capturing [XHR requests](Instrumentations.md#instrumentation-xhrfetch) requests.|
 
@@ -88,7 +88,7 @@ SplunkRum.init({
       ],
     },
     longtask: false,
-    websockets: true,
+    websocket: true,
   },
 });
 ```
