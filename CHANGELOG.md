@@ -4,6 +4,11 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## Unreleased
 
+## 0.17.0-beta.0
+
+* `@splunk/otel-web`
+  * remove zone.js from user-interaction instrumentation ([#719](https://github.com/signalfx/splunk-otel-js-web/pull/719)) 
+
 ## 0.16.5
 
 | Open Telemetry API | Core    | Instrumentations & Contrib |
