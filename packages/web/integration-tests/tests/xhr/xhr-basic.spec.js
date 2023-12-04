@@ -42,7 +42,9 @@ module.exports = {
     })) {
       await browser.timesMakeSense(xhrSpan.annotations, 'domainLookupStart', 'domainLookupEnd');
       await browser.timesMakeSense(xhrSpan.annotations, 'connectStart', 'connectEnd');
-      await browser.timesMakeSense(xhrSpan.annotations, 'secureConnectionStart', 'connectEnd');
+      if (browser.globals.enableHttps) {
+        await browser.timesMakeSense(xhrSpan.annotations, 'secureConnectionStart', 'connectEnd');
+      }
       await browser.timesMakeSense(xhrSpan.annotations, 'requestStart', 'responseStart');
       await browser.timesMakeSense(xhrSpan.annotations, 'responseStart', 'responseEnd');
       await browser.timesMakeSense(xhrSpan.annotations, 'fetchStart', 'responseEnd');

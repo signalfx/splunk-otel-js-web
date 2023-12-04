@@ -37,7 +37,9 @@ module.exports = {
     if (browser.options.desiredCapabilities.browserName !== 'Safari' && browser.options.desiredCapabilities.browser_version !== '10.1') {
       await browser.timesMakeSense(fetchSpan.annotations, 'domainLookupStart', 'domainLookupEnd');
       await browser.timesMakeSense(fetchSpan.annotations, 'connectStart', 'connectEnd');
-      await browser.timesMakeSense(fetchSpan.annotations, 'secureConnectionStart', 'connectEnd');
+      if (browser.globals.enableHttps) {
+        await browser.timesMakeSense(fetchSpan.annotations, 'secureConnectionStart', 'connectEnd');
+      }
       await browser.timesMakeSense(fetchSpan.annotations, 'requestStart', 'responseStart');
       await browser.timesMakeSense(fetchSpan.annotations, 'responseStart', 'responseEnd');
       await browser.timesMakeSense(fetchSpan.annotations, 'fetchStart', 'responseEnd');
