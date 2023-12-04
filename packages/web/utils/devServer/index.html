@@ -21,7 +21,7 @@
   <script src="/dist/artifacts/splunk-otel-web.js"></script>
   <script>
     window.SplunkRum && window.SplunkRum.init({
-      beaconEndpoint: '/api/v2/spans',
+      beaconEndpoint: 'http://localhost:9412',
       applicationName: 'splunk-otel-js-dummy-app',
       debug: true
     });
