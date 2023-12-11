@@ -23,12 +23,12 @@
     "require": "./dist/cjs/index.js"
   },
   "files": [
-    "dist/cjs/*.js",
-    "dist/cjs/*.js.map",
-    "dist/cjs/*.d.ts",
-    "dist/esm/*.js",
-    "dist/esm/*.js.map",
-    "dist/esm/*.d.ts"
+    "dist/cjs/**/*.js",
+    "dist/cjs/**/*.js.map",
+    "dist/cjs/**/*.d.ts",
+    "dist/esm/**/*.js",
+    "dist/esm/**/*.js.map",
+    "dist/esm/**/*.d.ts"
   ],
   "dependencies": {
     "@babel/runtime": "~7.22.6",
