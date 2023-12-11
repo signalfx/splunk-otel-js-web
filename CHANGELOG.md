@@ -4,6 +4,10 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## Unreleased
 
+## 0.17.0-beta.1
+
+* Fix folders being ignored while packing for npm ([#726](https://github.com/signalfx/splunk-otel-js-web/pull/726))
+
 ## 0.17.0-beta.0
 
 * `@splunk/otel-web`
