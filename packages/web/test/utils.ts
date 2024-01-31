@@ -37,7 +37,7 @@ export function buildInMemorySplunkExporter(): {
   } {
   const spans: ZipkinSpan[] = [];
   const exporter = new SplunkZipkinExporter({
-    beaconUrl: null,
+    url: '',
     beaconSender: null,
     xhrSender: (_, data) => {
       if (typeof data === 'string') {

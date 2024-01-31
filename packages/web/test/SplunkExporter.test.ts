@@ -20,6 +20,8 @@ import { expect } from 'chai';
 import * as api from '@opentelemetry/api';
 import { timeInputToHrTime } from '@opentelemetry/core';
 import { SplunkZipkinExporter } from '../src/exporters/zipkin';
+import { RateLimitProcessor } from '../src/exporters/rate-limit';
+import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 
 function buildDummySpan({
   name = '<name>',
@@ -39,7 +41,7 @@ function buildDummySpan({
     status: { code: api.SpanStatusCode.UNSET },
     resource: { attributes: {} },
     events: [] as ({time: api.HrTime; name: string})[],
-  };
+  } as ReadableSpan;
 }
 
 describe('SplunkZipkinExporter', () => {
@@ -100,43 +102,6 @@ describe('SplunkZipkinExporter', () => {
     const sentSpan = JSON.parse(xhrSenderMock.args[0][1])[0];
     expect(sentSpan.name).to.equal('<name>');
     expect(sentSpan.id).to.equal('0001');
-  });
-
-  it('limits spans sent', () => {
-    exporter = new SplunkZipkinExporter({
-      url: 'https://localhost',
-      xhrSender: xhrSenderMock,
-    });
-
-    const dummySpan = buildDummySpan();
-    const spans: (typeof dummySpan)[] = [];
-    for (let i = 0; i < 110; i++) { spans.push(dummySpan); }
-    exporter.export(spans, () => {});
-
-    const sentSpans = JSON.parse(xhrSenderMock.getCall(0).args[1]);
-    expect(sentSpans).to.have.lengthOf(100);
-  });
-
-  it('still exports parent spans', () => {
-    exporter = new SplunkZipkinExporter({
-      url: 'https://localhost',
-      xhrSender: xhrSenderMock,
-    });
-
-    const dummySpan = buildDummySpan();
-    const spans: (typeof dummySpan)[] = [];
-    for (let i = 0; i < 110; i++) { spans.push(dummySpan); }
-    const parentSpan = buildDummySpan();
-    parentSpan.spanContext = () => ({
-      traceId: '0000',
-      spanId: '0002',
-    });
-    parentSpan.parentSpanId = undefined;
-    spans.push(parentSpan);
-    exporter.export(spans, () => {});
-
-    const sentSpans = JSON.parse(xhrSenderMock.getCall(0).args[1]);
-    expect(sentSpans).to.have.lengthOf(101);
   });
 
   it('truncates long values', () => {
@@ -222,5 +187,50 @@ describe('SplunkZipkinExporter', () => {
       key2: 'value 2',
       key3: 'null'
     });
+  });
+});
+
+describe('Rate Limiter', () => {
+  it('limits spans sent', () => {
+    const allowedSpans: ReadableSpan[] = [];
+    const rateLimiter = new RateLimitProcessor({
+      onStart() {},
+      onEnd(span) {
+        allowedSpans.push(span);
+      },
+      forceFlush() { return Promise.resolve(); },
+      shutdown() { return Promise.resolve(); }
+    });
+
+    const dummySpan = buildDummySpan();
+    for (let i = 0; i < 110; i++) { rateLimiter.onEnd(dummySpan); }
+
+    expect(allowedSpans).to.have.lengthOf(100);
+  });
+
+  it('still exports parent spans', () => {
+    const allowedSpans: ReadableSpan[] = [];
+    const rateLimiter = new RateLimitProcessor({
+      onStart() {},
+      onEnd(span) {
+        allowedSpans.push(span);
+      },
+      forceFlush() { return Promise.resolve(); },
+      shutdown() { return Promise.resolve(); }
+    });
+
+    const dummySpan = buildDummySpan();
+    for (let i = 0; i < 110; i++) { rateLimiter.onEnd(dummySpan); }
+    const parentSpan = buildDummySpan();
+    // @ts-expect-error read-only
+    parentSpan.spanContext = () => ({
+      traceId: '0000',
+      spanId: '0002',
+    });
+    // @ts-expect-error read-only
+    parentSpan.parentSpanId = undefined;
+    rateLimiter.onEnd(parentSpan);
+
+    expect(allowedSpans).to.have.lengthOf(101);
   });
 });
