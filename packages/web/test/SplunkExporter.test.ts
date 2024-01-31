@@ -19,7 +19,7 @@ import { expect } from 'chai';
 
 import * as api from '@opentelemetry/api';
 import { timeInputToHrTime } from '@opentelemetry/core';
-import { SplunkExporter } from '../src/SplunkExporter';
+import { SplunkZipkinExporter } from '../src/exporters/zipkin';
 
 function buildDummySpan({
   name = '<name>',
@@ -42,7 +42,7 @@ function buildDummySpan({
   };
 }
 
-describe('SplunkExporter', () => {
+describe('SplunkZipkinExporter', () => {
   let beaconSenderMock;
   let xhrSenderMock;
   let exporter;
@@ -58,8 +58,8 @@ describe('SplunkExporter', () => {
   });
 
   it('uses Beacon API if in background', () => {
-    exporter = new SplunkExporter({
-      beaconUrl: 'https://domain1',
+    exporter = new SplunkZipkinExporter({
+      url: 'https://domain1',
       xhrSender: xhrSenderMock,
     });
 
@@ -86,8 +86,8 @@ describe('SplunkExporter', () => {
   });
 
   it('uses XHR if Beacon API is unavailable', () => {
-    exporter = new SplunkExporter({
-      beaconUrl: 'https://domain2',
+    exporter = new SplunkZipkinExporter({
+      url: 'https://domain2',
       beaconSender: null,
       xhrSender: xhrSenderMock,
     });
@@ -103,8 +103,8 @@ describe('SplunkExporter', () => {
   });
 
   it('limits spans sent', () => {
-    exporter = new SplunkExporter({
-      beaconUrl: 'https://localhost',
+    exporter = new SplunkZipkinExporter({
+      url: 'https://localhost',
       xhrSender: xhrSenderMock,
     });
 
@@ -118,8 +118,8 @@ describe('SplunkExporter', () => {
   });
 
   it('still exports parent spans', () => {
-    exporter = new SplunkExporter({
-      beaconUrl: 'https://localhost',
+    exporter = new SplunkZipkinExporter({
+      url: 'https://localhost',
       xhrSender: xhrSenderMock,
     });
 
@@ -140,8 +140,8 @@ describe('SplunkExporter', () => {
   });
 
   it('truncates long values', () => {
-    exporter = new SplunkExporter({
-      beaconUrl: 'https://localhost',
+    exporter = new SplunkZipkinExporter({
+      url: 'https://localhost',
       xhrSender: xhrSenderMock,
     });
 
@@ -161,8 +161,8 @@ describe('SplunkExporter', () => {
   });
 
   it('filters out missing cors timings', () => {
-    exporter = new SplunkExporter({
-      beaconUrl: 'https://localhost',
+    exporter = new SplunkZipkinExporter({
+      url: 'https://localhost',
       xhrSender: xhrSenderMock,
     });
 
@@ -195,8 +195,8 @@ describe('SplunkExporter', () => {
   });
 
   it('allows hooking into serialization', () => {
-    exporter = new SplunkExporter({
-      beaconUrl: 'https://localhost',
+    exporter = new SplunkZipkinExporter({
+      url: 'https://localhost',
       xhrSender: xhrSenderMock,
       onAttributesSerializing: (attributes) => ({
         ...attributes,
