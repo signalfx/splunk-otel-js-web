@@ -38,7 +38,8 @@ import {
   DEFAULT_AUTO_INSTRUMENTED_EVENT_NAMES,
   UserInteractionEventsConfig,
 } from './SplunkUserInteractionInstrumentation';
-import { SplunkExporter, SplunkExporterConfig } from './SplunkExporter';
+import { SplunkExporterConfig } from './exporters/common';
+import { SplunkZipkinExporter } from './exporters/zipkin';
 import { ERROR_INSTRUMENTATION_NAME, SplunkErrorInstrumentation } from './SplunkErrorInstrumentation';
 import { generateId, getPluginConfig } from './utils';
 import { getRumSessionId, initSessionTracking, SessionIdType } from './session';
@@ -67,8 +68,10 @@ import { getSyntheticsRunId, SYNTHETICS_RUN_ID_ATTRIBUTE } from './synthetics';
 import { SplunkSpanAttributesProcessor } from './SplunkSpanAttributesProcessor';
 import { SessionBasedSampler } from './SessionBasedSampler';
 import { SocketIoClientInstrumentationConfig, SplunkSocketIoClientInstrumentation } from './SplunkSocketIoClientInstrumentation';
+import { SplunkOTLPTraceExporter } from './exporters/otlp';
 
-export * from './SplunkExporter';
+export { SplunkExporterConfig } from './exporters/common';
+export { SplunkZipkinExporter } from './exporters/zipkin';
 export * from './SplunkWebTracerProvider';
 export * from './SessionBasedSampler';
 
@@ -93,6 +96,11 @@ export interface SplunkOtelWebExporterOptions {
    * One potential use case of this method is to remove PII from the attributes.
    */
   onAttributesSerializing?: (attributes: Attributes, span: ReadableSpan) => Attributes;
+
+  /**
+   * Switch from zipkin to otlp for exporting
+   */
+  otlp?: boolean;
 }
 
 export interface SplunkOtelWebConfig {
@@ -185,7 +193,7 @@ interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
   bufferTimeout?: number;
 
   exporter: SplunkOtelWebExporterOptions & {
-    factory: (config: SplunkExporterConfig) => SpanExporter;
+    factory: (config: SplunkExporterConfig & {otlp?: boolean}) => SpanExporter;
   };
 
   instrumentations: SplunkOtelWebOptionsInstrumentations;
@@ -202,7 +210,12 @@ const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
   bufferSize: 50, // spans, tradeoff between batching and hitting sendBeacon invididual limits
   instrumentations: {},
   exporter: {
-    factory: (options) => new SplunkExporter(options),
+    factory: (options) => {
+      if (options.otlp) {
+        return new SplunkOTLPTraceExporter(options);
+      }
+      return new SplunkZipkinExporter(options);
+    },
   },
   spanProcessor: {
     factory: (exporter, config) => new BatchSpanProcessor(exporter, config),
@@ -250,9 +263,10 @@ export const INSTRUMENTATIONS_ALL_DISABLED: SplunkOtelWebOptionsInstrumentations
   );
 
 function buildExporter(options: SplunkOtelWebConfigInternal) {
-  const beaconUrl = options.beaconEndpoint + (options.rumAccessToken ? '?auth='+options.rumAccessToken : '');
+  const url = options.beaconEndpoint + (options.rumAccessToken ? '?auth='+options.rumAccessToken : '');
   return options.exporter.factory({
-    beaconUrl,
+    url,
+    otlp: options.exporter.otlp,
     onAttributesSerializing: options.exporter.onAttributesSerializing,
   });
 }
