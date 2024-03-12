@@ -518,6 +518,7 @@ export const SplunkRum: SplunkOtelWebType = {
     delete this.provider;
     eventTarget = undefined;
     diag.disable();
+    registerGlobal('splunk.rum', undefined, true);
 
     inited = false;
   },
