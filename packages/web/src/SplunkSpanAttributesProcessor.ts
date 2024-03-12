@@ -16,7 +16,7 @@ limitations under the License.
 
 import { Attributes } from '@opentelemetry/api';
 import { Span, SpanProcessor } from '@opentelemetry/sdk-trace-base';
-import { getRumSessionId } from './session.js';
+import { getRumSessionId } from './session';
 
 export class SplunkSpanAttributesProcessor implements SpanProcessor {
   private readonly _globalAttributes: Attributes;
