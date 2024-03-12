@@ -44,7 +44,7 @@ export class RateLimitProcessor implements SpanProcessor {
     }
     const component = (span.attributes?.component ?? 'unknown').toString();
     if (!this._spanCounts.has(component)) {
-      this._spanCounts.set(component, -1);
+      this._spanCounts.set(component, 0);
     }
     const counter = (this._spanCounts.get(component) || 0) + 1;
     this._spanCounts.set(component, counter);
@@ -54,7 +54,7 @@ export class RateLimitProcessor implements SpanProcessor {
       this._parents.delete(spanId);
       return true;
     }
-    return counter < MAX_SPANS_PER_PERIOD_PER_COMPONENT;
+    return counter <= MAX_SPANS_PER_PERIOD_PER_COMPONENT;
   }
 
   onStart(span: Span, parentContext: Context): void {
