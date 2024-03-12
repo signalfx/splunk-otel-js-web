@@ -41,7 +41,7 @@ import {
 import { SplunkExporterConfig } from './exporters/common';
 import { SplunkZipkinExporter } from './exporters/zipkin';
 import { ERROR_INSTRUMENTATION_NAME, SplunkErrorInstrumentation } from './SplunkErrorInstrumentation';
-import { generateId, getPluginConfig } from './utils';
+import { generateId, getPluginConfig, registerGlobal } from './utils';
 import { getRumSessionId, initSessionTracking, SessionIdType } from './session';
 import { SplunkWebSocketInstrumentation } from './SplunkWebSocketInstrumentation';
 import { initWebVitals } from './webvitals';
@@ -272,6 +272,8 @@ function buildExporter(options: SplunkOtelWebConfigInternal) {
 }
 
 export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
+  readonly resource?: Resource;
+
   deinit: () => void;
 
   error: (...args: Array<any>) => void;
@@ -423,18 +425,11 @@ export const SplunkRum: SplunkOtelWebType = {
     if (syntheticsRunId) {
       resourceAttrs[SYNTHETICS_RUN_ID_ATTRIBUTE] = syntheticsRunId;
     }
+    this.resource = new Resource(resourceAttrs);
 
     const provider = new SplunkWebTracerProvider({
       ...processedOptions.tracer,
-      resource: new Resource(resourceAttrs),
-    });
-
-    Object.defineProperty(provider.resource.attributes, 'splunk.rumSessionId', {
-      get() {
-        return getRumSessionId();
-      },
-      configurable: true,
-      enumerable: true,
+      resource: this.resource,
     });
 
     const instrumentations = INSTRUMENTATIONS.map(({ Instrument, confKey, disable }) => {
@@ -504,6 +499,7 @@ export const SplunkRum: SplunkOtelWebType = {
     }
 
     inited = true;
+    registerGlobal('splunk.rum', this);
     diag.info('SplunkRum.init() complete');
   },
 

@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Resource } from '@opentelemetry/resources';
 import { gzipSync } from 'fflate';
 import type { Root } from 'protobufjs';
 import type { JsonArray, JsonObject, JsonValue } from 'type-fest';
@@ -26,7 +25,7 @@ import { VERSION } from './version.js';
 interface OTLPLogExporterConfig {
   headers?: Record<string, string>;
   beaconUrl: string;
-  resource: Resource;
+  getResourceAttributes: () => JsonObject;
   debug?: boolean;
 }
 
@@ -98,7 +97,7 @@ export default class OTLPLogExporter {
     return {
       resourceLogs: [{
         resource: {
-          attributes: convertToAnyValue(this.config.resource?.attributes || {}).kvlistValue.values,
+          attributes: convertToAnyValue(this.config.getResourceAttributes() || {}).kvlistValue!.values,
         },
         scopeLogs: [{
           scope: { name: 'splunk.rr-web', version: VERSION },
