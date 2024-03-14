@@ -20,31 +20,13 @@ import {
   defaultStatusErrorTagName,
 } from '@opentelemetry/exporter-zipkin/build/src/transform.js';
 import { ExportResult, ExportResultCode } from '@opentelemetry/core';
-import { limitLen } from './utils';
-import { SpanAttributes, SpanKind } from '@opentelemetry/api';
+import { SpanKind } from '@opentelemetry/api';
 import { ReadableSpan, SpanExporter } from '@opentelemetry/sdk-trace-base';
+import { limitLen } from '../utils';
+import { NOOP_ATTRIBUTES_TRANSFORMER, NATIVE_XHR_SENDER, NATIVE_BEACON_SENDER, SplunkExporterConfig } from './common';
 
 const MAX_VALUE_LIMIT = 4096;
-const SPAN_RATE_LIMIT_PERIOD = 30000; // millis, sweep to clear out span counts
-const MAX_SPANS_PER_PERIOD_PER_COMPONENT = 100;
 const SERVICE_NAME = 'browser';
-
-export interface SplunkExporterConfig {
-  beaconUrl: string;
-  onAttributesSerializing?: (attributes: SpanAttributes, span: ReadableSpan) => SpanAttributes,
-  xhrSender?: (url: string, data) => void,
-  beaconSender?: (url: string, data: BodyInit) => void,
-}
-
-export const NOOP_ATTRIBUTES_TRANSFORMER: SplunkExporterConfig['onAttributesSerializing'] = (attributes) => attributes;
-export const NATIVE_XHR_SENDER: SplunkExporterConfig['xhrSender'] = (url: string, data) => {
-  const xhr = new XMLHttpRequest();
-  xhr.open('POST', url);
-  xhr.setRequestHeader('Accept', '*/*');
-  xhr.setRequestHeader('Content-Type', 'text/plain;charset=UTF-8');
-  xhr.send(data);
-};
-export const NATIVE_BEACON_SENDER: SplunkExporterConfig['beaconSender'] = typeof navigator !== 'undefined' && navigator.sendBeacon ? (url, data) => navigator.sendBeacon(url, data) : undefined;
 
 // TODO: upstream proper exports from ZipkinExporter
 export interface ZipkinAnnotation {
@@ -83,68 +65,44 @@ export interface ZipkinSpan {
 /**
  * SplunkExporter is based on Zipkin V2. It includes Splunk-specific modifications.
  */
-export class SplunkExporter implements SpanExporter {
+export class SplunkZipkinExporter implements SpanExporter {
   // TODO: a test which relies on beaconUrl needs to be fixed first
   public readonly beaconUrl: string;
   private readonly _onAttributesSerializing: SplunkExporterConfig['onAttributesSerializing'];
   private readonly _xhrSender: SplunkExporterConfig['xhrSender'];
   private readonly _beaconSender: SplunkExporterConfig['beaconSender'];
-  private readonly _spanCounts = new Map<string, number>();
-  private readonly _parents = new Map<string, boolean>();
-  private readonly _limiterHandle: number;
 
   constructor({
-    beaconUrl,
+    url,
     onAttributesSerializing = NOOP_ATTRIBUTES_TRANSFORMER,
     xhrSender = NATIVE_XHR_SENDER,
     beaconSender = NATIVE_BEACON_SENDER,
   }: SplunkExporterConfig) {
-    this.beaconUrl = beaconUrl;
+    this.beaconUrl = url;
     this._onAttributesSerializing = onAttributesSerializing;
     this._xhrSender = xhrSender;
     this._beaconSender = beaconSender;
-    this._limiterHandle = window.setInterval(() => {
-      this._spanCounts.clear();
-    }, SPAN_RATE_LIMIT_PERIOD);
   }
 
   export(
     spans: ReadableSpan[],
     resultCallback: (result: ExportResult) => void
   ): void {
-    spans = spans.filter(span => this._filter(span));
     const zspans = spans.map(span => this._mapToZipkinSpan(span));
     const zJson = JSON.stringify(zspans);
     if (document.hidden && this._beaconSender && zJson.length <= 64000) {
       this._beaconSender(this.beaconUrl, zJson);
     } else {
-      this._xhrSender(this.beaconUrl, zJson);
+      this._xhrSender(this.beaconUrl, zJson, {
+        Accept: '*/*',
+        'Content-Type': 'text/plain;charset=UTF-8',
+      });
     }
     resultCallback({ code: ExportResultCode.SUCCESS });
   }
 
   shutdown(): Promise<void> {
-    clearInterval(this._limiterHandle);
     return Promise.resolve();
-  }
-
-  private _filter(span: ReadableSpan) {
-    if (span.parentSpanId) {
-      this._parents.set(span.parentSpanId, true);
-    }
-    const component = (span.attributes?.component ?? 'unknown').toString();
-    if (!this._spanCounts.has(component)) {
-      this._spanCounts.set(component, -1);
-    }
-    const counter = this._spanCounts.get(component) + 1;
-    this._spanCounts.set(component, counter);
-
-    const { spanId } = span.spanContext();
-    if (this._parents.has(spanId)) {
-      this._parents.delete(spanId);
-      return true;
-    }
-    return counter < MAX_SPANS_PER_PERIOD_PER_COMPONENT;
   }
 
   private _mapToZipkinSpan(span: ReadableSpan): ZipkinSpan {

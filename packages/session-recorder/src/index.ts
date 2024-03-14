@@ -19,9 +19,10 @@ import { record } from 'rrweb';
 import OTLPLogExporter from './OTLPLogExporter';
 import { BatchLogProcessor, convert } from './BatchLogProcessor';
 import { VERSION } from './version';
+import { getGlobal } from './utils';
 
 import type { Resource } from '@opentelemetry/resources';
-
+import type { SplunkOtelWebType } from '@splunk/otel-web';
 
 interface BasicTracerProvider extends TracerProvider {
   readonly resource: Resource;
@@ -110,16 +111,18 @@ const SplunkRumRecorder = {
       return;
     }
 
+    const SplunkRum = getGlobal<SplunkOtelWebType>('splunk.rum');
+
     let tracerProvider: BasicTracerProvider | ProxyTracerProvider = trace.getTracerProvider() as BasicTracerProvider;
     if (tracerProvider && 'getDelegate' in tracerProvider) {
       tracerProvider = (tracerProvider as unknown as ProxyTracerProvider).getDelegate() as BasicTracerProvider;
     }
-    if (!(tracerProvider?.resource)) {
-      console.error('Splunk OTEL Web must be inited before recorder.');
+    if (!SplunkRum || !SplunkRum.resource) {
+      console.error('Splunk OTEL Web must be inited before session recorder.');
       return;
     }
 
-    const resource = tracerProvider.resource;
+    const resource = SplunkRum.resource;
 
     migrateConfig(config);
 
@@ -156,10 +159,20 @@ const SplunkRumRecorder = {
       exportUrl += `?auth=${rumAccessToken}`;
     }
 
-    const exporter = new OTLPLogExporter({ beaconUrl: exportUrl, debug, headers, resource });
+    const exporter = new OTLPLogExporter({
+      beaconUrl: exportUrl,
+      debug,
+      headers, 
+      getResourceAttributes() {
+        return {
+          ...resource.attributes,
+          'splunk.rumSessionId': SplunkRum.getSessionId()!
+        };
+      }
+    });
     const processor = new BatchLogProcessor(exporter, {});
 
-    lastKnownSession = resource.attributes['splunk.rumSessionId'] as string;
+    lastKnownSession = SplunkRum.getSessionId() as string;
     sessionStartTime = Date.now();
 
     inited = record({
@@ -174,11 +187,11 @@ const SplunkRumRecorder = {
         // Safeguards from our ingest getting DDOSed:
         // 1. A session can send up to 4 hours of data
         // 2. Recording resumes on session change if it isn't a background tab (session regenerated in an another tab)
-        if (resource.attributes['splunk.rumSessionId'] !== lastKnownSession) {
+        if (SplunkRum.getSessionId() !== lastKnownSession) {
           if (document.hidden) {
             return;
           }
-          lastKnownSession = resource.attributes['splunk.rumSessionId'] as string;
+          lastKnownSession = SplunkRum.getSessionId() as string;
           sessionStartTime = Date.now();
           // reset counters
           eventCounter = 1;
