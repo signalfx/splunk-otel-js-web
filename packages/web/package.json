@@ -77,7 +77,6 @@
     "@types/nightwatch": "^2.3.24",
     "@types/shimmer": "^1.0.2",
     "body-parser": "^1.20.2",
-    "browserstack-local": "^1.5.3",
     "chai": "^4.3.7",
     "chrome-launcher": "^1.0.0",
     "chromedriver": "^121.0.0",
