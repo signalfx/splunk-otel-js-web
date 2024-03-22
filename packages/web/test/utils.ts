@@ -15,7 +15,8 @@ limitations under the License.
 */
 
 import { ReadableSpan, SimpleSpanProcessor, SpanProcessor } from '@opentelemetry/sdk-trace-base';
-import SplunkRum, { SplunkExporter, ZipkinSpan } from '../src/index';
+import SplunkRum, { SplunkZipkinExporter } from '../src/index';
+import { ZipkinSpan } from '../src/exporters/zipkin';
 
 export class SpanCapturer implements SpanProcessor {
   public readonly spans: ReadableSpan[] = [];
@@ -31,12 +32,12 @@ export class SpanCapturer implements SpanProcessor {
 }
 
 export function buildInMemorySplunkExporter(): {
-  exporter: SplunkExporter,
+  exporter: SplunkZipkinExporter,
   getFinishedSpans: () => ZipkinSpan[],
   } {
   const spans: ZipkinSpan[] = [];
-  const exporter = new SplunkExporter({
-    beaconUrl: null,
+  const exporter = new SplunkZipkinExporter({
+    url: '',
     beaconSender: null,
     xhrSender: (_, data) => {
       if (typeof data === 'string') {

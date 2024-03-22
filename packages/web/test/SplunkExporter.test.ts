@@ -19,7 +19,9 @@ import { expect } from 'chai';
 
 import * as api from '@opentelemetry/api';
 import { timeInputToHrTime } from '@opentelemetry/core';
-import { SplunkExporter } from '../src/SplunkExporter';
+import { SplunkZipkinExporter } from '../src/exporters/zipkin';
+import { RateLimitProcessor } from '../src/exporters/rate-limit';
+import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 
 function buildDummySpan({
   name = '<name>',
@@ -39,10 +41,10 @@ function buildDummySpan({
     status: { code: api.SpanStatusCode.UNSET },
     resource: { attributes: {} },
     events: [] as ({time: api.HrTime; name: string})[],
-  };
+  } as ReadableSpan;
 }
 
-describe('SplunkExporter', () => {
+describe('SplunkZipkinExporter', () => {
   let beaconSenderMock;
   let xhrSenderMock;
   let exporter;
@@ -58,8 +60,8 @@ describe('SplunkExporter', () => {
   });
 
   it('uses Beacon API if in background', () => {
-    exporter = new SplunkExporter({
-      beaconUrl: 'https://domain1',
+    exporter = new SplunkZipkinExporter({
+      url: 'https://domain1',
       xhrSender: xhrSenderMock,
     });
 
@@ -86,8 +88,8 @@ describe('SplunkExporter', () => {
   });
 
   it('uses XHR if Beacon API is unavailable', () => {
-    exporter = new SplunkExporter({
-      beaconUrl: 'https://domain2',
+    exporter = new SplunkZipkinExporter({
+      url: 'https://domain2',
       beaconSender: null,
       xhrSender: xhrSenderMock,
     });
@@ -102,46 +104,9 @@ describe('SplunkExporter', () => {
     expect(sentSpan.id).to.equal('0001');
   });
 
-  it('limits spans sent', () => {
-    exporter = new SplunkExporter({
-      beaconUrl: 'https://localhost',
-      xhrSender: xhrSenderMock,
-    });
-
-    const dummySpan = buildDummySpan();
-    const spans: (typeof dummySpan)[] = [];
-    for (let i = 0; i < 110; i++) { spans.push(dummySpan); }
-    exporter.export(spans, () => {});
-
-    const sentSpans = JSON.parse(xhrSenderMock.getCall(0).args[1]);
-    expect(sentSpans).to.have.lengthOf(100);
-  });
-
-  it('still exports parent spans', () => {
-    exporter = new SplunkExporter({
-      beaconUrl: 'https://localhost',
-      xhrSender: xhrSenderMock,
-    });
-
-    const dummySpan = buildDummySpan();
-    const spans: (typeof dummySpan)[] = [];
-    for (let i = 0; i < 110; i++) { spans.push(dummySpan); }
-    const parentSpan = buildDummySpan();
-    parentSpan.spanContext = () => ({
-      traceId: '0000',
-      spanId: '0002',
-    });
-    parentSpan.parentSpanId = undefined;
-    spans.push(parentSpan);
-    exporter.export(spans, () => {});
-
-    const sentSpans = JSON.parse(xhrSenderMock.getCall(0).args[1]);
-    expect(sentSpans).to.have.lengthOf(101);
-  });
-
   it('truncates long values', () => {
-    exporter = new SplunkExporter({
-      beaconUrl: 'https://localhost',
+    exporter = new SplunkZipkinExporter({
+      url: 'https://localhost',
       xhrSender: xhrSenderMock,
     });
 
@@ -161,8 +126,8 @@ describe('SplunkExporter', () => {
   });
 
   it('filters out missing cors timings', () => {
-    exporter = new SplunkExporter({
-      beaconUrl: 'https://localhost',
+    exporter = new SplunkZipkinExporter({
+      url: 'https://localhost',
       xhrSender: xhrSenderMock,
     });
 
@@ -195,8 +160,8 @@ describe('SplunkExporter', () => {
   });
 
   it('allows hooking into serialization', () => {
-    exporter = new SplunkExporter({
-      beaconUrl: 'https://localhost',
+    exporter = new SplunkZipkinExporter({
+      url: 'https://localhost',
       xhrSender: xhrSenderMock,
       onAttributesSerializing: (attributes) => ({
         ...attributes,
@@ -222,5 +187,50 @@ describe('SplunkExporter', () => {
       key2: 'value 2',
       key3: 'null'
     });
+  });
+});
+
+describe('Rate Limiter', () => {
+  it('limits spans sent', () => {
+    const allowedSpans: ReadableSpan[] = [];
+    const rateLimiter = new RateLimitProcessor({
+      onStart() {},
+      onEnd(span) {
+        allowedSpans.push(span);
+      },
+      forceFlush() { return Promise.resolve(); },
+      shutdown() { return Promise.resolve(); }
+    });
+
+    const dummySpan = buildDummySpan();
+    for (let i = 0; i < 110; i++) { rateLimiter.onEnd(dummySpan); }
+
+    expect(allowedSpans).to.have.lengthOf(100);
+  });
+
+  it('still exports parent spans', () => {
+    const allowedSpans: ReadableSpan[] = [];
+    const rateLimiter = new RateLimitProcessor({
+      onStart() {},
+      onEnd(span) {
+        allowedSpans.push(span);
+      },
+      forceFlush() { return Promise.resolve(); },
+      shutdown() { return Promise.resolve(); }
+    });
+
+    const dummySpan = buildDummySpan();
+    for (let i = 0; i < 110; i++) { rateLimiter.onEnd(dummySpan); }
+    const parentSpan = buildDummySpan();
+    // @ts-expect-error read-only
+    parentSpan.spanContext = () => ({
+      traceId: '0000',
+      spanId: '0002',
+    });
+    // @ts-expect-error read-only
+    parentSpan.parentSpanId = undefined;
+    rateLimiter.onEnd(parentSpan);
+
+    expect(allowedSpans).to.have.lengthOf(101);
   });
 });

@@ -201,11 +201,11 @@ describe('creating spans is possible', () => {
     assert.strictEqual(exposedSpan.attributes['environment'], 'my-env');
     assert.strictEqual(exposedSpan.attributes['app.version'], '1.2-test.3');
     assert.strictEqual(exposedSpan.attributes.customerType, 'GOLD');
+    assert.ok(exposedSpan.attributes['splunk.rumSessionId'], 'Checking splunk.rumSessionId');
     // Attributes set on resource that zipkin exporter merges to span tags
     assert.ok(exposedSpan.resource.attributes['telemetry.sdk.name'], 'Checking telemetry.sdk.name');
     assert.ok(exposedSpan.resource.attributes['telemetry.sdk.language'], 'Checking telemetry.sdk.language');
     assert.ok(exposedSpan.resource.attributes['telemetry.sdk.version'], 'Checking telemetry.sdk.version');
-    assert.ok(exposedSpan.resource.attributes['splunk.rumSessionId'], 'Checking splunk.rumSessionId');
     assert.ok(exposedSpan.resource.attributes['splunk.rumVersion'], 'Checking splunk.rumVersion');
     assert.ok(exposedSpan.resource.attributes['splunk.scriptInstance'], 'Checking splunk.scriptInstance');
     assert.strictEqual(exposedSpan.resource.attributes['app'], 'my-app');
