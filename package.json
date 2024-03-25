@@ -14,6 +14,7 @@
   },
   "scripts": {
     "compile": "npm run --ws compile --",
+    "generate:security-theater": "node ./scripts/security-theater-generator.mjs",
     "lint": "eslint --ignore-path .gitignore packages/*/src/ packages/*/test/ packages/*/integration-tests/",
     "lint:markdown": "markdownlint *.md docs/*.md",
     "lint:fix": "eslint --ignore-path .gitignore --fix  packages/*/src/ packages/*/test/ packages/*/integration-tests/",
@@ -47,6 +48,7 @@
     "dotenv": "^16.3.1",
     "eslint": "^8.45.0",
     "eslint-plugin-header": "^3.1.1",
+    "magic-string": "^0.30.8",
     "typescript": "^5.1.6"
   }
 }
