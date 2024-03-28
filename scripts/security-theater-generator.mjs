@@ -20,7 +20,7 @@ import MagicString from 'magic-string';
 const source = await readFile('packages/web/dist/artifacts/splunk-otel-web.js', { encoding: 'utf-8' });
 
 const string = new MagicString(source);
-string.replaceAll('Math.random()', '(crypto.getRandomValues(new Uint32Array(1))[0]/Math.pow(2,32))');
+string.replaceAll('Math.random()', '(crypto.getRandomValues(new Uint32Array(1))[0]/4294967295)');
 
 writeFile('packages/web/dist/artifacts/splunk-otel-web-security-theater-edition.js', string.toString());
 // future (rollup plugin?) - can we do something with sourcemap from string.generateMap?
