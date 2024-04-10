@@ -262,6 +262,14 @@ export const INSTRUMENTATIONS_ALL_DISABLED: SplunkOtelWebOptionsInstrumentations
     { 'webvitals': false },
   );
 
+function getBeaconEndpointForRealm(config: SplunkOtelWebConfigInternal) {
+  if (config.exporter?.otlp) {
+    return `https://rum-ingest.${config.realm}.signalfx.com/v1/rumotlp`;
+  }
+
+  return `https://rum-ingest.${config.realm}.signalfx.com/v1/rum`;
+}
+
 function buildExporter(options: SplunkOtelWebConfigInternal) {
   const url = options.beaconEndpoint + (options.rumAccessToken ? '?auth='+options.rumAccessToken : '');
   return options.exporter.factory({
@@ -382,7 +390,7 @@ export const SplunkRum: SplunkOtelWebType = {
 
     if (processedOptions.realm) {
       if (!processedOptions.beaconEndpoint) {
-        processedOptions.beaconEndpoint = `https://rum-ingest.${processedOptions.realm}.signalfx.com/v1/rum`;
+        processedOptions.beaconEndpoint = getBeaconEndpointForRealm(processedOptions);
       } else {
         diag.warn('SplunkRum: Realm value ignored (beaconEndpoint has been specified)');
       }
