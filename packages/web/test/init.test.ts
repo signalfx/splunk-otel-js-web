@@ -25,7 +25,7 @@ import { expect } from 'chai';
 function doesBeaconUrlEndWith(suffix) {
   const sps = (SplunkRum.provider.getActiveSpanProcessor() as any)._spanProcessors;
   // TODO: refactor to make beaconUrl field private
-  const beaconUrl = sps[1]._exporter.beaconUrl;
+  const beaconUrl = sps[1]._exporter.beaconUrl || sps[1]._exporter.url;
   assert.ok(beaconUrl.endsWith(suffix), `Checking beaconUrl if (${beaconUrl}) ends with ${suffix}`);
 }
 
@@ -82,6 +82,19 @@ describe('test init', () => {
       });
       assert.ok(SplunkRum.inited);
       doesBeaconUrlEndWith('https://rum-ingest.test.signalfx.com/v1/rum');
+      SplunkRum.deinit();
+    });
+    it('can use realm + otlp config option', () => {
+      SplunkRum.init({
+        realm: 'test',
+        applicationName: 'app',
+        rumAccessToken: undefined,
+        exporter: {
+          otlp: true,
+        },
+      });
+      assert.ok(SplunkRum.inited);
+      doesBeaconUrlEndWith('https://rum-ingest.test.signalfx.com/v1/rumotlp');
       SplunkRum.deinit();
     });
   });
