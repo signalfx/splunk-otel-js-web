@@ -20,7 +20,6 @@ import {
   defaultStatusErrorTagName,
 } from '@opentelemetry/exporter-zipkin/build/src/transform.js';
 import { ExportResult, ExportResultCode } from '@opentelemetry/core';
-import { SpanKind } from '@opentelemetry/api';
 import { ReadableSpan, SpanExporter } from '@opentelemetry/sdk-trace-base';
 import { limitLen } from '../utils';
 import { NOOP_ATTRIBUTES_TRANSFORMER, NATIVE_XHR_SENDER, NATIVE_BEACON_SENDER, SplunkExporterConfig } from './common';
@@ -52,7 +51,7 @@ export interface ZipkinSpan {
   name: string;
   parentId?: string;
   id: string;
-  kind?: SpanKind;
+  kind?: 'CLIENT' | 'SERVER' | 'CONSUMER' | 'PRODUCER';
   timestamp: number;
   duration: number;
   debug?: boolean;
@@ -93,7 +92,7 @@ export class SplunkZipkinExporter implements SpanExporter {
     if (document.hidden && this._beaconSender && zJson.length <= 64000) {
       this._beaconSender(this.beaconUrl, zJson);
     } else {
-      this._xhrSender(this.beaconUrl, zJson, {
+      this._xhrSender!(this.beaconUrl, zJson, {
         Accept: '*/*',
         'Content-Type': 'text/plain;charset=UTF-8',
       });
