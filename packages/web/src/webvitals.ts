@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import { TracerProvider, Tracer } from '@opentelemetry/api';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore TS1479 in commonjs
 import { onCLS, onLCP, onFID, onINP, Metric } from 'web-vitals';
 const reported = {};
