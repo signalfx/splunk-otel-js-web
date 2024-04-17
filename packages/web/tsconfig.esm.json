@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
     "declaration": true,
-    "module": "ES6",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "outDir": "./dist/esm",
     "rootDir": "src",
     "sourceMap": true
