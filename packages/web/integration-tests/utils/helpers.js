@@ -23,7 +23,7 @@ limitations under the License.
  * * {chrome: {max: 79}} (chrome ... - 79)
  * * {chrome: {min: 70, max: 79}} (chrome 70 - 79)
  * 
- * @typedef {'chrome' | 'edge' | 'firefox' | 'ie' | 'safari'} BrowserName
+ * @typedef {'chrome' | 'microsoftedge' | 'firefox' | 'ie' | 'safari'} BrowserName
  * @typedef {{min?: number; max?: number}} VersionCondition
  * @typedef {{[x in BrowserName]?: number | VersionCondition}} BrowsersCondition
  * @param {import('nightwatch').NightwatchBrowser} browser Nightwatch browser object
