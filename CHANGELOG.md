@@ -4,6 +4,21 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## Unreleased
 
+## 0.17.0
+
+| Open Telemetry API | Core    | Instrumentations & Contrib |
+| ------------------ | ------- | -------------------------- |
+| ^1.8.0             | ^1.23.0 | ^0.50.0 & compatible       |
+
+Changelog since v0.16.5:
+
+* `@splunk/otel-web`
+  * remove zone.js from user-interaction instrumentation ([#719](https://github.com/signalfx/splunk-otel-js-web/pull/719))
+  * Preprations for OTLP export support ([#745](https://github.com/signalfx/splunk-otel-js-web/pull/745))
+* `@splunk/otel-web-session-recorder`
+  * Internal changes in how data is shared with `@splunk/otel-web`  
+  **Note**: make sure that to use the same version of `@splunk/otel-web` and `@splunk/otel-web-session-recorder` libraries
+
 ## 0.17.0-beta.1
 
 * Fix folders being ignored while packing for npm ([#726](https://github.com/signalfx/splunk-otel-js-web/pull/726))
