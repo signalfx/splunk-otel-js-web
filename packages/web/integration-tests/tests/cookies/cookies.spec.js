@@ -63,7 +63,7 @@ module.exports = {
   'setting cookieDomain via config sets it on subdomains also': async function(browser) {  
     // chrome: too old to remember
     // edge: doesnt' work in saucelab right now for some reason?
-    if (isBrowser(browser, { chrome: true, edge: true })) {
+    if (isBrowser(browser, { chrome: true, microsoftedge: true })) {
       return;
     }
     /*
