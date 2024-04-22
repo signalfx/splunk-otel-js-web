@@ -46,7 +46,7 @@
     "dist/esm/**/*.d.ts"
   ],
   "dependencies": {
-    "@babel/runtime": "^7.22.6",
+    "@babel/runtime": "^7.24.4",
     "@opentelemetry/api": "^1.8.0",
     "@opentelemetry/core": "^1.23.0",
     "@opentelemetry/exporter-trace-otlp-http": "^0.50.0",
