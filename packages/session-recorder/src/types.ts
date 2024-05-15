@@ -31,3 +31,50 @@ export interface LogExporter {
   /** Stops the exporter. */
   // shutdown(): Promise<void>;
 }
+
+// OTLP Logs Interfaces
+export interface IAnyValue {
+  /** AnyValue stringValue */
+  stringValue?: (string|null);
+
+  /** AnyValue boolValue */
+  boolValue?: (boolean|null);
+
+  /** AnyValue intValue */
+  intValue?: (number|null);
+
+  /** AnyValue doubleValue */
+  doubleValue?: (number|null);
+
+  /** AnyValue arrayValue */
+  // eslint-disable-next-line no-use-before-define
+  arrayValue?: (IArrayValue|null);
+
+  /** AnyValue kvlistValue */
+  // eslint-disable-next-line no-use-before-define
+  kvlistValue?: (IKeyValueList|null);
+
+  /** AnyValue bytesValue */
+  bytesValue?: (Uint8Array|null);
+}
+
+export interface IArrayValue {
+  /** ArrayValue values */
+  values?: (IAnyValue[]|null);
+}
+
+export interface IKeyValue {
+
+  /** KeyValue key */
+  key?: (string|null);
+
+  /** KeyValue value */
+  value?: (IAnyValue|null);
+}
+
+export interface IKeyValueList {
+
+  /** KeyValueList values */
+  values?: (IKeyValue[]|null);
+}
+
