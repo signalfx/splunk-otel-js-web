@@ -18,6 +18,10 @@
   });
   </script>
   -->
+  <meta
+  http-equiv="Content-Security-Policy"
+  content="default-src 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self' rum-ingest.lab0.signalfx.com" />
+
   <script src="/dist/artifacts/splunk-otel-web.js"></script>
   <script>
     window.SplunkRum && window.SplunkRum.init({

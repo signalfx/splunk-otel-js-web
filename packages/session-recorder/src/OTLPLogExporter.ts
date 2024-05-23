@@ -14,12 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { gzipSync } from 'fflate';
-import type { Root } from 'protobufjs';
+import { gzipSync, strToU8 } from 'fflate';
 import type { JsonArray, JsonObject, JsonValue } from 'type-fest';
 
-import * as proto from './LogsProto.js';
-import { Log } from './types';
+import { IAnyValue, Log } from './types';
 import { VERSION } from './version.js';
 
 interface OTLPLogExporterConfig {
@@ -30,11 +28,9 @@ interface OTLPLogExporterConfig {
 }
 
 const defaultHeaders = {
-  'Content-Type': 'application/x-protobuf',
+  'Content-Type': 'application/json',
   'Content-Encoding': 'gzip'
 };
-
-const LogsData = (proto as unknown as {default: Root}).default.lookupType('opentelemetry.proto.logs.v1.LogsData') as unknown as typeof proto.opentelemetry.proto.logs.v1.LogsData;
 
 function isArray(value: JsonValue): value is JsonArray {
   return Array.isArray(value);
@@ -44,7 +40,7 @@ function isObject(value: JsonValue): value is JsonObject {
   return !!value && typeof value === 'object' && !isArray(value);
 }
 
-function convertToAnyValue(value: JsonValue): proto.opentelemetry.proto.common.v1.IAnyValue {
+function convertToAnyValue(value: JsonValue): IAnyValue {
   if (isObject(value)) {
     return {
       kvlistValue: {
@@ -93,18 +89,18 @@ export default class OTLPLogExporter {
     this.config = config;
   }
 
-  constructLogData(logs: Log[]): proto.opentelemetry.proto.logs.v1.ILogsData {
+  constructLogData(logs: Log[]): JsonObject {
     return {
       resourceLogs: [{
         resource: {
-          attributes: convertToAnyValue(this.config.getResourceAttributes() || {}).kvlistValue!.values,
+          attributes: convertToAnyValue(this.config.getResourceAttributes() || {}).kvlistValue!.values as JsonArray,
         },
         scopeLogs: [{
           scope: { name: 'splunk.rr-web', version: VERSION },
           logRecords: logs.map(log => ({
-            body: convertToAnyValue(log.body),
+            body: convertToAnyValue(log.body!) as JsonObject,
             timeUnixNano: log.timeUnixNano,
-            attributes: convertToAnyValue(log.attributes || {}).kvlistValue.values,
+            attributes: convertToAnyValue(log.attributes || {}).kvlistValue!.values as JsonArray,
           }))
         }]
       }],
@@ -116,21 +112,21 @@ export default class OTLPLogExporter {
       return;
     }
 
+    const headers = this.config.headers
+      ? Object.assign({}, defaultHeaders, this.config.headers)
+      : defaultHeaders;
+
     const logsData = this.constructLogData(logs);
     if (this.config.debug) {
       console.log('otlp request', logsData);
     }
-    const buffer = LogsData.encode(logsData).finish();
-    const compressed = gzipSync(buffer);
 
-    const updatedHeaders = this.config.headers
-      ? Object.assign({}, defaultHeaders, this.config.headers)
-      : defaultHeaders;
+    const compressed = gzipSync(strToU8(JSON.stringify(logsData)));
 
     fetch(this.config.beaconUrl, {
       method: 'POST',
       body: compressed,
-      headers: updatedHeaders,
+      headers: headers,
     }).catch(() => {
       // TODO remove this once we have ingest with correct cors headers
     });
