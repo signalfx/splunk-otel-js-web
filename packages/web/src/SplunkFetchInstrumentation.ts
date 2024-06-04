@@ -16,6 +16,11 @@ limitations under the License.
 
 import { FetchInstrumentation, FetchInstrumentationConfig } from '@opentelemetry/instrumentation-fetch';
 import { captureTraceParent } from './servertiming';
+import { diag } from '@opentelemetry/api';
+
+type ExposedSuper = {
+  _addHeaders: (options: Request | RequestInit, spanUrl: string) => void
+}
 
 export class SplunkFetchInstrumentation extends FetchInstrumentation {
   constructor(config: FetchInstrumentationConfig = {}) {
@@ -37,6 +42,20 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
     };
 
     super(config);
+
+    const _superAddHeaders = (this as unknown as ExposedSuper)._addHeaders.bind(this) as ExposedSuper['_addHeaders'];
+    (this as unknown as ExposedSuper)._addHeaders = (options, spanUrl) => {
+      // Fix: Fetch instrumentation currently can't handle headers array
+      try {
+        if (options.headers && Array.isArray(options.headers)) {
+          (options as RequestInit).headers = new Headers(options.headers);
+        }
+      } catch(err) {
+        diag.error('Error fixing headers', err);
+      }
+
+      return _superAddHeaders(options, spanUrl);
+    };
   }
 
   enable(): void {
