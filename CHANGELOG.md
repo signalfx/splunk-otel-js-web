@@ -6,6 +6,8 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 Changelog since v0.17.0: 
 
+* `@splunk/otel-web`
+  * fix fetch instrumentation not handling headers array correctly ([#790](https://github.com/signalfx/splunk-otel-js-web/pull/790))
 * `@splunk/otel-web-session-recorder`
   * Switch from using otlp/protobuf to otlp/json. This removes dependency on protobuf.js, allowing the library to be ran on sites where unsafe-eval is blocked via CSP and reducing the bundle size by half ([#765](https://github.com/signalfx/splunk-otel-js-web/pull/756))
 
