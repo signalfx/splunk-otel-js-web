@@ -22,7 +22,7 @@ export type EventName = keyof HTMLElementEventMap;
 
 export type ShouldPreventSpanCreation = (
   eventType: EventName,
-  element: HTMLElement,
+  element: Element,
   span: Span
 ) => boolean | void;
 

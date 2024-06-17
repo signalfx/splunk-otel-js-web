@@ -43,7 +43,7 @@ function defaultShouldPreventSpanCreation() {
 /**
  * This class represents a UserInteraction plugin for auto instrumentation.
  * If zone.js is available then it patches the zone otherwise it patches
- * addEventListener of HTMLElement
+ * addEventListener of Element
  */
 export class UserInteractionInstrumentation extends InstrumentationBase<unknown> {
   readonly version = VERSION;
@@ -53,7 +53,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
   // for addEventListener/removeEventListener state
   private _wrappedListeners = new WeakMap<
     Function | EventListenerObject,
-    Map<string, Map<HTMLElement, Function>>
+    Map<string, Map<Element, Function>>
   >();
   // for event bubbling
   private _eventsSpanMap: WeakMap<Event, api.Span> = new WeakMap<
@@ -92,7 +92,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
     eventName: EventName,
     parentSpan?: api.Span
   ): api.Span | undefined {
-    if (!(element instanceof HTMLElement)) {
+    if (!(element instanceof Element)) {
       return undefined;
     }
     if (!element.getAttribute) {
@@ -140,7 +140,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
    * Returns true iff we should use the patched callback; false if it's already been patched
    */
   private addPatchedListener(
-    on: HTMLElement,
+    on: Element,
     type: string,
     listener: Function | EventListenerObject,
     wrappedListener: Function
@@ -166,7 +166,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
    * Returns the patched version of the callback (or undefined)
    */
   private removePatchedListener(
-    on: HTMLElement,
+    on: Element,
     type: string,
     listener: Function | EventListenerObject
   ): Function | undefined {
@@ -205,7 +205,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
   }
 
   /**
-   * This patches the addEventListener of HTMLElement to be able to
+   * This patches the addEventListener of Element to be able to
    * auto instrument the click events
    * This is done when zone is not available
    */
@@ -213,8 +213,8 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
     const plugin = this;
     return (original: EventTarget['addEventListener']) => {
       return function addEventListenerPatched(
-        this: HTMLElement,
-        type: keyof HTMLElementEventMap,
+        this: Element,
+        type: keyof (ElementEventMap & HTMLElementEventMap),
         listener: EventListenerOrEventListenerObject | null,
         useCapture?: boolean | AddEventListenerOptions
       ) {
@@ -226,7 +226,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
         // filter out null (typeof null === 'object')
         const once =
           useCapture && typeof useCapture === 'object' && useCapture.once;
-        const patchedListener = function (this: HTMLElement, ...args: any[]) {
+        const patchedListener = function (this: Element, ...args: any[]) {
           let parentSpan: api.Span | undefined;
           const event: Event | undefined = args[0];
           const target = event?.target;
@@ -262,7 +262,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
   }
 
   /**
-   * This patches the removeEventListener of HTMLElement to handle the fact that
+   * This patches the removeEventListener of Element to handle the fact that
    * we patched the original callbacks
    * This is done when zone is not available
    */
@@ -270,7 +270,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
     const plugin = this;
     return (original: Function) => {
       return function removeEventListenerPatched(
-        this: HTMLElement,
+        this: Element,
         type: any,
         listener: any,
         useCapture: any
@@ -297,7 +297,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
    * ** - has addEventListener in all other browsers
    * ! - missing in IE
    *
-   * HTMLElement -> Element -> Node * -> EventTarget **! -> Object
+   * Element -> Node * -> EventTarget **! -> Object
    * Document -> Node * -> EventTarget **! -> Object
    * Window * -> WindowProperties ! -> EventTarget **! -> Object
    */
