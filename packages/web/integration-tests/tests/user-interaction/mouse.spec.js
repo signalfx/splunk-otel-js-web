@@ -98,6 +98,41 @@ module.exports = {
     await browser.url(browser.globals.getUrl('/user-interaction/mouse-bubble.ejs'));
     await browser.click('#inner');
 
-    browser.expect.element('#result').text.to.equal('container');
-  }
+    await browser.globals.findSpan(span => span.name === 'click');
+    await browser.expect.element('#result').text.to.equal('container');
+
+    await browser.globals.assertNoErrorSpans();
+  },
+  'handles svg interactions': async function(browser) {
+    browser.globals.clearReceivedSpans();
+
+    await browser.url(browser.globals.getUrl('/user-interaction/mouse.ejs'));
+    await browser.click('#btn-svg-target');
+
+    const clickSpan = await browser.globals.findSpan(span => span.name === 'click');
+    await browser.assert.ok(!!clickSpan, 'Checking click span presence.');
+
+    await browser.assert.strictEqual(clickSpan.tags['component'], 'user-interaction');
+    await browser.assert.strictEqual(clickSpan.tags['event_type'], 'click');
+    await browser.assert.strictEqual(clickSpan.tags['target_element'], 'rect');
+    await browser.assert.strictEqual(clickSpan.tags['target_xpath'], '//*[@id="btn-svg-target"]');
+
+    const mouseDownSpan = await browser.globals.findSpan(span => span.name === 'mousedown');
+    await browser.assert.ok(!!mouseDownSpan, 'Checking mousedown span presence.');
+
+    await browser.assert.strictEqual(mouseDownSpan.tags['component'], 'user-interaction');
+    await browser.assert.strictEqual(mouseDownSpan.tags['event_type'], 'mousedown');
+    await browser.assert.strictEqual(mouseDownSpan.tags['target_element'], 'rect');
+    await browser.assert.strictEqual(mouseDownSpan.tags['target_xpath'], '//*[@id="btn-svg-target"]');
+
+    const mouseUpSpan = await browser.globals.findSpan(span => span.name === 'mouseup');
+    await browser.assert.ok(!!mouseUpSpan, 'Checking mouseup span presence.');
+
+    await browser.assert.strictEqual(mouseUpSpan.tags['component'], 'user-interaction');
+    await browser.assert.strictEqual(mouseUpSpan.tags['event_type'], 'mouseup');
+    await browser.assert.strictEqual(mouseUpSpan.tags['target_element'], 'rect');
+    await browser.assert.strictEqual(mouseUpSpan.tags['target_xpath'], '//*[@id="btn-svg-target"]');
+
+    await browser.globals.assertNoErrorSpans();
+  },
 };
