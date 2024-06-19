@@ -17,8 +17,15 @@ limitations under the License.
 import { TracerProvider, Tracer } from '@opentelemetry/api';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore TS1479 in commonjs
-import { onCLS, onLCP, onFID, onINP, Metric } from 'web-vitals';
+import { onCLS, onLCP, onFID, onINP, Metric, ReportOpts } from 'web-vitals';
 const reported = {};
+
+export interface WebVitalsInstrumentationConfig {
+  cls?: boolean | ReportOpts;
+  fid?: boolean | ReportOpts;
+  inp?: boolean | ReportOpts;
+  lcp?: boolean | ReportOpts;
+}
 
 function report(tracer: Tracer, name: string, metric: Metric): void {
   if (reported[name]) {
@@ -34,19 +41,31 @@ function report(tracer: Tracer, name: string, metric: Metric): void {
   span.end(now);
 }
 
-export function initWebVitals(provider: TracerProvider): void {
+export function initWebVitals(provider: TracerProvider, config: WebVitalsInstrumentationConfig = {}): void {
   const tracer = provider.getTracer('webvitals');
   // CLS is defined as being sent more than once, easier to just ensure that everything is sent just on the first occurence.
-  onFID((metric) => {
-    report(tracer, 'fid', metric);
-  });
-  onCLS((metric) => {
-    report(tracer, 'cls', metric);
-  });
-  onLCP((metric) => {
-    report(tracer, 'lcp', metric);
-  });
-  onINP((metric) => {
-    report(tracer, 'inp', metric);
-  });
+
+  if (config.fid !== false) {
+    onFID((metric) => {
+      report(tracer, 'fid', metric);
+    }, typeof config.fid === 'object' ? config.fid : undefined);
+  }
+
+  if (config.cls !== false) {
+    onCLS((metric) => {
+      report(tracer, 'cls', metric);
+    }, typeof config.cls === 'object' ? config.cls : undefined);
+  }
+
+  if (config.lcp !== false) {
+    onLCP((metric) => {
+      report(tracer, 'lcp', metric);
+    }, typeof config.lcp === 'object' ? config.lcp : undefined);
+  }
+
+  if (config.inp !== false) {
+    onINP((metric) => {
+      report(tracer, 'inp', metric);
+    }, typeof config.inp === 'object' ? config.inp : undefined);
+  }
 }

@@ -44,7 +44,7 @@ import { ERROR_INSTRUMENTATION_NAME, SplunkErrorInstrumentation } from './Splunk
 import { generateId, getPluginConfig, registerGlobal } from './utils';
 import { getRumSessionId, initSessionTracking, SessionIdType } from './session';
 import { SplunkWebSocketInstrumentation } from './SplunkWebSocketInstrumentation';
-import { initWebVitals } from './webvitals';
+import { WebVitalsInstrumentationConfig, initWebVitals } from './webvitals';
 import { SplunkLongTaskInstrumentation } from './SplunkLongTaskInstrumentation';
 import { SplunkPageVisibilityInstrumentation } from './SplunkPageVisibilityInstrumentation';
 import { SplunkConnectivityInstrumentation } from './SplunkConnectivityInstrumentation';
@@ -86,7 +86,7 @@ interface SplunkOtelWebOptionsInstrumentations {
   postload?:     boolean | SplunkPostDocLoadResourceInstrumentationConfig;
   socketio?:     boolean | SocketIoClientInstrumentationConfig;
   websocket?:    boolean | InstrumentationConfig;
-  webvitals?:    boolean;
+  webvitals?:    boolean | WebVitalsInstrumentationConfig;
   xhr?:          boolean | XMLHttpRequestInstrumentationConfig;
 }
 
@@ -503,7 +503,7 @@ export const SplunkRum: SplunkOtelWebType = {
 
     const vitalsConf = getPluginConfig(processedOptions.instrumentations.webvitals);
     if (vitalsConf !== false) {
-      initWebVitals(provider);
+      initWebVitals(provider, vitalsConf);
     }
 
     inited = true;
