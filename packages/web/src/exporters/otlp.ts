@@ -17,7 +17,6 @@ limitations under the License.
 import { diag } from '@opentelemetry/api';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { NOOP_ATTRIBUTES_TRANSFORMER, NATIVE_XHR_SENDER, NATIVE_BEACON_SENDER, SplunkExporterConfig } from './common';
-import { IExportTraceServiceRequest } from '@opentelemetry/otlp-transformer';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 
 export class SplunkOTLPTraceExporter extends OTLPTraceExporter {
@@ -30,17 +29,6 @@ export class SplunkOTLPTraceExporter extends OTLPTraceExporter {
     this._onAttributesSerializing = options.onAttributesSerializing || NOOP_ATTRIBUTES_TRANSFORMER;
   }
 
-  convert(spans: ReadableSpan[]): IExportTraceServiceRequest {
-    // Changes: Add attribute serializing hook to remove data before export
-    spans = spans.map(span => {
-      // @ts-expect-error Yep we're overwriting a readonly property here. Deal with it
-      span.attributes = this._onAttributesSerializing ? this._onAttributesSerializing(span.attributes, span) : span.attributes;
-      return span;
-    });
-
-    return super.convert(spans);
-  }
-
   send(
     items: ReadableSpan[],
     onSuccess: () => void,
@@ -49,8 +37,14 @@ export class SplunkOTLPTraceExporter extends OTLPTraceExporter {
       diag.debug('Shutdown already started. Cannot send objects');
       return;
     }
-    const serviceRequest = this.convert(items);
-    const body = JSON.stringify(serviceRequest);
+    items = items.map(span => {
+      // @ts-expect-error Yep we're overwriting a readonly property here. Deal with it
+      span.attributes = this._onAttributesSerializing ? this._onAttributesSerializing(span.attributes, span) : span.attributes;
+      return span;
+    });
+
+    // @ts-expect-error Say no to private
+    const body = this._serializer.serializeRequest(items) ?? new Uint8Array();
 
     // Changed: Determine which exporter to use at the time of export
     if (document.hidden && this._beaconSender && body.length <= 64000) {
