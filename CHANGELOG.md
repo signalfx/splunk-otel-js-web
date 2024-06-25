@@ -2,6 +2,16 @@
 
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
+## 0.19.0
+
+| Open Telemetry API | Core    | Instrumentations & Contrib |
+| ------------------ | ------- | -------------------------- |
+| ^1.9.0             | ^1.25.1 | ^0.52.1 & compatible       |
+
+* `@splunk/otel-web`
+  * Allow broader Element, rather than HTMLELement in user interactions ([#801](https://github.com/signalfx/splunk-otel-js-web/pull/801))
+  * Make webvitals metrics individually disableable/configurable ([#806](https://github.com/signalfx/splunk-otel-js-web/pull/806))
+
 ## 0.18.0
 
 Changelog since v0.17.0: 
