@@ -104,7 +104,7 @@
     "nyc": "^15.1.0",
     "puppeteer": "^22.11.2",
     "rollup": "^4.18.0",
-    "rollup-plugin-istanbul": "^4.0.0",
+    "rollup-plugin-istanbul": "^5.0.0",
     "rollup-plugin-polyfill-node": "^0.12.0",
     "saucelabs": "^7.2.2",
     "sinon": "^15.2.0",
