@@ -14,8 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { SpanProcessor, WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { InternalEventTarget } from './EventTarget';
-import { findCookieValue, generateId, isIframe } from './utils';
+import { cookieStore, findCookieValue, generateId, isIframe } from './utils';
 
 /*
     The basic idea is to let the browser expire cookies for us "naturally" once
@@ -48,7 +49,7 @@ let recentActivity = false;
 let cookieDomain: string;
 let eventTarget: InternalEventTarget | undefined;
 
-function markActivity() {
+export function markActivity(): void {
   recentActivity = true;
 }
 
@@ -107,7 +108,13 @@ function renewCookieTimeout(sessionState) {
   } else {
     cookie += ';SameSite=Strict';
   }
-  document.cookie = cookie;
+  cookieStore.set(cookie);
+}
+
+export function clearSessionCookie(): void {
+  const domain = cookieDomain ? `domain=${cookieDomain};` : '';
+  const cookie = `${COOKIE_NAME}=;domain=${domain};expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+  cookieStore.set(cookie);
 }
 
 // This is called periodically and has two purposes:
@@ -134,10 +141,34 @@ function hasNativeSessionId(): boolean {
   return typeof window !== 'undefined' && window['SplunkRumNative'] && window['SplunkRumNative'].getNativeSessionId;
 }
 
+class ActivitySpanProcessor implements SpanProcessor {
+  forceFlush(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  onStart(): void {
+    markActivity();
+  }
+
+  onEnd(): void {
+    
+  }
+
+  shutdown(): Promise<void> {
+    return Promise.resolve();
+  }
+}
+
+const ACTIVITY_EVENTS = [
+  'click', 'scroll', 'mousedown', 'keydown', 'touchend', 'visibilitychange'
+];
+
 export function initSessionTracking(
+  provider: WebTracerProvider,
   instanceId: SessionIdType,
   newEventTarget: InternalEventTarget,
   domain?: string,
+  allSpansAreActivity = false,
 ): { deinit: () => void; } {
   if (hasNativeSessionId()) {
     // short-circuit and bail out - don't create cookie, watch for inactivity, or anything
@@ -154,19 +185,20 @@ export function initSessionTracking(
   recentActivity = true; // document loaded implies activity
   eventTarget = newEventTarget;
 
+  ACTIVITY_EVENTS.forEach(type => document.addEventListener(type, markActivity, { capture:true, passive: true }));
+  if (allSpansAreActivity) {
+    provider.addSpanProcessor(new ActivitySpanProcessor());
+  }
+
   updateSessionStatus();
   const intervalHandle = setInterval(
     () => updateSessionStatus(),
     PeriodicCheckSeconds * 1000,
   );
 
-  [
-    'click', 'scroll', 'mousedown', 'keydown', 'touchend', 'visibilitychange'
-  ].forEach(type => document.addEventListener(type, markActivity, { capture:true, passive: true }));
-  // FIXME have span creation also markActivity?
-
   return {
     deinit: () => {
+      ACTIVITY_EVENTS.forEach(type => document.removeEventListener(type, markActivity));
       clearInterval(intervalHandle);
       rumSessionId = undefined;
       eventTarget = undefined;

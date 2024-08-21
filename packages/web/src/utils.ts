@@ -25,8 +25,13 @@ export function generateId(bits: number): string {
   });
 }
 
+export const cookieStore = {
+  set: (value: string): void => { document.cookie = value; },
+  get: (): string => document.cookie,
+};
+
 export function findCookieValue(cookieName: string): string | undefined {
-  const decodedCookie = decodeURIComponent(document.cookie);
+  const decodedCookie = decodeURIComponent(cookieStore.get());
   const cookies = decodedCookie.split(';');
   for (let i = 0; i < cookies.length; i++) {
     const c = cookies[i].trim();

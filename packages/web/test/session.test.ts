@@ -16,16 +16,26 @@ limitations under the License.
 
 import * as assert from 'assert';
 import { InternalEventTarget } from '../src/EventTarget';
-import { initSessionTracking, COOKIE_NAME, getRumSessionId, updateSessionStatus } from '../src/session';
+import { initSessionTracking, COOKIE_NAME, getRumSessionId, updateSessionStatus, clearSessionCookie } from '../src/session';
+import { SplunkWebTracerProvider } from '../src';
+import sinon from 'sinon';
+import { cookieStore } from '../src/utils';
 
 describe('Session tracking', () => {
+  beforeEach(() => {
+    clearSessionCookie();
+  });
+
+  afterEach(() => {
+    clearSessionCookie();
+  });
+
   it('should correctly handle expiry, garbage values, (in)activity, etc.', (done) => {
-    // First clear the cookie so we start from a known quantity
-    document.cookie = COOKIE_NAME+'=garbageValue;expires=Thu, 01 Jan 1970 00:00:00 GMT';
     // the init tests have possibly already started the setInterval for updateSessionStatus.  Try to accomodate this.
-    initSessionTracking('1234', new InternalEventTarget());
+    const provider = new SplunkWebTracerProvider();
+    const trackingHandle = initSessionTracking(provider, '1234', new InternalEventTarget());
     const firstSessionId = getRumSessionId();
-    assert.strictEqual(firstSessionId.length, 32);
+    assert.strictEqual(firstSessionId!.length, 32);
     // no marked activity, should keep same state
     updateSessionStatus();
     assert.strictEqual(firstSessionId, getRumSessionId());
@@ -49,10 +59,45 @@ describe('Session tracking', () => {
       updateSessionStatus();
       assert.ok(document.cookie.includes(COOKIE_NAME));
       const newSessionId = getRumSessionId();
-      assert.strictEqual(newSessionId.length, 32);
+      assert.strictEqual(newSessionId!.length, 32);
       assert.ok(firstSessionId !== newSessionId);
 
+      trackingHandle.deinit();
       done();
     }, 4000);
+  });
+
+  describe('Activity tracking', () => {
+
+    afterEach(() => {
+      sinon.restore();
+    });
+
+    async function subject(allSpansAreActivity = false): Promise<void> {
+      const provider = new SplunkWebTracerProvider();
+      const firstSessionId = getRumSessionId();
+      initSessionTracking(provider, firstSessionId!, new InternalEventTarget(), undefined, allSpansAreActivity);
+
+      provider.getTracer('tracer').startSpan('any-span').end();
+      updateSessionStatus();
+    }
+
+    it('non-activity spans do not trigger a new session', (done) => {
+      const cookieSetSpy = sinon.spy(cookieStore, 'set');
+
+      subject().then(() => {
+        assert.equal(cookieSetSpy.callCount, 1);
+        done();
+      });
+    });
+
+    it('activity spans do trigger a new session when opt-in', (done) => {
+      const cookieSetSpy = sinon.spy(cookieStore, 'set');
+
+      subject(true).then(() => {
+        assert.equal(cookieSetSpy.callCount, 2);
+        done();
+      });
+    });
   });
 });
