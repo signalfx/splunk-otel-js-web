@@ -186,6 +186,11 @@ export interface SplunkOtelWebConfig {
    * Config options passed to web tracer
    */
   tracer?: WebTracerConfig;
+
+  /**
+   * If enabled, all spans are treated as activity and extend the duration of the session. Defaults to false.
+   */
+  _experimental_allSpansExtendSession?: boolean;
 }
 
 interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
@@ -408,11 +413,6 @@ export const SplunkRum: SplunkOtelWebType = {
     }
 
     const instanceId = generateId(64);
-    _deinitSessionTracking = initSessionTracking(
-      instanceId,
-      eventTarget,
-      processedOptions.cookieDomain,
-    ).deinit;
 
     const { ignoreUrls, applicationName, deploymentEnvironment, version } = processedOptions;
     // enabled: false prevents registerInstrumentations from enabling instrumentations in constructor
@@ -440,6 +440,14 @@ export const SplunkRum: SplunkOtelWebType = {
       resource: this.resource,
     });
 
+    _deinitSessionTracking = initSessionTracking(
+      provider,
+      instanceId,
+      eventTarget,
+      processedOptions.cookieDomain,
+      !!options._experimental_allSpansExtendSession,
+    ).deinit;
+
     const instrumentations = INSTRUMENTATIONS.map(({ Instrument, confKey, disable }) => {
       const pluginConf = getPluginConfig(processedOptions.instrumentations[confKey], pluginDefaults, disable);
       if (pluginConf) {
@@ -456,6 +464,7 @@ export const SplunkRum: SplunkOtelWebType = {
 
       return null;
     }).filter((a): a is Exclude<typeof a, null> => Boolean(a));
+
 
     this.attributesProcessor = new SplunkSpanAttributesProcessor({
       ...deploymentEnvironment ? { environment: deploymentEnvironment, 'deployment.environment': deploymentEnvironment } : {},
