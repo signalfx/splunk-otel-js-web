@@ -76,6 +76,7 @@
     "@types/mocha": "^10.0.1",
     "@types/nightwatch": "^2.3.24",
     "@types/shimmer": "^1.0.2",
+    "@types/sinon": "^17.0.3",
     "body-parser": "^1.20.2",
     "chai": "^4.3.7",
     "chrome-launcher": "^1.0.0",

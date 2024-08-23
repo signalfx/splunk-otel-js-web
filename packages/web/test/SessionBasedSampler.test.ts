@@ -19,6 +19,7 @@ import { InternalEventTarget } from '../src/EventTarget';
 import { SessionBasedSampler } from '../src/SessionBasedSampler';
 import { initSessionTracking, COOKIE_NAME, updateSessionStatus } from '../src/session';
 import { context, SamplingDecision } from '@opentelemetry/api';
+import { SplunkWebTracerProvider } from '../src';
 
 describe('Session based sampler', () => {
   it('decide sampling based on session id and ratio', () => {
@@ -26,7 +27,8 @@ describe('Session based sampler', () => {
     const lowSessionId = '0'.repeat(32);
     const lowCookieValue = encodeURIComponent(JSON.stringify({ id: lowSessionId, startTime: new Date().getTime() }));
     document.cookie = COOKIE_NAME + '=' + lowCookieValue + '; path=/; max-age=' + 10;
-    initSessionTracking(lowSessionId, new InternalEventTarget());
+    const provider = new SplunkWebTracerProvider();
+    initSessionTracking(provider, lowSessionId, new InternalEventTarget());
 
     const sampler = new SessionBasedSampler({ ratio: 0.5 });
     assert.strictEqual(
