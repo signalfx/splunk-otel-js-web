@@ -14,9 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { diag } from '@opentelemetry/api';
 import { wrap } from 'shimmer';
-import { VERSION } from './version';
 
 export function generateId(bits: number): string {
   const xes = 'x'.repeat(bits/4);
@@ -169,38 +167,4 @@ export function waitForGlobal(identifier: string, callback: (value: unknown) => 
       window[identifier] = value;
     }
   };
-}
-
-const GLOBAL_OPENTELEMETRY_API_KEY = Symbol.for('opentelemetry.js.api.1');
-/**
- * otel-api's global function. This isn't exported by otel/api but would be
- * super useful to register global components for experimental purposes...
- * For us, it's included to register components accessed by other packages,
- * eg. sharing session id manager with session recorder
- */
-export function registerGlobal(
-  type: string,
-  instance: unknown,
-  allowOverride = false
-): boolean {
-  if (!globalThis[GLOBAL_OPENTELEMETRY_API_KEY]) {
-    diag.error('SplunkRum: Tried to access global before otel setup');
-    return false;
-  }
-  const api = globalThis[GLOBAL_OPENTELEMETRY_API_KEY];
-
-  if (!api['splunk.rum.version']) {
-    api['splunk.rum.version'] = VERSION;
-  }
-  if (api['splunk.rum.version'] !== VERSION) {
-    diag.warn(`SplunkRum: Global: Multiple versions detected (${VERSION} already registered)`);
-  }
-
-  if (!allowOverride && api[type]) {
-    diag.error(`SplunkRum: Attempted duplicate registration of otel API ${type}`);
-    return false;
-  }
-
-  api[type] = instance;
-  return true;
 }

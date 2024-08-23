@@ -41,7 +41,7 @@ import {
 import { SplunkExporterConfig } from './exporters/common';
 import { SplunkZipkinExporter } from './exporters/zipkin';
 import { ERROR_INSTRUMENTATION_NAME, SplunkErrorInstrumentation } from './SplunkErrorInstrumentation';
-import { generateId, getPluginConfig, registerGlobal } from './utils';
+import { generateId, getPluginConfig } from './utils';
 import { getRumSessionId, initSessionTracking, SessionIdType } from './session';
 import { SplunkWebSocketInstrumentation } from './SplunkWebSocketInstrumentation';
 import { WebVitalsInstrumentationConfig, initWebVitals } from './webvitals';
@@ -69,6 +69,7 @@ import { SplunkSpanAttributesProcessor } from './SplunkSpanAttributesProcessor';
 import { SessionBasedSampler } from './SessionBasedSampler';
 import { SocketIoClientInstrumentationConfig, SplunkSocketIoClientInstrumentation } from './SplunkSocketIoClientInstrumentation';
 import { SplunkOTLPTraceExporter } from './exporters/otlp';
+import { registerGlobal, unregisterGlobal } from './global-utils';
 
 export { SplunkExporterConfig } from './exporters/common';
 export { SplunkZipkinExporter } from './exporters/zipkin';
@@ -287,7 +288,7 @@ function buildExporter(options: SplunkOtelWebConfigInternal) {
 export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
   readonly resource?: Resource;
 
-  deinit: () => void;
+  deinit: (force?: boolean) => void;
 
   error: (...args: Array<any>) => void;
 
@@ -366,7 +367,18 @@ export const SplunkRum: SplunkOtelWebType = {
       _globalThis.OTEL_TRACES_EXPORTER = 'none';
     }
 
+    if (inited) {
+      console.warn('SplunkRum already init()ed.');
+      return;
+    }
+
+    // touches otel globals, our registerGlobal requires this first
     diag.setLogger(new DiagConsoleLogger(), options?.debug ? DiagLogLevel.DEBUG : DiagLogLevel.WARN);
+
+    const registered = registerGlobal('splunk.rum', this);
+    if (!registered) {
+      return;
+    }
 
     if (typeof window !== 'object') {
       diag.error('SplunkRum: Non-browser environment detected, aborting');
@@ -387,11 +399,6 @@ export const SplunkRum: SplunkOtelWebType = {
         exporter: Object.assign({}, OPTIONS_DEFAULTS.exporter, options.exporter),
       },
     );
-
-    if (inited) {
-      diag.warn('SplunkRum already init()ed.');
-      return;
-    }
 
     if (processedOptions.realm) {
       if (!processedOptions.beaconEndpoint) {
@@ -516,12 +523,11 @@ export const SplunkRum: SplunkOtelWebType = {
     }
 
     inited = true;
-    registerGlobal('splunk.rum', this);
     diag.info('SplunkRum.init() complete');
   },
 
-  deinit() {
-    if (!inited) {
+  deinit(force = false) {
+    if (!inited && !force) {
       return;
     }
 
@@ -531,11 +537,14 @@ export const SplunkRum: SplunkOtelWebType = {
     _deinitSessionTracking?.();
     _deinitSessionTracking = undefined;
 
-    this.provider.shutdown();
+    this.provider?.shutdown();
     delete this.provider;
+
     eventTarget = undefined;
+    
     diag.disable();
-    registerGlobal('splunk.rum', undefined, true);
+    unregisterGlobal('splunk.rum');
+    unregisterGlobal('splunk.rum.version');
 
     inited = false;
   },

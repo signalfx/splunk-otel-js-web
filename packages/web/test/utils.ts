@@ -17,6 +17,7 @@ limitations under the License.
 import { ReadableSpan, SimpleSpanProcessor, SpanProcessor } from '@opentelemetry/sdk-trace-base';
 import SplunkRum, { SplunkZipkinExporter } from '../src/index';
 import { ZipkinSpan } from '../src/exporters/zipkin';
+import { assert } from 'chai';
 
 export class SpanCapturer implements SpanProcessor {
   public readonly spans: ReadableSpan[] = [];
@@ -65,7 +66,8 @@ export function initWithDefaultConfig(capturer: SpanCapturer, additionalOptions 
     rumAccessToken: '123-no-warn-spam-in-console',
     ...additionalOptions,
   });
-  SplunkRum.provider.addSpanProcessor(capturer);
+  assert.ok(SplunkRum.inited);
+  SplunkRum.provider!.addSpanProcessor(capturer);
 }
 
 export function initWithSyncPipeline(additionalOptions = {}): {
@@ -94,6 +96,6 @@ export function initWithSyncPipeline(additionalOptions = {}): {
   };
 }
 
-export function deinit(): void {
-  SplunkRum.deinit();
+export function deinit(force?: boolean): void {
+  SplunkRum.deinit(force);
 }

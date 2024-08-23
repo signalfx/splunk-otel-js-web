@@ -16,11 +16,13 @@ limitations under the License.
 
 import * as assert from 'assert';
 import SplunkRum from '../src/index';
-import { context, diag, trace } from '@opentelemetry/api';
+import { context, trace } from '@opentelemetry/api';
 import * as tracing from '@opentelemetry/sdk-trace-base';
 import { deinit, initWithDefaultConfig, SpanCapturer } from './utils';
 import sinon from 'sinon';
 import { expect } from 'chai';
+import { beforeEach } from 'mocha';
+import { VERSION } from '../src/version';
 
 function doesBeaconUrlEndWith(suffix) {
   const sps = (SplunkRum.provider.getActiveSpanProcessor() as any)._spanProcessors;
@@ -32,6 +34,19 @@ function doesBeaconUrlEndWith(suffix) {
 describe('test init', () => {
   const capturer = new SpanCapturer();
 
+  afterEach(() => {
+    SplunkRum.deinit(true);
+    
+    assert.ok(!SplunkRum.inited);
+    assert.ok(!window[Symbol.for('opentelemetry.js.api.1')]['splunk.rum']);
+    assert.ok(!window[Symbol.for('opentelemetry.js.api.1')]['splunk.rum.version']);
+    assert.ok(!window[Symbol.for('opentelemetry.js.api.1')]['diag']);
+  });
+
+  beforeEach(() => {
+    assert.ok(!SplunkRum.inited);
+  });
+
   describe('not specifying beaconUrl', () => {
     it('should not be inited', () => {
       try {
@@ -39,8 +54,6 @@ describe('test init', () => {
         assert.ok(false, 'Initializer finished.'); // should not get here
       } catch (expected) {
         assert.ok(SplunkRum.inited === false, 'SplunkRum should not be inited.');
-      } finally {
-        diag.disable();
       }
     });
   });
@@ -51,8 +64,6 @@ describe('test init', () => {
         assert.ok(false);
       } catch(e) {
         assert.ok(SplunkRum.inited === false);
-      } finally {
-        diag.disable();
       }
     });
     it('should init with https', () => {
@@ -60,7 +71,6 @@ describe('test init', () => {
       SplunkRum.init({ beaconEndpoint: `https://127.0.0.1:8888/${path}`, applicationName: 'app', rumAccessToken: undefined });
       assert.ok(SplunkRum.inited);
       doesBeaconUrlEndWith(path);
-      SplunkRum.deinit();
     });
     it('can be forced via allowInsecureBeacon option', () => {
       const path = '/insecure';
@@ -72,7 +82,6 @@ describe('test init', () => {
       });
       assert.ok(SplunkRum.inited);
       doesBeaconUrlEndWith(path);
-      SplunkRum.deinit();
     });
     it('can use realm config option', () => {
       SplunkRum.init({
@@ -82,7 +91,6 @@ describe('test init', () => {
       });
       assert.ok(SplunkRum.inited);
       doesBeaconUrlEndWith('https://rum-ingest.test.signalfx.com/v1/rum');
-      SplunkRum.deinit();
     });
     it('can use realm + otlp config option', () => {
       SplunkRum.init({
@@ -95,9 +103,9 @@ describe('test init', () => {
       });
       assert.ok(SplunkRum.inited);
       doesBeaconUrlEndWith('https://rum-ingest.test.signalfx.com/v1/rumotlp');
-      SplunkRum.deinit();
     });
   });
+
   describe('successful', () => {
     it('should have been inited properly with doc load spans', (done) => {
       SplunkRum.init({
@@ -111,7 +119,7 @@ describe('test init', () => {
         rumAccessToken: undefined,
       });
       assert.ok(SplunkRum.inited);
-      SplunkRum.provider.addSpanProcessor(capturer);
+      SplunkRum.provider!.addSpanProcessor(capturer);
       setTimeout(()=> {
         assert.ok(capturer.spans.length >= 3);
         const docLoadTraceId = capturer.spans.find(span => span.name === 'documentLoad')?.spanContext().traceId;
@@ -133,7 +141,6 @@ describe('test init', () => {
         const resourceFetchSpan = capturer.spans.find(span => span.name === 'resourceFetch');
         assert.ok(resourceFetchSpan, 'resourceFetch span presence.');
 
-        SplunkRum.deinit();
         done();
       }, 1000);
     });
@@ -147,7 +154,6 @@ describe('test init', () => {
 
       assert.ok(SplunkRum.inited);
       doesBeaconUrlEndWith('/foo?auth=test123');
-      SplunkRum.deinit();
     });
   });
   describe('double-init has no effect', () => {
@@ -155,7 +161,6 @@ describe('test init', () => {
       SplunkRum.init({ beaconEndpoint: 'https://127.0.0.1:8888/foo', applicationName: 'app', rumAccessToken: undefined });
       SplunkRum.init({ beaconEndpoint: 'https://127.0.0.1:8888/bar', applicationName: 'app', rumAccessToken: undefined });
       doesBeaconUrlEndWith('/foo');
-      SplunkRum.deinit();
     });
   });
   describe('exporter option', () => {
@@ -184,9 +189,45 @@ describe('test init', () => {
       SplunkRum.provider.getTracer('test').startSpan('testSpan').end();
       setTimeout(() => {
         expect(exportMock.called).to.eq(true);
-        SplunkRum.deinit();
         done();
       });
+    });
+  });
+
+  describe('multiple instance protection', () => {
+    function init() {
+      SplunkRum.init({
+        beaconEndpoint: 'https://127.0.0.1:9999/foo',
+        applicationName: 'my-app',
+        deploymentEnvironment: 'my-env',
+        globalAttributes: { customerType: 'GOLD' },
+        instrumentations:{
+          websocket: true
+        },
+        rumAccessToken: undefined,
+      });
+    }
+
+    it('sets the global version flag', () => {
+      init();
+      assert.ok(SplunkRum.inited);
+
+      assert.ok(typeof window[Symbol.for('opentelemetry.js.api.1')]['splunk.rum.version'] === 'string');
+      assert.ok(typeof window[Symbol.for('opentelemetry.js.api.1')]['splunk.rum'] === 'object');
+      assert.ok(!!window[Symbol.for('opentelemetry.js.api.1')]['splunk.rum']);
+    });
+
+    it('fails the init if the version does not match', () => {
+      window[Symbol.for('opentelemetry.js.api.1')]['splunk.rum.version'] = '1.2.3';
+      init();
+      assert.ok(!SplunkRum.inited);
+    });
+
+    it('fails the init if splunk.rum already exists', () => {
+      window[Symbol.for('opentelemetry.js.api.1')]['splunk.rum.version'] = VERSION;
+      window[Symbol.for('opentelemetry.js.api.1')]['splunk.rum'] = {};
+      init();
+      assert.ok(!SplunkRum.inited);
     });
   });
 });
@@ -197,7 +238,7 @@ describe('creating spans is possible', () => {
     initWithDefaultConfig(capturer);
   });
   afterEach(() => {
-    deinit();
+    deinit(true);
   });
 
   // FIXME figure out ways to validate zipkin 'export', sendBeacon, etc. etc.
