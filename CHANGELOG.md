@@ -2,6 +2,12 @@
 
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
+## 0.19.1
+
+* `@splunk/otel-web`
+  * Optionally allow all spans to count as activity ([#818](https://github.com/signalfx/splunk-otel-js-web/pull/818)) 
+  * Protect against multiple instances running in the same context ([#819](https://github.com/signalfx/splunk-otel-js-web/pull/819))
+
 ## 0.19.0
 
 | Open Telemetry API | Core    | Instrumentations & Contrib |
