@@ -42,7 +42,7 @@
     "@aws-sdk/client-s3": "^3.171.0",
     "@octokit/graphql": "^7.0.1",
     "@octokit/request": "^8.1.1",
-    "@typescript-eslint/eslint-plugin": "^6.2.0",
+    "@typescript-eslint/eslint-plugin": "^8.6.0",
     "@typescript-eslint/parser": "^6.2.0",
     "dotenv": "^16.3.1",
     "eslint": "^8.45.0",
