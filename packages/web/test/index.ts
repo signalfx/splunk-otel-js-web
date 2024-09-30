@@ -31,3 +31,4 @@ import './SplunkSpanAttributesProcessor.test';
 import './SplunkOtelWeb.test';
 import './synthetics.test';
 import './socketio.test';
+import './stackTrace.test';

@@ -99,3 +99,22 @@ export function initWithSyncPipeline(additionalOptions = {}): {
 export function deinit(force?: boolean): void {
   SplunkRum.deinit(force);
 }
+
+export function generateFilePaths(domainCount: number, pathCount: number) {
+  const paths: string[] = [];
+  for (let i = 0; i < domainCount; i++) {
+    let domain = `http://domain${i}.com`;
+    for (let j = 0; j < pathCount; j++) {
+      paths.push(`${domain}/path${j}.js`);
+    }
+  }
+  return paths;
+}
+
+export function generateRandomStackTrace(paths: string[], stackCount: number)  {
+  let stack = 'Error\n';
+  for (let i = 0; i < stackCount; i++) {
+    stack += `at ${paths[Math.floor(Math.random() * paths.length)]}:${Math.floor(Math.random() * 1000)}:${Math.floor(Math.random() * 1000)}\n`;
+  }
+  return stack;
+}
