@@ -175,5 +175,26 @@ module.exports = {
     await browser.globals.waitForTestToFinish();
 
     browser.assert.not.ok(browser.globals.getReceivedSpans().find(({ name }) => name === 'onerror'), 'Checking lack of error span.');
+  },
+  'minified script with source map id': async function(browser) {
+    await browser.url(browser.globals.getUrl('/errors/views/minified_file_errors.ejs'));
+    // click on button1 to trigger error
+    await browser.click('#button1');
+    await browser.pause(1000);
+    const errorSpan1 = await browser.globals.findSpan(s => s.name === 'onerror');
+    await browser.assert.ok(!!errorSpan1, 'Checking presence of error span.');
+    await browser.assert.strictEqual(errorSpan1.tags['error.message'], 'Error from script1.js');
+    // check errorSpan2.tags['error.source_map_ids'] contains the strings script1.min.js and the hash text
+    await browser.assert.ok(errorSpan1.tags['error.source_map_ids'].includes('script1.min.js'));
+    await browser.assert.ok(errorSpan1.tags['error.source_map_ids'].includes('9663c60664c425cef3b141c167e9b324240ce10ae488726293892b7130266a6b'));
+    // clear spans and do same for button2
+    browser.globals.clearReceivedSpans();
+    await browser.click('#button2');
+    await browser.pause(1000);
+    const errorSpan2 = await browser.globals.findSpan(s => s.name === 'onerror');
+    await browser.assert.ok(!!errorSpan2, 'Checking presence of error span.');
+    await browser.assert.strictEqual(errorSpan2.tags['error.message'], 'Error from script2.js');
+    await browser.assert.ok(errorSpan2.tags['error.source_map_ids'].includes('script2.min.js'));
+    await browser.assert.ok(errorSpan2.tags['error.source_map_ids'].includes('9793573cdc2ab308a0b1996bea14253ec8832bc036210475ded0813cafa27066'));
   }
 };

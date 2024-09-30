@@ -37,9 +37,33 @@ function stringifyValue(value: unknown) {
   return value.toString();
 }
 
+function parseErrorStack(stack: string): string {
+  //get list of files in stack , find corresponding sourcemap id and add it to the source map id object
+  const sourceMapIds = {};
+  const urlPattern = /(https?:\/\/[^\s]+\/[^\s:]+|\/[^\s:]+)/g;
+  const urls = stack.match(urlPattern);
+  if (urls) {
+    urls.forEach(url => {
+      // Strip off any line/column numbers at the end after the last colon
+      const cleanedUrl = url.split(/:(?=\d+$)/)[0];
+      const globalSourceMapIds = (window as any).sourceMapIds;
+      if(globalSourceMapIds && globalSourceMapIds[cleanedUrl] && !sourceMapIds[cleanedUrl]) {
+        sourceMapIds[cleanedUrl] = globalSourceMapIds[cleanedUrl];
+      }
+    });
+  }
+  return JSON.stringify(sourceMapIds);
+}
+
 function addStackIfUseful(span: Span, err: Error) {
+
   if (err && err.stack && useful(err.stack)) {
+    //get sourcemap ids and add to span as error.soruce_map_ids
     span.setAttribute('error.stack', limitLen(err.stack.toString(), STACK_LIMIT));
+    const sourcemapIds = parseErrorStack(err.stack);
+    if (sourcemapIds) {
+      span.setAttribute('error.source_map_ids', sourcemapIds);
+    }
   }
 }
 
