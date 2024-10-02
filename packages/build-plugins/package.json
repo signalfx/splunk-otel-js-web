@@ -1,7 +1,7 @@
 {
   "name": "@splunk/olly-web-build-plugins",
   "private": true,
-  "version": "0.0.1",
+  "version": "0.19.1",
   "description": "Build plugins for users of @splunk/otel-web",
   "repository": "github:signalfx/splunk-otel-js-browser",
   "scripts": {
