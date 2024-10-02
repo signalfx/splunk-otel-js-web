@@ -1,0 +1,33 @@
+{
+  "name": "@splunk/olly-web-build-plugins",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Build plugins for users of @splunk/otel-web",
+  "repository": "github:signalfx/splunk-otel-js-browser",
+  "scripts": {
+    "compile": "npm-run-all -s compile:*",
+    "compile:tsc": "tsc --build tsconfig.cjs.json tsconfig.esm.json"
+  },
+  "author": "Splunk Observability Instrumentals Team <ssg-observability-instrumentals-npm@splunk.com>",
+  "license": "Apache-2.0",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/cjs/index.d.ts",
+  "exports": {
+    "types": "./dist/cjs/index.d.ts",
+    "import": "./dist/esm/index.js",
+    "require": "./dist/cjs/index.js"
+  },
+  "files": [
+    "dist/cjs/**/*.js",
+    "dist/cjs/**/*.js.map",
+    "dist/cjs/**/*.d.ts",
+    "dist/esm/**/*.js",
+    "dist/esm/**/*.js.map",
+    "dist/esm/**/*.d.ts"
+  ],
+  "bugs": {
+    "url": "https://github.com/signalfx/splunk-otel-js-browser/issues"
+  },
+  "homepage": "https://github.com/signalfx/splunk-otel-js-browser#readme"
+}
