@@ -14,7 +14,7 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v4.2.2
-            - uses: actions/setup-node@v4.4.0
+            - uses: actions/setup-node@v4.3.0
               with:
                   node-version: '22'
                   cache: 'npm'
@@ -52,6 +52,9 @@ jobs:
                   path: vitest-report/
                   retention-days: 14
 
+            - name: Run Unit Tests (Plugin)
+              run: npm run test:plugin
+
     tests-macos:
         timeout-minutes: 60
         runs-on: macos-latest
@@ -63,7 +66,7 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v4.2.2
-            - uses: actions/setup-node@v4.4.0
+            - uses: actions/setup-node@v4.3.0
               with:
                   node-version: '22'
                   cache: 'npm'
@@ -97,6 +100,9 @@ jobs:
                   path: vitest-report/
                   retention-days: 14
 
+            - name: Run Unit Tests (Plugin)
+              run: npm run test:plugin
+
     merge-reports:
         name: Merge playwright reports
         if: ${{ !cancelled() }}
@@ -106,7 +112,7 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v4.2.2
-            - uses: actions/setup-node@v4.4.0
+            - uses: actions/setup-node@v4.3.0
               with:
                   node-version: '22'
                   cache: 'npm'
