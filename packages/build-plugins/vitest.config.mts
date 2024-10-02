@@ -21,38 +21,15 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
 	test: {
-		browser: {
-			enabled: true,
-			provider: 'playwright',
-			headless: true,
-			instances: [
-				{
-					browser: 'chromium',
-				},
-				{
-					browser: 'firefox',
-				},
-				{
-					browser: 'webkit',
-				},
-			],
-			api: {
-				host: '127.0.0.1',
-				port: 1234,
-			},
-		},
-		retry: 3,
 		clearMocks: true,
 		coverage: {
 			exclude: ['**/node_modules'],
 			provider: 'istanbul',
 		},
 		include: ['**/*.test.ts'],
-		exclude: ['./node_modules/**/*.test.ts', './packages/build-plugins/**/*.test.ts'],
+		exclude: ['**/node_modules'],
 		pool: 'forks',
 		root: path.resolve(__dirname),
 		reporters: ['default', 'html'],
-		globalSetup: ['./tests/global-setup.ts'],
-		setupFiles: ['./tests/setup.ts'],
 	},
 })
