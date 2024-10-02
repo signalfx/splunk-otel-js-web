@@ -15,8 +15,8 @@ limitations under the License.
 */
 
 import * as assert from 'assert';
-import { beforeEach } from "mocha";
-import { generateFilePaths, generateRandomStackTrace } from "./utils";
+import { beforeEach } from 'mocha';
+import { generateFilePaths, generateRandomStackTrace } from './utils';
 
 const chromeStackTraceEval = `Error: Something went wrong
     at eval (eval at <anonymous> (http://example.com/scripts/main.js:10:20), <anonymous>:1:1)
@@ -25,10 +25,10 @@ const chromeStackTraceEval = `Error: Something went wrong
     at new ConstructorName (http://example.com/scripts/controller.js:25:35)
     at http://example.com/scripts/main.js:30:40`;
 const chromeStackTraceEvalExpected = [
-    "http://example.com/scripts/main.js",
-    "http://example.com/scripts/utils.js",
-    "http://example.com/scripts/app.js",
-    "http://example.com/scripts/controller.js",
+  'http://example.com/scripts/main.js',
+  'http://example.com/scripts/utils.js',
+  'http://example.com/scripts/app.js',
+  'http://example.com/scripts/controller.js',
 ];
 
 const chromeStackTraceAnonymous = `TypeError: undefined is not a function
@@ -38,9 +38,9 @@ const chromeStackTraceAnonymous = `TypeError: undefined is not a function
     at new ConstructorName (http://example.com/js/app.js:25:20)
     at <anonymous>:30:25`;
 const chromeStackTraceAnonymousExpected = [
-    "http://example.com/js/anonymous.js",
-    "http://example.com/js/utils.js",
-    "http://example.com/js/app.js",
+  'http://example.com/js/anonymous.js',
+  'http://example.com/js/utils.js',
+  'http://example.com/js/app.js',
 ];
 
 const geckoStackTraceEval = `Error: Something went wrong
@@ -51,10 +51,10 @@ const geckoStackTraceEval = `Error: Something went wrong
     ConstructorName@http://example.com/scripts/controller.js:25:35
     @http://example.com/scripts/main.js:30:40`;
 const geckoStackTraceEvalExpected = [
-    "http://example.com/scripts/main.js",
-    "http://example.com/scripts/utils.js",
-    "http://example.com/scripts/app.js",
-    "http://example.com/scripts/controller.js",
+  'http://example.com/scripts/main.js',
+  'http://example.com/scripts/utils.js',
+  'http://example.com/scripts/app.js',
+  'http://example.com/scripts/controller.js',
 ];
 
 const geckoStackTraceAnonymous = `TypeError: undefined is not a function
@@ -64,9 +64,9 @@ const geckoStackTraceAnonymous = `TypeError: undefined is not a function
     ConstructorName@http://example.com/js/app.js:25:20
     @<anonymous>:30:25`;
 const geckoStackTraceAnonymousExpected = [
-    "http://example.com/js/anonymous.js",
-    "http://example.com/js/utils.js",
-    "http://example.com/js/app.js"
+  'http://example.com/js/anonymous.js',
+  'http://example.com/js/utils.js',
+  'http://example.com/js/app.js'
 ];
 
 // Test 1: simple test w/ dupes
@@ -111,113 +111,113 @@ const expected6 = ['http://example.com:8080/path/js/main.js', 'http://example.co
 const stack7 = `Error
     at file://testing.com:8000/js/testFile.js:1:2
     at blob:https://example.com:1000/src/hello.js:2:3`;
-const expected7 = ['file://testing.com:8000/js/testFile.js', 'https://example.com:1000/src/hello.js']
+const expected7 = ['file://testing.com:8000/js/testFile.js', 'https://example.com:1000/src/hello.js'];
 
-const regexFilter = /([\w]+:\/\/[^\s\/]+\/[^\s?:#]+)/g;
+const regexFilter = /([\w]+:\/\/[^\s/]+\/[^\s?:#]+)/g;
 describe('regexFilter', () => {
-    let urls = new Set();
-    let match;
+  let urls = new Set();
+  let match;
 
-    beforeEach(() => {
-        urls = new Set();
-        match = null;
-    });
-    it('should test chrome eval stack traces', () => {
-        while ((match = regexFilter.exec(chromeStackTraceEval)) !== null) {
-            urls.add(match[0]);
-        }
-        let urlArr = [...urls];
-        assert.deepEqual(urlArr, chromeStackTraceEvalExpected);
-    });
+  beforeEach(() => {
+    urls = new Set();
+    match = null;
+  });
+  it('should test chrome eval stack traces', () => {
+    while ((match = regexFilter.exec(chromeStackTraceEval)) !== null) {
+      urls.add(match[0]);
+    }
+    const urlArr = [...urls];
+    assert.deepEqual(urlArr, chromeStackTraceEvalExpected);
+  });
 
-    it ('should test chrome anonymous stack traces', () => {
-        while ((match = regexFilter.exec(chromeStackTraceAnonymous)) !== null) {
-            urls.add(match[0]);
-        }
-        let urlArr = [...urls];
-        assert.deepEqual(urlArr, chromeStackTraceAnonymousExpected);
-    });
+  it ('should test chrome anonymous stack traces', () => {
+    while ((match = regexFilter.exec(chromeStackTraceAnonymous)) !== null) {
+      urls.add(match[0]);
+    }
+    const urlArr = [...urls];
+    assert.deepEqual(urlArr, chromeStackTraceAnonymousExpected);
+  });
 
-    it ('should test gecko eval stack traces', () => {
-        while ((match = regexFilter.exec(geckoStackTraceEval)) !== null) {
-            urls.add(match[0]);
-        }
-        let urlArr = [...urls];
-        assert.deepEqual(urlArr, chromeStackTraceEvalExpected);
-    });
+  it ('should test gecko eval stack traces', () => {
+    while ((match = regexFilter.exec(geckoStackTraceEval)) !== null) {
+      urls.add(match[0]);
+    }
+    const urlArr = [...urls];
+    assert.deepEqual(urlArr, geckoStackTraceEvalExpected);
+  });
 
-    it ('should test gecko anonymous stack traces', () => {
-        while ((match = regexFilter.exec(geckoStackTraceAnonymous)) !== null) {
-            urls.add(match[0]);
-        }
-        let urlArr = [...urls];
-        assert.deepEqual(urlArr, chromeStackTraceAnonymousExpected);
-    });
+  it ('should test gecko anonymous stack traces', () => {
+    while ((match = regexFilter.exec(geckoStackTraceAnonymous)) !== null) {
+      urls.add(match[0]);
+    }
+    const urlArr = [...urls];
+    assert.deepEqual(urlArr, geckoStackTraceAnonymousExpected);
+  });
 
-    it ('should test simple stack trace with dupes', () => {
-        while ((match = regexFilter.exec(stack1)) !== null) {
-            urls.add(match[0]);
-        }
-        let urlArr = [...urls];
-        assert.deepEqual(urlArr, expected1);
-    });
+  it ('should test simple stack trace with dupes', () => {
+    while ((match = regexFilter.exec(stack1)) !== null) {
+      urls.add(match[0]);
+    }
+    const urlArr = [...urls];
+    assert.deepEqual(urlArr, expected1);
+  });
 
-    it ('should test http vs https stack traces', () => {
-        while ((match = regexFilter.exec(stack2)) !== null) {
-            urls.add(match[0]);
-        }
-        let urlArr = [...urls];
-        assert.deepEqual(urlArr, expected2);
-    });
+  it ('should test http vs https stack traces', () => {
+    while ((match = regexFilter.exec(stack2)) !== null) {
+      urls.add(match[0]);
+    }
+    const urlArr = [...urls];
+    assert.deepEqual(urlArr, expected2);
+  });
 
-    it ('should test no full url path stack traces', () => {
-        while ((match = regexFilter.exec(stack3)) !== null) {
-            urls.add(match[0]);
-        }
-        let urlArr = [...urls];
-        assert.deepEqual(urlArr, expected3);
-    });
+  it ('should test no full url path stack traces', () => {
+    while ((match = regexFilter.exec(stack3)) !== null) {
+      urls.add(match[0]);
+    }
+    const urlArr = [...urls];
+    assert.deepEqual(urlArr, expected3);
+  });
 
-    it ('should test url ports in stack traces', () => {
-        while ((match = regexFilter.exec(stack4)) !== null) {
-            urls.add(match[0]);
-        }
-        let urlArr = [...urls];
-        assert.deepEqual(urlArr, expected4);
-    });
+  it ('should test url ports in stack traces', () => {
+    while ((match = regexFilter.exec(stack4)) !== null) {
+      urls.add(match[0]);
+    }
+    const urlArr = [...urls];
+    assert.deepEqual(urlArr, expected4);
+  });
 
-    it ('should test duplicate urls in stack traces', () => {
-        while ((match = regexFilter.exec(stack5)) !== null) {
-            urls.add(match[0]);
-        }
-        let urlArr = [...urls];
-        assert.deepEqual(urlArr, expected5);
-    });
+  it ('should test duplicate urls in stack traces', () => {
+    while ((match = regexFilter.exec(stack5)) !== null) {
+      urls.add(match[0]);
+    }
+    const urlArr = [...urls];
+    assert.deepEqual(urlArr, expected5);
+  });
 
-    it ('should test query strings/fragments in stack traces', () => {
-        while ((match = regexFilter.exec(stack6)) !== null) {
-            urls.add(match[0]);
-        }
-        let urlArr = [...urls];
-        assert.deepEqual(urlArr, expected6);
-    });
+  it ('should test query strings/fragments in stack traces', () => {
+    while ((match = regexFilter.exec(stack6)) !== null) {
+      urls.add(match[0]);
+    }
+    const urlArr = [...urls];
+    assert.deepEqual(urlArr, expected6);
+  });
 
-    it ('should test blobs and diff protocols in stack traces', () => {
-        while ((match = regexFilter.exec(stack7)) !== null) {
-            urls.add(match[0]);
-        }
-        let urlArr = [...urls];
-        assert.deepEqual(urlArr, expected7);
-    });
+  it ('should test blobs and diff protocols in stack traces', () => {
+    while ((match = regexFilter.exec(stack7)) !== null) {
+      urls.add(match[0]);
+    }
+    const urlArr = [...urls];
+    assert.deepEqual(urlArr, expected7);
+  });
 
-    it ('should test long stack traces', () => {
-        const randomPaths = generateFilePaths(20, 20);
-        const randomStack = generateRandomStackTrace(randomPaths, 10000);
+  it ('should test long stack traces', () => {
+    const randomPaths = generateFilePaths(20, 20);
+    const randomStack = generateRandomStackTrace(randomPaths, 10000);
 
-        while ((match = regexFilter.exec(randomStack)) !== null) {
-            urls.add(match[0]);
-        }
-        let urlArr = [...urls];
-        assert.deepEqual(urlArr.sort(), randomPaths.sort());
-    });
+    while ((match = regexFilter.exec(randomStack)) !== null) {
+      urls.add(match[0]);
+    }
+    const urlArr = [...urls];
+    assert.deepEqual(urlArr.sort(), randomPaths.sort());
+  });
 });

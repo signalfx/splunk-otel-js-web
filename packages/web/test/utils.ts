@@ -100,10 +100,10 @@ export function deinit(force?: boolean): void {
   SplunkRum.deinit(force);
 }
 
-export function generateFilePaths(domainCount: number, pathCount: number) {
+export function generateFilePaths(domainCount: number, pathCount: number): string[] {
   const paths: string[] = [];
   for (let i = 0; i < domainCount; i++) {
-    let domain = `http://domain${i}.com`;
+    const domain = `http://domain${i}.com`;
     for (let j = 0; j < pathCount; j++) {
       paths.push(`${domain}/path${j}.js`);
     }
@@ -111,7 +111,7 @@ export function generateFilePaths(domainCount: number, pathCount: number) {
   return paths;
 }
 
-export function generateRandomStackTrace(paths: string[], stackCount: number)  {
+export function generateRandomStackTrace(paths: string[], stackCount: number): string  {
   let stack = 'Error\n';
   for (let i = 0; i < stackCount; i++) {
     stack += `at ${paths[Math.floor(Math.random() * paths.length)]}:${Math.floor(Math.random() * 1000)}:${Math.floor(Math.random() * 1000)}\n`;
