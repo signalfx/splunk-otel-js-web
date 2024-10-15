@@ -10,7 +10,7 @@
     "compile:browser": "rollup -c",
     "compile:tsc": "tsc --build tsconfig.cjs.json tsconfig.esm.json",
     "test:unit:watch": "karma start",
-    "test:unit:ci": "nyc karma start --single-run --no-auto-watch --browsers ChromeHeadless",
+    "test:unit:ci": "nyc karma start --single-run --no-auto-watch --browsers ChromeHeadlessCI",
     "test:unit:ci-node": "env TS_NODE_TRANSPILE_ONLY=true TS_NODE_PROJECT=tsconfig.cjs.json nyc mocha",
     "test:integration:local": "npm-run-all -s compile test:integration:local:headlessChrome:_execute",
     "test:integration:local:firefox": "npm-run-all -s compile test:integration:local:firefox:_execute",
