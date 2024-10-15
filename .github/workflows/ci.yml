@@ -10,7 +10,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4.2.1
-      - uses: actions/setup-node@v4.0.3
+      - uses: actions/setup-node@v4.0.4
         with:
           node-version: '18'
           cache: 'npm'
@@ -48,7 +48,7 @@ jobs:
           tunnelName: ${{ secrets.SAUCE_TUNNEL_ID }}
       - name: Checkout
         uses: actions/checkout@v4.2.1
-      - uses: actions/setup-node@v4.0.3
+      - uses: actions/setup-node@v4.0.4
         with:
           node-version: '18'
           cache: 'npm'
@@ -70,7 +70,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4.2.1
-      - uses: actions/setup-node@v4.0.3
+      - uses: actions/setup-node@v4.0.4
         with:
           node-version: '18'
           cache: 'npm'
