@@ -18,6 +18,11 @@ import { expect } from 'chai';
 import { computeSourceMapId, getCodeSnippet } from '../src/utils';
 
 describe('getCodeSnippet', function () {
+  it('inserts the source map id into the snippet', function () {
+    const code = getCodeSnippet('testid123');
+    expect(code).contains('window.sourceMapIds[s] = \'testid123\'');
+  });
+
   it('does not throw error in a node environment', function () {
     const code = getCodeSnippet('testid123');
     // eslint-disable-next-line no-eval
@@ -33,7 +38,7 @@ describe('getCodeSnippet', function () {
 });
 
 describe('computeSourceMapId', function () {
-  it('returns a consistent GUID result in base64', function () {
+  it('returns a consistent id in GUID format', function () {
     const id = computeSourceMapId('console.log("Hello world")');
 
     expect(id).eq('d77ec5d8-4fb5-fbc8-1897-54b54e939bcd');
