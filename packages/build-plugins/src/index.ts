@@ -14,8 +14,37 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-export class OllyWebWebpackPlugin {
-  public apply(): void {
-    console.log('apply OllyWebWebpackPlugin');
-  }
+import { createUnplugin, UnpluginFactory } from 'unplugin';
+
+import { BannerPlugin, WebpackPluginInstance } from 'webpack';
+import { computeSourceMapId, getCodeSnippet } from './utils';
+
+export interface OllyWebPluginOptions {
+  // define your plugin options here
 }
+
+const unpluginFactory: UnpluginFactory<OllyWebPluginOptions | undefined> = () => ({
+  name: 'OllyWebPlugin',
+  webpack(compiler) {
+    compiler.hooks.thisCompilation.tap('OllyWebPlugin', () => {
+      const bannerPlugin = new BannerPlugin({
+        banner: ({ chunk }) => {
+          if (!chunk.hash) {
+            return '';
+          }
+          const sourceMapId = computeSourceMapId(chunk.hash);
+          return getCodeSnippet(sourceMapId);
+        },
+        entryOnly: false,
+        footer: true,
+        include: /\.(js|mjs)$/,
+        raw: true,
+      });
+      bannerPlugin.apply(compiler);
+    });
+  }
+});
+
+const unplugin = createUnplugin(unpluginFactory);
+
+export const ollyWebWebpackPlugin: (options: OllyWebPluginOptions) => WebpackPluginInstance = unplugin.webpack;
