@@ -77,7 +77,7 @@
     "@types/nightwatch": "^2.3.24",
     "@types/shimmer": "^1.0.2",
     "@types/sinon": "^17.0.3",
-    "body-parser": "^1.20.2",
+    "body-parser": "^1.20.3",
     "chai": "^4.3.7",
     "chrome-launcher": "^1.0.0",
     "chromedriver": "^129.0.4",
