@@ -40,7 +40,7 @@ function stringifyValue(value: unknown) {
 function parseErrorStack(stack: string): string {
   //get list of files in stack , find corresponding sourcemap id and add it to the source map id object
   const sourceMapIds = {};
-  const urlPattern = /(https?:\/\/[^\s]+\/[^\s:]+|\/[^\s:]+)/g;
+  const urlPattern = /([\w]+:\/\/[^\s/]+\/[^\s?:#]+)/g;
   const urls = stack.match(urlPattern);
   if (urls) {
     urls.forEach(url => {
