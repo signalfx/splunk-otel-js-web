@@ -27,6 +27,9 @@
     "dist/esm/**/*.js.map",
     "dist/esm/**/*.d.ts"
   ],
+  "dependencies": {
+    "unplugin": "^1.14.1"
+  },
   "devDependencies": {
     "@types/chai": "^4.3.5",
     "@types/mocha": "^10.0.1",
@@ -35,14 +38,11 @@
     "nyc": "^15.1.0",
     "ts-node": "^10.9.1"
   },
+  "peerDependencies": {
+    "webpack": "^4 || ^5"
+  },
   "bugs": {
     "url": "https://github.com/signalfx/splunk-otel-js-browser/issues"
   },
-  "homepage": "https://github.com/signalfx/splunk-otel-js-browser#readme",
-  "dependencies": {
-    "unplugin": "^1.14.1"
-  },
-  "peerDependencies": {
-    "webpack": "^4 || ^5"
-  }
+  "homepage": "https://github.com/signalfx/splunk-otel-js-browser#readme"
 }
