@@ -1,5 +1,5 @@
-* @signalfx/gdi-js-maintainers @signalfx/gdi-js-approvers
-*.md @signalfx/gdi-docs @signalfx/gdi-js-maintainers @signalfx/gdi-js-approvers
-*.rst @signalfx/gdi-docs @signalfx/gdi-js-maintainers @signalfx/gdi-js-approvers
-docs/ @signalfx/gdi-docs @signalfx/gdi-js-maintainers @signalfx/gdi-js-approvers
-README* @signalfx/gdi-docs @signalfx/gdi-js-maintainers @signalfx/gdi-js-approvers
+* @signalfx/gdi-js-web-maintainers @signalfx/gdi-js-web-approvers @signalfx/gdi-js-maintainers @signalfx/gdi-js-approvers
+*.md @signalfx/gdi-docs @signalfx/gdi-js-web-maintainers @signalfx/gdi-js-web-approvers @signalfx/gdi-js-maintainers @signalfx/gdi-js-approvers
+*.rst @signalfx/gdi-docs @signalfx/gdi-js-web-maintainers @signalfx/gdi-js-web-approvers @signalfx/gdi-js-maintainers @signalfx/gdi-js-approvers
+docs/ @signalfx/gdi-docs @signalfx/gdi-js-web-maintainers @signalfx/gdi-js-web-approvers @signalfx/gdi-js-maintainers @signalfx/gdi-js-approvers
+README* @signalfx/gdi-docs @signalfx/gdi-js-web-maintainers @signalfx/gdi-js-web-approvers @signalfx/gdi-js-maintainers @signalfx/gdi-js-approvers
