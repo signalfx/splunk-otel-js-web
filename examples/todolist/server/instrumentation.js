@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-const { startTracing } = require('@splunk/otel');
+const { startTracing } = require('@splunk/otel')
 
 startTracing({
-  serviceName: 'RUM Todo Example Backend'
-});
+	serviceName: 'RUM Todo Example Backend',
+})

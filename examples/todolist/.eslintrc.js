@@ -15,12 +15,12 @@ limitations under the License.
 */
 
 module.exports = {
-  extends: '../../.eslintrc.js',
-  env: {
-    browser: true,
-    es6: true,
-  },
-  globals: {
-    process: 'readable',
-  },
-};
+	extends: '../../eslint.config.mjs',
+	env: {
+		browser: true,
+		es6: true,
+	},
+	globals: {
+		process: 'readable',
+	},
+}
