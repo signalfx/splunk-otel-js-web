@@ -70,6 +70,7 @@ import { SessionBasedSampler } from './SessionBasedSampler';
 import { SocketIoClientInstrumentationConfig, SplunkSocketIoClientInstrumentation } from './SplunkSocketIoClientInstrumentation';
 import { SplunkOTLPTraceExporter } from './exporters/otlp';
 import { registerGlobal, unregisterGlobal } from './global-utils';
+import { BrowserInstanceService } from './services/BrowserInstanceService';
 
 export { SplunkExporterConfig } from './exporters/common';
 export { SplunkZipkinExporter } from './exporters/zipkin';
@@ -433,6 +434,7 @@ export const SplunkRum: SplunkOtelWebType = {
       // Splunk specific attributes
       'splunk.rumVersion': VERSION,
       'splunk.scriptInstance': instanceId,
+      'browser.instance.id': BrowserInstanceService.id,
       'app': applicationName,
     };
 
