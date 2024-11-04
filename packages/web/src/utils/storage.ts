@@ -18,7 +18,7 @@ export const safelyGetSessionStorage = (key: string): string | null | undefined 
   try {
     return window.sessionStorage.getItem(key);
   } catch {
-    return undefined
+    return undefined;
     // sessionStorage not accessible probably user is in incognito-mode
     // or set "Block third-party cookies" option in browser settings
   }

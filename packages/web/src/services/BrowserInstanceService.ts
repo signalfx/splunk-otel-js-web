@@ -50,8 +50,8 @@ export class BrowserInstanceService {
       this._id = browserInstanceId;
       safelySetSessionStorage(BROWSER_INSTANCE_ID_KEY, browserInstanceId);
     } else {
-        // Storage is not accessible.
-        this._id = undefined;
+      // Storage is not accessible.
+      this._id = undefined;
     }
     
 
