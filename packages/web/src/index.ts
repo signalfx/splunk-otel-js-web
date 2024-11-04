@@ -434,9 +434,12 @@ export const SplunkRum: SplunkOtelWebType = {
       // Splunk specific attributes
       'splunk.rumVersion': VERSION,
       'splunk.scriptInstance': instanceId,
-      'browser.instance.id': BrowserInstanceService.id,
       'app': applicationName,
     };
+
+    if(BrowserInstanceService.id) {
+      resourceAttrs['browser.instance.id'] = BrowserInstanceService.id
+    }
 
     const syntheticsRunId = getSyntheticsRunId();
     if (syntheticsRunId) {

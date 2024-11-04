@@ -14,15 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-export const safelyGetSessionStorage = (key: string): string | null => {
-  let value = null;
+export const safelyGetSessionStorage = (key: string): string | null | undefined => {
   try {
-    value = window.sessionStorage.getItem(key);
+    return window.sessionStorage.getItem(key);
   } catch {
+    return undefined
     // sessionStorage not accessible probably user is in incognito-mode
     // or set "Block third-party cookies" option in browser settings
   }
-  return value;
 };
 
 export const safelySetSessionStorage = (key: string, value: string): boolean => {
