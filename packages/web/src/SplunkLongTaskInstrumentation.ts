@@ -30,7 +30,13 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
 		super(MODULE_NAME, VERSION, Object.assign({}, config))
 	}
 
-	init(): void {}
+	disable(): void {
+		if (!this.isSupported()) {
+			return
+		}
+
+		this._longtaskObserver.disconnect()
+	}
 
 	enable(): void {
 		if (!this.isSupported()) {
@@ -43,13 +49,7 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
 		this._longtaskObserver.observe({ type: LONGTASK_PERFORMANCE_TYPE, buffered: true })
 	}
 
-	disable(): void {
-		if (!this.isSupported()) {
-			return
-		}
-
-		this._longtaskObserver.disconnect()
-	}
+	init(): void {}
 
 	private _createSpanFromEntry(entry: PerformanceEntry) {
 		const span = this.tracer.startSpan(LONGTASK_PERFORMANCE_TYPE, {

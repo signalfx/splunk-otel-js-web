@@ -27,22 +27,16 @@ export class SplunkSpanAttributesProcessor implements SpanProcessor {
 		this._globalAttributes = globalAttributes ?? {}
 	}
 
-	setGlobalAttributes(attributes?: Attributes): void {
-		if (attributes) {
-			Object.assign(this._globalAttributes, attributes)
-		} else {
-			for (const key of Object.keys(this._globalAttributes)) {
-				delete this._globalAttributes[key]
-			}
-		}
+	forceFlush(): Promise<void> {
+		return Promise.resolve()
 	}
 
 	getGlobalAttributes(): Attributes {
 		return this._globalAttributes
 	}
 
-	forceFlush(): Promise<void> {
-		return Promise.resolve()
+	onEnd(): void {
+		// Intentionally empty
 	}
 
 	onStart(span: Span): void {
@@ -52,8 +46,14 @@ export class SplunkSpanAttributesProcessor implements SpanProcessor {
 		span.setAttribute('browser.instance.visibility_state', document.visibilityState)
 	}
 
-	onEnd(): void {
-		// Intentionally empty
+	setGlobalAttributes(attributes?: Attributes): void {
+		if (attributes) {
+			Object.assign(this._globalAttributes, attributes)
+		} else {
+			for (const key of Object.keys(this._globalAttributes)) {
+				delete this._globalAttributes[key]
+			}
+		}
 	}
 
 	shutdown(): Promise<void> {

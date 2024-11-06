@@ -82,15 +82,15 @@ export * from './SplunkWebTracerProvider'
 export * from './SessionBasedSampler'
 
 interface SplunkOtelWebOptionsInstrumentations {
+	connectivity?: boolean | InstrumentationConfig
 	document?: boolean | InstrumentationConfig
 	errors?: boolean
 	fetch?: boolean | FetchInstrumentationConfig
 	interactions?: boolean | SplunkUserInteractionInstrumentationConfig
 	longtask?: boolean | InstrumentationConfig
-	visibility?: boolean | InstrumentationConfig
-	connectivity?: boolean | InstrumentationConfig
 	postload?: boolean | SplunkPostDocLoadResourceInstrumentationConfig
 	socketio?: boolean | SocketIoClientInstrumentationConfig
+	visibility?: boolean | InstrumentationConfig
 	websocket?: boolean | InstrumentationConfig
 	webvitals?: boolean | WebVitalsInstrumentationConfig
 	xhr?: boolean | XMLHttpRequestInstrumentationConfig
@@ -110,6 +110,11 @@ export interface SplunkOtelWebExporterOptions {
 }
 
 export interface SplunkOtelWebConfig {
+	/**
+	 * If enabled, all spans are treated as activity and extend the duration of the session. Defaults to false.
+	 */
+	_experimental_allSpansExtendSession?: boolean
+
 	/** Allows http beacon urls */
 	allowInsecureBeacon?: boolean
 
@@ -121,14 +126,14 @@ export interface SplunkOtelWebConfig {
 	/** Application name */
 	applicationName?: string
 
+	/** Destination for the captured data */
+	beaconEndpoint?: string
+
 	/**
 	 * Destination for the captured data
 	 * @deprecated Renamed to `beaconEndpoint`, or use realm
 	 */
 	beaconUrl?: string
-
-	/** Destination for the captured data */
-	beaconEndpoint?: string
 
 	/** Options for context manager */
 	context?: ContextManagerConfig
@@ -149,11 +154,6 @@ export interface SplunkOtelWebConfig {
 	 * @deprecated Renamed to `deploymentEnvironment`
 	 */
 	environment?: string
-
-	/**
-	 * Sets a value for the 'app.version' attribute
-	 */
-	version?: string
 
 	/** Allows configuring how telemetry data is sent to the backend */
 	exporter?: SplunkOtelWebExporterOptions
@@ -176,6 +176,12 @@ export interface SplunkOtelWebConfig {
 	realm?: string
 
 	/**
+	 * Publicly-visible rum access token value. Please do not paste any other access token or auth value into here, as this
+	 * will be visible to every user of your app
+	 */
+	rumAccessToken?: string
+
+	/**
 	 * Publicly-visible `rumAuth` value.  Please do not paste any other access token or auth value into here, as this
 	 * will be visible to every user of your app
 	 * @deprecated Renamed to rumAccessToken
@@ -183,20 +189,14 @@ export interface SplunkOtelWebConfig {
 	rumAuth?: string
 
 	/**
-	 * Publicly-visible rum access token value. Please do not paste any other access token or auth value into here, as this
-	 * will be visible to every user of your app
-	 */
-	rumAccessToken?: string
-
-	/**
 	 * Config options passed to web tracer
 	 */
 	tracer?: WebTracerConfig
 
 	/**
-	 * If enabled, all spans are treated as activity and extend the duration of the session. Defaults to false.
+	 * Sets a value for the 'app.version' attribute
 	 */
-	_experimental_allSpansExtendSession?: boolean
+	version?: string
 }
 
 interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
@@ -299,52 +299,55 @@ function buildExporter(options: SplunkOtelWebConfigInternal) {
 }
 
 export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
-	readonly resource?: Resource
+	AlwaysOffSampler: typeof AlwaysOffSampler
+	AlwaysOnSampler: typeof AlwaysOnSampler
 
-	deinit: (force?: boolean) => void
+	DEFAULT_AUTO_INSTRUMENTED_EVENTS: UserInteractionEventsConfig
+	DEFAULT_AUTO_INSTRUMENTED_EVENT_NAMES: (keyof HTMLElementEventMap)[]
 
-	error: (...args: Array<any>) => void
+	ParentBasedSampler: typeof ParentBasedSampler
+	SessionBasedSampler: typeof SessionBasedSampler
 
-	init: (options: SplunkOtelWebConfig) => void
-
-	/**
-	 * Allows experimental options to be passed. No versioning guarantees are given for this method.
-	 */
-	_internalInit: (options: Partial<SplunkOtelWebConfigInternal>) => void
-
-	provider?: SplunkWebTracerProvider
-
-	attributesProcessor?: SplunkSpanAttributesProcessor
-
-	setGlobalAttributes: (attributes: Attributes) => void
-
-	/**
-	 * This method provides access to computed, final value of global attributes, which are applied to all created spans.
-	 */
-	getGlobalAttributes: () => Attributes
 	/**
 	 * @deprecated Use {@link getGlobalAttributes()}
 	 */
 	_experimental_getGlobalAttributes: () => Attributes
 
 	/**
-	 * This method returns current session ID
-	 */
-	getSessionId: () => SessionIdType | undefined
-	/**
 	 * @deprecated Use {@link getSessionId()}
 	 */
 	_experimental_getSessionId: () => SessionIdType | undefined
 
-	DEFAULT_AUTO_INSTRUMENTED_EVENTS: UserInteractionEventsConfig
-	DEFAULT_AUTO_INSTRUMENTED_EVENT_NAMES: (keyof HTMLElementEventMap)[]
+	/**
+	 * Allows experimental options to be passed. No versioning guarantees are given for this method.
+	 */
+	_internalInit: (options: Partial<SplunkOtelWebConfigInternal>) => void
 
-	AlwaysOnSampler: typeof AlwaysOnSampler
-	AlwaysOffSampler: typeof AlwaysOffSampler
-	ParentBasedSampler: typeof ParentBasedSampler
-	SessionBasedSampler: typeof SessionBasedSampler
+	attributesProcessor?: SplunkSpanAttributesProcessor
+
+	deinit: (force?: boolean) => void
+
+	error: (...args: Array<any>) => void
+
+	/**
+	 * This method provides access to computed, final value of global attributes, which are applied to all created spans.
+	 */
+	getGlobalAttributes: () => Attributes
+
+	/**
+	 * This method returns current session ID
+	 */
+	getSessionId: () => SessionIdType | undefined
+
+	init: (options: SplunkOtelWebConfig) => void
 
 	readonly inited: boolean
+
+	provider?: SplunkWebTracerProvider
+
+	readonly resource?: Resource
+
+	setGlobalAttributes: (attributes: Attributes) => void
 }
 
 let inited = false

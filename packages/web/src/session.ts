@@ -156,11 +156,11 @@ class ActivitySpanProcessor implements SpanProcessor {
 		return Promise.resolve()
 	}
 
+	onEnd(): void {}
+
 	onStart(): void {
 		markActivity()
 	}
-
-	onEnd(): void {}
 
 	shutdown(): Promise<void> {
 		return Promise.resolve()

@@ -72,9 +72,9 @@ type ExposedSuper = {
 }
 
 export class SplunkUserInteractionInstrumentation extends UserInteractionInstrumentation {
-	private _routingTracer: Tracer
-
 	private __hashChangeHandler: (ev: Event) => void
+
+	private _routingTracer: Tracer
 
 	constructor(config: SplunkUserInteractionInstrumentationConfig = {}) {
 		// Prefer otel's eventNames property
@@ -138,33 +138,6 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 		}
 	}
 
-	setTracerProvider(tracerProvider: TracerProvider): void {
-		super.setTracerProvider(tracerProvider)
-		this._routingTracer = tracerProvider.getTracer(ROUTING_INSTRUMENTATION_NAME, ROUTING_INSTRUMENTATION_VERSION)
-	}
-
-	getZoneWithPrototype(): undefined {
-		// FIXME work out ngZone issues with Angular  PENDING
-		return undefined
-	}
-
-	enable(): void {
-		this.__hashChangeHandler = (event: Event) => {
-			this._emitRouteChangeSpan((event as HashChangeEvent).oldURL)
-		}
-
-		// Hash can be changed with location.hash = '#newThing', no way to hook that directly...
-		window.addEventListener('hashchange', this.__hashChangeHandler)
-
-		super.enable()
-	}
-
-	disable(): void {
-		super.disable()
-
-		window.removeEventListener('hashchange', this.__hashChangeHandler)
-	}
-
 	// FIXME find cleaner way to patch
 	_patchHistoryMethod(): (original: any) => (this: History, ...args: unknown[]) => any {
 		const that = this
@@ -179,6 +152,33 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 
 				return result
 			}
+	}
+
+	disable(): void {
+		super.disable()
+
+		window.removeEventListener('hashchange', this.__hashChangeHandler)
+	}
+
+	enable(): void {
+		this.__hashChangeHandler = (event: Event) => {
+			this._emitRouteChangeSpan((event as HashChangeEvent).oldURL)
+		}
+
+		// Hash can be changed with location.hash = '#newThing', no way to hook that directly...
+		window.addEventListener('hashchange', this.__hashChangeHandler)
+
+		super.enable()
+	}
+
+	getZoneWithPrototype(): undefined {
+		// FIXME work out ngZone issues with Angular  PENDING
+		return undefined
+	}
+
+	setTracerProvider(tracerProvider: TracerProvider): void {
+		super.setTracerProvider(tracerProvider)
+		this._routingTracer = tracerProvider.getTracer(ROUTING_INSTRUMENTATION_NAME, ROUTING_INSTRUMENTATION_VERSION)
 	}
 
 	private _emitRouteChangeSpan(oldHref) {

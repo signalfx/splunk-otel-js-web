@@ -39,7 +39,7 @@ function buildDummySpan({ name = '<name>', attributes = {} } = {}) {
 		duration: timeInputToHrTime(1000),
 		status: { code: api.SpanStatusCode.UNSET },
 		resource: { attributes: {} },
-		events: [] as { time: api.HrTime; name: string }[],
+		events: [] as { name: string; time: api.HrTime }[],
 	} as ReadableSpan
 }
 

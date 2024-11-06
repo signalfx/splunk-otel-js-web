@@ -37,9 +37,9 @@ export interface ZipkinAnnotation {
 
 // TODO: upstream proper exports from ZipkinExporter
 export interface ZipkinEndpoint {
-	serviceName?: string
 	ipv4?: string
 	port?: number
+	serviceName?: string
 }
 
 // TODO: upstream proper exports from ZipkinExporter
@@ -49,18 +49,18 @@ export interface ZipkinTags {
 
 // TODO: upstream proper exports from ZipkinExporter
 export interface ZipkinSpan {
-	traceId: string
-	name: string
-	parentId?: string
+	annotations?: ZipkinAnnotation[]
+	debug?: boolean
+	duration: number
 	id: string
 	kind?: 'CLIENT' | 'SERVER' | 'CONSUMER' | 'PRODUCER'
-	timestamp: number
-	duration: number
-	debug?: boolean
-	shared?: boolean
 	localEndpoint: ZipkinEndpoint
-	annotations?: ZipkinAnnotation[]
+	name: string
+	parentId?: string
+	shared?: boolean
 	tags: ZipkinTags
+	timestamp: number
+	traceId: string
 }
 
 /**
@@ -70,11 +70,11 @@ export class SplunkZipkinExporter implements SpanExporter {
 	// TODO: a test which relies on beaconUrl needs to be fixed first
 	public readonly beaconUrl: string
 
+	private readonly _beaconSender: SplunkExporterConfig['beaconSender']
+
 	private readonly _onAttributesSerializing: SplunkExporterConfig['onAttributesSerializing']
 
 	private readonly _xhrSender: SplunkExporterConfig['xhrSender']
-
-	private readonly _beaconSender: SplunkExporterConfig['beaconSender']
 
 	constructor({
 		url,
@@ -113,6 +113,31 @@ export class SplunkZipkinExporter implements SpanExporter {
 		return this._postTranslateSpan(zspan)
 	}
 
+	private _postTranslateSpan(span: ZipkinSpan) {
+		delete span.localEndpoint
+		span.name = limitLen(span.name, MAX_VALUE_LIMIT)
+		for (const [key, value] of Object.entries(span.tags)) {
+			span.tags[key] = limitLen(value.toString(), MAX_VALUE_LIMIT)
+		}
+		// Remove inaccurate CORS timings
+		const zero = performance.timeOrigin * 1000
+		if (
+			span.tags['http.url'] &&
+			!(span.tags['http.url'] as string).startsWith(location.origin) &&
+			span.timestamp > zero &&
+			span.annotations
+		) {
+			span.annotations = span.annotations.filter(
+				({ timestamp }) =>
+					// Chrome has increased precision on timeOrigin but otel may round it
+					// Due to multiple roundings and truncs it can be less than timeOrigin
+					timestamp > zero,
+			)
+		}
+
+		return span
+	}
+
 	private _preTranslateSpan(span: ReadableSpan): ReadableSpan {
 		return {
 			// todo: once typescript is implemented, conform to ReadableSpan
@@ -139,30 +164,5 @@ export class SplunkZipkinExporter implements SpanExporter {
 			droppedEventsCount: span.droppedEventsCount,
 			droppedLinksCount: span.droppedLinksCount,
 		}
-	}
-
-	private _postTranslateSpan(span: ZipkinSpan) {
-		delete span.localEndpoint
-		span.name = limitLen(span.name, MAX_VALUE_LIMIT)
-		for (const [key, value] of Object.entries(span.tags)) {
-			span.tags[key] = limitLen(value.toString(), MAX_VALUE_LIMIT)
-		}
-		// Remove inaccurate CORS timings
-		const zero = performance.timeOrigin * 1000
-		if (
-			span.tags['http.url'] &&
-			!(span.tags['http.url'] as string).startsWith(location.origin) &&
-			span.timestamp > zero &&
-			span.annotations
-		) {
-			span.annotations = span.annotations.filter(
-				({ timestamp }) =>
-					// Chrome has increased precision on timeOrigin but otel may round it
-					// Due to multiple roundings and truncs it can be less than timeOrigin
-					timestamp > zero,
-			)
-		}
-
-		return span
 	}
 }

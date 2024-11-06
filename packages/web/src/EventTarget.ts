@@ -19,11 +19,11 @@
 import { Attributes } from '@opentelemetry/api'
 
 export interface SplunkOtelWebEventTypes {
-	'session-changed': {
-		sessionId: string
-	}
 	'global-attributes-changed': {
 		attributes: Attributes
+	}
+	'session-changed': {
+		sessionId: string
 	}
 }
 
@@ -42,18 +42,6 @@ export class InternalEventTarget {
 		;(this.events[type] as SplunkEventListener<T>[]).push(listener)
 	}
 
-	removeEventListener<T extends keyof SplunkOtelWebEventTypes>(type: T, listener: SplunkEventListener<T>): void {
-		if (!this.events[type]) {
-			return
-		}
-
-		const i = (this.events[type] as SplunkEventListener<T>[]).indexOf(listener)
-
-		if (i >= 0) {
-			this.events[type].splice(i, 1)
-		}
-	}
-
 	emit<T extends keyof SplunkOtelWebEventTypes>(type: T, payload: SplunkOtelWebEventTypes[T]): void {
 		const listeners = this.events[type]
 		if (!listeners) {
@@ -65,17 +53,32 @@ export class InternalEventTarget {
 			void Promise.resolve({ payload }).then(listener)
 		})
 	}
+
+	removeEventListener<T extends keyof SplunkOtelWebEventTypes>(type: T, listener: SplunkEventListener<T>): void {
+		if (!this.events[type]) {
+			return
+		}
+
+		const i = (this.events[type] as SplunkEventListener<T>[]).indexOf(listener)
+
+		if (i >= 0) {
+			this.events[type].splice(i, 1)
+		}
+	}
 }
 
 export interface SplunkOtelWebEventTarget {
-	addEventListener: InternalEventTarget['addEventListener']
 	/**
 	 * @deprecated Use {@link addEventListener}
 	 */
 	_experimental_addEventListener: InternalEventTarget['addEventListener']
-	removeEventListener: InternalEventTarget['removeEventListener']
+
 	/**
 	 * @deprecated Use {@link removeEventListener}
 	 */
 	_experimental_removeEventListener: InternalEventTarget['removeEventListener']
+
+	addEventListener: InternalEventTarget['addEventListener']
+
+	removeEventListener: InternalEventTarget['removeEventListener']
 }

@@ -24,11 +24,11 @@ const SPAN_RATE_LIMIT_PERIOD = 30000 // millis, sweep to clear out span counts
 const MAX_SPANS_PER_PERIOD_PER_COMPONENT = 100
 
 export class RateLimitProcessor implements SpanProcessor {
-	protected readonly _spanCounts = new Map<string, number>()
+	protected readonly _limiterHandle: number
 
 	protected readonly _parents = new Map<string, boolean>()
 
-	protected readonly _limiterHandle: number
+	protected readonly _spanCounts = new Map<string, number>()
 
 	constructor(protected _processor: SpanProcessor) {
 		this._limiterHandle = window.setInterval(() => {
@@ -38,6 +38,21 @@ export class RateLimitProcessor implements SpanProcessor {
 
 	forceFlush(): Promise<void> {
 		return this._processor.forceFlush()
+	}
+
+	onEnd(span: ReadableSpan): void {
+		if (this._filter(span)) {
+			this._processor.onEnd(span)
+		}
+	}
+
+	onStart(span: Span, parentContext: Context): void {
+		return this._processor.onStart(span, parentContext)
+	}
+
+	shutdown(): Promise<void> {
+		clearInterval(this._limiterHandle)
+		return this._processor.shutdown()
 	}
 
 	protected _filter(span: ReadableSpan): boolean {
@@ -60,20 +75,5 @@ export class RateLimitProcessor implements SpanProcessor {
 		}
 
 		return counter <= MAX_SPANS_PER_PERIOD_PER_COMPONENT
-	}
-
-	onStart(span: Span, parentContext: Context): void {
-		return this._processor.onStart(span, parentContext)
-	}
-
-	onEnd(span: ReadableSpan): void {
-		if (this._filter(span)) {
-			this._processor.onEnd(span)
-		}
-	}
-
-	shutdown(): Promise<void> {
-		clearInterval(this._limiterHandle)
-		return this._processor.shutdown()
 	}
 }

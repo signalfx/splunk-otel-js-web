@@ -23,10 +23,10 @@ import { IAnyValue, Log } from './types'
 import { VERSION } from './version.js'
 
 interface OTLPLogExporterConfig {
-	headers?: Record<string, string>
 	beaconUrl: string
-	getResourceAttributes: () => JsonObject
 	debug?: boolean
+	getResourceAttributes: () => JsonObject
+	headers?: Record<string, string>
 }
 
 const defaultHeaders = {

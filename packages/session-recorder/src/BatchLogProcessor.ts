@@ -26,15 +26,15 @@ export interface BatchLogProcessorConfig {
 }
 
 export class BatchLogProcessor {
-	private logs: Log[] = []
+	exporter: LogExporter
+
+	lastBatchSent: number
 
 	scheduledDelayMillis: number
 
 	timeout: NodeJS.Timeout | undefined
 
-	exporter: LogExporter
-
-	lastBatchSent: number
+	private logs: Log[] = []
 
 	constructor(exporter: LogExporter, config: BatchLogProcessorConfig) {
 		this.scheduledDelayMillis = config?.scheduledDelayMillis || 5000
@@ -42,6 +42,15 @@ export class BatchLogProcessor {
 
 		window.addEventListener('unload', () => {
 			this._flushAll()
+		})
+	}
+
+	_flushAll(): void {
+		this.lastBatchSent = Date.now()
+
+		context.with(suppressTracing(context.active()), () => {
+			const logsToExport = this.logs.splice(0, this.logs.length)
+			this.exporter.export(logsToExport)
 		})
 	}
 
@@ -54,15 +63,6 @@ export class BatchLogProcessor {
 				this._flushAll()
 			}, this.scheduledDelayMillis)
 		}
-	}
-
-	_flushAll(): void {
-		this.lastBatchSent = Date.now()
-
-		context.with(suppressTracing(context.active()), () => {
-			const logsToExport = this.logs.splice(0, this.logs.length)
-			this.exporter.export(logsToExport)
-		})
 	}
 }
 

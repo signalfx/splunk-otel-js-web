@@ -38,13 +38,18 @@ function defaultShouldPreventSpanCreation() {
  * addEventListener of Element
  */
 export class UserInteractionInstrumentation extends InstrumentationBase<unknown> {
-	readonly version = VERSION
-
 	readonly moduleName: string = 'user-interaction'
 
-	private _spansData = new WeakMap<api.Span, SpanData>()
+	readonly version = VERSION
 
-	private _zonePatched?: boolean
+	private _eventNames: Set<EventName>
+
+	// for event bubbling
+	private _eventsSpanMap: WeakMap<Event, api.Span> = new WeakMap<Event, api.Span>()
+
+	private _shouldPreventSpanCreation: ShouldPreventSpanCreation
+
+	private _spansData = new WeakMap<api.Span, SpanData>()
 
 	// for addEventListener/removeEventListener state
 	private _wrappedListeners = new WeakMap<
@@ -52,12 +57,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
 		Map<string, Map<Element, EventListenerOrEventListenerObject>>
 	>()
 
-	// for event bubbling
-	private _eventsSpanMap: WeakMap<Event, api.Span> = new WeakMap<Event, api.Span>()
-
-	private _eventNames: Set<EventName>
-
-	private _shouldPreventSpanCreation: ShouldPreventSpanCreation
+	private _zonePatched?: boolean
 
 	constructor(config?: UserInteractionInstrumentationConfig) {
 		super('@opentelemetry/instrumentation-user-interaction', VERSION, config)
@@ -66,6 +66,122 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
 			typeof config?.shouldPreventSpanCreation === 'function'
 				? config.shouldPreventSpanCreation
 				: defaultShouldPreventSpanCreation
+	}
+
+	/**
+	 * Patches the history api
+	 */
+	_patchHistoryApi() {
+		this._unpatchHistoryApi()
+
+		this._wrap(history, 'replaceState', this._patchHistoryMethod())
+		this._wrap(history, 'pushState', this._patchHistoryMethod())
+		this._wrap(history, 'back', this._patchHistoryMethod())
+		this._wrap(history, 'forward', this._patchHistoryMethod())
+		this._wrap(history, 'go', this._patchHistoryMethod())
+	}
+
+	/**
+	 * Patches the certain history api method
+	 */
+	_patchHistoryMethod() {
+		const instrumentation = this
+		return (original: any) =>
+			function patchHistoryMethod(this: History, ...args: unknown[]) {
+				const url = `${location.pathname}${location.hash}${location.search}`
+				const result = original.apply(this, args)
+				const urlAfter = `${location.pathname}${location.hash}${location.search}`
+				if (url !== urlAfter) {
+					instrumentation._updateInteractionName(urlAfter)
+				}
+
+				return result
+			}
+	}
+
+	/**
+	 * unpatch the history api methods
+	 */
+	_unpatchHistoryApi() {
+		if (isWrapped(history.replaceState)) {
+			this._unwrap(history, 'replaceState')
+		}
+
+		if (isWrapped(history.pushState)) {
+			this._unwrap(history, 'pushState')
+		}
+
+		if (isWrapped(history.back)) {
+			this._unwrap(history, 'back')
+		}
+
+		if (isWrapped(history.forward)) {
+			this._unwrap(history, 'forward')
+		}
+
+		if (isWrapped(history.go)) {
+			this._unwrap(history, 'go')
+		}
+	}
+
+	/**
+	 * Updates interaction span name
+	 * @param url
+	 */
+	_updateInteractionName(url: string) {
+		const span: api.Span | undefined = api.trace.getSpan(api.context.active())
+		if (span && typeof span.updateName === 'function') {
+			span.updateName(`${EVENT_NAVIGATION_NAME} ${url}`)
+		}
+	}
+
+	/**
+	 * implements unpatch function
+	 */
+	override disable() {
+		const targets = this._getPatchableEventTargets()
+		targets.forEach((target) => {
+			if (isWrapped(target.addEventListener)) {
+				this._unwrap(target, 'addEventListener')
+			}
+
+			if (isWrapped(target.removeEventListener)) {
+				this._unwrap(target, 'removeEventListener')
+			}
+		})
+
+		this._unpatchHistoryApi()
+	}
+
+	/**
+	 * implements enable function
+	 */
+	override enable() {
+		this._zonePatched = false
+		const targets = this._getPatchableEventTargets()
+		targets.forEach((target) => {
+			if (isWrapped(target.addEventListener)) {
+				this._unwrap(target, 'addEventListener')
+				this._diag.debug('removing previous patch from method addEventListener')
+			}
+
+			if (isWrapped(target.removeEventListener)) {
+				this._unwrap(target, 'removeEventListener')
+				this._diag.debug('removing previous patch from method removeEventListener')
+			}
+
+			this._wrap(target, 'addEventListener', this._patchAddEventListener())
+			this._wrap(target, 'removeEventListener', this._patchRemoveEventListener())
+		})
+
+		this._patchHistoryApi()
+	}
+
+	/**
+	 * returns Zone
+	 */
+	getZoneWithPrototype(): undefined {
+		return undefined
 	}
 
 	init() {}
@@ -135,64 +251,19 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
 	}
 
 	/**
-	 * Returns true if we should use the patched callback; false if it's already been patched
+	 * Most browser provide event listener api via EventTarget in prototype chain.
+	 * Exception to this is IE 11 which has it on the prototypes closest to EventTarget:
+	 *
+	 * * - has addEventListener in IE
+	 * ** - has addEventListener in all other browsers
+	 * ! - missing in IE
+	 *
+	 * Element -> Node * -> EventTarget **! -> Object
+	 * Document -> Node * -> EventTarget **! -> Object
+	 * Window * -> WindowProperties ! -> EventTarget **! -> Object
 	 */
-	private addPatchedListener(
-		on: Element,
-		type: string,
-		listener: EventListenerOrEventListenerObject,
-		wrappedListener: (...args: unknown[]) => void,
-	): boolean {
-		let listener2Type = this._wrappedListeners.get(listener)
-		if (!listener2Type) {
-			listener2Type = new Map()
-			this._wrappedListeners.set(listener, listener2Type)
-		}
-
-		let element2patched = listener2Type.get(type)
-		if (!element2patched) {
-			element2patched = new Map()
-			listener2Type.set(type, element2patched)
-		}
-
-		if (element2patched.has(on)) {
-			return false
-		}
-
-		element2patched.set(on, wrappedListener)
-		return true
-	}
-
-	/**
-	 * Returns the patched version of the callback (or undefined)
-	 */
-	private removePatchedListener(
-		on: Element,
-		type: string,
-		listener: EventListenerOrEventListenerObject,
-	): EventListenerOrEventListenerObject | undefined {
-		const listener2Type = this._wrappedListeners.get(listener)
-		if (!listener2Type) {
-			return undefined
-		}
-
-		const element2patched = listener2Type.get(type)
-		if (!element2patched) {
-			return undefined
-		}
-
-		const patched = element2patched.get(on)
-		if (patched) {
-			element2patched.delete(on)
-			if (element2patched.size === 0) {
-				listener2Type.delete(type)
-				if (listener2Type.size === 0) {
-					this._wrappedListeners.delete(listener)
-				}
-			}
-		}
-
-		return patched
+	private _getPatchableEventTargets(): EventTarget[] {
+		return window.EventTarget ? [EventTarget.prototype] : [Node.prototype, Window.prototype]
 	}
 
 	// utility method to deal with the Function|EventListener nature of addEventListener
@@ -278,134 +349,63 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
 	}
 
 	/**
-	 * Most browser provide event listener api via EventTarget in prototype chain.
-	 * Exception to this is IE 11 which has it on the prototypes closest to EventTarget:
-	 *
-	 * * - has addEventListener in IE
-	 * ** - has addEventListener in all other browsers
-	 * ! - missing in IE
-	 *
-	 * Element -> Node * -> EventTarget **! -> Object
-	 * Document -> Node * -> EventTarget **! -> Object
-	 * Window * -> WindowProperties ! -> EventTarget **! -> Object
+	 * Returns true if we should use the patched callback; false if it's already been patched
 	 */
-	private _getPatchableEventTargets(): EventTarget[] {
-		return window.EventTarget ? [EventTarget.prototype] : [Node.prototype, Window.prototype]
+	private addPatchedListener(
+		on: Element,
+		type: string,
+		listener: EventListenerOrEventListenerObject,
+		wrappedListener: (...args: unknown[]) => void,
+	): boolean {
+		let listener2Type = this._wrappedListeners.get(listener)
+		if (!listener2Type) {
+			listener2Type = new Map()
+			this._wrappedListeners.set(listener, listener2Type)
+		}
+
+		let element2patched = listener2Type.get(type)
+		if (!element2patched) {
+			element2patched = new Map()
+			listener2Type.set(type, element2patched)
+		}
+
+		if (element2patched.has(on)) {
+			return false
+		}
+
+		element2patched.set(on, wrappedListener)
+		return true
 	}
 
 	/**
-	 * Patches the history api
+	 * Returns the patched version of the callback (or undefined)
 	 */
-	_patchHistoryApi() {
-		this._unpatchHistoryApi()
+	private removePatchedListener(
+		on: Element,
+		type: string,
+		listener: EventListenerOrEventListenerObject,
+	): EventListenerOrEventListenerObject | undefined {
+		const listener2Type = this._wrappedListeners.get(listener)
+		if (!listener2Type) {
+			return undefined
+		}
 
-		this._wrap(history, 'replaceState', this._patchHistoryMethod())
-		this._wrap(history, 'pushState', this._patchHistoryMethod())
-		this._wrap(history, 'back', this._patchHistoryMethod())
-		this._wrap(history, 'forward', this._patchHistoryMethod())
-		this._wrap(history, 'go', this._patchHistoryMethod())
-	}
+		const element2patched = listener2Type.get(type)
+		if (!element2patched) {
+			return undefined
+		}
 
-	/**
-	 * Patches the certain history api method
-	 */
-	_patchHistoryMethod() {
-		const instrumentation = this
-		return (original: any) =>
-			function patchHistoryMethod(this: History, ...args: unknown[]) {
-				const url = `${location.pathname}${location.hash}${location.search}`
-				const result = original.apply(this, args)
-				const urlAfter = `${location.pathname}${location.hash}${location.search}`
-				if (url !== urlAfter) {
-					instrumentation._updateInteractionName(urlAfter)
+		const patched = element2patched.get(on)
+		if (patched) {
+			element2patched.delete(on)
+			if (element2patched.size === 0) {
+				listener2Type.delete(type)
+				if (listener2Type.size === 0) {
+					this._wrappedListeners.delete(listener)
 				}
-
-				return result
 			}
-	}
-
-	/**
-	 * unpatch the history api methods
-	 */
-	_unpatchHistoryApi() {
-		if (isWrapped(history.replaceState)) {
-			this._unwrap(history, 'replaceState')
 		}
 
-		if (isWrapped(history.pushState)) {
-			this._unwrap(history, 'pushState')
-		}
-
-		if (isWrapped(history.back)) {
-			this._unwrap(history, 'back')
-		}
-
-		if (isWrapped(history.forward)) {
-			this._unwrap(history, 'forward')
-		}
-
-		if (isWrapped(history.go)) {
-			this._unwrap(history, 'go')
-		}
-	}
-
-	/**
-	 * Updates interaction span name
-	 * @param url
-	 */
-	_updateInteractionName(url: string) {
-		const span: api.Span | undefined = api.trace.getSpan(api.context.active())
-		if (span && typeof span.updateName === 'function') {
-			span.updateName(`${EVENT_NAVIGATION_NAME} ${url}`)
-		}
-	}
-
-	/**
-	 * implements enable function
-	 */
-	override enable() {
-		this._zonePatched = false
-		const targets = this._getPatchableEventTargets()
-		targets.forEach((target) => {
-			if (isWrapped(target.addEventListener)) {
-				this._unwrap(target, 'addEventListener')
-				this._diag.debug('removing previous patch from method addEventListener')
-			}
-
-			if (isWrapped(target.removeEventListener)) {
-				this._unwrap(target, 'removeEventListener')
-				this._diag.debug('removing previous patch from method removeEventListener')
-			}
-
-			this._wrap(target, 'addEventListener', this._patchAddEventListener())
-			this._wrap(target, 'removeEventListener', this._patchRemoveEventListener())
-		})
-
-		this._patchHistoryApi()
-	}
-
-	/**
-	 * implements unpatch function
-	 */
-	override disable() {
-		const targets = this._getPatchableEventTargets()
-		targets.forEach((target) => {
-			if (isWrapped(target.addEventListener)) {
-				this._unwrap(target, 'addEventListener')
-			}
-
-			if (isWrapped(target.removeEventListener)) {
-				this._unwrap(target, 'removeEventListener')
-			}
-		})
-
-		this._unpatchHistoryApi()
-	}
-
-	/**
-	 * returns Zone
-	 */
-	getZoneWithPrototype(): undefined {
-		return undefined
+		return patched
 	}
 }

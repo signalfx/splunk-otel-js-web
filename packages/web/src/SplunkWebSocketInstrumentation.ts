@@ -42,7 +42,9 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase {
 		this._config = config
 	}
 
-	init(): void {}
+	disable(): void {
+		shimmer.unwrap(window, 'WebSocket')
+	}
 
 	enable(): void {
 		const instrumentation = this
@@ -103,44 +105,7 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase {
 		shimmer.wrap(window, 'WebSocket', webSocketWrapper)
 	}
 
-	disable(): void {
-		shimmer.unwrap(window, 'WebSocket')
-	}
-
-	private startSpan(ws: WebSocket, name: string, spanKind: SpanKind) {
-		const span = this.tracer.startSpan(name, { kind: spanKind })
-		span.setAttribute('component', 'websocket')
-		span.setAttribute('protocol', ws.protocol)
-		span.setAttribute('http.url', ws.url)
-		// FIXME anything else?
-		return span
-	}
-
-	private patchSend(ws: WebSocket) {
-		const instrumentation = this
-		const origSend = ws.send
-		ws.send = function instrumentedSend(...args) {
-			const span = instrumentation.startSpan(ws, 'send', SpanKind.PRODUCER)
-			const sendSize = args.length > 0 ? size(args[0]) : undefined
-			span.setAttribute('http.request_content_length', sendSize)
-			let retVal = undefined
-
-			try {
-				retVal = origSend.apply(ws, args)
-			} catch (err) {
-				instrumentation.endSpanExceptionally(span, err)
-				throw err
-			}
-
-			if (retVal === false) {
-				// Gecko 6.0
-				instrumentation.endSpanExceptionally(span, new Error('Failed to send frame.'))
-			}
-
-			span.end()
-			return retVal
-		}
-	}
+	init(): void {}
 
 	// Returns true iff we should use the patched callback; false if it's already been patched
 	private addPatchedListener(ws: WebSocket, origListener, patched) {
@@ -158,22 +123,15 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase {
 		return true
 	}
 
-	// Returns patched listener or undefined
-	private removePatchedListener(ws, origListener) {
-		const ws2patched = this.listener2ws2patched.get(origListener)
-		if (!ws2patched) {
-			return undefined
-		}
-
-		const patched = ws2patched.get(ws)
-		if (patched) {
-			ws2patched.delete(ws)
-			if (ws2patched.size === 0) {
-				this.listener2ws2patched.delete(ws)
-			}
-		}
-
-		return patched
+	private endSpanExceptionally(span: Span, err: Error) {
+		span.setAttribute('error', true)
+		span.setAttribute('error.message', err.message)
+		span.setAttribute(
+			'error.object',
+			err.name ? err.name : err.constructor && err.constructor.name ? err.constructor.name : 'Error',
+		)
+		//TODO Should we do span.setStatus( someErroCode ) ? Currently all failed spans are CanonicalCode.OK
+		span.end()
 	}
 
 	// FIXME need to share logic better with userinteraction instrumentation
@@ -242,14 +200,56 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase {
 		}
 	}
 
-	private endSpanExceptionally(span: Span, err: Error) {
-		span.setAttribute('error', true)
-		span.setAttribute('error.message', err.message)
-		span.setAttribute(
-			'error.object',
-			err.name ? err.name : err.constructor && err.constructor.name ? err.constructor.name : 'Error',
-		)
-		//TODO Should we do span.setStatus( someErroCode ) ? Currently all failed spans are CanonicalCode.OK
-		span.end()
+	private patchSend(ws: WebSocket) {
+		const instrumentation = this
+		const origSend = ws.send
+		ws.send = function instrumentedSend(...args) {
+			const span = instrumentation.startSpan(ws, 'send', SpanKind.PRODUCER)
+			const sendSize = args.length > 0 ? size(args[0]) : undefined
+			span.setAttribute('http.request_content_length', sendSize)
+			let retVal = undefined
+
+			try {
+				retVal = origSend.apply(ws, args)
+			} catch (err) {
+				instrumentation.endSpanExceptionally(span, err)
+				throw err
+			}
+
+			if (retVal === false) {
+				// Gecko 6.0
+				instrumentation.endSpanExceptionally(span, new Error('Failed to send frame.'))
+			}
+
+			span.end()
+			return retVal
+		}
+	}
+
+	// Returns patched listener or undefined
+	private removePatchedListener(ws, origListener) {
+		const ws2patched = this.listener2ws2patched.get(origListener)
+		if (!ws2patched) {
+			return undefined
+		}
+
+		const patched = ws2patched.get(ws)
+		if (patched) {
+			ws2patched.delete(ws)
+			if (ws2patched.size === 0) {
+				this.listener2ws2patched.delete(ws)
+			}
+		}
+
+		return patched
+	}
+
+	private startSpan(ws: WebSocket, name: string, spanKind: SpanKind) {
+		const span = this.tracer.startSpan(name, { kind: spanKind })
+		span.setAttribute('component', 'websocket')
+		span.setAttribute('protocol', ws.protocol)
+		span.setAttribute('http.url', ws.url)
+		// FIXME anything else?
+		return span
 	}
 }

@@ -42,7 +42,7 @@ function addExtraDocLoadTags(span: api.Span) {
 }
 
 type PerformanceEntriesWithServerTiming = PerformanceEntries & {
-	serverTiming?: ReadonlyArray<{ name: string; duration: number; description: string }>
+	serverTiming?: ReadonlyArray<{ description: string; duration: number; name: string }>
 }
 
 type ExposedSuper = {
