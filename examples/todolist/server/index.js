@@ -14,120 +14,120 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-/* eslint-disable consistent-return, no-console */
-require('./instrumentation');
+require('./instrumentation')
 
-const express = require('express');
-const { json } = require('body-parser');
-const cors = require('cors');
+const express = require('express')
+const { json } = require('body-parser')
+const cors = require('cors')
 
-const app = express();
-const port = 3001;
+const app = express()
+const port = 3001
 
 // simple store for items
-let nextId = 3;
+let nextId = 3
 const items = [
-  {
-    id: 1,
-    text: 'Example todo',
-    completed: false
-  },
-  {
-    id: 2,
-    text: 'Completed example',
-    completed: true
-  }
-];
+	{
+		id: 1,
+		text: 'Example todo',
+		completed: false,
+	},
+	{
+		id: 2,
+		text: 'Completed example',
+		completed: true,
+	},
+]
 const secretItems = [
-  {
-    id: 1,
-    text: 'A secret todo for logged in user',
-    completed: false
-  },
-  {
-    id: 2,
-    text: 'See the secret todos',
-    completed: true
-  }
-];
-const secretToken = 'top-secret-do-not-share-me';
+	{
+		id: 1,
+		text: 'A secret todo for logged in user',
+		completed: false,
+	},
+	{
+		id: 2,
+		text: 'See the secret todos',
+		completed: true,
+	},
+]
+const secretToken = 'top-secret-do-not-share-me'
 
 function getItems(req) {
-  if (req.query.token === secretToken) {
-    return secretItems;
-  }
+	if (req.query.token === secretToken) {
+		return secretItems
+	}
 
-  return items;
+	return items
 }
 
-app.use(json());
-app.use(cors());
+app.use(json())
+app.use(cors())
 
 app.get('/ping', (req, res) => {
-  res.json({ status: true });
-});
+	res.json({ status: true })
+})
 
 app.get('/login', (req, res) => {
-  res.json({ token: secretToken });
-});
+	res.json({ token: secretToken })
+})
 
 app.get('/items', (req, res) => {
-  res.json(getItems(req));
-});
+	res.json(getItems(req))
+})
 
 app.post('/items', (req, res) => {
-  const item = {
-    id: nextId++,
-    text: req.body.text || '',
-    completed: req.body.completed || false
-  };
-  getItems(req).push(item);
+	const item = {
+		id: nextId++,
+		text: req.body.text || '',
+		completed: req.body.completed || false,
+	}
+	getItems(req).push(item)
 
-  res.status(201).json(item);
-});
+	res.status(201).json(item)
+})
 
 app.get('/items/:id', (req, res) => {
-  const reqId = parseInt(req.params.id);
-  const item = getItems(req).find(({ id }) => id === reqId);
-  
-  if (!item) {
-    return res.sendStatus(404);
-  }
+	const reqId = parseInt(req.params.id)
+	const item = getItems(req).find(({ id }) => id === reqId)
 
-  res.json(item);
-});
+	if (!item) {
+		return res.sendStatus(404)
+	}
+
+	res.json(item)
+})
 
 app.patch('/items/:id', (req, res) => {
-  const reqId = parseInt(req.params.id);
-  const item = getItems(req).find(({ id }) => id === reqId);
-  
-  if (!item) {
-    return res.sendStatus(404);
-  }
+	const reqId = parseInt(req.params.id)
+	const item = getItems(req).find(({ id }) => id === reqId)
 
-  if ('text' in req.body) {
-    item.text = req.body.text;
-  }
-  if ('completed' in req.body) {
-    item.completed = req.body.completed;
-  }
+	if (!item) {
+		return res.sendStatus(404)
+	}
 
-  res.json(item);
-});
+	if ('text' in req.body) {
+		item.text = req.body.text
+	}
+
+	if ('completed' in req.body) {
+		item.completed = req.body.completed
+	}
+
+	res.json(item)
+})
 
 app.delete('/items/:id', (req, res) => {
-  const reqId = parseInt(req.params.id);
-  const item = getItems(req).find(({ id }) => id === reqId);
-  
-  if (!item) {
-    return res.sendStatus(404);
-  }
+	const reqId = parseInt(req.params.id)
+	const item = getItems(req).find(({ id }) => id === reqId)
 
-  items.splice(items.indexOf(item), 1);
+	if (!item) {
+		return res.sendStatus(404)
+	}
 
-  res.sendStatus(204);
-});
+	items.splice(items.indexOf(item), 1)
+
+	res.sendStatus(204)
+})
 
 app.listen(port, () => {
-  console.log(`Backend listening on http://localhost:${port}`);
-});
+	console.log(`Backend listening on http://localhost:${port}`)
+})

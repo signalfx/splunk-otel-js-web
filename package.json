@@ -14,9 +14,9 @@
   },
   "scripts": {
     "compile": "npm run --ws compile --",
-    "lint": "eslint --ignore-path .gitignore packages/*/src/ packages/*/test/ packages/*/integration-tests/",
+    "lint": "eslint .",
     "lint:markdown": "markdownlint *.md docs/*.md",
-    "lint:fix": "eslint --ignore-path .gitignore --fix  packages/*/src/ packages/*/test/ packages/*/integration-tests/",
+    "lint:fix": "eslint . --fix",
     "test:integration:local": "npm run --ws --if-present test:integration:local --",
     "test:integration:local:all": "npm run --ws --if-present test:integration:local:all --",
     "test:integration:local:chrome": "npm run --ws --if-present test:integration:local:chrome --",
@@ -40,13 +40,21 @@
   "devDependencies": {
     "@aws-sdk/client-cloudfront": "^3.171.0",
     "@aws-sdk/client-s3": "^3.171.0",
+    "@eslint/js": "^9.13.0",
     "@octokit/graphql": "^7.0.1",
     "@octokit/request": "^8.1.1",
-    "@typescript-eslint/eslint-plugin": "^6.2.0",
-    "@typescript-eslint/parser": "^6.2.0",
+    "@stylistic/eslint-plugin-js": "^2.10.1",
+    "@stylistic/eslint-plugin-ts": "^2.10.1",
+    "@typescript-eslint/eslint-plugin": "^8.12.2",
+    "@typescript-eslint/parser": "^8.12.2",
     "dotenv": "^16.3.1",
-    "eslint": "^8.45.0",
-    "eslint-plugin-header": "^3.1.1",
-    "typescript": "^5.1.6"
+    "eslint": "^9.14.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-headers": "^1.2.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "globals": "^15.11.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.1.6",
+    "typescript-eslint": "^8.12.2"
   }
 }

@@ -15,26 +15,11 @@
  * limitations under the License.
  *
  */
-
-import { accessSync, readdirSync } from 'fs'
-import { resolve } from 'path'
-
-export function getPackageRoots() {
-	const appRoot = process.cwd()
-	const packagesDir = resolve(appRoot, 'packages')
-
-	return readdirSync(packagesDir, { withFileTypes: true })
-		.filter((dirent) => {
-			if (!dirent.isDirectory()) {
-				return false
-			}
-
-			try {
-				accessSync(resolve(packagesDir, dirent.name, 'package.json'))
-				return true
-			} catch {
-				return false
-			}
-		})
-		.map((dirent) => resolve(packagesDir, dirent.name))
+module.exports = {
+	printWidth: 120,
+	quoteProps: 'consistent',
+	semi: false,
+	singleQuote: true,
+	trailingComma: 'all',
+	useTabs: true,
 }

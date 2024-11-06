@@ -1,51 +1,55 @@
-/*
-Copyright 2020 Splunk Inc.
+/**
+ *
+ * Copyright 2024 Splunk Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
-import { wrap } from 'shimmer';
+import { wrap } from 'shimmer'
 
 export function generateId(bits: number): string {
-  const xes = 'x'.repeat(bits/4);
-  return xes.replace(/x/g, function () {
-    return (Math.random() * 16 | 0).toString(16);
-  });
+	const xes = 'x'.repeat(bits / 4)
+	return xes.replace(/x/g, function () {
+		return ((Math.random() * 16) | 0).toString(16)
+	})
 }
 
 export const cookieStore = {
-  set: (value: string): void => { document.cookie = value; },
-  get: (): string => document.cookie,
-};
+	set: (value: string): void => {
+		document.cookie = value
+	},
+	get: (): string => document.cookie,
+}
 
 export function findCookieValue(cookieName: string): string | undefined {
-  const decodedCookie = decodeURIComponent(cookieStore.get());
-  const cookies = decodedCookie.split(';');
-  for (let i = 0; i < cookies.length; i++) {
-    const c = cookies[i].trim();
-    if (c.indexOf(cookieName + '=') === 0) {
-      return c.substring((cookieName + '=').length, c.length);
-    }
-  }
-  return undefined;
+	const decodedCookie = decodeURIComponent(cookieStore.get())
+	const cookies = decodedCookie.split(';')
+	for (let i = 0; i < cookies.length; i++) {
+		const c = cookies[i].trim()
+		if (c.indexOf(cookieName + '=') === 0) {
+			return c.substring((cookieName + '=').length, c.length)
+		}
+	}
+	return undefined
 }
 
 export function limitLen(s: string, cap: number): string {
-  if (s.length > cap) {
-    return s.substring(0, cap);
-  } else {
-    return s;
-  }
+	if (s.length > cap) {
+		return s.substring(0, cap)
+	} else {
+		return s
+	}
 }
 
 /**
@@ -57,19 +61,19 @@ export function limitLen(s: string, cap: number): string {
  * @param defaultDisable If undefined by user should mean false
  */
 export function getPluginConfig<T>(
-  value: T | boolean | undefined,
-  defaults?: T,
-  defaultDisable?: T | boolean,
+	value: T | boolean | undefined,
+	defaults?: T,
+	defaultDisable?: T | boolean,
 ): false | T {
-  if (value === false) {
-    return value;
-  }
+	if (value === false) {
+		return value
+	}
 
-  if (value === undefined && defaultDisable) {
-    return false;
-  }
+	if (value === undefined && defaultDisable) {
+		return false
+	}
 
-  return Object.assign({}, defaults, value);
+	return Object.assign({}, defaults, value)
 }
 
 /**
@@ -79,15 +83,15 @@ export function getPluginConfig<T>(
  * @returns is function
  */
 export function isFunction(value: unknown): value is (...args: unknown[]) => unknown {
-  return typeof value === 'function';
+	return typeof value === 'function'
 }
 
 export function isIframe(): boolean {
-  try {
-    return window.self !== window.top;
-  } catch (e) {
-    return true;
-  }
+	try {
+		return window.self !== window.top
+	} catch {
+		return true
+	}
 }
 
 /**
@@ -102,69 +106,68 @@ export function isIframe(): boolean {
  * @param name Property to patch
  * @param wrapper Wrapper
  */
-// eslint-disable-next-line @typescript-eslint/ban-types
-export function wrapNatively<Nodule extends Object, FieldName extends keyof Nodule>(
-  nodule: Nodule,
-  name: FieldName,
-  wrapper: (original: Nodule[FieldName]) => Nodule[FieldName]
+export function wrapNatively<Nodule extends object, FieldName extends keyof Nodule>(
+	nodule: Nodule,
+	name: FieldName,
+	wrapper: (original: Nodule[FieldName]) => Nodule[FieldName],
 ): void {
-  const orig = nodule[name];
-  wrap(nodule, name, wrapper) as unknown as CallableFunction;
-  const wrapped = nodule[name];
-  wrapped.toString = orig.toString.bind(orig);
+	const orig = nodule[name]
+	wrap(nodule, name, wrapper) as unknown as CallableFunction
+	const wrapped = nodule[name]
+	wrapped.toString = orig.toString.bind(orig)
 }
 
 /**
  * Get the original version of function (without all of the shimmer wrappings)
  */
 export function getOriginalFunction<T extends CallableFunction>(func: T): T {
-  // @ts-expect-error __original isn't mentioned in types
-  while (func.__original && func.__original !== func) {
-    // @ts-expect-error same
-    func = func.__original as T;
-  }
+	// @ts-expect-error __original isn't mentioned in types
+	while (func.__original && func.__original !== func) {
+		// @ts-expect-error same
+		func = func.__original as T
+	}
 
-  return func;
+	return func
 }
 
 /**
  * Wait for a variable to be set globally
- * 
+ *
  * @param {string} identifier Name of the variable (window[identifier])
  * @param {function} callback Fired when such value is available
  * @returns {function} cleanup to call in disable (in case not defined before instrumentation is disabled)
  */
 export function waitForGlobal(identifier: string, callback: (value: unknown) => void): () => void {
-  if (window[identifier]) {
-    callback(window[identifier]);
-    return () => {};
-  }
+	if (window[identifier]) {
+		callback(window[identifier])
+		return () => {}
+	}
 
-  const value = window[identifier]; // most cases undefined
-  let used = false;
-  Object.defineProperty(window, identifier, {
-    get() {
-      return value;
-    },
-    set(newVal) {
-      delete window[identifier];
-      used = true;
-      window[identifier] = newVal;
-      callback(newVal);
-    },
-    configurable: true,
-    enumerable: false,
-  });
+	const value = window[identifier] // most cases undefined
+	let used = false
+	Object.defineProperty(window, identifier, {
+		get() {
+			return value
+		},
+		set(newVal) {
+			delete window[identifier]
+			used = true
+			window[identifier] = newVal
+			callback(newVal)
+		},
+		configurable: true,
+		enumerable: false,
+	})
 
-  return () => {
-    // Don't touch if value is used or another defineProperty used it
-    if (used || window[identifier] !== value) {
-      return;
-    }
+	return () => {
+		// Don't touch if value is used or another defineProperty used it
+		if (used || window[identifier] !== value) {
+			return
+		}
 
-    delete window[identifier];
-    if (value !== undefined) {
-      window[identifier] = value;
-    }
-  };
+		delete window[identifier]
+		if (value !== undefined) {
+			window[identifier] = value
+		}
+	}
 }

@@ -14,26 +14,26 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { useEffect } from 'react';
-import TodoList from './TodoList';
+import { useEffect } from 'react'
+import TodoList from './TodoList'
 
 function App() {
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetch(process.env.REACT_APP_BACKEND + '/ping');
-    }, 60000);
+	useEffect(() => {
+		const interval = setInterval(() => {
+			fetch(process.env.REACT_APP_BACKEND + '/ping')
+		}, 60000)
 
-    return () => {
-      clearInterval(interval);
-    };
-  });
+		return () => {
+			clearInterval(interval)
+		}
+	})
 
-  return (
-    <div className="container p-4">
-      <h1 className="mb-4">Great Todo App!</h1>
-      <TodoList />
-    </div>
-  );
+	return (
+		<div className="container p-4">
+			<h1 className="mb-4">Great Todo App!</h1>
+			<TodoList />
+		</div>
+	)
 }
 
-export default App;
+export default App
