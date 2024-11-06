@@ -24,9 +24,9 @@ const MODULE_NAME = 'splunk-connectivity'
 export class SplunkConnectivityInstrumentation extends InstrumentationBase {
 	offlineListener: any
 
-	onlineListener: any
-
 	offlineStart: number | null
+
+	onlineListener: any
 
 	constructor(config: InstrumentationConfig = {}) {
 		super(MODULE_NAME, VERSION, Object.assign({}, config))
@@ -34,7 +34,10 @@ export class SplunkConnectivityInstrumentation extends InstrumentationBase {
 		this.offlineStart = navigator.onLine ? null : Date.now()
 	}
 
-	init(): void {}
+	disable(): void {
+		window.removeEventListener('offline', this.offlineListener)
+		window.removeEventListener('online', this.onlineListener)
+	}
 
 	enable(): void {
 		this.offlineListener = () => {
@@ -53,10 +56,7 @@ export class SplunkConnectivityInstrumentation extends InstrumentationBase {
 		window.addEventListener('online', this.onlineListener)
 	}
 
-	disable(): void {
-		window.removeEventListener('offline', this.offlineListener)
-		window.removeEventListener('online', this.onlineListener)
-	}
+	init(): void {}
 
 	private _createSpan(online: boolean, startTime: number) {
 		const span = this.tracer.startSpan('connectivity', { startTime })

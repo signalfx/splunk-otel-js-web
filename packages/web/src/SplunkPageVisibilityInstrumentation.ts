@@ -22,18 +22,21 @@ import { VERSION } from './version'
 const MODULE_NAME = 'splunk-visibility'
 
 export class SplunkPageVisibilityInstrumentation extends InstrumentationBase {
+	unloadListener: any
+
 	unloading: boolean
 
 	visibilityListener: any
-
-	unloadListener: any
 
 	constructor(config: InstrumentationConfig = {}) {
 		super(MODULE_NAME, VERSION, Object.assign({}, config))
 		this.unloading = false
 	}
 
-	init(): void {}
+	disable(): void {
+		window.removeEventListener('beforeunload', this.unloadListener)
+		window.removeEventListener('visibilitychange', this.visibilityListener)
+	}
 
 	enable(): void {
 		if (document.hidden) {
@@ -55,10 +58,7 @@ export class SplunkPageVisibilityInstrumentation extends InstrumentationBase {
 		window.addEventListener('visibilitychange', this.visibilityListener)
 	}
 
-	disable(): void {
-		window.removeEventListener('beforeunload', this.unloadListener)
-		window.removeEventListener('visibilitychange', this.visibilityListener)
-	}
+	init(): void {}
 
 	private _createSpan(hidden: boolean) {
 		const now = Date.now()

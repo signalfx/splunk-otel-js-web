@@ -37,13 +37,13 @@ interface SocketIOSocket {
 	(...args: unknown[]): unknown
 
 	prototype: {
-		emit(ev: string, ...args: unknown[]): ThisParameterType<SocketIOSocket>
-		on(ev: string, listener: (...args: unknown[]) => void): ThisParameterType<SocketIOSocket>
 		addEventListener(ev: string, listener: (...args: unknown[]) => void): ThisParameterType<SocketIOSocket>
+		emit(ev: string, ...args: unknown[]): ThisParameterType<SocketIOSocket>
 		off(ev?: string, listener?: (...args: unknown[]) => void): ThisParameterType<SocketIOSocket>
-		removeListener(ev?: string, listener?: (...args: unknown[]) => void): ThisParameterType<SocketIOSocket>
+		on(ev: string, listener: (...args: unknown[]) => void): ThisParameterType<SocketIOSocket>
 		removeAllListeners(ev?: string): ThisParameterType<SocketIOSocket>
 		removeEventListener(ev?: string, listener?: (...args: unknown[]) => void): ThisParameterType<SocketIOSocket>
+		removeListener(ev?: string, listener?: (...args: unknown[]) => void): ThisParameterType<SocketIOSocket>
 	}
 }
 
@@ -79,19 +79,40 @@ function seemsLikeSocketIoClient(io: unknown): io is SocketIOClient {
 const RESERVED_EVENTS = ['connect', 'connect_error', 'disconnect', 'disconnecting', 'newListener', 'removeListener']
 
 export class SplunkSocketIoClientInstrumentation extends InstrumentationBase {
+	_onDisable?: () => void
+
 	protected listeners = new WeakMap<(...args: unknown[]) => void, (...args: unknown[]) => void>()
 
 	constructor(config: SocketIoClientInstrumentationConfig = {}) {
 		super(MODULE_NAME, VERSION, Object.assign({ target: 'io' }, config))
 	}
 
-	_onDisable?: () => void
+	disable(): void {
+		if (this._onDisable) {
+			this._onDisable()
+			this._onDisable = undefined
+		}
+	}
 
-	protected init(): void {}
+	enable(): void {
+		const config = this.getConfig()
+
+		if (!config.target) {
+			return
+		}
+
+		if (typeof config.target === 'string') {
+			this._onDisable = waitForGlobal(config.target, (io: SocketIOClient) => this.patchSocketIo(io))
+		} else {
+			this.patchSocketIo(config.target)
+		}
+	}
 
 	override getConfig(): SocketIoClientInstrumentationConfig {
 		return this._config
 	}
+
+	protected init(): void {}
 
 	protected patchSocketIo(io: SocketIOClient): void {
 		if (!seemsLikeSocketIoClient(io)) {
@@ -215,27 +236,6 @@ export class SplunkSocketIoClientInstrumentation extends InstrumentationBase {
 			io.Socket.prototype.removeListener = io.Socket.prototype.off
 			io.Socket.prototype.removeEventListener = io.Socket.prototype.off
 			io.Socket.prototype.removeAllListeners = io.Socket.prototype.off
-		}
-	}
-
-	enable(): void {
-		const config = this.getConfig()
-
-		if (!config.target) {
-			return
-		}
-
-		if (typeof config.target === 'string') {
-			this._onDisable = waitForGlobal(config.target, (io: SocketIOClient) => this.patchSocketIo(io))
-		} else {
-			this.patchSocketIo(config.target)
-		}
-	}
-
-	disable(): void {
-		if (this._onDisable) {
-			this._onDisable()
-			this._onDisable = undefined
 		}
 	}
 }

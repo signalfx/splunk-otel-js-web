@@ -23,8 +23,8 @@ import { getOriginalFunction, isFunction, wrapNatively } from './utils'
 export interface ContextManagerConfig {
 	/** Enable async tracking of span parents */
 	async?: boolean
-	onBeforeContextStart?: () => void
 	onBeforeContextEnd?: () => void
+	onBeforeContextStart?: () => void
 }
 
 type EventListenerWithOrig = EventListener & { _orig?: EventListener }
@@ -37,38 +37,36 @@ const ATTACHED_CONTEXT_KEY = '__splunk_context'
  */
 export class SplunkContextManager implements ContextManager {
 	/**
-	 * whether the context manager is enabled or not
-	 */
-	protected _enabled = false
-
-	/**
 	 * Keeps the reference to current context
 	 */
 	public _currentContext = ROOT_CONTEXT
 
-	protected _hashChangeContext: Context = null
-
-	constructor(protected _config: ContextManagerConfig = {}) {}
+	/**
+	 * Event listeners wrapped to resume context from event registration
+	 *
+	 * _contextResumingListeners.get(Target).get(EventType).get(origListener)
+	 */
+	protected _contextResumingListeners = new WeakMap<
+		EventTarget,
+		Map<
+			string,
+			WeakMap<
+				EventListener, // User defined
+				EventListener // Wrapped
+			>
+		>
+	>()
 
 	/**
-	 *
-	 * @param target Function to be executed within the context
-	 * @param context
+	 * whether the context manager is enabled or not
 	 */
-	protected _bindFunction<T extends (...args: unknown[]) => unknown>(target: T, context = ROOT_CONTEXT): T {
-		// eslint-disable-next-line @typescript-eslint/no-this-alias
-		const manager = this
-		const contextWrapper = function (this: unknown, ...args: unknown[]) {
-			return manager.with(context, () => target.apply(this, args))
-		}
-		Object.defineProperty(contextWrapper, 'length', {
-			enumerable: false,
-			configurable: true,
-			writable: false,
-			value: target.length,
-		})
-		return contextWrapper as unknown as T
-	}
+	protected _enabled = false
+
+	protected _hashChangeContext: Context = null
+
+	protected _messagePorts = new WeakMap<MessagePort, MessagePort>()
+
+	constructor(protected _config: ContextManagerConfig = {}) {}
 
 	/**
 	 * Returns the active context
@@ -135,228 +133,66 @@ export class SplunkContextManager implements ContextManager {
 	}
 
 	/**
-	 * Bind current zone to function given in arguments
-	 *
-	 * @param args Arguments array
-	 * @param index Argument index to patch
+	 * Calls the callback function [fn] with the provided [context]. If [context] is undefined then it will use the window.
+	 * The context will be set as active
+	 * @param context
+	 * @param fn Callback function
+	 * @param thisArg optional receiver to be used for calling fn
+	 * @param args optional arguments forwarded to fn
 	 */
-	protected bindActiveToArgument(args: unknown[], index: number): void {
-		if (isFunction(args[index])) {
-			// Bind callback to current context
-			args[index] = this.bind(this.active(), args[index])
+	with<A extends unknown[], F extends (...args: A) => ReturnType<F>>(
+		context: Context | null,
+		fn: F,
+		thisArg?: ThisParameterType<F>,
+		...args: A
+	): ReturnType<F> {
+		try {
+			this._config.onBeforeContextStart?.()
+		} catch {
+			// ignore any exceptions thrown by context hooks
 		}
-	}
+		const previousContext = this._currentContext
+		this._currentContext = context || ROOT_CONTEXT
 
-	protected _patchTimeouts(): void {
-		// eslint-disable-next-line @typescript-eslint/no-this-alias
-		const manager = this
-
-		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-		// @ts-ignore for some reason CI decides error is here while locally happens on next line
-		wrapNatively(
-			window,
-			'setTimeout',
-			(original) =>
-				// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-				// @ts-ignore expects __promisify__ for some reason
-				function (...args: Parameters<typeof setTimeout>) {
-					// Don't copy parent context if the timeout is long enough that it isn't really
-					// expected to happen within interaction (eg polling every second).
-					// The value for that is a pretty arbitary decision so here's 1 frame at 30fps (1000/30)
-					if (!args[1] || args[1] <= 34) {
-						manager.bindActiveToArgument(args, 0)
+		// Observe for location.hash changes (as it isn't a (re)configurable property))
+		const preLocationHash = location.hash
+		try {
+			const result = fn.call(thisArg, ...args)
+			this._config.onBeforeContextEnd?.()
+			return result
+		} finally {
+			this._currentContext = previousContext
+			if (preLocationHash !== location.hash) {
+				this._hashChangeContext = context
+				// Cleanup as macrotask (as hash change can also be done by user)
+				getOriginalFunction(setTimeout)(() => {
+					if (this._hashChangeContext === context) {
+						this._hashChangeContext = null
 					}
-
-					return original.apply(this, args)
-				},
-		)
-
-		if (window.setImmediate) {
-			wrapNatively(
-				window,
-				'setImmediate',
-				(original) =>
-					// @ts-expect-error expects __promisify__
-					function (...args: Parameters<typeof setImmediate>) {
-						manager.bindActiveToArgument(args, 0)
-
-						return original.apply(this, args)
-					},
-			)
+				}, 33)
+			}
 		}
-
-		if (window.requestAnimationFrame) {
-			wrapNatively(
-				window,
-				'requestAnimationFrame',
-				(original) =>
-					function (...args: Parameters<typeof requestAnimationFrame>) {
-						manager.bindActiveToArgument(args, 0)
-
-						return original.apply(this, args)
-					},
-			)
-		}
-	}
-
-	protected _unpatchTimeouts(): void {
-		unwrap(window, 'setTimeout')
-		if (window.setImmediate) {
-			unwrap(window, 'setImmediate')
-		}
-	}
-
-	protected _patchPromise(): void {
-		if (!window.Promise) {
-			return
-		}
-
-		// eslint-disable-next-line @typescript-eslint/no-this-alias
-		const manager = this
-
-		// On typings: Don't want to hardcode the amount of parameters for future-safe,
-		// but using Parameters<...> ignores generics, causing type error, so copy-paste of lib.es5 & lib.es2018
-		wrapNatively(
-			Promise.prototype,
-			'then',
-			(original) =>
-				function <T, TResult1, TResult2>(
-					this: Promise<T>,
-					...args: [
-						onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
-						onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | undefined | null,
-					]
-				) {
-					manager.bindActiveToArgument(args, 0)
-					manager.bindActiveToArgument(args, 1)
-
-					return original.apply(this, args)
-				},
-		)
-
-		wrapNatively(
-			Promise.prototype,
-			'catch',
-			(original) =>
-				function <T, TResult>(
-					this: Promise<T>,
-					...args: [onrejected?: ((reason: unknown) => TResult | PromiseLike<TResult>) | undefined | null]
-				) {
-					manager.bindActiveToArgument(args, 0)
-
-					return original.apply(this, args)
-				},
-		)
-
-		wrapNatively(
-			Promise.prototype,
-			'finally',
-			(original) =>
-				function <T>(this: Promise<T>, ...args: [onfinally?: (() => void) | undefined | null]) {
-					manager.bindActiveToArgument(args, 0)
-
-					return original.apply(this, args)
-				},
-		)
-	}
-
-	protected _unpatchPromise(): void {
-		if (!window.Promise) {
-			return
-		}
-
-		unwrap(Promise.prototype, 'then')
-		unwrap(Promise.prototype, 'catch')
-		unwrap(Promise.prototype, 'finally')
-	}
-
-	protected _patchMutationObserver(): void {
-		// 1. Patch mutation observer in general to check if a context is offered to it
-		// 2. on observe call check for known use cases and patch those to forward the context
-
-		// eslint-disable-next-line @typescript-eslint/no-this-alias
-		const manager = this
-
-		wrapNatively(
-			window,
-			'MutationObserver',
-			(original) =>
-				class WrappedMutationObserver extends original {
-					constructor(...args: [callback: MutationCallback]) {
-						if (isFunction(args[0])) {
-							const orig = args[0]
-							args[0] = function (...innerArgs) {
-								if (this[ATTACHED_CONTEXT_KEY] && manager._enabled) {
-									return manager.with(this[ATTACHED_CONTEXT_KEY], orig, this, ...innerArgs)
-								} else {
-									return orig.apply(this, innerArgs)
-								}
-							}
-						}
-
-						super(...args)
-
-						Object.defineProperty(this, ATTACHED_CONTEXT_KEY, {
-							value: null,
-							writable: true,
-							enumerable: false,
-						})
-					}
-
-					observe(...args: Parameters<MutationObserver['observe']>) {
-						// Observing a text node (document.createTextNode)
-						if (
-							args[0] &&
-							args[0] instanceof Text &&
-							!args[0].parentNode &&
-							args[1] &&
-							args[1].characterData
-						) {
-							// Overwrite setting textNode.data to copy active context to mutation observer
-							// eslint-disable-next-line @typescript-eslint/no-this-alias
-							const observer = this
-							const target = args[0]
-							const descriptor = Object.getOwnPropertyDescriptor(CharacterData.prototype, 'data')
-
-							Object.defineProperty(target, 'data', {
-								...descriptor,
-								enumerable: false,
-								set: function (...args) {
-									const context = manager.active()
-									if (context) {
-										observer[ATTACHED_CONTEXT_KEY] = context
-									}
-
-									return descriptor.set.apply(this, args)
-								},
-							})
-						}
-
-						return super.observe(...args)
-					}
-				},
-		)
-	}
-
-	protected _unpatchMutationObserver(): void {
-		unwrap(window, 'MutationObserver')
 	}
 
 	/**
-	 * Event listeners wrapped to resume context from event registration
 	 *
-	 * _contextResumingListeners.get(Target).get(EventType).get(origListener)
+	 * @param target Function to be executed within the context
+	 * @param context
 	 */
-	protected _contextResumingListeners = new WeakMap<
-		EventTarget,
-		Map<
-			string,
-			WeakMap<
-				EventListener, // User defined
-				EventListener // Wrapped
-			>
-		>
-	>()
+	protected _bindFunction<T extends (...args: unknown[]) => unknown>(target: T, context = ROOT_CONTEXT): T {
+		// eslint-disable-next-line @typescript-eslint/no-this-alias
+		const manager = this
+		const contextWrapper = function (this: unknown, ...args: unknown[]) {
+			return manager.with(context, () => target.apply(this, args))
+		}
+		Object.defineProperty(contextWrapper, 'length', {
+			enumerable: false,
+			configurable: true,
+			writable: false,
+			value: target.length,
+		})
+		return contextWrapper as unknown as T
+	}
 
 	protected _getListenersMap(target: EventTarget, type: string): WeakMap<EventListener, EventListener> {
 		if (!this._contextResumingListeners.has(target)) {
@@ -369,6 +205,21 @@ export class SplunkContextManager implements ContextManager {
 		}
 
 		return listenersByType.get(type)
+	}
+
+	protected _getWrappedEventListener<E extends EventListener>(orig: E, contextGetter: () => Context | void): E {
+		// eslint-disable-next-line @typescript-eslint/no-this-alias
+		const manager = this
+
+		return function (...innerArgs) {
+			const context = contextGetter()
+			if (context && manager._enabled) {
+				// @ts-expect-error on orig: Type 'void' is not assignable to type 'ReturnType<E>'.
+				return manager.with(context, orig, this, ...innerArgs)
+			} else {
+				return orig.apply(this, innerArgs)
+			}
+		} as E
 	}
 
 	protected _patchEvents(): void {
@@ -511,13 +362,6 @@ export class SplunkContextManager implements ContextManager {
 		Object.defineProperty(window, 'onhashchange', desc)
 	}
 
-	protected _unpatchEvents(): void {
-		unwrap(XMLHttpRequest.prototype, 'addEventListener')
-		unwrap(XMLHttpRequest.prototype, 'removeEventListener')
-	}
-
-	protected _messagePorts = new WeakMap<MessagePort, MessagePort>()
-
 	protected _patchMessageChannel(): void {
 		// eslint-disable-next-line @typescript-eslint/no-this-alias
 		const manager = this
@@ -650,19 +494,183 @@ export class SplunkContextManager implements ContextManager {
 		Object.defineProperty(MessagePort.prototype, 'onmessage', desc)
 	}
 
-	protected _getWrappedEventListener<E extends EventListener>(orig: E, contextGetter: () => Context | void): E {
+	protected _patchMutationObserver(): void {
+		// 1. Patch mutation observer in general to check if a context is offered to it
+		// 2. on observe call check for known use cases and patch those to forward the context
+
 		// eslint-disable-next-line @typescript-eslint/no-this-alias
 		const manager = this
 
-		return function (...innerArgs) {
-			const context = contextGetter()
-			if (context && manager._enabled) {
-				// @ts-expect-error on orig: Type 'void' is not assignable to type 'ReturnType<E>'.
-				return manager.with(context, orig, this, ...innerArgs)
-			} else {
-				return orig.apply(this, innerArgs)
-			}
-		} as E
+		wrapNatively(
+			window,
+			'MutationObserver',
+			(original) =>
+				class WrappedMutationObserver extends original {
+					constructor(...args: [callback: MutationCallback]) {
+						if (isFunction(args[0])) {
+							const orig = args[0]
+							args[0] = function (...innerArgs) {
+								if (this[ATTACHED_CONTEXT_KEY] && manager._enabled) {
+									return manager.with(this[ATTACHED_CONTEXT_KEY], orig, this, ...innerArgs)
+								} else {
+									return orig.apply(this, innerArgs)
+								}
+							}
+						}
+
+						super(...args)
+
+						Object.defineProperty(this, ATTACHED_CONTEXT_KEY, {
+							value: null,
+							writable: true,
+							enumerable: false,
+						})
+					}
+
+					observe(...args: Parameters<MutationObserver['observe']>) {
+						// Observing a text node (document.createTextNode)
+						if (
+							args[0] &&
+							args[0] instanceof Text &&
+							!args[0].parentNode &&
+							args[1] &&
+							args[1].characterData
+						) {
+							// Overwrite setting textNode.data to copy active context to mutation observer
+							// eslint-disable-next-line @typescript-eslint/no-this-alias
+							const observer = this
+							const target = args[0]
+							const descriptor = Object.getOwnPropertyDescriptor(CharacterData.prototype, 'data')
+
+							Object.defineProperty(target, 'data', {
+								...descriptor,
+								enumerable: false,
+								set: function (...args) {
+									const context = manager.active()
+									if (context) {
+										observer[ATTACHED_CONTEXT_KEY] = context
+									}
+
+									return descriptor.set.apply(this, args)
+								},
+							})
+						}
+
+						return super.observe(...args)
+					}
+				},
+		)
+	}
+
+	protected _patchPromise(): void {
+		if (!window.Promise) {
+			return
+		}
+
+		// eslint-disable-next-line @typescript-eslint/no-this-alias
+		const manager = this
+
+		// On typings: Don't want to hardcode the amount of parameters for future-safe,
+		// but using Parameters<...> ignores generics, causing type error, so copy-paste of lib.es5 & lib.es2018
+		wrapNatively(
+			Promise.prototype,
+			'then',
+			(original) =>
+				function <T, TResult1, TResult2>(
+					this: Promise<T>,
+					...args: [
+						onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
+						onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | undefined | null,
+					]
+				) {
+					manager.bindActiveToArgument(args, 0)
+					manager.bindActiveToArgument(args, 1)
+
+					return original.apply(this, args)
+				},
+		)
+
+		wrapNatively(
+			Promise.prototype,
+			'catch',
+			(original) =>
+				function <T, TResult>(
+					this: Promise<T>,
+					...args: [onrejected?: ((reason: unknown) => TResult | PromiseLike<TResult>) | undefined | null]
+				) {
+					manager.bindActiveToArgument(args, 0)
+
+					return original.apply(this, args)
+				},
+		)
+
+		wrapNatively(
+			Promise.prototype,
+			'finally',
+			(original) =>
+				function <T>(this: Promise<T>, ...args: [onfinally?: (() => void) | undefined | null]) {
+					manager.bindActiveToArgument(args, 0)
+
+					return original.apply(this, args)
+				},
+		)
+	}
+
+	protected _patchTimeouts(): void {
+		// eslint-disable-next-line @typescript-eslint/no-this-alias
+		const manager = this
+
+		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+		// @ts-ignore for some reason CI decides error is here while locally happens on next line
+		wrapNatively(
+			window,
+			'setTimeout',
+			(original) =>
+				// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+				// @ts-ignore expects __promisify__ for some reason
+				function (...args: Parameters<typeof setTimeout>) {
+					// Don't copy parent context if the timeout is long enough that it isn't really
+					// expected to happen within interaction (eg polling every second).
+					// The value for that is a pretty arbitary decision so here's 1 frame at 30fps (1000/30)
+					if (!args[1] || args[1] <= 34) {
+						manager.bindActiveToArgument(args, 0)
+					}
+
+					return original.apply(this, args)
+				},
+		)
+
+		if (window.setImmediate) {
+			wrapNatively(
+				window,
+				'setImmediate',
+				(original) =>
+					// @ts-expect-error expects __promisify__
+					function (...args: Parameters<typeof setImmediate>) {
+						manager.bindActiveToArgument(args, 0)
+
+						return original.apply(this, args)
+					},
+			)
+		}
+
+		if (window.requestAnimationFrame) {
+			wrapNatively(
+				window,
+				'requestAnimationFrame',
+				(original) =>
+					function (...args: Parameters<typeof requestAnimationFrame>) {
+						manager.bindActiveToArgument(args, 0)
+
+						return original.apply(this, args)
+					},
+			)
+		}
+	}
+
+	protected _unpatchEvents(): void {
+		unwrap(XMLHttpRequest.prototype, 'addEventListener')
+		unwrap(XMLHttpRequest.prototype, 'removeEventListener')
 	}
 
 	protected _unpatchMessageChannel(): void {
@@ -676,45 +684,37 @@ export class SplunkContextManager implements ContextManager {
 		Object.defineProperty(MessagePort.prototype, 'onmessage', desc)
 	}
 
-	/**
-	 * Calls the callback function [fn] with the provided [context]. If [context] is undefined then it will use the window.
-	 * The context will be set as active
-	 * @param context
-	 * @param fn Callback function
-	 * @param thisArg optional receiver to be used for calling fn
-	 * @param args optional arguments forwarded to fn
-	 */
-	with<A extends unknown[], F extends (...args: A) => ReturnType<F>>(
-		context: Context | null,
-		fn: F,
-		thisArg?: ThisParameterType<F>,
-		...args: A
-	): ReturnType<F> {
-		try {
-			this._config.onBeforeContextStart?.()
-		} catch {
-			// ignore any exceptions thrown by context hooks
-		}
-		const previousContext = this._currentContext
-		this._currentContext = context || ROOT_CONTEXT
+	protected _unpatchMutationObserver(): void {
+		unwrap(window, 'MutationObserver')
+	}
 
-		// Observe for location.hash changes (as it isn't a (re)configurable property))
-		const preLocationHash = location.hash
-		try {
-			const result = fn.call(thisArg, ...args)
-			this._config.onBeforeContextEnd?.()
-			return result
-		} finally {
-			this._currentContext = previousContext
-			if (preLocationHash !== location.hash) {
-				this._hashChangeContext = context
-				// Cleanup as macrotask (as hash change can also be done by user)
-				getOriginalFunction(setTimeout)(() => {
-					if (this._hashChangeContext === context) {
-						this._hashChangeContext = null
-					}
-				}, 33)
-			}
+	protected _unpatchPromise(): void {
+		if (!window.Promise) {
+			return
+		}
+
+		unwrap(Promise.prototype, 'then')
+		unwrap(Promise.prototype, 'catch')
+		unwrap(Promise.prototype, 'finally')
+	}
+
+	protected _unpatchTimeouts(): void {
+		unwrap(window, 'setTimeout')
+		if (window.setImmediate) {
+			unwrap(window, 'setImmediate')
+		}
+	}
+
+	/**
+	 * Bind current zone to function given in arguments
+	 *
+	 * @param args Arguments array
+	 * @param index Argument index to patch
+	 */
+	protected bindActiveToArgument(args: unknown[], index: number): void {
+		if (isFunction(args[index])) {
+			// Bind callback to current context
+			args[index] = this.bind(this.active(), args[index])
 		}
 	}
 }

@@ -20,10 +20,10 @@ import { Attributes } from '@opentelemetry/api'
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base'
 
 export interface SplunkExporterConfig {
-	url: string
-	onAttributesSerializing?: (attributes: Attributes, span: ReadableSpan) => Attributes
-	xhrSender?: (url: string, data: string, headers?: Record<string, string>) => void
 	beaconSender?: (url: string, data: string, headers?: Record<string, string>) => void
+	onAttributesSerializing?: (attributes: Attributes, span: ReadableSpan) => Attributes
+	url: string
+	xhrSender?: (url: string, data: string, headers?: Record<string, string>) => void
 }
 
 export function NOOP_ATTRIBUTES_TRANSFORMER(attributes: Attributes): Attributes {

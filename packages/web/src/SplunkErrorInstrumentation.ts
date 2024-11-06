@@ -73,30 +73,16 @@ export const ERROR_INSTRUMENTATION_NAME = 'errors'
 export const ERROR_INSTRUMENTATION_VERSION = '1'
 
 export class SplunkErrorInstrumentation extends InstrumentationBase {
-	private readonly _consoleErrorHandler =
-		(original: Console['error']) =>
-		(...args: any[]) => {
-			this.report('console.error', args)
-			return original.apply(this, args)
-		}
-
-	private readonly _unhandledRejectionListener = (event: PromiseRejectionEvent) => {
-		this.report('unhandledrejection', event.reason)
-	}
-
-	private readonly _errorListener = (event: ErrorEvent) => {
-		this.report('onerror', event)
-	}
-
-	private readonly _documentErrorListener = (event: ErrorEvent) => {
-		this.report('eventListener.error', event)
-	}
-
 	constructor(config: InstrumentationConfig) {
 		super(ERROR_INSTRUMENTATION_NAME, ERROR_INSTRUMENTATION_VERSION, config)
 	}
 
-	init(): void {}
+	disable(): void {
+		shimmer.unwrap(console, 'error')
+		window.removeEventListener('unhandledrejection', this._unhandledRejectionListener)
+		window.removeEventListener('error', this._errorListener)
+		document.documentElement.removeEventListener('error', this._documentErrorListener, { capture: true })
+	}
 
 	enable(): void {
 		shimmer.wrap(console, 'error', this._consoleErrorHandler)
@@ -105,11 +91,32 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		document.documentElement.addEventListener('error', this._documentErrorListener, { capture: true })
 	}
 
-	disable(): void {
-		shimmer.unwrap(console, 'error')
-		window.removeEventListener('unhandledrejection', this._unhandledRejectionListener)
-		window.removeEventListener('error', this._errorListener)
-		document.documentElement.removeEventListener('error', this._documentErrorListener, { capture: true })
+	init(): void {}
+
+	public report(source: string, arg: string | Event | ErrorEvent | Array<any>): void {
+		if (Array.isArray(arg) && arg.length === 0) {
+			return
+		}
+
+		if (arg instanceof Array && arg.length === 1) {
+			arg = arg[0]
+		}
+
+		if (arg instanceof Error) {
+			this.reportError(source, arg)
+		} else if (arg instanceof ErrorEvent) {
+			this.reportErrorEvent(source, arg)
+		} else if (arg instanceof Event) {
+			this.reportEvent(source, arg)
+		} else if (typeof arg === 'string') {
+			this.reportString(source, arg)
+		} else if (arg instanceof Array) {
+			// if any arguments are Errors then add the stack trace even though the message is handled differently
+			const firstError = arg.find((x) => x instanceof Error)
+			this.reportString(source, arg.map((x) => stringifyValue(x)).join(' '), firstError)
+		} else {
+			this.reportString(source, stringifyValue(arg)) // FIXME or JSON.stringify?
+		}
 	}
 
 	protected reportError(source: string, err: Error): void {
@@ -128,24 +135,6 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		)
 		span.setAttribute('error.message', limitLen(msg, MESSAGE_LIMIT))
 		addStackIfUseful(span, err)
-		span.end(now)
-	}
-
-	protected reportString(source: string, message: string, firstError?: Error): void {
-		if (!useful(message)) {
-			return
-		}
-
-		const now = Date.now()
-		const span = this.tracer.startSpan(source, { startTime: now })
-		span.setAttribute('component', 'error')
-		span.setAttribute('error', true)
-		span.setAttribute('error.object', 'String')
-		span.setAttribute('error.message', limitLen(message, MESSAGE_LIMIT))
-		if (firstError) {
-			addStackIfUseful(span, firstError)
-		}
-
 		span.end(now)
 	}
 
@@ -177,29 +166,40 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		span.end(now)
 	}
 
-	public report(source: string, arg: string | Event | ErrorEvent | Array<any>): void {
-		if (Array.isArray(arg) && arg.length === 0) {
+	protected reportString(source: string, message: string, firstError?: Error): void {
+		if (!useful(message)) {
 			return
 		}
 
-		if (arg instanceof Array && arg.length === 1) {
-			arg = arg[0]
+		const now = Date.now()
+		const span = this.tracer.startSpan(source, { startTime: now })
+		span.setAttribute('component', 'error')
+		span.setAttribute('error', true)
+		span.setAttribute('error.object', 'String')
+		span.setAttribute('error.message', limitLen(message, MESSAGE_LIMIT))
+		if (firstError) {
+			addStackIfUseful(span, firstError)
 		}
 
-		if (arg instanceof Error) {
-			this.reportError(source, arg)
-		} else if (arg instanceof ErrorEvent) {
-			this.reportErrorEvent(source, arg)
-		} else if (arg instanceof Event) {
-			this.reportEvent(source, arg)
-		} else if (typeof arg === 'string') {
-			this.reportString(source, arg)
-		} else if (arg instanceof Array) {
-			// if any arguments are Errors then add the stack trace even though the message is handled differently
-			const firstError = arg.find((x) => x instanceof Error)
-			this.reportString(source, arg.map((x) => stringifyValue(x)).join(' '), firstError)
-		} else {
-			this.reportString(source, stringifyValue(arg)) // FIXME or JSON.stringify?
+		span.end(now)
+	}
+
+	private readonly _consoleErrorHandler =
+		(original: Console['error']) =>
+		(...args: any[]) => {
+			this.report('console.error', args)
+			return original.apply(this, args)
 		}
+
+	private readonly _documentErrorListener = (event: ErrorEvent) => {
+		this.report('eventListener.error', event)
+	}
+
+	private readonly _errorListener = (event: ErrorEvent) => {
+		this.report('onerror', event)
+	}
+
+	private readonly _unhandledRejectionListener = (event: PromiseRejectionEvent) => {
+		this.report('unhandledrejection', event.reason)
 	}
 }

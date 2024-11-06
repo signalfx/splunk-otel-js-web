@@ -82,80 +82,79 @@ export default [
 			],
 			'@typescript-eslint/explicit-function-return-type': 'off',
 			'@typescript-eslint/interface-name-prefix': 'off',
-			// '@typescript-eslint/member-ordering': [
-			//   'error',
-			//   {
-			//     default: {
-			//       memberTypes: [
-			//         // Index signature
-			//         'signature',
-			//
-			//         // Fields
-			//         'public-static-field',
-			//         'protected-static-field',
-			//         'private-static-field',
-			//
-			//         'public-decorated-field',
-			//         'protected-decorated-field',
-			//         'private-decorated-field',
-			//
-			//         'public-instance-field',
-			//         'protected-instance-field',
-			//         'private-instance-field',
-			//
-			//         'public-abstract-field',
-			//         'protected-abstract-field',
-			//
-			//         'public-field',
-			//         'protected-field',
-			//         'private-field',
-			//
-			//         'static-field',
-			//         'instance-field',
-			//         'abstract-field',
-			//
-			//         'decorated-field',
-			//
-			//         'field',
-			//
-			//         // Constructors
-			//         'public-constructor',
-			//         'protected-constructor',
-			//         'private-constructor',
-			//
-			//         'constructor',
-			//
-			//         // Methods
-			//         'public-decorated-method',
-			//         'public-static-method',
-			//         'public-instance-method',
-			//         'protected-decorated-method',
-			//         'protected-static-method',
-			//         'protected-instance-method',
-			//         'private-decorated-method',
-			//         'private-static-method',
-			//         'private-instance-method',
-			//
-			//         'public-abstract-method',
-			//         'protected-abstract-method',
-			//
-			//         'public-method',
-			//         'protected-method',
-			//         'private-method',
-			//
-			//         'static-method',
-			//         'instance-method',
-			//         'abstract-method',
-			//
-			//         'decorated-method',
-			//
-			//         'method',
-			//       ],
-			//       order: 'alphabetically',
-			//     },
-			//   },
-			// ],
-			'@typescript-eslint/member-ordering': 'off', // TODO: temporarily disabled
+			'@typescript-eslint/member-ordering': [
+				'error',
+				{
+					default: {
+						memberTypes: [
+							// Index signature
+							'signature',
+
+							// Fields
+							'public-static-field',
+							'protected-static-field',
+							'private-static-field',
+
+							'public-decorated-field',
+							'protected-decorated-field',
+							'private-decorated-field',
+
+							'public-instance-field',
+							'protected-instance-field',
+							'private-instance-field',
+
+							'public-abstract-field',
+							'protected-abstract-field',
+
+							'public-field',
+							'protected-field',
+							'private-field',
+
+							'static-field',
+							'instance-field',
+							'abstract-field',
+
+							'decorated-field',
+
+							'field',
+
+							// Constructors
+							'public-constructor',
+							'protected-constructor',
+							'private-constructor',
+
+							'constructor',
+
+							// Methods
+							'public-decorated-method',
+							'public-static-method',
+							'public-instance-method',
+							'protected-decorated-method',
+							'protected-static-method',
+							'protected-instance-method',
+							'private-decorated-method',
+							'private-static-method',
+							'private-instance-method',
+
+							'public-abstract-method',
+							'protected-abstract-method',
+
+							'public-method',
+							'protected-method',
+							'private-method',
+
+							'static-method',
+							'instance-method',
+							'abstract-method',
+
+							'decorated-method',
+
+							'method',
+						],
+						order: 'alphabetically',
+					},
+				},
+			],
 			'@typescript-eslint/naming-convention': ['error', { format: ['UPPER_CASE'], selector: ['enumMember'] }],
 			'@typescript-eslint/no-base-to-string': 'off',
 			'@typescript-eslint/no-empty-interface': 'off',

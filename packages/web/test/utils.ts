@@ -24,13 +24,11 @@ import { assert } from 'chai'
 export class SpanCapturer implements SpanProcessor {
 	public readonly spans: ReadableSpan[] = []
 
-	forceFlush(): Promise<void> {
-		return Promise.resolve()
+	clear(): void {
+		this.spans.length = 0
 	}
 
-	onStart(): void {}
-
-	shutdown(): Promise<void> {
+	forceFlush(): Promise<void> {
 		return Promise.resolve()
 	}
 
@@ -38,8 +36,10 @@ export class SpanCapturer implements SpanProcessor {
 		this.spans.push(span)
 	}
 
-	clear(): void {
-		this.spans.length = 0
+	onStart(): void {}
+
+	shutdown(): Promise<void> {
+		return Promise.resolve()
 	}
 }
 

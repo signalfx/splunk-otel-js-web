@@ -22,12 +22,12 @@ import { NOOP_ATTRIBUTES_TRANSFORMER, NATIVE_XHR_SENDER, NATIVE_BEACON_SENDER, S
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base'
 
 export class SplunkOTLPTraceExporter extends OTLPTraceExporter {
+	protected readonly _beaconSender: SplunkExporterConfig['beaconSender'] =
+		typeof navigator !== 'undefined' && navigator.sendBeacon ? NATIVE_BEACON_SENDER : undefined
+
 	protected readonly _onAttributesSerializing: SplunkExporterConfig['onAttributesSerializing']
 
 	protected readonly _xhrSender: SplunkExporterConfig['xhrSender'] = NATIVE_XHR_SENDER
-
-	protected readonly _beaconSender: SplunkExporterConfig['beaconSender'] =
-		typeof navigator !== 'undefined' && navigator.sendBeacon ? NATIVE_BEACON_SENDER : undefined
 
 	constructor(options: SplunkExporterConfig) {
 		super(options)

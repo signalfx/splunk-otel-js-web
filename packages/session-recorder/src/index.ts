@@ -33,6 +33,11 @@ interface BasicTracerProvider extends TracerProvider {
 type RRWebOptions = Parameters<typeof record>[0]
 
 export type SplunkRumRecorderConfig = RRWebOptions & {
+	/**
+	 * @deprecated Use RUM token in rumAccessToken
+	 */
+	apiToken?: string
+
 	/** Destination for the captured data */
 	beaconEndpoint?: string
 
@@ -40,6 +45,9 @@ export type SplunkRumRecorderConfig = RRWebOptions & {
 	 * @deprecated Use beaconEndpoint
 	 */
 	beaconUrl?: string
+
+	/** Debug mode */
+	debug?: boolean
 
 	/**
 	 * The name of your organization’s realm. Automatically configures beaconUrl with correct URL
@@ -58,14 +66,6 @@ export type SplunkRumRecorderConfig = RRWebOptions & {
 	 * @deprecated Renamed to `rumAccessToken`
 	 **/
 	rumAuth?: string
-
-	/**
-	 * @deprecated Use RUM token in rumAccessToken
-	 */
-	apiToken?: string
-
-	/** Debug mode */
-	debug?: boolean
 }
 
 function migrateConfigOption(

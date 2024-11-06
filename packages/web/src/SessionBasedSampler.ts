@@ -22,6 +22,12 @@ import { getRumSessionId } from './session'
 
 export interface SessionBasedSamplerConfig {
 	/**
+	 * Sampler called when session isn't being sampled
+	 * default: AlwaysOffSampler
+	 */
+	notSampled?: Sampler
+
+	/**
 	 * Ratio of sessions that get sampled (0.0 - 1.0, where 1 is all sessions)
 	 */
 	ratio?: number
@@ -31,26 +37,20 @@ export interface SessionBasedSamplerConfig {
 	 * default: AlwaysOnSampler
 	 */
 	sampled?: Sampler
-
-	/**
-	 * Sampler called when session isn't being sampled
-	 * default: AlwaysOffSampler
-	 */
-	notSampled?: Sampler
 }
 
 export class SessionBasedSampler implements Sampler {
-	protected _ratio: number
-
-	protected _upperBound: number
-
-	protected _sampled: Sampler
-
-	protected _notSampled: Sampler
-
 	protected _currentSession: string
 
 	protected _currentSessionSampled: boolean
+
+	protected _notSampled: Sampler
+
+	protected _ratio: number
+
+	protected _sampled: Sampler
+
+	protected _upperBound: number
 
 	constructor({
 		ratio = 1,
@@ -90,14 +90,6 @@ export class SessionBasedSampler implements Sampler {
 		return `SessionBased{ratio=${this._ratio}, sampled=${this._sampled.toString()}, notSampled=${this._notSampled.toString()}}`
 	}
 
-	private _normalize(ratio: number): number {
-		if (typeof ratio !== 'number' || isNaN(ratio)) {
-			return 0
-		}
-
-		return ratio >= 1 ? 1 : ratio <= 0 ? 0 : ratio
-	}
-
 	private _accumulate(sessionId: string): number {
 		let accumulation = 0
 		for (let i = 0; i < sessionId.length / 8; i++) {
@@ -106,5 +98,13 @@ export class SessionBasedSampler implements Sampler {
 			accumulation = (accumulation ^ part) >>> 0
 		}
 		return accumulation
+	}
+
+	private _normalize(ratio: number): number {
+		if (typeof ratio !== 'number' || isNaN(ratio)) {
+			return 0
+		}
+
+		return ratio >= 1 ? 1 : ratio <= 0 ? 0 : ratio
 	}
 }

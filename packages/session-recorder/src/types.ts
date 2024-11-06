@@ -19,9 +19,9 @@
 import type { JsonObject, JsonValue } from 'type-fest'
 
 export interface Log {
+	attributes?: JsonObject
 	body?: JsonValue
 	timeUnixNano: number
-	attributes?: JsonObject
 }
 
 export interface LogExporter {
@@ -36,28 +36,28 @@ export interface LogExporter {
 
 // OTLP Logs Interfaces
 export interface IAnyValue {
-	/** AnyValue stringValue */
-	stringValue?: string | null
+	/** AnyValue arrayValue */
+
+	arrayValue?: IArrayValue | null
 
 	/** AnyValue boolValue */
 	boolValue?: boolean | null
 
-	/** AnyValue intValue */
-	intValue?: number | null
+	/** AnyValue bytesValue */
+	bytesValue?: Uint8Array | null
 
 	/** AnyValue doubleValue */
 	doubleValue?: number | null
 
-	/** AnyValue arrayValue */
-
-	arrayValue?: IArrayValue | null
+	/** AnyValue intValue */
+	intValue?: number | null
 
 	/** AnyValue kvlistValue */
 
 	kvlistValue?: IKeyValueList | null
 
-	/** AnyValue bytesValue */
-	bytesValue?: Uint8Array | null
+	/** AnyValue stringValue */
+	stringValue?: string | null
 }
 
 export interface IArrayValue {
