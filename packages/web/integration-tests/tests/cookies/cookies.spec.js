@@ -26,15 +26,18 @@ module.exports = {
     // This should create two streams of documentLoad sequences, all with the same sessionId but having
     // two scriptInstances (one from parent, one from iframe)
     const parent = await browser.globals.findSpan(span => span.name === 'documentFetch' && span.tags['location.href'].includes('cookies.ejs'));
-    await browser.assert.ok(parent.tags['splunk.rumSessionId']);
+    await browser.assert.ok(parent.tags['browser.instance.id']);
+
     await browser.assert.notEqual(parent.tags['splunk.scriptInstance'], parent.tags['splunk.rumSessionId']);
 
     const iframe = await browser.globals.findSpan(span => span.name === 'documentFetch' && span.tags['location.href'].includes('iframe.ejs'));
     await browser.assert.ok(iframe.tags['splunk.rumSessionId']);
     await browser.assert.notEqual(iframe.tags['splunk.scriptInstance'], iframe.tags['splunk.rumSessionId']);
 
-    // same session id
+    // same session id & instanceId
     await browser.assert.equal(parent.tags['splunk.rumSessionId'], iframe.tags['splunk.rumSessionId']);
+    await browser.assert.equal(parent.tags['browser.instance.id'], iframe.tags['browser.instance.id']);
+
     // but different scriptInstance
     await browser.assert.notEqual(parent.tags['splunk.scriptInstance'], iframe.tags['splunk.scriptInstance']);
 
