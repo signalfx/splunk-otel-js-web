@@ -49,6 +49,7 @@ export class SplunkSpanAttributesProcessor implements SpanProcessor {
 		span.setAttribute('location.href', location.href)
 		span.setAttributes(this._globalAttributes)
 		span.setAttribute('splunk.rumSessionId', getRumSessionId())
+		span.setAttribute('browser.instance.visibility_state', document.visibilityState)
 	}
 
 	onEnd(): void {

@@ -15,6 +15,7 @@
  * limitations under the License.
  *
  */
+
 import './polyfill-safari10'
 import { InstrumentationConfig, registerInstrumentations } from '@opentelemetry/instrumentation'
 import {
@@ -73,6 +74,7 @@ import {
 } from './SplunkSocketIoClientInstrumentation'
 import { SplunkOTLPTraceExporter } from './exporters/otlp'
 import { registerGlobal, unregisterGlobal } from './global-utils'
+import { BrowserInstanceService } from './services/BrowserInstanceService'
 
 export { SplunkExporterConfig } from './exporters/common'
 export { SplunkZipkinExporter } from './exporters/zipkin'
@@ -447,6 +449,10 @@ export const SplunkRum: SplunkOtelWebType = {
 			'splunk.rumVersion': VERSION,
 			'splunk.scriptInstance': instanceId,
 			'app': applicationName,
+		}
+
+		if (BrowserInstanceService.id) {
+			resourceAttrs['browser.instance.id'] = BrowserInstanceService.id
 		}
 
 		const syntheticsRunId = getSyntheticsRunId()
