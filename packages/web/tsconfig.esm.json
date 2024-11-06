@@ -1,11 +1,11 @@
 {
-  "compilerOptions": {
-    "declaration": true,
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "outDir": "./dist/esm",
-    "rootDir": "src",
-    "sourceMap": true
-  },
-  "extends": "./tsconfig.base.json",
+	"compilerOptions": {
+		"declaration": true,
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"outDir": "./dist/esm",
+		"rootDir": "src",
+		"sourceMap": true
+	},
+	"extends": "./tsconfig.base.json"
 }

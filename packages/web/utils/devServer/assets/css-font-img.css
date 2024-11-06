@@ -1,9 +1,9 @@
 body {
-  background-image: 'splunk-black.png';
-  font-family: splunkerz;
+	background-image: 'splunk-black.png';
+	font-family: splunkerz;
 }
 
 @font-face {
-  font-family: splunkerz;
-  src: url(splunk.woff);
+	font-family: splunkerz;
+	src: url(splunk.woff);
 }

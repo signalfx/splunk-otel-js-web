@@ -1,21 +1,15 @@
 {
-  "compilerOptions": {
-    "forceConsistentCasingInFileNames": true,
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "esModuleInterop": false,
-    "noEmitOnError": true,
-    "pretty": true,
-    "resolveJsonModule": true,
-    "target": "ES2017",
-    "types": [
-      "node"
-    ]
-  },
-  "include": [
-    "src/**/*.ts",
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+	"compilerOptions": {
+		"forceConsistentCasingInFileNames": true,
+		"module": "ESNext",
+		"moduleResolution": "Bundler",
+		"esModuleInterop": false,
+		"noEmitOnError": true,
+		"pretty": true,
+		"resolveJsonModule": true,
+		"target": "ES2017",
+		"types": ["node"]
+	},
+	"include": ["src/**/*.ts"],
+	"exclude": ["node_modules"]
 }
