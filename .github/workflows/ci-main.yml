@@ -1,47 +1,47 @@
 name: Continuous Integration Main
 on:
-  push:
-    branches:
-      - main
+    push:
+        branches:
+            - main
 permissions: read-all
 
 jobs:
-  unit-tests:
-    runs-on: ubuntu-latest
-    permissions: read-all
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4.2.1
-      - uses: actions/setup-node@v4.0.3
-        with:
-          node-version: '18'
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run version:check
-      - name: Lint code
-        run: npm run lint
-      - name: Lint docs
-        run: npm run lint:markdown
-      - name: Transpile code
-        run: npm run compile
-      - name: Unit test
-        run: npm run test:unit:ci
+    unit-tests:
+        runs-on: ubuntu-latest
+        permissions: read-all
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4.2.1
+            - uses: actions/setup-node@v4.0.3
+              with:
+                  node-version: '18'
+                  cache: 'npm'
+            - run: npm ci
+            - run: npm run version:check
+            - name: Lint code
+              run: npm run lint
+            - name: Lint docs
+              run: npm run lint:markdown
+            - name: Transpile code
+              run: npm run compile
+            - name: Unit test
+              run: npm run test:unit:ci
 
-  local-integration-tests:
-    runs-on: ubuntu-latest
-    permissions: read-all
-    strategy:
-      fail-fast: true
-      matrix:
-        browser: [headlessChrome, headlessFirefox]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4.2.1
-      - uses: actions/setup-node@v4.0.3
-        with:
-          node-version: '18'
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run compile
-      - name: Local integration tests using ${{ matrix.browser }}
-        run: npm run test:integration:local:${{ matrix.browser }}:_execute
+    local-integration-tests:
+        runs-on: ubuntu-latest
+        permissions: read-all
+        strategy:
+            fail-fast: true
+            matrix:
+                browser: [headlessChrome, headlessFirefox]
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4.2.1
+            - uses: actions/setup-node@v4.0.3
+              with:
+                  node-version: '18'
+                  cache: 'npm'
+            - run: npm ci
+            - run: npm run compile
+            - name: Local integration tests using ${{ matrix.browser }}
+              run: npm run test:integration:local:${{ matrix.browser }}:_execute

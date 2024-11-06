@@ -1,11 +1,11 @@
 {
-  "compilerOptions": {
-    "declaration": true,
-    "module": "CommonJS",
-    "moduleResolution": "Node10",
-    "outDir": "./dist/cjs",
-    "rootDir": "src",
-    "sourceMap": true
-  },
-  "extends": "./tsconfig.base.json",
+	"compilerOptions": {
+		"declaration": true,
+		"module": "CommonJS",
+		"moduleResolution": "Node10",
+		"outDir": "./dist/cjs",
+		"rootDir": "src",
+		"sourceMap": true
+	},
+	"extends": "./tsconfig.base.json"
 }
