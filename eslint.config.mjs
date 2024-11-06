@@ -198,7 +198,7 @@ export default [
 	},
 
 	{
-		files: ['**/*.{js,mjs,cjs}'],
+		files: ['**/*.{js,jsx,mjs,cjs}'],
 		...tseslint.configs.disableTypeChecked,
 	},
 
@@ -222,6 +222,23 @@ export default [
 		},
 	},
 	{
-		ignores: ['**/dist/', '**/node_modules/', '.git/', '.github/', '.idea', '.vscode/', 'examples/**'],
+		files: ['examples/todolist/src/**/*.{js,jsx}'],
+		languageOptions: {
+			globals: {
+				process: true,
+			},
+		},
+	},
+	{
+		ignores: [
+			'**/dist/',
+			'**/node_modules/',
+			'.git/',
+			'.github/',
+			'.idea',
+			'.vscode/',
+			'examples/installing-npm',
+			'examples/next-ssr-example',
+		],
 	},
 ]
