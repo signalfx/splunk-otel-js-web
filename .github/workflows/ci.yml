@@ -9,7 +9,7 @@ jobs:
         permissions: read-all
         steps:
             - name: Checkout
-              uses: actions/checkout@v4.2.1
+              uses: actions/checkout@v4.2.2
             - name: Setup
               uses: ./.github/actions/setup
             - run: npm run version:check
