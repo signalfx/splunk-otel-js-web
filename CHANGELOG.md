@@ -2,6 +2,15 @@
 
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
+## 0.19.2
+
+* `@splunk/otel-web`
+  * Send `browser.instance.visibility_state` in spans ([#878](https://github.com/signalfx/splunk-otel-js-web/pull/878))
+  * Send `browser.instance.id` in spans ([#878](https://github.com/signalfx/splunk-otel-js-web/pull/878))
+
+* Internal: Update linting tooling ([#879](https://github.com/signalfx/splunk-otel-js-web/pull/879), [#882](https://github.com/signalfx/splunk-otel-js-web/pull/882), [#883](https://github.com/signalfx/splunk-otel-js-web/pull/883))
+* Internal: Update `todolist` example dependencies ([#884](https://github.com/signalfx/splunk-otel-js-web/pull/884))
+
 ## 0.19.1
 
 * `@splunk/otel-web`
