@@ -40,7 +40,8 @@
 		"postversion": "node ./scripts/version-update.mjs",
 		"version:bump": "npm version --workspaces --include-workspace-root",
 		"version:check": "node ./scripts/version-check.mjs",
-		"tag:check": "node ./scripts/tag-check.js"
+		"tag:check": "node ./scripts/tag-check.js",
+		"size-limit": "size-limit"
 	},
 	"devDependencies": {
 		"@aws-sdk/client-cloudfront": "^3.171.0",
@@ -48,6 +49,7 @@
 		"@eslint/js": "^9.13.0",
 		"@octokit/graphql": "^7.0.1",
 		"@octokit/request": "^8.1.1",
+		"@size-limit/file": "^11.1.6",
 		"@stylistic/eslint-plugin-js": "^2.10.1",
 		"@stylistic/eslint-plugin-ts": "^2.10.1",
 		"@typescript-eslint/eslint-plugin": "^8.13.0",
@@ -59,6 +61,7 @@
 		"eslint-plugin-prettier": "^5.2.1",
 		"globals": "^15.11.0",
 		"prettier": "^3.3.3",
+		"size-limit": "^11.1.6",
 		"typescript": "^5.1.6",
 		"typescript-eslint": "^8.12.2"
 	}

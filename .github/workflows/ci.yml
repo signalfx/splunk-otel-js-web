@@ -13,6 +13,8 @@ jobs:
             - name: Setup
               uses: ./.github/actions/setup
             - run: npm run version:check
+            - name: Size check
+              run: npm run size-limit
             - name: Lint code
               run: npm run lint
             - name: Lint docs

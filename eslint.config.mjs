@@ -210,6 +210,7 @@ export default [
 			'packages/web/performance-tests/**/*.{js,mjs,cjs}',
 			'packages/web/integration-tests/**/*.{js,mjs,cjs}',
 			'**/*.conf.js',
+			'.size-limit.cjs',
 			'.prettierrc.cjs',
 		],
 		languageOptions: {
