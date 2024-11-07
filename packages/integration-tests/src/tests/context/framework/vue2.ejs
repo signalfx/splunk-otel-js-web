@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Vue 2</title>
+
+  <%- renderAgent({
+    context: {
+      async: true
+    }
+  }) %>
+
+  <script src="https://unpkg.com/vue@^2/dist/vue.min.js"></script>
+</head>
+<body>
+  <h1>Vue 2</h1>
+
+  <div id="app">
+    <button type="button" id="btn1" @click="toggle = !toggle">Toggle</button>
+    <lazy v-if="toggle"></lazy>
+  </div>
+
+  <script>
+    Vue.component('lazy', {
+      created() {
+        const span = SplunkRum.provider.getTracer('test').startSpan('custom-span').end()
+      }
+    })
+
+    const app = new Vue({
+      el: '#app',
+      data: {
+        toggle: false
+      }
+    })
+  </script>
+</body>
+</html>

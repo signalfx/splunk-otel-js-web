@@ -82,3 +82,7 @@ jobs:
                   path: |
                       packages/web/tests_output/
                       packages/web/logs/
+
+    playwright:
+        uses: ./.github/workflows/tests.yml
+        secrets: inherit

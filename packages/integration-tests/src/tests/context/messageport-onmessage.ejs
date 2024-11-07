@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MessagePort - onmessage</title>
+
+  <%- renderAgent({
+    context: {
+      async: true
+    }
+  }) %>
+</head>
+<body>
+  <h1>MessagePort - onmessage</h1>
+
+  <button type="button" id="btn1">Button</button>
+
+  <script>
+    // Based on react/scheduler's implementation of nextTick
+    // https://github.com/facebook/react/blob/8ea11306ad473b26a2c899ef7a893d25413f3510/packages/scheduler/src/forks/SchedulerDOM.js#L571
+    const channel = new MessageChannel();
+    channel.port1.onmessage = function () {
+      SplunkRum.provider.getTracer('default').startSpan('context-child').end();
+      window.testing = false;
+    };
+
+    btn1.addEventListener('click', function () {
+      window.testing = true;
+      channel.port2.postMessage(null);
+    });
+  </script>
+</body>
+</html>
