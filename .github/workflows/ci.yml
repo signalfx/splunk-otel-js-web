@@ -10,11 +10,8 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v4.2.1
-            - uses: actions/setup-node@v4.0.3
-              with:
-                  node-version: '18'
-                  cache: 'npm'
-            - run: npm ci
+            - name: Setup
+              uses: ./.github/actions/setup
             - run: npm run version:check
             - name: Lint code
               run: npm run lint
@@ -47,13 +44,11 @@ jobs:
                   accessKey: ${{ secrets.SAUCE_ACCESS_KEY }}
                   tunnelName: ${{ secrets.SAUCE_TUNNEL_ID }}
             - name: Checkout
-              uses: actions/checkout@v4.2.1
-            - uses: actions/setup-node@v4.0.3
-              with:
-                  node-version: '18'
-                  cache: 'npm'
-            - run: npm ci
-            - run: npm run compile
+              uses: actions/checkout@v4.2.2
+
+            - name: Setup
+              uses: ./.github/actions/setup
+
             - name: Add to hosts file
               run: echo "127.0.0.1 local.test" | sudo tee -a /etc/hosts
             - name: Run integration tests in Saucelabs
@@ -69,15 +64,14 @@ jobs:
                 browser: [headlessChrome, headlessFirefox]
         steps:
             - name: Checkout
-              uses: actions/checkout@v4.2.1
-            - uses: actions/setup-node@v4.0.3
-              with:
-                  node-version: '18'
-                  cache: 'npm'
-            - run: npm ci
-            - run: npm run compile
+              uses: actions/checkout@v4.2.2
+
+            - name: Setup
+              uses: ./.github/actions/setup
+
             - name: Local integration tests using ${{ matrix.browser }}
               run: npm run test:integration:local:${{ matrix.browser }}:_execute
+
             - name: Upload test logs
               uses: actions/upload-artifact@v3.1.2
               if: ${{ failure() }}

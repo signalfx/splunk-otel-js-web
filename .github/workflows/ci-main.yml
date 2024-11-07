@@ -11,17 +11,12 @@ jobs:
         permissions: read-all
         steps:
             - name: Checkout
-              uses: actions/checkout@v4.2.1
-            - uses: actions/setup-node@v4.0.3
-              with:
-                  node-version: '18'
-                  cache: 'npm'
-            - run: npm ci
+              uses: actions/checkout@v4.2.2
+            - name: Setup
+              uses: ./.github/actions/setup
             - run: npm run version:check
             - name: Lint code
               run: npm run lint
-            - name: Lint docs
-              run: npm run lint:markdown
             - name: Transpile code
               run: npm run compile
             - name: Unit test
@@ -36,12 +31,8 @@ jobs:
                 browser: [headlessChrome, headlessFirefox]
         steps:
             - name: Checkout
-              uses: actions/checkout@v4.2.1
-            - uses: actions/setup-node@v4.0.3
-              with:
-                  node-version: '18'
-                  cache: 'npm'
-            - run: npm ci
-            - run: npm run compile
+              uses: actions/checkout@v4.2.2
+            - name: Setup
+              uses: ./.github/actions/setup
             - name: Local integration tests using ${{ matrix.browser }}
               run: npm run test:integration:local:${{ matrix.browser }}:_execute
