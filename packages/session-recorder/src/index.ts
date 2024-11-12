@@ -215,8 +215,9 @@ const SplunkRumRecorder = {
 				}
 
 				const time = event.timestamp
-				eventCounter += 1
 				const eventI = eventCounter
+				eventCounter += 1
+
 				// Research found that stringifying the rr-web event here is
 				// more efficient for otlp + gzip exporting
 
@@ -226,13 +227,13 @@ const SplunkRumRecorder = {
 				for (let i = 0; i < totalC; i++) {
 					const start = i * MAX_CHUNK_SIZE
 					const end = (i + 1) * MAX_CHUNK_SIZE
-					logCounter += 1
 					const log = convert(decoder.decode(body.slice(start, end)), time, {
 						'rr-web.offset': logCounter,
 						'rr-web.event': eventI,
 						'rr-web.chunk': i + 1,
 						'rr-web.total-chunks': totalC,
 					})
+					logCounter += 1
 					if (debug) {
 						console.log(log)
 					}

@@ -4,7 +4,7 @@ This is a [Next.js](https://nextjs.org/) project bootstrapped using [`create-nex
 
 ## Instrumenting with Splunk RUM using NPM installation method
 
-Next.js uses [static generation](https://nextjs.org/docs/basic-features/pages#pre-rendering) by default to generate the output HTML for most pages. As static generation is done using the node.js runtime, it isn't compatible with RUM. Check that RUM is only imported and activated in the browser environment.
+Next.js uses static generation by default to generate the output HTML for most pages. As static generation is done using the node.js runtime, it isn't compatible with RUM. Check that RUM is only imported and activated in the browser environment.
 
 1. Install Splunk RUM for Browser: `npm install @splunk/otel-web --save`
 2. Create file `src/instrument.js` that imports `@splunk/otel-web` and calls `SplunkOtelWeb.init()`. You can use the Data Setup guided setup in Splunk Observability to get the correct values for your organization.
