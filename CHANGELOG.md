@@ -2,6 +2,11 @@
 
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
+## 0.19.3
+
+* `@splunk/otel-web-session-recorder`
+  * Fix incrementing ids [#892](https://github.com/signalfx/splunk-otel-js-web/pull/892)
+
 ## 0.19.2
 
 * `@splunk/otel-web`
