@@ -80,7 +80,7 @@
 		"body-parser": "^1.20.2",
 		"chai": "^4.3.7",
 		"chrome-launcher": "^1.0.0",
-		"chromedriver": "^129.0.4",
+		"chromedriver": "^131.0.1",
 		"codecov": "^3.8.2",
 		"compression": "^1.7.4",
 		"cors": "^2.8.5",
