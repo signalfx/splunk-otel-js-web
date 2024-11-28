@@ -17,11 +17,12 @@
  */
 
 import { SpanProcessor, WebTracerProvider } from '@opentelemetry/sdk-trace-web'
-import { InternalEventTarget } from './EventTarget'
-import { generateId } from './utils'
+import { InternalEventTarget } from '../EventTarget'
+import { generateId } from '../utils'
 import { parseCookieToSessionState, renewCookieTimeout } from './cookie-session'
 import { SessionState, SessionId } from './types'
 import { getSessionStateFromLocalStorage, setSessionStateToLocalStorage } from './local-storage-session'
+import { SESSION_INACTIVITY_TIMEOUT_MS } from './constants'
 
 /*
     The basic idea is to let the browser expire cookies for us "naturally" once
@@ -42,8 +43,6 @@ import { getSessionStateFromLocalStorage, setSessionStateToLocalStorage } from '
     with setting cookies, checking for inactivity, etc.
 */
 
-const periodicCheckSeconds = 60
-
 let rumSessionId: SessionId | undefined
 let recentActivity = false
 let cookieDomain: string
@@ -55,9 +54,14 @@ export function markActivity(): void {
 
 function createSessionState(): SessionState {
 	return {
+		expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
 		id: generateId(128),
 		startTime: Date.now(),
 	}
+}
+
+export function getCurrentSessionState(useLocalStorage = false): SessionState | undefined {
+	return useLocalStorage ? getSessionStateFromLocalStorage() : parseCookieToSessionState()
 }
 
 // This is called periodically and has two purposes:
@@ -65,7 +69,7 @@ function createSessionState(): SessionState {
 // 2) If activity has occured since the last periodic invocation, renew the cookie timeout
 // (Only exported for testing purposes.)
 export function updateSessionStatus(useLocalStorage = false): void {
-	let sessionState = useLocalStorage ? getSessionStateFromLocalStorage() : parseCookieToSessionState()
+	let sessionState = getCurrentSessionState(useLocalStorage)
 	if (!sessionState) {
 		sessionState = createSessionState()
 		recentActivity = true // force write of new cookie
@@ -75,6 +79,7 @@ export function updateSessionStatus(useLocalStorage = false): void {
 	eventTarget?.emit('session-changed', { sessionId: rumSessionId })
 
 	if (recentActivity) {
+		sessionState.expiresAt = Date.now() + SESSION_INACTIVITY_TIMEOUT_MS
 		if (useLocalStorage) {
 			setSessionStateToLocalStorage(sessionState)
 		} else {
@@ -89,7 +94,9 @@ function hasNativeSessionId(): boolean {
 	return typeof window !== 'undefined' && window['SplunkRumNative'] && window['SplunkRumNative'].getNativeSessionId
 }
 
-class ActivitySpanProcessor implements SpanProcessor {
+class SessionSpanProcessor implements SpanProcessor {
+	constructor(private readonly allSpansAreActivity: boolean) {}
+
 	forceFlush(): Promise<void> {
 		return Promise.resolve()
 	}
@@ -97,7 +104,11 @@ class ActivitySpanProcessor implements SpanProcessor {
 	onEnd(): void {}
 
 	onStart(): void {
-		markActivity()
+		if (this.allSpansAreActivity) {
+			markActivity()
+		}
+
+		updateSessionStatus()
 	}
 
 	shutdown(): Promise<void> {
@@ -133,17 +144,13 @@ export function initSessionTracking(
 	eventTarget = newEventTarget
 
 	ACTIVITY_EVENTS.forEach((type) => document.addEventListener(type, markActivity, { capture: true, passive: true }))
-	if (allSpansAreActivity) {
-		provider.addSpanProcessor(new ActivitySpanProcessor())
-	}
+	provider.addSpanProcessor(new SessionSpanProcessor(allSpansAreActivity))
 
 	updateSessionStatus(useLocalStorage)
-	const intervalHandle = setInterval(() => updateSessionStatus(useLocalStorage), periodicCheckSeconds * 1000)
 
 	return {
 		deinit: () => {
 			ACTIVITY_EVENTS.forEach((type) => document.removeEventListener(type, markActivity))
-			clearInterval(intervalHandle)
 			rumSessionId = undefined
 			eventTarget = undefined
 		},

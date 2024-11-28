@@ -15,13 +15,10 @@
  * limitations under the License.
  *
  */
-import { isIframe } from './utils'
+import { isIframe } from '../utils'
 import { SessionState } from './types'
-
-export const COOKIE_NAME = '_splunk_rum_sid'
-
-const CookieSession = 4 * 60 * 60 * 1000 // 4 hours
-const InactivityTimeoutSeconds = 15 * 60
+import { SESSION_DURATION_SECONDS, SESSION_STORAGE_KEY } from './constants'
+import { isSessionDurationExceeded, isSessionInactivityTimeoutReached, isSessionState } from './utils'
 
 export const cookieStore = {
 	set: (value: string): void => {
@@ -31,7 +28,7 @@ export const cookieStore = {
 }
 
 export function parseCookieToSessionState(): SessionState | undefined {
-	const rawValue = findCookieValue(COOKIE_NAME)
+	const rawValue = findCookieValue(SESSION_STORAGE_KEY)
 	if (!rawValue) {
 		return undefined
 	}
@@ -52,18 +49,11 @@ export function parseCookieToSessionState(): SessionState | undefined {
 		return undefined
 	}
 
-	// id validity
-	if (
-		!sessionState.id ||
-		typeof sessionState.id !== 'string' ||
-		!sessionState.id.length ||
-		sessionState.id.length !== 32
-	) {
+	if (isSessionDurationExceeded(sessionState)) {
 		return undefined
 	}
 
-	// startTime validity
-	if (!sessionState.startTime || typeof sessionState.startTime !== 'number' || isPastMaxAge(sessionState.startTime)) {
+	if (isSessionInactivityTimeoutReached(sessionState)) {
 		return undefined
 	}
 
@@ -71,14 +61,14 @@ export function parseCookieToSessionState(): SessionState | undefined {
 }
 
 export function renewCookieTimeout(sessionState: SessionState, cookieDomain: string | undefined): void {
-	if (isPastMaxAge(sessionState.startTime)) {
+	if (isSessionDurationExceeded(sessionState)) {
 		// safety valve
 		return
 	}
 
 	const cookieValue = encodeURIComponent(JSON.stringify(sessionState))
 	const domain = cookieDomain ? `domain=${cookieDomain};` : ''
-	let cookie = COOKIE_NAME + '=' + cookieValue + '; path=/;' + domain + 'max-age=' + InactivityTimeoutSeconds
+	let cookie = SESSION_STORAGE_KEY + '=' + cookieValue + '; path=/;' + domain + 'max-age=' + SESSION_DURATION_SECONDS
 
 	if (isIframe()) {
 		cookie += ';SameSite=None; Secure'
@@ -91,7 +81,7 @@ export function renewCookieTimeout(sessionState: SessionState, cookieDomain: str
 
 export function clearSessionCookie(cookieDomain?: string): void {
 	const domain = cookieDomain ? `domain=${cookieDomain};` : ''
-	const cookie = `${COOKIE_NAME}=;domain=${domain};expires=Thu, 01 Jan 1970 00:00:00 GMT`
+	const cookie = `${SESSION_STORAGE_KEY}=;domain=${domain};expires=Thu, 01 Jan 1970 00:00:00 GMT`
 	cookieStore.set(cookie)
 }
 
@@ -105,20 +95,4 @@ export function findCookieValue(cookieName: string): string | undefined {
 		}
 	}
 	return undefined
-}
-
-function isPastMaxAge(startTime: number): boolean {
-	const now = Date.now()
-	return startTime > now || now > startTime + CookieSession
-}
-
-function isSessionState(maybeSessionState: unknown): maybeSessionState is SessionState {
-	return (
-		typeof maybeSessionState === 'object' &&
-		maybeSessionState !== null &&
-		'id' in maybeSessionState &&
-		typeof maybeSessionState['id'] === 'string' &&
-		'startTime' in maybeSessionState &&
-		typeof maybeSessionState['startTime'] === 'number'
-	)
 }

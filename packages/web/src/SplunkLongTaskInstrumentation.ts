@@ -19,6 +19,8 @@
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 
 import { VERSION } from './version'
+import { getCurrentSessionState } from './session'
+import { SplunkOtelWebConfig } from './types'
 
 const LONGTASK_PERFORMANCE_TYPE = 'longtask'
 const MODULE_NAME = 'splunk-longtask'
@@ -26,8 +28,12 @@ const MODULE_NAME = 'splunk-longtask'
 export class SplunkLongTaskInstrumentation extends InstrumentationBase {
 	private _longtaskObserver: PerformanceObserver | undefined
 
-	constructor(config: InstrumentationConfig = {}) {
+	private initOptions: SplunkOtelWebConfig
+
+	constructor(config: InstrumentationConfig = {}, initOptions: SplunkOtelWebConfig) {
 		super(MODULE_NAME, VERSION, Object.assign({}, config))
+
+		this.initOptions = initOptions
 	}
 
 	disable(): void {
@@ -52,6 +58,11 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
 	init(): void {}
 
 	private _createSpanFromEntry(entry: PerformanceEntry) {
+		if (!!this.initOptions._experimental_longtaskNoStartSession && !getCurrentSessionState()) {
+			// session expired, we do not want to spawn new session from long tasks
+			return
+		}
+
 		const span = this.tracer.startSpan(LONGTASK_PERFORMANCE_TYPE, {
 			startTime: entry.startTime,
 		})
