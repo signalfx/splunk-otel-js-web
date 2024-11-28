@@ -15,9 +15,4 @@
  * limitations under the License.
  *
  */
-export type SessionId = string
-
-export type SessionState = {
-	id: SessionId
-	startTime: number
-}
+export * from './config'

@@ -19,7 +19,7 @@
 import * as assert from 'assert'
 import { deinit, initWithDefaultConfig, SpanCapturer } from './utils'
 import { io } from 'socket.io-client'
-import { SplunkOtelWebConfig } from '../src'
+import { SplunkOtelWebConfig } from '../src/types'
 import { SpanKind } from '@opentelemetry/api'
 
 describe('can produce websocket events', () => {

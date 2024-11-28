@@ -17,11 +17,14 @@
  */
 
 import { SpanProcessor, WebTracerProvider } from '@opentelemetry/sdk-trace-web'
-import { InternalEventTarget } from './EventTarget'
-import { generateId } from './utils'
+import { InternalEventTarget } from '../EventTarget'
+import { generateId } from '../utils'
 import { parseCookieToSessionState, renewCookieTimeout } from './cookie-session'
 import { SessionState, SessionId } from './types'
 import { getSessionStateFromLocalStorage, setSessionStateToLocalStorage } from './local-storage-session'
+import { SESSION_INACTIVITY_TIMEOUT_MS } from './constants'
+import { suppressTracing } from '@opentelemetry/core'
+import { context } from '@opentelemetry/api'
 
 /*
     The basic idea is to let the browser expire cookies for us "naturally" once
@@ -42,8 +45,6 @@ import { getSessionStateFromLocalStorage, setSessionStateToLocalStorage } from '
     with setting cookies, checking for inactivity, etc.
 */
 
-const periodicCheckSeconds = 60
-
 let rumSessionId: SessionId | undefined
 let recentActivity = false
 let cookieDomain: string
@@ -55,30 +56,50 @@ export function markActivity(): void {
 
 function createSessionState(): SessionState {
 	return {
+		expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
 		id: generateId(128),
 		startTime: Date.now(),
 	}
 }
 
+export function getCurrentSessionState({ useLocalStorage = false, forceStoreRead = false }): SessionState | undefined {
+	return useLocalStorage
+		? getSessionStateFromLocalStorage({ forceStoreRead })
+		: parseCookieToSessionState({ forceStoreRead })
+}
+
 // This is called periodically and has two purposes:
 // 1) Check if the cookie has been expired by the browser; if so, create a new one
-// 2) If activity has occured since the last periodic invocation, renew the cookie timeout
+// 2) If activity has occurred since the last periodic invocation, renew the cookie timeout
 // (Only exported for testing purposes.)
-export function updateSessionStatus(useLocalStorage = false): void {
-	let sessionState = useLocalStorage ? getSessionStateFromLocalStorage() : parseCookieToSessionState()
+export function updateSessionStatus({
+	forceStore,
+	useLocalStorage = false,
+}: {
+	forceStore: boolean
+	useLocalStorage: boolean
+}): void {
+	let sessionState = getCurrentSessionState({ useLocalStorage, forceStoreRead: forceStore })
+	let shouldForceWrite = false
 	if (!sessionState) {
-		sessionState = createSessionState()
-		recentActivity = true // force write of new cookie
+		// Check if another tab has created a new session
+		sessionState = getCurrentSessionState({ useLocalStorage, forceStoreRead: true })
+		if (!sessionState) {
+			sessionState = createSessionState()
+			recentActivity = true // force write of new cookie
+			shouldForceWrite = true
+		}
 	}
 
 	rumSessionId = sessionState.id
 	eventTarget?.emit('session-changed', { sessionId: rumSessionId })
 
 	if (recentActivity) {
+		sessionState.expiresAt = Date.now() + SESSION_INACTIVITY_TIMEOUT_MS
 		if (useLocalStorage) {
-			setSessionStateToLocalStorage(sessionState)
+			setSessionStateToLocalStorage(sessionState, { forceStoreWrite: shouldForceWrite || forceStore })
 		} else {
-			renewCookieTimeout(sessionState, cookieDomain)
+			renewCookieTimeout(sessionState, cookieDomain, { forceStoreWrite: shouldForceWrite || forceStore })
 		}
 	}
 
@@ -89,7 +110,12 @@ function hasNativeSessionId(): boolean {
 	return typeof window !== 'undefined' && window['SplunkRumNative'] && window['SplunkRumNative'].getNativeSessionId
 }
 
-class ActivitySpanProcessor implements SpanProcessor {
+class SessionSpanProcessor implements SpanProcessor {
+	constructor(
+		private readonly allSpansAreActivity: boolean,
+		private readonly useLocalStorage: boolean,
+	) {}
+
 	forceFlush(): Promise<void> {
 		return Promise.resolve()
 	}
@@ -97,7 +123,16 @@ class ActivitySpanProcessor implements SpanProcessor {
 	onEnd(): void {}
 
 	onStart(): void {
-		markActivity()
+		if (this.allSpansAreActivity) {
+			markActivity()
+		}
+
+		context.with(suppressTracing(context.active()), () => {
+			updateSessionStatus({
+				forceStore: false,
+				useLocalStorage: this.useLocalStorage,
+			})
+		})
 	}
 
 	shutdown(): Promise<void> {
@@ -133,17 +168,13 @@ export function initSessionTracking(
 	eventTarget = newEventTarget
 
 	ACTIVITY_EVENTS.forEach((type) => document.addEventListener(type, markActivity, { capture: true, passive: true }))
-	if (allSpansAreActivity) {
-		provider.addSpanProcessor(new ActivitySpanProcessor())
-	}
+	provider.addSpanProcessor(new SessionSpanProcessor(allSpansAreActivity, useLocalStorage))
 
-	updateSessionStatus(useLocalStorage)
-	const intervalHandle = setInterval(() => updateSessionStatus(useLocalStorage), periodicCheckSeconds * 1000)
+	updateSessionStatus({ useLocalStorage, forceStore: true })
 
 	return {
 		deinit: () => {
 			ACTIVITY_EVENTS.forEach((type) => document.removeEventListener(type, markActivity))
-			clearInterval(intervalHandle)
 			rumSessionId = undefined
 			eventTarget = undefined
 		},

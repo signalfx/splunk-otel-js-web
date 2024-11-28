@@ -29,7 +29,7 @@ import { VERSION } from '../src/version'
 function doesBeaconUrlEndWith(suffix) {
 	const sps = (SplunkRum.provider.getActiveSpanProcessor() as any)._spanProcessors
 	// TODO: refactor to make beaconUrl field private
-	const beaconUrl = sps[1]._exporter.beaconUrl || sps[1]._exporter.url
+	const beaconUrl = sps[2]._exporter.beaconUrl || sps[2]._exporter.url
 	assert.ok(beaconUrl.endsWith(suffix), `Checking beaconUrl if (${beaconUrl}) ends with ${suffix}`)
 }
 
