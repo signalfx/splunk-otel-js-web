@@ -18,7 +18,10 @@
 
 import { SpanProcessor, WebTracerProvider } from '@opentelemetry/sdk-trace-web'
 import { InternalEventTarget } from './EventTarget'
-import { cookieStore, findCookieValue, generateId, isIframe } from './utils'
+import { generateId } from './utils'
+import { parseCookieToSessionState, renewCookieTimeout } from './cookie-session'
+import { SessionState, SessionId } from './types'
+import { getSessionStateFromLocalStorage, setSessionStateToLocalStorage } from './local-storage-session'
 
 /*
     The basic idea is to let the browser expire cookies for us "naturally" once
@@ -39,13 +42,9 @@ import { cookieStore, findCookieValue, generateId, isIframe } from './utils'
     with setting cookies, checking for inactivity, etc.
 */
 
-const MaxSessionAgeMillis = 4 * 60 * 60 * 1000
-const InactivityTimeoutSeconds = 15 * 60
-const PeriodicCheckSeconds = 60
-export const COOKIE_NAME = '_splunk_rum_sid'
+const periodicCheckSeconds = 60
 
-export type SessionIdType = string
-let rumSessionId: SessionIdType | undefined
+let rumSessionId: SessionId | undefined
 let recentActivity = false
 let cookieDomain: string
 let eventTarget: InternalEventTarget | undefined
@@ -54,86 +53,21 @@ export function markActivity(): void {
 	recentActivity = true
 }
 
-function pastMaxAge(startTime: number): boolean {
-	const now = Date.now()
-	return startTime > now || now > startTime + MaxSessionAgeMillis
-}
-
-function parseCookieToSessionState() {
-	const rawValue = findCookieValue(COOKIE_NAME)
-	if (!rawValue) {
-		return undefined
-	}
-
-	const decoded = decodeURIComponent(rawValue)
-	if (!decoded) {
-		return undefined
-	}
-
-	let ss: any = undefined
-	try {
-		ss = JSON.parse(decoded)
-	} catch {
-		return undefined
-	}
-	// should exist and be an object
-	if (!ss || typeof ss !== 'object') {
-		return undefined
-	}
-
-	// id validity
-	if (!ss.id || typeof ss.id !== 'string' || !ss.id.length || ss.id.length !== 32) {
-		return undefined
-	}
-
-	// startTime validity
-	if (!ss.startTime || typeof ss.startTime !== 'number' || pastMaxAge(ss.startTime)) {
-		return undefined
-	}
-
-	return ss
-}
-
-function newSessionState() {
+function createSessionState(): SessionState {
 	return {
 		id: generateId(128),
 		startTime: Date.now(),
 	}
 }
 
-function renewCookieTimeout(sessionState) {
-	if (pastMaxAge(sessionState.startTime)) {
-		// safety valve
-		return
-	}
-
-	const cookieValue = encodeURIComponent(JSON.stringify(sessionState))
-	const domain = cookieDomain ? `domain=${cookieDomain};` : ''
-	let cookie = COOKIE_NAME + '=' + cookieValue + '; path=/;' + domain + 'max-age=' + InactivityTimeoutSeconds
-
-	if (isIframe()) {
-		cookie += ';SameSite=None; Secure'
-	} else {
-		cookie += ';SameSite=Strict'
-	}
-
-	cookieStore.set(cookie)
-}
-
-export function clearSessionCookie(): void {
-	const domain = cookieDomain ? `domain=${cookieDomain};` : ''
-	const cookie = `${COOKIE_NAME}=;domain=${domain};expires=Thu, 01 Jan 1970 00:00:00 GMT`
-	cookieStore.set(cookie)
-}
-
 // This is called periodically and has two purposes:
 // 1) Check if the cookie has been expired by the browser; if so, create a new one
 // 2) If activity has occured since the last periodic invocation, renew the cookie timeout
 // (Only exported for testing purposes.)
-export function updateSessionStatus(): void {
-	let sessionState = parseCookieToSessionState()
+export function updateSessionStatus(useLocalStorage = false): void {
+	let sessionState = useLocalStorage ? getSessionStateFromLocalStorage() : parseCookieToSessionState()
 	if (!sessionState) {
-		sessionState = newSessionState()
+		sessionState = createSessionState()
 		recentActivity = true // force write of new cookie
 	}
 
@@ -141,7 +75,11 @@ export function updateSessionStatus(): void {
 	eventTarget?.emit('session-changed', { sessionId: rumSessionId })
 
 	if (recentActivity) {
-		renewCookieTimeout(sessionState)
+		if (useLocalStorage) {
+			setSessionStateToLocalStorage(sessionState)
+		} else {
+			renewCookieTimeout(sessionState, cookieDomain)
+		}
 	}
 
 	recentActivity = false
@@ -171,10 +109,11 @@ const ACTIVITY_EVENTS = ['click', 'scroll', 'mousedown', 'keydown', 'touchend', 
 
 export function initSessionTracking(
 	provider: WebTracerProvider,
-	instanceId: SessionIdType,
+	instanceId: SessionId,
 	newEventTarget: InternalEventTarget,
 	domain?: string,
 	allSpansAreActivity = false,
+	useLocalStorage = false,
 ): { deinit: () => void } {
 	if (hasNativeSessionId()) {
 		// short-circuit and bail out - don't create cookie, watch for inactivity, or anything
@@ -198,8 +137,8 @@ export function initSessionTracking(
 		provider.addSpanProcessor(new ActivitySpanProcessor())
 	}
 
-	updateSessionStatus()
-	const intervalHandle = setInterval(() => updateSessionStatus(), PeriodicCheckSeconds * 1000)
+	updateSessionStatus(useLocalStorage)
+	const intervalHandle = setInterval(() => updateSessionStatus(useLocalStorage), periodicCheckSeconds * 1000)
 
 	return {
 		deinit: () => {
@@ -211,7 +150,7 @@ export function initSessionTracking(
 	}
 }
 
-export function getRumSessionId(): SessionIdType | undefined {
+export function getRumSessionId(): SessionId | undefined {
 	if (hasNativeSessionId()) {
 		return window['SplunkRumNative'].getNativeSessionId()
 	}

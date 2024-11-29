@@ -18,16 +18,10 @@
 
 import * as assert from 'assert'
 import { InternalEventTarget } from '../src/EventTarget'
-import {
-	initSessionTracking,
-	COOKIE_NAME,
-	getRumSessionId,
-	updateSessionStatus,
-	clearSessionCookie,
-} from '../src/session'
+import { initSessionTracking, getRumSessionId, updateSessionStatus } from '../src/session'
 import { SplunkWebTracerProvider } from '../src'
 import sinon from 'sinon'
-import { cookieStore } from '../src/utils'
+import { COOKIE_NAME, clearSessionCookie, cookieStore } from '../src/cookie-session'
 
 describe('Session tracking', () => {
 	beforeEach(() => {
