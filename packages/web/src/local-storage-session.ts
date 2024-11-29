@@ -16,7 +16,7 @@
  *
  */
 import { SessionState } from './types'
-import { safelyGetLocalStorage, safelySetLocalStorage } from './utils/storage'
+import { safelyGetLocalStorage, safelySetLocalStorage, safelyRemoveFromLocalStorage } from './utils/storage'
 
 const SESSION_ID_LENGTH = 32
 const SESSION_DURATION_MS = 4 * 60 * 60 * 1000 // 4 hours
@@ -48,9 +48,15 @@ export const setSessionStateToLocalStorage = (sessionState: SessionState): void 
 	safelySetLocalStorage(SESSION_LAST_UPDATED_KEY, String(sessionState.startTime))
 }
 
+export const clearSessionStateFromLocalStorage = (): void => {
+	safelyRemoveFromLocalStorage(SESSION_ID_KEY)
+	safelyRemoveFromLocalStorage(SESSION_LAST_UPDATED_KEY)
+}
+
 const isSessionIdValid = (sessionId: unknown): boolean =>
 	typeof sessionId === 'string' && sessionId.length === SESSION_ID_LENGTH
 
-const isSessionStartTimeValid = (startTime: unknown): boolean => typeof startTime === 'number' && startTime < Date.now()
+const isSessionStartTimeValid = (startTime: unknown): boolean =>
+	typeof startTime === 'number' && startTime <= Date.now()
 
 const isSessionExpired = (startTime: number) => Date.now() - startTime > SESSION_DURATION_MS

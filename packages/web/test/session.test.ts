@@ -22,6 +22,7 @@ import { initSessionTracking, getRumSessionId, updateSessionStatus } from '../sr
 import { SplunkWebTracerProvider } from '../src'
 import sinon from 'sinon'
 import { COOKIE_NAME, clearSessionCookie, cookieStore } from '../src/cookie-session'
+import { clearSessionStateFromLocalStorage } from '../src/local-storage-session'
 
 describe('Session tracking', () => {
 	beforeEach(() => {
@@ -102,5 +103,34 @@ describe('Session tracking', () => {
 			assert.equal(cookieSetSpy.callCount, 2)
 			done()
 		})
+	})
+})
+
+describe('Session tracking - localStorage', () => {
+	beforeEach(() => {
+		clearSessionStateFromLocalStorage()
+	})
+
+	afterEach(() => {
+		clearSessionStateFromLocalStorage()
+	})
+
+	it('should save session state to local storage', () => {
+		const useLocalStorage = true
+		const provider = new SplunkWebTracerProvider()
+		const trackingHandle = initSessionTracking(
+			provider,
+			'1234',
+			new InternalEventTarget(),
+			undefined,
+			undefined,
+			useLocalStorage,
+		)
+
+		const firstSessionId = getRumSessionId()
+		updateSessionStatus(useLocalStorage)
+		assert.strictEqual(firstSessionId, getRumSessionId())
+
+		trackingHandle.deinit()
 	})
 })

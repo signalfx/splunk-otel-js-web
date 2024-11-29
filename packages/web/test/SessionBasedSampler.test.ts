@@ -19,9 +19,10 @@
 import * as assert from 'assert'
 import { InternalEventTarget } from '../src/EventTarget'
 import { SessionBasedSampler } from '../src/SessionBasedSampler'
-import { initSessionTracking, COOKIE_NAME, updateSessionStatus } from '../src/session'
+import { initSessionTracking, updateSessionStatus } from '../src/session'
 import { context, SamplingDecision } from '@opentelemetry/api'
 import { SplunkWebTracerProvider } from '../src'
+import { COOKIE_NAME } from '../src/cookie-session'
 
 describe('Session based sampler', () => {
 	it('decide sampling based on session id and ratio', () => {

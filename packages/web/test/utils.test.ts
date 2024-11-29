@@ -17,7 +17,8 @@
  */
 
 import * as assert from 'assert'
-import { findCookieValue, generateId } from '../src/utils'
+import { generateId } from '../src/utils'
+import { findCookieValue } from '../src/cookie-session'
 
 describe('generateId', () => {
 	it('should generate IDs of 64 and 128 bits', () => {
