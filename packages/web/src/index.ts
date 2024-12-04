@@ -46,7 +46,7 @@ import { SplunkExporterConfig } from './exporters/common'
 import { SplunkZipkinExporter } from './exporters/zipkin'
 import { ERROR_INSTRUMENTATION_NAME, SplunkErrorInstrumentation } from './SplunkErrorInstrumentation'
 import { generateId, getPluginConfig } from './utils'
-import { getRumSessionId, initSessionTracking, SessionIdType } from './session'
+import { getRumSessionId, initSessionTracking } from './session'
 import { SplunkWebSocketInstrumentation } from './SplunkWebSocketInstrumentation'
 import { WebVitalsInstrumentationConfig, initWebVitals } from './webvitals'
 import { SplunkLongTaskInstrumentation } from './SplunkLongTaskInstrumentation'
@@ -75,6 +75,7 @@ import {
 import { SplunkOTLPTraceExporter } from './exporters/otlp'
 import { registerGlobal, unregisterGlobal } from './global-utils'
 import { BrowserInstanceService } from './services/BrowserInstanceService'
+import { SessionId } from './types'
 
 export { SplunkExporterConfig } from './exporters/common'
 export { SplunkZipkinExporter } from './exporters/zipkin'
@@ -192,6 +193,9 @@ export interface SplunkOtelWebConfig {
 	 * Config options passed to web tracer
 	 */
 	tracer?: WebTracerConfig
+
+	/** Use local storage to save session ID instead of cookie */
+	useLocalStorage?: boolean
 
 	/**
 	 * Sets a value for the 'app.version' attribute
@@ -316,7 +320,7 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	/**
 	 * @deprecated Use {@link getSessionId()}
 	 */
-	_experimental_getSessionId: () => SessionIdType | undefined
+	_experimental_getSessionId: () => SessionId | undefined
 
 	/**
 	 * Allows experimental options to be passed. No versioning guarantees are given for this method.
@@ -337,7 +341,7 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	/**
 	 * This method returns current session ID
 	 */
-	getSessionId: () => SessionIdType | undefined
+	getSessionId: () => SessionId | undefined
 
 	init: (options: SplunkOtelWebConfig) => void
 
@@ -470,12 +474,14 @@ export const SplunkRum: SplunkOtelWebType = {
 			resource: this.resource,
 		})
 
+		// TODO
 		_deinitSessionTracking = initSessionTracking(
 			provider,
 			instanceId,
 			eventTarget,
 			processedOptions.cookieDomain,
 			!!options._experimental_allSpansExtendSession,
+			processedOptions.useLocalStorage,
 		).deinit
 
 		const instrumentations = INSTRUMENTATIONS.map(({ Instrument, confKey, disable }) => {

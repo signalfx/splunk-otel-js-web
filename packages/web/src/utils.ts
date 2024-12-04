@@ -25,25 +25,6 @@ export function generateId(bits: number): string {
 	})
 }
 
-export const cookieStore = {
-	set: (value: string): void => {
-		document.cookie = value
-	},
-	get: (): string => document.cookie,
-}
-
-export function findCookieValue(cookieName: string): string | undefined {
-	const decodedCookie = decodeURIComponent(cookieStore.get())
-	const cookies = decodedCookie.split(';')
-	for (let i = 0; i < cookies.length; i++) {
-		const c = cookies[i].trim()
-		if (c.indexOf(cookieName + '=') === 0) {
-			return c.substring((cookieName + '=').length, c.length)
-		}
-	}
-	return undefined
-}
-
 export function limitLen(s: string, cap: number): string {
 	if (s.length > cap) {
 		return s.substring(0, cap)
