@@ -49,6 +49,7 @@ let rumSessionId: SessionId | undefined
 let recentActivity = false
 let cookieDomain: string
 let eventTarget: InternalEventTarget | undefined
+let isNewSessionId = false
 
 export function markActivity(): void {
 	recentActivity = true
@@ -82,6 +83,9 @@ export function updateSessionStatus({
 	useLocalStorage: boolean
 }): void {
 	let sessionState = getCurrentSessionState({ useLocalStorage, forceStoreRead: forceStore })
+
+	console.log('session state', sessionState)
+
 	let shouldForceWrite = false
 	if (!sessionState) {
 		// Check if another tab has created a new session
@@ -90,6 +94,7 @@ export function updateSessionStatus({
 			sessionState = createSessionState()
 			recentActivity = true // force write of new cookie
 			shouldForceWrite = true
+			isNewSessionId = true
 		}
 	}
 
@@ -191,4 +196,8 @@ export function getRumSessionId(): SessionId | undefined {
 	}
 
 	return rumSessionId
+}
+
+export function getIsNewSession(): boolean {
+	return isNewSessionId
 }
