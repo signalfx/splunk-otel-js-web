@@ -15,5 +15,18 @@
  * limitations under the License.
  *
  */
-export * from './config'
-export * from './session'
+import { SessionData } from '../../types'
+
+export abstract class Storage {
+	abstract clear(): void
+
+	abstract getSessionData(): SessionData | null
+
+	abstract setSessionData(data: SessionData): void
+
+	protected abstract get(key: string): string | null
+
+	protected abstract remove(key: string): void
+
+	protected abstract set(key: string, value: string): void
+}

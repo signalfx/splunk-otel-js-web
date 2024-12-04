@@ -15,10 +15,21 @@
  * limitations under the License.
  *
  */
-export type SessionId = string
+import { SessionData, SplunkOtelWebConfig } from '../../types'
+import { Storage } from './storage'
+import { LocalStorage } from './local-storage'
+import { CookieStorage } from './cookie-storage'
 
-export type SessionState = {
-	expiresAt?: number
-	id: SessionId
-	startTime: number
+export class StorageService {
+	private storage: Storage
+
+	constructor(config: SplunkOtelWebConfig) {
+		this.storage = config.useLocalStorage ? new LocalStorage() : new CookieStorage(config)
+	}
+
+	getSessionData = (): SessionData | null => this.storage.getSessionData()
+
+	setSessionData = (sessionData: SessionData) => {
+		this.storage.setSessionData(sessionData)
+	}
 }

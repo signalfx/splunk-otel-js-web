@@ -15,5 +15,14 @@
  * limitations under the License.
  *
  */
-export * from './config'
-export * from './session'
+export type SessionId = string
+
+export type SessionData = {
+	expiresAt?: number
+	id: SessionId
+	startTime: number
+}
+
+export type SessionDataWithMeta = SessionData & {
+	isNewSession?: true
+}

@@ -15,5 +15,6 @@
  * limitations under the License.
  *
  */
-export * from './config'
-export * from './session'
+export function hasNativeSessionId(): boolean {
+	return typeof window !== 'undefined' && window['SplunkRumNative'] && window['SplunkRumNative'].getNativeSessionId
+}

@@ -15,5 +15,20 @@
  * limitations under the License.
  *
  */
-export * from './config'
-export * from './session'
+import { SessionId, SessionData } from '../../types'
+
+export class Session {
+	readonly id: SessionId
+
+	private readonly startTime: number
+
+	constructor({ id, startTime }: SessionData) {
+		this.id = id
+		this.startTime = startTime
+	}
+
+	getSessionData = (): SessionData => ({
+		id: this.id,
+		startTime: this.startTime,
+	})
+}

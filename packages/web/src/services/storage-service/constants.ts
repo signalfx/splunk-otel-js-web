@@ -15,5 +15,6 @@
  * limitations under the License.
  *
  */
-export * from './types'
-export * from './session'
+export const SESSION_ID_LENGTH = 32
+export const SESSION_DURATION_SECONDS = 4 * 60 * 60 // 4 hours
+export const SESSION_STORAGE_KEY = '_splunk_rum_sid'

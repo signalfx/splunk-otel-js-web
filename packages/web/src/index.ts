@@ -43,7 +43,6 @@ import { SplunkExporterConfig } from './exporters/common'
 import { SplunkZipkinExporter } from './exporters/zipkin'
 import { ERROR_INSTRUMENTATION_NAME, SplunkErrorInstrumentation } from './SplunkErrorInstrumentation'
 import { generateId, getPluginConfig } from './utils'
-import { getRumSessionId, initSessionTracking } from './session'
 import { SplunkWebSocketInstrumentation } from './SplunkWebSocketInstrumentation'
 import { initWebVitals } from './webvitals'
 import { SplunkLongTaskInstrumentation } from './SplunkLongTaskInstrumentation'
@@ -64,8 +63,11 @@ import { SplunkSocketIoClientInstrumentation } from './SplunkSocketIoClientInstr
 import { SplunkOTLPTraceExporter } from './exporters/otlp'
 import { registerGlobal, unregisterGlobal } from './global-utils'
 import { BrowserInstanceService } from './services/BrowserInstanceService'
-import { SessionId } from './session'
 import { SplunkOtelWebConfig, SplunkOtelWebExporterOptions, SplunkOtelWebOptionsInstrumentations } from './types'
+import { SessionId } from './types'
+import { SessionService } from './services/session-service'
+import { StorageService } from './services/storage-service'
+import { ActivityService } from './services/activity-service'
 
 export { SplunkExporterConfig } from './exporters/common'
 export { SplunkZipkinExporter } from './exporters/zipkin'
@@ -225,9 +227,10 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 
 let inited = false
 let _deregisterInstrumentations: () => void | undefined
-let _deinitSessionTracking: () => void | undefined
+//let _deinitSessionTracking: () => void | undefined
 let _errorInstrumentation: SplunkErrorInstrumentation | undefined
 let _postDocLoadInstrumentation: SplunkPostDocLoadResourceInstrumentation | undefined
+let _sessionService: SessionService | undefined
 let eventTarget: InternalEventTarget | undefined
 export const SplunkRum: SplunkOtelWebType = {
 	DEFAULT_AUTO_INSTRUMENTED_EVENTS,
@@ -343,15 +346,18 @@ export const SplunkRum: SplunkOtelWebType = {
 			resource: this.resource,
 		})
 
-		// TODO
-		_deinitSessionTracking = initSessionTracking(
+		// Init and start session tracking
+		const storageService = new StorageService(options)
+		const activityService = new ActivityService()
+		_sessionService = new SessionService(
+			options,
 			provider,
 			instanceId,
+			storageService,
+			activityService,
 			eventTarget,
-			processedOptions.cookieDomain,
-			!!options._experimental_allSpansExtendSession,
-			processedOptions.useLocalStorage,
-		).deinit
+		)
+		_sessionService.startSession()
 
 		const instrumentations = INSTRUMENTATIONS.map(({ Instrument, confKey, disable }) => {
 			const pluginConf = getPluginConfig(processedOptions.instrumentations[confKey], pluginDefaults, disable)
@@ -440,8 +446,8 @@ export const SplunkRum: SplunkOtelWebType = {
 		_deregisterInstrumentations?.()
 		_deregisterInstrumentations = undefined
 
-		_deinitSessionTracking?.()
-		_deinitSessionTracking = undefined
+		_sessionService?.stopSession()
+		_sessionService = undefined
 
 		this.provider?.shutdown()
 		delete this.provider
@@ -501,7 +507,7 @@ export const SplunkRum: SplunkOtelWebType = {
 	},
 
 	getSessionId() {
-		return getRumSessionId()
+		return _sessionService?.sessionId
 	},
 	_experimental_getSessionId() {
 		return this.getSessionId()

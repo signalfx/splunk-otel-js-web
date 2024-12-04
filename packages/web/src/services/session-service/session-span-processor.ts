@@ -15,5 +15,22 @@
  * limitations under the License.
  *
  */
-export * from './config'
-export * from './session'
+import { SpanProcessor } from '@opentelemetry/sdk-trace-web'
+
+export class SessionSpanProcessor implements SpanProcessor {
+	constructor(private readonly onSpanStart: () => void) {}
+
+	forceFlush(): Promise<void> {
+		return Promise.resolve()
+	}
+
+	onEnd(): void {}
+
+	onStart(): void {
+		this.onSpanStart()
+	}
+
+	shutdown(): Promise<void> {
+		return Promise.resolve()
+	}
+}
