@@ -79,7 +79,7 @@ describe('Session tracking', () => {
 		// }, 4000)
 	})
 
-	describe.only('Activity tracking', () => {
+	describe('Activity tracking', () => {
 		let sessionService: SessionService
 
 		afterEach(() => {
@@ -119,7 +119,7 @@ describe('Session tracking', () => {
 	})
 })
 
-describe.only('Session tracking - localStorage', () => {
+describe('Session tracking - localStorage', () => {
 	const config: SplunkOtelWebConfig = { useLocalStorage: true }
 	let storageService: StorageService
 
