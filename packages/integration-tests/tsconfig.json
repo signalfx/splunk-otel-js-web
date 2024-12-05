@@ -1,0 +1,8 @@
+{
+	"include": ["**/*.ts"],
+	"compilerOptions": {
+		"allowSyntheticDefaultImports": true,
+		"target": "esnext",
+		"moduleResolution": "nodenext"
+	}
+}

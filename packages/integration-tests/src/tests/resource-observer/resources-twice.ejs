@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Resource observer test</title>
+  <%- renderAgent() %>
+</head>
+<body>
+  <h1>Resource observer test</h1>
+
+  <img src="assets/splunk-black.svg" alt="white">
+
+  <script>
+
+    function loadImg() {
+      const p = new Promise(function(resolve, _) {
+		  const img = document.createElement('img');
+        img.src = 'assets/splunk-black.svg?delay=100';
+        img.onload = resolve;
+        document.body.appendChild(img);
+      });
+      return p;
+    }
+
+    window.addEventListener("load", function() {
+      Promise.all([loadImg()]).then(function() {
+        SplunkRum.provider.getTracer('default').startSpan('guard-span').end();
+      })
+    })
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Test docload</title>
+
+	<%- renderAgent({
+    bufferTimeout: 200
+  }) %>
+  <link rel="stylesheet" href="assets/css-font-img.css">
+</head>
+<body>
+  <p>Docload</p>
+  <script>
+    function makeHXR(url) {
+      const oReq = new XMLHttpRequest();
+      oReq.open("GET", url);
+      oReq.setRequestHeader('Content-Type', 'text/plain');
+      oReq.send();
+
+      return oReq;
+    }
+    makeHXR('/some-data');
+		fetch('/some-data?delay=1').then(response => response.json());
+  </script>
+
+  <iframe src="iframe.ejs" frameborder="0"></iframe>
+	<img src="assets/splunk-black.png?delay=300">
+</body>
+</html>
