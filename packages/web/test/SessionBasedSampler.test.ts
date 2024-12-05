@@ -16,12 +16,12 @@
  *
  */
 
-import * as assert from 'assert'
-import { InternalEventTarget } from '../src/EventTarget'
-import { SessionBasedSampler } from '../src/SessionBasedSampler'
+//import * as assert from 'assert'
+//import { InternalEventTarget } from '../src/EventTarget'
+//import { SessionBasedSampler } from '../src/SessionBasedSampler'
 //import { initSessionTracking, updateSessionStatus } from '../src/session/session'
-import { context, SamplingDecision } from '@opentelemetry/api'
-import { SplunkWebTracerProvider } from '../src'
+//import { context, SamplingDecision } from '@opentelemetry/api'
+//import { SplunkWebTracerProvider } from '../src'
 //import { COOKIE_NAME } from '../src/session/cookie-session'
 
 // describe('Session based sampler', () => {

@@ -8,7 +8,7 @@
 		"pretty": true,
 		"resolveJsonModule": true,
 		"target": "ES2017",
-		"types": ["node"],
+		"types": ["node"]
 		// TODO: Enable strict mode
 		//"strict": true,
 	},
