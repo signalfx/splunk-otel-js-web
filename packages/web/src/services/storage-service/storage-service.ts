@@ -27,6 +27,10 @@ export class StorageService {
 		this.storage = config.useLocalStorage ? new LocalStorage() : new CookieStorage(config)
 	}
 
+	clearSessionData = () => {
+		this.storage.clear()
+	}
+
 	getSessionData = (): SessionData | null => this.storage.getSessionData()
 
 	setSessionData = (sessionData: SessionData) => {

@@ -33,39 +33,13 @@ export class SessionService {
 	constructor(
 		private readonly config: SplunkOtelWebConfig,
 		private readonly provider: WebTracerProvider,
-		private readonly instanceId: SessionId, // TODO: is it needed?
 		private readonly storageService: StorageService,
 		private readonly activityService: ActivityService,
 		private readonly eventTarget: InternalEventTarget,
 	) {}
 
-	startSession = () => {
-		if (SessionProvider.getSession()) {
-			throw new Error('Session already running')
-		}
-
-		if (hasNativeSessionId()) {
-			return
-		}
-
-		this.markActivity()
-		this.activityService.start(this.markActivity)
-		this.provider.addSpanProcessor(new SessionSpanProcessor(this.onSessionSpanStart))
-
-		this.checkSession()
-	}
-
-	stopSession = () => {
-		if (!SessionProvider.getSession()) {
-			throw new Error('No session running')
-		}
-
-		this.activityService.stop()
-		SessionProvider.clearSession()
-	}
-
-	private checkSession = () => {
-		const sessionData = this.getOrCreateSessionData()
+	checkSession = (initialSessionId?: SessionId) => {
+		const sessionData = this.getOrCreateSessionData(initialSessionId)
 		SessionProvider.setSession(new Session(sessionData))
 
 		if (sessionData.isNewSession) {
@@ -83,14 +57,39 @@ export class SessionService {
 		this.hasRecentActivity = false
 	}
 
-	private getOrCreateSessionData = (): SessionDataWithMeta => {
+	startSession = (initialSessionId?: SessionId) => {
+		if (SessionProvider.getSession()) {
+			throw new Error('Session already running')
+		}
+
+		if (hasNativeSessionId()) {
+			return
+		}
+
+		this.markActivity()
+		this.activityService.start(this.markActivity)
+		this.provider.addSpanProcessor(new SessionSpanProcessor(this.onSessionSpanStart))
+
+		this.checkSession(initialSessionId)
+	}
+
+	stopSession = () => {
+		if (!SessionProvider.getSession()) {
+			throw new Error('No session running')
+		}
+
+		this.activityService.stop()
+		SessionProvider.clearSession()
+	}
+
+	private getOrCreateSessionData = (initialSessionId?: SessionId): SessionDataWithMeta => {
 		const sessionData = this.storageService.getSessionData()
 		if (sessionData) {
 			return sessionData
 		}
 
 		return {
-			id: generateId(128),
+			id: initialSessionId ?? generateId(128),
 			startTime: Date.now(),
 			expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
 			isNewSession: true,

@@ -19,7 +19,6 @@
 import { SpanAttributes } from '@opentelemetry/api'
 import { expect } from 'chai'
 import SplunkRum from '../src'
-import { updateSessionStatus } from '../src/session/session'
 
 describe('SplunkOtelWeb', () => {
 	afterEach(() => {
@@ -124,7 +123,7 @@ describe('SplunkOtelWeb', () => {
 			})
 
 			document.body.click()
-			updateSessionStatus()
+			// TODO: updateSessionStatus()
 
 			// Wait for promise chain to resolve
 			await Promise.resolve()

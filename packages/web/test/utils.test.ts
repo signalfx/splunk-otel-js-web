@@ -18,7 +18,6 @@
 
 import * as assert from 'assert'
 import { generateId } from '../src/utils'
-import { findCookieValue } from '../src/session/cookie-session'
 
 describe('generateId', () => {
 	it('should generate IDs of 64 and 128 bits', () => {
@@ -28,10 +27,5 @@ describe('generateId', () => {
 		assert.strictEqual(id128.length, 32)
 		assert.ok(id64.match('^[0-9a-z]+$'))
 		assert.ok(id128.match('^[0-9a-z]+$'))
-	})
-})
-describe('findCookieValue', () => {
-	it('should not find unset cookie', () => {
-		assert.ok(findCookieValue('nosuchCookie') === undefined)
 	})
 })

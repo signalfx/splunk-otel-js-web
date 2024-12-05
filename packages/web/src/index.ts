@@ -349,15 +349,8 @@ export const SplunkRum: SplunkOtelWebType = {
 		// Init and start session tracking
 		const storageService = new StorageService(options)
 		const activityService = new ActivityService()
-		_sessionService = new SessionService(
-			options,
-			provider,
-			instanceId,
-			storageService,
-			activityService,
-			eventTarget,
-		)
-		_sessionService.startSession()
+		_sessionService = new SessionService(options, provider, storageService, activityService, eventTarget)
+		_sessionService.startSession(instanceId)
 
 		const instrumentations = INSTRUMENTATIONS.map(({ Instrument, confKey, disable }) => {
 			const pluginConf = getPluginConfig(processedOptions.instrumentations[confKey], pluginDefaults, disable)
