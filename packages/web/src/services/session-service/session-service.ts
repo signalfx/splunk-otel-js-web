@@ -25,10 +25,9 @@ import { generateId } from '../../utils'
 import { SESSION_INACTIVITY_TIMEOUT_MS } from './constants'
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web'
 import { SessionSpanProcessor } from './session-span-processor'
+import { SessionProvider } from './session-provider'
 
 export class SessionService {
-	private currentSession?: Session
-
 	private hasRecentActivity = false
 
 	constructor(
@@ -40,16 +39,8 @@ export class SessionService {
 		private readonly eventTarget: InternalEventTarget,
 	) {}
 
-	get sessionId(): string | undefined {
-		if (hasNativeSessionId()) {
-			return window['SplunkRumNative'].getNativeSessionId()
-		}
-
-		return this.currentSession?.id
-	}
-
 	startSession = () => {
-		if (this.currentSession) {
+		if (SessionProvider.getSession()) {
 			throw new Error('Session already running')
 		}
 
@@ -65,27 +56,28 @@ export class SessionService {
 	}
 
 	stopSession = () => {
-		if (!this.currentSession) {
+		if (!SessionProvider.getSession()) {
 			throw new Error('No session running')
 		}
 
 		this.activityService.stop()
-		this.currentSession = undefined
+		SessionProvider.clearSession()
 	}
 
 	private checkSession = () => {
 		const sessionData = this.getOrCreateSessionData()
-		this.currentSession = new Session(sessionData)
+		SessionProvider.setSession(new Session(sessionData))
 
 		if (sessionData.isNewSession) {
 			this.hasRecentActivity = true
 		}
 
-		this.eventTarget.emit('session-changed', { sessionId: this.sessionId })
+		this.eventTarget.emit('session-changed', { sessionId: SessionProvider.sessionId })
 
 		if (this.hasRecentActivity) {
 			sessionData.expiresAt = Date.now() + SESSION_INACTIVITY_TIMEOUT_MS
-			this.storageService.setSessionData(this.currentSession.getSessionData())
+			SessionProvider.updateSession(sessionData)
+			this.storageService.setSessionData(sessionData)
 		}
 
 		this.hasRecentActivity = false

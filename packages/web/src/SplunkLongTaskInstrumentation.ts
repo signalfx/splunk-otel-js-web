@@ -19,8 +19,8 @@
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 
 import { VERSION } from './version'
-import { getCurrentSessionState } from './session'
 import { SplunkOtelWebConfig } from './types'
+import { SessionProvider } from './services/session-service'
 
 const LONGTASK_PERFORMANCE_TYPE = 'longtask'
 const MODULE_NAME = 'splunk-longtask'
@@ -58,7 +58,7 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
 	init(): void {}
 
 	private _createSpanFromEntry(entry: PerformanceEntry) {
-		if (!!this.initOptions._experimental_longtaskNoStartSession && !getCurrentSessionState()) {
+		if (!!this.initOptions._experimental_longtaskNoStartSession && !SessionProvider.sessionId) {
 			// session expired, we do not want to spawn new session from long tasks
 			return
 		}

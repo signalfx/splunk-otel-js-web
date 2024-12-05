@@ -65,7 +65,7 @@ import { registerGlobal, unregisterGlobal } from './global-utils'
 import { BrowserInstanceService } from './services/BrowserInstanceService'
 import { SplunkOtelWebConfig, SplunkOtelWebExporterOptions, SplunkOtelWebOptionsInstrumentations } from './types'
 import { SessionId } from './types'
-import { SessionService } from './services/session-service'
+import { SessionService, SessionProvider } from './services/session-service'
 import { StorageService } from './services/storage-service'
 import { ActivityService } from './services/activity-service'
 
@@ -507,7 +507,7 @@ export const SplunkRum: SplunkOtelWebType = {
 	},
 
 	getSessionId() {
-		return _sessionService?.sessionId
+		return SessionProvider.sessionId
 	},
 	_experimental_getSessionId() {
 		return this.getSessionId()

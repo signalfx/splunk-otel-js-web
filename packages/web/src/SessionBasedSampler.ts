@@ -18,7 +18,7 @@
 
 import { Context, Link, Sampler, SamplingResult, SpanAttributes, SpanKind } from '@opentelemetry/api'
 import { AlwaysOffSampler, AlwaysOnSampler } from '@opentelemetry/core'
-import { getRumSessionId } from './session'
+import { SessionProvider } from './services/session-service'
 
 export interface SessionBasedSamplerConfig {
 	/**
@@ -75,7 +75,7 @@ export class SessionBasedSampler implements Sampler {
 		// Implementation based on @opentelemetry/core TraceIdRatioBasedSampler
 		// but replacing deciding based on traceId with sessionId
 		// (not extended from due to private methods)
-		const currentSession = getRumSessionId()
+		const currentSession = SessionProvider.sessionId
 		if (this._currentSession !== currentSession) {
 			this._currentSessionSampled = this._accumulate(currentSession) < this._upperBound
 			this._currentSession = currentSession

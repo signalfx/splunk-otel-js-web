@@ -23,6 +23,8 @@ export type SessionData = {
 	startTime: number
 }
 
+export type UpdateSessionData = Partial<Pick<SessionData, 'expiresAt'>>
+
 export type SessionDataWithMeta = SessionData & {
 	isNewSession?: true
 }

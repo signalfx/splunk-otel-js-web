@@ -15,20 +15,28 @@
  * limitations under the License.
  *
  */
-import { SessionId, SessionData } from '../../types'
+import { SessionId, SessionData, UpdateSessionData } from '../../types'
 
 export class Session {
 	readonly id: SessionId
 
+	private expiresAt?: number
+
 	private readonly startTime: number
 
-	constructor({ id, startTime }: SessionData) {
+	constructor({ id, startTime, expiresAt }: SessionData) {
 		this.id = id
 		this.startTime = startTime
+		this.expiresAt = expiresAt
 	}
 
 	getSessionData = (): SessionData => ({
 		id: this.id,
 		startTime: this.startTime,
+		expiresAt: this.expiresAt,
 	})
+
+	updateSession = (data: UpdateSessionData) => {
+		this.expiresAt = data.expiresAt
+	}
 }
