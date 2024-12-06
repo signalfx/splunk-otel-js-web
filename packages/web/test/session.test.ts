@@ -150,7 +150,7 @@ describe('Session tracking - localStorage', () => {
 		sessionService.checkSession()
 		assert.strictEqual(firstSessionId, SessionProvider.sessionId)
 		assert.equal(localStorageGetSpy.callCount, 2)
-		assert.equal(localStorageSetSpy.callCount, 2)
+		assert.equal(localStorageSetSpy.callCount, 1)
 
 		sessionService.stopSession()
 		assert.strictEqual(SessionProvider.sessionId, undefined)
