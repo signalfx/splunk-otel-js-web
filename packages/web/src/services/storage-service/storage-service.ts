@@ -33,7 +33,7 @@ export class StorageService {
 
 	getSessionData = (): SessionData | null => this.storage.getSessionData()
 
-	setSessionData = (sessionData: SessionData) => {
-		this.storage.setSessionData(sessionData)
+	setSessionData = ({ id, expiresAt, startTime }: SessionData) => {
+		this.storage.setSessionData({ id, expiresAt, startTime })
 	}
 }
