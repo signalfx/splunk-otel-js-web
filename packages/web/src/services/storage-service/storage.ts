@@ -15,28 +15,18 @@
  * limitations under the License.
  *
  */
-module.exports = [
-	{
-		name: 'artifacts/otel-api-globals.js',
-		limit: '3 kB',
-		path: './packages/web/dist/artifacts/otel-api-globals.js',
-	},
+import { SessionData } from '../../types'
 
-	{
-		name: 'artifacts/splunk-otel-web.js',
-		limit: '41 kB',
-		path: './packages/web/dist/artifacts/splunk-otel-web.js',
-	},
+export abstract class Storage {
+	abstract clear(): void
 
-	{
-		name: 'artifacts/splunk-otel-web.js',
-		limit: '73 kB',
-		path: './packages/web/dist/artifacts/splunk-otel-web-legacy.js',
-	},
+	abstract getSessionData(): SessionData | null
 
-	{
-		name: 'artifacts/splunk-otel-web-session-recorder.js',
-		limit: '22 kB',
-		path: './packages/session-recorder/dist/artifacts/splunk-otel-web-session-recorder.js',
-	},
-]
+	abstract setSessionData(data: SessionData): void
+
+	protected abstract get(key: string): string | null
+
+	protected abstract remove(key: string): void
+
+	protected abstract set(key: string, value: string): void
+}

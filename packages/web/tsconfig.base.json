@@ -9,6 +9,8 @@
 		"resolveJsonModule": true,
 		"target": "ES2017",
 		"types": ["node"]
+		// TODO: Enable strict mode
+		//"strict": true,
 	},
 	"include": ["src/**/*.ts"],
 	"exclude": ["node_modules"]

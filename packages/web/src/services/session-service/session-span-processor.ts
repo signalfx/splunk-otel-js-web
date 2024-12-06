@@ -15,28 +15,22 @@
  * limitations under the License.
  *
  */
-module.exports = [
-	{
-		name: 'artifacts/otel-api-globals.js',
-		limit: '3 kB',
-		path: './packages/web/dist/artifacts/otel-api-globals.js',
-	},
+import { SpanProcessor } from '@opentelemetry/sdk-trace-web'
 
-	{
-		name: 'artifacts/splunk-otel-web.js',
-		limit: '41 kB',
-		path: './packages/web/dist/artifacts/splunk-otel-web.js',
-	},
+export class SessionSpanProcessor implements SpanProcessor {
+	constructor(private readonly onSpanStart: () => void) {}
 
-	{
-		name: 'artifacts/splunk-otel-web.js',
-		limit: '73 kB',
-		path: './packages/web/dist/artifacts/splunk-otel-web-legacy.js',
-	},
+	forceFlush(): Promise<void> {
+		return Promise.resolve()
+	}
 
-	{
-		name: 'artifacts/splunk-otel-web-session-recorder.js',
-		limit: '22 kB',
-		path: './packages/session-recorder/dist/artifacts/splunk-otel-web-session-recorder.js',
-	},
-]
+	onEnd(): void {}
+
+	onStart(): void {
+		this.onSpanStart()
+	}
+
+	shutdown(): Promise<void> {
+		return Promise.resolve()
+	}
+}

@@ -15,28 +15,16 @@
  * limitations under the License.
  *
  */
-module.exports = [
-	{
-		name: 'artifacts/otel-api-globals.js',
-		limit: '3 kB',
-		path: './packages/web/dist/artifacts/otel-api-globals.js',
-	},
+export type SessionId = string
 
-	{
-		name: 'artifacts/splunk-otel-web.js',
-		limit: '41 kB',
-		path: './packages/web/dist/artifacts/splunk-otel-web.js',
-	},
+export type SessionData = {
+	expiresAt?: number
+	id: SessionId
+	startTime: number
+}
 
-	{
-		name: 'artifacts/splunk-otel-web.js',
-		limit: '73 kB',
-		path: './packages/web/dist/artifacts/splunk-otel-web-legacy.js',
-	},
+export type UpdateSessionData = Partial<Pick<SessionData, 'expiresAt'>>
 
-	{
-		name: 'artifacts/splunk-otel-web-session-recorder.js',
-		limit: '22 kB',
-		path: './packages/session-recorder/dist/artifacts/splunk-otel-web-session-recorder.js',
-	},
-]
+export type SessionDataWithMeta = SessionData & {
+	isNewSession?: true
+}

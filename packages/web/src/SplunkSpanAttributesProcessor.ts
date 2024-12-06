@@ -18,7 +18,7 @@
 
 import { Attributes } from '@opentelemetry/api'
 import { Span, SpanProcessor } from '@opentelemetry/sdk-trace-base'
-import { getRumSessionId } from './session'
+import { SessionProvider } from './services/session-service'
 
 export class SplunkSpanAttributesProcessor implements SpanProcessor {
 	private readonly _globalAttributes: Attributes
@@ -42,7 +42,7 @@ export class SplunkSpanAttributesProcessor implements SpanProcessor {
 	onStart(span: Span): void {
 		span.setAttribute('location.href', location.href)
 		span.setAttributes(this._globalAttributes)
-		span.setAttribute('splunk.rumSessionId', getRumSessionId())
+		span.setAttribute('splunk.rumSessionId', SessionProvider.sessionId)
 		span.setAttribute('browser.instance.visibility_state', document.visibilityState)
 	}
 

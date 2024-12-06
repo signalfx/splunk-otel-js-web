@@ -15,28 +15,28 @@
  * limitations under the License.
  *
  */
-module.exports = [
-	{
-		name: 'artifacts/otel-api-globals.js',
-		limit: '3 kB',
-		path: './packages/web/dist/artifacts/otel-api-globals.js',
-	},
+import { SessionId, SessionData, UpdateSessionData } from '../../types'
 
-	{
-		name: 'artifacts/splunk-otel-web.js',
-		limit: '41 kB',
-		path: './packages/web/dist/artifacts/splunk-otel-web.js',
-	},
+export class Session {
+	readonly id: SessionId
 
-	{
-		name: 'artifacts/splunk-otel-web.js',
-		limit: '73 kB',
-		path: './packages/web/dist/artifacts/splunk-otel-web-legacy.js',
-	},
+	private expiresAt?: number
 
-	{
-		name: 'artifacts/splunk-otel-web-session-recorder.js',
-		limit: '22 kB',
-		path: './packages/session-recorder/dist/artifacts/splunk-otel-web-session-recorder.js',
-	},
-]
+	private readonly startTime: number
+
+	constructor({ id, startTime, expiresAt }: SessionData) {
+		this.id = id
+		this.startTime = startTime
+		this.expiresAt = expiresAt
+	}
+
+	getSessionData = (): SessionData => ({
+		id: this.id,
+		startTime: this.startTime,
+		expiresAt: this.expiresAt,
+	})
+
+	updateSession = (data: UpdateSessionData) => {
+		this.expiresAt = data.expiresAt
+	}
+}

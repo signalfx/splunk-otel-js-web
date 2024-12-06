@@ -17,12 +17,11 @@
  */
 
 import './polyfill-safari10'
-import { InstrumentationConfig, registerInstrumentations } from '@opentelemetry/instrumentation'
+import { registerInstrumentations } from '@opentelemetry/instrumentation'
 import {
 	ConsoleSpanExporter,
 	SimpleSpanProcessor,
 	BatchSpanProcessor,
-	ReadableSpan,
 	SpanExporter,
 	SpanProcessor,
 	BufferConfig,
@@ -30,14 +29,12 @@ import {
 	AlwaysOnSampler,
 	ParentBasedSampler,
 } from '@opentelemetry/sdk-trace-base'
-import { WebTracerConfig } from '@opentelemetry/sdk-trace-web'
 import { Attributes, diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api'
 import { SplunkDocumentLoadInstrumentation } from './SplunkDocumentLoadInstrumentation'
 import { SplunkXhrPlugin } from './SplunkXhrPlugin'
 import { SplunkFetchInstrumentation } from './SplunkFetchInstrumentation'
 import {
 	SplunkUserInteractionInstrumentation,
-	SplunkUserInteractionInstrumentationConfig,
 	DEFAULT_AUTO_INSTRUMENTED_EVENTS,
 	DEFAULT_AUTO_INSTRUMENTED_EVENT_NAMES,
 	UserInteractionEventsConfig,
@@ -46,21 +43,15 @@ import { SplunkExporterConfig } from './exporters/common'
 import { SplunkZipkinExporter } from './exporters/zipkin'
 import { ERROR_INSTRUMENTATION_NAME, SplunkErrorInstrumentation } from './SplunkErrorInstrumentation'
 import { generateId, getPluginConfig } from './utils'
-import { getRumSessionId, initSessionTracking } from './session'
 import { SplunkWebSocketInstrumentation } from './SplunkWebSocketInstrumentation'
-import { WebVitalsInstrumentationConfig, initWebVitals } from './webvitals'
+import { initWebVitals } from './webvitals'
 import { SplunkLongTaskInstrumentation } from './SplunkLongTaskInstrumentation'
 import { SplunkPageVisibilityInstrumentation } from './SplunkPageVisibilityInstrumentation'
 import { SplunkConnectivityInstrumentation } from './SplunkConnectivityInstrumentation'
-import {
-	SplunkPostDocLoadResourceInstrumentation,
-	SplunkPostDocLoadResourceInstrumentationConfig,
-} from './SplunkPostDocLoadResourceInstrumentation'
+import { SplunkPostDocLoadResourceInstrumentation } from './SplunkPostDocLoadResourceInstrumentation'
 import { SplunkWebTracerProvider } from './SplunkWebTracerProvider'
-import { FetchInstrumentationConfig } from '@opentelemetry/instrumentation-fetch'
-import { XMLHttpRequestInstrumentationConfig } from '@opentelemetry/instrumentation-xml-http-request'
 import { InternalEventTarget, SplunkOtelWebEventTarget } from './EventTarget'
-import { ContextManagerConfig, SplunkContextManager } from './SplunkContextManager'
+import { SplunkContextManager } from './SplunkContextManager'
 import { Resource, ResourceAttributes } from '@opentelemetry/resources'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 import { SDK_INFO, _globalThis } from '@opentelemetry/core'
@@ -68,140 +59,20 @@ import { VERSION } from './version'
 import { getSyntheticsRunId, SYNTHETICS_RUN_ID_ATTRIBUTE } from './synthetics'
 import { SplunkSpanAttributesProcessor } from './SplunkSpanAttributesProcessor'
 import { SessionBasedSampler } from './SessionBasedSampler'
-import {
-	SocketIoClientInstrumentationConfig,
-	SplunkSocketIoClientInstrumentation,
-} from './SplunkSocketIoClientInstrumentation'
+import { SplunkSocketIoClientInstrumentation } from './SplunkSocketIoClientInstrumentation'
 import { SplunkOTLPTraceExporter } from './exporters/otlp'
 import { registerGlobal, unregisterGlobal } from './global-utils'
 import { BrowserInstanceService } from './services/BrowserInstanceService'
+import { SplunkOtelWebConfig, SplunkOtelWebExporterOptions, SplunkOtelWebOptionsInstrumentations } from './types'
 import { SessionId } from './types'
+import { SessionService, SessionProvider } from './services/session-service'
+import { StorageService } from './services/storage-service'
+import { ActivityService } from './services/activity-service'
 
 export { SplunkExporterConfig } from './exporters/common'
 export { SplunkZipkinExporter } from './exporters/zipkin'
 export * from './SplunkWebTracerProvider'
 export * from './SessionBasedSampler'
-
-interface SplunkOtelWebOptionsInstrumentations {
-	connectivity?: boolean | InstrumentationConfig
-	document?: boolean | InstrumentationConfig
-	errors?: boolean
-	fetch?: boolean | FetchInstrumentationConfig
-	interactions?: boolean | SplunkUserInteractionInstrumentationConfig
-	longtask?: boolean | InstrumentationConfig
-	postload?: boolean | SplunkPostDocLoadResourceInstrumentationConfig
-	socketio?: boolean | SocketIoClientInstrumentationConfig
-	visibility?: boolean | InstrumentationConfig
-	websocket?: boolean | InstrumentationConfig
-	webvitals?: boolean | WebVitalsInstrumentationConfig
-	xhr?: boolean | XMLHttpRequestInstrumentationConfig
-}
-
-export interface SplunkOtelWebExporterOptions {
-	/**
-	 * Allows remapping Span's attributes right before they're serialized.
-	 * One potential use case of this method is to remove PII from the attributes.
-	 */
-	onAttributesSerializing?: (attributes: Attributes, span: ReadableSpan) => Attributes
-
-	/**
-	 * Switch from zipkin to otlp for exporting
-	 */
-	otlp?: boolean
-}
-
-export interface SplunkOtelWebConfig {
-	/**
-	 * If enabled, all spans are treated as activity and extend the duration of the session. Defaults to false.
-	 */
-	_experimental_allSpansExtendSession?: boolean
-
-	/** Allows http beacon urls */
-	allowInsecureBeacon?: boolean
-
-	/** Application name
-	 * @deprecated Renamed to `applicationName`
-	 */
-	app?: string
-
-	/** Application name */
-	applicationName?: string
-
-	/** Destination for the captured data */
-	beaconEndpoint?: string
-
-	/**
-	 * Destination for the captured data
-	 * @deprecated Renamed to `beaconEndpoint`, or use realm
-	 */
-	beaconUrl?: string
-
-	/** Options for context manager */
-	context?: ContextManagerConfig
-
-	/** Sets session cookie to this domain */
-	cookieDomain?: string
-
-	/** Turns on/off internal debug logging */
-	debug?: boolean
-
-	/**
-	 * Sets a value for the `environment` attribute (persists through calls to `setGlobalAttributes()`)
-	 * */
-	deploymentEnvironment?: string
-
-	/**
-	 * Sets a value for the `environment` attribute (persists through calls to `setGlobalAttributes()`)
-	 * @deprecated Renamed to `deploymentEnvironment`
-	 */
-	environment?: string
-
-	/** Allows configuring how telemetry data is sent to the backend */
-	exporter?: SplunkOtelWebExporterOptions
-
-	/** Sets attributes added to every Span. */
-	globalAttributes?: Attributes
-
-	/**
-	 * Applies for XHR, Fetch and Websocket URLs. URLs that partially match any regex in ignoreUrls will not be traced.
-	 * In addition, URLs that are _exact matches_ of strings in ignoreUrls will also not be traced.
-	 * */
-	ignoreUrls?: Array<string | RegExp>
-
-	/** Configuration for instrumentation modules. */
-	instrumentations?: SplunkOtelWebOptionsInstrumentations
-
-	/**
-	 * The name of your organization’s realm. Automatically configures beaconUrl with correct URL
-	 */
-	realm?: string
-
-	/**
-	 * Publicly-visible rum access token value. Please do not paste any other access token or auth value into here, as this
-	 * will be visible to every user of your app
-	 */
-	rumAccessToken?: string
-
-	/**
-	 * Publicly-visible `rumAuth` value.  Please do not paste any other access token or auth value into here, as this
-	 * will be visible to every user of your app
-	 * @deprecated Renamed to rumAccessToken
-	 */
-	rumAuth?: string
-
-	/**
-	 * Config options passed to web tracer
-	 */
-	tracer?: WebTracerConfig
-
-	/** Use local storage to save session ID instead of cookie */
-	useLocalStorage?: boolean
-
-	/**
-	 * Sets a value for the 'app.version' attribute
-	 */
-	version?: string
-}
 
 interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
 	bufferSize?: number
@@ -356,9 +227,10 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 
 let inited = false
 let _deregisterInstrumentations: () => void | undefined
-let _deinitSessionTracking: () => void | undefined
+//let _deinitSessionTracking: () => void | undefined
 let _errorInstrumentation: SplunkErrorInstrumentation | undefined
 let _postDocLoadInstrumentation: SplunkPostDocLoadResourceInstrumentation | undefined
+let _sessionService: SessionService | undefined
 let eventTarget: InternalEventTarget | undefined
 export const SplunkRum: SplunkOtelWebType = {
 	DEFAULT_AUTO_INSTRUMENTED_EVENTS,
@@ -474,21 +346,21 @@ export const SplunkRum: SplunkOtelWebType = {
 			resource: this.resource,
 		})
 
-		// TODO
-		_deinitSessionTracking = initSessionTracking(
-			provider,
-			instanceId,
-			eventTarget,
-			processedOptions.cookieDomain,
-			!!options._experimental_allSpansExtendSession,
-			processedOptions.useLocalStorage,
-		).deinit
+		// Init and start session tracking
+		const storageService = new StorageService(options)
+		const activityService = new ActivityService()
+		_sessionService = new SessionService(options, provider, storageService, activityService, eventTarget)
+		_sessionService.startSession(instanceId)
 
 		const instrumentations = INSTRUMENTATIONS.map(({ Instrument, confKey, disable }) => {
 			const pluginConf = getPluginConfig(processedOptions.instrumentations[confKey], pluginDefaults, disable)
 			if (pluginConf) {
-				// @ts-expect-error Can't mark in any way that processedOptions.instrumentations[confKey] is of specifc config type
-				const instrumentation = new Instrument(pluginConf)
+				const instrumentation =
+					Instrument === SplunkLongTaskInstrumentation
+						? new Instrument(pluginConf, options)
+						: // @ts-expect-error Can't mark in any way that processedOptions.instrumentations[confKey] is of specifc config type
+							new Instrument(pluginConf)
+
 				if (confKey === ERROR_INSTRUMENTATION_NAME && instrumentation instanceof SplunkErrorInstrumentation) {
 					_errorInstrumentation = instrumentation
 				}
@@ -567,8 +439,8 @@ export const SplunkRum: SplunkOtelWebType = {
 		_deregisterInstrumentations?.()
 		_deregisterInstrumentations = undefined
 
-		_deinitSessionTracking?.()
-		_deinitSessionTracking = undefined
+		_sessionService?.stopSession()
+		_sessionService = undefined
 
 		this.provider?.shutdown()
 		delete this.provider
@@ -628,7 +500,7 @@ export const SplunkRum: SplunkOtelWebType = {
 	},
 
 	getSessionId() {
-		return getRumSessionId()
+		return SessionProvider.sessionId
 	},
 	_experimental_getSessionId() {
 		return this.getSessionId()
