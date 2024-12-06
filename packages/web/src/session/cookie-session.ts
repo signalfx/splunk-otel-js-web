@@ -15,23 +15,39 @@
  * limitations under the License.
  *
  */
-import { isIframe } from './utils'
+import { isIframe } from '../utils'
 import { SessionState } from './types'
-
-export const COOKIE_NAME = '_splunk_rum_sid'
-
-const CookieSession = 4 * 60 * 60 * 1000 // 4 hours
-const InactivityTimeoutSeconds = 15 * 60
+import { SESSION_DURATION_SECONDS, SESSION_STORAGE_KEY } from './constants'
+import { isSessionDurationExceeded, isSessionInactivityTimeoutReached, isSessionState } from './utils'
+import { throttle } from '../utils/throttle'
 
 export const cookieStore = {
-	set: (value: string): void => {
-		document.cookie = value
+	cachedValue: null,
+	set: (value: string) => {
+		cookieStore.cachedValue = value
+		cookieStore._set(value)
 	},
-	get: (): string => document.cookie,
+
+	_set: throttle((value: string) => {
+		document.cookie = value
+	}, 1000),
+
+	flush: () => {
+		cookieStore._set.flush()
+	},
+
+	get: ({ forceStoreRead }: { forceStoreRead: boolean }): string => {
+		if (cookieStore.cachedValue === null || forceStoreRead) {
+			cookieStore.cachedValue = document.cookie
+			return cookieStore.cachedValue
+		}
+
+		return cookieStore.cachedValue
+	},
 }
 
-export function parseCookieToSessionState(): SessionState | undefined {
-	const rawValue = findCookieValue(COOKIE_NAME)
+export function parseCookieToSessionState({ forceStoreRead }: { forceStoreRead: boolean }): SessionState | undefined {
+	const rawValue = findCookieValue(SESSION_STORAGE_KEY, { forceStoreRead })
 	if (!rawValue) {
 		return undefined
 	}
@@ -52,33 +68,30 @@ export function parseCookieToSessionState(): SessionState | undefined {
 		return undefined
 	}
 
-	// id validity
-	if (
-		!sessionState.id ||
-		typeof sessionState.id !== 'string' ||
-		!sessionState.id.length ||
-		sessionState.id.length !== 32
-	) {
+	if (isSessionDurationExceeded(sessionState)) {
 		return undefined
 	}
 
-	// startTime validity
-	if (!sessionState.startTime || typeof sessionState.startTime !== 'number' || isPastMaxAge(sessionState.startTime)) {
+	if (isSessionInactivityTimeoutReached(sessionState)) {
 		return undefined
 	}
 
 	return sessionState
 }
 
-export function renewCookieTimeout(sessionState: SessionState, cookieDomain: string | undefined): void {
-	if (isPastMaxAge(sessionState.startTime)) {
+export function renewCookieTimeout(
+	sessionState: SessionState,
+	cookieDomain: string | undefined,
+	{ forceStoreWrite }: { forceStoreWrite: boolean },
+): void {
+	if (isSessionDurationExceeded(sessionState)) {
 		// safety valve
 		return
 	}
 
 	const cookieValue = encodeURIComponent(JSON.stringify(sessionState))
 	const domain = cookieDomain ? `domain=${cookieDomain};` : ''
-	let cookie = COOKIE_NAME + '=' + cookieValue + '; path=/;' + domain + 'max-age=' + InactivityTimeoutSeconds
+	let cookie = SESSION_STORAGE_KEY + '=' + cookieValue + '; path=/;' + domain + 'max-age=' + SESSION_DURATION_SECONDS
 
 	if (isIframe()) {
 		cookie += ';SameSite=None; Secure'
@@ -87,16 +100,23 @@ export function renewCookieTimeout(sessionState: SessionState, cookieDomain: str
 	}
 
 	cookieStore.set(cookie)
+	if (forceStoreWrite) {
+		cookieStore.flush()
+	}
 }
 
 export function clearSessionCookie(cookieDomain?: string): void {
 	const domain = cookieDomain ? `domain=${cookieDomain};` : ''
-	const cookie = `${COOKIE_NAME}=;domain=${domain};expires=Thu, 01 Jan 1970 00:00:00 GMT`
+	const cookie = `${SESSION_STORAGE_KEY}=;domain=${domain};expires=Thu, 01 Jan 1970 00:00:00 GMT`
 	cookieStore.set(cookie)
+	cookieStore.flush()
 }
 
-export function findCookieValue(cookieName: string): string | undefined {
-	const decodedCookie = decodeURIComponent(cookieStore.get())
+export function findCookieValue(
+	cookieName: string,
+	{ forceStoreRead }: { forceStoreRead: boolean },
+): string | undefined {
+	const decodedCookie = decodeURIComponent(cookieStore.get({ forceStoreRead }))
 	const cookies = decodedCookie.split(';')
 	for (let i = 0; i < cookies.length; i++) {
 		const c = cookies[i].trim()
@@ -105,20 +125,4 @@ export function findCookieValue(cookieName: string): string | undefined {
 		}
 	}
 	return undefined
-}
-
-function isPastMaxAge(startTime: number): boolean {
-	const now = Date.now()
-	return startTime > now || now > startTime + CookieSession
-}
-
-function isSessionState(maybeSessionState: unknown): maybeSessionState is SessionState {
-	return (
-		typeof maybeSessionState === 'object' &&
-		maybeSessionState !== null &&
-		'id' in maybeSessionState &&
-		typeof maybeSessionState['id'] === 'string' &&
-		'startTime' in maybeSessionState &&
-		typeof maybeSessionState['startTime'] === 'number'
-	)
 }

@@ -194,6 +194,10 @@ const SplunkRumRecorder = {
 					return
 				}
 
+				if (SplunkRum._internalOnExternalSpanCreated) {
+					SplunkRum._internalOnExternalSpanCreated()
+				}
+
 				// Safeguards from our ingest getting DDOSed:
 				// 1. A session can send up to 4 hours of data
 				// 2. Recording resumes on session change if it isn't a background tab (session regenerated in an another tab)
