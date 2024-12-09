@@ -16,7 +16,7 @@
  *
  */
 import { SessionState } from './types'
-import { SESSION_DURATION_SECONDS, SESSION_ID_LENGTH } from './constants'
+import { SESSION_DURATION_MS, SESSION_ID_LENGTH } from './constants'
 
 export const isSessionState = (maybeSessionState: unknown): maybeSessionState is SessionState =>
 	typeof maybeSessionState === 'object' &&
@@ -29,7 +29,7 @@ export const isSessionState = (maybeSessionState: unknown): maybeSessionState is
 
 export const isSessionDurationExceeded = (sessionState: SessionState): boolean => {
 	const now = Date.now()
-	return sessionState.startTime > now || now > sessionState.startTime + SESSION_DURATION_SECONDS
+	return sessionState.startTime > now || now > sessionState.startTime + SESSION_DURATION_MS
 }
 
 export const isSessionInactivityTimeoutReached = (sessionState: SessionState): boolean => {
