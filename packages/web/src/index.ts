@@ -521,9 +521,11 @@ export const SplunkRum: SplunkOtelWebType = {
 			return
 		}
 
-		if (this._processedOptions._experimental_allSpansExtendSession) {
-			updateSessionStatus({ forceStore: false, useLocalStorage: this._processedOptions.useLocalStorage ?? false })
-		}
+		updateSessionStatus({
+			forceStore: false,
+			useLocalStorage: this._processedOptions.useLocalStorage ?? false,
+			forceActivity: this._processedOptions._experimental_allSpansExtendSession,
+		})
 	},
 }
 

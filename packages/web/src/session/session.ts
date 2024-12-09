@@ -75,7 +75,9 @@ export function getCurrentSessionState({ useLocalStorage = false, forceStoreRead
 export function updateSessionStatus({
 	forceStore,
 	useLocalStorage = false,
+	forceActivity,
 }: {
+	forceActivity?: boolean
 	forceStore: boolean
 	useLocalStorage: boolean
 }): void {
@@ -94,7 +96,7 @@ export function updateSessionStatus({
 	rumSessionId = sessionState.id
 	eventTarget?.emit('session-changed', { sessionId: rumSessionId })
 
-	if (recentActivity) {
+	if (recentActivity || forceActivity) {
 		sessionState.expiresAt = Date.now() + SESSION_INACTIVITY_TIMEOUT_MS
 		if (useLocalStorage) {
 			setSessionStateToLocalStorage(sessionState, { forceStoreWrite: shouldForceWrite || forceStore })
