@@ -128,6 +128,18 @@ export interface SplunkOtelWebConfig {
 	instrumentations?: SplunkOtelWebOptionsInstrumentations
 
 	/**
+	 * Specifies where session data should be stored.
+	 *
+	 * Available options:
+	 * - `'cookie'` (default): Session data will be stored in a browser cookie.
+	 *
+	 * - `'localStorage'`: Session data will be stored in the browser's localStorage.
+	 *
+	 * If not specified, `'cookie'` will be used as the default storage method.
+	 */
+	persistence?: 'cookie' | 'localStorage'
+
+	/**
 	 * The name of your organization’s realm. Automatically configures beaconUrl with correct URL
 	 */
 	realm?: string
@@ -149,9 +161,6 @@ export interface SplunkOtelWebConfig {
 	 * Config options passed to web tracer
 	 */
 	tracer?: WebTracerConfig
-
-	/** Use local storage to save session ID instead of cookie */
-	useLocalStorage?: boolean
 
 	/**
 	 * Sets a value for the 'app.version' attribute

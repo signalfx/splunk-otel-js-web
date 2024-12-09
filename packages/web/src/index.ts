@@ -297,6 +297,13 @@ export const SplunkRum: SplunkOtelWebType = {
 			},
 		)
 
+		if (!['localStorage', 'cookie', undefined].includes(processedOptions.persistence)) {
+			diag.error(
+				'Invalid persistence flag: The value for "persistence" must be either "cookie", "localStorage", or omitted entirely.',
+			)
+			return
+		}
+
 		this._processedOptions = processedOptions
 
 		if (processedOptions.realm) {
@@ -359,7 +366,7 @@ export const SplunkRum: SplunkOtelWebType = {
 			eventTarget,
 			processedOptions.cookieDomain,
 			!!options._experimental_allSpansExtendSession,
-			processedOptions.useLocalStorage,
+			processedOptions.persistence === 'localStorage',
 		).deinit
 
 		const instrumentations = INSTRUMENTATIONS.map(({ Instrument, confKey, disable }) => {
@@ -523,7 +530,7 @@ export const SplunkRum: SplunkOtelWebType = {
 
 		updateSessionStatus({
 			forceStore: false,
-			useLocalStorage: this._processedOptions.useLocalStorage ?? false,
+			useLocalStorage: this._processedOptions.persistence === 'localStorage',
 			forceActivity: this._processedOptions._experimental_allSpansExtendSession,
 		})
 	},
