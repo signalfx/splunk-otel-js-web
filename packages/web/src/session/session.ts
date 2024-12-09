@@ -112,8 +112,10 @@ function hasNativeSessionId(): boolean {
 
 class SessionSpanProcessor implements SpanProcessor {
 	constructor(
-		private readonly allSpansAreActivity: boolean,
-		private readonly useLocalStorage: boolean,
+		private readonly options: {
+			allSpansAreActivity: boolean
+			useLocalStorage: boolean
+		},
 	) {}
 
 	forceFlush(): Promise<void> {
@@ -123,14 +125,14 @@ class SessionSpanProcessor implements SpanProcessor {
 	onEnd(): void {}
 
 	onStart(): void {
-		if (this.allSpansAreActivity) {
+		if (this.options.allSpansAreActivity) {
 			markActivity()
 		}
 
 		context.with(suppressTracing(context.active()), () => {
 			updateSessionStatus({
 				forceStore: false,
-				useLocalStorage: this.useLocalStorage,
+				useLocalStorage: this.options.useLocalStorage,
 			})
 		})
 	}
@@ -168,7 +170,7 @@ export function initSessionTracking(
 	eventTarget = newEventTarget
 
 	ACTIVITY_EVENTS.forEach((type) => document.addEventListener(type, markActivity, { capture: true, passive: true }))
-	provider.addSpanProcessor(new SessionSpanProcessor(allSpansAreActivity, useLocalStorage))
+	provider.addSpanProcessor(new SessionSpanProcessor({ allSpansAreActivity, useLocalStorage }))
 
 	updateSessionStatus({ useLocalStorage, forceStore: true })
 
