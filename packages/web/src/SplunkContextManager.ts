@@ -19,13 +19,7 @@
 import { Context, ContextManager, ROOT_CONTEXT } from '@opentelemetry/api'
 import { unwrap } from 'shimmer'
 import { getOriginalFunction, isFunction, wrapNatively } from './utils'
-
-export interface ContextManagerConfig {
-	/** Enable async tracking of span parents */
-	async?: boolean
-	onBeforeContextEnd?: () => void
-	onBeforeContextStart?: () => void
-}
+import { ContextManagerConfig } from './types'
 
 type EventListenerWithOrig = EventListener & { _orig?: EventListener }
 

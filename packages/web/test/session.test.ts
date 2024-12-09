@@ -18,11 +18,12 @@
 
 import * as assert from 'assert'
 import { InternalEventTarget } from '../src/EventTarget'
-import { initSessionTracking, getRumSessionId, updateSessionStatus } from '../src/session'
+import { initSessionTracking, getRumSessionId, updateSessionStatus } from '../src/session/session'
 import { SplunkWebTracerProvider } from '../src'
 import sinon from 'sinon'
-import { COOKIE_NAME, clearSessionCookie, cookieStore } from '../src/cookie-session'
-import { clearSessionStateFromLocalStorage } from '../src/local-storage-session'
+import { SESSION_STORAGE_KEY, SESSION_INACTIVITY_TIMEOUT_MS } from '../src/session/constants'
+import { clearSessionCookie, cookieStore } from '../src/session/cookie-session'
+import { clearSessionStateFromLocalStorage } from '../src/session/local-storage-session'
 
 describe('Session tracking', () => {
 	beforeEach(() => {
@@ -40,29 +41,39 @@ describe('Session tracking', () => {
 		const firstSessionId = getRumSessionId()
 		assert.strictEqual(firstSessionId.length, 32)
 		// no marked activity, should keep same state
-		updateSessionStatus()
+		updateSessionStatus({ forceStore: false, useLocalStorage: false })
 		assert.strictEqual(firstSessionId, getRumSessionId())
 		// set cookie to expire in 2 seconds, mark activity, and then updateSessionStatus.
 		// Wait 4 seconds and cookie should still be there (having been renewed)
-		const cookieValue = encodeURIComponent(JSON.stringify({ id: firstSessionId, startTime: new Date().getTime() }))
-		document.cookie = COOKIE_NAME + '=' + cookieValue + '; path=/; max-age=' + 2
+		const cookieValue = encodeURIComponent(
+			JSON.stringify({
+				id: firstSessionId,
+				startTime: new Date().getTime(),
+				expiresAt: new Date().getTime() + SESSION_INACTIVITY_TIMEOUT_MS,
+			}),
+		)
+		document.cookie = SESSION_STORAGE_KEY + '=' + cookieValue + '; path=/; max-age=' + 2
 		document.body.dispatchEvent(new Event('click'))
-		updateSessionStatus()
+		updateSessionStatus({ forceStore: false, useLocalStorage: false })
 		setTimeout(() => {
 			// because of activity, same session should be there
-			assert.ok(document.cookie.includes(COOKIE_NAME))
+			assert.ok(document.cookie.includes(SESSION_STORAGE_KEY))
 			assert.strictEqual(firstSessionId, getRumSessionId())
 
 			// Finally, set a fake cookie with startTime 5 hours ago, update status, and find a new cookie with a new session ID
 			// after max age code does its thing
 			const fiveHoursMillis = 5 * 60 * 60 * 1000
 			const tooOldCookieValue = encodeURIComponent(
-				JSON.stringify({ id: firstSessionId, startTime: new Date().getTime() - fiveHoursMillis }),
+				JSON.stringify({
+					id: firstSessionId,
+					startTime: new Date().getTime() - fiveHoursMillis,
+					expiresAt: new Date().getTime() + SESSION_INACTIVITY_TIMEOUT_MS - fiveHoursMillis,
+				}),
 			)
-			document.cookie = COOKIE_NAME + '=' + tooOldCookieValue + '; path=/; max-age=' + 4
+			document.cookie = SESSION_STORAGE_KEY + '=' + tooOldCookieValue + '; path=/; max-age=' + 4
 
-			updateSessionStatus()
-			assert.ok(document.cookie.includes(COOKIE_NAME))
+			updateSessionStatus({ forceStore: true, useLocalStorage: false })
+			assert.ok(document.cookie.includes(SESSION_STORAGE_KEY))
 			const newSessionId = getRumSessionId()
 			assert.strictEqual(newSessionId.length, 32)
 			assert.ok(firstSessionId !== newSessionId)
@@ -83,7 +94,7 @@ describe('Session tracking', () => {
 			initSessionTracking(provider, firstSessionId, new InternalEventTarget(), undefined, allSpansAreActivity)
 
 			provider.getTracer('tracer').startSpan('any-span').end()
-			updateSessionStatus()
+			updateSessionStatus({ forceStore: false, useLocalStorage: false })
 		}
 
 		it('non-activity spans do not trigger a new session', (done) => {
@@ -128,7 +139,7 @@ describe('Session tracking - localStorage', () => {
 		)
 
 		const firstSessionId = getRumSessionId()
-		updateSessionStatus(useLocalStorage)
+		updateSessionStatus({ forceStore: true, useLocalStorage })
 		assert.strictEqual(firstSessionId, getRumSessionId())
 
 		trackingHandle.deinit()
