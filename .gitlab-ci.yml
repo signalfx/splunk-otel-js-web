@@ -89,7 +89,8 @@ release_npm:
     script:
         # release to NPM
         - echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
-        - for f in artifacts/*.tgz; do npm publish ./$f; done;
+        # January: remove --tag beta
+        - for f in artifacts/*.tgz; do npm publish --tag beta ./$f; done;
         - rm -f ~/.npmrc
 
 release_github:
@@ -105,8 +106,8 @@ release_github:
         - sudo apt update
         - sudo apt install gh
 
-        # release in Github
-        - gh release create v${CI_COMMIT_REF_NAME:1} ./artifacts/* --target $CI_COMMIT_SHA --repo $GITHUB_REPOSITORY
+        # January: remove --prerelease
+        - gh release create v${CI_COMMIT_REF_NAME:1} ./artifacts/* --prerelease --target $CI_COMMIT_SHA --repo $GITHUB_REPOSITORY
 
 release_cdn:
     artifacts:
