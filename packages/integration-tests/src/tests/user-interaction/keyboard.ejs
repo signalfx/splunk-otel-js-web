@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Keyboard events test</title>
+  <%- renderAgent({
+    instrumentations: {
+      interactions: {
+        events: {
+          keydown: true,
+          keyup: true
+        }
+      }
+    }
+  }) %>
+</head>
+<body>
+  <h1>Keyboard events test</h1>
+  <pre id="messagesLog"></pre>
+
+  <pre id="scenarioDisplay"></pre>
+  <script id="scenario">
+    const messages = [];
+    function handleKeyEvent(type, event) {
+		console.log('event', {event})
+      messages.push('event=' + type + ' code=' + event.code);
+      document.querySelector('#messagesLog').innerHTML = messages.join('\n');
+    }
+
+    document.body.addEventListener('keyup', function (e) { handleKeyEvent('keyup', e) });
+    document.body.addEventListener('keydown', function (e) { handleKeyEvent('keydown', e) });
+  </script>
+  <script>scenarioDisplay.innerHTML = scenario.innerHTML;</script>
+</body>
+</html>
