@@ -13,7 +13,7 @@ jobs:
         name: Playwright Tests - ${{ matrix.browser }}
         steps:
             - name: Checkout
-              uses: actions/checkout@v4.2.1
+              uses: actions/checkout@v4.2.2
             - uses: actions/setup-node@v4.0.3
               with:
                   node-version: '18'
@@ -46,7 +46,7 @@ jobs:
                 browser: [webkit]
         steps:
             - name: Checkout
-              uses: actions/checkout@v4.2.1
+              uses: actions/checkout@v4.2.2
             - uses: actions/setup-node@v4.0.3
               with:
                   node-version: '18'
@@ -77,7 +77,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout
-              uses: actions/checkout@v4.2.1
+              uses: actions/checkout@v4.2.2
             - uses: actions/setup-node@v4.0.3
               with:
                   node-version: '18'
