@@ -4,6 +4,7 @@
 	<meta charset="UTF-8">
 	<title>Socket.io</title>
 
+    <script src="https://www.unpkg.com/socket.io-client@4.8.1/dist/socket.io.min.js"></script>
 	<%- renderAgent({instrumentations: {socketio: true}}) %>
 </head>
 <body>
@@ -11,11 +12,10 @@
 	<button id="connectSocket" type="button">Connect to a socket.io server</button>
 	<button id="sendHello" type="button">Send</button>
 	<button id="sendPing" type="button">Ping</button>
-  <script src="/socket.io/socket.io.js"></script>
 	<script>
-		var socket;
+		let socket;
 		connectSocket.addEventListener('click', function () {
-			socket = io();
+			socket = io("ws://localhost:3002/");
 			socket.on('pong', function () {
 				window.testing = false;
 				console.log('Pong!');
@@ -26,11 +26,10 @@
 			socket.emit('hello');
 		});
 
-		sendPing.addEventListener('click', function() {
+		sendHello.addEventListener('click', function() {
 			window.testing = true;
 			socket.emit('ping');
 		});
-
 	</script>
 </body>
 </html>

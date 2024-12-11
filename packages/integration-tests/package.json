@@ -7,6 +7,7 @@
 		"server": "run-p server:*",
 		"server:same-origin": "PORT=3000 tsx src/server/server.ts",
 		"server:cross-origin": "PORT=3001 tsx src/server/server.ts",
+		"server:socketio": "PORT=3002 tsx src/server/server-socketio.ts",
 		"test": "npx playwright test",
 		"compile": "exit 0;"
 	},
@@ -30,6 +31,7 @@
 		"@fastify/websocket": "^11.0.1",
 		"npm-run-all": "^4.1.5",
 		"pino-pretty": "^13.0.0",
+		"socket.io": "^4.8.1",
 		"tsx": "^4.19.2"
 	}
 }
