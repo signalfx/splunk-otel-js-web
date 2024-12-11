@@ -7,29 +7,30 @@
 	<%- renderAgent({instrumentations: {websocket: true}}) %>
 </head>
 <body>
-	<h1>Websocket sub protocol</h1>
+	<h1>Websocket</h1>
 	<button id="connectWs" type="button">Connect to a websockets server</button>
 	<button id="sendWs" type="button">Send</button>
 	<script>
-			var socket;
+			let socket;
 			connectWs.addEventListener('click', function () {
-				var protocol = window.location.search.match(/wsProtocol=(\w+)/);
-				var port = window.location.search.match(/wsPort=(\d+)/);
-				var url = (protocol ? protocol[1] : 'wss') + '://' + document.location.hostname + ':' + (port ? port[1] : (document.location.port + 1)) + '/';
+				let protocol = window.location.search.match(/wsProtocol=(\w+)/);
+				let port = window.location.search.match(/wsPort=(\d+)/);
+				let url = (protocol ? protocol[1] : 'ws') + '://' + document.location.hostname + ':' + (port ? port[1] : (document.location.port)) + '/ws';
 				console.log('WS URL: ', url);
-				socket = new WebSocket(url, ["soap"]);
+				socket = new WebSocket(url);
 
 				socket.addEventListener('message', function (event) {
 					console.log('Message from server ', event.data);
 				});
-				
-				socket.addEventListener('error', function(event) {					
+
+				socket.addEventListener('error', function(event) {
 					console.log('Message from server ', event.data);
 				})
 			});
 
 			sendWs.addEventListener('click', function() {
 				socket.send('hello world!');
+
 			});
 	</script>
 </body>

@@ -7,9 +7,9 @@
 	<%- renderAgent({instrumentations: {websocket: true}}, true) %>
 
 	<script>
-		var protocol = window.location.search.match(/wsProtocol=(\w+)/);
-		var port = window.location.search.match(/wsPort=(\d+)/);
-		window.url = (protocol ? protocol[1] : 'wss') + '://' + document.location.hostname + ':' + (port ? port[1] : (document.location.port + 1)) + '/';
+		let protocol = window.location.search.match(/wsProtocol=(\w+)/);
+		let port = window.location.search.match(/wsPort=(\d+)/);
+		window.wsUrl = (protocol ? protocol[1] : 'ws') + '://' + document.location.hostname + ':' + (port ? port[1] : document.location.port ) + '/ws';
 	</script>
 
 	<script>

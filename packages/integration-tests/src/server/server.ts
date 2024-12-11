@@ -24,6 +24,7 @@ import cors from '@fastify/cors'
 import { serverTimingMiddleware, delayMiddleware, noCacheMiddleware } from './middlewares'
 import fastifyStatic from '@fastify/static'
 import fastifyView from '@fastify/view'
+import fastifyWebsockets from '@fastify/websocket'
 
 const GLOBAL_TEST_BUFFER_TIMEOUT = 20
 
@@ -62,6 +63,15 @@ fastify.register(fastifyStatic, {
 fastify.addHook('preHandler', delayMiddleware)
 fastify.addHook('onSend', serverTimingMiddleware)
 fastify.addHook('onSend', noCacheMiddleware)
+
+fastify.register(fastifyWebsockets)
+fastify.register(function (f) {
+	f.get('/ws', { websocket: true }, (socket) => {
+		socket.on('message', () => {
+			socket.send('hi from server')
+		})
+	})
+})
 
 fastify.post('/api/v2/spans', (request, reply) => {
 	reply.send('')
