@@ -34,7 +34,7 @@ test.describe('socketio', () => {
 		expect(socketioSpans[2].name).toBe('pong receive')
 	})
 
-	test.only('produces correct connect span (socket.io already on page)', async ({ recordPage }) => {
+	test('produces correct connect span (socket.io already on page)', async ({ recordPage }) => {
 		await recordPage.goTo('/socketio/socketio.before.ejs')
 		await recordPage.locator('#connectSocket').click()
 		await recordPage.locator('#sendHello').click()
