@@ -5,7 +5,8 @@
 	"--workspaces": "Hardcoded so npm runs workspaces commands in order",
 	"workspaces": [
 		"packages/web",
-		"packages/session-recorder"
+		"packages/session-recorder",
+		"packages/integration-tests"
 	],
 	"engines": {
 		"--": "Versions required for development only (recent enough to use npm workspaces)",
@@ -47,6 +48,7 @@
 		"@aws-sdk/client-cloudfront": "^3.171.0",
 		"@aws-sdk/client-s3": "^3.171.0",
 		"@eslint/js": "^9.13.0",
+		"@fastify/cors": "^10.0.1",
 		"@octokit/graphql": "^7.0.1",
 		"@octokit/request": "^8.1.1",
 		"@size-limit/file": "^11.1.6",
@@ -59,6 +61,7 @@
 		"eslint-config-prettier": "^9.1.0",
 		"eslint-plugin-headers": "^1.2.0",
 		"eslint-plugin-prettier": "^5.2.1",
+		"fastify": "^5.1.0",
 		"globals": "^15.11.0",
 		"prettier": "^3.3.3",
 		"size-limit": "^11.1.6",

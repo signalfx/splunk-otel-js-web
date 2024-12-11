@@ -79,7 +79,7 @@ export default [
 		context: 'window',
 	},
 	{
-		input: 'integration-tests/otel-api-globals.ts',
+		input: 'src/otel-api-globals.ts',
 		output: {
 			file: 'dist/artifacts/otel-api-globals.js',
 			format: 'iife',

@@ -38,3 +38,7 @@ jobs:
               uses: ./.github/actions/setup
             - name: Local integration tests using ${{ matrix.browser }}
               run: npm run test:integration:local:${{ matrix.browser }}:_execute
+
+    playwright:
+        uses: ./.github/workflows/tests.yml
+        secrets: inherit

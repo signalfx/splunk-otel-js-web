@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MessagePort Iframe</title>
+
+  <%- renderAgent({
+    context: {
+      async: true
+    }
+  }) %>
+</head>
+<body>
+  <h1>MessagePort Iframe</h1>
+
+  <iframe id="frame" src="http://127.0.0.1.nip.io:3000/context/messageport-cors-inner.ejs"></iframe>
+
+  <div id="output"></div>
+
+  <script>
+    const output = document.getElementById('output');
+    window.testing = true;
+
+	const channel = new MessageChannel();
+    /** @type {HTMLIFrameElement} */
+	const iframe = document.getElementById('frame');
+
+    iframe.addEventListener('load', function () {
+      channel.port1.onmessage = function (event) {
+        output.innerText += 'Port Message: ' + event.data;
+        SplunkRum.provider.getTracer('default').startSpan('message-event').end();
+        window.testing = false;
+      }
+
+      iframe.contentWindow.postMessage('from parent', '*', [channel.port2]);
+    });
+
+  </script>
+</body>
+</html>
