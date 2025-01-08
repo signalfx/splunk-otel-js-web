@@ -15,18 +15,13 @@
  * limitations under the License.
  *
  */
+import { createWebTracerProvider } from './web-tracer-provider'
+import { Span } from '@opentelemetry/api'
 
-import 'mocha'
+export const createSpan = (name: string) => {
+	const webTracerProvider = createWebTracerProvider()
+	const tracer = webTracerProvider.getTracer('test')
+	const span = tracer.startSpan(name)
 
-// Manually maintain this list, as old webpack require-based mechanism isn't working under rollup
-import '../src/tests/init.test'
-import '../src/tests/session.test'
-import '../src/tests/websockets.test'
-import '../src/tests/SessionBasedSampler.test'
-import '../src/tests/SplunkExporter.test'
-import '../src/tests/SplunkContextManager.test'
-import '../src/tests/SplunkSpanAttributesProcessor.test'
-import '../src/tests/SplunkOtelWeb.test'
-import '../src/tests/synthetics.test'
-import './socketio.test'
-import '../src/stacktrace.test'
+	return span as Span & { attributes: Record<string, string> }
+}

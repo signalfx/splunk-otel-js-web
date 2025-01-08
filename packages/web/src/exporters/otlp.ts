@@ -18,7 +18,12 @@
 
 import { diag } from '@opentelemetry/api'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
-import { NOOP_ATTRIBUTES_TRANSFORMER, NATIVE_XHR_SENDER, NATIVE_BEACON_SENDER, SplunkExporterConfig } from './common'
+import {
+	NOOP_ATTRIBUTES_TRANSFORMER,
+	NATIVE_XHR_SENDER,
+	NATIVE_BEACON_SENDER,
+	type SplunkExporterConfig,
+} from './common'
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base'
 
 export class SplunkOTLPTraceExporter extends OTLPTraceExporter {

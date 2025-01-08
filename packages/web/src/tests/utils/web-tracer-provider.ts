@@ -15,18 +15,6 @@
  * limitations under the License.
  *
  */
+import { SplunkWebTracerProvider } from '../../SplunkWebTracerProvider'
 
-import 'mocha'
-
-// Manually maintain this list, as old webpack require-based mechanism isn't working under rollup
-import '../src/tests/init.test'
-import '../src/tests/session.test'
-import '../src/tests/websockets.test'
-import '../src/tests/SessionBasedSampler.test'
-import '../src/tests/SplunkExporter.test'
-import '../src/tests/SplunkContextManager.test'
-import '../src/tests/SplunkSpanAttributesProcessor.test'
-import '../src/tests/SplunkOtelWeb.test'
-import '../src/tests/synthetics.test'
-import './socketio.test'
-import '../src/stacktrace.test'
+export const createWebTracerProvider = () => new SplunkWebTracerProvider()

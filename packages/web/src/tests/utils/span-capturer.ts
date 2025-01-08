@@ -16,17 +16,26 @@
  *
  */
 
-import 'mocha'
+import { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-base'
 
-// Manually maintain this list, as old webpack require-based mechanism isn't working under rollup
-import '../src/tests/init.test'
-import '../src/tests/session.test'
-import '../src/tests/websockets.test'
-import '../src/tests/SessionBasedSampler.test'
-import '../src/tests/SplunkExporter.test'
-import '../src/tests/SplunkContextManager.test'
-import '../src/tests/SplunkSpanAttributesProcessor.test'
-import '../src/tests/SplunkOtelWeb.test'
-import '../src/tests/synthetics.test'
-import './socketio.test'
-import '../src/stacktrace.test'
+export class SpanCapturer implements SpanProcessor {
+	public readonly spans: ReadableSpan[] = []
+
+	clear(): void {
+		this.spans.length = 0
+	}
+
+	forceFlush(): Promise<void> {
+		return Promise.resolve()
+	}
+
+	onEnd(span: ReadableSpan): void {
+		this.spans.push(span)
+	}
+
+	onStart(): void {}
+
+	shutdown(): Promise<void> {
+		return Promise.resolve()
+	}
+}

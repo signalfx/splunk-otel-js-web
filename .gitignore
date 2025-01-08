@@ -17,3 +17,6 @@ tests_output/
 
 # contains secrets
 .env
+
+vitest-report
+__screenshots__

@@ -15,57 +15,13 @@
  * limitations under the License.
  *
  */
+import SplunkRum from '../../index'
+import { SpanCapturer } from './span-capturer'
+import { ZipkinSpan } from '../../exporters/zipkin'
+import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base'
+import { buildInMemorySplunkExporter } from './memory-exporter'
 
-import { ReadableSpan, SimpleSpanProcessor, SpanProcessor } from '@opentelemetry/sdk-trace-base'
-import SplunkRum, { SplunkZipkinExporter } from '../src/index'
-import { ZipkinSpan } from '../src/exporters/zipkin'
-import { assert } from 'chai'
-
-export class SpanCapturer implements SpanProcessor {
-	public readonly spans: ReadableSpan[] = []
-
-	clear(): void {
-		this.spans.length = 0
-	}
-
-	forceFlush(): Promise<void> {
-		return Promise.resolve()
-	}
-
-	onEnd(span: ReadableSpan): void {
-		this.spans.push(span)
-	}
-
-	onStart(): void {}
-
-	shutdown(): Promise<void> {
-		return Promise.resolve()
-	}
-}
-
-export function buildInMemorySplunkExporter(): {
-	exporter: SplunkZipkinExporter
-	getFinishedSpans: () => ZipkinSpan[]
-} {
-	const spans: ZipkinSpan[] = []
-	const exporter = new SplunkZipkinExporter({
-		url: '',
-		beaconSender: null,
-		xhrSender: (_, data) => {
-			if (typeof data === 'string') {
-				const newSpans = JSON.parse(data) as ZipkinSpan[]
-				spans.splice(spans.length, 0, ...newSpans)
-			}
-		},
-	})
-
-	return {
-		exporter,
-		getFinishedSpans: () => spans,
-	}
-}
-
-export function initWithDefaultConfig(capturer: SpanCapturer, additionalOptions = {}): void {
+export const initWithDefaultConfig = (capturer: SpanCapturer, additionalOptions = {}): void => {
 	SplunkRum._internalInit({
 		beaconEndpoint: 'http://127.0.0.1:8888/v1/trace',
 		allowInsecureBeacon: true,
@@ -77,7 +33,11 @@ export function initWithDefaultConfig(capturer: SpanCapturer, additionalOptions 
 		rumAccessToken: '123-no-warn-spam-in-console',
 		...additionalOptions,
 	})
-	assert.ok(SplunkRum.inited)
+
+	if (!SplunkRum.inited) {
+		throw Error('SplunkRum not initialized')
+	}
+
 	SplunkRum.provider.addSpanProcessor(capturer)
 }
 
@@ -107,6 +67,6 @@ export function initWithSyncPipeline(additionalOptions = {}): {
 	}
 }
 
-export function deinit(force?: boolean): void {
+export const deinit = (force?: boolean): void => {
 	SplunkRum.deinit(force)
 }
