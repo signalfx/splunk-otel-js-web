@@ -15,28 +15,8 @@
  * limitations under the License.
  *
  */
-
-const { Server } = require('socket.io')
-
-function initSocketIo() {
-	const io = new Server({
-		cors: {
-			origin: true,
-		},
-	})
-
-	io.on('connection', (socket) => {
-		socket.on('hello', () => {
-			// Does nothing
-		})
-		socket.on('ping', (...args) => {
-			socket.emit('pong', ...args)
-		})
-	})
-
-	io.listen(8980)
-}
-
-module.exports = {
-	'framework:socketio-server': ['factory', initSocketIo],
-}
+export * from './span-capturer'
+export * from './init'
+export * from './web-tracer-provider'
+export * from './span'
+export * from './memory-exporter'

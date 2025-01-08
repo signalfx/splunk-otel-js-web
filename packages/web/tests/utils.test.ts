@@ -16,22 +16,22 @@
  *
  */
 
-import * as assert from 'assert'
 import { generateId } from '../src/utils'
 import { findCookieValue } from '../src/session/cookie-session'
+import { describe, it, expect } from 'vitest'
 
 describe('generateId', () => {
 	it('should generate IDs of 64 and 128 bits', () => {
 		const id64 = generateId(64)
 		const id128 = generateId(128)
-		assert.strictEqual(id64.length, 16)
-		assert.strictEqual(id128.length, 32)
-		assert.ok(id64.match('^[0-9a-z]+$'))
-		assert.ok(id128.match('^[0-9a-z]+$'))
+		expect(id64.length).toBe(16)
+		expect(id128.length).toBe(32)
+		expect(id64.match('^[0-9a-z]+$')).toBeTruthy()
+		expect(id128.match('^[0-9a-z]+$')).toBeTruthy()
 	})
 })
 describe('findCookieValue', () => {
 	it('should not find unset cookie', () => {
-		assert.ok(findCookieValue('nosuchCookie', { forceStoreRead: true }) === undefined)
+		expect(findCookieValue('nosuchCookie', { forceStoreRead: true })).toBeUndefined()
 	})
 })

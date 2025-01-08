@@ -16,10 +16,10 @@
  *
  */
 
-import { expect } from 'chai'
 import SplunkRum from '../src'
 import { SYNTHETICS_RUN_ID_ATTRIBUTE } from '../src/synthetics'
 import { deinit, initWithSyncPipeline } from './utils'
+import { expect, it, describe } from 'vitest'
 
 describe('synthetics integration', () => {
 	it('uses window', async () => {
@@ -30,10 +30,10 @@ describe('synthetics integration', () => {
 		await forceFlush()
 
 		const spans = getFinishedSpans()
-		expect(spans.length).to.eq(1)
-		expect(spans[0].tags[SYNTHETICS_RUN_ID_ATTRIBUTE]).to.eq('1234abcd'.repeat(4))
-
+		expect(spans.length).toBe(1)
+		expect(spans[0].tags[SYNTHETICS_RUN_ID_ATTRIBUTE]).toBe('1234abcd'.repeat(4))
 		deinit()
+
 		delete window.syntheticsRunId
 	})
 
@@ -44,8 +44,8 @@ describe('synthetics integration', () => {
 		await forceFlush()
 
 		const spans = getFinishedSpans()
-		expect(spans.length).to.eq(1)
-		expect(spans[0].tags[SYNTHETICS_RUN_ID_ATTRIBUTE]).to.eq(undefined)
+		expect(spans.length).toBe(1)
+		expect(spans[0].tags[SYNTHETICS_RUN_ID_ATTRIBUTE]).toBeUndefined()
 		deinit()
 	})
 })

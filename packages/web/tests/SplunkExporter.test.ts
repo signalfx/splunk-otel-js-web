@@ -16,17 +16,15 @@
  *
  */
 
-import sinon from 'sinon'
-import { expect } from 'chai'
-
 import * as api from '@opentelemetry/api'
 import { timeInputToHrTime } from '@opentelemetry/core'
 import { SplunkZipkinExporter } from '../src/exporters/zipkin'
 import { RateLimitProcessor } from '../src/exporters/rate-limit'
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base'
+import { describe, vi, expect, it, Mock, assert, beforeEach, afterEach } from 'vitest'
 
-function buildDummySpan({ name = '<name>', attributes = {} } = {}) {
-	return {
+const buildDummySpan = ({ name = '<name>', attributes = {} } = {}) =>
+	({
 		spanContext: () => ({
 			traceId: '0000',
 			spanId: '0001',
@@ -40,22 +38,24 @@ function buildDummySpan({ name = '<name>', attributes = {} } = {}) {
 		status: { code: api.SpanStatusCode.UNSET },
 		resource: { attributes: {} },
 		events: [] as { name: string; time: api.HrTime }[],
-	} as ReadableSpan
-}
+	}) as ReadableSpan
 
 describe('SplunkZipkinExporter', () => {
-	let beaconSenderMock
-	let xhrSenderMock
-	let exporter
+	let beaconSenderMock: Mock
+	const originalBeacon = window.navigator.sendBeacon
+	let xhrSenderMock: Mock
+	let exporter: SplunkZipkinExporter
 
 	beforeEach(() => {
-		beaconSenderMock = sinon.stub(navigator, 'sendBeacon').returns(true)
-		xhrSenderMock = sinon.fake()
+		beaconSenderMock = vi.fn().mockReturnValue(true)
+		window.navigator.sendBeacon = beaconSenderMock
+
+		xhrSenderMock = vi.fn().mockReturnValue(undefined)
 	})
 
-	afterEach(() => {
-		exporter.shutdown()
-		beaconSenderMock.restore()
+	afterEach(async () => {
+		await exporter.shutdown()
+		window.navigator.sendBeacon = originalBeacon
 	})
 
 	it('uses Beacon API if in background', () => {
@@ -73,34 +73,43 @@ describe('SplunkZipkinExporter', () => {
 			configurable: true,
 			enumerable: true,
 		})
+
 		const dummySpan = buildDummySpan()
 		exporter.export([dummySpan], () => {})
 
+		assert(oldDef)
 		Object.defineProperty(targetDocProto, 'hidden', oldDef)
 
-		expect(beaconSenderMock.args[0][0]).to.eq('https://domain1')
-		const sentSpan = JSON.parse(beaconSenderMock.args[0][1])[0]
-		expect(sentSpan.name).to.equal('<name>')
-		expect(sentSpan.id).to.equal('0001')
+		expect(beaconSenderMock).toHaveBeenCalledTimes(1)
+		const sendBeaconArgs = beaconSenderMock.mock.calls[0]
+		expect(sendBeaconArgs[0]).toBe('https://domain1')
 
-		expect(xhrSenderMock.called).to.eq(false)
+		const sentSpan = JSON.parse(sendBeaconArgs[1])[0]
+
+		expect(sentSpan.name).toBe('<name>')
+		expect(sentSpan.id).toBe('0001')
+
+		expect(xhrSenderMock).toHaveBeenCalledTimes(0)
 	})
 
 	it('uses XHR if Beacon API is unavailable', () => {
 		exporter = new SplunkZipkinExporter({
 			url: 'https://domain2',
-			beaconSender: null,
+			beaconSender: undefined,
 			xhrSender: xhrSenderMock,
 		})
 
 		const dummySpan = buildDummySpan()
 		exporter.export([dummySpan], () => {})
 
-		expect(xhrSenderMock.args[0][0]).to.eq('https://domain2')
+		expect(xhrSenderMock).toHaveBeenCalledTimes(1)
+		const sendXhrArgs = xhrSenderMock.mock.calls[0]
 
-		const sentSpan = JSON.parse(xhrSenderMock.args[0][1])[0]
-		expect(sentSpan.name).to.equal('<name>')
-		expect(sentSpan.id).to.equal('0001')
+		expect(sendXhrArgs[0]).toBe('https://domain2')
+
+		const sentSpan = JSON.parse(sendXhrArgs[1])[0]
+		expect(sentSpan.name).toBe('<name>')
+		expect(sentSpan.id).toBe('0001')
 	})
 
 	it('truncates long values', () => {
@@ -117,11 +126,12 @@ describe('SplunkZipkinExporter', () => {
 			},
 		})
 		exporter.export([dummySpan], () => {})
-
-		const sentSpan = JSON.parse(xhrSenderMock.getCall(0).args[1])[0]
-		expect(sentSpan.name).to.eq('a'.repeat(4096))
-		expect(sentSpan.tags['longValue']).to.eq('b'.repeat(4096))
-		expect(sentSpan.tags['shortValue']).to.eq('c'.repeat(4000))
+		expect(xhrSenderMock).toHaveBeenCalledTimes(1)
+		const sendXhrArgs = xhrSenderMock.mock.calls[0]
+		const sentSpan = JSON.parse(sendXhrArgs[1])[0]
+		expect(sentSpan.name).toBe('a'.repeat(4096))
+		expect(sentSpan.tags['longValue']).toBe('b'.repeat(4096))
+		expect(sentSpan.tags['shortValue']).toBe('c'.repeat(4000))
 	})
 
 	it('filters out missing cors timings', () => {
@@ -153,9 +163,10 @@ describe('SplunkZipkinExporter', () => {
 			name: 'responseEnd',
 		})
 		exporter.export([dummySpan], () => {})
-
-		const sentSpan = JSON.parse(xhrSenderMock.getCall(0).args[1])[0]
-		expect(sentSpan.annotations.length).to.eq(2)
+		expect(xhrSenderMock).toHaveBeenCalledTimes(1)
+		const sendXhrArgs = xhrSenderMock.mock.calls[0]
+		const sentSpan = JSON.parse(sendXhrArgs[1])[0]
+		expect(sentSpan.annotations).toHaveLength(2)
 	})
 
 	it('allows hooking into serialization', () => {
@@ -177,11 +188,12 @@ describe('SplunkZipkinExporter', () => {
 			},
 		})
 		exporter.export([dummySpan], () => {})
+		expect(xhrSenderMock).toHaveBeenCalledTimes(1)
+		const sendXhrArgs = xhrSenderMock.mock.calls[0]
 
-		const sentSpan = JSON.parse(xhrSenderMock.getCall(0).args[1])[0]
-		expect(sentSpan.name).to.eq('<name>')
-		console.log(sentSpan.tags)
-		expect(sentSpan.tags).to.deep.eq({
+		const sentSpan = JSON.parse(sendXhrArgs[1])[0]
+		expect(sentSpan.name).toBe('<name>')
+		expect(sentSpan.tags).toStrictEqual({
 			key1: 'new value 1',
 			key2: 'value 2',
 			key3: 'null',
@@ -210,7 +222,7 @@ describe('Rate Limiter', () => {
 			rateLimiter.onEnd(dummySpan)
 		}
 
-		expect(allowedSpans).to.have.lengthOf(100)
+		expect(allowedSpans).toHaveLength(100)
 	})
 
 	it('still exports parent spans', () => {
@@ -242,6 +254,6 @@ describe('Rate Limiter', () => {
 		parentSpan.parentSpanId = undefined
 		rateLimiter.onEnd(parentSpan)
 
-		expect(allowedSpans).to.have.lengthOf(101)
+		expect(allowedSpans).toHaveLength(101)
 	})
 })

@@ -27,6 +27,8 @@ import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instr
 const STACK_LIMIT = 4096
 const MESSAGE_LIMIT = 1024
 
+export const STACK_TRACE_URL_PATTER = /([\w]+:\/\/[^\s/]+\/[^\s?:#]+)/g
+
 function useful(s) {
 	return s && s.trim() !== '' && !s.startsWith('[object') && s !== 'error'
 }
@@ -42,8 +44,7 @@ function stringifyValue(value: unknown) {
 function parseErrorStack(stack: string): string {
 	//get list of files in stack , find corresponding sourcemap id and add it to the source map id object
 	const sourceMapIds = {}
-	const urlPattern = /([\w]+:\/\/[^\s/]+\/[^\s?:#]+)/g
-	const urls = stack.match(urlPattern)
+	const urls = stack.match(STACK_TRACE_URL_PATTER)
 	if (urls) {
 		urls.forEach((url) => {
 			// Strip off any line/column numbers at the end after the last colon

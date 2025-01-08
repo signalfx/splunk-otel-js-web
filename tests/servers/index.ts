@@ -15,28 +15,5 @@
  * limitations under the License.
  *
  */
-
-import 'mocha'
-import SplunkRum from '../src/index'
-
-describe('Node.js basic support', () => {
-	it('Can call init', () => {
-		SplunkRum.init({
-			applicationName: 'test-app',
-			beaconEndpoint: 'https://localhost/events',
-			rumAccessToken: 'example1234',
-		})
-	})
-
-	it('Can call setGlobalAttributes', () => {
-		SplunkRum.setGlobalAttributes({ asd: 'asd' })
-	})
-
-	it('Can call error', () => {
-		SplunkRum.error(new Error('Test error'))
-	})
-
-	it('Can call getSessionId()', () => {
-		SplunkRum.getSessionId()
-	})
-})
+export * from './socket-io'
+export * from './websocket'
