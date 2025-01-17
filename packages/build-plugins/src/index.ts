@@ -16,17 +16,40 @@ limitations under the License.
 
 import { createUnplugin, UnpluginFactory } from 'unplugin';
 
-import { BannerPlugin, WebpackPluginInstance } from 'webpack';
-import { computeSourceMapId, getCodeSnippet } from './utils';
+import type { WebpackPluginInstance } from 'webpack';
+import {
+  computeSourceMapId,
+  getCodeSnippet, JS_FILE_REGEX,
+  PLUGIN_NAME
+} from './utils';
+import { applySourceMapsUpload } from './webpack';
 
 export interface OllyWebPluginOptions {
-  // define your plugin options here
+  /** Plugin configuration for source map ID injection and source map file uploads */
+  sourceMaps: {
+    /** the Splunk Observability realm */
+    realm: string;
+
+    /** API token used to authenticate the file upload requests.  This is not the same as the rumAccessToken used in SplunkRum.init(). */
+    token: string;
+
+    /** Optional. If provided, this should match the "applicationName" used where SplunkRum.init() is called. */
+    applicationName?: string;
+
+    /** Optional. If provided, this should match the "version" used where SplunkRum.init() is called. */
+    version?: string;
+
+    /** Optional. If true, the plugin will inject source map IDs into the final JavaScript bundles, but it will not upload any source map files. */
+    disableUpload?: boolean;
+  }
 }
 
-const unpluginFactory: UnpluginFactory<OllyWebPluginOptions | undefined> = () => ({
-  name: 'OllyWebPlugin',
+const unpluginFactory: UnpluginFactory<OllyWebPluginOptions | undefined> = (options) => ({
+  name: PLUGIN_NAME,
   webpack(compiler) {
-    compiler.hooks.thisCompilation.tap('OllyWebPlugin', () => {
+    const { webpack } = compiler;
+    const { BannerPlugin } = webpack;
+    compiler.hooks.thisCompilation.tap(PLUGIN_NAME, () => {
       const bannerPlugin = new BannerPlugin({
         banner: ({ chunk }) => {
           if (!chunk.hash) {
@@ -37,11 +60,15 @@ const unpluginFactory: UnpluginFactory<OllyWebPluginOptions | undefined> = () =>
         },
         entryOnly: false,
         footer: true,
-        include: /\.(js|mjs)$/,
+        include: JS_FILE_REGEX,
         raw: true,
       });
       bannerPlugin.apply(compiler);
     });
+
+    if (!options.sourceMaps.disableUpload) {
+      applySourceMapsUpload(compiler, options);
+    }
   }
 });
 

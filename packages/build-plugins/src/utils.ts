@@ -14,8 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-
 import { createHash } from 'crypto';
+import { createReadStream } from 'fs';
+
+export const PLUGIN_NAME = 'OllyWebPlugin';
+
+export const JS_FILE_REGEX = /\.(js|cjs|mjs)$/;
+
+function shaToSourceMapId(sha: string) {
+  return [
+    sha.slice(0, 8),
+    sha.slice(8, 12),
+    sha.slice(12, 16),
+    sha.slice(16, 20),
+    sha.slice(20, 32),
+  ].join('-');
+}
 
 /**
  * Returns a standardized GUID value to use for a sourceMapId.
@@ -26,14 +40,19 @@ export function computeSourceMapId(content: string): string {
   const sha256 = createHash('sha256')
     .update(content, 'utf-8')
     .digest('hex');
-  const guid = [
-    sha256.slice(0, 8),
-    sha256.slice(8, 12),
-    sha256.slice(12, 16),
-    sha256.slice(16, 20),
-    sha256.slice(20, 32),
-  ].join('-');
-  return guid;
+  return shaToSourceMapId(sha256);
+}
+
+export async function computeSourceMapIdFromFile(sourceMapFilePath: string): Promise<string> {
+  const hash = createHash('sha256').setEncoding('hex');
+
+  const fileStream = createReadStream(sourceMapFilePath);
+  for await (const chunk of fileStream) {
+    hash.update(chunk);
+  }
+
+  const sha = hash.digest('hex');
+  return shaToSourceMapId(sha);
 }
 
 // eslint-disable-next-line quotes
@@ -43,3 +62,7 @@ export function getCodeSnippet(sourceMapId: string): string {
   return SNIPPET_TEMPLATE.replace('__SOURCE_MAP_ID_PLACEHOLDER__', sourceMapId);
 }
 
+export function getSourceMapUploadUrl(realm: string, idPathParam: string): string {
+  const API_BASE_URL = process.env.O11Y_API_BASE_URL || `https://api.${realm}.signalfx.com`;
+  return `${API_BASE_URL}/v1/sourcemaps/id/${idPathParam}`;
+}
