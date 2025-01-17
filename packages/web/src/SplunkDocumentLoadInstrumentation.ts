@@ -76,8 +76,8 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 						;(entries as PerformanceEntriesWithServerTiming).serverTiming = navEntries[0].serverTiming
 					}
 
-					if (navEntries[0]?.responseStatus) {
-						span.setAttribute('http.response.status_code', navEntries[0].responseStatus)
+					if ((navEntries[0] as any)?.responseStatus) {
+						span.setAttribute('http.response.status_code', (navEntries[0] as any).responseStatus)
 					}
 				}
 
