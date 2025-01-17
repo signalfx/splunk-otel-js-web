@@ -10,8 +10,8 @@
 	],
 	"engines": {
 		"--": "Versions required for development only (recent enough to use npm workspaces)",
-		"node": ">=16",
-		"npm": ">=8"
+		"node": ">=22",
+		"npm": ">=10"
 	},
 	"scripts": {
 		"compile": "npm run --ws compile --",
