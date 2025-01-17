@@ -1,5 +1,5 @@
 default:
-    image: 'cimg/node:20.5-browsers'
+    image: 'cimg/node:22-browsers'
 
 include:
     - project: 'ci-cd/templates'

@@ -96,6 +96,7 @@ test.describe('docload', () => {
 
 		expect(docFetchSpans[0].tags['link.traceId']).toBeDefined()
 		expect(docFetchSpans[0].tags['link.spanId']).toBeDefined()
+		expect(parseInt(docFetchSpans[0].tags['http.response.status_code'] as string)).toBeGreaterThan(0)
 		expect(parseInt(scriptFetchSpans[0].tags['http.response_content_length'] as string)).toBeGreaterThan(0)
 
 		expect(docLoadSpans[0].tags['component']).toBe('document-load')
