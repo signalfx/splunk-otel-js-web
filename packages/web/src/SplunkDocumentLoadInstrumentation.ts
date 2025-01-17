@@ -17,7 +17,7 @@
  */
 
 import { InstrumentationConfig } from '@opentelemetry/instrumentation'
-import { DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load'
+import { AttributeNames, DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load'
 import * as api from '@opentelemetry/api'
 import { captureTraceParentFromPerformanceEntries } from './servertiming'
 import { PerformanceEntries } from '@opentelemetry/sdk-trace-web'
@@ -65,19 +65,19 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 				span.setAttribute('component', this.component)
 			}
 
-			if (span && exposedSpan.name !== 'documentLoad') {
+			if (span && exposedSpan.name !== AttributeNames.DOCUMENT_LOAD) {
 				// only apply links to document/resource fetch
 				// To maintain compatibility, getEntries copies out select items from
 				// different versions of the performance API into its own structure for the
 				// initial document load (but leaves the entries undisturbed for resource loads).
-				if (
-					exposedSpan.name === 'documentFetch' &&
-					!(entries as PerformanceEntriesWithServerTiming).serverTiming &&
-					performance.getEntriesByType
-				) {
+				if (exposedSpan.name === AttributeNames.DOCUMENT_FETCH && performance.getEntriesByType) {
 					const navEntries = performance.getEntriesByType('navigation')
-					if (navEntries[0]?.serverTiming) {
+					if (!(entries as PerformanceEntriesWithServerTiming).serverTiming && navEntries[0]?.serverTiming) {
 						;(entries as PerformanceEntriesWithServerTiming).serverTiming = navEntries[0].serverTiming
+					}
+
+					if (navEntries[0]?.responseStatus) {
+						span.setAttribute('http.response.status_code', navEntries[0].responseStatus)
 					}
 				}
 
@@ -85,7 +85,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 				span.setAttribute(SemanticAttributes.HTTP_METHOD, 'GET')
 			}
 
-			if (span && exposedSpan.name === 'documentLoad') {
+			if (span && exposedSpan.name === AttributeNames.DOCUMENT_LOAD) {
 				addExtraDocLoadTags(span)
 			}
 
