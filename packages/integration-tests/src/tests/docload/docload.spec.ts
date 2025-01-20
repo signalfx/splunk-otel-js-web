@@ -50,7 +50,7 @@ test.describe('docload', () => {
 		}
 	})
 
-	test('documentFetch, resourceFetch, and documentLoad spans', async ({ recordPage }) => {
+	test('documentFetch, resourceFetch, and documentLoad spans', async ({ recordPage, browserName }) => {
 		await recordPage.goTo('/docload/docload.ejs')
 
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'documentLoad').length === 1)
@@ -96,6 +96,11 @@ test.describe('docload', () => {
 
 		expect(docFetchSpans[0].tags['link.traceId']).toBeDefined()
 		expect(docFetchSpans[0].tags['link.spanId']).toBeDefined()
+		if (browserName !== 'webkit') {
+			// Webkit does not support https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/responseStatus
+			expect(parseInt(docFetchSpans[0].tags['http.response.status_code'] as string)).toBe(200)
+		}
+
 		expect(parseInt(scriptFetchSpans[0].tags['http.response_content_length'] as string)).toBeGreaterThan(0)
 
 		expect(docLoadSpans[0].tags['component']).toBe('document-load')
