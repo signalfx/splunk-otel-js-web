@@ -2,7 +2,7 @@
 
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
-## 0.20.0-beta.1
+## 0.20.0-beta.2
 
 * `@splunk/otel-web`
   * fix: add 'http.response.status_code' to documentFetch span ([#928](https://github.com/signalfx/splunk-otel-js-web/pull/928))
