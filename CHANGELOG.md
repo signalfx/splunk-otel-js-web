@@ -2,6 +2,15 @@
 
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
+## 0.20.0-beta.1
+
+* `@splunk/otel-web`
+  * fix: add 'http.response.status_code' to documentFetch span ([#928](https://github.com/signalfx/splunk-otel-js-web/pull/928))
+* `root - internal changes`
+  * chore(internal): deps bump ([#890](https://github.com/signalfx/splunk-otel-js-web/pull/890), [#915](https://github.com/signalfx/splunk-otel-js-web/pull/915), [#921](https://github.com/signalfx/splunk-otel-js-web/pull/921), [#911](https://github.com/signalfx/splunk-otel-js-web/pull/911))
+  * chore(internal): update license headers to reflect new year ([#920](https://github.com/signalfx/splunk-otel-js-web/pull/920))
+  * chore(internal): use playwright for e2e tests ([#887](https://github.com/signalfx/splunk-otel-js-web/pull/887))
+
 ## 0.20.0-beta.0
 
 * `@splunk/otel-web`
