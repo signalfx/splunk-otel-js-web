@@ -1,0 +1,118 @@
+name: Playwright tests
+on:
+    workflow_call:
+
+jobs:
+    playwright:
+        timeout-minutes: 60
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                browser: [chromium, firefox, chrome, edge]
+        name: Playwright Tests - ${{ matrix.browser }}
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4.2.2
+            - uses: actions/setup-node@v4.0.3
+              with:
+                  node-version: '18'
+                  cache: 'npm'
+            - run: npm ci
+            - run: npm run compile
+
+            - name: Install playwright
+              uses: ./.github/actions/install-playwright
+
+            - name: Run Playwright tests
+              run: |
+                  npx playwright test --project=${{ matrix.browser }}
+              working-directory: ./packages/integration-tests
+
+            - name: Upload blob report to GitHub Actions Artifacts
+              if: ${{ !cancelled() }}
+              uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
+              with:
+                  name: blob-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
+                  path: packages/integration-tests/blob-report
+                  retention-days: 1
+
+    playwright-macos:
+        timeout-minutes: 60
+        runs-on: macos-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                browser: [webkit]
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4.2.2
+            - uses: actions/setup-node@v4.0.3
+              with:
+                  node-version: '18'
+                  cache: 'npm'
+            - run: npm ci
+            - run: npm run compile
+
+            - name: Install playwright
+              uses: ./.github/actions/install-playwright
+
+            - name: Run Playwright tests
+              run: |
+                  npx playwright test --project=${{ matrix.browser }}
+              working-directory: ./packages/integration-tests
+
+            - name: Upload blob report to GitHub Actions Artifacts
+              if: ${{ !cancelled() }}
+              uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
+              with:
+                  name: blob-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
+                  path: packages/integration-tests/blob-report
+                  retention-days: 1
+
+    merge-reports:
+        if: ${{ !cancelled() }}
+        needs: [playwright, playwright-macos]
+
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4.2.2
+            - uses: actions/setup-node@v4.0.3
+              with:
+                  node-version: '18'
+                  cache: 'npm'
+            - run: npm ci
+            - run: npm run compile
+
+            - name: Download blob reports from GitHub Actions Artifacts
+              uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16
+              with:
+                  path: packages/integration-tests/all-blob-reports
+                  pattern: blob-report-*
+                  merge-multiple: true
+
+            - name: Merge into HTML Report
+              run: npx playwright merge-reports --reporter html ./all-blob-reports -c playwright.config.ts
+              working-directory: ./packages/integration-tests
+
+            - name: Upload HTML report
+              uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
+              with:
+                  name: playwright-report--attempt-${{ github.run_attempt }}
+                  path: packages/integration-tests/playwright-report
+                  retention-days: 14
+
+    check-failure:
+        needs: [playwright, playwright-macos, merge-reports]
+        runs-on: ubuntu-latest
+        if: ${{ always() }}
+        steps:
+            - name: Check if any playwright tests failed
+              run: |
+                  if [ "${{ needs.playwright.result }}" != "success" ] || [ "${{ needs['playwright-macos'].result }}" != "success" ];  then
+                  echo "One or more tests failed."
+                  exit 1
+                  else
+                  echo "All tests passed."
+                  fi

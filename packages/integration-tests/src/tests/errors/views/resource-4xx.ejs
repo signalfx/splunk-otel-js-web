@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Errors test</title>
+    <%- renderAgent({ allowInsecureBeacon: true }) %>
+</head>
+<body>
+	<h1>Dom parsing error simulation</h1>
+	<img src="/nonexistent.png" />
+</body>
+</html>

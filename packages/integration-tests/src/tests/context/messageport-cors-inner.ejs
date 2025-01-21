@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Iframe</title>
+
+  <%- renderAgent({
+    context: {
+      async: true
+    }
+  }) %>
+</head>
+<body>
+	<h1>Inner frame</h1>
+
+  <div id="output"></div>
+
+  <script>
+    const output = document.getElementById('output');
+
+    window.addEventListener('message', function (event) {
+      output.innerText += 'Window Message: ' + event.data;
+
+      event.ports[0].postMessage('from child');
+    });
+
+  </script>
+</body>
+</html>
