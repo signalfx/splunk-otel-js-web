@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import { expect } from 'chai';
-import { computeSourceMapId, getCodeSnippet } from '../src/utils';
+import { computeSourceMapId, computeSourceMapIdFromFile, getCodeSnippet, getSourceMapUploadUrl } from '../src/utils';
 
 describe('getCodeSnippet', function () {
   it('inserts the source map id into the snippet', function () {
@@ -44,5 +44,19 @@ describe('computeSourceMapId', function () {
     expect(id).eq('d77ec5d8-4fb5-fbc8-1897-54b54e939bcd');
     expect(id).eq(computeSourceMapId('console.log("Hello world")'));
     expect(id).not.eq(computeSourceMapId('console.log("a different snippet gets a different id");'));
+  });
+});
+
+describe('computeSourceMapIdFromFilePath', function () {
+  it('returns an id in GUID format', async function () {
+    const id = await computeSourceMapIdFromFile('package.json');
+    expect(id).matches(/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/);
+  });
+});
+
+describe('getSourceMapUploadUrl', function () {
+  it('uses the proper API based on the realm and id', function () {
+    const url = getSourceMapUploadUrl('us0', 'd77ec5d8-4fb5-fbc8-1897-54b54e939bcd');
+    expect(url).eq('https://api.us0.signalfx.com/v1/sourcemaps/id/d77ec5d8-4fb5-fbc8-1897-54b54e939bcd');
   });
 });
