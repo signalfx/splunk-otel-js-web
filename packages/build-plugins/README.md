@@ -12,7 +12,12 @@ const { ollyWebWebpackPlugin } = require('@splunk/olly-web-build-plugins');
 module.exports = {
   /* ... */
   plugins: [
-    ollyWebWebpackPlugin({ /* options */ })
+    ollyWebWebpackPlugin({
+      sourceMaps: {
+        realm: 'us0',
+        token: process.env.SPLUNK_API_TOKEN,
+      }
+    })
   ]
 }
 ```
