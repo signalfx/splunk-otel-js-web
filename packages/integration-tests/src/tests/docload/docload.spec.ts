@@ -98,7 +98,7 @@ test.describe('docload', () => {
 		expect(docFetchSpans[0].tags['link.spanId']).toBeDefined()
 		if (browserName !== 'webkit') {
 			// Webkit does not support https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/responseStatus
-			expect(parseInt(docFetchSpans[0].tags['http.response.status_code'] as string)).toBe(200)
+			expect(parseInt(docFetchSpans[0].tags['http.status_code'] as string)).toBe(200)
 		}
 
 		expect(parseInt(scriptFetchSpans[0].tags['http.response_content_length'] as string)).toBeGreaterThan(0)

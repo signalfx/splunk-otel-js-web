@@ -77,7 +77,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 					}
 
 					if (navEntries[0]?.responseStatus) {
-						span.setAttribute('http.response.status_code', navEntries[0].responseStatus)
+						span.setAttribute('http.status_code', navEntries[0].responseStatus)
 					}
 				}
 
