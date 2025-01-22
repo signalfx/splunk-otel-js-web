@@ -1,23 +1,16 @@
 {
-  "compilerOptions": {
-    "allowJs": true,
-    "checkJs": false,
-    "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node",
-    "noEmitOnError": true,
-    "pretty": true,
-    "resolveJsonModule": true,
-    "skipLibCheck": true,
-    "target": "ES2017",
-    "types": [
-      "node"
-    ]
-  },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.js",
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+	"compilerOptions": {
+		"allowJs": true,
+		"checkJs": false,
+		"forceConsistentCasingInFileNames": true,
+		"moduleResolution": "node",
+		"noEmitOnError": true,
+		"pretty": true,
+		"resolveJsonModule": true,
+		"skipLibCheck": true,
+		"target": "ES2017",
+		"types": ["node"]
+	},
+	"include": ["src/**/*.ts", "src/**/*.js"],
+	"exclude": ["node_modules"]
 }
