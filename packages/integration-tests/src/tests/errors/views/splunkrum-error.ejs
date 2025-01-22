@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Errors test</title>
+  <%- renderAgent({}) %>
+  <script id="scenario">
+    let someNull = null;
+    try {
+      someNull.anyField = 'value';
+    } catch(e) {
+      SplunkRum.error(e);
+    }
+  </script>
+</head>
+<body>
+  <h1>Manual console.error</h1>
+  <pre id="scenarioDisplay"></pre>
+  <script>scenarioDisplay.innerHTML = scenario.innerHTML;</script>
+</body>
+</html>

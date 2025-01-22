@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Errors test</title>
+  <%- renderAgent({}) %>
+  <script id="scenario">
+    window.testing = true;
+
+    let test = null;
+    setTimeout(function() {
+      setTimeout(function () {
+        window.testing = false;
+      });
+
+      test.prop1 = true;
+    });
+  </script>
+</head>
+<body>
+  <h1>Unhandled error</h1>
+  <pre id="scenarioDisplay"></pre>
+  <script>scenarioDisplay.innerHTML = scenario.innerHTML;</script>
+</body>
+</html>

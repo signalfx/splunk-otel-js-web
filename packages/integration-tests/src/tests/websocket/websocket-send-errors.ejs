@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Websocket</title>
+
+	<%- renderAgent({instrumentations: {websocket: true}}) %>
+</head>
+<body>
+	<h1>Websocket send errors</h1>
+	<button id="connectWs" type="button">Connect to a websockets server</button>
+	<script>
+			let socket;
+			connectWs.addEventListener('click', function () {
+				let protocol = window.location.search.match(/wsProtocol=(\w+)/);
+				let port = window.location.search.match(/wsPort=(\d+)/);
+				let url = (protocol ? protocol[1] : 'wss') + '://' + document.location.hostname + ':' + (port ? port[1] : (document.location.port)) + '/ws';
+				socket = new WebSocket(url);
+				socket.send('Hello world!');
+			});
+	</script>
+</body>
+</html>
