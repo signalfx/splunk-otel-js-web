@@ -1,125 +1,126 @@
 default:
-  image: 'cimg/node:20.5-browsers'
+    image: 'cimg/node:20.5-browsers'
 
 include:
-  - project: 'ci-cd/templates'
-    ref: master
-    file: '/prodsec/.oss-scan.yml'
+    - project: 'ci-cd/templates'
+      ref: master
+      file: '/prodsec/.oss-scan.yml'
 
 cache:
-  key:
-    files:
-      - package-lock.json
-  paths:
-    - "./node_modules"
-    - "./packages/*/node_modules"
+    key:
+        files:
+            - package-lock.json
+    paths:
+        - './node_modules'
+        - './packages/*/node_modules'
 
 stages:
-  - setup
-  - build
-  - test
-  - release
+    - setup
+    - build
+    - test
+    - release
 
 npm_install:
-  stage: setup
-  script:
-    - npm ci --include=dev
+    stage: setup
+    script:
+        - npm ci --include=dev
 
 check_version:
-  stage: build
-  script:
-    - npm run version:check
+    stage: build
+    script:
+        - npm run version:check
 
 check_tag:
-  stage: build
-  only:
-    - /^v.*/
-  script:
-    - npm run tag:check
+    stage: build
+    only:
+        - /^v.*/
+    script:
+        - npm run tag:check
 
 lint:
-  stage: build
-  script:
-    - npm run lint
-    - npm run lint:markdown
+    stage: build
+    script:
+        - npm run lint
+        - npm run lint:markdown
 
 build:
-  stage: build
-  only:
-    - /^[^v].*/
-  artifacts:
-    paths:
-      - packages/*/dist/
-  script:
-    - npm run compile
+    stage: build
+    only:
+        - /^[^v].*/
+    artifacts:
+        paths:
+            - packages/*/dist/
+    script:
+        - npm run compile
 
 build_artifacts:
-  stage: build
-  only:
-  - /^v[0-9]+\..*/
-  artifacts:
-    paths:
-      - artifacts/
-  script:
-    - if [ ! -d "artifacts" ]; then mkdir artifacts; fi
-    - npm run compile
-    - npm pack --pack-destination artifacts -ws
+    stage: build
+    only:
+        - /^v[0-9]+\..*/
+    artifacts:
+        paths:
+            - artifacts/
+    script:
+        - if [ ! -d "artifacts" ]; then mkdir artifacts; fi
+        - npm run compile
+        - npm pack --pack-destination artifacts --workspace packages/session-recorder --workspace packages/web
 
-    # complete artifacts & checksums
-    - cp packages/*/dist/artifacts/* artifacts/
-    - shasum -a 256 artifacts/* > artifacts/checksums.txt
+        # complete artifacts & checksums
+        - cp packages/*/dist/artifacts/* artifacts/
+        - shasum -a 256 artifacts/* > artifacts/checksums.txt
 
 unit_test:
-  stage: test
-  script:
-    - npm ci --include=dev
-    - npm run test:unit:ci
+    stage: test
+    script:
+        - npm ci --include=dev
+        - npm run test:unit:ci
 
 oss-scan:
-  stage: test
-  extends: .oss-scan
+    stage: test
+    extends: .oss-scan
 
 release_npm:
-  artifacts:
-    paths:
-      - artifacts/
-  stage: release
-  only:
-    - /^v[0-9]+\..*/
-  script:
-    # release to NPM
-    - echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
-    - for f in artifacts/*.tgz; do npm publish ./$f; done;
-    - rm -f ~/.npmrc
+    artifacts:
+        paths:
+            - artifacts/
+    stage: release
+    only:
+        - /^v[0-9]+\..*/
+    script:
+        # release to NPM
+        - echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
+        # January: remove --tag beta
+        - for f in artifacts/*.tgz; do npm publish --tag beta ./$f; done;
+        - rm -f ~/.npmrc
 
 release_github:
-  artifacts:
-    paths:
-      - artifacts/
-  stage: release
-  only:
-    - /^v[0-9]+\..*/
-  script:
-    - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-key 23F3D4EA75716059
-    - echo "deb [arch=$(dpkg --print-architecture)] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-    - sudo apt update
-    - sudo apt install gh
+    artifacts:
+        paths:
+            - artifacts/
+    stage: release
+    only:
+        - /^v[0-9]+\..*/
+    script:
+        - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-key 23F3D4EA75716059
+        - echo "deb [arch=$(dpkg --print-architecture)] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+        - sudo apt update
+        - sudo apt install gh
 
-    # release in Github
-    - gh release create v${CI_COMMIT_REF_NAME:1} ./artifacts/* --target $CI_COMMIT_SHA --repo $GITHUB_REPOSITORY
+        # January: remove --prerelease
+        - gh release create v${CI_COMMIT_REF_NAME:1} ./artifacts/* --prerelease --target $CI_COMMIT_SHA --repo $GITHUB_REPOSITORY
 
 release_cdn:
-  artifacts:
-    paths:
-      - artifacts/
-  stage: release
-  only:
-    - /^v[0-9]+\..*/
-  needs: ["release_github"]
-  id_tokens:
-    CI_JOB_JWT:
-      aud: $CICD_VAULT_ADDR
-  script:
-    # authenticate and release to CDN
-    - creds-helper init && eval $(creds-helper aws --eval aws:v1/o11y-infra/role/o11y_gdi_otel_js_web_releaser_role)
-    - node scripts/release-cdn.mjs v${CI_COMMIT_REF_NAME:1}
+    artifacts:
+        paths:
+            - artifacts/
+    stage: release
+    only:
+        - /^v[0-9]+\..*/
+    needs: ['release_github']
+    id_tokens:
+        CI_JOB_JWT:
+            aud: $CICD_VAULT_ADDR
+    script:
+        # authenticate and release to CDN
+        - creds-helper init && eval $(creds-helper aws --eval aws:v1/o11y-infra/role/o11y_gdi_otel_js_web_releaser_role)
+        - node scripts/release-cdn.mjs v${CI_COMMIT_REF_NAME:1}

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>XHR</title>
+
+  <%- renderAgent() %>
+</head>
+<body>
+  <h1>XHR</h1>
+  <script>
+    function makeXHR(url) {
+      const oReq = new XMLHttpRequest();
+      oReq.open("GET", url);
+      oReq.setRequestHeader('Content-Type', 'text/plain');
+      oReq.send();
+
+      return oReq;
+    }
+
+    window.testing = true;
+    const req = makeXHR('/some-data');
+    req.addEventListener('loadend', function () {
+      // Otel plugin waits for 300ms for resource timings to appear. This should schedule
+      // testing done to be after that.
+      setTimeout(function () {
+        window.testing = false;
+      }, 350);
+    })
+  </script>
+  </body>
+</html>

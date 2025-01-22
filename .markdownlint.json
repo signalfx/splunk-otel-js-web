@@ -1,10 +1,10 @@
 {
-  "default": true,
-  "line-length": false,
-  "no-trailing-spaces": false,
-  "blanks-around-lists": false,
-  "blanks-around-headings": false,
-  "commands-show-output": false,
-  "no-inline-html": false,
-  "first-line-h1": false
+	"default": true,
+	"line-length": false,
+	"no-trailing-spaces": false,
+	"blanks-around-lists": false,
+	"blanks-around-headings": false,
+	"commands-show-output": false,
+	"no-inline-html": false,
+	"first-line-h1": false
 }

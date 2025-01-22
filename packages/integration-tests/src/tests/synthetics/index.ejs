@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Splunk Synthetics integration</title>
+
+  <script id="scenario">
+    const match = /syntheticsRunId=([a-zA-Z0-9\-]+)/.exec(document.location.search);
+    window.syntheticsRunId = match && match[1];
+  </script>
+	<%- renderAgent() %>
+</head>
+<body>
+  <h1>Splunk Synthetics integration</h1>
+	<pre id="scenarioDisplay"></pre>
+  <script>scenarioDisplay.innerHTML = scenario.innerHTML;</script>
+
+  <script>
+    setTimeout(() => {
+      SplunkRum.provider.getTracer('guard').startSpan('guard-span').end();
+    }, 100);
+  </script>
+</body>
+</html>

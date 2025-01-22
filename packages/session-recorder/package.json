@@ -1,64 +1,64 @@
 {
-  "name": "@splunk/otel-web-session-recorder",
-  "version": "0.19.1",
-  "description": "Splunk distribution of rrweb for recording session",
-  "repository": "github:signalfx/splunk-otel-js-browser",
-  "scripts": {
-    "compile": "npm-run-all -s compile:*",
-    "compile:browser": "rollup -c",
-    "compile:tsc": "tsc --build tsconfig.cjs.json tsconfig.esm.json"
-  },
-  "author": "Splunk Observability Instrumentals Team <ssg-observability-instrumentals-npm@splunk.com>",
-  "license": "Apache-2.0",
-  "main": "dist/cjs/index.js",
-  "browser": "dist/cjs/index.js",
-  "module": "dist/esm/index.js",
-  "types": "dist/cjs/index.d.ts",
-  "exports": {
-    "types": "./dist/cjs/index.d.ts",
-    "import": "./dist/esm/index.js",
-    "require": "./dist/cjs/index.js"
-  },
-  "files": [
-    "dist/cjs/**/*.js",
-    "dist/cjs/**/*.js.map",
-    "dist/cjs/**/*.d.ts",
-    "dist/esm/**/*.js",
-    "dist/esm/**/*.js.map",
-    "dist/esm/**/*.d.ts"
-  ],
-  "dependencies": {
-    "@babel/runtime": "~7.24.7",
-    "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/core": "^1.25.1",
-    "@opentelemetry/resources": "^1.25.1",
-    "fflate": "^0.8.0",
-    "rrweb": "^1.1.3",
-    "type-fest": "^4.0.0"
-  },
-  "peerDependencies": {
-    "@splunk/otel-web": "^0.19.0"
-  },
-  "devDependencies": {
-    "@babel/plugin-transform-runtime": "^7.22.9",
-    "@babel/preset-env": "^7.22.9",
-    "@babel/runtime-corejs3": "^7.22.6",
-    "@rollup/plugin-commonjs": "^25.0.3",
-    "@rollup/plugin-json": "^6.0.0",
-    "@rollup/plugin-node-resolve": "^15.1.0",
-    "@rollup/plugin-terser": "^0.4.3",
-    "@rollup/plugin-typescript": "^11.1.2",
-    "npm-run-all": "^4.1.5",
-    "protobufjs-cli": "^1.1.1",
-    "rollup": "^3.26.3",
-    "rollup-plugin-istanbul": "^4.0.0",
-    "rollup-plugin-polyfill-node": "^0.12.0"
-  },
-  "bugs": {
-    "url": "https://github.com/signalfx/splunk-otel-js-web/issues"
-  },
-  "homepage": "https://github.com/signalfx/splunk-otel-js-web#readme",
-  "publishConfig": {
-    "access": "public"
-  }
+	"name": "@splunk/otel-web-session-recorder",
+	"version": "0.20.0-beta.2",
+	"description": "Splunk distribution of rrweb for recording session",
+	"repository": "github:signalfx/splunk-otel-js-browser",
+	"scripts": {
+		"compile": "npm-run-all -s compile:*",
+		"compile:browser": "rollup -c",
+		"compile:tsc": "tsc --build tsconfig.cjs.json tsconfig.esm.json"
+	},
+	"author": "Splunk Observability Instrumentals Team <ssg-observability-instrumentals-npm@splunk.com>",
+	"license": "Apache-2.0",
+	"main": "dist/cjs/index.js",
+	"browser": "dist/cjs/index.js",
+	"module": "dist/esm/index.js",
+	"types": "dist/cjs/index.d.ts",
+	"exports": {
+		"types": "./dist/cjs/index.d.ts",
+		"import": "./dist/esm/index.js",
+		"require": "./dist/cjs/index.js"
+	},
+	"files": [
+		"dist/cjs/**/*.js",
+		"dist/cjs/**/*.js.map",
+		"dist/cjs/**/*.d.ts",
+		"dist/esm/**/*.js",
+		"dist/esm/**/*.js.map",
+		"dist/esm/**/*.d.ts"
+	],
+	"dependencies": {
+		"@babel/runtime": "~7.24.7",
+		"@opentelemetry/api": "^1.9.0",
+		"@opentelemetry/core": "^1.25.1",
+		"@opentelemetry/resources": "^1.25.1",
+		"fflate": "^0.8.0",
+		"rrweb": "^1.1.3",
+		"type-fest": "^4.0.0"
+	},
+	"peerDependencies": {
+		"@splunk/otel-web": "^0.20.0-beta.0"
+	},
+	"devDependencies": {
+		"@babel/plugin-transform-runtime": "^7.22.9",
+		"@babel/preset-env": "^7.22.9",
+		"@babel/runtime-corejs3": "^7.22.6",
+		"@rollup/plugin-commonjs": "^25.0.3",
+		"@rollup/plugin-json": "^6.0.0",
+		"@rollup/plugin-node-resolve": "^15.1.0",
+		"@rollup/plugin-terser": "^0.4.3",
+		"@rollup/plugin-typescript": "^11.1.2",
+		"npm-run-all": "^4.1.5",
+		"protobufjs-cli": "^1.1.1",
+		"rollup": "^3.26.3",
+		"rollup-plugin-istanbul": "^4.0.0",
+		"rollup-plugin-polyfill-node": "^0.12.0"
+	},
+	"bugs": {
+		"url": "https://github.com/signalfx/splunk-otel-js-web/issues"
+	},
+	"homepage": "https://github.com/signalfx/splunk-otel-js-web#readme",
+	"publishConfig": {
+		"access": "public"
+	}
 }

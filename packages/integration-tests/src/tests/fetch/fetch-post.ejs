@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>FETCH post</title>
+
+	<%- renderAgent({debug: true}) %>
+</head>
+<body>
+	<h1>FETCH post</h1>
+
+	<div id="result"></div>
+
+	<script>
+		window.testing = true;
+		console.log('fetching');
+		fetch(
+			new Request('/echo', {
+				method: 'POST',
+				body: '{"test":true}',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+			})
+		).then(response => response.text()).then(res => {
+			console.log({res});
+			document.getElementById('result').innerText = res;
+			setTimeout(function () {
+				// Otel plugin waits for 300ms for resource timings to appear. This should schedule
+				// testing done to be after that.
+				window.testing = false;
+			}, 301);
+		});
+	</script>
+	</body>
+</html>

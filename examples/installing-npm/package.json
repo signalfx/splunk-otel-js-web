@@ -1,20 +1,20 @@
 {
-  "dependencies": {
-    "@splunk/otel-web": "^0.10.3"
-  },
-  "scripts": {
-    "start": "node backend.js"
-  },
-  "devDependencies": {
-    "body-parser": "^1.19.2",
-    "clean-webpack-plugin": "^4.0.0",
-    "cors": "^2.8.5",
-    "ejs": "^3.1.6",
-    "express": "^4.17.3",
-    "html-webpack-plugin": "^5.5.0",
-    "webpack": "^5.70.0",
-    "webpack-cli": "^4.9.2",
-    "webpack-dev-server": "^4.7.4",
-    "ws": "^8.5.0"
-  }
+	"dependencies": {
+		"@splunk/otel-web": "^0.10.3"
+	},
+	"scripts": {
+		"start": "node backend.js"
+	},
+	"devDependencies": {
+		"body-parser": "^1.19.2",
+		"clean-webpack-plugin": "^4.0.0",
+		"cors": "^2.8.5",
+		"ejs": "^3.1.6",
+		"express": "^4.17.3",
+		"html-webpack-plugin": "^5.5.0",
+		"webpack": "^5.70.0",
+		"webpack-cli": "^4.9.2",
+		"webpack-dev-server": "^4.7.4",
+		"ws": "^8.5.0"
+	}
 }

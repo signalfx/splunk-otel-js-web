@@ -2,6 +2,42 @@
 
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
+## 0.20.0-beta.2
+
+* `@splunk/otel-web`
+  * fix: add 'http.response.status_code' to documentFetch span ([#928](https://github.com/signalfx/splunk-otel-js-web/pull/928))
+* `root - internal changes`
+  * chore(internal): deps bump ([#890](https://github.com/signalfx/splunk-otel-js-web/pull/890), [#915](https://github.com/signalfx/splunk-otel-js-web/pull/915), [#921](https://github.com/signalfx/splunk-otel-js-web/pull/921), [#911](https://github.com/signalfx/splunk-otel-js-web/pull/911))
+  * chore(internal): update license headers to reflect new year ([#920](https://github.com/signalfx/splunk-otel-js-web/pull/920))
+  * chore(internal): use playwright for e2e tests ([#887](https://github.com/signalfx/splunk-otel-js-web/pull/887))
+
+## 0.20.0-beta.0
+
+* `@splunk/otel-web`
+  * feat: added `persistence` config parameter. 
+    The session state can now be persisted to local storage instead of cookie. ([#900](https://github.com/signalfx/splunk-otel-js-web/pull/900), [#904](https://github.com/signalfx/splunk-otel-js-web/pull/904))
+  * feat: added `_experimental_longtaskNoStartSession` config parameter. 
+    When enabled, `longtasks` spans will not start the new session when previous expired. 
+    They will be simply ignored. ([#899](https://github.com/signalfx/splunk-otel-js-web/pull/899))
+  * internal: session management improvements. Session state contains now `expiresAt` field 
+    and cookie age is set to 4 hours (session duration). Session is only extended/created when span
+    is emitted. The 1-minute periodic interval is removed. Thanks to that the session start time matches the first 
+    span time and the session will not contain blank time at the beginning. ([#899](https://github.com/signalfx/splunk-otel-js-web/pull/899))
+
+## 0.19.3
+
+* `@splunk/otel-web-session-recorder`
+  * Fix incrementing ids [#892](https://github.com/signalfx/splunk-otel-js-web/pull/892)
+
+## 0.19.2
+
+* `@splunk/otel-web`
+  * Send `browser.instance.visibility_state` in spans ([#878](https://github.com/signalfx/splunk-otel-js-web/pull/878))
+  * Send `browser.instance.id` in spans ([#878](https://github.com/signalfx/splunk-otel-js-web/pull/878))
+
+* Internal: Update linting tooling ([#879](https://github.com/signalfx/splunk-otel-js-web/pull/879), [#882](https://github.com/signalfx/splunk-otel-js-web/pull/882), [#883](https://github.com/signalfx/splunk-otel-js-web/pull/883))
+* Internal: Update `todolist` example dependencies ([#884](https://github.com/signalfx/splunk-otel-js-web/pull/884))
+
 ## 0.19.1
 
 * `@splunk/otel-web`

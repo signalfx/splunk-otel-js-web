@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Socket.io</title>
+
+    <script src="https://www.unpkg.com/socket.io-client@4.8.1/dist/socket.io.min.js"></script>
+	<%- renderAgent({instrumentations: {socketio: true}}) %>
+</head>
+<body>
+	<h1>Socket.io</h1>
+	<button id="connectSocket" type="button">Connect to a socket.io server</button>
+	<button id="sendHello" type="button">Send</button>
+	<button id="sendPing" type="button">Ping</button>
+	<script>
+		let socket;
+		connectSocket.addEventListener('click', function () {
+			socket = io("ws://localhost:3002/");
+			socket.on('pong', function () {
+				window.testing = false;
+				console.log('Pong!');
+			});
+		});
+
+		sendHello.addEventListener('click', function() {
+			socket.emit('hello');
+		});
+
+		sendHello.addEventListener('click', function() {
+			window.testing = true;
+			socket.emit('ping');
+		});
+	</script>
+</body>
+</html>
