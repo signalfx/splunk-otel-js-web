@@ -126,14 +126,33 @@ export default class OTLPLogExporter {
 			console.log('otlp request', logsData)
 		}
 
-		const compressed = gzipSync(strToU8(JSON.stringify(logsData)))
+		const compressedData = gzipSync(strToU8(JSON.stringify(logsData)))
+		const endpoint = this.config.beaconUrl
 
-		fetch(this.config.beaconUrl, {
+		if (document.visibilityState === 'hidden') {
+			// Use fetch with keepalive option instead of beacon
+			void sendByFetch(endpoint, headers, compressedData, true)
+		} else {
+			void sendByFetch(endpoint, headers, compressedData)
+		}
+	}
+}
+
+const sendByFetch = async (endpoint: string, headers: HeadersInit, data: Uint8Array, keepalive?: boolean) => {
+	try {
+		const response = await fetch(endpoint, {
 			method: 'POST',
-			body: compressed,
-			headers: headers,
-		}).catch(() => {
-			// TODO remove this once we have ingest with correct cors headers
+			keepalive,
+			body: data,
+			headers,
 		})
+
+		console.debug('📦 dbg: sendByFetch', { ok: response.ok, keepalive })
+
+		if (!response.ok) {
+			console.error('Could not sent data to BE - fetch', data, response)
+		}
+	} catch (error) {
+		console.error('Could not sent data to BE - fetch', error)
 	}
 }
