@@ -17,13 +17,18 @@
  */
 
 import { InstrumentationConfig } from '@opentelemetry/instrumentation'
-import { AttributeNames, DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load'
+import {
+	AttributeNames,
+	DocumentLoadInstrumentation,
+	DocumentLoadInstrumentationConfig,
+	ResourceFetchCustomAttributeFunction,
+} from '@opentelemetry/instrumentation-document-load'
 import * as api from '@opentelemetry/api'
 import { captureTraceParentFromPerformanceEntries } from './servertiming'
-import { PerformanceEntries } from '@opentelemetry/sdk-trace-web'
+import { addSpanNetworkEvents, PerformanceEntries, PerformanceTimingNames as PTN } from '@opentelemetry/sdk-trace-web'
 import { Span } from '@opentelemetry/sdk-trace-base'
 import { isUrlIgnored } from '@opentelemetry/core'
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions'
+import { SemanticAttributes, SEMATTRS_HTTP_URL } from '@opentelemetry/semantic-conventions'
 
 export interface SplunkDocLoadInstrumentationConfig extends InstrumentationConfig {
 	ignoreUrls?: (string | RegExp)[]
@@ -46,8 +51,20 @@ type PerformanceEntriesWithServerTiming = PerformanceEntries & {
 }
 
 type ExposedSuper = {
+	_addCustomAttributesOnResourceSpan(
+		span: Span,
+		resource: PerformanceResourceTiming,
+		applyCustomAttributesOnSpan: ResourceFetchCustomAttributeFunction | undefined,
+	)
 	_endSpan(span: api.Span | undefined, performanceName: string, entries: PerformanceEntries): void
 	_initResourceSpan(resource: PerformanceResourceTiming, parentSpan: api.Span): void
+	_startSpan(
+		spanName: string,
+		performanceName: string,
+		entries: PerformanceEntries,
+		parentSpan?: api.Span,
+	): Span | undefined
+	getConfig(): DocumentLoadInstrumentationConfig
 }
 
 export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentation {
@@ -76,8 +93,8 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 						;(entries as PerformanceEntriesWithServerTiming).serverTiming = navEntries[0].serverTiming
 					}
 
-					if (navEntries[0]?.responseStatus) {
-						span.setAttribute('http.status_code', navEntries[0].responseStatus)
+					if (navEntries[0] && typeof navEntries[0].responseStatus === 'number') {
+						span.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, navEntries[0].responseStatus)
 					}
 				}
 
@@ -92,7 +109,6 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 			return _superEndSpan(span, performanceName, entries)
 		}
 
-		const _superInitResourceSpan: ExposedSuper['_initResourceSpan'] = exposedSuper._initResourceSpan.bind(this)
 		exposedSuper._initResourceSpan = (resource, parentSpan) => {
 			if (
 				excludedInitiatorTypes.indexOf(resource.initiatorType) !== -1 ||
@@ -101,7 +117,23 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 				return
 			}
 
-			_superInitResourceSpan(resource, parentSpan)
+			const span = exposedSuper._startSpan(AttributeNames.RESOURCE_FETCH, PTN.FETCH_START, resource, parentSpan)
+			if (span) {
+				span.setAttribute(SEMATTRS_HTTP_URL, resource.name)
+				if (!exposedSuper.getConfig().ignoreNetworkEvents) {
+					addSpanNetworkEvents(span, resource)
+					if (typeof resource.responseStatus === 'number') {
+						span.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, resource.responseStatus)
+					}
+				}
+
+				exposedSuper._addCustomAttributesOnResourceSpan(
+					span,
+					resource,
+					exposedSuper.getConfig().applyCustomAttributesOnSpan?.resourceFetch,
+				)
+				exposedSuper._endSpan(span, PTN.RESPONSE_END, resource)
+			}
 		}
 	}
 }
