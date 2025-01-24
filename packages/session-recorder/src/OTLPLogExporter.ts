@@ -16,7 +16,7 @@
  *
  */
 
-import { gzipSync, strToU8 } from 'fflate'
+import { gzipSync, gzip, strToU8 } from 'fflate'
 import type { JsonArray, JsonObject, JsonValue } from 'type-fest'
 
 import { IAnyValue, Log } from './types'
@@ -126,14 +126,25 @@ export default class OTLPLogExporter {
 			console.log('otlp request', logsData)
 		}
 
-		const compressedData = gzipSync(strToU8(JSON.stringify(logsData)))
 		const endpoint = this.config.beaconUrl
+		const uint8ArrayData = strToU8(JSON.stringify(logsData))
 
 		if (document.visibilityState === 'hidden') {
+			const compressedData = gzipSync(uint8ArrayData)
+			console.debug('🗜️ dbg: SYNC compress', { endpoint, headers, compressedData })
+
 			// Use fetch with keepalive option instead of beacon
 			void sendByFetch(endpoint, headers, compressedData, true)
 		} else {
-			void sendByFetch(endpoint, headers, compressedData)
+			gzip(uint8ArrayData, (err, compressedData) => {
+				if (err) {
+					console.error('Could not compress data', err)
+					return
+				}
+
+				console.debug('🗜️ dbg: ASYNC compress', { endpoint, headers, compressedData })
+				void sendByFetch(endpoint, headers, compressedData)
+			})
 		}
 	}
 }
