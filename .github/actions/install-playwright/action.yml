@@ -3,6 +3,11 @@ description: 'Install Playwright browser binaries and OS dependencies'
 runs:
     using: 'composite'
     steps:
+        - name: Get Node.js version
+          id: node-version
+          shell: bash
+          run: echo "node=$(node -v)" >> $GITHUB_ENV
+
         - name: Get installed Playwright version
           id: playwright-version
           shell: bash
@@ -20,7 +25,7 @@ runs:
           id: playwright-cache
           with:
               path: ${{ env.PLAYWRIGHT_CACHE_PATH }}
-              key: '${{ runner.os }}-playwright-cache-${{ env.PLAYWRIGHT_VERSION }}-splunk-otel-js-web-artifacts'
+              key: '${{ runner.os }}-node-${{ steps.node-version.outputs.node }}-playwright-cache-${{ env.PLAYWRIGHT_VERSION }}-splunk-otel-js-web-artifacts'
 
         - name: Install Playwright browser binaries
           if: steps.playwright-cache.outputs.cache-hit != 'true'
