@@ -93,7 +93,11 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 						;(entries as PerformanceEntriesWithServerTiming).serverTiming = navEntries[0].serverTiming
 					}
 
-					if (navEntries[0] && typeof navEntries[0].responseStatus === 'number') {
+					if (
+						navEntries[0] &&
+						typeof navEntries[0].responseStatus === 'number' &&
+						navEntries[0].responseStatus > 0
+					) {
 						span.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, navEntries[0].responseStatus)
 					}
 				}
@@ -122,7 +126,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 				span.setAttribute(SEMATTRS_HTTP_URL, resource.name)
 				if (!exposedSuper.getConfig().ignoreNetworkEvents) {
 					addSpanNetworkEvents(span, resource)
-					if (typeof resource.responseStatus === 'number') {
+					if (typeof resource.responseStatus === 'number' && resource.responseStatus > 0) {
 						span.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, resource.responseStatus)
 					}
 				}
