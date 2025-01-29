@@ -38,11 +38,11 @@ describe('Session tracking', () => {
 		// the init tests have possibly already started the setInterval for updateSessionStatus.  Try to accomodate this.
 		const provider = new SplunkWebTracerProvider()
 		const trackingHandle = initSessionTracking(provider, '1234', new InternalEventTarget())
-		const firstSessionId = getRumSessionId()
+		const firstSessionId = getRumSessionId({ useLocalStorage: false })
 		assert.strictEqual(firstSessionId.length, 32)
 		// no marked activity, should keep same state
 		updateSessionStatus({ forceStore: false, useLocalStorage: false })
-		assert.strictEqual(firstSessionId, getRumSessionId())
+		assert.strictEqual(firstSessionId, getRumSessionId({ useLocalStorage: false }))
 		// set cookie to expire in 2 seconds, mark activity, and then updateSessionStatus.
 		// Wait 4 seconds and cookie should still be there (having been renewed)
 		const cookieValue = encodeURIComponent(
@@ -58,7 +58,7 @@ describe('Session tracking', () => {
 		setTimeout(() => {
 			// because of activity, same session should be there
 			assert.ok(document.cookie.includes(SESSION_STORAGE_KEY))
-			assert.strictEqual(firstSessionId, getRumSessionId())
+			assert.strictEqual(firstSessionId, getRumSessionId({ useLocalStorage: false }))
 
 			// Finally, set a fake cookie with startTime 5 hours ago, update status, and find a new cookie with a new session ID
 			// after max age code does its thing
@@ -74,7 +74,7 @@ describe('Session tracking', () => {
 
 			updateSessionStatus({ forceStore: true, useLocalStorage: false })
 			assert.ok(document.cookie.includes(SESSION_STORAGE_KEY))
-			const newSessionId = getRumSessionId()
+			const newSessionId = getRumSessionId({ useLocalStorage: false })
 			assert.strictEqual(newSessionId.length, 32)
 			assert.ok(firstSessionId !== newSessionId)
 
@@ -90,7 +90,7 @@ describe('Session tracking', () => {
 
 		function subject(allSpansAreActivity = false) {
 			const provider = new SplunkWebTracerProvider()
-			const firstSessionId = getRumSessionId()
+			const firstSessionId = getRumSessionId({ useLocalStorage: false })
 			initSessionTracking(provider, firstSessionId, new InternalEventTarget(), undefined, allSpansAreActivity)
 
 			provider.getTracer('tracer').startSpan('any-span').end()
@@ -138,9 +138,9 @@ describe('Session tracking - localStorage', () => {
 			useLocalStorage,
 		)
 
-		const firstSessionId = getRumSessionId()
+		const firstSessionId = getRumSessionId({ useLocalStorage })
 		updateSessionStatus({ forceStore: true, useLocalStorage })
-		assert.strictEqual(firstSessionId, getRumSessionId())
+		assert.strictEqual(firstSessionId, getRumSessionId({ useLocalStorage }))
 
 		trackingHandle.deinit()
 	})

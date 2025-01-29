@@ -80,10 +80,18 @@ test.describe('docload', () => {
 		expect(scriptFetchSpans[0].traceId).toBe(docLoadSpans[0].traceId)
 		expect(scriptFetchSpans[0].parentId).toBe(docLoadSpans[0].id)
 		expect(scriptFetchSpans[0].tags['component']).toBe('document-load')
+		if (browserName !== 'webkit') {
+			// Webkit does not support https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/responseStatus
+			expect(parseInt(scriptFetchSpans[0].tags['http.status_code'] as string)).toBe(200)
+		}
 
 		expect(brokenImageFetchSpans.length).toBeGreaterThanOrEqual(1)
 		expect(brokenImageFetchSpans[0].traceId).toBe(docLoadSpans[0].traceId)
 		expect(brokenImageFetchSpans[0].parentId).toBe(docLoadSpans[0].id)
+		if (browserName !== 'webkit') {
+			// Webkit does not support https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/responseStatus
+			expect(parseInt(brokenImageFetchSpans[0].tags['http.status_code'] as string)).toBe(404)
+		}
 
 		expect(docFetchSpans[0].tags['component']).toBe('document-load')
 		expect(docLoadSpans[0].tags['location.href']).toBe('http://localhost:3000/docload/docload.ejs')
@@ -98,7 +106,7 @@ test.describe('docload', () => {
 		expect(docFetchSpans[0].tags['link.spanId']).toBeDefined()
 		if (browserName !== 'webkit') {
 			// Webkit does not support https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/responseStatus
-			expect(parseInt(docFetchSpans[0].tags['http.response.status_code'] as string)).toBe(200)
+			expect(parseInt(docFetchSpans[0].tags['http.status_code'] as string)).toBe(200)
 		}
 
 		expect(parseInt(scriptFetchSpans[0].tags['http.response_content_length'] as string)).toBeGreaterThan(0)
