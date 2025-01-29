@@ -19,7 +19,7 @@
 import { gzipSync, gzip, strToU8 } from 'fflate'
 import type { JsonArray, JsonObject, JsonValue } from 'type-fest'
 
-import { IAnyValue, Log } from './types'
+import { IAnyValue, Log, WindowWithSessionReplay, SessionReplay } from './types'
 import { VERSION } from './version.js'
 
 interface OTLPLogExporterConfig {
@@ -84,6 +84,14 @@ function convertToAnyValue(value: JsonValue): IAnyValue {
 	return {}
 }
 
+const getSessionReplay = (): SessionReplay | null => {
+	if ((window as WindowWithSessionReplay).SessionReplay) {
+		return (window as WindowWithSessionReplay).SessionReplay
+	}
+
+	return null
+}
+
 export default class OTLPLogExporter {
 	config: OTLPLogExporterConfig
 
@@ -136,20 +144,47 @@ export default class OTLPLogExporter {
 			// Use fetch with keepalive option instead of beacon
 			void sendByFetch(endpoint, headers, compressedData, true)
 		} else {
-			gzip(uint8ArrayData, (err, compressedData) => {
-				if (err) {
-					console.error('Could not compress data', err)
-					return
-				}
-
-				console.debug('🗜️ dbg: ASYNC compress', { endpoint, headers, compressedData })
-				void sendByFetch(endpoint, headers, compressedData)
-			})
+			compressAsync(uint8ArrayData)
+				.then((compressedData) => {
+					console.debug('🗜️ dbg: ASYNC compress', { endpoint, headers, compressedData })
+					void sendByFetch(endpoint, headers, compressedData)
+				})
+				.catch((error) => {
+					console.error('Could not compress data', error)
+				})
 		}
 	}
 }
 
-const sendByFetch = async (endpoint: string, headers: HeadersInit, data: Uint8Array, keepalive?: boolean) => {
+const compressAsync = async (data: Uint8Array): Promise<Uint8Array | Blob> => {
+	if (!getSessionReplay()) {
+		console.warn('SessionReplay module undefined, fallback to gzip.')
+		return compressGzipAsync(data)
+	}
+
+	const isCompressionSupported = await getSessionReplay().isCompressionSupported()
+	if (!isCompressionSupported) {
+		console.warn('Compression is not supported, fallback to gzip.')
+		return compressGzipAsync(data)
+	}
+
+	const dataBlob = new Blob([data])
+	return getSessionReplay().compressData(dataBlob.stream(), 'gzip')
+}
+
+const compressGzipAsync = async (data: Uint8Array): Promise<Uint8Array> =>
+	new Promise<Uint8Array>((resolve, reject) => {
+		gzip(data, (err, compressedData) => {
+			if (err) {
+				reject(err)
+				return
+			}
+
+			resolve(compressedData)
+		})
+	})
+
+const sendByFetch = async (endpoint: string, headers: HeadersInit, data: BodyInit, keepalive?: boolean) => {
 	try {
 		const response = await fetch(endpoint, {
 			method: 'POST',
