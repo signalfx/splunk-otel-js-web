@@ -52,11 +52,14 @@ export class SessionBasedSampler implements Sampler {
 
 	protected _upperBound: number
 
-	constructor({
-		ratio = 1,
-		sampled = new AlwaysOnSampler(),
-		notSampled = new AlwaysOffSampler(),
-	}: SessionBasedSamplerConfig = {}) {
+	constructor(
+		{
+			ratio = 1,
+			sampled = new AlwaysOnSampler(),
+			notSampled = new AlwaysOffSampler(),
+		}: SessionBasedSamplerConfig = {},
+		private readonly useLocalStorageForSessionMetadata = false,
+	) {
 		this._ratio = this._normalize(ratio)
 		this._upperBound = Math.floor(this._ratio * 0xffffffff)
 
@@ -75,7 +78,7 @@ export class SessionBasedSampler implements Sampler {
 		// Implementation based on @opentelemetry/core TraceIdRatioBasedSampler
 		// but replacing deciding based on traceId with sessionId
 		// (not extended from due to private methods)
-		const currentSession = getRumSessionId()
+		const currentSession = getRumSessionId({ useLocalStorage: this.useLocalStorageForSessionMetadata })
 		if (this._currentSession !== currentSession) {
 			this._currentSessionSampled = this._accumulate(currentSession) < this._upperBound
 			this._currentSession = currentSession
