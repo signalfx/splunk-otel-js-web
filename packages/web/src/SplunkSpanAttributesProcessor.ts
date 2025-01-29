@@ -23,7 +23,10 @@ import { getRumSessionId } from './session'
 export class SplunkSpanAttributesProcessor implements SpanProcessor {
 	private readonly _globalAttributes: Attributes
 
-	constructor(globalAttributes: Attributes) {
+	constructor(
+		globalAttributes: Attributes,
+		private useLocalStorageForSessionMetadata: boolean,
+	) {
 		this._globalAttributes = globalAttributes ?? {}
 	}
 
@@ -42,7 +45,10 @@ export class SplunkSpanAttributesProcessor implements SpanProcessor {
 	onStart(span: Span): void {
 		span.setAttribute('location.href', location.href)
 		span.setAttributes(this._globalAttributes)
-		span.setAttribute('splunk.rumSessionId', getRumSessionId())
+		span.setAttribute(
+			'splunk.rumSessionId',
+			getRumSessionId({ useLocalStorage: this.useLocalStorageForSessionMetadata }),
+		)
 		span.setAttribute('browser.instance.visibility_state', document.visibilityState)
 	}
 
