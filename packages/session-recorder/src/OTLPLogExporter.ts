@@ -22,6 +22,7 @@ import type { JsonArray, JsonObject, JsonValue } from 'type-fest'
 import { IAnyValue, Log } from './types'
 import { VERSION } from './version.js'
 import { getSessionReplayGlobal } from './session-replay/utils'
+import { apiFetch } from './api/api-fetch'
 
 interface OTLPLogExporterConfig {
 	beaconUrl: string
@@ -180,11 +181,16 @@ const compressGzipAsync = async (data: Uint8Array): Promise<Uint8Array> =>
 
 const sendByFetch = async (endpoint: string, headers: HeadersInit, data: BodyInit, keepalive?: boolean) => {
 	try {
-		const response = await fetch(endpoint, {
+		const { response } = await apiFetch(endpoint, {
 			method: 'POST',
+			headers,
 			keepalive,
 			body: data,
-			headers,
+			abortPreviousRequest: false,
+			doNotConvert: true,
+			doNotRetryOnDocumentHidden: true,
+			retryCount: 100,
+			retryOnHttpErrorStatusCodes: true,
 		})
 
 		console.debug('📦 dbg: sendByFetch', { ok: response.ok, keepalive })
