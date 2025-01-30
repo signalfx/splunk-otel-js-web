@@ -60,5 +60,8 @@
 	"homepage": "https://github.com/signalfx/splunk-otel-js-web#readme",
 	"publishConfig": {
 		"access": "public"
+	},
+	"optionalDependencies": {
+		"@rollup/rollup-linux-x64-gnu": "^4.18.0"
 	}
 }
