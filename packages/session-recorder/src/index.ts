@@ -26,6 +26,8 @@ import type { Resource } from '@opentelemetry/resources'
 import type { SplunkOtelWebType } from '@splunk/otel-web'
 
 import { loadRecorderBrowserScript } from './session-replay/load'
+import { getSessionReplayPlainGlobal } from './session-replay/utils'
+import { SessionReplayPlain as SessionReplayPlainType } from './session-replay/types'
 
 interface BasicTracerProvider extends TracerProvider {
 	readonly resource: Resource
@@ -64,7 +66,7 @@ let paused = false
 let eventCounter = 1
 let logCounter = 1
 
-let srp: any
+let sessionReplay: SessionReplayPlainType | undefined
 
 const SplunkRumRecorder = {
 	get inited(): boolean {
@@ -142,22 +144,28 @@ const SplunkRumRecorder = {
 
 		lastKnownSession = SplunkRum.getSessionId()
 
+		const SessionReplayPlain = getSessionReplayPlainGlobal()
+		if (!SessionReplayPlain) {
+			console.error('SessionReplayPlain is not available')
+			return
+		}
+
 		if (SplunkRum.isNewSessionId()) {
 			console.log('SplunkRum.isNewSessionId()', 'clearing')
-			;(window as any).SessionReplayPlain.clear()
+			SessionReplayPlain.clear()
 		}
 
 		sessionStartTime = Date.now()
 
-		srp = new (window as any).SessionReplayPlain({
+		sessionReplay = new SessionReplayPlain({
 			features: {
-				backgroundServiceSrc: 'https://domain.com/web/latest/background-service.html',
+				backgroundServiceSrc:
+					'https://session-replay-artifacts.ci.smartlook.cloud/web/latest/background-service.html',
 				cacheAssets: false,
 				iframes: false,
 				imageBitmap: false,
 				packAssets: false,
 			},
-			isDebug: true,
 			logLevel: 'debug',
 			maskAllInputs: false,
 			maskAllText: false,
@@ -187,10 +195,10 @@ const SplunkRumRecorder = {
 					// reset counters
 					eventCounter = 1
 					logCounter = 1
-					srp?.stop()
+					sessionReplay?.stop()
 					console.log('onSegment - Clearing assets')
-					;(window as any).SessionReplayPlain.clear()
-					srp?.start()
+					SessionReplayPlain.clear()
+					void sessionReplay?.start()
 				}
 
 				if (segment.metadata.startUnixMs > sessionStartTime + MAX_RECORDING_LENGTH) {
@@ -236,7 +244,7 @@ const SplunkRumRecorder = {
 		})
 
 		console.log('Starting SRP')
-		srp.start()
+		void sessionReplay.start()
 		inited = true
 	},
 
@@ -248,7 +256,7 @@ const SplunkRumRecorder = {
 		const oldPaused = paused
 		paused = false
 		if (!oldPaused) {
-			srp?.start()
+			void sessionReplay?.start()
 			tracer.startSpan('record resume').end()
 		}
 	},
@@ -258,7 +266,7 @@ const SplunkRumRecorder = {
 		}
 
 		if (paused) {
-			srp.stop()
+			sessionReplay.stop()
 			tracer.startSpan('record stop').end()
 		}
 
@@ -269,7 +277,7 @@ const SplunkRumRecorder = {
 			return
 		}
 
-		srp?.stop()
+		sessionReplay?.stop()
 		inited = false
 	},
 }

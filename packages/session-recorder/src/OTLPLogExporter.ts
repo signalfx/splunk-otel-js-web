@@ -19,8 +19,9 @@
 import { gzipSync, gzip, strToU8 } from 'fflate'
 import type { JsonArray, JsonObject, JsonValue } from 'type-fest'
 
-import { IAnyValue, Log, WindowWithSessionReplay, SessionReplay } from './types'
+import { IAnyValue, Log } from './types'
 import { VERSION } from './version.js'
+import { getSessionReplayGlobal } from './session-replay/utils'
 
 interface OTLPLogExporterConfig {
 	beaconUrl: string
@@ -82,14 +83,6 @@ function convertToAnyValue(value: JsonValue): IAnyValue {
 
 	// never
 	return {}
-}
-
-const getSessionReplay = (): SessionReplay | null => {
-	if ((window as WindowWithSessionReplay).SessionReplay) {
-		return (window as WindowWithSessionReplay).SessionReplay
-	}
-
-	return null
 }
 
 export default class OTLPLogExporter {
@@ -157,19 +150,20 @@ export default class OTLPLogExporter {
 }
 
 const compressAsync = async (data: Uint8Array): Promise<Uint8Array | Blob> => {
-	if (!getSessionReplay()) {
+	const SessionReplay = getSessionReplayGlobal()
+	if (!SessionReplay) {
 		console.warn('SessionReplay module undefined, fallback to gzip.')
 		return compressGzipAsync(data)
 	}
 
-	const isCompressionSupported = await getSessionReplay().isCompressionSupported()
+	const isCompressionSupported = await SessionReplay.isCompressionSupported()
 	if (!isCompressionSupported) {
 		console.warn('Compression is not supported, fallback to gzip.')
 		return compressGzipAsync(data)
 	}
 
 	const dataBlob = new Blob([data])
-	return getSessionReplay().compressData(dataBlob.stream(), 'gzip')
+	return SessionReplay.compressData(dataBlob.stream(), 'gzip')
 }
 
 const compressGzipAsync = async (data: Uint8Array): Promise<Uint8Array> =>

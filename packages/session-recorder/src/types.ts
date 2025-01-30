@@ -77,12 +77,3 @@ export interface IKeyValueList {
 	/** KeyValueList values */
 	values?: IKeyValue[] | null
 }
-
-export interface SessionReplay {
-	compressData: (dataToCompress: ReadableStream<Uint8Array>, format: 'deflate' | 'gzip') => Promise<Blob>
-	isCompressionSupported: () => Promise<boolean>
-}
-
-export interface WindowWithSessionReplay {
-	SessionReplay?: SessionReplay
-}
