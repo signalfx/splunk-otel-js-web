@@ -22,9 +22,12 @@ import { SplunkSpanAttributesProcessor } from '../src/SplunkSpanAttributesProces
 describe('SplunkSpanAttributesProcessor', () => {
 	describe('setting global attribute', () => {
 		it('should set attributes via constructor', () => {
-			const processor = new SplunkSpanAttributesProcessor({
-				key1: 'value1',
-			})
+			const processor = new SplunkSpanAttributesProcessor(
+				{
+					key1: 'value1',
+				},
+				false,
+			)
 
 			expect(processor.getGlobalAttributes()).to.deep.eq({
 				key1: 'value1',
@@ -32,10 +35,13 @@ describe('SplunkSpanAttributesProcessor', () => {
 		})
 
 		it('should patch attributes via .setGlobalAttributes()', () => {
-			const processor = new SplunkSpanAttributesProcessor({
-				key1: 'value1',
-				key2: 'value2',
-			})
+			const processor = new SplunkSpanAttributesProcessor(
+				{
+					key1: 'value1',
+					key2: 'value2',
+				},
+				false,
+			)
 
 			processor.setGlobalAttributes({
 				key2: 'value2-updaged',

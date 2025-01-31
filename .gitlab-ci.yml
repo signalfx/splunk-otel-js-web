@@ -63,7 +63,7 @@ build_artifacts:
     script:
         - if [ ! -d "artifacts" ]; then mkdir artifacts; fi
         - npm run compile
-        - npm pack --pack-destination artifacts -ws
+        - npm pack --pack-destination artifacts --workspace packages/session-recorder --workspace packages/web
 
         # complete artifacts & checksums
         - cp packages/*/dist/artifacts/* artifacts/

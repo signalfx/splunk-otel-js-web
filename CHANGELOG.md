@@ -2,6 +2,33 @@
 
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
+## 0.20.0-beta.4
+
+* `@splunk/otel-web`
+  * feat: add `http.status_code` to all resources spans 
+    * Resource spans now contain status code. The status code is set always when browser reports it. 
+      Browser does not report status code for [cross-origin resources](https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/responseStatus#value) that do not have [`crossorigin` attribute set](https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/crossorigin). 
+      in such cases, status code is omitted. ([#936](https://github.com/signalfx/splunk-otel-js-web/pull/936))
+  * fix: do not extend session from discarded session replay spans
+    * Session is not extended when span is discarded by session replay. Please see detailed info in [PR description](https://github.com/signalfx/splunk-otel-js-web/pull/939).
+    * There is a possibly breaking change as the `Splunk.getSessionId()` can return `undefined` when previous session
+      expired and there are no new spans. The API already was typed as returning `string | undefined` hence not 
+      considered as a breaking change. See PR for explanation. ([#939](https://github.com/signalfx/splunk-otel-js-web/pull/939))
+
+## 0.20.0-beta.3
+
+* `@splunk/otel-web`
+  * fix: rename `http.response.status_code` to `http.status_code` in documentFetch span ([#934](https://github.com/signalfx/splunk-otel-js-web/pull/934))
+
+## 0.20.0-beta.2
+
+* `@splunk/otel-web`
+  * fix: add `http.response.status_code` to documentFetch span ([#928](https://github.com/signalfx/splunk-otel-js-web/pull/928))
+* `root - internal changes`
+  * chore(internal): deps bump ([#890](https://github.com/signalfx/splunk-otel-js-web/pull/890), [#915](https://github.com/signalfx/splunk-otel-js-web/pull/915), [#921](https://github.com/signalfx/splunk-otel-js-web/pull/921), [#911](https://github.com/signalfx/splunk-otel-js-web/pull/911))
+  * chore(internal): update license headers to reflect new year ([#920](https://github.com/signalfx/splunk-otel-js-web/pull/920))
+  * chore(internal): use playwright for e2e tests ([#887](https://github.com/signalfx/splunk-otel-js-web/pull/887))
+
 ## 0.20.0-beta.0
 
 * `@splunk/otel-web`

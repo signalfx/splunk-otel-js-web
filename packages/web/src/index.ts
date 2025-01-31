@@ -395,13 +395,16 @@ export const SplunkRum: SplunkOtelWebType = {
 			return null
 		}).filter((a): a is Exclude<typeof a, null> => Boolean(a))
 
-		this.attributesProcessor = new SplunkSpanAttributesProcessor({
-			...(deploymentEnvironment
-				? { 'environment': deploymentEnvironment, 'deployment.environment': deploymentEnvironment }
-				: {}),
-			...(version ? { 'app.version': version } : {}),
-			...(processedOptions.globalAttributes || {}),
-		})
+		this.attributesProcessor = new SplunkSpanAttributesProcessor(
+			{
+				...(deploymentEnvironment
+					? { 'environment': deploymentEnvironment, 'deployment.environment': deploymentEnvironment }
+					: {}),
+				...(version ? { 'app.version': version } : {}),
+				...(processedOptions.globalAttributes || {}),
+			},
+			this._processedOptions.persistence === 'localStorage',
+		)
 		provider.addSpanProcessor(this.attributesProcessor)
 
 		if (processedOptions.beaconEndpoint) {
@@ -520,7 +523,11 @@ export const SplunkRum: SplunkOtelWebType = {
 	},
 
 	getSessionId() {
-		return getRumSessionId()
+		if (!inited) {
+			return undefined
+		}
+
+		return getRumSessionId({ useLocalStorage: this._processedOptions.persistence === 'localStorage' })
 	},
 	isNewSessionId() {
 		return getIsNewSession()

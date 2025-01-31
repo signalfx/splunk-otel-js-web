@@ -45,7 +45,6 @@ import { context } from '@opentelemetry/api'
     with setting cookies, checking for inactivity, etc.
 */
 
-let rumSessionId: SessionId | undefined
 let recentActivity = false
 let cookieDomain: string
 let eventTarget: InternalEventTarget | undefined
@@ -98,8 +97,7 @@ export function updateSessionStatus({
 		}
 	}
 
-	rumSessionId = sessionState.id
-	eventTarget?.emit('session-changed', { sessionId: rumSessionId })
+	eventTarget?.emit('session-changed', { sessionId: sessionState.id })
 
 	if (recentActivity || forceActivity) {
 		sessionState.expiresAt = Date.now() + SESSION_INACTIVITY_TIMEOUT_MS
@@ -162,9 +160,7 @@ export function initSessionTracking(
 	if (hasNativeSessionId()) {
 		// short-circuit and bail out - don't create cookie, watch for inactivity, or anything
 		return {
-			deinit: () => {
-				rumSessionId = undefined
-			},
+			deinit: () => {},
 		}
 	}
 
@@ -172,7 +168,6 @@ export function initSessionTracking(
 		cookieDomain = domain
 	}
 
-	rumSessionId = instanceId
 	recentActivity = true // document loaded implies activity
 	eventTarget = newEventTarget
 
@@ -184,18 +179,17 @@ export function initSessionTracking(
 	return {
 		deinit: () => {
 			ACTIVITY_EVENTS.forEach((type) => document.removeEventListener(type, markActivity))
-			rumSessionId = undefined
 			eventTarget = undefined
 		},
 	}
 }
 
-export function getRumSessionId(): SessionId | undefined {
+export function getRumSessionId({ useLocalStorage }: { useLocalStorage: boolean }): SessionId | undefined {
 	if (hasNativeSessionId()) {
 		return window['SplunkRumNative'].getNativeSessionId()
 	}
 
-	return rumSessionId
+	return getCurrentSessionState({ useLocalStorage, forceStoreRead: true })?.id
 }
 
 export function getIsNewSession(): boolean {
