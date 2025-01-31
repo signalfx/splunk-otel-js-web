@@ -17,7 +17,6 @@
  */
 
 import { ProxyTracerProvider, TracerProvider, trace, Tracer } from '@opentelemetry/api'
-import { record } from 'rrweb'
 import OTLPLogExporter from './OTLPLogExporter'
 import { BatchLogProcessor, convert } from './BatchLogProcessor'
 import { VERSION } from './version'
@@ -26,25 +25,18 @@ import { getGlobal } from './utils'
 import type { Resource } from '@opentelemetry/resources'
 import type { SplunkOtelWebType } from '@splunk/otel-web'
 
+import { loadRecorderBrowserScript } from './session-replay/load'
+import { getSessionReplayPlainGlobal } from './session-replay/utils'
+import { SessionReplayPlain as SessionReplayPlainType } from './session-replay/types'
+import { SESSION_REPLAY_BACKGROUND_SERVICE_URL } from './session-replay/constants'
+
 interface BasicTracerProvider extends TracerProvider {
 	readonly resource: Resource
 }
 
-type RRWebOptions = Parameters<typeof record>[0]
-
-export type SplunkRumRecorderConfig = RRWebOptions & {
-	/**
-	 * @deprecated Use RUM token in rumAccessToken
-	 */
-	apiToken?: string
-
+export type SplunkRumRecorderConfig = {
 	/** Destination for the captured data */
 	beaconEndpoint?: string
-
-	/** Destination for the captured data
-	 * @deprecated Use beaconEndpoint
-	 */
-	beaconUrl?: string
 
 	/** Debug mode */
 	debug?: boolean
@@ -59,33 +51,6 @@ export type SplunkRumRecorderConfig = RRWebOptions & {
 	 * with only RUM scope as it's visible to every user of your app
 	 **/
 	rumAccessToken?: string
-
-	/**
-	 * RUM authorization token for data sending. Please make sure this is a token
-	 * with only RUM scope as it's visible to every user of your app
-	 * @deprecated Renamed to `rumAccessToken`
-	 **/
-	rumAuth?: string
-}
-
-function migrateConfigOption(
-	config: SplunkRumRecorderConfig,
-	from: keyof SplunkRumRecorderConfig,
-	to: keyof SplunkRumRecorderConfig,
-) {
-	if (from in config && !(to in config)) {
-		// @ts-expect-error There's no way to type this right
-		config[to] = config[from]
-	}
-}
-
-/**
- * Update configuration based on configuration option renames
- */
-function migrateConfig(config: SplunkRumRecorderConfig) {
-	migrateConfigOption(config, 'beaconUrl', 'beaconEndpoint')
-	migrateConfigOption(config, 'rumAuth', 'rumAccessToken')
-	return config
 }
 
 // Hard limit of 4 hours of maximum recording during one session
@@ -94,7 +59,7 @@ const MAX_CHUNK_SIZE = 950 * 1024 // ~950KB
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()
 
-let inited: (() => void) | false | undefined = false
+let inited: true | false | undefined = false
 let tracer: Tracer
 let lastKnownSession: string
 let sessionStartTime = 0
@@ -102,12 +67,14 @@ let paused = false
 let eventCounter = 1
 let logCounter = 1
 
+let sessionReplay: SessionReplayPlainType | undefined
+
 const SplunkRumRecorder = {
 	get inited(): boolean {
 		return Boolean(inited)
 	},
 
-	init(config: SplunkRumRecorderConfig): void {
+	async init(config: SplunkRumRecorderConfig): Promise<void> {
 		if (inited) {
 			return
 		}
@@ -117,6 +84,8 @@ const SplunkRumRecorder = {
 			return
 		}
 
+		await loadRecorderBrowserScript()
+
 		const SplunkRum = getGlobal<SplunkOtelWebType>('splunk.rum')
 
 		let tracerProvider: BasicTracerProvider | ProxyTracerProvider = trace.getTracerProvider() as BasicTracerProvider
@@ -125,15 +94,13 @@ const SplunkRumRecorder = {
 		}
 
 		if (!SplunkRum || !SplunkRum.resource) {
-			console.error('Splunk OTEL Web must be inited before session recorder.')
+			console.error('Splunk OTEL Web must be initiated before session recorder.')
 			return
 		}
 
 		const resource = SplunkRum.resource
 
-		migrateConfig(config)
-
-		const { apiToken, beaconEndpoint, debug, realm, rumAccessToken, ...rrwebConf } = config
+		const { beaconEndpoint, debug, realm, rumAccessToken } = config
 		tracer = trace.getTracer('splunk.rr-web', VERSION)
 		const span = tracer.startSpan('record init')
 
@@ -160,11 +127,6 @@ const SplunkRumRecorder = {
 			return
 		}
 
-		const headers = {}
-		if (apiToken) {
-			headers['X-SF-Token'] = apiToken
-		}
-
 		if (rumAccessToken) {
 			exportUrl += `?auth=${rumAccessToken}`
 		}
@@ -172,7 +134,6 @@ const SplunkRumRecorder = {
 		const exporter = new OTLPLogExporter({
 			beaconUrl: exportUrl,
 			debug,
-			headers,
 			getResourceAttributes() {
 				return {
 					...resource.attributes,
@@ -180,16 +141,39 @@ const SplunkRumRecorder = {
 				}
 			},
 		})
-		const processor = new BatchLogProcessor(exporter, {})
+		const processor = new BatchLogProcessor(exporter)
 
 		lastKnownSession = SplunkRum.getSessionId()
+
+		const SessionReplayPlain = getSessionReplayPlainGlobal()
+		if (!SessionReplayPlain) {
+			console.error('SessionReplayPlain is not available')
+			return
+		}
+
+		if (SplunkRum.isNewSessionId()) {
+			console.log('SplunkRum.isNewSessionId()', 'clearing')
+			SessionReplayPlain.clear()
+		}
+
 		sessionStartTime = Date.now()
 
-		inited = record({
-			maskAllInputs: true,
-			maskTextSelector: '*',
-			...rrwebConf,
-			emit(event) {
+		sessionReplay = new SessionReplayPlain({
+			features: {
+				backgroundServiceSrc: SESSION_REPLAY_BACKGROUND_SERVICE_URL,
+				cacheAssets: false,
+				iframes: false,
+				imageBitmap: false,
+				packAssets: false,
+			},
+			logLevel: 'debug',
+			maskAllInputs: false,
+			maskAllText: false,
+			maxExportIntervalMs: 5000,
+			onSegment: (segment) => {
+				console.log('Have segment', segment)
+				console.debug('🔥 dbg: onSegment begin', segment)
+
 				if (paused) {
 					return
 				}
@@ -216,10 +200,13 @@ const SplunkRumRecorder = {
 					// reset counters
 					eventCounter = 1
 					logCounter = 1
-					record.takeFullSnapshot()
+					sessionReplay?.stop()
+					console.log('onSegment - Clearing assets')
+					SessionReplayPlain.clear()
+					void sessionReplay?.start()
 				}
 
-				if (event.timestamp > sessionStartTime + MAX_RECORDING_LENGTH) {
+				if (segment.metadata.startUnixMs > sessionStartTime + MAX_RECORDING_LENGTH) {
 					return
 				}
 
@@ -229,16 +216,23 @@ const SplunkRumRecorder = {
 					}
 				}
 
-				const time = event.timestamp
+				const time = Math.floor(segment.metadata.startUnixMs)
 				const eventI = eventCounter
+
 				eventCounter += 1
 
-				// Research found that stringifying the rr-web event here is
-				// more efficient for otlp + gzip exporting
-
-				// Blob is unicode aware for size calculation (eg emoji.length = 1 vs blob.size() = 4)
-				const body = encoder.encode(JSON.stringify(event))
+				const body = encoder.encode(JSON.stringify({ data: segment.data, metadata: segment.metadata }))
 				const totalC = Math.ceil(body.byteLength / MAX_CHUNK_SIZE)
+
+				console.log('TotalC:', totalC)
+
+				// TODO: Remove debug segments
+				const storedSegments = localStorage.getItem(`segments-${SplunkRum.getSessionId()}`)
+					? JSON.parse(localStorage.getItem(`segments-${SplunkRum.getSessionId()}`))
+					: []
+				storedSegments.push(segment)
+				localStorage.setItem(`segments-${SplunkRum.getSessionId()}`, JSON.stringify(storedSegments))
+
 				for (let i = 0; i < totalC; i++) {
 					const start = i * MAX_CHUNK_SIZE
 					const end = (i + 1) * MAX_CHUNK_SIZE
@@ -248,16 +242,23 @@ const SplunkRumRecorder = {
 						'rr-web.chunk': i + 1,
 						'rr-web.total-chunks': totalC,
 					})
+
 					logCounter += 1
+
 					if (debug) {
 						console.log(log)
 					}
 
-					processor.onLog(log)
+					processor.onEmit(log)
 				}
 			},
 		})
+
+		console.log('Starting SRP')
+		void sessionReplay.start()
+		inited = true
 	},
+
 	resume(): void {
 		if (!inited) {
 			return
@@ -266,7 +267,7 @@ const SplunkRumRecorder = {
 		const oldPaused = paused
 		paused = false
 		if (!oldPaused) {
-			record.takeFullSnapshot()
+			void sessionReplay?.start()
 			tracer.startSpan('record resume').end()
 		}
 	},
@@ -276,6 +277,7 @@ const SplunkRumRecorder = {
 		}
 
 		if (paused) {
+			sessionReplay.stop()
 			tracer.startSpan('record stop').end()
 		}
 
@@ -286,7 +288,7 @@ const SplunkRumRecorder = {
 			return
 		}
 
-		inited()
+		sessionReplay?.stop()
 		inited = false
 	},
 }
