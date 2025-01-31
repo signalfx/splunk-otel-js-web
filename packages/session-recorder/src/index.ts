@@ -159,8 +159,7 @@ const SplunkRumRecorder = {
 
 		sessionReplay = new SessionReplayPlain({
 			features: {
-				backgroundServiceSrc:
-					'https://session-replay-artifacts.ci.smartlook.cloud/web/latest/background-service.html',
+				backgroundServiceSrc: 'https://domain.com/web/latest/background-service.html',
 				cacheAssets: false,
 				iframes: false,
 				imageBitmap: false,
