@@ -15,18 +15,23 @@
  * limitations under the License.
  *
  */
+import { SplunkZipkinExporter, ZipkinSpan } from '../../exporters/zipkin'
 
-import 'mocha'
+export const buildInMemorySplunkExporter = () => {
+	const spans: ZipkinSpan[] = []
+	const exporter = new SplunkZipkinExporter({
+		url: '',
+		beaconSender: null,
+		xhrSender: (_, data) => {
+			if (typeof data === 'string') {
+				const newSpans = JSON.parse(data) as ZipkinSpan[]
+				spans.splice(spans.length, 0, ...newSpans)
+			}
+		},
+	})
 
-// Manually maintain this list, as old webpack require-based mechanism isn't working under rollup
-import '../src/tests/init.test'
-import '../src/tests/session.test'
-import '../src/tests/websockets.test'
-import '../src/tests/SessionBasedSampler.test'
-import '../src/tests/SplunkExporter.test'
-import '../src/tests/SplunkContextManager.test'
-import '../src/tests/SplunkSpanAttributesProcessor.test'
-import '../src/tests/SplunkOtelWeb.test'
-import '../src/tests/synthetics.test'
-import './socketio.test'
-import '../src/stacktrace.test'
+	return {
+		exporter,
+		getFinishedSpans: () => spans,
+	}
+}

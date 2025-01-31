@@ -17,9 +17,9 @@
  */
 
 import { SpanAttributes } from '@opentelemetry/api'
-import { expect } from 'chai'
-import SplunkRum from '../src'
-import { updateSessionStatus } from '../src/session/session'
+import SplunkRum from '../index'
+import { updateSessionStatus } from '../session'
+import { describe, expect, it, afterEach } from 'vitest'
 
 describe('SplunkOtelWeb', () => {
 	afterEach(() => {

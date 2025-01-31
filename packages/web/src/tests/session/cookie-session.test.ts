@@ -16,17 +16,12 @@
  *
  */
 
-import 'mocha'
+import { findCookieValue } from '../../session/cookie-session'
 
-// Manually maintain this list, as old webpack require-based mechanism isn't working under rollup
-import '../src/tests/init.test'
-import '../src/tests/session.test'
-import '../src/tests/websockets.test'
-import '../src/tests/SessionBasedSampler.test'
-import '../src/tests/SplunkExporter.test'
-import '../src/tests/SplunkContextManager.test'
-import '../src/tests/SplunkSpanAttributesProcessor.test'
-import '../src/tests/SplunkOtelWeb.test'
-import '../src/tests/synthetics.test'
-import './socketio.test'
-import '../src/stacktrace.test'
+import { describe, expect, it } from 'vitest'
+
+describe('cookie-session', () => {
+	it('findCookieValue() - should not find unset cookie', () => {
+		expect(findCookieValue('nosuchCookie', { forceStoreRead: true })).toBeUndefined()
+	})
+})

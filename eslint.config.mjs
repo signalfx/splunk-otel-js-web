@@ -231,6 +231,19 @@ export default [
 		},
 	},
 	{
+		files: ['**/*.test.ts'],
+		languageOptions: {
+			globals: {
+				...globals.browser,
+			},
+			parser: tseslint.parser,
+			parserOptions: {
+				ecmaVersion: 2020,
+				project: 'tsconfig.eslint.json',
+			},
+		},
+	},
+	{
 		ignores: [
 			'**/dist/',
 			'**/node_modules/',
@@ -240,6 +253,8 @@ export default [
 			'.vscode/',
 			'examples/installing-npm',
 			'examples/next-ssr-example',
+			'vitest-report',
+			'packages/web/test',
 		],
 	},
 ]
