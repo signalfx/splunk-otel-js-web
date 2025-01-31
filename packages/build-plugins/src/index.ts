@@ -18,8 +18,8 @@
 import { createUnplugin, UnpluginFactory } from 'unplugin'
 
 import type { WebpackPluginInstance } from 'webpack'
-import { computeSourceMapId, getCodeSnippet, JS_FILE_REGEX, PLUGIN_NAME } from './utils'
-import { applySourceMapsUpload } from './webpack'
+import { PLUGIN_NAME } from './utils'
+import { applySourceMapsInject, applySourceMapsUpload } from './webpack'
 
 export interface OllyWebPluginOptions {
 	/** Plugin configuration for source map ID injection and source map file uploads */
@@ -44,25 +44,7 @@ export interface OllyWebPluginOptions {
 const unpluginFactory: UnpluginFactory<OllyWebPluginOptions | undefined> = (options) => ({
 	name: PLUGIN_NAME,
 	webpack(compiler) {
-		const { webpack } = compiler
-		const { BannerPlugin } = webpack
-		compiler.hooks.thisCompilation.tap(PLUGIN_NAME, () => {
-			const bannerPlugin = new BannerPlugin({
-				banner: ({ chunk }) => {
-					if (!chunk.hash) {
-						return ''
-					}
-
-					const sourceMapId = computeSourceMapId(chunk.hash)
-					return getCodeSnippet(sourceMapId)
-				},
-				entryOnly: false,
-				footer: true,
-				include: JS_FILE_REGEX,
-				raw: true,
-			})
-			bannerPlugin.apply(compiler)
-		})
+		applySourceMapsInject(compiler)
 
 		if (!options.sourceMaps.disableUpload) {
 			applySourceMapsUpload(compiler, options)

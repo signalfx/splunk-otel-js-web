@@ -16,12 +16,83 @@
  *
  */
 
-import { computeSourceMapIdFromFile, getSourceMapUploadUrl, JS_FILE_REGEX, PLUGIN_NAME } from '../utils'
+import {
+	computeSourceMapId,
+	computeSourceMapIdFromFile,
+	getCodeSnippet,
+	getInsertIndexForCodeSnippet,
+	getSourceMapUploadUrl,
+	JS_FILE_REGEX,
+	PLUGIN_NAME,
+} from '../utils'
 import { join } from 'path'
 import { uploadFile } from '../httpUtils'
 import { AxiosError } from 'axios'
 import type { Compiler } from 'webpack'
 import { OllyWebPluginOptions } from '../index'
+
+/**
+ * The part of the webpack plugin responsible for injecting the sourceMapId code snippet into the JS bundles.
+ */
+export function applySourceMapsInject(compiler: Compiler) {
+	const { webpack } = compiler
+	const { Compilation } = webpack
+	const { ReplaceSource } = webpack.sources as any
+
+	/*
+	 * The below implementation is based on webpack's native BannerPlugin implementation.
+	 *
+	 * BannerPlugin is not used here because:
+	 *
+	 *  - if the "//# sourceMappingURL=..." comment is present, we want to inject before that
+	 *    (not just concat to end of file)
+	 *
+	 *  - we want to hash the source map contents to compute a consistent sourceMapId,
+	 *    so this plugin must run after the PROCESS_ASSETS_STAGE_DEV_TOOLING stage of processAssets
+	 *    (DEV_TOOLING is the stage when the source map asset should be added)
+	 *
+	 */
+	const cache = new WeakMap()
+	compiler.hooks.compilation.tap(PLUGIN_NAME, (compilation) => {
+		compilation.hooks.processAssets.tap(
+			{
+				name: PLUGIN_NAME,
+				stage: Compilation.PROCESS_ASSETS_STAGE_OPTIMIZE_INLINE, // the next stage after DEV_TOOLING
+			},
+			() => {
+				for (const chunk of compilation.chunks) {
+					for (const file of chunk.files) {
+						if (!file.match(JS_FILE_REGEX)) {
+							continue
+						}
+
+						const sourceMap = compilation.getAsset(file).info.related?.sourceMap
+						if (typeof sourceMap !== 'string') {
+							continue
+						}
+
+						const sourceMapContent = compilation.getAsset(sourceMap).source.source()
+						const sourceMapId = computeSourceMapId(sourceMapContent)
+						const codeSnippet = getCodeSnippet(sourceMapId)
+
+						compilation.updateAsset(file, (old) => {
+							const cached = cache.get(old)
+							if (!cached || cached.codeSnippet !== codeSnippet) {
+								const index = getInsertIndexForCodeSnippet(old.source())
+								const source = new ReplaceSource(old)
+								source.insert(index, '\n' + codeSnippet)
+								cache.set(old, { source, codeSnippet })
+								return source
+							}
+
+							return cached.source
+						})
+					}
+				}
+			},
+		)
+	})
+}
 
 /**
  * The part of the webpack plugin responsible for uploading source maps from the output directory.

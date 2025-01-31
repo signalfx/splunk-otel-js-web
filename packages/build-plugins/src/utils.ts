@@ -31,8 +31,8 @@ function shaToSourceMapId(sha: string) {
  *
  * @param content the source map file contents, or an already-computed hash of the source map (or its source files)
  */
-export function computeSourceMapId(content: string): string {
-	const sha256 = createHash('sha256').update(content, 'utf-8').digest('hex')
+export function computeSourceMapId(content: string | Buffer<ArrayBufferLike>): string {
+	const sha256 = createHash('sha256').update(content).digest('hex')
 	return shaToSourceMapId(sha256)
 }
 
@@ -52,6 +52,20 @@ const SNIPPET_TEMPLATE = `;if (typeof window === 'object') { window.sourceMapIds
 
 export function getCodeSnippet(sourceMapId: string): string {
 	return SNIPPET_TEMPLATE.replace('__SOURCE_MAP_ID_PLACEHOLDER__', sourceMapId)
+}
+
+export function getInsertIndexForCodeSnippet(content: string | Buffer<ArrayBufferLike>): number {
+	const SOURCE_MAPPING_URL_COMMENT_START = '//# sourceMappingURL='
+	const contentString = typeof content === 'string' ? content : content.toString()
+	const sourceMappingUrlIndex = contentString.search(new RegExp('\n' + SOURCE_MAPPING_URL_COMMENT_START + '.*\n?$'))
+
+	if (sourceMappingUrlIndex !== -1) {
+		// insert the code snippet above the //# sourceMappingURL comment
+		return sourceMappingUrlIndex
+	} else {
+		// concat the code snippet to the end
+		return content.length
+	}
 }
 
 export function getSourceMapUploadUrl(realm: string, idPathParam: string): string {

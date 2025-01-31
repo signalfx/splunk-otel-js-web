@@ -16,7 +16,13 @@
  *
  */
 import { expect } from 'chai'
-import { computeSourceMapId, computeSourceMapIdFromFile, getCodeSnippet, getSourceMapUploadUrl } from '../src/utils'
+import {
+	computeSourceMapId,
+	computeSourceMapIdFromFile,
+	getCodeSnippet,
+	getInsertIndexForCodeSnippet,
+	getSourceMapUploadUrl,
+} from '../src/utils'
 
 describe('getCodeSnippet', function () {
 	it('inserts the source map id into the snippet', function () {
@@ -58,5 +64,33 @@ describe('getSourceMapUploadUrl', function () {
 	it('uses the proper API based on the realm and id', function () {
 		const url = getSourceMapUploadUrl('us0', 'd77ec5d8-4fb5-fbc8-1897-54b54e939bcd')
 		expect(url).eq('https://api.us0.signalfx.com/v1/sourcemaps/id/d77ec5d8-4fb5-fbc8-1897-54b54e939bcd')
+	})
+})
+
+describe('getInsertIndexForCodeSnippet', function () {
+	it('returns the end of the string when there is no source map comment present', function () {
+		const content = 'line1\nline2\nline3'
+		expect(getInsertIndexForCodeSnippet(content)).eq(content.length)
+	})
+	it('returns the index of the source map comment when it is present', function () {
+		const content = 'line1\n//# sourceMappingURL=bundle.js.map'
+		expect(getInsertIndexForCodeSnippet(content)).eq(5)
+	})
+	it('returns the index of the source map comment when it occurs at the end of the string, but the string ends in a newline', function () {
+		const content = 'line1\n//# sourceMappingURL=bundle.js.map\n'
+		expect(getInsertIndexForCodeSnippet(content)).eq(5)
+	})
+	it('returns the index of the last source map comment, when there are multiple comments present', function () {
+		const content = 'line1\n//# sourceMappingURL=bundle.js.map\nline2\n//# sourceMappingURL=bundle.js.map'
+		expect(getInsertIndexForCodeSnippet(content)).eq(46)
+		expect(getInsertIndexForCodeSnippet(content)).lt(content.length)
+	})
+	it('returns the end of the string, if there is a lone source map comment in the middle of the content', function () {
+		const content = 'line1\n//# sourceMappingURL=bundle.js.map\nline2'
+		expect(getInsertIndexForCodeSnippet(content)).eq(content.length)
+	})
+	it('handles buffer types', function () {
+		const content = Buffer.from('line1\n//# sourceMappingURL=bundle.js.map\n')
+		expect(getInsertIndexForCodeSnippet(content)).eq(5)
 	})
 })
