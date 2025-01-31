@@ -28,6 +28,7 @@ import type { SplunkOtelWebType } from '@splunk/otel-web'
 import { loadRecorderBrowserScript } from './session-replay/load'
 import { getSessionReplayPlainGlobal } from './session-replay/utils'
 import { SessionReplayPlain as SessionReplayPlainType } from './session-replay/types'
+import { SESSION_REPLAY_BACKGROUND_SERVICE_URL } from './session-replay/constants'
 
 interface BasicTracerProvider extends TracerProvider {
 	readonly resource: Resource
@@ -159,7 +160,7 @@ const SplunkRumRecorder = {
 
 		sessionReplay = new SessionReplayPlain({
 			features: {
-				backgroundServiceSrc: 'https://domain.com/web/latest/background-service.html',
+				backgroundServiceSrc: SESSION_REPLAY_BACKGROUND_SERVICE_URL,
 				cacheAssets: false,
 				iframes: false,
 				imageBitmap: false,

@@ -16,11 +16,12 @@
  *
  */
 import { isRequiredAPISupported } from './required-api-check.js'
+import { SESSION_REPLAY_BROWSER_SCRIPT_URL, SESSION_REPLAY_BROWSER_LEGACY_SCRIPT_URL } from './constants'
 
 export const loadRecorderBrowserScript = async () => {
 	const recorderScriptUrl: string = isRequiredAPISupported()
-		? 'https://domain.com/web/latest/session-replay.browser.min.js'
-		: 'https://domain.com/web/latest/session-replay.browser.legacy.min.js'
+		? SESSION_REPLAY_BROWSER_SCRIPT_URL
+		: SESSION_REPLAY_BROWSER_LEGACY_SCRIPT_URL
 
 	// const currentScript = document.currentScript as HTMLScriptElement | null
 	// if (currentScript) {
