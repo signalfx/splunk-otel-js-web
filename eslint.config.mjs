@@ -239,7 +239,13 @@ export default [
 			'.idea',
 			'.vscode/',
 			'examples/installing-npm',
-			'examples/next-ssr-example',
+			'**/.next/',
 		],
+	},
+	{
+		files: ['examples/**'],
+		rules: {
+			'headers/header-format': 'off',
+		},
 	},
 ]
