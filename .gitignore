@@ -17,3 +17,5 @@ tests_output/
 
 # contains secrets
 .env
+
+.next
