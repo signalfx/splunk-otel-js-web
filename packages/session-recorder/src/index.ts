@@ -140,6 +140,7 @@ const SplunkRumRecorder = {
 					'splunk.rumSessionId': SplunkRum.getSessionId(),
 				}
 			},
+			usePersistentExportQueue: true,
 		})
 		const processor = new BatchLogProcessor(exporter)
 

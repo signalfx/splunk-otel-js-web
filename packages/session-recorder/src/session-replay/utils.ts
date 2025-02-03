@@ -16,6 +16,7 @@
  *
  */
 import { WindowWithSessionReplay, SessionReplayPlainClass, SessionReplayClass } from './types'
+import { gzip } from 'fflate'
 
 export const getSessionReplayGlobal = (): SessionReplayClass | null => {
 	if ((window as WindowWithSessionReplay).SessionReplay) {
@@ -32,3 +33,32 @@ export const getSessionReplayPlainGlobal = (): SessionReplayPlainClass | null =>
 
 	return null
 }
+
+export const compressAsync = async (data: Uint8Array): Promise<Uint8Array | Blob> => {
+	const SessionReplay = getSessionReplayGlobal()
+	if (!SessionReplay) {
+		console.warn('SessionReplay module undefined, fallback to gzip.')
+		return compressGzipAsync(data)
+	}
+
+	const isCompressionSupported = await SessionReplay.isCompressionSupported()
+	if (!isCompressionSupported) {
+		console.warn('Compression is not supported, fallback to gzip.')
+		return compressGzipAsync(data)
+	}
+
+	const dataBlob = new Blob([data])
+	return SessionReplay.compressData(dataBlob.stream(), 'gzip')
+}
+
+const compressGzipAsync = async (data: Uint8Array): Promise<Uint8Array> =>
+	new Promise<Uint8Array>((resolve, reject) => {
+		gzip(data, (err, compressedData) => {
+			if (err) {
+				reject(err)
+				return
+			}
+
+			resolve(compressedData)
+		})
+	})

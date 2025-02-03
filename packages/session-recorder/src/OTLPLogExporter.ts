@@ -16,19 +16,21 @@
  *
  */
 
-import { gzipSync, gzip, strToU8 } from 'fflate'
+import { gzipSync, strToU8 } from 'fflate'
 import type { JsonArray, JsonObject, JsonValue } from 'type-fest'
 
 import { IAnyValue, Log } from './types'
 import { VERSION } from './version.js'
-import { getSessionReplayGlobal } from './session-replay/utils'
+import { compressAsync } from './session-replay/utils'
 import { apiFetch } from './api/api-fetch'
+import { addLogToQueue, removeQueuedLog, QueuedLog, getQueuedLogs, removeQueuedLogs } from './export-log-queue'
 
 interface OTLPLogExporterConfig {
 	beaconUrl: string
 	debug?: boolean
 	getResourceAttributes: () => JsonObject
 	headers?: Record<string, string>
+	usePersistentExportQueue: boolean
 }
 
 const defaultHeaders = {
@@ -91,6 +93,7 @@ export default class OTLPLogExporter {
 
 	constructor(config: OTLPLogExporterConfig) {
 		this.config = config
+		this.exportQueuedLogs()
 	}
 
 	constructLogData(logs: Log[]): JsonObject {
@@ -131,57 +134,72 @@ export default class OTLPLogExporter {
 		const endpoint = this.config.beaconUrl
 		const uint8ArrayData = strToU8(JSON.stringify(logsData))
 
+		const requestId = window.crypto.randomUUID()
+		const queuedLog = this.config.usePersistentExportQueue
+			? { data: uint8ArrayData, timestamp: Date.now(), url: endpoint, headers, requestId }
+			: null
+
+		if (queuedLog) {
+			console.log('Adding log to queue', { ...queuedLog, data: '[truncated]' })
+			addLogToQueue(queuedLog)
+		}
+
+		const onFetchSuccess = () => {
+			if (!queuedLog) {
+				return
+			}
+
+			console.log('Removing queued log', { ...queuedLog, data: '[truncated]' })
+			removeQueuedLog(queuedLog)
+		}
+
 		if (document.visibilityState === 'hidden') {
 			const compressedData = gzipSync(uint8ArrayData)
 			console.debug('🗜️ dbg: SYNC compress', { endpoint, headers, compressedData })
 
 			// Use fetch with keepalive option instead of beacon
-			void sendByFetch(endpoint, headers, compressedData, true)
+			void sendByFetch(endpoint, headers, compressedData, onFetchSuccess, true)
 		} else {
 			compressAsync(uint8ArrayData)
 				.then((compressedData) => {
 					console.debug('🗜️ dbg: ASYNC compress', { endpoint, headers, compressedData })
-					void sendByFetch(endpoint, headers, compressedData)
+					void sendByFetch(endpoint, headers, compressedData, onFetchSuccess)
 				})
 				.catch((error) => {
 					console.error('Could not compress data', error)
 				})
 		}
 	}
+
+	exportQueuedLogs(): void {
+		let logs: QueuedLog[] = []
+		try {
+			logs = getQueuedLogs() ?? []
+		} finally {
+			removeQueuedLogs()
+		}
+
+		for (const log of logs) {
+			console.log('Found queued log', { ...log, data: '[truncated]' })
+
+			// TODO: Skip log if it's too old?
+
+			void sendByFetch(log.url, log.headers, log.data, () => {
+				console.log('exportQueuedLogs - success', { ...log, data: '[truncated]' })
+			})
+		}
+	}
 }
 
-const compressAsync = async (data: Uint8Array): Promise<Uint8Array | Blob> => {
-	const SessionReplay = getSessionReplayGlobal()
-	if (!SessionReplay) {
-		console.warn('SessionReplay module undefined, fallback to gzip.')
-		return compressGzipAsync(data)
-	}
-
-	const isCompressionSupported = await SessionReplay.isCompressionSupported()
-	if (!isCompressionSupported) {
-		console.warn('Compression is not supported, fallback to gzip.')
-		return compressGzipAsync(data)
-	}
-
-	const dataBlob = new Blob([data])
-	return SessionReplay.compressData(dataBlob.stream(), 'gzip')
-}
-
-const compressGzipAsync = async (data: Uint8Array): Promise<Uint8Array> =>
-	new Promise<Uint8Array>((resolve, reject) => {
-		gzip(data, (err, compressedData) => {
-			if (err) {
-				reject(err)
-				return
-			}
-
-			resolve(compressedData)
-		})
-	})
-
-const sendByFetch = async (endpoint: string, headers: HeadersInit, data: BodyInit, keepalive?: boolean) => {
+const sendByFetch = async (
+	endpoint: string,
+	headers: HeadersInit,
+	data: BodyInit,
+	onSuccess: () => void,
+	keepalive?: boolean,
+) => {
 	try {
-		const { response } = await apiFetch(endpoint, {
+		await apiFetch(endpoint, {
 			method: 'POST',
 			headers,
 			keepalive,
@@ -193,11 +211,8 @@ const sendByFetch = async (endpoint: string, headers: HeadersInit, data: BodyIni
 			retryOnHttpErrorStatusCodes: true,
 		})
 
-		console.debug('📦 dbg: sendByFetch', { ok: response.ok, keepalive })
-
-		if (!response.ok) {
-			console.error('Could not sent data to BE - fetch', data, response)
-		}
+		console.debug('📦 dbg: sendByFetch', { keepalive })
+		onSuccess()
 	} catch (error) {
 		console.error('Could not sent data to BE - fetch', error)
 	}
