@@ -184,9 +184,15 @@ export default class OTLPLogExporter {
 
 			// TODO: Skip log if it's too old?
 
-			void sendByFetch(log.url, log.headers, log.data, () => {
-				console.log('exportQueuedLogs - success', { ...log, data: '[truncated]' })
-			})
+			compressAsync(log.data)
+				.then((compressedData) => {
+					void sendByFetch(log.url, log.headers, compressedData, () => {
+						console.log('exportQueuedLogs - success', { ...log, data: '[truncated]' })
+					})
+				})
+				.catch((error) => {
+					console.error('Could not compress data', error)
+				})
 		}
 	}
 }
