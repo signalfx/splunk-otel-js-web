@@ -6,14 +6,14 @@ runs:
         - name: Get Node.js version
           id: node-version
           shell: bash
-          run: echo "node=$(node -v)" >> $GITHUB_ENV
+          run: echo "node_version=$(node -v)" >> $GITHUB_ENV
 
         - name: Get installed Playwright version
           id: playwright-version
           shell: bash
           working-directory: ./packages/integration-tests
           run: |
-              PLAYWRIGHT_VERSION=$(npm ls --json "@playwright/test" | jq --raw-output '.dependencies["@playwright/test"].version')
+              PLAYWRIGHT_VERSION=$(npm ls --json "@playwright/test" | jq --raw-output '.dependencies["@splunk/otel-js-web-integration-tests"].dependencies["@playwright/test"].version')
               echo "PLAYWRIGHT_VERSION=$PLAYWRIGHT_VERSION" >> $GITHUB_ENV
 
         - name: Set up path for Playwright cache
@@ -25,7 +25,7 @@ runs:
           id: playwright-cache
           with:
               path: ${{ env.PLAYWRIGHT_CACHE_PATH }}
-              key: '${{ runner.os }}-node-${{ steps.node-version.outputs.node }}-playwright-cache-${{ env.PLAYWRIGHT_VERSION }}-splunk-otel-js-web-artifacts'
+              key: '${{ runner.os }}-node-${{ env.node_version }}-playwright-cache-${{ env.PLAYWRIGHT_VERSION }}-splunk-otel-js-web-artifacts'
 
         - name: Install Playwright browser binaries
           if: steps.playwright-cache.outputs.cache-hit != 'true'
