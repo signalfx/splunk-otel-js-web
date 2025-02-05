@@ -30,6 +30,7 @@ interface OTLPLogExporterConfig {
 	debug?: boolean
 	getResourceAttributes: () => JsonObject
 	headers?: Record<string, string>
+	sessionId: string
 	usePersistentExportQueue: boolean
 }
 
@@ -135,8 +136,15 @@ export default class OTLPLogExporter {
 		const uint8ArrayData = strToU8(JSON.stringify(logsData))
 
 		const requestId = window.crypto.randomUUID()
-		const queuedLog = this.config.usePersistentExportQueue
-			? { data: uint8ArrayData, timestamp: Date.now(), url: endpoint, headers, requestId }
+		const queuedLog: QueuedLog | null = this.config.usePersistentExportQueue
+			? {
+					data: uint8ArrayData,
+					timestamp: Date.now(),
+					url: endpoint,
+					sessionId: this.config.sessionId,
+					headers,
+					requestId,
+				}
 			: null
 
 		if (queuedLog) {
@@ -182,7 +190,15 @@ export default class OTLPLogExporter {
 		for (const log of logs) {
 			console.log('Found queued log', { ...log, data: '[truncated]' })
 
-			// TODO: Skip log if it's too old?
+			// Only export logs that belong to the current session
+			if (log.sessionId !== this.config.sessionId) {
+				console.debug(
+					'exportQueuedLogs - session mismatch',
+					{ ...log, data: '[truncated]' },
+					{ sessionId: this.config.sessionId },
+				)
+				continue
+			}
 
 			compressAsync(log.data)
 				.then((compressedData) => {

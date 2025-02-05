@@ -21,6 +21,7 @@ export interface QueuedLog {
 	data: Uint8Array
 	headers: Record<string, string>
 	requestId: string
+	sessionId: string
 	timestamp: number
 	url: string
 }
