@@ -33,6 +33,7 @@
 		"@opentelemetry/core": "^1.25.1",
 		"@opentelemetry/resources": "^1.25.1",
 		"fflate": "^0.8.0",
+		"nanoid": "^5.0.9",
 		"type-fest": "^4.0.0"
 	},
 	"peerDependencies": {

@@ -17,6 +17,7 @@
  */
 
 import { gzipSync, strToU8 } from 'fflate'
+import { nanoid } from 'nanoid'
 import type { JsonArray, JsonObject, JsonValue } from 'type-fest'
 
 import { IAnyValue, Log } from './types'
@@ -135,7 +136,7 @@ export default class OTLPLogExporter {
 		const endpoint = this.config.beaconUrl
 		const uint8ArrayData = strToU8(JSON.stringify(logsData))
 
-		const requestId = window.crypto.randomUUID()
+		const requestId = nanoid()
 		const queuedLog: QueuedLog | null = this.config.usePersistentExportQueue
 			? {
 					data: uint8ArrayData,
