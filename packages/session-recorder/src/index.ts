@@ -228,13 +228,6 @@ const SplunkRumRecorder = {
 
 				console.log('TotalC:', totalC)
 
-				// TODO: Remove debug segments
-				const storedSegments = localStorage.getItem(`segments-${SplunkRum.getSessionId()}`)
-					? JSON.parse(localStorage.getItem(`segments-${SplunkRum.getSessionId()}`))
-					: []
-				storedSegments.push(segment)
-				localStorage.setItem(`segments-${SplunkRum.getSessionId()}`, JSON.stringify(storedSegments))
-
 				for (let i = 0; i < totalC; i++) {
 					const start = i * MAX_CHUNK_SIZE
 					const end = (i + 1) * MAX_CHUNK_SIZE
