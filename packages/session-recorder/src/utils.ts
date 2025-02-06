@@ -26,6 +26,7 @@ const GLOBAL_OPENTELEMETRY_API_KEY = Symbol.for('opentelemetry.js.api.1')
  * eg. sharing session id manager with session recorder
  */
 export function getGlobal<Type>(type: string): Type | undefined {
+	// @ts-expect-error FIXME: Symbol is not defined in globalThis
 	const globalSplunkRumVersion = globalThis[GLOBAL_OPENTELEMETRY_API_KEY]?.['splunk.rum.version']
 	if (!globalSplunkRumVersion || globalSplunkRumVersion !== VERSION) {
 		console.warn(
@@ -34,5 +35,6 @@ export function getGlobal<Type>(type: string): Type | undefined {
 		return undefined // undefined for eslint
 	}
 
+	// @ts-expect-error FIXME: Symbol is not defined in globalThis
 	return globalThis[GLOBAL_OPENTELEMETRY_API_KEY]?.[type]
 }
