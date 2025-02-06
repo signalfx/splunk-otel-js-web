@@ -19,19 +19,13 @@ import { WindowWithSessionReplay, SessionReplayPlainClass, SessionReplayClass } 
 import { gzip } from 'fflate'
 
 export const getSessionReplayGlobal = (): SessionReplayClass | null => {
-	if ((window as WindowWithSessionReplay).SessionReplay) {
-		return (window as WindowWithSessionReplay).SessionReplay
-	}
-
-	return null
+	const windowObject: WindowWithSessionReplay = window
+	return windowObject.SessionReplay ?? null
 }
 
 export const getSessionReplayPlainGlobal = (): SessionReplayPlainClass | null => {
-	if ((window as WindowWithSessionReplay).SessionReplayPlain) {
-		return (window as WindowWithSessionReplay).SessionReplayPlain
-	}
-
-	return null
+	const windowObject: WindowWithSessionReplay = window
+	return windowObject.SessionReplayPlain ?? null
 }
 
 export const compressAsync = async (data: Uint8Array): Promise<Uint8Array | Blob> => {

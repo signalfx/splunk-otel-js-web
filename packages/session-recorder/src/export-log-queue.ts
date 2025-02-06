@@ -68,7 +68,7 @@ const setQueuedLogs = (queuedLogs: QueuedLog[]): void => {
 }
 
 export const removeQueuedLog = (logToRemove: QueuedLog) => {
-	const queuedLogs = getQueuedLogs()
+	const queuedLogs = getQueuedLogs() ?? []
 	const updatedLogs = queuedLogs.filter((log) => log.requestId !== logToRemove.requestId)
 	setQueuedLogs(updatedLogs)
 }

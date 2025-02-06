@@ -61,7 +61,7 @@ const decoder = new TextDecoder()
 
 let inited: true | false | undefined = false
 let tracer: Tracer
-let lastKnownSession: string
+let lastKnownSession: string | undefined
 let sessionStartTime = 0
 let paused = false
 let eventCounter = 1
@@ -137,10 +137,10 @@ const SplunkRumRecorder = {
 			getResourceAttributes() {
 				return {
 					...resource.attributes,
-					'splunk.rumSessionId': SplunkRum.getSessionId(),
+					'splunk.rumSessionId': SplunkRum.getSessionId() ?? '',
 				}
 			},
-			sessionId: SplunkRum.getSessionId(),
+			sessionId: SplunkRum.getSessionId() ?? '',
 			usePersistentExportQueue: true,
 		})
 		const processor = new BatchLogProcessor(exporter)
@@ -272,7 +272,7 @@ const SplunkRumRecorder = {
 		}
 
 		if (paused) {
-			sessionReplay.stop()
+			sessionReplay?.stop()
 			tracer.startSpan('record stop').end()
 		}
 

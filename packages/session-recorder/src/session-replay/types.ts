@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-export interface WindowWithSessionReplay {
+export interface WindowWithSessionReplay extends Window {
 	SessionReplay?: SessionReplayClass
 	SessionReplayPlain?: SessionReplayPlainClass
 }

@@ -104,15 +104,16 @@ export default class OTLPLogExporter {
 				{
 					resource: {
 						attributes: convertToAnyValue(this.config.getResourceAttributes() || {}).kvlistValue
-							.values as JsonArray,
+							?.values as JsonArray,
 					},
 					scopeLogs: [
 						{
 							scope: { name: 'splunk.rr-web', version: VERSION },
 							logRecords: logs.map((log) => ({
+								// @ts-expect-error FIXME: `body` is not defined
 								body: convertToAnyValue(log.body) as JsonObject,
 								timeUnixNano: log.timeUnixNano,
-								attributes: convertToAnyValue(log.attributes || {}).kvlistValue.values as JsonArray,
+								attributes: convertToAnyValue(log.attributes || {}).kvlistValue?.values as JsonArray,
 							})),
 						},
 					],

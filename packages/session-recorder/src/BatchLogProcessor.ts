@@ -26,7 +26,7 @@ export interface BatchLogProcessorConfig {
 }
 
 export class BatchLogProcessor {
-	private readonly exportTimeoutMillis: number
+	private readonly exportTimeoutMillis = 30000
 
 	private finishedLogs: Log[] = []
 
