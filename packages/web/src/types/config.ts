@@ -162,6 +162,9 @@ export interface SplunkOtelWebConfig {
 	 */
 	tracer?: WebTracerConfig
 
+	/** Allows tracking of unidentified users. Defaults to false. */
+	userTracking?: boolean
+
 	/**
 	 * Sets a value for the 'app.version' attribute
 	 */

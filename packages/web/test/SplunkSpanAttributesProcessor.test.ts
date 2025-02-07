@@ -27,6 +27,7 @@ describe('SplunkSpanAttributesProcessor', () => {
 					key1: 'value1',
 				},
 				false,
+				() => false,
 			)
 
 			expect(processor.getGlobalAttributes()).to.deep.eq({
@@ -41,6 +42,7 @@ describe('SplunkSpanAttributesProcessor', () => {
 					key2: 'value2',
 				},
 				false,
+				() => false,
 			)
 
 			processor.setGlobalAttributes({

@@ -66,6 +66,7 @@ import { registerGlobal, unregisterGlobal } from './global-utils'
 import { BrowserInstanceService } from './services/BrowserInstanceService'
 import { SessionId } from './session'
 import { SplunkOtelWebConfig, SplunkOtelWebExporterOptions, SplunkOtelWebOptionsInstrumentations } from './types'
+import { forgetAnonymousId, getOrCreateAnonymousId } from './user-tracking'
 
 export { SplunkExporterConfig } from './exporters/common'
 export { SplunkZipkinExporter } from './exporters/zipkin'
@@ -207,6 +208,8 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 
 	error: (...args: Array<any>) => void
 
+	getAnonymousId: () => string | undefined
+
 	/**
 	 * This method provides access to computed, final value of global attributes, which are applied to all created spans.
 	 */
@@ -226,9 +229,12 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	readonly resource?: Resource
 
 	setGlobalAttributes: (attributes: Attributes) => void
+
+	setUserTracking: (enabled: boolean) => void
 }
 
 let inited = false
+let userTracking = false
 let _deregisterInstrumentations: () => void | undefined
 let _deinitSessionTracking: () => void | undefined
 let _errorInstrumentation: SplunkErrorInstrumentation | undefined
@@ -258,6 +264,7 @@ export const SplunkRum: SplunkOtelWebType = {
 	},
 
 	init: function (options) {
+		userTracking = options.userTracking
 		// "env" based config still a bad idea for web
 		if (!('OTEL_TRACES_EXPORTER' in _globalThis)) {
 			_globalThis.OTEL_TRACES_EXPORTER = 'none'
@@ -401,6 +408,7 @@ export const SplunkRum: SplunkOtelWebType = {
 				...(processedOptions.globalAttributes || {}),
 			},
 			this._processedOptions.persistence === 'localStorage',
+			() => userTracking,
 		)
 		provider.addSpanProcessor(this.attributesProcessor)
 
@@ -471,6 +479,7 @@ export const SplunkRum: SplunkOtelWebType = {
 		unregisterGlobal('splunk.rum')
 		unregisterGlobal('splunk.rum.version')
 
+		forgetAnonymousId()
 		inited = false
 	},
 
@@ -517,6 +526,16 @@ export const SplunkRum: SplunkOtelWebType = {
 
 	_experimental_removeEventListener(name, callback): void {
 		return this.removeEventListener(name, callback)
+	},
+
+	setUserTracking(enabled: boolean) {
+		userTracking = enabled
+	},
+
+	getAnonymousId() {
+		if (userTracking) {
+			return getOrCreateAnonymousId({ useLocalStorage: this._processedOptions.persistence === 'localStorage' })
+		}
 	},
 
 	getSessionId() {
