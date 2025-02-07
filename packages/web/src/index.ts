@@ -66,6 +66,7 @@ import { registerGlobal, unregisterGlobal } from './global-utils'
 import { BrowserInstanceService } from './services/BrowserInstanceService'
 import { SessionId } from './session'
 import { SplunkOtelWebConfig, SplunkOtelWebExporterOptions, SplunkOtelWebOptionsInstrumentations } from './types'
+import { isBot } from './utils/is-bot'
 
 export { SplunkExporterConfig } from './exporters/common'
 export { SplunkZipkinExporter } from './exporters/zipkin'
@@ -88,6 +89,8 @@ interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
 }
 
 const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
+	allowBots: false,
+	disableAutomationFrameworks: false,
 	applicationName: 'unknown-browser-app',
 	beaconEndpoint: undefined,
 	bufferTimeout: 4000, //millis, tradeoff between batching and loss of spans by not sending before page close
@@ -258,6 +261,16 @@ export const SplunkRum: SplunkOtelWebType = {
 	},
 
 	init: function (options) {
+		if (!options.allowBots && isBot(navigator.userAgent)) {
+			console.warn('SplunkRum wont be initialized. Bots are not allowed.')
+			return
+		}
+
+		if (options.disableAutomationFrameworks && navigator.webdriver) {
+			console.warn('SplunkRum wont be initialized. Automation frameworks are not allowed.')
+			return
+		}
+
 		// "env" based config still a bad idea for web
 		if (!('OTEL_TRACES_EXPORTER' in _globalThis)) {
 			_globalThis.OTEL_TRACES_EXPORTER = 'none'
