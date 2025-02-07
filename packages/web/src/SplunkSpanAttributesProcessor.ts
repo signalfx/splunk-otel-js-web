@@ -19,6 +19,7 @@
 import { Attributes } from '@opentelemetry/api'
 import { Span, SpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { getRumSessionId } from './session'
+import { getOrCreateAnonymousId } from './anonymous/index.js'
 
 export class SplunkSpanAttributesProcessor implements SpanProcessor {
 	private readonly _globalAttributes: Attributes
@@ -26,6 +27,7 @@ export class SplunkSpanAttributesProcessor implements SpanProcessor {
 	constructor(
 		globalAttributes: Attributes,
 		private useLocalStorageForSessionMetadata: boolean,
+		private userTracking: boolean,
 	) {
 		this._globalAttributes = globalAttributes ?? {}
 	}
@@ -49,6 +51,10 @@ export class SplunkSpanAttributesProcessor implements SpanProcessor {
 			'splunk.rumSessionId',
 			getRumSessionId({ useLocalStorage: this.useLocalStorageForSessionMetadata }),
 		)
+		if (this.userTracking) {
+			span.setAttribute('user.anonymousId', getOrCreateAnonymousId())
+		}
+
 		span.setAttribute('browser.instance.visibility_state', document.visibilityState)
 	}
 
