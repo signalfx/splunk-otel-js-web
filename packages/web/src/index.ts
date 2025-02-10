@@ -208,6 +208,16 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 
 	deinit: (force?: boolean) => void
 
+	/**
+	 * True if library detected an automation framework and was disabled based on 'disableAutomationFrameworks' setting.
+	 */
+	disabledByAutomationFrameworkDetection?: boolean
+
+	/**
+	 * True if library detected a bot and was disabled based on 'allowBots' setting.
+	 */
+	disabledByBotDetection?: boolean
+
 	error: (...args: Array<any>) => void
 
 	/**
@@ -262,12 +272,15 @@ export const SplunkRum: SplunkOtelWebType = {
 
 	init: function (options) {
 		if (!options.allowBots && isBot(navigator.userAgent)) {
-			console.warn('SplunkRum wont be initialized. Bots are not allowed.')
+			console.warn('SplunkRum will not be initialized because bots are not allowed.')
+
+			this.disabledByBotDetection = true
 			return
 		}
 
 		if (options.disableAutomationFrameworks && navigator.webdriver) {
-			console.warn('SplunkRum wont be initialized. Automation frameworks are not allowed.')
+			console.warn('SplunkRum will not be initialized because automation frameworks are not allowed.')
+			this.disableAutomationFrameworks = true
 			return
 		}
 

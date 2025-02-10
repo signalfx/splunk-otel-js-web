@@ -113,7 +113,17 @@ const SplunkRumRecorder = {
 		}
 
 		if (typeof window === 'undefined') {
-			console.error("Session recorder can't be ran in non-browser environments")
+			console.error("Session recorder can't be run in non-browser environments.")
+			return
+		}
+
+		if ('SplunkRum' in window && (window.SplunkRum as SplunkOtelWebType).disabledByBotDetection) {
+			console.warn('The session recorder will not be initialized because bots are not allowed.')
+			return
+		}
+
+		if ('SplunkRum' in window && (window.SplunkRum as SplunkOtelWebType).disabledByAutomationFrameworkDetection) {
+			console.warn('The session recorder will not be initialized because automation frameworks are not allowed.')
 			return
 		}
 
