@@ -19,7 +19,7 @@
 import { Attributes } from '@opentelemetry/api'
 import { Span, SpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { getRumSessionId } from './session'
-import { getOrCreateAnonymousId } from './anonymous/index.js'
+import { getOrCreateAnonymousId } from './anonymous'
 
 export class SplunkSpanAttributesProcessor implements SpanProcessor {
 	private readonly _globalAttributes: Attributes

@@ -66,7 +66,7 @@ import { registerGlobal, unregisterGlobal } from './global-utils'
 import { BrowserInstanceService } from './services/BrowserInstanceService'
 import { SessionId } from './session'
 import { SplunkOtelWebConfig, SplunkOtelWebExporterOptions, SplunkOtelWebOptionsInstrumentations } from './types'
-import { getOrCreateAnonymousId } from './anonymous/index.js'
+import { getOrCreateAnonymousId } from './anonymous'
 
 export { SplunkExporterConfig } from './exporters/common'
 export { SplunkZipkinExporter } from './exporters/zipkin'
