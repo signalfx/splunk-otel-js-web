@@ -408,7 +408,7 @@ export const SplunkRum: SplunkOtelWebType = {
 				...(processedOptions.globalAttributes || {}),
 			},
 			this._processedOptions.persistence === 'localStorage',
-			userTracking,
+			() => userTracking,
 		)
 		provider.addSpanProcessor(this.attributesProcessor)
 

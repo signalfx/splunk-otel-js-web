@@ -27,7 +27,7 @@ export class SplunkSpanAttributesProcessor implements SpanProcessor {
 	constructor(
 		globalAttributes: Attributes,
 		private useLocalStorageForSessionMetadata: boolean,
-		private userTracking: boolean,
+		private getUserTracking: () => boolean,
 	) {
 		this._globalAttributes = globalAttributes ?? {}
 	}
@@ -51,7 +51,7 @@ export class SplunkSpanAttributesProcessor implements SpanProcessor {
 			'splunk.rumSessionId',
 			getRumSessionId({ useLocalStorage: this.useLocalStorageForSessionMetadata }),
 		)
-		if (this.userTracking) {
+		if (this.getUserTracking()) {
 			span.setAttribute('user.anonymousId', getOrCreateAnonymousId())
 		}
 

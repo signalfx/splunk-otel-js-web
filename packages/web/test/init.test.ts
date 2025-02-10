@@ -651,42 +651,33 @@ describe('userTracking is reflected', () => {
 	afterEach(() => {
 		deinit(true)
 	})
+	const createSpan = (tracer: tracing.Tracer) => {
+		const span = tracer.startSpan('testSpan')
+		span.end()
+		return span as tracing.Span
+	}
 	it('userTracking is true, then false', () => {
 		initWithDefaultConfig(capturer, { userTracking: true })
+
 		const tracer = SplunkRum.provider.getTracer('test')
-		{
-			const span = tracer.startSpan('testSpan')
-			span.end()
+		const spanWithAnonymousId = createSpan(tracer)
+		assert.ok(spanWithAnonymousId.attributes['user.anonymousId'], 'Checking user.anonymousId')
 
-			const exposedSpan = span as tracing.Span
-			assert.ok(exposedSpan.attributes['user.anonymousId'], 'Checking user.anonymousId')
-		}
 		SplunkRum.setUserTracking(false)
-		{
-			const span = tracer.startSpan('testSpan')
-			span.end()
 
-			const exposedSpan = span as tracing.Span
-			assert.equal(exposedSpan.attributes['user.anonymousId'], undefined, 'Checking user.anonymousId')
-		}
+		const spanWithoutAnonymousId = createSpan(tracer)
+		assert.equal(spanWithoutAnonymousId.attributes['user.anonymousId'], undefined, 'Checking user.anonymousId')
 	})
 	it('userTracking is false, then true', () => {
 		initWithDefaultConfig(capturer)
+
 		const tracer = SplunkRum.provider.getTracer('test')
-		{
-			const span = tracer.startSpan('testSpan')
-			span.end()
+		const spanWithoutAnonymousId = createSpan(tracer)
+		assert.equal(spanWithoutAnonymousId.attributes['user.anonymousId'], undefined, 'Checking user.anonymousId')
 
-			const exposedSpan = span as tracing.Span
-			assert.equal(exposedSpan.attributes['user.anonymousId'], undefined, 'Checking user.anonymousId')
-		}
 		SplunkRum.setUserTracking(true)
-		{
-			const span = tracer.startSpan('testSpan')
-			span.end()
 
-			const exposedSpan = span as tracing.Span
-			assert.ok(exposedSpan.attributes['user.anonymousId'], 'Checking user.anonymousId')
-		}
+		const spanWithAnonymousId = createSpan(tracer)
+		assert.ok(spanWithAnonymousId.attributes['user.anonymousId'], 'Checking user.anonymousId')
 	})
 })
