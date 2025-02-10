@@ -644,3 +644,40 @@ describe('can produce click events', () => {
 		assert.strictEqual(capturer.spans[0].attributes.component, 'user-interaction')
 	})
 })
+
+describe('userTracking is reflected', () => {
+	const capturer = new SpanCapturer()
+	beforeEach(() => {})
+	afterEach(() => {
+		deinit(true)
+	})
+	const createSpan = (tracer: tracing.Tracer) => {
+		const span = tracer.startSpan('testSpan')
+		span.end()
+		return span as tracing.Span
+	}
+	it('userTracking is true, then false', () => {
+		initWithDefaultConfig(capturer, { userTracking: true })
+
+		const tracer = SplunkRum.provider.getTracer('test')
+		const spanWithAnonymousId = createSpan(tracer)
+		assert.ok(spanWithAnonymousId.attributes['user.anonymousId'], 'Checking user.anonymousId')
+
+		SplunkRum.setUserTracking(false)
+
+		const spanWithoutAnonymousId = createSpan(tracer)
+		assert.equal(spanWithoutAnonymousId.attributes['user.anonymousId'], undefined, 'Checking user.anonymousId')
+	})
+	it('userTracking is false, then true', () => {
+		initWithDefaultConfig(capturer)
+
+		const tracer = SplunkRum.provider.getTracer('test')
+		const spanWithoutAnonymousId = createSpan(tracer)
+		assert.equal(spanWithoutAnonymousId.attributes['user.anonymousId'], undefined, 'Checking user.anonymousId')
+
+		SplunkRum.setUserTracking(true)
+
+		const spanWithAnonymousId = createSpan(tracer)
+		assert.ok(spanWithAnonymousId.attributes['user.anonymousId'], 'Checking user.anonymousId')
+	})
+})
