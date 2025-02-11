@@ -271,26 +271,13 @@ export const SplunkRum: SplunkOtelWebType = {
 	},
 
 	init: function (options) {
-		if (!options.allowBots && isBot(navigator.userAgent)) {
-			console.warn('SplunkRum will not be initialized because bots are not allowed.')
-
-			this.disabledByBotDetection = true
-			return
-		}
-
-		if (options.disableAutomationFrameworks && navigator.webdriver) {
-			console.warn('SplunkRum will not be initialized because automation frameworks are not allowed.')
-			this.disableAutomationFrameworks = true
-			return
-		}
-
 		// "env" based config still a bad idea for web
 		if (!('OTEL_TRACES_EXPORTER' in _globalThis)) {
 			_globalThis.OTEL_TRACES_EXPORTER = 'none'
 		}
 
 		if (inited) {
-			console.warn('SplunkRum already init()ed.')
+			console.warn('SplunkRum already initialized.')
 			return
 		}
 
@@ -309,6 +296,18 @@ export const SplunkRum: SplunkOtelWebType = {
 
 		if (typeof Symbol !== 'function') {
 			diag.error('SplunkRum: browser not supported, disabling instrumentation.')
+			return
+		}
+
+		if (!options.allowBots && isBot(navigator.userAgent)) {
+			this.disabledByBotDetection = true
+			diag.error('SplunkRum will not be initialized, bots are not allowed.')
+			return
+		}
+
+		if (options.disableAutomationFrameworks && navigator.webdriver) {
+			this.disableAutomationFrameworks = true
+			diag.error('SplunkRum will not be initialized, automation frameworks are not allowed.')
 			return
 		}
 

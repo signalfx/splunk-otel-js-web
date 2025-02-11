@@ -21,7 +21,7 @@ import { record } from 'rrweb'
 import OTLPLogExporter from './OTLPLogExporter'
 import { BatchLogProcessor, convert } from './BatchLogProcessor'
 import { VERSION } from './version'
-import { getGlobal } from './utils'
+import { getSplunkRumVersion, getGlobal } from './utils'
 
 import type { Resource } from '@opentelemetry/resources'
 import type { SplunkOtelWebType } from '@splunk/otel-web'
@@ -113,29 +113,41 @@ const SplunkRumRecorder = {
 		}
 
 		if (typeof window === 'undefined') {
-			console.error("Session recorder can't be run in non-browser environments.")
+			console.error("SplunkSessionRecorder can't be run in non-browser environments.")
 			return
 		}
-
-		if ('SplunkRum' in window && (window.SplunkRum as SplunkOtelWebType).disabledByBotDetection) {
-			console.warn('The session recorder will not be initialized because bots are not allowed.')
-			return
-		}
-
-		if ('SplunkRum' in window && (window.SplunkRum as SplunkOtelWebType).disabledByAutomationFrameworkDetection) {
-			console.warn('The session recorder will not be initialized because automation frameworks are not allowed.')
-			return
-		}
-
-		const SplunkRum = getGlobal<SplunkOtelWebType>('splunk.rum')
 
 		let tracerProvider: BasicTracerProvider | ProxyTracerProvider = trace.getTracerProvider() as BasicTracerProvider
 		if (tracerProvider && 'getDelegate' in tracerProvider) {
 			tracerProvider = (tracerProvider as unknown as ProxyTracerProvider).getDelegate() as BasicTracerProvider
 		}
 
-		if (!SplunkRum || !SplunkRum.resource) {
-			console.error('Splunk OTEL Web must be inited before session recorder.')
+		const SplunkRum = getGlobal<SplunkOtelWebType>()
+		if (!SplunkRum) {
+			console.error('SplunkRum must be initialized before session recorder.')
+			return
+		}
+
+		if (SplunkRum.disabledByBotDetection) {
+			console.error('SplunkSessionRecorder will not be initialized, bots are not allowed.')
+			return
+		}
+
+		if (SplunkRum.disabledByAutomationFrameworkDetection) {
+			console.error('SplunkSessionRecorder will not be initialized, automation frameworks are not allowed.')
+			return
+		}
+
+		const splunkRumVersion = getSplunkRumVersion()
+		if (!splunkRumVersion || splunkRumVersion !== VERSION) {
+			console.error(
+				`SplunkSessionRecorder will not be initialized. Version mismatch with SplunkRum (SplunkRum: ${splunkRumVersion ?? 'N/A'}, SplunkSessionRecorder: ${VERSION})`,
+			)
+			return
+		}
+
+		if (!SplunkRum.resource) {
+			console.error('Splunk OTEL Web must be initialized before session recorder.')
 			return
 		}
 
@@ -159,13 +171,13 @@ const SplunkRumRecorder = {
 			if (!exportUrl) {
 				exportUrl = `https://rum-ingest.${realm}.signalfx.com/v1/rumreplay`
 			} else {
-				console.warn('Splunk Session Recorder: Realm value ignored (beaconEndpoint has been specified)')
+				console.warn('SplunkSessionRecorder: Realm value ignored (beaconEndpoint has been specified)')
 			}
 		}
 
 		if (!exportUrl) {
 			console.error(
-				'Session recorder could not determine `exportUrl`, please ensure that `realm` or `beaconEndpoint` is specified and try again',
+				'SplunkSessionRecorder could not determine `exportUrl`, please ensure that `realm` or `beaconEndpoint` is specified and try again',
 			)
 			return
 		}
