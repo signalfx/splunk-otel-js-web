@@ -21,7 +21,7 @@ import { test } from '../../utils/test'
 test.describe('Automation frameworks', () => {
 	test('Tracking is working for playwright with automation frameworks enabled', async ({ recordPage }) => {
 		await recordPage.goTo('/automation-frameworks/automation-frameworks-enabled.ejs')
-		await recordPage.waitForTimeout(1000)
+		await recordPage.waitForSpans(() => true)
 
 		expect(recordPage.receivedSpans.length).toBeGreaterThan(0)
 	})

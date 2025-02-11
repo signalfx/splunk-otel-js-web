@@ -26,7 +26,7 @@ test.describe('Bots - Google bot', () => {
 
 	test('Tracking is working for google bot with bots enabled', async ({ recordPage }) => {
 		await recordPage.goTo('/bots/bots-enabled.ejs')
-		await recordPage.waitForTimeout(1000)
+		await recordPage.waitForSpans(() => true)
 
 		expect(recordPage.receivedSpans.length).toBeGreaterThan(0)
 	})
@@ -47,7 +47,7 @@ test.describe('Bots - Splunk synthetics', () => {
 
 	test('Tracking is working for Splunk Synthetics with bots enabled', async ({ recordPage }) => {
 		await recordPage.goTo('/bots/bots-enabled.ejs')
-		await recordPage.waitForTimeout(1000)
+		await recordPage.waitForSpans(() => true)
 
 		expect(recordPage.receivedSpans.length).toBeGreaterThan(0)
 	})
@@ -68,14 +68,14 @@ test.describe('Bots - Real browser - Chrome', () => {
 
 	test('Tracking is working for real browser Chrome with bots enabled', async ({ recordPage }) => {
 		await recordPage.goTo('/bots/bots-enabled.ejs')
-		await recordPage.waitForTimeout(1000)
+		await recordPage.waitForSpans(() => true)
 
 		expect(recordPage.receivedSpans.length).toBeGreaterThan(0)
 	})
 
 	test('Tracking is working for real browser Chrome with bots disabled', async ({ recordPage }) => {
 		await recordPage.goTo('/bots/bots-disabled.ejs')
-		await recordPage.waitForTimeout(1000)
+		await recordPage.waitForSpans(() => true)
 
 		expect(recordPage.receivedSpans.length).toBeGreaterThan(0)
 	})
@@ -89,14 +89,14 @@ test.describe('Bots - Real browser - Safari', () => {
 
 	test('Tracking is working for real browser Safari with bots enabled', async ({ recordPage }) => {
 		await recordPage.goTo('/bots/bots-enabled.ejs')
-		await recordPage.waitForTimeout(1000)
+		await recordPage.waitForSpans(() => true)
 
 		expect(recordPage.receivedSpans.length).toBeGreaterThan(0)
 	})
 
 	test('Tracking is working for real browser Safari with bots disabled', async ({ recordPage }) => {
 		await recordPage.goTo('/bots/bots-disabled.ejs')
-		await recordPage.waitForTimeout(1000)
+		await recordPage.waitForSpans(() => true)
 
 		expect(recordPage.receivedSpans.length).toBeGreaterThan(0)
 	})
@@ -109,14 +109,14 @@ test.describe('Bots - Real browser - Firefox', () => {
 
 	test('Tracking is working for real browser Firefox with bots enabled', async ({ recordPage }) => {
 		await recordPage.goTo('/bots/bots-enabled.ejs')
-		await recordPage.waitForTimeout(1000)
+		await recordPage.waitForSpans(() => true)
 
 		expect(recordPage.receivedSpans.length).toBeGreaterThan(0)
 	})
 
 	test('Tracking is working for real browser Firefox with bots disabled', async ({ recordPage }) => {
 		await recordPage.goTo('/bots/bots-disabled.ejs')
-		await recordPage.waitForTimeout(1000)
+		await recordPage.waitForSpans(() => true)
 
 		expect(recordPage.receivedSpans.length).toBeGreaterThan(0)
 	})
