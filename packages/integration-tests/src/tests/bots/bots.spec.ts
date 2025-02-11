@@ -54,7 +54,7 @@ test.describe('Bots - Splunk synthetics', () => {
 
 	test('Tracking is working for Splunk Synthetics with bots disabled', async ({ recordPage }) => {
 		await recordPage.goTo('/bots/bots-disabled.ejs')
-		await recordPage.waitForTimeout(1000)
+		await recordPage.waitForSpans(() => true)
 
 		expect(recordPage.receivedSpans.length).toBeGreaterThan(0)
 	})
