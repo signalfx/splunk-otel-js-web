@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2024 Splunk Inc.
+ * Copyright 2025 Splunk Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,6 +75,7 @@ import {
 import { SplunkOTLPTraceExporter } from './exporters/otlp'
 import { registerGlobal, unregisterGlobal } from './global-utils'
 import { BrowserInstanceService } from './services/BrowserInstanceService'
+import { createDebugSpan } from './utils/debug-spans'
 
 export { SplunkExporterConfig } from './exporters/common'
 export { SplunkZipkinExporter } from './exporters/zipkin'
@@ -470,6 +471,10 @@ export const SplunkRum: SplunkOtelWebType = {
 			resource: this.resource,
 		})
 
+		createDebugSpan('initBefore', {
+			scriptInstance: instanceId,
+		})
+
 		_deinitSessionTracking = initSessionTracking(
 			provider,
 			instanceId,
@@ -543,6 +548,10 @@ export const SplunkRum: SplunkOtelWebType = {
 		})
 
 		this.provider = provider
+
+		createDebugSpan('initAfter', {
+			scriptInstance: instanceId,
+		})
 
 		const vitalsConf = getPluginConfig(processedOptions.instrumentations.webvitals)
 		if (vitalsConf !== false) {

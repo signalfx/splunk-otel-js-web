@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2024 Splunk Inc.
+ * Copyright 2025 Splunk Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@
 import { SpanProcessor, WebTracerProvider } from '@opentelemetry/sdk-trace-web'
 import { InternalEventTarget } from './EventTarget'
 import { cookieStore, findCookieValue, generateId, isIframe } from './utils'
+import { createDebugSpan } from './utils/debug-spans'
 
 /*
     The basic idea is to let the browser expire cookies for us "naturally" once
@@ -59,39 +60,47 @@ function pastMaxAge(startTime: number): boolean {
 	return startTime > now || now > startTime + MaxSessionAgeMillis
 }
 
-function parseCookieToSessionState() {
+function parseCookieToSessionState():
+	| [
+			{
+				id: string
+				startTime: number
+			},
+			undefined,
+	  ]
+	| [undefined, string] {
 	const rawValue = findCookieValue(COOKIE_NAME)
 	if (!rawValue) {
-		return undefined
+		return [undefined, 'findCookieValue:failed']
 	}
 
 	const decoded = decodeURIComponent(rawValue)
 	if (!decoded) {
-		return undefined
+		return [undefined, 'decodeURIComponent:failed']
 	}
 
 	let ss: any = undefined
 	try {
 		ss = JSON.parse(decoded)
 	} catch {
-		return undefined
+		return [undefined, 'jsonParse:failed']
 	}
 	// should exist and be an object
 	if (!ss || typeof ss !== 'object') {
-		return undefined
+		return [undefined, 'parseNotAnObject:failed']
 	}
 
 	// id validity
 	if (!ss.id || typeof ss.id !== 'string' || !ss.id.length || ss.id.length !== 32) {
-		return undefined
+		return [undefined, 'parseNoId:failed']
 	}
 
 	// startTime validity
 	if (!ss.startTime || typeof ss.startTime !== 'number' || pastMaxAge(ss.startTime)) {
-		return undefined
+		return [undefined, 'parseNoStartTIme:failed']
 	}
 
-	return ss
+	return [ss, undefined]
 }
 
 function newSessionState() {
@@ -103,6 +112,7 @@ function newSessionState() {
 
 function renewCookieTimeout(sessionState) {
 	if (pastMaxAge(sessionState.startTime)) {
+		createDebugSpan('renewCookieTimeout:expired', sessionState)
 		// safety valve
 		return
 	}
@@ -131,20 +141,51 @@ export function clearSessionCookie(): void {
 // 2) If activity has occured since the last periodic invocation, renew the cookie timeout
 // (Only exported for testing purposes.)
 export function updateSessionStatus(): void {
-	let sessionState = parseCookieToSessionState()
-	if (!sessionState) {
-		sessionState = newSessionState()
-		recentActivity = true // force write of new cookie
+	try {
+		let sessionState: { id: string; startTime: number } | undefined
+		try {
+			const result = parseCookieToSessionState()
+			sessionState = result[0]
+
+			if (result[1]) {
+				createDebugSpan(`parseCookieToSessionState:${result[1]}`, {
+					error: result[1],
+				})
+			}
+		} catch (e) {
+			createDebugSpan('parseCookieToSessionState:failed', {
+				error: e.name,
+			})
+			throw e
+		}
+
+		if (!sessionState) {
+			sessionState = newSessionState()
+			recentActivity = true // force write of new cookie
+		}
+
+		if (rumSessionId !== sessionState.id) {
+			createDebugSpan('newSessionCreated', {
+				rumSessionId,
+				sessionStateId: sessionState.id,
+			})
+		}
+
+		rumSessionId = sessionState.id
+		eventTarget?.emit('session-changed', { sessionId: rumSessionId })
+
+		if (recentActivity) {
+			renewCookieTimeout(sessionState)
+		}
+
+		recentActivity = false
+	} catch (e) {
+		createDebugSpan('updateSessionStatus:failed', {
+			error: e.name,
+		})
+
+		throw e
 	}
-
-	rumSessionId = sessionState.id
-	eventTarget?.emit('session-changed', { sessionId: rumSessionId })
-
-	if (recentActivity) {
-		renewCookieTimeout(sessionState)
-	}
-
-	recentActivity = false
 }
 
 function hasNativeSessionId(): boolean {
