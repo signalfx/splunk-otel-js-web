@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Title</title>
+	</head>
+	<body>
+		<script src="packages/web/dist/artifacts/splunk-otel-web.js"></script>
+		<script src="packages/session-recorder/dist/artifacts/splunk-otel-web-session-recorder.js"></script>
+		<script>
+			SplunkRum.init({
+				realm: 'lab0',
+				rumAccessToken: 'SKg_6qBzqXn-TFcosK0vRA',
+				applicationName: 'DavidK-App',
+				deploymentEnvironment: 'lab',
+				debug: true,
+			})
+			SplunkSessionRecorder.init({
+				realm: 'lab0',
+				rumAccessToken: 'SKg_6qBzqXn-TFcosK0vRA',
+			})
+		</script>
+		<div style="width: 1000px; height: 1000px; background: red">red square</div>
+	</body>
+</html>
