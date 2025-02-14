@@ -16,25 +16,24 @@
  *
  */
 
-import { VERSION } from './version'
-
 const GLOBAL_OPENTELEMETRY_API_KEY = Symbol.for('opentelemetry.js.api.1')
+
+const GLOBAL_SPLUNK_RUM_KEY = 'splunk.rum'
+
+const GLOBAL_SPLUNK_RUM_VERSION_KEY = `${GLOBAL_SPLUNK_RUM_KEY}.version`
+
 /**
  * otel-api's global function. This isn't exported by otel/api but would be
  * super useful to access global components for experimental purposes...
  * For us, it's included to access components accessed by other packages,
  * eg. sharing session id manager with session recorder
  */
-export function getGlobal<Type>(type: string): Type | undefined {
-	// @ts-expect-error FIXME: Symbol is not defined in globalThis
-	const globalSplunkRumVersion = globalThis[GLOBAL_OPENTELEMETRY_API_KEY]?.['splunk.rum.version']
-	if (!globalSplunkRumVersion || globalSplunkRumVersion !== VERSION) {
-		console.warn(
-			`SplunkSessionRecorder: Version mismatch with SplunkRum (RUM: ${globalSplunkRumVersion}, recorder: ${VERSION})`,
-		)
-		return undefined // undefined for eslint
-	}
+export function getGlobal<Type>(): Type | undefined {
+	// @ts-expect-error FIXME: Symbol type is not assignable to string
+	return globalThis[GLOBAL_OPENTELEMETRY_API_KEY]?.[GLOBAL_SPLUNK_RUM_KEY]
+}
 
-	// @ts-expect-error FIXME: Symbol is not defined in globalThis
-	return globalThis[GLOBAL_OPENTELEMETRY_API_KEY]?.[type]
+export function getSplunkRumVersion(): string | undefined {
+	// @ts-expect-error FIXME: Symbol type is not assignable to string
+	return globalThis[GLOBAL_OPENTELEMETRY_API_KEY]?.[GLOBAL_SPLUNK_RUM_VERSION_KEY]
 }

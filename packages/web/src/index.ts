@@ -66,6 +66,7 @@ import { registerGlobal, unregisterGlobal } from './global-utils'
 import { BrowserInstanceService } from './services/BrowserInstanceService'
 import { SessionId } from './session'
 import { SplunkOtelWebConfig, SplunkOtelWebExporterOptions, SplunkOtelWebOptionsInstrumentations } from './types'
+import { isBot } from './utils/is-bot'
 
 export { SplunkExporterConfig } from './exporters/common'
 export { SplunkZipkinExporter } from './exporters/zipkin'
@@ -88,6 +89,8 @@ interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
 }
 
 const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
+	allowBots: false,
+	disableAutomationFrameworks: false,
 	applicationName: 'unknown-browser-app',
 	beaconEndpoint: undefined,
 	bufferTimeout: 4000, //millis, tradeoff between batching and loss of spans by not sending before page close
@@ -205,6 +208,16 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 
 	deinit: (force?: boolean) => void
 
+	/**
+	 * True if library detected an automation framework and was disabled based on 'disableAutomationFrameworks' setting.
+	 */
+	disabledByAutomationFrameworkDetection?: boolean
+
+	/**
+	 * True if library detected a bot and was disabled based on 'allowBots' setting.
+	 */
+	disabledByBotDetection?: boolean
+
 	error: (...args: Array<any>) => void
 
 	/**
@@ -266,7 +279,7 @@ export const SplunkRum: SplunkOtelWebType = {
 		}
 
 		if (inited) {
-			console.warn('SplunkRum already init()ed.')
+			console.warn('SplunkRum already initialized.')
 			return
 		}
 
@@ -285,6 +298,18 @@ export const SplunkRum: SplunkOtelWebType = {
 
 		if (typeof Symbol !== 'function') {
 			diag.error('SplunkRum: browser not supported, disabling instrumentation.')
+			return
+		}
+
+		if (!options.allowBots && isBot(navigator.userAgent)) {
+			this.disabledByBotDetection = true
+			diag.error('SplunkRum will not be initialized, bots are not allowed.')
+			return
+		}
+
+		if (options.disableAutomationFrameworks && navigator.webdriver) {
+			this.disableAutomationFrameworks = true
+			diag.error('SplunkRum will not be initialized, automation frameworks are not allowed.')
 			return
 		}
 

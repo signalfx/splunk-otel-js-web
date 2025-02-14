@@ -22,6 +22,7 @@ import SplunkRum from '../src/index'
 describe('Node.js basic support', () => {
 	it('Can call init', () => {
 		SplunkRum.init({
+			allowBots: true,
 			applicationName: 'test-app',
 			beaconEndpoint: 'https://localhost/events',
 			rumAccessToken: 'example1234',
