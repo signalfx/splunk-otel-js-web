@@ -24,7 +24,7 @@ function globalFunction() {
 }
 
 function globalFunctionThatThrowsError() {
-	sharedHelperFunctionThatThrowsError(5)
+	sharedHelperFunctionThatThrowsError()
 }
 
 window.globalFunction = globalFunction

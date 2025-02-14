@@ -15,6 +15,7 @@
  * limitations under the License.
  *
  */
+/* eslint-disable */
 const path = require('path')
 module.exports = {
 	getBaseConfig: (configFilename) => ({

@@ -15,6 +15,7 @@
  * limitations under the License.
  *
  */
+/* eslint-disable */
 const { ollyWebWebpackPlugin } = require('@splunk/olly-web-build-plugins')
 const path = require('path')
 const { getBaseConfig } = require('./webpack-utils')

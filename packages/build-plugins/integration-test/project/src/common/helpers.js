@@ -20,7 +20,8 @@ export function sharedHelperFunction(value1, value2) {
 	return result
 }
 
-export function sharedHelperFunctionThatThrowsError(value) {
+export function sharedHelperFunctionThatThrowsError() {
+	/* eslint-disable no-undef */
 	return thisFunctionDoesNotExist()
 }
 
