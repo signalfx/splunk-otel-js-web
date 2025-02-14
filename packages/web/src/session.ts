@@ -117,6 +117,8 @@ function renewCookieTimeout(sessionState) {
 		return
 	}
 
+	sessionState.expiration = Date.now() + InactivityTimeoutSeconds * 1000
+
 	const cookieValue = encodeURIComponent(JSON.stringify(sessionState))
 	const domain = cookieDomain ? `domain=${cookieDomain};` : ''
 	let cookie = COOKIE_NAME + '=' + cookieValue + '; path=/;' + domain + 'max-age=' + InactivityTimeoutSeconds
@@ -162,6 +164,14 @@ export function updateSessionStatus(): void {
 		if (!sessionState) {
 			sessionState = newSessionState()
 			recentActivity = true // force write of new cookie
+		}
+
+		if ('expiration' in sessionState && typeof sessionState.expiration === 'number') {
+			if (sessionState.expiration < Date.now()) {
+				createDebugSpan('updateSessionStatus:cookieShouldExpire', {
+					expiration: new Date(sessionState.expiration).toISOString(),
+				})
+			}
 		}
 
 		if (rumSessionId !== sessionState.id) {

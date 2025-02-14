@@ -25,8 +25,8 @@ export const createDebugSpan = (name: string, attributes: Record<string, string 
 	const tracer = provider.getTracer('debug')
 	const span = tracer.startSpan(`debug:${name}`, {
 		attributes: {
-			...attributes,
-			performanceTime: new Date(performance.timeOrigin + performance.now()).toISOString(),
+			...Object.fromEntries(Object.entries(attributes).map(([key, value]) => [`debug.${key}`, value])),
+			'debug.performanceTime': new Date(performance.timeOrigin + performance.now()).toISOString(),
 		},
 	})
 	span.end()
