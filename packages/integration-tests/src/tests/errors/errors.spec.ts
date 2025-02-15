@@ -175,5 +175,19 @@ test.describe('errors', () => {
 				'9793573cdc2ab308a0b1996bea14253ec8832bc036210475ded0813cafa27066',
 			),
 		).toBeTruthy()
+
+		await recordPage.locator('#button3').click()
+		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'onerror').length === 3)
+		const errorSpans3 = recordPage.receivedSpans.filter((span) => span.name === 'onerror')
+
+		expect(errorSpans3).toHaveLength(3)
+		expect(errorSpans3[2].tags['error.message']).toContain('thisFunctionDoesNotExist') // browsers report the exact error message differently in this scenario
+		expect(errorSpans3[2].tags['error.source_map_ids'] as string).toContain(
+			'http://localhost:3000/build-plugins-test-project-artifacts/webpack-config-devtool-source-map-js/main.js',
+		)
+		expect(
+			errorSpans3[2].tags['error.source_map_ids'] as string,
+			'this expect must be kept in-sync with the sourceMapId injected into build-plugins/integration-test/project/dist/webpack-config-devtool-source-map-js/main.js',
+		).toContain('ab2a6548-e5d2-9d1a-fa76-1db1692955bc')
 	})
 })
