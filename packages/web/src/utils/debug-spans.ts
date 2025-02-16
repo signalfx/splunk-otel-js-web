@@ -27,6 +27,7 @@ export const createDebugSpan = (name: string, attributes: Record<string, string 
 		attributes: {
 			...Object.fromEntries(Object.entries(attributes).map(([key, value]) => [`debug.${key}`, value])),
 			'debug.performanceTime': new Date(performance.timeOrigin + performance.now()).toISOString(),
+			'debug.message': name,
 		},
 	})
 	span.end()
