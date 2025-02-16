@@ -64,6 +64,7 @@ import { SplunkSocketIoClientInstrumentation } from './SplunkSocketIoClientInstr
 import { SplunkOTLPTraceExporter } from './exporters/otlp'
 import { registerGlobal, unregisterGlobal } from './global-utils'
 import { BrowserInstanceService } from './services/BrowserInstanceService'
+import { createDebugSpan } from './utils/debug-spans'
 import { SessionId } from './session'
 import { SplunkOtelWebConfig, SplunkOtelWebExporterOptions, SplunkOtelWebOptionsInstrumentations } from './types'
 import { isBot } from './utils/is-bot'
@@ -384,7 +385,10 @@ export const SplunkRum: SplunkOtelWebType = {
 			resource: this.resource,
 		})
 
-		// TODO
+		createDebugSpan('initBefore', {
+			scriptInstance: instanceId,
+		})
+
 		_deinitSessionTracking = initSessionTracking(
 			provider,
 			instanceId,
@@ -466,6 +470,10 @@ export const SplunkRum: SplunkOtelWebType = {
 		})
 
 		this.provider = provider
+
+		createDebugSpan('initAfter', {
+			scriptInstance: instanceId,
+		})
 
 		const vitalsConf = getPluginConfig(processedOptions.instrumentations.webvitals)
 		if (vitalsConf !== false) {

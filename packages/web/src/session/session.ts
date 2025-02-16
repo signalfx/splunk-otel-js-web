@@ -17,6 +17,7 @@
  */
 
 import { SpanProcessor, WebTracerProvider } from '@opentelemetry/sdk-trace-web'
+import { createDebugSpan } from './utils/debug-spans'
 import { InternalEventTarget } from '../EventTarget'
 import { generateId } from '../utils'
 import { parseCookieToSessionState, renewCookieTimeout } from './cookie-session'
@@ -102,8 +103,6 @@ export function updateSessionStatus({
 			renewCookieTimeout(sessionState, cookieDomain, { forceStoreWrite: shouldForceWrite || forceStore })
 		}
 	}
-
-	recentActivity = false
 }
 
 function hasNativeSessionId(): boolean {
