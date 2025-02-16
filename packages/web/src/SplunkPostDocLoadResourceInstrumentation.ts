@@ -99,6 +99,7 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 			},
 			this.urlToContextMap[targetUrl.toString()],
 		)
+
 		span.setAttribute('component', MODULE_NAME)
 		span.setAttribute(SemanticAttributes.HTTP_URL, entry.name)
 		span.setAttribute(SemanticAttributes.HTTP_METHOD, 'GET')

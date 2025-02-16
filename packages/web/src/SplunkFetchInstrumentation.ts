@@ -29,6 +29,7 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
 		const origCustomAttrs = config.applyCustomAttributesOnSpan
 		config.applyCustomAttributesOnSpan = function (span, request, result) {
 			// Temporary return to old span name until cleared by backend
+
 			span.updateName(`HTTP ${(request.method || 'GET').toUpperCase()}`)
 			span.setAttribute('component', 'fetch')
 

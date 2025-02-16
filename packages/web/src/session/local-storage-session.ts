@@ -54,23 +54,23 @@ export const getSessionStateFromLocalStorage = ({
 	forceStoreRead,
 }: {
 	forceStoreRead: boolean
-}): SessionState | undefined => {
+}): [SessionState, undefined] | [undefined, string] => {
 	let sessionState: unknown = undefined
 	try {
 		sessionState = JSON.parse(localStore.get({ forceStoreRead }))
 	} catch {
-		return undefined
+		return [undefined, 'ls1']
 	}
 
 	if (!isSessionState(sessionState)) {
-		return
+		return [undefined, 'ls2']
 	}
 
 	if (isSessionDurationExceeded(sessionState) || isSessionInactivityTimeoutReached(sessionState)) {
-		return
+		return [undefined, 'ls3']
 	}
 
-	return sessionState
+	return [sessionState, undefined]
 }
 
 export const setSessionStateToLocalStorage = (

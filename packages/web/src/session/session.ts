@@ -17,6 +17,7 @@
  */
 
 import { SpanProcessor, WebTracerProvider } from '@opentelemetry/sdk-trace-web'
+import { createDebugSpan } from '../utils/debug-spans'
 import { InternalEventTarget } from '../EventTarget'
 import { generateId } from '../utils'
 import { parseCookieToSessionState, renewCookieTimeout } from './cookie-session'
@@ -61,7 +62,10 @@ function createSessionState(): SessionState {
 	}
 }
 
-export function getCurrentSessionState({ useLocalStorage = false, forceStoreRead = false }): SessionState | undefined {
+export function getCurrentSessionState({
+	useLocalStorage = false,
+	forceStoreRead = false,
+}): [SessionState, undefined] | [undefined, string] {
 	return useLocalStorage
 		? getSessionStateFromLocalStorage({ forceStoreRead })
 		: parseCookieToSessionState({ forceStoreRead })
@@ -80,30 +84,75 @@ export function updateSessionStatus({
 	forceStore: boolean
 	useLocalStorage: boolean
 }): void {
-	let sessionState = getCurrentSessionState({ useLocalStorage, forceStoreRead: forceStore })
-	let shouldForceWrite = false
-	if (!sessionState) {
-		// Check if another tab has created a new session
-		sessionState = getCurrentSessionState({ useLocalStorage, forceStoreRead: true })
-		if (!sessionState) {
-			sessionState = createSessionState()
-			recentActivity = true // force write of new cookie
-			shouldForceWrite = true
+	try {
+		let sessionState: SessionState | undefined
+		let shouldForceWrite = false
+
+		try {
+			let result = getCurrentSessionState({ useLocalStorage, forceStoreRead: forceStore })
+			sessionState = result[0]
+
+			if (result[1]) {
+				createDebugSpan(`getCurrentSessionStateNoForce:${result[1]}`, {
+					error: result[1],
+				})
+			}
+
+			if (!sessionState) {
+				// Check if another tab has created a new session
+				result = getCurrentSessionState({ useLocalStorage, forceStoreRead: true })
+				sessionState = result[0]
+
+				if (result[1]) {
+					createDebugSpan(`getCurrentSessionStateForce:${result[1]}`, {
+						error: result[1],
+					})
+				}
+
+				if (!sessionState) {
+					sessionState = createSessionState()
+					recentActivity = true // force write of new cookie
+					shouldForceWrite = true
+
+					createDebugSpan(`updateSessionStatus:creatingNewSession`, {
+						id: sessionState.id,
+						startTime: sessionState.startTime,
+						expiresAt: sessionState.expiresAt,
+					})
+				}
+			}
+		} catch (e) {
+			createDebugSpan('parseCookieToSessionState:failed', {
+				error: e.name,
+			})
+			throw e
 		}
-	}
 
-	eventTarget?.emit('session-changed', { sessionId: sessionState.id })
+		// if (log) {
+		// 	createDebugSpan(`updateSessionStatus:sessionState`, {
+		// 		id: sessionState.id,
+		// 		startTime: sessionState.startTime,
+		// 		expiresAt: sessionState.expiresAt,
+		// 	})
+		// }
 
-	if (recentActivity || forceActivity) {
-		sessionState.expiresAt = Date.now() + SESSION_INACTIVITY_TIMEOUT_MS
-		if (useLocalStorage) {
-			setSessionStateToLocalStorage(sessionState, { forceStoreWrite: shouldForceWrite || forceStore })
-		} else {
-			renewCookieTimeout(sessionState, cookieDomain, { forceStoreWrite: shouldForceWrite || forceStore })
+		eventTarget?.emit('session-changed', { sessionId: sessionState.id })
+
+		if (recentActivity || forceActivity) {
+			sessionState.expiresAt = Date.now() + SESSION_INACTIVITY_TIMEOUT_MS
+			if (useLocalStorage) {
+				setSessionStateToLocalStorage(sessionState, { forceStoreWrite: shouldForceWrite || forceStore })
+			} else {
+				renewCookieTimeout(sessionState, cookieDomain, { forceStoreWrite: shouldForceWrite || forceStore })
+			}
 		}
-	}
+	} catch (e) {
+		createDebugSpan('updateSessionStatus:failed', {
+			error: e.name,
+		})
 
-	recentActivity = false
+		throw e
+	}
 }
 
 function hasNativeSessionId(): boolean {
@@ -122,9 +171,31 @@ class SessionSpanProcessor implements SpanProcessor {
 		return Promise.resolve()
 	}
 
-	onEnd(): void {}
+	onEnd(span: any): void {
+		try {
+			span.attributes['debug.endTime'] = span.endTime[0] * 1e3 + span.endTime[1] / 1e6
+			span.attributes['debug.endTime.iso'] = new Date(span.attributes['debug.endTime']).toISOString()
+			span.attributes['debug.browser.visibility_state.end'] = document.visibilityState
 
-	onStart(): void {
+			if (
+				['splunk-post-doc-load-resource', 'fetch', 'xml-http-request', 'document-load'].includes(
+					span.attributes['component'],
+				)
+			) {
+				span.events.forEach((e) => {
+					span.attributes['debug.' + e.name] = e.time[0] * 1e3 + e.time[1] / 1e6
+					span.attributes['debug.' + e.name + '.iso'] = new Date(
+						span.attributes['debug.' + e.name],
+					).toISOString()
+				})
+			}
+		} catch (e) {
+			console.error(e)
+			//NOOP
+		}
+	}
+
+	onStart(span: any): void {
 		if (this.options.allSpansAreActivity) {
 			markActivity()
 		}
@@ -135,6 +206,15 @@ class SessionSpanProcessor implements SpanProcessor {
 				useLocalStorage: this.options.useLocalStorage,
 			})
 		})
+
+		try {
+			span.attributes['debug.browser.visibility_state.start'] = document.visibilityState
+			span.attributes['debug.startTime'] = span.startTime[0] * 1e3 + span.startTime[1] / 1e6
+			span.attributes['debug.startTime.iso'] = new Date(span.attributes['debug.startTime']).toISOString()
+		} catch (e) {
+			console.error(e)
+			//NOOP
+		}
 	}
 
 	shutdown(): Promise<void> {
@@ -184,5 +264,6 @@ export function getRumSessionId({ useLocalStorage }: { useLocalStorage: boolean 
 		return window['SplunkRumNative'].getNativeSessionId()
 	}
 
-	return getCurrentSessionState({ useLocalStorage, forceStoreRead: true })?.id
+	const [sessionState] = getCurrentSessionState({ useLocalStorage, forceStoreRead: true })
+	return sessionState?.id
 }
