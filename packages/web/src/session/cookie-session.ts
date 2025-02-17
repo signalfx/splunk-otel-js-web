@@ -46,37 +46,41 @@ export const cookieStore = {
 	},
 }
 
-export function parseCookieToSessionState({ forceStoreRead }: { forceStoreRead: boolean }): SessionState | undefined {
+export function parseCookieToSessionState({
+	forceStoreRead,
+}: {
+	forceStoreRead: boolean
+}): [SessionState, undefined] | [undefined, string] {
 	const rawValue = findCookieValue(SESSION_STORAGE_KEY, { forceStoreRead })
 	if (!rawValue) {
-		return undefined
+		return [undefined, 'findCookieValue:failed']
 	}
 
 	const decoded = decodeURIComponent(rawValue)
 	if (!decoded) {
-		return undefined
+		return [undefined, 'decodeURIComponent:failed']
 	}
 
 	let sessionState: unknown = undefined
 	try {
 		sessionState = JSON.parse(decoded)
 	} catch {
-		return undefined
+		return [undefined, 'jsonParse:failed']
 	}
 
 	if (!isSessionState(sessionState)) {
-		return undefined
+		return [undefined, 'parseNotAnObject:failed']
 	}
 
 	if (isSessionDurationExceeded(sessionState)) {
-		return undefined
+		return [undefined, 'sessionDurationExceeded:failed']
 	}
 
 	if (isSessionInactivityTimeoutReached(sessionState)) {
-		return undefined
+		return [undefined, 'sessionInactivityTimeoutReached:failed']
 	}
 
-	return sessionState
+	return [sessionState, undefined]
 }
 
 export function renewCookieTimeout(
@@ -116,12 +120,11 @@ export function findCookieValue(
 	cookieName: string,
 	{ forceStoreRead }: { forceStoreRead: boolean },
 ): string | undefined {
-	const decodedCookie = decodeURIComponent(cookieStore.get({ forceStoreRead }))
-	const cookies = decodedCookie.split(';')
+	const cookies = cookieStore.get({ forceStoreRead }).split(';')
 	for (let i = 0; i < cookies.length; i++) {
 		const c = cookies[i].trim()
 		if (c.indexOf(cookieName + '=') === 0) {
-			return c.substring((cookieName + '=').length, c.length)
+			return decodeURIComponent(c.substring((cookieName + '=').length, c.length))
 		}
 	}
 	return undefined
