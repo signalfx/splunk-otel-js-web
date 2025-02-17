@@ -51,4 +51,5 @@ export const getDeviceId = (domain: string) => {
 
 	const id = generateId(64)
 	window.document.cookie = `${KEY}=${id};expires=${getCookieExpirationDate()};domain=${domain};path=/;sameSite=strict;secure`
+	return id
 }
