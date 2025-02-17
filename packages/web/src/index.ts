@@ -68,6 +68,7 @@ import { createDebugSpan } from './utils/debug-spans'
 import { SessionId } from './session'
 import { SplunkOtelWebConfig, SplunkOtelWebExporterOptions, SplunkOtelWebOptionsInstrumentations } from './types'
 import { isBot } from './utils/is-bot'
+import { getDeviceId } from './utils/device-id'
 
 export { SplunkExporterConfig } from './exporters/common'
 export { SplunkZipkinExporter } from './exporters/zipkin'
@@ -371,6 +372,12 @@ export const SplunkRum: SplunkOtelWebType = {
 
 		if (BrowserInstanceService.id) {
 			resourceAttrs['browser.instance.id'] = BrowserInstanceService.id
+		}
+
+		const deviceId = getDeviceId(processedOptions.cookieDomain)
+		if (deviceId) {
+			console.debug('Got device ID', deviceId)
+			resourceAttrs['device.id'] = deviceId
 		}
 
 		const syntheticsRunId = getSyntheticsRunId()
