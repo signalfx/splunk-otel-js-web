@@ -18,7 +18,11 @@
 
 import { FetchInstrumentation, FetchInstrumentationConfig } from '@opentelemetry/instrumentation-fetch'
 import { captureTraceParent } from './servertiming'
-import { diag } from '@opentelemetry/api'
+import { diag, Span } from '@opentelemetry/api'
+import * as core from '@opentelemetry/core'
+import { FetchResponse, SpanData } from '@opentelemetry/instrumentation-fetch/build/src/types'
+
+const OBSERVER_WAIT_TIME_MS = 300
 
 type ExposedSuper = {
 	_addHeaders: (options: Request | RequestInit, spanUrl: string) => void
@@ -29,6 +33,7 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
 		const origCustomAttrs = config.applyCustomAttributesOnSpan
 		config.applyCustomAttributesOnSpan = function (span, request, result) {
 			// Temporary return to old span name until cleared by backend
+
 			span.updateName(`HTTP ${(request.method || 'GET').toUpperCase()}`)
 			span.setAttribute('component', 'fetch')
 
@@ -45,6 +50,34 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
 		}
 
 		super(config)
+
+		const parent = this as any
+
+		const createSpanOrig = parent._createSpan.bind(this)
+		parent._createSpan = (url, options) => {
+			const createdSpan = createSpanOrig(url, options)
+			if (createdSpan) {
+				createdSpan.setAttribute('debug.browser.visibility_state.start', document.visibilityState)
+			}
+
+			return createdSpan
+		}
+
+		parent._endSpan = (span: Span, spanData: SpanData, response: FetchResponse) => {
+			const endTime = core.millisToHrTime(Date.now())
+			const performanceEndTime = core.hrTime()
+			parent._addFinalSpanAttributes(span, response)
+
+			setTimeout(() => {
+				spanData.observer?.disconnect()
+				parent._findResourceAndAddNetworkEvents(span, spanData, performanceEndTime)
+				// eslint-disable-next-line no-plusplus
+				parent._tasksCount--
+				parent._clearResources()
+				span.setAttribute('debug.browser.visibility_state.end', document.visibilityState)
+				span.end(endTime)
+			}, OBSERVER_WAIT_TIME_MS)
+		}
 
 		const _superAddHeaders = (this as unknown as ExposedSuper)._addHeaders.bind(this) as ExposedSuper['_addHeaders']
 		;(this as unknown as ExposedSuper)._addHeaders = (options, spanUrl) => {

@@ -99,6 +99,9 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 			},
 			this.urlToContextMap[targetUrl.toString()],
 		)
+
+		span.setAttribute('debug.browser.visibility_state.start', document.visibilityState)
+
 		span.setAttribute('component', MODULE_NAME)
 		span.setAttribute(SemanticAttributes.HTTP_URL, entry.name)
 		span.setAttribute(SemanticAttributes.HTTP_METHOD, 'GET')
@@ -111,6 +114,8 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 		} else {
 			span.end()
 		}
+
+		;(span as any).attributes['debug.browser.visibility_state.end'] = document.visibilityState
 	}
 
 	// for each added node that corresponds to a resource load, create an entry in `this.urlToContextMap`
