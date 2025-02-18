@@ -20,7 +20,7 @@ export const createDebugSpan = (name: string, attributes: Record<string, string 
 	const provider = window.SplunkRum.provider
 
 	if (!provider) {
-		setTimeout(() => createDebugSpan(name, attributes), 100)
+		setTimeout(() => createDebugSpan(name, attributes), 0)
 		return
 	}
 
