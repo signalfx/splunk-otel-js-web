@@ -15,10 +15,12 @@
  * limitations under the License.
  *
  */
+
 export const createDebugSpan = (name: string, attributes: Record<string, string | number> = {}) => {
 	const provider = window.SplunkRum.provider
 
 	if (!provider) {
+		setTimeout(() => createDebugSpan(name, attributes), 100)
 		return
 	}
 
