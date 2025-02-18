@@ -115,18 +115,19 @@ export class SplunkZipkinExporter implements SpanExporter {
 				)
 			) {
 				;(span as any).attributes['debug.startTime'] =
-					(span as any).startTime[0] + '' + (span as any).startTime[1]
+					(span as any).startTime[0] * 1e3 + (span as any).startTime[1] / 1e6
 				;(span as any).attributes['debug.startTime.iso'] = new Date(
-					parseInt((span as any).startTime[0] + '' + (span as any).startTime[1]) / 1000000,
+					(span as any).attributes['debug.startTime'],
 				).toISOString()
-				;(span as any).attributes['debug.endTime'] = (span as any).endTime[0] + '' + (span as any).endTime[1]
+				;(span as any).attributes['debug.endTime'] =
+					(span as any).endTime[0] * 1e3 + (span as any).endTime[1] / 1e6
 				;(span as any).attributes['debug.endTime.iso'] = new Date(
-					parseInt((span as any).endTime[0] + '' + (span as any).endTime[1]) / 1000000,
+					(span as any).attributes['debug.endTime'],
 				).toISOString()
 				;(span as any).events.forEach((e) => {
-					;(span as any).attributes['debug.' + e.name] = e.time[0] + '' + e.time[1]
+					;(span as any).attributes['debug.' + e.name] = e.time[0] * 1e3 + e.time[1] / 1e6
 					;(span as any).attributes['debug.' + e.name + '.iso'] = new Date(
-						parseInt(e.time[0] + '' + e.time[1]) / 1000000,
+						(span as any).attributes['debug.' + e.name],
 					).toISOString()
 				})
 				console.debug('Updated span', span)
