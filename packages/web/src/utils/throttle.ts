@@ -60,6 +60,8 @@ export function throttle<T extends (...args: unknown[]) => any>(func: T, limit: 
 
 				document.removeEventListener('visibilitychange', visibilityListener)
 			}
+
+			document.addEventListener('visibilitychange', visibilityListener)
 		}
 	}
 
