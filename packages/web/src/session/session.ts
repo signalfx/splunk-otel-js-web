@@ -26,6 +26,7 @@ import { getSessionStateFromLocalStorage, setSessionStateToLocalStorage } from '
 import { SESSION_INACTIVITY_TIMEOUT_MS } from './constants'
 import { suppressTracing } from '@opentelemetry/core'
 import { context } from '@opentelemetry/api'
+import { getDeviceId } from '../utils/device-id'
 
 /*
     The basic idea is to let the browser expire cookies for us "naturally" once
@@ -205,6 +206,11 @@ class SessionSpanProcessor implements SpanProcessor {
 				forceStore: false,
 				useLocalStorage: this.options.useLocalStorage,
 			})
+
+			const deviceId = getDeviceId(cookieDomain, 2)
+			if (deviceId) {
+				span.attributes['device.id.2'] = deviceId
+			}
 		})
 
 		try {
