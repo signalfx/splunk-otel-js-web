@@ -2,8 +2,9 @@
 	"compilerOptions": {
 		"allowJs": true,
 		"checkJs": false,
+		"esModuleInterop": true,
 		"forceConsistentCasingInFileNames": true,
-		"moduleResolution": "node",
+		"module": "NodeNext",
 		"noEmitOnError": true,
 		"pretty": true,
 		"resolveJsonModule": true,

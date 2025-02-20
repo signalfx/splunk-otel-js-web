@@ -25,7 +25,7 @@ import { getSplunkRumVersion, getGlobal } from './utils'
 import type { Resource } from '@opentelemetry/resources'
 import type { SplunkOtelWebType } from '@splunk/otel-web'
 
-import { loadRecorderBrowserScript } from './session-replay/load'
+import { loadRecorderBrowserScript, importRecorderScript } from './session-replay/load'
 import { getSessionReplayPlainGlobal } from './session-replay/utils'
 import { SessionReplayPlain as SessionReplayPlainType } from './session-replay/types'
 import { SESSION_REPLAY_BACKGROUND_SERVICE_URL } from './session-replay/constants'
@@ -84,7 +84,8 @@ const SplunkRumRecorder = {
 			return
 		}
 
-		await loadRecorderBrowserScript()
+		//await loadRecorderBrowserScript()
+		await importRecorderScript()
 
 		let tracerProvider: BasicTracerProvider | ProxyTracerProvider = trace.getTracerProvider() as BasicTracerProvider
 		if (tracerProvider && 'getDelegate' in tracerProvider) {
@@ -184,7 +185,7 @@ const SplunkRumRecorder = {
 
 		sessionReplay = new SessionReplayPlain({
 			features: {
-				backgroundServiceSrc: SESSION_REPLAY_BACKGROUND_SERVICE_URL,
+				//backgroundServiceSrc: SESSION_REPLAY_BACKGROUND_SERVICE_URL,
 				cacheAssets: false,
 				iframes: false,
 				imageBitmap: false,
