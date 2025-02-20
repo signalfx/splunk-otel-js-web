@@ -207,9 +207,9 @@ class SessionSpanProcessor implements SpanProcessor {
 				useLocalStorage: this.options.useLocalStorage,
 			})
 
-			const deviceId = getDeviceId(cookieDomain, 2)
+			const deviceId = getDeviceId(cookieDomain)
 			if (deviceId) {
-				span.attributes['device.id.2'] = deviceId
+				span.attributes['device.id.span'] = deviceId
 			}
 		})
 

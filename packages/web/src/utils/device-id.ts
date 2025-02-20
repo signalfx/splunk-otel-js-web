@@ -17,8 +17,7 @@
  */
 import { generateId } from '../utils'
 
-const KEY1 = '_splunk_device_id'
-const KEY2 = '_splunk_device_id_2'
+const KEY = '_splunk_device_id'
 
 const getCookie = (key: string) => {
 	const cookies = document.cookie.split(';')
@@ -44,13 +43,13 @@ const getCookieExpirationDate = () => {
 	return date.toUTCString()
 }
 
-export const getDeviceId = (domain: string, keyId: 1 | 2) => {
-	const idFromCookie = getCookie(keyId === 1 ? KEY1 : KEY2)
+export const getDeviceId = (domain: string) => {
+	const idFromCookie = getCookie(KEY)
 	if (idFromCookie) {
 		return idFromCookie
 	}
 
 	const id = generateId(64)
-	window.document.cookie = `${keyId === 1 ? KEY1 : KEY2}=${id};expires=${getCookieExpirationDate()};domain=${domain};path=/;sameSite=strict;secure`
+	window.document.cookie = `${KEY}=${id};expires=${getCookieExpirationDate()};domain=${domain};path=/;sameSite=strict;secure`
 	return id
 }

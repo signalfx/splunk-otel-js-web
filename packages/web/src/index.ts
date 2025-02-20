@@ -374,7 +374,7 @@ export const SplunkRum: SplunkOtelWebType = {
 			resourceAttrs['browser.instance.id'] = BrowserInstanceService.id
 		}
 
-		const deviceId = getDeviceId(processedOptions.cookieDomain, 1)
+		const deviceId = getDeviceId(processedOptions.cookieDomain)
 		if (deviceId) {
 			console.debug('Got device ID', deviceId)
 			resourceAttrs['device.id'] = deviceId
