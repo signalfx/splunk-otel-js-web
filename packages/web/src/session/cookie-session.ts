@@ -19,31 +19,24 @@ import { isIframe } from '../utils'
 import { SessionState } from './types'
 import { SESSION_DURATION_SECONDS, SESSION_STORAGE_KEY } from './constants'
 import { isSessionDurationExceeded, isSessionInactivityTimeoutReached, isSessionState } from './utils'
-import { throttle } from '../utils/throttle'
+// import { throttle } from '../utils/throttle'
 
 export const cookieStore = {
 	cachedValue: null,
 	set: (value: string) => {
-		cookieStore.cachedValue = value
-		cookieStore._set(value)
+		document.cookie = value
 	},
 
-	_set: throttle((value: string) => {
-		document.cookie = value
-	}, 1000),
+	// _set: throttle((value: string) => {
+	// 	document.cookie = value
+	// }, 1000),
 
 	flush: () => {
-		cookieStore._set.flush()
+		// cookieStore._set.flush()
 	},
 
-	get: ({ forceStoreRead }: { forceStoreRead: boolean }): string => {
-		if (cookieStore.cachedValue === null || forceStoreRead) {
-			cookieStore.cachedValue = document.cookie
-			return cookieStore.cachedValue
-		}
-
-		return cookieStore.cachedValue
-	},
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	get: ({ forceStoreRead }: { forceStoreRead: boolean }): string => document.cookie,
 }
 
 export function parseCookieToSessionState({
