@@ -31,7 +31,7 @@ jobs:
 
             - name: Upload blob report to GitHub Actions Artifacts
               if: ${{ !cancelled() }}
-              uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
+              uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1
               with:
                   name: blob-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
                   path: packages/integration-tests/blob-report
@@ -64,7 +64,7 @@ jobs:
 
             - name: Upload blob report to GitHub Actions Artifacts
               if: ${{ !cancelled() }}
-              uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
+              uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1
               with:
                   name: blob-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
                   path: packages/integration-tests/blob-report
@@ -97,7 +97,7 @@ jobs:
               working-directory: ./packages/integration-tests
 
             - name: Upload HTML report
-              uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
+              uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1
               with:
                   name: playwright-report--attempt-${{ github.run_attempt }}
                   path: packages/integration-tests/playwright-report
