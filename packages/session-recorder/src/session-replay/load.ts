@@ -40,12 +40,3 @@ export const loadRecorderBrowserScript = async () => {
 
 	console.log('Recorder script loaded from URL:', recorderScriptUrl)
 }
-
-export const importRecorderScript = async () => {
-	const { SessionReplay } = await import(
-		/* webpackMode: "eager" */
-		'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v1.30.0/session-replay.module.min.js' as any
-	)
-
-	window.SessionReplay = SessionReplay
-}

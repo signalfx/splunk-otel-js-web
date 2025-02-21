@@ -25,10 +25,8 @@ import { getSplunkRumVersion, getGlobal } from './utils'
 import type { Resource } from '@opentelemetry/resources'
 import type { SplunkOtelWebType } from '@splunk/otel-web'
 
-import { loadRecorderBrowserScript, importRecorderScript } from './session-replay/load'
-import { getSessionReplayPlainGlobal } from './session-replay/utils'
 import { SessionReplayPlain as SessionReplayPlainType } from './session-replay/types'
-import { SESSION_REPLAY_BACKGROUND_SERVICE_URL } from './session-replay/constants'
+import { SessionReplayPlain } from './session-replay/loader'
 
 interface BasicTracerProvider extends TracerProvider {
 	readonly resource: Resource
@@ -83,9 +81,6 @@ const SplunkRumRecorder = {
 			console.error("SplunkSessionRecorder can't be run in non-browser environments.")
 			return
 		}
-
-		//await loadRecorderBrowserScript()
-		await importRecorderScript()
 
 		let tracerProvider: BasicTracerProvider | ProxyTracerProvider = trace.getTracerProvider() as BasicTracerProvider
 		if (tracerProvider && 'getDelegate' in tracerProvider) {
@@ -170,7 +165,6 @@ const SplunkRumRecorder = {
 
 		lastKnownSession = SplunkRum.getSessionId()
 
-		const SessionReplayPlain = getSessionReplayPlainGlobal()
 		if (!SessionReplayPlain) {
 			console.error('SessionReplayPlain is not available')
 			return

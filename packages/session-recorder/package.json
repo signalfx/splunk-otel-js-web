@@ -4,10 +4,10 @@
 	"description": "Splunk distribution of rrweb for recording session",
 	"repository": "github:signalfx/splunk-otel-js-browser",
 	"scripts": {
-		"compile": "webpack --config webpack/webpack.config.js --mode production --color",
+		"compile": "webpack --mode production --color",
 		"compile:browser": "rollup -c",
 		"compile:tsc": "tsc --build tsconfig.cjs.json tsconfig.esm.json",
-		"dev": "webpack serve --config webpack/webpack.config.js --mode development --color"
+		"dev": "webpack serve --mode development --color"
 	},
 	"author": "Splunk Observability Instrumentals Team <ssg-observability-instrumentals-npm@splunk.com>",
 	"license": "Apache-2.0",

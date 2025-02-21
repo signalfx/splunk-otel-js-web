@@ -16,20 +16,15 @@
  *
  */
 const path = require('path')
-const { fileURLToPath } = require('url')
 const TerserPlugin = require('terser-webpack-plugin')
-
-const { InjectCDNScriptPlugin } = require('./plugins/InjectCDNScriptPlugin')
-
-const outputAssetName = 'splunk-otel-web-session-recorder.js'
 
 module.exports = {
 	mode: 'production',
-	entry: path.resolve(__dirname, '../src/index.ts'),
+	entry: path.resolve(__dirname, './src/index.ts'),
 	output: {
 		crossOriginLoading: 'anonymous',
-		filename: outputAssetName,
-		path: path.resolve(__dirname, '../dist/artifacts'),
+		filename: 'splunk-otel-web-session-recorder.js',
+		path: path.resolve(__dirname, './dist/artifacts'),
 		library: {
 			name: 'SplunkSessionRecorder',
 			type: 'window',
@@ -66,12 +61,6 @@ module.exports = {
 			},
 		],
 	},
-	// plugins: [
-	// 	new InjectCDNScriptPlugin(
-	// 		'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v1.30.0/session-replay.module.min.js',
-	// 		outputAssetName,
-	// 	),
-	// ],
 	devtool: 'source-map',
 	optimization: {
 		minimize: true,
@@ -85,5 +74,11 @@ module.exports = {
 				},
 			}),
 		],
+	},
+	experiments: {
+		buildHttp: {
+			allowedUris: ['https://cdn.signalfx.com/'],
+			cacheLocation: false,
+		},
 	},
 }
