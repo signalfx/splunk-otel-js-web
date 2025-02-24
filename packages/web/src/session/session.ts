@@ -20,7 +20,7 @@ import { SpanProcessor, WebTracerProvider } from '@opentelemetry/sdk-trace-web'
 import { createDebugSpan } from '../utils/debug-spans'
 import { InternalEventTarget } from '../EventTarget'
 import { generateId } from '../utils'
-import { parseCookieToSessionState, renewCookieTimeout } from './cookie-session'
+import { parseCookieToSessionState, renewCookieTimeout, getDebugDataAttributes } from './cookie-session'
 import { SessionState, SessionId } from './types'
 import { getSessionStateFromLocalStorage, setSessionStateToLocalStorage } from './local-storage-session'
 import { SESSION_INACTIVITY_TIMEOUT_MS } from './constants'
@@ -177,6 +177,10 @@ class SessionSpanProcessor implements SpanProcessor {
 			span.attributes['debug.endTime'] = span.endTime[0] * 1e3 + span.endTime[1] / 1e6
 			span.attributes['debug.endTime.iso'] = new Date(span.attributes['debug.endTime']).toISOString()
 			span.attributes['debug.browser.visibility_state.end'] = document.visibilityState
+
+			for (const [key, value] of Object.entries(getDebugDataAttributes())) {
+				span.attributes[`debug.${key}`] = value
+			}
 
 			if (
 				['splunk-post-doc-load-resource', 'fetch', 'xml-http-request', 'document-load'].includes(

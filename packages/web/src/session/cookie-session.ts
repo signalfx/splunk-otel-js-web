@@ -21,6 +21,10 @@ import { SESSION_DURATION_SECONDS, SESSION_STORAGE_KEY } from './constants'
 import { isSessionDurationExceeded, isSessionInactivityTimeoutReached, isSessionState } from './utils'
 // import { throttle } from '../utils/throttle'
 
+let debugDataAttributes: Record<string, string> = {}
+
+export const getDebugDataAttributes = () => debugDataAttributes
+
 export const cookieStore = {
 	cachedValue: null,
 	set: (value: string) => {
@@ -86,7 +90,8 @@ export function renewCookieTimeout(
 		return
 	}
 
-	const cookieValue = encodeURIComponent(JSON.stringify(sessionState))
+	const cookieStateStringified = JSON.stringify(sessionState)
+	const cookieValue = encodeURIComponent(cookieStateStringified)
 	const domain = cookieDomain ? `domain=${cookieDomain};` : ''
 	let cookie = SESSION_STORAGE_KEY + '=' + cookieValue + '; path=/;' + domain + 'max-age=' + SESSION_DURATION_SECONDS
 
@@ -99,6 +104,27 @@ export function renewCookieTimeout(
 	cookieStore.set(cookie)
 	if (forceStoreWrite) {
 		cookieStore.flush()
+	}
+
+	const cookieAfter = findCookieValue(SESSION_STORAGE_KEY, { forceStoreRead: true }) || ''
+	if (forceStoreWrite && !cookieAfter.includes(cookieStateStringified)) {
+		for (let i = 0; i < 10; i++) {
+			cookieStore.set(cookie)
+			cookieStore.flush()
+			const afterRetry = findCookieValue(SESSION_STORAGE_KEY, { forceStoreRead: true }) || ''
+
+			debugDataAttributes = {
+				'cookie.retry': 'true',
+				cookieAfter,
+				cookieValue,
+				'retry': String(i),
+			}
+
+			if (afterRetry.includes(cookieStateStringified)) {
+				debugDataAttributes['retry.success'] = 'true'
+				break
+			}
+		}
 	}
 }
 
