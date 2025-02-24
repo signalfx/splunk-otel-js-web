@@ -44,12 +44,19 @@ const getCookieExpirationDate = () => {
 }
 
 export const getDeviceId = (domain: string) => {
-	const idFromCookie = getCookie(KEY)
-	if (idFromCookie) {
-		return idFromCookie
+	let idFromCookie = getCookie(KEY)
+	let attempts = 0
+
+	while (!idFromCookie && attempts < 10) {
+		const id = generateId(64)
+		window.document.cookie = `${KEY}=${id};expires=${getCookieExpirationDate()};domain=${domain};path=/;sameSite=strict;secure`
+		idFromCookie = getCookie(KEY)
+		attempts += 1
 	}
 
-	const id = generateId(64)
-	window.document.cookie = `${KEY}=${id};expires=${getCookieExpirationDate()};domain=${domain};path=/;sameSite=strict;secure`
-	return id
+	if (attempts > 1) {
+		return `${idFromCookie}-${attempts}`
+	}
+
+	return idFromCookie
 }
