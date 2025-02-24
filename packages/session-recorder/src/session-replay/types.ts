@@ -15,11 +15,6 @@
  * limitations under the License.
  *
  */
-export interface WindowWithSessionReplay extends Window {
-	SessionReplay?: SessionReplayClass
-	SessionReplayPlain?: SessionReplayPlainClass
-}
-
 interface SessionReplayClassBase {
 	clear: () => void
 }
@@ -59,7 +54,7 @@ export interface SessionReplayConfig {
 	onSegment: (segment: SessionReplayPlainSegment) => void
 }
 
-interface SessionReplayPlainSegment {
+export interface SessionReplayPlainSegment {
 	data: {
 		assets: ProcessedAsset[]
 		events: ReplayEvent[]
