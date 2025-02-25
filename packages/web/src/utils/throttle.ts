@@ -23,7 +23,10 @@ export function throttle<T extends (...args: unknown[]) => any>(func: T, limit: 
 
 	const executeFunc = (...args: Parameters<T>) => {
 		lastExecutionTime = performance.now()
-		return func(...args)
+		const returnValue = func(...args)
+		lastArgs = undefined
+
+		return returnValue
 	}
 
 	const throttled = (...args: Parameters<T>) => {
@@ -51,11 +54,11 @@ export function throttle<T extends (...args: unknown[]) => any>(func: T, limit: 
 
 			visibilityListener = () => {
 				if (document.visibilityState === 'hidden') {
+					executeFunc(...args)
+
 					if (timeout !== null) {
 						clearTimeout(timeout)
 					}
-
-					executeFunc(...args)
 				}
 
 				document.removeEventListener('visibilitychange', visibilityListener)
@@ -66,6 +69,10 @@ export function throttle<T extends (...args: unknown[]) => any>(func: T, limit: 
 	}
 
 	throttled.flush = () => {
+		if (lastArgs) {
+			executeFunc(...lastArgs)
+		}
+
 		if (timeout) {
 			clearTimeout(timeout)
 			timeout = null
@@ -74,10 +81,6 @@ export function throttle<T extends (...args: unknown[]) => any>(func: T, limit: 
 		if (visibilityListener) {
 			document.removeEventListener('visibilitychange', visibilityListener)
 			visibilityListener = null
-		}
-
-		if (lastArgs) {
-			executeFunc(...lastArgs)
 		}
 	}
 

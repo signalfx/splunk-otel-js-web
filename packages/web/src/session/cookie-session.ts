@@ -17,9 +17,9 @@
  */
 import { isIframe } from '../utils'
 import { SessionState } from './types'
-import { SESSION_DURATION_SECONDS, SESSION_STORAGE_KEY } from './constants'
+import { SESSION_INACTIVITY_TIMEOUT_SECONDS, SESSION_STORAGE_KEY } from './constants'
 import { isSessionDurationExceeded, isSessionInactivityTimeoutReached, isSessionState } from './utils'
-// import { throttle } from '../utils/throttle'
+import { throttle } from '../utils/throttle'
 
 let debugDataAttributes: Record<string, string> = {}
 
@@ -28,19 +28,26 @@ export const getDebugDataAttributes = () => debugDataAttributes
 export const cookieStore = {
 	cachedValue: null,
 	set: (value: string) => {
-		document.cookie = value
+		cookieStore.cachedValue = value
+		cookieStore._set(value)
 	},
 
-	// _set: throttle((value: string) => {
-	// 	document.cookie = value
-	// }, 1000),
+	_set: throttle((value: string) => {
+		document.cookie = value
+	}, 1000),
 
 	flush: () => {
-		// cookieStore._set.flush()
+		cookieStore._set.flush()
 	},
 
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	get: ({ forceStoreRead }: { forceStoreRead: boolean }): string => document.cookie,
+	get: ({ forceStoreRead }: { forceStoreRead: boolean }): string => {
+		if (cookieStore.cachedValue === null || forceStoreRead) {
+			cookieStore.cachedValue = document.cookie
+			return cookieStore.cachedValue
+		}
+
+		return cookieStore.cachedValue
+	},
 }
 
 export function parseCookieToSessionState({
@@ -93,7 +100,8 @@ export function renewCookieTimeout(
 	const cookieStateStringified = JSON.stringify(sessionState)
 	const cookieValue = encodeURIComponent(cookieStateStringified)
 	const domain = cookieDomain ? `domain=${cookieDomain};` : ''
-	let cookie = SESSION_STORAGE_KEY + '=' + cookieValue + '; path=/;' + domain + 'max-age=' + SESSION_DURATION_SECONDS
+	let cookie =
+		SESSION_STORAGE_KEY + '=' + cookieValue + '; path=/;' + domain + 'max-age=' + SESSION_INACTIVITY_TIMEOUT_SECONDS
 
 	if (isIframe()) {
 		cookie += ';SameSite=None; Secure'
