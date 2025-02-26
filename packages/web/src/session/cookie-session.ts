@@ -123,7 +123,7 @@ export function renewCookieTimeout(
 
 			debugDataAttributes = {
 				'cookie.retry': 'true',
-				cookieAfter,
+				'cookieAfter': cookieValue ?? 'none',
 				cookieValue,
 				'retry': String(i),
 			}

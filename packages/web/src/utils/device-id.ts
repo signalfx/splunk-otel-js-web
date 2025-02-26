@@ -54,7 +54,7 @@ export const getDeviceId = (domain: string) => {
 		attempts += 1
 	}
 
-	if (attempts > 1) {
+	if (attempts >= 1) {
 		return `${idFromCookie}-${attempts}`
 	}
 
