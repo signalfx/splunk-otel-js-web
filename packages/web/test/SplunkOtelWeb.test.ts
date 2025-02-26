@@ -29,7 +29,6 @@ describe('SplunkOtelWeb', () => {
 	describe('global attributes', () => {
 		it('should be settable via constructor and then readable', () => {
 			SplunkRum.init({
-				allowBots: true,
 				applicationName: 'app-name',
 				beaconEndpoint: 'https://beacon',
 				rumAccessToken: '<token>',
@@ -44,7 +43,6 @@ describe('SplunkOtelWeb', () => {
 
 		it('should be patchable via setGlobalAttributes and then readable', () => {
 			SplunkRum.init({
-				allowBots: true,
 				applicationName: 'app-name',
 				beaconEndpoint: 'https://beacon',
 				rumAccessToken: '<token>',
@@ -68,7 +66,6 @@ describe('SplunkOtelWeb', () => {
 
 		it('should notify about changes via setGlobalAttributes', async () => {
 			SplunkRum.init({
-				allowBots: true,
 				applicationName: 'app-name',
 				beaconEndpoint: 'https://beacon',
 				rumAccessToken: '<token>',
@@ -104,7 +101,6 @@ describe('SplunkOtelWeb', () => {
 			expect(SplunkRum.getSessionId()).to.eq(undefined)
 
 			SplunkRum.init({
-				allowBots: true,
 				applicationName: 'app-name',
 				beaconEndpoint: 'https://beacon',
 				rumAccessToken: '<token>',
@@ -119,7 +115,6 @@ describe('SplunkOtelWeb', () => {
 			let sessionId: string | undefined
 
 			SplunkRum.init({
-				allowBots: true,
 				applicationName: 'app-name',
 				beaconEndpoint: 'https://beacon',
 				rumAccessToken: '<token>',
@@ -143,7 +138,6 @@ describe('SplunkOtelWeb', () => {
 			expect(SplunkRum.inited).to.eq(false, 'Should be false in the beginning.')
 
 			SplunkRum.init({
-				allowBots: true,
 				applicationName: 'app-name',
 				beaconEndpoint: 'https://beacon',
 				rumAccessToken: '<token>',

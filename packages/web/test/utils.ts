@@ -67,7 +67,6 @@ export function buildInMemorySplunkExporter(): {
 
 export function initWithDefaultConfig(capturer: SpanCapturer, additionalOptions = {}): void {
 	SplunkRum._internalInit({
-		allowBots: true,
 		beaconEndpoint: 'http://127.0.0.1:8888/v1/trace',
 		allowInsecureBeacon: true,
 		applicationName: 'my-app',
@@ -90,7 +89,6 @@ export function initWithSyncPipeline(additionalOptions = {}): {
 	const processor = new SimpleSpanProcessor(exporter)
 
 	SplunkRum._internalInit({
-		allowBots: true,
 		beaconEndpoint: 'http://127.0.0.1:8888/v1/trace',
 		allowInsecureBeacon: true,
 		applicationName: 'my-app',
