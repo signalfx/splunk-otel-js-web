@@ -40,7 +40,7 @@ const checkCookie = (expectedValue: string) => {
 	assert.equal(cookieValue, expectedValue, 'Checking cookie value')
 }
 
-describe.only('userTracking is reflected', () => {
+describe('userTracking is reflected', () => {
 	const capturer = new SpanCapturer()
 
 	afterEach(() => {
