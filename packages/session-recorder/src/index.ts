@@ -129,6 +129,11 @@ const SplunkRumRecorder = {
 		const { beaconEndpoint, debug, realm, rumAccessToken, recorder: recorderType, ...initRecorderConfig } = config
 		const isProprietaryRecorder = recorderType === 'proprietary'
 
+		// Mark recorded session as proprietary
+		if (isProprietaryRecorder && SplunkRum.provider) {
+			SplunkRum.provider.resource.attributes['splunk.sessionReplay'] = 'proprietary'
+		}
+
 		tracer = trace.getTracer('splunk.rr-web', VERSION)
 		const span = tracer.startSpan('record init')
 

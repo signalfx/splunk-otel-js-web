@@ -367,7 +367,6 @@ export const SplunkRum: SplunkOtelWebType = {
 			// Splunk specific attributes
 			'splunk.rumVersion': VERSION,
 			'splunk.scriptInstance': instanceId,
-			'splunk.sessionReplay': 'proprietary',
 			'app': applicationName,
 		}
 

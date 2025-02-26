@@ -29,7 +29,7 @@ export interface RecorderConfig {
 export abstract class Recorder {
 	protected onEmit: RecorderConfig['onEmit']
 
-	constructor(config: RecorderConfig) {
+	protected constructor(config: RecorderConfig) {
 		this.onEmit = config.onEmit
 	}
 

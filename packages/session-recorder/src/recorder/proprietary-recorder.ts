@@ -68,7 +68,7 @@ export class ProprietaryRecorder extends Recorder {
 		this.sessionReplay?.stop()
 	}
 
-	private onSegment(segment: SessionReplayPlainSegment) {
+	private onSegment = (segment: SessionReplayPlainSegment) => {
 		console.log('Session replay segment: ', segment)
 
 		const context: RecorderEmitContext = {
@@ -81,7 +81,7 @@ export class ProprietaryRecorder extends Recorder {
 		this.onEmit(context)
 	}
 
-	private onSessionChanged() {
+	private onSessionChanged = () => {
 		console.log('ProprietaryRecorder: onSessionChanged')
 		this.stop()
 		ProprietaryRecorder.clear()
