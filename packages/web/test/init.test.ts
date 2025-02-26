@@ -53,7 +53,6 @@ describe('test init', () => {
 		it('should not be inited', () => {
 			try {
 				SplunkRum.init({
-					allowBots: true,
 					beaconEndpoint: undefined,
 					applicationName: 'app',
 					rumAccessToken: undefined,
@@ -68,7 +67,6 @@ describe('test init', () => {
 		it('should not be inited with http', () => {
 			try {
 				SplunkRum.init({
-					allowBots: true,
 					beaconEndpoint: 'http://127.0.0.1:8888/insecure',
 					applicationName: 'app',
 					rumAccessToken: undefined,
@@ -81,7 +79,6 @@ describe('test init', () => {
 		it('should init with https', () => {
 			const path = '/secure'
 			SplunkRum.init({
-				allowBots: true,
 				beaconEndpoint: `https://127.0.0.1:8888/${path}`,
 				applicationName: 'app',
 				rumAccessToken: undefined,
@@ -92,7 +89,6 @@ describe('test init', () => {
 		it('can be forced via allowInsecureBeacon option', () => {
 			const path = '/insecure'
 			SplunkRum.init({
-				allowBots: true,
 				beaconEndpoint: `http://127.0.0.1:8888/${path}`,
 				allowInsecureBeacon: true,
 				applicationName: 'app',
@@ -102,13 +98,12 @@ describe('test init', () => {
 			doesBeaconUrlEndWith(path)
 		})
 		it('can use realm config option', () => {
-			SplunkRum.init({ allowBots: true, realm: 'test', applicationName: 'app', rumAccessToken: undefined })
+			SplunkRum.init({ realm: 'test', applicationName: 'app', rumAccessToken: undefined })
 			assert.ok(SplunkRum.inited)
 			doesBeaconUrlEndWith('https://rum-ingest.test.signalfx.com/v1/rum')
 		})
 		it('can use realm + otlp config option', () => {
 			SplunkRum.init({
-				allowBots: true,
 				realm: 'test',
 				applicationName: 'app',
 				rumAccessToken: undefined,
@@ -124,7 +119,6 @@ describe('test init', () => {
 	describe('successful', () => {
 		it('should have been inited properly with doc load spans', (done) => {
 			SplunkRum.init({
-				allowBots: true,
 				beaconEndpoint: 'https://127.0.0.1:9999/foo',
 				applicationName: 'my-app',
 				deploymentEnvironment: 'my-env',
@@ -166,7 +160,6 @@ describe('test init', () => {
 		})
 		it('is backwards compatible with 0.15.3 and earlier config options', () => {
 			SplunkRum.init({
-				allowBots: true,
 				beaconUrl: 'https://127.0.0.1:9999/foo',
 				app: 'my-app',
 				environment: 'my-env',
@@ -180,13 +173,11 @@ describe('test init', () => {
 	describe('double-init has no effect', () => {
 		it('should have been inited only once', () => {
 			SplunkRum.init({
-				allowBots: true,
 				beaconEndpoint: 'https://127.0.0.1:8888/foo',
 				applicationName: 'app',
 				rumAccessToken: undefined,
 			})
 			SplunkRum.init({
-				allowBots: true,
 				beaconEndpoint: 'https://127.0.0.1:8888/bar',
 				applicationName: 'app',
 				rumAccessToken: undefined,
@@ -199,7 +190,6 @@ describe('test init', () => {
 			const exportMock = sinon.fake()
 			const onAttributesSerializingMock = sinon.fake()
 			SplunkRum._internalInit({
-				allowBots: true,
 				beaconEndpoint: 'https://domain1',
 				allowInsecureBeacon: true,
 				applicationName: 'my-app',
@@ -229,7 +219,6 @@ describe('test init', () => {
 	describe('multiple instance protection', () => {
 		function init() {
 			SplunkRum.init({
-				allowBots: true,
 				beaconEndpoint: 'https://127.0.0.1:9999/foo',
 				applicationName: 'my-app',
 				deploymentEnvironment: 'my-env',
