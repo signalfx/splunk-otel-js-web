@@ -53,11 +53,11 @@ export function throttle<T extends (...args: unknown[]) => any>(func: T, limit: 
 
 			visibilityListener = () => {
 				if (document.visibilityState === 'hidden') {
+					executeFunc(...args)
+
 					if (timeout !== null) {
 						clearTimeout(timeout)
 					}
-
-					executeFunc(...args)
 				}
 
 				document.removeEventListener('visibilitychange', visibilityListener)
