@@ -50,9 +50,16 @@ module.exports = {
 		rules: [
 			{
 				test: /\.ts$/,
-				loader: 'ts-loader',
 				exclude: /node_modules/,
-				options: { configFile: 'tsconfig.base.json' },
+				use: [
+					{ loader: 'babel-loader' },
+					{
+						loader: 'ts-loader',
+						options: {
+							configFile: 'tsconfig.base.json',
+						},
+					},
+				],
 			},
 			{
 				test: /\.js$/,
