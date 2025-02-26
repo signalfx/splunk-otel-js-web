@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Automation frameworks allowed test</title>
+
+	<%- renderAgent({ debug: true }) %>
+
+	<script>console.log(navigator.userAgent)</script>
+</head>
+<body>
+  <h1>Automation frameworks allowed test</h1>
+  <pre id="scenarioDisplay"></pre>
+  <script>scenarioDisplay.innerHTML = scenario.innerHTML;</script>
+</body>
+</html>

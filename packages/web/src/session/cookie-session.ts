@@ -116,12 +116,11 @@ export function findCookieValue(
 	cookieName: string,
 	{ forceStoreRead }: { forceStoreRead: boolean },
 ): string | undefined {
-	const decodedCookie = decodeURIComponent(cookieStore.get({ forceStoreRead }))
-	const cookies = decodedCookie.split(';')
+	const cookies = cookieStore.get({ forceStoreRead }).split(';')
 	for (let i = 0; i < cookies.length; i++) {
 		const c = cookies[i].trim()
 		if (c.indexOf(cookieName + '=') === 0) {
-			return c.substring((cookieName + '=').length, c.length)
+			return decodeURIComponent(c.substring((cookieName + '=').length, c.length))
 		}
 	}
 	return undefined

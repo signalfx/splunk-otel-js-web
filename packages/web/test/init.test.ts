@@ -52,7 +52,11 @@ describe('test init', () => {
 	describe('not specifying beaconUrl', () => {
 		it('should not be inited', () => {
 			try {
-				SplunkRum.init({ beaconEndpoint: undefined, applicationName: 'app', rumAccessToken: undefined })
+				SplunkRum.init({
+					beaconEndpoint: undefined,
+					applicationName: 'app',
+					rumAccessToken: undefined,
+				})
 				assert.ok(false, 'Initializer finished.') // should not get here
 			} catch {
 				assert.ok(SplunkRum.inited === false, 'SplunkRum should not be inited.')
@@ -94,11 +98,7 @@ describe('test init', () => {
 			doesBeaconUrlEndWith(path)
 		})
 		it('can use realm config option', () => {
-			SplunkRum.init({
-				realm: 'test',
-				applicationName: 'app',
-				rumAccessToken: undefined,
-			})
+			SplunkRum.init({ realm: 'test', applicationName: 'app', rumAccessToken: undefined })
 			assert.ok(SplunkRum.inited)
 			doesBeaconUrlEndWith('https://rum-ingest.test.signalfx.com/v1/rum')
 		})

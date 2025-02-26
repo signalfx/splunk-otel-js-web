@@ -106,6 +106,16 @@ export interface SplunkOtelWebConfig {
 	 * */
 	deploymentEnvironment?: string
 
+	/*
+	 * If true, automation frameworks like Cypress, Selenium, Playwright, Synthetics will not be tracked. Defaults to false.
+	 */
+	disableAutomationFrameworks?: boolean
+
+	/*
+	 * If true, bots like google bot, bing bot, and others will be blocked. Defaults to false.
+	 */
+	disableBots?: boolean
+
 	/**
 	 * Sets a value for the `environment` attribute (persists through calls to `setGlobalAttributes()`)
 	 * @deprecated Renamed to `deploymentEnvironment`
