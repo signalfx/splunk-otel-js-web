@@ -52,14 +52,9 @@ export function parseCookieToSessionState({ forceStoreRead }: { forceStoreRead: 
 		return undefined
 	}
 
-	const decoded = decodeURIComponent(rawValue)
-	if (!decoded) {
-		return undefined
-	}
-
 	let sessionState: unknown = undefined
 	try {
-		sessionState = JSON.parse(decoded)
+		sessionState = JSON.parse(rawValue)
 	} catch {
 		return undefined
 	}
