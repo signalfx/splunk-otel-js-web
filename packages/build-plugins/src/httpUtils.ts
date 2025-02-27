@@ -28,10 +28,13 @@ interface FileUpload {
 interface UploadOptions {
 	file: FileUpload
 	parameters: { [key: string]: string | number }
+	token: string
 	url: string
 }
 
-export const uploadFile = async ({ url, file, parameters }: UploadOptions): Promise<void> => {
+const TOKEN_HEADER = 'X-SF-Token'
+
+export const uploadFile = async ({ url, file, parameters, token }: UploadOptions): Promise<void> => {
 	const formData = new FormData()
 
 	formData.append(file.fieldName, createReadStream(file.filePath))
@@ -43,6 +46,7 @@ export const uploadFile = async ({ url, file, parameters }: UploadOptions): Prom
 	await axios.put(url, formData, {
 		headers: {
 			...formData.getHeaders(),
+			[TOKEN_HEADER]: token,
 		},
 	})
 }

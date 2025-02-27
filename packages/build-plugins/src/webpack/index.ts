@@ -153,6 +153,7 @@ export function applySourceMapsUpload(compiler: Compiler, options: OllyWebPlugin
 					},
 					url,
 					parameters,
+					token: options.sourceMaps.token,
 				})
 				uploadResults.success += 1
 			} catch (e) {
