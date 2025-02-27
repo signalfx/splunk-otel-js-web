@@ -32,7 +32,7 @@ interface UploadOptions {
 	url: string
 }
 
-const TOKEN_HEADER = 'X-SF-Token';
+const TOKEN_HEADER = 'X-SF-Token'
 
 export const uploadFile = async ({ url, file, parameters, token }: UploadOptions): Promise<void> => {
 	const formData = new FormData()
