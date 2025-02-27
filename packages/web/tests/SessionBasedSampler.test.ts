@@ -18,7 +18,7 @@
 
 import { InternalEventTarget } from '../src/EventTarget'
 import { SessionBasedSampler } from '../src/SessionBasedSampler'
-import { initSessionTracking, updateSessionStatus } from '../src/session'
+import { initSessionTracking, getOrCreateSessionIdAndUpdateExpirationIfNecessary } from '../src/session'
 import { context, SamplingDecision } from '@opentelemetry/api'
 import { SESSION_INACTIVITY_TIMEOUT_MS, SESSION_STORAGE_KEY } from '../src/session/constants'
 import { describe, it, expect } from 'vitest'
@@ -37,7 +37,8 @@ describe('Session based sampler', () => {
 		)
 		document.cookie = SESSION_STORAGE_KEY + '=' + lowCookieValue + '; path=/; max-age=' + 10
 		const provider = createWebTracerProvider()
-		initSessionTracking(provider, lowSessionId, new InternalEventTarget())
+		initSessionTracking(provider, new InternalEventTarget())
+		getOrCreateSessionIdAndUpdateExpirationIfNecessary({ useLocalStorage: false, forceStore: true })
 
 		const sampler = new SessionBasedSampler({ ratio: 0.5 })
 		expect(
@@ -55,7 +56,7 @@ describe('Session based sampler', () => {
 			}),
 		)
 		document.cookie = SESSION_STORAGE_KEY + '=' + highCookieValue + '; path=/; max-age=' + 10
-		updateSessionStatus({
+		getOrCreateSessionIdAndUpdateExpirationIfNecessary({
 			forceStore: true,
 			useLocalStorage: false,
 		})

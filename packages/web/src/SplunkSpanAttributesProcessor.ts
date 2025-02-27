@@ -18,7 +18,9 @@
 
 import { Attributes } from '@opentelemetry/api'
 import { Span, SpanProcessor } from '@opentelemetry/sdk-trace-base'
-import { getRumSessionId } from './session'
+import { getOrCreateSessionIdAndUpdateExpirationIfNecessary } from './session'
+import { suppressTracing } from '@opentelemetry/core'
+import { context } from '@opentelemetry/api'
 
 export class SplunkSpanAttributesProcessor implements SpanProcessor {
 	private readonly _globalAttributes: Attributes
@@ -43,13 +45,18 @@ export class SplunkSpanAttributesProcessor implements SpanProcessor {
 	}
 
 	onStart(span: Span): void {
-		span.setAttribute('location.href', location.href)
-		span.setAttributes(this._globalAttributes)
-		span.setAttribute(
-			'splunk.rumSessionId',
-			getRumSessionId({ useLocalStorage: this.useLocalStorageForSessionMetadata }),
-		)
-		span.setAttribute('browser.instance.visibility_state', document.visibilityState)
+		context.with(suppressTracing(context.active()), () => {
+			span.setAttribute('location.href', location.href)
+			span.setAttributes(this._globalAttributes)
+			span.setAttribute(
+				'splunk.rumSessionId',
+				getOrCreateSessionIdAndUpdateExpirationIfNecessary({
+					useLocalStorage: this.useLocalStorageForSessionMetadata,
+					forceStore: true,
+				}),
+			)
+			span.setAttribute('browser.instance.visibility_state', document.visibilityState)
+		})
 	}
 
 	setGlobalAttributes(attributes?: Attributes): void {

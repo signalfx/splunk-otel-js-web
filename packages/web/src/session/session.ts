@@ -23,8 +23,6 @@ import { parseCookieToSessionState, renewCookieTimeout } from './cookie-session'
 import { SessionState, SessionId } from './types'
 import { getSessionStateFromLocalStorage, setSessionStateToLocalStorage } from './local-storage-session'
 import { SESSION_INACTIVITY_TIMEOUT_MS } from './constants'
-import { suppressTracing } from '@opentelemetry/core'
-import { context } from '@opentelemetry/api'
 
 /*
     The basic idea is to let the browser expire cookies for us "naturally" once
@@ -71,15 +69,22 @@ export function getCurrentSessionState({ useLocalStorage = false, forceStoreRead
 // 1) Check if the cookie has been expired by the browser; if so, create a new one
 // 2) If activity has occurred since the last periodic invocation, renew the cookie timeout
 // (Only exported for testing purposes.)
-export function updateSessionStatus({
-	forceStore,
-	useLocalStorage = false,
-	forceActivity,
-}: {
-	forceActivity?: boolean
-	forceStore: boolean
-	useLocalStorage: boolean
-}): void {
+export function getOrCreateSessionIdAndUpdateExpirationIfNecessary(
+	{
+		forceStore,
+		useLocalStorage,
+		forceActivity,
+	}: {
+		forceActivity?: boolean
+		forceStore: boolean
+		useLocalStorage: boolean
+	},
+	level = 0,
+): string {
+	if (hasNativeSessionId()) {
+		return window['SplunkRumNative'].getNativeSessionId()
+	}
+
 	let sessionState = getCurrentSessionState({ useLocalStorage, forceStoreRead: forceStore })
 	let shouldForceWrite = false
 	if (!sessionState) {
@@ -104,6 +109,29 @@ export function updateSessionStatus({
 	}
 
 	recentActivity = false
+
+	// New session created, check if another tab has created a new session at the same time
+	if (shouldForceWrite && level < 1) {
+		return getOrCreateSessionIdAndUpdateExpirationIfNecessary(
+			{
+				forceStore: true,
+				useLocalStorage,
+			},
+			level + 1,
+		)
+	}
+
+	return sessionState.id
+}
+
+export function getCurrentSessionId({
+	forceStore,
+	useLocalStorage,
+}: {
+	forceStore: boolean
+	useLocalStorage: boolean
+}): string | undefined {
+	return getCurrentSessionState({ useLocalStorage, forceStoreRead: forceStore })?.id
 }
 
 function hasNativeSessionId(): boolean {
@@ -128,13 +156,6 @@ class SessionSpanProcessor implements SpanProcessor {
 		if (this.options.allSpansAreActivity) {
 			markActivity()
 		}
-
-		context.with(suppressTracing(context.active()), () => {
-			updateSessionStatus({
-				forceStore: false,
-				useLocalStorage: this.options.useLocalStorage,
-			})
-		})
 	}
 
 	shutdown(): Promise<void> {
@@ -146,7 +167,6 @@ const ACTIVITY_EVENTS = ['click', 'scroll', 'mousedown', 'keydown', 'touchend', 
 
 export function initSessionTracking(
 	provider: WebTracerProvider,
-	instanceId: SessionId,
 	newEventTarget: InternalEventTarget,
 	domain?: string,
 	allSpansAreActivity = false,
@@ -169,8 +189,6 @@ export function initSessionTracking(
 	ACTIVITY_EVENTS.forEach((type) => document.addEventListener(type, markActivity, { capture: true, passive: true }))
 	provider.addSpanProcessor(new SessionSpanProcessor({ allSpansAreActivity, useLocalStorage }))
 
-	updateSessionStatus({ useLocalStorage, forceStore: true })
-
 	return {
 		deinit: () => {
 			ACTIVITY_EVENTS.forEach((type) => document.removeEventListener(type, markActivity))
@@ -184,5 +202,5 @@ export function getRumSessionId({ useLocalStorage }: { useLocalStorage: boolean 
 		return window['SplunkRumNative'].getNativeSessionId()
 	}
 
-	return getCurrentSessionState({ useLocalStorage, forceStoreRead: true })?.id
+	return getCurrentSessionId({ useLocalStorage, forceStore: true })
 }
