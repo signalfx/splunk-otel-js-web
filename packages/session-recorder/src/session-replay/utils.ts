@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-import { SessionReplay } from './loader'
+import { SessionReplay } from './cdn-module'
 import { gzip } from 'fflate'
 
 export const compressAsync = async (data: Uint8Array): Promise<Uint8Array | Blob> => {

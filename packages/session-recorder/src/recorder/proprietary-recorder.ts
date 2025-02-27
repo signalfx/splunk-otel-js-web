@@ -16,11 +16,10 @@
  *
  */
 import { Recorder, RecorderConfig, RecorderEmitContext } from './recorder'
-import { SessionReplayPlain as SessionReplayPlainType, SessionReplayPlainSegment } from '../session-replay'
-import { SessionReplayPlain } from '../session-replay/loader'
+import { SessionReplayPlain, SessionReplayPlainInstance, SessionReplayPlainSegment } from '../session-replay'
 
 export class ProprietaryRecorder extends Recorder {
-	private sessionReplay: SessionReplayPlainType | undefined
+	private sessionReplay: SessionReplayPlainInstance | undefined
 
 	constructor(config: RecorderConfig) {
 		super(config)

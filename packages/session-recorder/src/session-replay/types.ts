@@ -30,10 +30,10 @@ export interface SessionReplayClass extends SessionReplayClassBase {
 }
 
 export interface SessionReplayPlainClass extends SessionReplayClassBase {
-	new (config: SessionReplayConfig): SessionReplayPlain
+	new (config: SessionReplayConfig): SessionReplayPlainInstance
 }
 
-export type SessionReplayPlain = SessionReplayBase
+export type SessionReplayPlainInstance = SessionReplayBase
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 

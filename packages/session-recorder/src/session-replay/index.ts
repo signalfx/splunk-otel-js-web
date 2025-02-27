@@ -16,3 +16,4 @@
  *
  */
 export * from './types'
+export * from './cdn-module'
