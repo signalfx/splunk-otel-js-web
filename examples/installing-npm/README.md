@@ -27,7 +27,7 @@ npm install @splunk/otel-web
 ```
 Note: in modern versions of NPM, installed packages are added to `package.json` by default.
 
-Add a file, which will initialise instrumentation (in our case `./src/instrumentation.js`):
+Add a file, which will initialise instrumentation (in our case `./src/instrumentation.ts`):
 ```js
 import SplunkOtelWeb from '@splunk/otel-web';
 
@@ -39,11 +39,11 @@ SplunkOtelWeb.init({
 });
 ```
 
-Import the newly created file in your root `.js` file (in our case it's `./src/index.js`) **above other imports**:
+Import the newly created file in your root `.ts` file (in our case it's `./src/index.ts`) **above other imports**:
 ```js
-import './instrumentation.js';
+import './instrumentation.ts';
 /* other imports */
 ```
 
-Start your application and it will begin sending telemetry data, which you can observe in either DevTools console,
+Start your application, and it will begin sending telemetry data, which you can observe in either DevTools console,
 or in DevTools Network tab.
