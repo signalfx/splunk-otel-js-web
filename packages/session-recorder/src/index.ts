@@ -25,10 +25,13 @@ import { getSplunkRumVersion, getGlobal } from './utils'
 import type { Resource } from '@opentelemetry/resources'
 import type { SplunkOtelWebType } from '@splunk/otel-web'
 
-import { loadRecorderBrowserScript } from './session-replay/load'
-import { getSessionReplayPlainGlobal } from './session-replay/utils'
-import { SessionReplayPlain as SessionReplayPlainType } from './session-replay/types'
-import { SESSION_REPLAY_BACKGROUND_SERVICE_URL } from './session-replay/constants'
+import {
+	Recorder,
+	ProprietaryRecorder,
+	RRWebRecorder,
+	RecorderEmitContext,
+	RRWebRecorderPublicConfig,
+} from './recorder'
 
 interface BasicTracerProvider extends TracerProvider {
 	readonly resource: Resource
@@ -46,12 +49,15 @@ export type SplunkRumRecorderConfig = {
 	 */
 	realm?: string
 
+	/** Type of the recorder */
+	recorder?: 'rrweb' | 'proprietary'
+
 	/**
 	 * RUM authorization token for data sending. Please make sure this is a token
 	 * with only RUM scope as it's visible to every user of your app
 	 **/
 	rumAccessToken?: string
-}
+} & RRWebRecorderPublicConfig
 
 // Hard limit of 4 hours of maximum recording during one session
 const MAX_RECORDING_LENGTH = (4 * 60 + 1) * 60 * 1000
@@ -67,14 +73,14 @@ let paused = false
 let eventCounter = 1
 let logCounter = 1
 
-let sessionReplay: SessionReplayPlainType | undefined
+let recorder: Recorder | undefined
 
 const SplunkRumRecorder = {
 	get inited(): boolean {
 		return Boolean(inited)
 	},
 
-	async init(config: SplunkRumRecorderConfig): Promise<void> {
+	init(config: SplunkRumRecorderConfig): void {
 		if (inited) {
 			return
 		}
@@ -83,8 +89,6 @@ const SplunkRumRecorder = {
 			console.error("SplunkSessionRecorder can't be run in non-browser environments.")
 			return
 		}
-
-		await loadRecorderBrowserScript()
 
 		let tracerProvider: BasicTracerProvider | ProxyTracerProvider = trace.getTracerProvider() as BasicTracerProvider
 		if (tracerProvider && 'getDelegate' in tracerProvider) {
@@ -122,7 +126,14 @@ const SplunkRumRecorder = {
 
 		const resource = SplunkRum.resource
 
-		const { beaconEndpoint, debug, realm, rumAccessToken } = config
+		const { beaconEndpoint, debug, realm, rumAccessToken, recorder: recorderType, ...initRecorderConfig } = config
+		const isProprietaryRecorder = recorderType === 'proprietary'
+
+		// Mark recorded session as proprietary
+		if (isProprietaryRecorder && SplunkRum.provider) {
+			SplunkRum.provider.resource.attributes['splunk.sessionReplay'] = 'proprietary'
+		}
+
 		tracer = trace.getTracer('splunk.rr-web', VERSION)
 		const span = tracer.startSpan('record init')
 
@@ -163,116 +174,92 @@ const SplunkRumRecorder = {
 				}
 			},
 			sessionId: SplunkRum.getSessionId() ?? '',
-			usePersistentExportQueue: true,
+			usePersistentExportQueue: isProprietaryRecorder,
 		})
 		const processor = new BatchLogProcessor(exporter)
 
 		lastKnownSession = SplunkRum.getSessionId()
 
-		const SessionReplayPlain = getSessionReplayPlainGlobal()
-		if (!SessionReplayPlain) {
-			console.error('SessionReplayPlain is not available')
-			return
-		}
-
-		if (SplunkRum.isNewSessionId()) {
-			console.log('SplunkRum.isNewSessionId()', 'clearing')
-			SessionReplayPlain.clear()
+		if (isProprietaryRecorder && SplunkRum.isNewSessionId()) {
+			console.log('SplunkRum.isNewSessionId()')
+			ProprietaryRecorder.clear()
 		}
 
 		sessionStartTime = Date.now()
 
-		sessionReplay = new SessionReplayPlain({
-			features: {
-				backgroundServiceSrc: SESSION_REPLAY_BACKGROUND_SERVICE_URL,
-				cacheAssets: false,
-				iframes: false,
-				imageBitmap: false,
-				packAssets: false,
-			},
-			logLevel: 'debug',
-			maskAllInputs: false,
-			maskAllText: false,
-			maxExportIntervalMs: 5000,
-			onSegment: (segment) => {
-				console.log('Have segment', segment)
-				console.debug('🔥 dbg: onSegment begin', segment)
+		const onEmit = (context: RecorderEmitContext) => {
+			if (paused) {
+				return
+			}
 
-				if (paused) {
+			let isExtended = false
+
+			// Safeguards from our ingest getting DDOSed:
+			// 1. A session can send up to 4 hours of data
+			// 2. Recording resumes on session change if it isn't a background tab (session regenerated in an another tab)
+			if (SplunkRum.getSessionId() !== lastKnownSession) {
+				if (document.hidden) {
 					return
 				}
 
-				let isExtended = false
-
-				// Safeguards from our ingest getting DDOSed:
-				// 1. A session can send up to 4 hours of data
-				// 2. Recording resumes on session change if it isn't a background tab (session regenerated in an another tab)
-				if (SplunkRum.getSessionId() !== lastKnownSession) {
-					if (document.hidden) {
-						return
-					}
-
-					// We need to call it here before another getSessionID call. This will create a new session
-					// if the previous one was expired
-					if (SplunkRum._internalOnExternalSpanCreated) {
-						SplunkRum._internalOnExternalSpanCreated()
-						isExtended = true
-					}
-
-					lastKnownSession = SplunkRum.getSessionId()
-					sessionStartTime = Date.now()
-					// reset counters
-					eventCounter = 1
-					logCounter = 1
-					sessionReplay?.stop()
-					console.log('onSegment - Clearing assets')
-					SessionReplayPlain.clear()
-					void sessionReplay?.start()
+				// We need to call it here before another getSessionID call. This will create a new session
+				// if the previous one was expired
+				if (SplunkRum._internalOnExternalSpanCreated) {
+					SplunkRum._internalOnExternalSpanCreated()
+					isExtended = true
 				}
 
-				if (segment.metadata.startUnixMs > sessionStartTime + MAX_RECORDING_LENGTH) {
-					return
+				lastKnownSession = SplunkRum.getSessionId()
+				sessionStartTime = Date.now()
+				// reset counters
+				eventCounter = 1
+				logCounter = 1
+				context.onSessionChanged()
+			}
+
+			if (context.startTime > sessionStartTime + MAX_RECORDING_LENGTH) {
+				return
+			}
+
+			if (!isExtended) {
+				if (SplunkRum._internalOnExternalSpanCreated) {
+					SplunkRum._internalOnExternalSpanCreated()
+				}
+			}
+
+			const time = context.type === 'proprietary' ? Math.floor(context.startTime) : context.startTime
+			const eventI = eventCounter
+
+			eventCounter += 1
+
+			const body = encoder.encode(JSON.stringify(context.data))
+			const totalC = Math.ceil(body.byteLength / MAX_CHUNK_SIZE)
+
+			console.log('TotalC:', totalC)
+
+			for (let i = 0; i < totalC; i++) {
+				const start = i * MAX_CHUNK_SIZE
+				const end = (i + 1) * MAX_CHUNK_SIZE
+				const log = convert(decoder.decode(body.slice(start, end)), time, {
+					'rr-web.offset': logCounter,
+					'rr-web.event': eventI,
+					'rr-web.chunk': i + 1,
+					'rr-web.total-chunks': totalC,
+				})
+
+				logCounter += 1
+
+				if (debug) {
+					console.log(log)
 				}
 
-				if (!isExtended) {
-					if (SplunkRum._internalOnExternalSpanCreated) {
-						SplunkRum._internalOnExternalSpanCreated()
-					}
-				}
+				processor.onEmit(log)
+			}
+		}
 
-				const time = Math.floor(segment.metadata.startUnixMs)
-				const eventI = eventCounter
-
-				eventCounter += 1
-
-				const body = encoder.encode(JSON.stringify({ data: segment.data, metadata: segment.metadata }))
-				const totalC = Math.ceil(body.byteLength / MAX_CHUNK_SIZE)
-
-				console.log('TotalC:', totalC)
-
-				for (let i = 0; i < totalC; i++) {
-					const start = i * MAX_CHUNK_SIZE
-					const end = (i + 1) * MAX_CHUNK_SIZE
-					const log = convert(decoder.decode(body.slice(start, end)), time, {
-						'rr-web.offset': logCounter,
-						'rr-web.event': eventI,
-						'rr-web.chunk': i + 1,
-						'rr-web.total-chunks': totalC,
-					})
-
-					logCounter += 1
-
-					if (debug) {
-						console.log(log)
-					}
-
-					processor.onEmit(log)
-				}
-			},
-		})
-
-		console.log('Starting SRP')
-		void sessionReplay.start()
+		const recorderConfig = { ...initRecorderConfig, onEmit }
+		recorder = isProprietaryRecorder ? new ProprietaryRecorder(recorderConfig) : new RRWebRecorder(recorderConfig)
+		recorder.start()
 		inited = true
 	},
 
@@ -284,7 +271,7 @@ const SplunkRumRecorder = {
 		const oldPaused = paused
 		paused = false
 		if (!oldPaused) {
-			void sessionReplay?.start()
+			void recorder?.resume()
 			tracer.startSpan('record resume').end()
 		}
 	},
@@ -294,7 +281,7 @@ const SplunkRumRecorder = {
 		}
 
 		if (paused) {
-			sessionReplay?.stop()
+			recorder?.stop()
 			tracer.startSpan('record stop').end()
 		}
 
@@ -305,7 +292,7 @@ const SplunkRumRecorder = {
 			return
 		}
 
-		sessionReplay?.stop()
+		recorder?.stop()
 		inited = false
 	},
 }

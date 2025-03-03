@@ -15,28 +15,14 @@
  * limitations under the License.
  *
  */
-module.exports = [
-	{
-		name: 'artifacts/otel-api-globals.js',
-		limit: '3 kB',
-		path: './packages/web/dist/artifacts/otel-api-globals.js',
-	},
 
-	{
-		name: 'artifacts/splunk-otel-web.js',
-		limit: '42 kB',
-		path: './packages/web/dist/artifacts/splunk-otel-web.js',
-	},
+import {
+	SessionReplay as SessionReplayOriginal,
+	SessionReplayPlain as SessionReplayPlainOriginal,
+	// @ts-expect-error Remote module
+} from 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v1.31.0/session-replay.module.min.js'
+import { SessionReplayPlainClass, SessionReplayClass } from './types'
 
-	{
-		name: 'artifacts/splunk-otel-web.js',
-		limit: '74 kB',
-		path: './packages/web/dist/artifacts/splunk-otel-web-legacy.js',
-	},
+export const SessionReplay: SessionReplayClass = SessionReplayOriginal
 
-	{
-		name: 'artifacts/splunk-otel-web-session-recorder.js',
-		limit: '101 kB',
-		path: './packages/session-recorder/dist/artifacts/splunk-otel-web-session-recorder.js',
-	},
-]
+export const SessionReplayPlain: SessionReplayPlainClass = SessionReplayPlainOriginal

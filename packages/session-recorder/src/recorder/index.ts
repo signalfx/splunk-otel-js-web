@@ -15,9 +15,6 @@
  * limitations under the License.
  *
  */
-const SESSION_REPLAY_VERSION_TAG = 'v1.30.0'
-const SESSION_REPLAY_CDN_BASE_URL = `https://cdn.signalfx.com/o11y-gdi-rum/session-replay/${SESSION_REPLAY_VERSION_TAG}`
-
-export const SESSION_REPLAY_BROWSER_SCRIPT_URL = `${SESSION_REPLAY_CDN_BASE_URL}/session-replay.browser.min.js`
-export const SESSION_REPLAY_BROWSER_LEGACY_SCRIPT_URL = `${SESSION_REPLAY_CDN_BASE_URL}/session-replay.browser.legacy.min.js`
-export const SESSION_REPLAY_BACKGROUND_SERVICE_URL = `${SESSION_REPLAY_CDN_BASE_URL}/background-service.html`
+export * from './recorder'
+export * from './rrweb-recorder'
+export * from './proprietary-recorder'

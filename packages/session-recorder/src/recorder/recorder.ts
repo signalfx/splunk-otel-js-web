@@ -15,28 +15,29 @@
  * limitations under the License.
  *
  */
-module.exports = [
-	{
-		name: 'artifacts/otel-api-globals.js',
-		limit: '3 kB',
-		path: './packages/web/dist/artifacts/otel-api-globals.js',
-	},
+export interface RecorderEmitContext {
+	data: Record<string, unknown>
+	onSessionChanged: () => void
+	startTime: number
+	type: 'proprietary' | 'rrweb'
+}
 
-	{
-		name: 'artifacts/splunk-otel-web.js',
-		limit: '42 kB',
-		path: './packages/web/dist/artifacts/splunk-otel-web.js',
-	},
+export interface RecorderConfig {
+	onEmit: (context: RecorderEmitContext) => void
+}
 
-	{
-		name: 'artifacts/splunk-otel-web.js',
-		limit: '74 kB',
-		path: './packages/web/dist/artifacts/splunk-otel-web-legacy.js',
-	},
+export abstract class Recorder {
+	protected onEmit: RecorderConfig['onEmit']
 
-	{
-		name: 'artifacts/splunk-otel-web-session-recorder.js',
-		limit: '101 kB',
-		path: './packages/session-recorder/dist/artifacts/splunk-otel-web-session-recorder.js',
-	},
-]
+	protected constructor(config: RecorderConfig) {
+		this.onEmit = config.onEmit
+	}
+
+	abstract pause(): void
+
+	abstract resume(): void
+
+	abstract start(): void
+
+	abstract stop(): void
+}

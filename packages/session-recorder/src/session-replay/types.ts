@@ -15,11 +15,6 @@
  * limitations under the License.
  *
  */
-export interface WindowWithSessionReplay extends Window {
-	SessionReplay?: SessionReplayClass
-	SessionReplayPlain?: SessionReplayPlainClass
-}
-
 interface SessionReplayClassBase {
 	clear: () => void
 }
@@ -35,10 +30,10 @@ export interface SessionReplayClass extends SessionReplayClassBase {
 }
 
 export interface SessionReplayPlainClass extends SessionReplayClassBase {
-	new (config: SessionReplayConfig): SessionReplayPlain
+	new (config: SessionReplayConfig): SessionReplayPlainInstance
 }
 
-export type SessionReplayPlain = SessionReplayBase
+export type SessionReplayPlainInstance = SessionReplayBase
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 
@@ -59,7 +54,7 @@ export interface SessionReplayConfig {
 	onSegment: (segment: SessionReplayPlainSegment) => void
 }
 
-interface SessionReplayPlainSegment {
+export interface SessionReplayPlainSegment {
 	data: {
 		assets: ProcessedAsset[]
 		events: ReplayEvent[]

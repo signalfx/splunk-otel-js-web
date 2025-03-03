@@ -15,21 +15,10 @@
  * limitations under the License.
  *
  */
-import { WindowWithSessionReplay, SessionReplayPlainClass, SessionReplayClass } from './types'
+import { SessionReplay } from './cdn-module'
 import { gzip } from 'fflate'
 
-export const getSessionReplayGlobal = (): SessionReplayClass | null => {
-	const windowObject: WindowWithSessionReplay = window
-	return windowObject.SessionReplay ?? null
-}
-
-export const getSessionReplayPlainGlobal = (): SessionReplayPlainClass | null => {
-	const windowObject: WindowWithSessionReplay = window
-	return windowObject.SessionReplayPlain ?? null
-}
-
 export const compressAsync = async (data: Uint8Array): Promise<Uint8Array | Blob> => {
-	const SessionReplay = getSessionReplayGlobal()
 	if (!SessionReplay) {
 		console.warn('SessionReplay module undefined, fallback to gzip.')
 		return compressGzipAsync(data)

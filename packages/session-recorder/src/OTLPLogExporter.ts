@@ -21,7 +21,7 @@ import { nanoid } from 'nanoid'
 import type { JsonArray, JsonObject, JsonValue } from 'type-fest'
 
 import { IAnyValue, Log } from './types'
-import { VERSION } from './version.js'
+import { VERSION } from './version'
 import { compressAsync } from './session-replay/utils'
 import { apiFetch } from './api/api-fetch'
 import { addLogToQueue, removeQueuedLog, QueuedLog, getQueuedLogs, removeQueuedLogs } from './export-log-queue'
