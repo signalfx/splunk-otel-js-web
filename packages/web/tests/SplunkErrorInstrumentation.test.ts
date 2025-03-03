@@ -16,9 +16,27 @@
  *
  */
 
-import * as assert from 'assert'
-import { beforeEach } from 'mocha'
-import { generateFilePaths, generateRandomStackTrace } from './utils'
+import { STACK_TRACE_URL_PATTER } from '../src/SplunkErrorInstrumentation'
+import { describe, it, expect, beforeEach } from 'vitest'
+
+export function generateFilePaths(domainCount: number, pathCount: number): string[] {
+	const paths: string[] = []
+	for (let i = 0; i < domainCount; i++) {
+		const domain = `http://domain${i}.com`
+		for (let j = 0; j < pathCount; j++) {
+			paths.push(`${domain}/path${j}.js`)
+		}
+	}
+	return paths
+}
+
+export function generateRandomStackTrace(paths: string[], stackCount: number): string {
+	let stack = 'Error\n'
+	for (let i = 0; i < stackCount; i++) {
+		stack += `at ${paths[Math.floor(Math.random() * paths.length)]}:${Math.floor(Math.random() * 1000)}:${Math.floor(Math.random() * 1000)}\n`
+	}
+	return stack
+}
 
 const chromeStackTraceEval = `Error: Something went wrong
     at eval (eval at <anonymous> (http://example.com/scripts/main.js:10:20), <anonymous>:1:1)
@@ -26,6 +44,7 @@ const chromeStackTraceEval = `Error: Something went wrong
     at http://example.com/scripts/app.js:20:30
     at new ConstructorName (http://example.com/scripts/controller.js:25:35)
     at http://example.com/scripts/main.js:30:40`
+
 const chromeStackTraceEvalExpected = [
 	'http://example.com/scripts/main.js',
 	'http://example.com/scripts/utils.js',
@@ -39,6 +58,7 @@ const chromeStackTraceAnonymous = `TypeError: undefined is not a function
     at Object.functionName (http://example.com/js/utils.js:20:15)
     at new ConstructorName (http://example.com/js/app.js:25:20)
     at <anonymous>:30:25`
+
 const chromeStackTraceAnonymousExpected = [
 	'http://example.com/js/anonymous.js',
 	'http://example.com/js/utils.js',
@@ -52,6 +72,7 @@ const geckoStackTraceEval = `Error: Something went wrong
     @http://example.com/scripts/app.js:20:30
     ConstructorName@http://example.com/scripts/controller.js:25:35
     @http://example.com/scripts/main.js:30:40`
+
 const geckoStackTraceEvalExpected = [
 	'http://example.com/scripts/main.js',
 	'http://example.com/scripts/utils.js',
@@ -65,6 +86,7 @@ const geckoStackTraceAnonymous = `TypeError: undefined is not a function
     functionName@http://example.com/js/utils.js:20:15
     ConstructorName@http://example.com/js/app.js:25:20
     @<anonymous>:30:25`
+
 const geckoStackTraceAnonymousExpected = [
 	'http://example.com/js/anonymous.js',
 	'http://example.com/js/utils.js',
@@ -88,7 +110,7 @@ const expected2 = ['https://example.com/js/app.js', 'http://localhost/js/util.js
 const stack3 = `Error
     at someFunction (file.js:10:15)
     at anotherFunction (file.js:20:25)`
-const expected3 = []
+const expected3: string[] = []
 
 // Test 4: Only one URL, with port
 const stack4 = `Error
@@ -119,8 +141,7 @@ const stack7 = `Error
     at blob:https://example.com:1000/src/hello.js:2:3`
 const expected7 = ['file://testing.com:8000/js/testFile.js', 'https://example.com:1000/src/hello.js']
 
-const regexFilter = /([\w]+:\/\/[^\s/]+\/[^\s?:#]+)/g
-describe('regexFilter', () => {
+describe('SplunkErrorInstrumentation', () => {
 	let urls = new Set()
 	let match
 
@@ -128,102 +149,103 @@ describe('regexFilter', () => {
 		urls = new Set()
 		match = null
 	})
+
 	it('should test chrome eval stack traces', () => {
-		while ((match = regexFilter.exec(chromeStackTraceEval)) !== null) {
+		while ((match = STACK_TRACE_URL_PATTER.exec(chromeStackTraceEval)) !== null) {
 			urls.add(match[0])
 		}
 		const urlArr = [...urls]
-		assert.deepEqual(urlArr, chromeStackTraceEvalExpected)
+		expect(urlArr).toStrictEqual(chromeStackTraceEvalExpected)
 	})
 
 	it('should test chrome anonymous stack traces', () => {
-		while ((match = regexFilter.exec(chromeStackTraceAnonymous)) !== null) {
+		while ((match = STACK_TRACE_URL_PATTER.exec(chromeStackTraceAnonymous)) !== null) {
 			urls.add(match[0])
 		}
 		const urlArr = [...urls]
-		assert.deepEqual(urlArr, chromeStackTraceAnonymousExpected)
+		expect(urlArr).toStrictEqual(chromeStackTraceAnonymousExpected)
 	})
 
 	it('should test gecko eval stack traces', () => {
-		while ((match = regexFilter.exec(geckoStackTraceEval)) !== null) {
+		while ((match = STACK_TRACE_URL_PATTER.exec(geckoStackTraceEval)) !== null) {
 			urls.add(match[0])
 		}
 		const urlArr = [...urls]
-		assert.deepEqual(urlArr, geckoStackTraceEvalExpected)
+		expect(urlArr).toStrictEqual(geckoStackTraceEvalExpected)
 	})
 
 	it('should test gecko anonymous stack traces', () => {
-		while ((match = regexFilter.exec(geckoStackTraceAnonymous)) !== null) {
+		while ((match = STACK_TRACE_URL_PATTER.exec(geckoStackTraceAnonymous)) !== null) {
 			urls.add(match[0])
 		}
 		const urlArr = [...urls]
-		assert.deepEqual(urlArr, geckoStackTraceAnonymousExpected)
+		expect(urlArr).toStrictEqual(geckoStackTraceAnonymousExpected)
 	})
 
 	it('should test simple stack trace with dupes', () => {
-		while ((match = regexFilter.exec(stack1)) !== null) {
+		while ((match = STACK_TRACE_URL_PATTER.exec(stack1)) !== null) {
 			urls.add(match[0])
 		}
 		const urlArr = [...urls]
-		assert.deepEqual(urlArr, expected1)
+		expect(urlArr).toStrictEqual(expected1)
 	})
 
 	it('should test http vs https stack traces', () => {
-		while ((match = regexFilter.exec(stack2)) !== null) {
+		while ((match = STACK_TRACE_URL_PATTER.exec(stack2)) !== null) {
 			urls.add(match[0])
 		}
 		const urlArr = [...urls]
-		assert.deepEqual(urlArr, expected2)
+		expect(urlArr).toStrictEqual(expected2)
 	})
 
 	it('should test no full url path stack traces', () => {
-		while ((match = regexFilter.exec(stack3)) !== null) {
+		while ((match = STACK_TRACE_URL_PATTER.exec(stack3)) !== null) {
 			urls.add(match[0])
 		}
 		const urlArr = [...urls]
-		assert.deepEqual(urlArr, expected3)
+		expect(urlArr).toStrictEqual(expected3)
 	})
 
 	it('should test url ports in stack traces', () => {
-		while ((match = regexFilter.exec(stack4)) !== null) {
+		while ((match = STACK_TRACE_URL_PATTER.exec(stack4)) !== null) {
 			urls.add(match[0])
 		}
 		const urlArr = [...urls]
-		assert.deepEqual(urlArr, expected4)
+		expect(urlArr).toStrictEqual(expected4)
 	})
 
 	it('should test duplicate urls in stack traces', () => {
-		while ((match = regexFilter.exec(stack5)) !== null) {
+		while ((match = STACK_TRACE_URL_PATTER.exec(stack5)) !== null) {
 			urls.add(match[0])
 		}
 		const urlArr = [...urls]
-		assert.deepEqual(urlArr, expected5)
+		expect(urlArr).toStrictEqual(expected5)
 	})
 
 	it('should test query strings/fragments in stack traces', () => {
-		while ((match = regexFilter.exec(stack6)) !== null) {
+		while ((match = STACK_TRACE_URL_PATTER.exec(stack6)) !== null) {
 			urls.add(match[0])
 		}
 		const urlArr = [...urls]
-		assert.deepEqual(urlArr, expected6)
+		expect(urlArr).toStrictEqual(expected6)
 	})
 
 	it('should test blobs and diff protocols in stack traces', () => {
-		while ((match = regexFilter.exec(stack7)) !== null) {
+		while ((match = STACK_TRACE_URL_PATTER.exec(stack7)) !== null) {
 			urls.add(match[0])
 		}
 		const urlArr = [...urls]
-		assert.deepEqual(urlArr, expected7)
+		expect(urlArr).toStrictEqual(expected7)
 	})
 
 	it('should test long stack traces', () => {
 		const randomPaths = generateFilePaths(20, 20)
 		const randomStack = generateRandomStackTrace(randomPaths, 10000)
 
-		while ((match = regexFilter.exec(randomStack)) !== null) {
+		while ((match = STACK_TRACE_URL_PATTER.exec(randomStack)) !== null) {
 			urls.add(match[0])
 		}
 		const urlArr = [...urls]
-		assert.deepEqual(urlArr.sort(), randomPaths.sort())
+		expect(urlArr.sort()).toStrictEqual(randomPaths.sort())
 	})
 })

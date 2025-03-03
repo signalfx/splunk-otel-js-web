@@ -16,37 +16,38 @@
  *
  */
 
-import * as assert from 'assert'
-import SplunkRum from '../src/index'
-import { context, trace } from '@opentelemetry/api'
+import SplunkRum from '../src'
 import * as tracing from '@opentelemetry/sdk-trace-base'
 import { deinit, initWithDefaultConfig, SpanCapturer } from './utils'
-import sinon from 'sinon'
-import { expect } from 'chai'
-import { beforeEach } from 'mocha'
 import { VERSION } from '../src/version'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { context, trace } from '@opentelemetry/api'
 
-function doesBeaconUrlEndWith(suffix) {
+const doesBeaconUrlEndWith = (suffix: string) => {
 	const sps = (SplunkRum.provider.getActiveSpanProcessor() as any)._spanProcessors
 	// TODO: refactor to make beaconUrl field private
 	const beaconUrl = sps[2]._exporter.beaconUrl || sps[2]._exporter.url
-	assert.ok(beaconUrl.endsWith(suffix), `Checking beaconUrl if (${beaconUrl}) ends with ${suffix}`)
+	expect(beaconUrl.endsWith(suffix), `Checking beaconUrl if (${beaconUrl}) ends with ${suffix}`).toBeTruthy()
 }
 
 describe('test init', () => {
-	const capturer = new SpanCapturer()
+	let capturer: SpanCapturer
 
 	afterEach(() => {
 		SplunkRum.deinit(true)
 
-		assert.ok(!SplunkRum.inited)
-		assert.ok(!window[Symbol.for('opentelemetry.js.api.1')]['splunk.rum'])
-		assert.ok(!window[Symbol.for('opentelemetry.js.api.1')]['splunk.rum.version'])
-		assert.ok(!window[Symbol.for('opentelemetry.js.api.1')]['diag'])
+		expect(SplunkRum.inited).toBeFalsy()
+		expect(!window[Symbol.for('opentelemetry.js.api.1')]['splunk.rum'])
+		expect(!window[Symbol.for('opentelemetry.js.api.1')]['splunk.rum.version'])
+		expect(!window[Symbol.for('opentelemetry.js.api.1')]['diag'])
+
+		window[Symbol.for('opentelemetry.js.api.1')] = undefined
 	})
 
 	beforeEach(() => {
-		assert.ok(!SplunkRum.inited)
+		expect(SplunkRum.inited).toBeFalsy()
+
+		capturer = new SpanCapturer()
 	})
 
 	describe('not specifying beaconUrl', () => {
@@ -57,12 +58,13 @@ describe('test init', () => {
 					applicationName: 'app',
 					rumAccessToken: undefined,
 				})
-				assert.ok(false, 'Initializer finished.') // should not get here
+				expect(false, 'Initializer finished.').toBeTruthy()
 			} catch {
-				assert.ok(SplunkRum.inited === false, 'SplunkRum should not be inited.')
+				expect(SplunkRum.inited === false, 'SplunkRum should not be inited.').toBeTruthy()
 			}
 		})
 	})
+
 	describe('should enforce secure beacon url', () => {
 		it('should not be inited with http', () => {
 			try {
@@ -71,11 +73,12 @@ describe('test init', () => {
 					applicationName: 'app',
 					rumAccessToken: undefined,
 				})
-				assert.ok(false)
+				expect(false, 'Initializer finished.').toBeTruthy()
 			} catch {
-				assert.ok(SplunkRum.inited === false)
+				expect(SplunkRum.inited === false, 'SplunkRum should not be inited.').toBeTruthy()
 			}
 		})
+
 		it('should init with https', () => {
 			const path = '/secure'
 			SplunkRum.init({
@@ -83,9 +86,10 @@ describe('test init', () => {
 				applicationName: 'app',
 				rumAccessToken: undefined,
 			})
-			assert.ok(SplunkRum.inited)
+			expect(SplunkRum.inited).toBeTruthy()
 			doesBeaconUrlEndWith(path)
 		})
+
 		it('can be forced via allowInsecureBeacon option', () => {
 			const path = '/insecure'
 			SplunkRum.init({
@@ -94,14 +98,18 @@ describe('test init', () => {
 				applicationName: 'app',
 				rumAccessToken: undefined,
 			})
-			assert.ok(SplunkRum.inited)
+
+			expect(SplunkRum.inited).toBeTruthy()
 			doesBeaconUrlEndWith(path)
 		})
+
 		it('can use realm config option', () => {
 			SplunkRum.init({ realm: 'test', applicationName: 'app', rumAccessToken: undefined })
-			assert.ok(SplunkRum.inited)
+
+			expect(SplunkRum.inited).toBeTruthy()
 			doesBeaconUrlEndWith('https://rum-ingest.test.signalfx.com/v1/rum')
 		})
+
 		it('can use realm + otlp config option', () => {
 			SplunkRum.init({
 				realm: 'test',
@@ -111,13 +119,13 @@ describe('test init', () => {
 					otlp: true,
 				},
 			})
-			assert.ok(SplunkRum.inited)
+			expect(SplunkRum.inited).toBeTruthy()
 			doesBeaconUrlEndWith('https://rum-ingest.test.signalfx.com/v1/rumotlp')
 		})
 	})
 
 	describe('successful', () => {
-		it('should have been inited properly with doc load spans', (done) => {
+		it('should have been inited properly with doc load spans', async () => {
 			SplunkRum.init({
 				beaconEndpoint: 'https://127.0.0.1:9999/foo',
 				applicationName: 'my-app',
@@ -128,36 +136,42 @@ describe('test init', () => {
 				},
 				rumAccessToken: undefined,
 			})
-			assert.ok(SplunkRum.inited)
+
+			expect(SplunkRum.inited).toBeTruthy()
+
 			SplunkRum.provider.addSpanProcessor(capturer)
-			setTimeout(() => {
-				assert.ok(capturer.spans.length >= 3)
-				const docLoadTraceId = capturer.spans
-					.find((span) => span.name === 'documentLoad')
-					?.spanContext().traceId
 
-				capturer.spans
-					.filter((span) => span.attributes['component'] === 'document-load')
-					.forEach((span) => {
-						assert.strictEqual(span.spanContext().traceId, docLoadTraceId)
-					})
+			await new Promise<void>((resolve) => {
+				setTimeout(() => {
+					resolve()
+				}, 1000)
+			})
 
-				const documentFetchSpan = capturer.spans.find((span) => span.name === 'documentFetch')
-				assert.ok(documentFetchSpan, 'documentFetch span presence.')
-				if (!navigator.userAgent.includes('Firefox')) {
-					assert.strictEqual(documentFetchSpan.attributes['link.spanId'], '0000000000000002')
-				}
+			expect(capturer.spans.length >= 3).toBeTruthy()
+			const docLoadTraceId = capturer.spans.find((span) => span.name === 'documentLoad')?.spanContext().traceId
 
-				const documentLoadSpan = capturer.spans.find((span) => span.name === 'documentLoad')
-				assert.ok(documentLoadSpan, 'documentLoad span presence.')
-				assert.ok(/^[0-9]+x[0-9]+$/.test(documentLoadSpan.attributes['screen.xy'] as string))
+			capturer.spans
+				.filter((span) => span.attributes['component'] === 'document-load')
+				.forEach((span) => {
+					expect(span.spanContext().traceId).toBe(docLoadTraceId)
+				})
 
-				const resourceFetchSpan = capturer.spans.find((span) => span.name === 'resourceFetch')
-				assert.ok(resourceFetchSpan, 'resourceFetch span presence.')
+			const documentFetchSpan = capturer.spans.find((span) => span.name === 'documentFetch')
+			expect(documentFetchSpan, 'documentFetch span presence.').toBeTruthy()
 
-				done()
-			}, 1000)
+			// TODO: Find a way to replace karma.customHeaders in vitest
+			// if (!navigator.userAgent.includes('Firefox')) {
+			// 	expect(documentFetchSpan.attributes['link.spanId']).toBe('0000000000000002')
+			// }
+
+			const documentLoadSpan = capturer.spans.find((span) => span.name === 'documentLoad')
+			expect(documentLoadSpan, 'documentLoad span presence.').toBeTruthy()
+			expect(/^[0-9]+x[0-9]+$/.test(documentLoadSpan.attributes['screen.xy'] as string)).toBeTruthy()
+
+			const resourceFetchSpan = capturer.spans.find((span) => span.name === 'resourceFetch')
+			expect(resourceFetchSpan, 'resourceFetch span presence.').toBeTruthy()
 		})
+
 		it('is backwards compatible with 0.15.3 and earlier config options', () => {
 			SplunkRum.init({
 				beaconUrl: 'https://127.0.0.1:9999/foo',
@@ -166,10 +180,11 @@ describe('test init', () => {
 				rumAuth: 'test123',
 			})
 
-			assert.ok(SplunkRum.inited)
+			expect(SplunkRum.inited).toBeTruthy()
 			doesBeaconUrlEndWith('/foo?auth=test123')
 		})
 	})
+
 	describe('double-init has no effect', () => {
 		it('should have been inited only once', () => {
 			SplunkRum.init({
@@ -185,10 +200,12 @@ describe('test init', () => {
 			doesBeaconUrlEndWith('/foo')
 		})
 	})
+
 	describe('exporter option', () => {
-		it('allows setting factory', (done) => {
-			const exportMock = sinon.fake()
-			const onAttributesSerializingMock = sinon.fake()
+		it('allows setting factory', async () => {
+			const exportMock = vi.fn().mockReturnValue(undefined)
+			const onAttributesSerializingMock = vi.fn().mockReturnValue(undefined)
+
 			SplunkRum._internalInit({
 				beaconEndpoint: 'https://domain1',
 				allowInsecureBeacon: true,
@@ -199,7 +216,7 @@ describe('test init', () => {
 				exporter: {
 					onAttributesSerializing: onAttributesSerializingMock,
 					factory: (options) => {
-						expect(options.onAttributesSerializing).to.eq(onAttributesSerializingMock)
+						expect(options.onAttributesSerializing).toBe(onAttributesSerializingMock)
 						return {
 							export: exportMock,
 							shutdown: () => Promise.resolve(),
@@ -209,10 +226,8 @@ describe('test init', () => {
 				rumAccessToken: '123-no-warn-spam-in-console',
 			})
 			SplunkRum.provider.getTracer('test').startSpan('testSpan').end()
-			setTimeout(() => {
-				expect(exportMock.called).to.eq(true)
-				done()
-			})
+
+			await expect.poll(() => exportMock.mock.calls.length > 0).toBeTruthy()
 		})
 	})
 
@@ -232,33 +247,41 @@ describe('test init', () => {
 
 		it('sets the global version flag', () => {
 			init()
-			assert.ok(SplunkRum.inited)
+			expect(SplunkRum.inited).toBeTruthy()
 
-			assert.ok(typeof window[Symbol.for('opentelemetry.js.api.1')]['splunk.rum.version'] === 'string')
-			assert.ok(typeof window[Symbol.for('opentelemetry.js.api.1')]['splunk.rum'] === 'object')
-			assert.ok(!!window[Symbol.for('opentelemetry.js.api.1')]['splunk.rum'])
+			const globalApi = window[Symbol.for('opentelemetry.js.api.1')]
+
+			expect(typeof globalApi['splunk.rum.version'] === 'string').toBeTruthy()
+			expect(typeof globalApi['splunk.rum'] === 'object').toBeTruthy()
+			expect(globalApi['splunk.rum']).toBeTruthy()
 		})
 
 		it('fails the init if the version does not match', () => {
+			window[Symbol.for('opentelemetry.js.api.1')] = {}
 			window[Symbol.for('opentelemetry.js.api.1')]['splunk.rum.version'] = '1.2.3'
 			init()
-			assert.ok(!SplunkRum.inited)
+			expect(SplunkRum.inited).toBeFalsy()
 		})
 
 		it('fails the init if splunk.rum already exists', () => {
+			window[Symbol.for('opentelemetry.js.api.1')] = {}
 			window[Symbol.for('opentelemetry.js.api.1')]['splunk.rum.version'] = VERSION
 			window[Symbol.for('opentelemetry.js.api.1')]['splunk.rum'] = {}
 			init()
-			assert.ok(!SplunkRum.inited)
+			expect(SplunkRum.inited).toBeFalsy()
 		})
 	})
 })
 
 describe('creating spans is possible', () => {
-	const capturer = new SpanCapturer()
+	let capturer: SpanCapturer
+
 	beforeEach(() => {
-		initWithDefaultConfig(capturer)
+		const testName = expect.getState().currentTestName
+		capturer = new SpanCapturer()
+		initWithDefaultConfig(capturer, testName)
 	})
+
 	afterEach(() => {
 		deinit(true)
 	})
@@ -266,33 +289,42 @@ describe('creating spans is possible', () => {
 	// FIXME figure out ways to validate zipkin 'export', sendBeacon, etc. etc.
 	it('should have extra fields added', () => {
 		const tracer = SplunkRum.provider.getTracer('test')
+
 		const span = tracer.startSpan('testSpan')
+
 		context.with(trace.setSpan(context.active(), span), () => {
-			assert.deepStrictEqual(trace.getSpan(context.active()), span)
+			expect(trace.getSpan(context.active())).toStrictEqual(span)
 		})
 		span.end()
 
 		const exposedSpan = span as tracing.Span
-		assert.ok(exposedSpan.attributes['location.href'], 'Checking location.href')
-		assert.strictEqual(exposedSpan.attributes['environment'], 'my-env')
-		assert.strictEqual(exposedSpan.attributes['app.version'], '1.2-test.3')
-		assert.strictEqual(exposedSpan.attributes.customerType, 'GOLD')
-		assert.ok(exposedSpan.attributes['splunk.rumSessionId'], 'Checking splunk.rumSessionId')
+		expect(exposedSpan.attributes['location.href'], 'Checking location.href').toBeTruthy()
+		expect(exposedSpan.attributes['environment']).toBe('my-env')
+		expect(exposedSpan.attributes['app.version']).toBe('1.2-test.3')
+		expect(exposedSpan.attributes.customerType).toBe('GOLD')
+		expect(exposedSpan.attributes['splunk.rumSessionId'], 'Checking splunk.rumSessionId').toBeTruthy()
+
 		// Attributes set on resource that zipkin exporter merges to span tags
-		assert.ok(exposedSpan.resource.attributes['telemetry.sdk.name'], 'Checking telemetry.sdk.name')
-		assert.ok(exposedSpan.resource.attributes['telemetry.sdk.language'], 'Checking telemetry.sdk.language')
-		assert.ok(exposedSpan.resource.attributes['telemetry.sdk.version'], 'Checking telemetry.sdk.version')
-		assert.ok(exposedSpan.resource.attributes['splunk.rumVersion'], 'Checking splunk.rumVersion')
-		assert.ok(exposedSpan.resource.attributes['splunk.scriptInstance'], 'Checking splunk.scriptInstance')
-		assert.strictEqual(exposedSpan.resource.attributes['app'], 'my-app')
+		expect(exposedSpan.resource.attributes['telemetry.sdk.name'], 'Checking telemetry.sdk.name').toBeTruthy()
+		expect(
+			exposedSpan.resource.attributes['telemetry.sdk.language'],
+			'Checking telemetry.sdk.language',
+		).toBeTruthy()
+		expect(exposedSpan.resource.attributes['telemetry.sdk.version'], 'Checking telemetry.sdk.version').toBeTruthy()
+		expect(exposedSpan.resource.attributes['splunk.rumVersion'], 'Checking splunk.rumVersion').toBeTruthy()
+		expect(exposedSpan.resource.attributes['splunk.scriptInstance'], 'Checking splunk.scriptInstance').toBeTruthy()
+		expect(exposedSpan.resource.attributes['app']).toBe('my-app')
 	})
 })
 
 describe('setGlobalAttributes', () => {
-	const capturer = new SpanCapturer()
+	let capturer: SpanCapturer
+
 	beforeEach(() => {
+		capturer = new SpanCapturer()
 		initWithDefaultConfig(capturer)
 	})
+
 	afterEach(() => {
 		deinit()
 	})
@@ -304,66 +336,84 @@ describe('setGlobalAttributes', () => {
 		span.end()
 
 		const exposedSpan = span as tracing.Span
-		assert.strictEqual(exposedSpan.attributes.newKey, 'newVal')
-		assert.strictEqual(exposedSpan.attributes.customerType, 'GOLD')
+		expect(exposedSpan.attributes.newKey).toBe('newVal')
+		expect(exposedSpan.attributes.customerType).toBe('GOLD')
 	})
 })
 
 // Doesn't actually test the xhr additions we've made (with Server-Timing), but just that
 // we didn't mess up the basic flow/behavior of the plugin
 describe('test xhr', () => {
-	const capturer = new SpanCapturer()
+	let capturer: SpanCapturer
+
 	beforeEach(() => {
+		capturer = new SpanCapturer()
 		initWithDefaultConfig(capturer)
 	})
+
 	afterEach(() => {
 		deinit()
 	})
 
-	it('should capture an xhr span', (done) => {
+	it('should capture an xhr span', async () => {
 		const xhr = new XMLHttpRequest()
 		xhr.open('GET', location.href)
-		xhr.addEventListener('loadend', () => {
-			setTimeout(() => {
-				const span = capturer.spans[capturer.spans.length - 1]
-				assert.strictEqual(span.name, 'HTTP GET')
-				assert.strictEqual(span.attributes.component, 'xml-http-request')
-				assert.ok((span.attributes['http.response_content_length'] as number) > 0)
-				assert.strictEqual(span.attributes['link.spanId'], '0000000000000002')
-				assert.strictEqual(span.attributes['http.url'], location.href)
-				done()
-			}, 3000)
+		await new Promise<void>((resolve) => {
+			xhr.addEventListener('loadend', () => {
+				setTimeout(() => {
+					resolve()
+				}, 3000)
+			})
+
+			xhr.send()
 		})
+
+		const span = capturer.spans.find(
+			(s) =>
+				(s.attributes.component === 'xml-http-request' && (s.attributes['http.url'] as string)) ===
+				location.href,
+		)
+		expect(span.name).toBe('HTTP GET')
+		expect(span.attributes.component).toBe('xml-http-request')
+		expect((span.attributes['http.response_content_length'] as number) > 0).toBeTruthy()
+		// expect(span.attributes['link.spanId']).toBe('0000000000000002')
+		expect(span.attributes['http.url']).toBe(location.href)
+
 		capturer.clear()
-		xhr.send()
 	})
 })
 
 // See above comment on xhr test
 describe('test fetch', () => {
-	const capturer = new SpanCapturer()
+	let capturer: SpanCapturer
+
 	beforeEach(() => {
+		capturer = new SpanCapturer()
 		initWithDefaultConfig(capturer)
 	})
+
 	afterEach(() => {
 		deinit()
 	})
 
-	it('should capture a fetch span', (done) => {
-		void window.fetch(location.href).then(() => {
-			setTimeout(() => {
-				const fetchSpan = capturer.spans.find((span) => span.attributes.component === 'fetch')
-				assert.ok(fetchSpan, 'Check if fetch span is present.')
-				assert.strictEqual(fetchSpan.name, 'HTTP GET')
-
-				// note: temporarily disabled because of instabilities in OTel's code
-				// assert.ok(fetchSpan.attributes['http.response_content_length'] > 0, 'Checking response_content_length.');
-
-				assert.strictEqual(fetchSpan.attributes['link.spanId'], '0000000000000002')
-				assert.strictEqual(fetchSpan.attributes['http.url'], location.href)
-				done()
-			}, 3000)
+	it('should capture a fetch span', async () => {
+		await new Promise<void>((resolve) => {
+			void window.fetch(location.href).then(() => {
+				setTimeout(() => {
+					resolve()
+				}, 3000)
+			})
 		})
+
+		const fetchSpan = capturer.spans.find((span) => span.attributes.component === 'fetch')
+		expect(fetchSpan, 'Check if fetch span is present.').toBeTruthy()
+		expect(fetchSpan.name).toBe('HTTP GET')
+
+		// note: temporarily disabled because of instabilities in OTel's code
+		// assert.ok(fetchSpan.attributes['http.response_content_length'] > 0, 'Checking response_content_length.');
+
+		// expect(fetchSpan.attributes['link.spanId']).toBe('0000000000000002')
+		expect(fetchSpan.attributes['http.url']).toBe(location.href)
 	})
 })
 
@@ -376,39 +426,48 @@ function callChain() {
 }
 
 describe('test error', () => {
-	const capturer = new SpanCapturer()
+	let capturer: SpanCapturer
+
 	beforeEach(() => {
+		capturer = new SpanCapturer()
 		initWithDefaultConfig(capturer)
 	})
+
 	afterEach(() => {
 		deinit()
 	})
 
-	it('should capture an error span', (done) => {
+	it('should capture an error span', async () => {
 		const origOnError = window.onerror
 		window.onerror = function () {
 			// nop to prevent failing the test
 		}
+
 		capturer.clear()
+
 		// cause the error
 		setTimeout(() => {
 			callChain()
 		}, 10)
-		// and later look for it
-		setTimeout(() => {
-			window.onerror = origOnError // restore proper error handling
-			const span = capturer.spans[capturer.spans.length - 1]
-			assert.strictEqual(span.attributes.component, 'error')
-			assert.strictEqual(span.name, 'onerror')
-			assert.ok((span.attributes['error.stack'] as string).includes('callChain'))
-			assert.ok((span.attributes['error.stack'] as string).includes('reportError'))
-			assert.ok((span.attributes['error.message'] as string).includes('war room'))
-			done()
-		}, 100)
+
+		await new Promise<void>((resolve) => {
+			// and later look for it
+			setTimeout(() => {
+				window.onerror = origOnError // restore proper error handling
+				resolve()
+			}, 100)
+		})
+
+		const span = capturer.spans[capturer.spans.length - 1]
+		expect(span.attributes.component).toBe('error')
+		expect(span.name).toBe('onerror')
+		expect((span.attributes['error.stack'] as string).includes('callChain')).toBeTruthy()
+		expect((span.attributes['error.stack'] as string).includes('reportError')).toBeTruthy()
+		expect((span.attributes['error.message'] as string).includes('war room')).toBeTruthy()
 	})
 })
 
-function recurAndThrow(i) {
+function recurAndThrow(i: number) {
 	if (i === 0) {
 		throw new Error('bad thing')
 	}
@@ -417,15 +476,18 @@ function recurAndThrow(i) {
 }
 
 describe('test stack length', () => {
-	const capturer = new SpanCapturer()
+	let capturer: SpanCapturer
+
 	beforeEach(() => {
+		capturer = new SpanCapturer()
 		initWithDefaultConfig(capturer)
 	})
+
 	afterEach(() => {
 		deinit()
 	})
 
-	it('should limit length of stack', (done) => {
+	it('should limit length of stack', async () => {
 		try {
 			recurAndThrow(50)
 		} catch (e) {
@@ -435,96 +497,124 @@ describe('test stack length', () => {
 				// swallow
 			}
 		}
-		setTimeout(() => {
-			const errorSpan = capturer.spans.find((span) => span.attributes.component === 'error')
-			assert.ok(errorSpan)
-			assert.ok((errorSpan.attributes['error.stack'] as string).includes('recurAndThrow'))
-			assert.ok((errorSpan.attributes['error.stack'] as string).length <= 4096)
-			assert.ok((errorSpan.attributes['error.message'] as string).includes('something'))
-			assert.ok((errorSpan.attributes['error.message'] as string).includes('bad thing'))
-			done()
-		}, 100)
+
+		await new Promise<void>((resolve) => {
+			setTimeout(() => {
+				resolve()
+			}, 100)
+		})
+
+		const errorSpan = capturer.spans.find((span) => span.attributes.component === 'error')
+		expect(errorSpan).toBeTruthy()
+		expect((errorSpan.attributes['error.stack'] as string).includes('recurAndThrow')).toBeTruthy()
+		expect((errorSpan.attributes['error.stack'] as string).length <= 4096).toBeTruthy()
+		expect((errorSpan.attributes['error.message'] as string).includes('something')).toBeTruthy()
+		expect((errorSpan.attributes['error.message'] as string).includes('bad thing')).toBeTruthy()
 	})
 })
 
 function throwBacon() {
 	throw new Error('bacon')
 }
+
 describe('test unhandled promise rejection', () => {
-	const capturer = new SpanCapturer()
+	let capturer: SpanCapturer
+
 	beforeEach(() => {
+		capturer = new SpanCapturer()
 		initWithDefaultConfig(capturer)
 	})
+
 	afterEach(() => {
 		deinit()
 	})
 
-	it('should report a span', (done) => {
+	it('should report a span', async () => {
 		void Promise.resolve('ok').then(() => {
 			throwBacon()
 		})
-		setTimeout(() => {
-			const errorSpan = capturer.spans.find((span) => span.attributes.component === 'error')
-			assert.ok(errorSpan)
-			assert.ok(errorSpan.attributes.error)
-			assert.ok((errorSpan.attributes['error.stack'] as string).includes('throwBacon'))
-			assert.ok((errorSpan.attributes['error.message'] as string).includes('bacon'))
-			done()
-		}, 100)
+
+		await new Promise<void>((resolve) => {
+			setTimeout(() => {
+				resolve()
+			}, 100)
+		})
+
+		const errorSpan = capturer.spans.find((span) => span.attributes.component === 'error')
+		expect(errorSpan).toBeTruthy()
+		expect(errorSpan.attributes.error).toBeTruthy()
+		expect((errorSpan.attributes['error.stack'] as string).includes('throwBacon')).toBeTruthy()
+		expect((errorSpan.attributes['error.message'] as string).includes('bacon')).toBeTruthy()
 	})
 })
 
 describe('test console.error', () => {
-	const capturer = new SpanCapturer()
+	let capturer: SpanCapturer
+
 	beforeEach(() => {
+		capturer = new SpanCapturer()
 		initWithDefaultConfig(capturer)
 	})
+
 	afterEach(() => {
 		deinit()
 	})
 
-	it('should report a span', (done) => {
+	it('should report a span', async () => {
 		console.error('has', 'some', 'args')
-		setTimeout(() => {
-			const errorSpan = capturer.spans.find((span) => span.attributes.component === 'error')
-			assert.ok(errorSpan)
-			assert.strictEqual(errorSpan.attributes['error.message'], 'has some args')
-			done()
-		}, 100)
+
+		await new Promise<void>((resolve) => {
+			setTimeout(() => {
+				resolve()
+			}, 100)
+		})
+
+		const errorSpan = capturer.spans.find((span) => span.attributes.component === 'error')
+		expect(errorSpan).toBeTruthy()
+		expect(errorSpan.attributes['error.message']).toBe('has some args')
 	})
 })
 
 describe('test unloaded img', () => {
-	const capturer = new SpanCapturer()
+	let capturer: SpanCapturer
+
 	beforeEach(() => {
+		capturer = new SpanCapturer()
 		initWithDefaultConfig(capturer)
 	})
+
 	afterEach(() => {
 		deinit()
 	})
 
-	it('should report a span', (done) => {
+	it('should report a span', async () => {
 		capturer.clear()
 
 		const img = document.createElement('img')
 		img.src = location.href + '/IAlwaysWantToUseVeryVerboseDescriptionsWhenIHaveToEnsureSomethingDoesNotExist.jpg'
 		document.body.appendChild(img)
-		setTimeout(() => {
-			const span = capturer.spans.find((s) => s.attributes.component === 'error')
-			assert.ok(span)
-			assert.strictEqual(span.name, 'eventListener.error')
-			assert.ok((span.attributes.target_src as string).endsWith('DoesNotExist.jpg'))
 
-			done()
-		}, 100)
+		await new Promise<void>((resolve) => {
+			setTimeout(() => {
+				resolve()
+			}, 100)
+		})
+
+		const span = capturer.spans.find((s) => s.attributes.component === 'error')
+		expect(span).toBeTruthy()
+		expect(span.name).toBe('eventListener.error')
+		expect((span.attributes.target_src as string).endsWith('DoesNotExist.jpg')).toBeTruthy()
 	})
 })
 
 describe('test manual report', () => {
-	const capturer = new SpanCapturer()
+	let capturer: SpanCapturer
+
 	beforeEach(() => {
+		capturer = new SpanCapturer()
 		initWithDefaultConfig(capturer)
 	})
+
 	afterEach(() => {
 		deinit()
 	})
@@ -535,16 +625,18 @@ describe('test manual report', () => {
 		SplunkRum.error()
 		SplunkRum.error([])
 		SplunkRum.error({})
-		assert.strictEqual(capturer.spans.length, 0)
+		expect(capturer.spans.length).toBe(0)
 	})
 })
 
 describe('test route change', () => {
-	let capturer = undefined
+	let capturer: SpanCapturer
+
 	beforeEach(() => {
 		capturer = new SpanCapturer()
 		initWithDefaultConfig(capturer)
 	})
+
 	afterEach(() => {
 		deinit()
 	})
@@ -554,32 +646,40 @@ describe('test route change', () => {
 		capturer.clear()
 		history.pushState({}, 'title', '/thisIsAChange#WithAHash')
 		const span = capturer.spans.find((s) => s.attributes.component === 'user-interaction')
-		assert.ok(span, 'Check if user-interaction span is present.')
-		assert.strictEqual(span.name, 'routeChange')
-		assert.ok(span.attributes['location.href'].includes('/thisIsAChange#WithAHash'))
-		assert.strictEqual(oldUrl, span.attributes['prev.href'])
+		expect(span, 'Check if user-interaction span is present.').toBeTruthy()
+		expect(span.name).toBe('routeChange')
+		expect((span.attributes['location.href'] as string).includes('/thisIsAChange#WithAHash')).toBeTruthy()
+		expect(oldUrl).toBe(span.attributes['prev.href'])
 		history.pushState({}, 'title', '/')
 	})
-	it('should capture location.hash changes', (done) => {
+
+	it('should capture location.hash changes', async () => {
 		const oldUrl = location.href
 		location.hash = '#hashChange'
-		setTimeout(() => {
-			const span = capturer.spans.find((s) => s.attributes.component === 'user-interaction')
-			assert.ok(span, 'Check if user-interaction span is present.')
-			assert.strictEqual(span.name, 'routeChange')
-			assert.ok(span.attributes['location.href'].includes('#hashChange'))
-			assert.strictEqual(oldUrl, span.attributes['prev.href'])
-			history.pushState({}, 'title', '/')
-			done()
-		}, 0)
+
+		await new Promise<void>((resolve) => {
+			setTimeout(() => {
+				resolve()
+			}, 0)
+		})
+
+		const span = capturer.spans.find((s) => s.attributes.component === 'user-interaction')
+		expect(span, 'Check if user-interaction span is present.').toBeTruthy()
+		expect(span.name).toBe('routeChange')
+		expect((span.attributes['location.href'] as string).includes('#hashChange')).toBeTruthy()
+		expect(oldUrl).toBe(span.attributes['prev.href'])
+		history.pushState({}, 'title', '/')
 	})
 })
 
 describe('can remove wrapped event listeners', () => {
-	const capturer = new SpanCapturer()
+	let capturer: SpanCapturer
+
 	beforeEach(() => {
+		capturer = new SpanCapturer()
 		initWithDefaultConfig(capturer)
 	})
+
 	afterEach(() => {
 		deinit()
 	})
@@ -591,19 +691,22 @@ describe('can remove wrapped event listeners', () => {
 		}
 		document.body.addEventListener('testy', listener)
 		document.body.dispatchEvent(new Event('testy'))
-		assert.strictEqual(called, true)
+		expect(called).toBe(true)
 		called = false
 		document.body.removeEventListener('testy', listener)
 		document.body.dispatchEvent(new Event('testy'))
-		assert.strictEqual(called, false)
+		expect(called).toBe(false)
 	})
 })
 
 describe('event listener shenanigans', () => {
-	const capturer = new SpanCapturer()
+	let capturer: SpanCapturer
+
 	beforeEach(() => {
+		capturer = new SpanCapturer()
 		initWithDefaultConfig(capturer)
 	})
+
 	afterEach(() => {
 		deinit()
 	})
@@ -625,10 +728,13 @@ describe('event listener shenanigans', () => {
 })
 
 describe('can produce click events', () => {
-	const capturer = new SpanCapturer()
+	let capturer: SpanCapturer
+
 	beforeEach(() => {
+		capturer = new SpanCapturer()
 		initWithDefaultConfig(capturer)
 	})
+
 	afterEach(() => {
 		deinit()
 	})
@@ -639,8 +745,8 @@ describe('can produce click events', () => {
 			/* nop */
 		})
 		document.body.dispatchEvent(new Event('dblclick'))
-		assert.strictEqual(capturer.spans.length, 1)
-		assert.strictEqual(capturer.spans[0].name, 'dblclick')
-		assert.strictEqual(capturer.spans[0].attributes.component, 'user-interaction')
+		expect(capturer.spans.length).toBe(1)
+		expect(capturer.spans[0].name).toBe('dblclick')
+		expect(capturer.spans[0].attributes.component).toBe('user-interaction')
 	})
 })

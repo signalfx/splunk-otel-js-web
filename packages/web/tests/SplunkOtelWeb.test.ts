@@ -17,9 +17,9 @@
  */
 
 import { SpanAttributes } from '@opentelemetry/api'
-import { expect } from 'chai'
 import SplunkRum from '../src'
-import { updateSessionStatus } from '../src/session/session'
+import { updateSessionStatus } from '../src/session'
+import { describe, expect, it, afterEach } from 'vitest'
 
 describe('SplunkOtelWeb', () => {
 	afterEach(() => {
@@ -36,7 +36,7 @@ describe('SplunkOtelWeb', () => {
 					key1: 'value1',
 				},
 			})
-			expect(SplunkRum.getGlobalAttributes()).to.deep.eq({
+			expect(SplunkRum.getGlobalAttributes()).toStrictEqual({
 				key1: 'value1',
 			})
 		})
@@ -57,7 +57,7 @@ describe('SplunkOtelWeb', () => {
 				key3: 'value3',
 			})
 
-			expect(SplunkRum.getGlobalAttributes()).to.deep.eq({
+			expect(SplunkRum.getGlobalAttributes()).toStrictEqual({
 				key1: 'value1',
 				key2: 'value2-changed',
 				key3: 'value3',
@@ -88,7 +88,7 @@ describe('SplunkOtelWeb', () => {
 			// Wait for promise chain to resolve
 			await Promise.resolve()
 
-			expect(receivedAttributes).to.deep.eq({
+			expect(receivedAttributes).toStrictEqual({
 				key1: 'value1',
 				key2: 'value2-changed',
 				key3: 'value3',
@@ -98,7 +98,7 @@ describe('SplunkOtelWeb', () => {
 
 	describe('session ID', () => {
 		it('should be readable', () => {
-			expect(SplunkRum.getSessionId()).to.eq(undefined)
+			expect(SplunkRum.getSessionId()).toBe(undefined)
 
 			SplunkRum.init({
 				applicationName: 'app-name',
@@ -108,7 +108,7 @@ describe('SplunkOtelWeb', () => {
 			expect(SplunkRum.getSessionId()).to.match(/[0-9a-f]{32}/)
 
 			SplunkRum.deinit()
-			expect(SplunkRum.getSessionId()).to.eq(undefined)
+			expect(SplunkRum.getSessionId()).toBe(undefined)
 		})
 
 		it('should produce notifications when updated', async () => {
@@ -135,17 +135,17 @@ describe('SplunkOtelWeb', () => {
 
 	describe('.inited', () => {
 		it('should follow lifecycle', () => {
-			expect(SplunkRum.inited).to.eq(false, 'Should be false in the beginning.')
+			expect(SplunkRum.inited).toBe(false, 'Should be false in the beginning.')
 
 			SplunkRum.init({
 				applicationName: 'app-name',
 				beaconEndpoint: 'https://beacon',
 				rumAccessToken: '<token>',
 			})
-			expect(SplunkRum.inited).to.eq(true, 'Should be true after creating.')
+			expect(SplunkRum.inited).toBe(true, 'Should be true after creating.')
 
 			SplunkRum.deinit()
-			expect(SplunkRum.inited).to.eq(false, 'Should be false after destroying.')
+			expect(SplunkRum.inited).toBe(false, 'Should be false after destroying.')
 		})
 	})
 })

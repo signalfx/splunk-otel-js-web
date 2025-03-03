@@ -16,7 +16,7 @@
  *
  */
 
-import { expect } from 'chai'
+import { expect, describe, it } from 'vitest'
 import { SplunkSpanAttributesProcessor } from '../src/SplunkSpanAttributesProcessor'
 
 describe('SplunkSpanAttributesProcessor', () => {
@@ -29,7 +29,7 @@ describe('SplunkSpanAttributesProcessor', () => {
 				false,
 			)
 
-			expect(processor.getGlobalAttributes()).to.deep.eq({
+			expect(processor.getGlobalAttributes()).toStrictEqual({
 				key1: 'value1',
 			})
 		})
@@ -48,7 +48,7 @@ describe('SplunkSpanAttributesProcessor', () => {
 				key3: 'value3',
 			})
 
-			expect(processor.getGlobalAttributes()).to.deep.eq({
+			expect(processor.getGlobalAttributes()).toStrictEqual({
 				key1: 'value1',
 				key2: 'value2-updaged',
 				key3: 'value3',

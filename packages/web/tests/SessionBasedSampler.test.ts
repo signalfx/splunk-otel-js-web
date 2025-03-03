@@ -16,13 +16,13 @@
  *
  */
 
-import * as assert from 'assert'
 import { InternalEventTarget } from '../src/EventTarget'
 import { SessionBasedSampler } from '../src/SessionBasedSampler'
-import { initSessionTracking, updateSessionStatus } from '../src/session/session'
+import { initSessionTracking, updateSessionStatus } from '../src/session'
 import { context, SamplingDecision } from '@opentelemetry/api'
-import { SplunkWebTracerProvider } from '../src'
 import { SESSION_INACTIVITY_TIMEOUT_MS, SESSION_STORAGE_KEY } from '../src/session/constants'
+import { describe, it, expect } from 'vitest'
+import { createWebTracerProvider } from './utils'
 
 describe('Session based sampler', () => {
 	it('decide sampling based on session id and ratio', () => {
@@ -36,15 +36,14 @@ describe('Session based sampler', () => {
 			}),
 		)
 		document.cookie = SESSION_STORAGE_KEY + '=' + lowCookieValue + '; path=/; max-age=' + 10
-		const provider = new SplunkWebTracerProvider()
+		const provider = createWebTracerProvider()
 		initSessionTracking(provider, lowSessionId, new InternalEventTarget())
 
 		const sampler = new SessionBasedSampler({ ratio: 0.5 })
-		assert.strictEqual(
+		expect(
 			sampler.shouldSample(context.active(), '0000000000000000', 'test', 0, {}, []).decision,
-			SamplingDecision.RECORD_AND_SAMPLED,
 			'low session id should be recorded',
-		)
+		).toBe(SamplingDecision.RECORD_AND_SAMPLED)
 
 		// Session id > target ratio
 		const highSessionId = '1234567890abcdeffedcba0987654321'
@@ -61,10 +60,9 @@ describe('Session based sampler', () => {
 			useLocalStorage: false,
 		})
 
-		assert.strictEqual(
+		expect(
 			sampler.shouldSample(context.active(), '0000000000000000', 'test', 0, {}, []).decision,
-			SamplingDecision.NOT_RECORD,
 			'high session id should not be recorded',
-		)
+		).toBe(SamplingDecision.NOT_RECORD)
 	})
 })
