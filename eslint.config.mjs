@@ -251,7 +251,6 @@ export default [
 			'.github/',
 			'.idea',
 			'.vscode/',
-			'examples/installing-npm',
 			'**/.next/',
 			'vitest-report',
 		],
