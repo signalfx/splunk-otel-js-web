@@ -16,14 +16,14 @@
  *
  */
 /* eslint-disable */
-const { ollyWebWebpackPlugin } = require('@splunk/olly-web-build-plugins')
+const { SplunkRumWebpackPlugin } = require('@splunk/olly-web-build-plugins')
 const path = require('path')
 const { getBaseConfig } = require('./webpack-utils')
 
 module.exports = {
 	...getBaseConfig(__filename),
 	plugins: [
-		ollyWebWebpackPlugin({
+		new SplunkRumWebpackPlugin({
 			applicationName: 'sample-app',
 			version: '0.1.0',
 		}),

@@ -7,12 +7,12 @@
 ```js
 // webpack.config.js
 
-const { ollyWebWebpackPlugin } = require('@splunk/olly-web-build-plugins');
+const { SplunkRumWebpackPlugin } = require('@splunk/olly-web-build-plugins');
 
 module.exports = {
   /* ... */
   plugins: [
-    ollyWebWebpackPlugin({
+    new SplunkRumWebpackPlugin({
       sourceMaps: {
         realm: 'us0',
         token: process.env.SPLUNK_API_TOKEN,

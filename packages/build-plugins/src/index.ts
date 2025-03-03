@@ -17,11 +17,11 @@
  */
 import { createUnplugin, UnpluginFactory } from 'unplugin'
 
-import type { WebpackPluginInstance } from 'webpack'
+import type { Compiler, WebpackPluginInstance } from 'webpack'
 import { PLUGIN_NAME } from './utils'
 import { applySourceMapsInject, applySourceMapsUpload } from './webpack'
 
-export interface OllyWebPluginOptions {
+export interface SplunkRumPluginOptions {
 	/** Optional. If provided, this should match the "applicationName" used where SplunkRum.init() is called. */
 	applicationName?: string
 
@@ -41,7 +41,7 @@ export interface OllyWebPluginOptions {
 	}
 }
 
-const unpluginFactory: UnpluginFactory<OllyWebPluginOptions | undefined> = (options) => ({
+const unpluginFactory: UnpluginFactory<SplunkRumPluginOptions | undefined> = (options) => ({
 	name: PLUGIN_NAME,
 	webpack(compiler) {
 		const logger = compiler.getInfrastructureLogger(PLUGIN_NAME)
@@ -71,4 +71,15 @@ const unpluginFactory: UnpluginFactory<OllyWebPluginOptions | undefined> = (opti
 
 const unplugin = createUnplugin(unpluginFactory)
 
-export const ollyWebWebpackPlugin: (options: OllyWebPluginOptions) => WebpackPluginInstance = unplugin.webpack
+export class SplunkRumWebpackPlugin {
+	// unplugin gives us a function.  Wrap it in a class to follow the convention of webpack plugins, which generally use classes
+	private unpluginInstance: ReturnType<typeof unplugin.webpack>;
+
+	constructor(options: SplunkRumPluginOptions) {
+		this.unpluginInstance = unplugin.webpack(options);
+	}
+
+	apply(compiler: Compiler): void {
+		this.unpluginInstance.apply(compiler);
+	}
+}

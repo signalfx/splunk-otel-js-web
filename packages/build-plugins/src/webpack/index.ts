@@ -29,7 +29,7 @@ import { join } from 'path'
 import { uploadFile } from '../httpUtils'
 import { AxiosError } from 'axios'
 import type { Compiler } from 'webpack'
-import { OllyWebPluginOptions } from '../index'
+import { SplunkRumPluginOptions } from '../index'
 
 /**
  * The part of the webpack plugin responsible for injecting the sourceMapId code snippet into the JS bundles.
@@ -97,7 +97,7 @@ export function applySourceMapsInject(compiler: Compiler) {
 /**
  * The part of the webpack plugin responsible for uploading source maps from the output directory.
  */
-export function applySourceMapsUpload(compiler: Compiler, options: OllyWebPluginOptions): void {
+export function applySourceMapsUpload(compiler: Compiler, options: SplunkRumPluginOptions): void {
 	const logger = compiler.getInfrastructureLogger(PLUGIN_NAME)
 
 	compiler.hooks.afterEmit.tapAsync(PLUGIN_NAME, async (compilation, callback) => {
