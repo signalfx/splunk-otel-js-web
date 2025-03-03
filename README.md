@@ -11,7 +11,7 @@
     <img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/signalfx/splunk-otel-js-web?include_prereleases&style=for-the-badge">
   </a>
   <a href="https://www.npmjs.com/package/@splunk/otel-web">
-    <img src="https://img.shields.io/npm/v/@splunk/otel-web?style=for-the-badge">
+    <img alt="badge" src="https://img.shields.io/npm/v/@splunk/otel-web?style=for-the-badge">
   </a>
   <img alt="GitHub Workflow Status (branch)" src="https://img.shields.io/github/actions/workflow/status/signalfx/splunk-otel-js-web/ci-main.yml?branch=main&style=for-the-badge">
   <img alt="Beta" src="https://img.shields.io/badge/status-beta-informational?style=for-the-badge">

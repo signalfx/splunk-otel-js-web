@@ -17,7 +17,7 @@
  */
 import { isIframe } from '../utils'
 import { SessionState } from './types'
-import { SESSION_DURATION_SECONDS, SESSION_STORAGE_KEY } from './constants'
+import { SESSION_INACTIVITY_TIMEOUT_SECONDS, SESSION_STORAGE_KEY } from './constants'
 import { isSessionDurationExceeded, isSessionInactivityTimeoutReached, isSessionState } from './utils'
 import { throttle } from '../utils/throttle'
 
@@ -52,14 +52,9 @@ export function parseCookieToSessionState({ forceStoreRead }: { forceStoreRead: 
 		return undefined
 	}
 
-	const decoded = decodeURIComponent(rawValue)
-	if (!decoded) {
-		return undefined
-	}
-
 	let sessionState: unknown = undefined
 	try {
-		sessionState = JSON.parse(decoded)
+		sessionState = JSON.parse(rawValue)
 	} catch {
 		return undefined
 	}
@@ -91,7 +86,8 @@ export function renewCookieTimeout(
 
 	const cookieValue = encodeURIComponent(JSON.stringify(sessionState))
 	const domain = cookieDomain ? `domain=${cookieDomain};` : ''
-	let cookie = SESSION_STORAGE_KEY + '=' + cookieValue + '; path=/;' + domain + 'max-age=' + SESSION_DURATION_SECONDS
+	let cookie =
+		SESSION_STORAGE_KEY + '=' + cookieValue + '; path=/;' + domain + 'max-age=' + SESSION_INACTIVITY_TIMEOUT_SECONDS
 
 	if (isIframe()) {
 		cookie += ';SameSite=None; Secure'

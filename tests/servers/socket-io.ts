@@ -15,9 +15,26 @@
  * limitations under the License.
  *
  */
-export const SESSION_ID_LENGTH = 32
-export const SESSION_DURATION_SECONDS = 4 * 60 * 60 // 4 hours
-export const SESSION_DURATION_MS = SESSION_DURATION_SECONDS * 1000
-export const SESSION_INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000 // 15 minutes
-export const SESSION_INACTIVITY_TIMEOUT_SECONDS = SESSION_INACTIVITY_TIMEOUT_MS / 1000
-export const SESSION_STORAGE_KEY = '_splunk_rum_sid'
+import { Server } from 'socket.io'
+
+export const initSocketIo = () => {
+	const io = new Server({
+		cors: {
+			origin: true,
+		},
+	})
+
+	io.on('connection', (socket) => {
+		socket.on('hello', () => {
+			// Does nothing
+		})
+
+		socket.on('ping', (...args) => {
+			socket.emit('pong', ...args)
+		})
+	})
+
+	io.listen(8980)
+
+	return () => new Promise<void>((resolve) => io.close(() => resolve()))
+}

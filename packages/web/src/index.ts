@@ -39,7 +39,7 @@ import {
 	DEFAULT_AUTO_INSTRUMENTED_EVENT_NAMES,
 	UserInteractionEventsConfig,
 } from './SplunkUserInteractionInstrumentation'
-import { SplunkExporterConfig } from './exporters/common'
+import { type SplunkExporterConfig } from './exporters/common'
 import { SplunkZipkinExporter } from './exporters/zipkin'
 import { ERROR_INSTRUMENTATION_NAME, SplunkErrorInstrumentation } from './SplunkErrorInstrumentation'
 import { generateId, getPluginConfig } from './utils'
@@ -69,7 +69,7 @@ import { SplunkOtelWebConfig, SplunkOtelWebExporterOptions, SplunkOtelWebOptions
 import { forgetAnonymousId, getOrCreateAnonymousId } from './user-tracking'
 import { isBot } from './utils/is-bot'
 
-export { SplunkExporterConfig } from './exporters/common'
+export { type SplunkExporterConfig } from './exporters/common'
 export { SplunkZipkinExporter } from './exporters/zipkin'
 export * from './SplunkWebTracerProvider'
 export * from './SessionBasedSampler'
