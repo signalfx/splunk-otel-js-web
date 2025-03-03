@@ -1,3 +1,2 @@
-%25PUBLIC_URL%25
 http://localhost:9100/
-doesnotexist.jpg
+%3C%25=%20assetPrefix%20%25%3E/.*

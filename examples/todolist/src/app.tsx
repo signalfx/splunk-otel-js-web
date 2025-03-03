@@ -16,15 +16,26 @@
  *
  */
 
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
+import { useEffect } from 'react'
+import { TodoList } from './todo-list'
 
-import App from './App'
+function App() {
+	useEffect(() => {
+		const interval = setInterval(() => {
+			void fetch(process.env.PUBLIC_REACT_APP_BACKEND + '/ping')
+		}, 60000)
 
-const container = document.getElementById('root')
-const root = createRoot(container) // createRoot(container!) if you use TypeScript
-root.render(
-	<StrictMode>
-		<App />
-	</StrictMode>,
-)
+		return () => {
+			clearInterval(interval)
+		}
+	})
+
+	return (
+		<div className="container p-4">
+			<h1 className="mb-4">Great Todo App!</h1>
+			<TodoList />
+		</div>
+	)
+}
+
+export default App

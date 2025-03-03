@@ -17,19 +17,29 @@
  */
 
 import { useCallback, useEffect, useState } from 'react'
-import TodoAdd from './TodoAdd'
-import TodoRow from './TodoRow'
+import { TodoAdd } from './todo-add'
+import { TodoRow } from './todo-row'
 
-const ENDPOINT = process.env.REACT_APP_BACKEND + '/items'
+const ENDPOINT = process.env.PUBLIC_REACT_APP_BACKEND + '/items'
 
-function TodoList() {
-	const [token, setToken] = useState(null)
+interface TodoItem {
+	completed: boolean
+	id: string
+	text: string
+}
+
+export function TodoList() {
+	const [token, setToken] = useState<string | null>(null)
 	const [isLoading, setIsLoading] = useState(false)
-	const [todos, setTodos] = useState([])
+	const [todos, setTodos] = useState<TodoItem[]>([])
 
 	useEffect(() => {
 		async function fetchData() {
-			const tracer = window.SplunkRum.provider.getTracer('todoList')
+			const tracer = window.SplunkRum.provider?.getTracer('todoList')
+			if (!tracer) {
+				return
+			}
+
 			const span = tracer.startSpan('todoList.load', {
 				attributes: {
 					'workflow.id': 1,
@@ -45,7 +55,7 @@ function TodoList() {
 			span.end()
 		}
 
-		fetchData()
+		void fetchData()
 	}, [token])
 
 	const login = useCallback(async () => {
@@ -54,14 +64,18 @@ function TodoList() {
 			return
 		}
 
-		const res = await fetch(process.env.REACT_APP_BACKEND + '/login')
+		const res = await fetch(process.env.PUBLIC_REACT_APP_BACKEND + '/login')
 
-		setToken((await res.json()).token)
+		setToken((await res.json()).token as string)
 	}, [token, setToken])
 
 	const addItem = useCallback(
-		async (text) => {
-			const tracer = window.SplunkRum.provider.getTracer('todoList')
+		async (text: string) => {
+			const tracer = window.SplunkRum.provider?.getTracer('todoList')
+			if (!tracer) {
+				return
+			}
+
 			const span = tracer.startSpan('todoList.addItem', {
 				attributes: {
 					'workflow.id': 2,
@@ -89,7 +103,7 @@ function TodoList() {
 				throw error
 			}
 
-			const created = await res.json()
+			const created = (await res.json()) as TodoItem
 			setTodos(todos.concat([created]))
 			span.end()
 		},
@@ -97,7 +111,7 @@ function TodoList() {
 	)
 
 	const editItem = useCallback(
-		async (id, props) => {
+		async (id: string, props: Partial<{ completed: boolean; text: string }>) => {
 			const res = await fetch(ENDPOINT + '/' + id + (token ? '?token=' + token : ''), {
 				method: 'PATCH',
 				headers: {
@@ -118,7 +132,7 @@ function TodoList() {
 	)
 
 	const deleteItem = useCallback(
-		async (id) => {
+		async (id: string) => {
 			const res = await fetch(ENDPOINT + '/' + id + (token ? '?token=' + token : ''), {
 				method: 'DELETE',
 			})
@@ -161,5 +175,3 @@ function TodoList() {
 		</div>
 	)
 }
-
-export default TodoList

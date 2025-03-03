@@ -16,30 +16,41 @@
  *
  */
 
-import { useCallback, useState } from 'react'
+import { FormEvent, useCallback, useState, KeyboardEvent } from 'react'
 
-/**
- * @param {Object} props
- * @param {(text: string) => Promise} props.addItem
- */
-function TodoAdd({ addItem }) {
-	const [text, setText] = useState('')
+export function TodoEdit({
+	editText,
+	cancelEditing,
+	item,
+}: {
+	cancelEditing: () => void
+	editText: (text: string) => Promise<void>
+	item: { id: string; text: string }
+}) {
+	const [text, setText] = useState(item.text)
 
 	const onSubmit = useCallback(
-		async (event) => {
+		async (event: FormEvent<HTMLFormElement>) => {
 			event.preventDefault()
 
-			await addItem(text)
-			setText('')
+			await editText(text)
 		},
-		[text],
+		[editText, text],
 	)
 
+	const onKeyUp = useCallback(
+		(event: KeyboardEvent<HTMLInputElement>) => {
+			if (event.key !== 'Escape') {
+				return
+			}
+
+			event.preventDefault()
+			cancelEditing()
+		},
+		[cancelEditing],
+	)
 	return (
 		<form onSubmit={onSubmit}>
-			<label htmlFor="add-text" className="form-label">
-				Add new todo
-			</label>
 			<input
 				type="text"
 				name="text"
@@ -47,9 +58,8 @@ function TodoAdd({ addItem }) {
 				className="form-control"
 				value={text}
 				onChange={(e) => setText(e.target.value)}
+				onKeyUp={onKeyUp}
 			/>
 		</form>
 	)
 }
-
-export default TodoAdd
