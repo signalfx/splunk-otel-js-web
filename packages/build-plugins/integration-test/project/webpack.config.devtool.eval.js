@@ -16,7 +16,7 @@
  *
  */
 /* eslint-disable */
-const { SplunkRumWebpackPlugin } = require('@splunk/olly-web-build-plugins')
+const { SplunkRumWebpackPlugin } = require('@splunk/otel-web-build-plugins')
 const path = require('path')
 const { getBaseConfig } = require('./webpack-utils')
 

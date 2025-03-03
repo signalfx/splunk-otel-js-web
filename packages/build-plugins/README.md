@@ -7,7 +7,7 @@
 ```js
 // webpack.config.js
 
-const { SplunkRumWebpackPlugin } = require('@splunk/olly-web-build-plugins');
+const { SplunkRumWebpackPlugin } = require('@splunk/otel-web-build-plugins');
 
 module.exports = {
   /* ... */
