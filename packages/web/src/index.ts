@@ -89,7 +89,7 @@ interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
 }
 
 const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
-	allowBots: false,
+	disableBots: false,
 	disableAutomationFrameworks: false,
 	applicationName: 'unknown-browser-app',
 	beaconEndpoint: undefined,
@@ -214,7 +214,7 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	disabledByAutomationFrameworkDetection?: boolean
 
 	/**
-	 * True if library detected a bot and was disabled based on 'allowBots' setting.
+	 * True if library detected a bot and was disabled based on 'disableBots' setting.
 	 */
 	disabledByBotDetection?: boolean
 
@@ -301,7 +301,7 @@ export const SplunkRum: SplunkOtelWebType = {
 			return
 		}
 
-		if (!options.allowBots && isBot(navigator.userAgent)) {
+		if (options.disableBots && isBot(navigator.userAgent)) {
 			this.disabledByBotDetection = true
 			diag.error('SplunkRum will not be initialized, bots are not allowed.')
 			return
