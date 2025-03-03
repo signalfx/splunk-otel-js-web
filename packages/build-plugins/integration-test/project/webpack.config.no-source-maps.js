@@ -24,12 +24,12 @@ module.exports = {
 	...getBaseConfig(__filename),
 	plugins: [
 		ollyWebWebpackPlugin({
+			applicationName: 'sample-app',
+			version: '0.1.0',
 			sourceMaps: {
-				applicationName: 'sample-app',
 				disableUpload: true,
 				realm: 'us0',
 				token: '<token>',
-				version: '0.1.0',
 			},
 		}),
 	],

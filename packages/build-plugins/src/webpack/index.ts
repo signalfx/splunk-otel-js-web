@@ -128,8 +128,8 @@ export function applySourceMapsUpload(compiler: Compiler, options: OllyWebPlugin
 		}
 		const parameters = Object.fromEntries(
 			[
-				['appName', options.sourceMaps.applicationName],
-				['appVersion', options.sourceMaps.version],
+				['appName', options.applicationName],
+				['appVersion', options.version],
 				// eslint-disable-next-line @typescript-eslint/no-unused-vars
 			].filter(([_, value]) => typeof value !== 'undefined'),
 		)

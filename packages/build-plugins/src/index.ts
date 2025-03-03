@@ -22,11 +22,14 @@ import { PLUGIN_NAME } from './utils'
 import { applySourceMapsInject, applySourceMapsUpload } from './webpack'
 
 export interface OllyWebPluginOptions {
+	/** Optional. If provided, this should match the "applicationName" used where SplunkRum.init() is called. */
+	applicationName?: string
+
+	/** Optional. If provided, this should match the "version" used where SplunkRum.init() is called. */
+	version?: string
+
 	/** Plugin configuration for source map ID injection and source map file uploads */
 	sourceMaps?: {
-		/** Optional. If provided, this should match the "applicationName" used where SplunkRum.init() is called. */
-		applicationName?: string
-
 		/** Optional. If true, the plugin will inject source map IDs into the final JavaScript bundles, but it will not upload any source map files. */
 		disableUpload?: boolean
 
@@ -35,9 +38,6 @@ export interface OllyWebPluginOptions {
 
 		/** API token used to authenticate the file upload requests.  This is not the same as the rumAccessToken used in SplunkRum.init(). */
 		token: string
-
-		/** Optional. If provided, this should match the "version" used where SplunkRum.init() is called. */
-		version?: string
 	}
 }
 
