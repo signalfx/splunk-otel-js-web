@@ -23,7 +23,7 @@ import { applySourceMapsInject, applySourceMapsUpload } from './webpack'
 
 export interface OllyWebPluginOptions {
 	/** Plugin configuration for source map ID injection and source map file uploads */
-	sourceMaps: {
+	sourceMaps?: {
 		/** Optional. If provided, this should match the "applicationName" used where SplunkRum.init() is called. */
 		applicationName?: string
 
@@ -44,11 +44,28 @@ export interface OllyWebPluginOptions {
 const unpluginFactory: UnpluginFactory<OllyWebPluginOptions | undefined> = (options) => ({
 	name: PLUGIN_NAME,
 	webpack(compiler) {
-		applySourceMapsInject(compiler)
+		const logger = compiler.getInfrastructureLogger(PLUGIN_NAME)
 
-		if (!options.sourceMaps.disableUpload) {
-			applySourceMapsUpload(compiler, options)
+		if (options.sourceMaps) {
+			applySourceMapsInject(compiler)
+
+			let shouldApplySourceMapsUpload = true;
+			if (options.sourceMaps.disableUpload) {
+				logger.debug('sourceMaps.disableUpload is set — skipping source map uploads')
+				shouldApplySourceMapsUpload = false;
+			} else if (!options.sourceMaps.realm) {
+				logger.warn('sourceMaps.realm is missing — skipping source map uploads')
+				shouldApplySourceMapsUpload = false;
+			} else if (!options.sourceMaps.token) {
+				logger.warn('sourceMaps.token is missing — skipping source map uploads')
+				shouldApplySourceMapsUpload = false;
+			}
+
+			if (shouldApplySourceMapsUpload) {
+				applySourceMapsUpload(compiler, options)
+			}
 		}
+
 	},
 })
 
