@@ -20,7 +20,7 @@ import {
 	SessionReplay as SessionReplayOriginal,
 	SessionReplayPlain as SessionReplayPlainOriginal,
 	// @ts-expect-error Remote module
-} from 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v1.31.0/session-replay.module.min.js'
+} from 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v1.31.0/session-replay.module.legacy.min.js'
 import { SessionReplayPlainClass, SessionReplayClass } from './types'
 
 export const SessionReplay: SessionReplayClass = SessionReplayOriginal

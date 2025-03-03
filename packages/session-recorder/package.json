@@ -7,7 +7,7 @@
 		"compile": "npm-run-all -s compile:*",
 		"compile:browser": "webpack --mode production --color",
 		"compile:tsc": "tsc --build tsconfig.cjs.json tsconfig.esm.json",
-		"dev": "webpack --watch --color"
+		"dev": "webpack --mode development --watch --color"
 	},
 	"author": "Splunk Observability Instrumentals Team <ssg-observability-instrumentals-npm@splunk.com>",
 	"license": "Apache-2.0",
