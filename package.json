@@ -32,7 +32,7 @@
 		"size-limit": "size-limit"
 	},
 	"devDependencies": {
-		"@aws-sdk/client-cloudfront": "^3.171.0",
+		"@aws-sdk/client-cloudfront": "^3.758.0",
 		"@aws-sdk/client-s3": "^3.171.0",
 		"@eslint/js": "^9.13.0",
 		"@octokit/graphql": "^7.0.1",
