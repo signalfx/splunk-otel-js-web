@@ -19,3 +19,6 @@ tests_output/
 .env
 
 .next
+
+vitest-report
+__screenshots__

@@ -232,6 +232,19 @@ export default [
 		},
 	},
 	{
+		files: ['**/*.test.ts', '**/tests/utils/**/*.ts'],
+		languageOptions: {
+			globals: {
+				...globals.browser,
+			},
+			parser: tseslint.parser,
+			parserOptions: {
+				ecmaVersion: 2020,
+				project: 'tsconfig.eslint.json',
+			},
+		},
+	},
+	{
 		ignores: [
 			'**/dist/',
 			'**/node_modules/',
@@ -239,14 +252,8 @@ export default [
 			'.github/',
 			'.idea',
 			'.vscode/',
-			'examples/installing-npm',
 			'**/.next/',
+			'vitest-report',
 		],
-	},
-	{
-		files: ['examples/**'],
-		rules: {
-			'headers/header-format': 'off',
-		},
 	},
 ]

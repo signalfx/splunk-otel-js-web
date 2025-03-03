@@ -1,6 +1,11 @@
 name: Continuous Integration
 on:
     pull_request:
+        types: [opened, synchronize]
+    push:
+        branches: [main]
+        tags: [v*]
+
 permissions: read-all
 
 jobs:
@@ -10,21 +15,29 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v4.2.2
+
             - name: Setup
               uses: ./.github/actions/setup
+
             - run: npm run version:check
+
             - name: Size check
               run: npm run size-limit
+
             - name: Lint code
               run: npm run lint
+
             - name: Lint docs
               run: npm run lint:markdown
+
             - name: Transpile code
               run: npm run compile
-            - name: Unit test
-              run: npm run test:unit:ci
-            - name: Unit test (nodejs)
-              run: npm run test:unit:ci-node
+
+            - name: Install playwright
+              uses: ./.github/actions/install-playwright
+
+            - name: Unit tests
+              run: npm run test:unit
 
     playwright:
         uses: ./.github/workflows/tests.yml
