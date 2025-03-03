@@ -25,9 +25,6 @@ export interface SplunkRumPluginOptions {
 	/** Optional. If provided, this should match the "applicationName" used where SplunkRum.init() is called. */
 	applicationName?: string
 
-	/** Optional. If provided, this should match the "version" used where SplunkRum.init() is called. */
-	version?: string
-
 	/** Plugin configuration for source map ID injection and source map file uploads */
 	sourceMaps?: {
 		/** Optional. If true, the plugin will inject source map IDs into the final JavaScript bundles, but it will not upload any source map files. */
@@ -39,6 +36,9 @@ export interface SplunkRumPluginOptions {
 		/** API token used to authenticate the file upload requests.  This is not the same as the rumAccessToken used in SplunkRum.init(). */
 		token: string
 	}
+
+	/** Optional. If provided, this should match the "version" used where SplunkRum.init() is called. */
+	version?: string
 }
 
 const unpluginFactory: UnpluginFactory<SplunkRumPluginOptions | undefined> = (options) => ({
@@ -49,37 +49,39 @@ const unpluginFactory: UnpluginFactory<SplunkRumPluginOptions | undefined> = (op
 		if (options.sourceMaps) {
 			applySourceMapsInject(compiler)
 
-			let shouldApplySourceMapsUpload = true;
+			let shouldApplySourceMapsUpload = true
 			if (options.sourceMaps.disableUpload) {
 				logger.debug('sourceMaps.disableUpload is set — skipping source map uploads')
-				shouldApplySourceMapsUpload = false;
+				shouldApplySourceMapsUpload = false
 			} else if (!options.sourceMaps.realm) {
 				logger.warn('sourceMaps.realm is missing — skipping source map uploads')
-				shouldApplySourceMapsUpload = false;
+				shouldApplySourceMapsUpload = false
 			} else if (!options.sourceMaps.token) {
 				logger.warn('sourceMaps.token is missing — skipping source map uploads')
-				shouldApplySourceMapsUpload = false;
+				shouldApplySourceMapsUpload = false
 			}
 
 			if (shouldApplySourceMapsUpload) {
 				applySourceMapsUpload(compiler, options)
 			}
 		}
-
 	},
 })
 
 const unplugin = createUnplugin(unpluginFactory)
 
 export class SplunkRumWebpackPlugin {
-	// unplugin gives us a function.  Wrap it in a class to follow the convention of webpack plugins, which generally use classes
-	private unpluginInstance: ReturnType<typeof unplugin.webpack>;
+	// unplugin.webpack gives us a function
+	// Wrap it in this exported class so that usages of our plugin follow the convention of other webpack plugins,
+	// which use the "new" keyword to create instances of plugins
+
+	private unpluginInstance: WebpackPluginInstance
 
 	constructor(options: SplunkRumPluginOptions) {
-		this.unpluginInstance = unplugin.webpack(options);
+		this.unpluginInstance = unplugin.webpack(options)
 	}
 
 	apply(compiler: Compiler): void {
-		this.unpluginInstance.apply(compiler);
+		this.unpluginInstance.apply(compiler)
 	}
 }

@@ -39,7 +39,9 @@ describe('webpack sourceMaps plugin', function () {
 		)
 		await verifySourceMapIdInjectionDidNotOccur('./integration-test/project/dist/webpack-config-no-source-maps-js/')
 		await verifySourceMapIdInjectionDidNotOccur('./integration-test/project/dist/webpack-config-devtool-eval-js/')
-		await verifySourceMapIdInjectionDidNotOccur('./integration-test/project/dist/webpack-config-without-source-maps-options-js/')
+		await verifySourceMapIdInjectionDidNotOccur(
+			'./integration-test/project/dist/webpack-config-without-source-maps-options-js/',
+		)
 		await verifySourceMapIdInjectionDidNotOccur('./integration-test/project/dist/webpack-config-without-plugin-js/')
 	})
 })
