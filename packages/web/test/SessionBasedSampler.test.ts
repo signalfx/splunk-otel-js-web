@@ -19,7 +19,7 @@
 import * as assert from 'assert'
 import { InternalEventTarget } from '../src/EventTarget'
 import { SessionBasedSampler } from '../src/SessionBasedSampler'
-import { initSessionTracking, updateSessionStatus } from '../src/session/session'
+import { initSessionTracking, getOrCreateSessionIdAndUpdateExpirationIfNecessary } from '../src/session'
 import { context, SamplingDecision } from '@opentelemetry/api'
 import { SplunkWebTracerProvider } from '../src'
 import { SESSION_INACTIVITY_TIMEOUT_MS, SESSION_STORAGE_KEY } from '../src/session/constants'
@@ -37,7 +37,7 @@ describe('Session based sampler', () => {
 		)
 		document.cookie = SESSION_STORAGE_KEY + '=' + lowCookieValue + '; path=/; max-age=' + 10
 		const provider = new SplunkWebTracerProvider()
-		initSessionTracking(provider, lowSessionId, new InternalEventTarget())
+		initSessionTracking(provider, new InternalEventTarget())
 
 		const sampler = new SessionBasedSampler({ ratio: 0.5 })
 		assert.strictEqual(
@@ -56,7 +56,7 @@ describe('Session based sampler', () => {
 			}),
 		)
 		document.cookie = SESSION_STORAGE_KEY + '=' + highCookieValue + '; path=/; max-age=' + 10
-		updateSessionStatus({
+		getOrCreateSessionIdAndUpdateExpirationIfNecessary({
 			forceStore: true,
 			useLocalStorage: false,
 		})
