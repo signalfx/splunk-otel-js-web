@@ -256,10 +256,4 @@ export default [
 			'vitest-report',
 		],
 	},
-	{
-		files: ['examples/**'],
-		rules: {
-			'headers/header-format': 'off',
-		},
-	},
 ]

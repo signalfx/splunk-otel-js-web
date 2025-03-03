@@ -16,26 +16,20 @@
  *
  */
 
-import { useEffect } from 'react'
-import TodoList from './TodoList'
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
 
-function App() {
-	useEffect(() => {
-		const interval = setInterval(() => {
-			fetch(process.env.REACT_APP_BACKEND + '/ping')
-		}, 60000)
+import App from './app'
 
-		return () => {
-			clearInterval(interval)
-		}
-	})
+const container = document.getElementById('root')
 
-	return (
-		<div className="container p-4">
-			<h1 className="mb-4">Great Todo App!</h1>
-			<TodoList />
-		</div>
-	)
+if (!container) {
+	throw new Error('No container element found')
 }
 
-export default App
+const root = createRoot(container) // createRoot(container!) if you use TypeScript
+root.render(
+	<StrictMode>
+		<App />
+	</StrictMode>,
+)
