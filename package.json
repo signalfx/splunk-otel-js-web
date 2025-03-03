@@ -38,7 +38,7 @@
 		"@octokit/graphql": "^7.0.1",
 		"@octokit/request": "^8.1.1",
 		"@size-limit/file": "^11.1.6",
-		"@stylistic/eslint-plugin-js": "^2.10.1",
+		"@stylistic/eslint-plugin-js": "^4.2.0",
 		"@stylistic/eslint-plugin-ts": "^2.10.1",
 		"@types/ws": "^8.5.14",
 		"@typescript-eslint/eslint-plugin": "^8.13.0",
