@@ -9,8 +9,7 @@
 		"compile:tsc": "tsc --build tsconfig.cjs.json tsconfig.esm.json",
 		"test:unit:watch": "karma start",
 		"test:unit:ci": "nyc karma start --single-run --no-auto-watch --browsers ChromeHeadlessCI",
-		"test:unit:ci-node": "env TS_NODE_TRANSPILE_ONLY=true TS_NODE_PROJECT=tsconfig.cjs.json nyc mocha",
-		"test:performance": "node ./performance-tests/runner.js"
+		"test:unit:ci-node": "env TS_NODE_TRANSPILE_ONLY=true TS_NODE_PROJECT=tsconfig.cjs.json nyc mocha"
 	},
 	"author": "Splunk Observability Instrumentals Team <ssg-observability-instrumentals-npm@splunk.com>",
 	"license": "Apache-2.0",
@@ -62,17 +61,13 @@
 		"@types/nightwatch": "^2.3.24",
 		"@types/shimmer": "^1.0.2",
 		"@types/sinon": "^17.0.3",
-		"body-parser": "^1.20.2",
 		"chai": "^4.3.7",
 		"chrome-launcher": "^1.0.0",
 		"chromedriver": "^131.0.1",
 		"codecov": "^3.8.2",
-		"compression": "^1.7.4",
 		"cors": "^2.8.5",
-		"express": "^4.18.2",
 		"geckodriver": "^4.1.3",
 		"generate-source-map": "0.0.5",
-		"http-mitm-proxy": "^1.0.0",
 		"karma": "^6.4.2",
 		"karma-chrome-launcher": "^3.2.0",
 		"karma-coverage-istanbul-reporter": "^3.0.3",
@@ -81,7 +76,6 @@
 		"karma-rollup-preprocessor": "^7.0.8",
 		"karma-spec-reporter": "^0.0.36",
 		"karma-websocket-server": "^1.0.0",
-		"lighthouse": "^12.1.0",
 		"markdownlint-cli": "^0.35.0",
 		"mocha": "^10.2.0",
 		"nightwatch": "^3.0.1",
@@ -95,8 +89,7 @@
 		"sinon": "^15.2.0",
 		"socket.io": "^4.7.1",
 		"socket.io-client": "^4.7.1",
-		"ts-node": "^10.9.1",
-		"ws": "^8.17.1"
+		"ts-node": "^10.9.1"
 	},
 	"bugs": {
 		"url": "https://github.com/signalfx/splunk-otel-js-web/issues"
