@@ -29,7 +29,7 @@ import { join } from 'path'
 import { uploadFile } from '../httpUtils'
 import { AxiosError } from 'axios'
 import type { Compiler } from 'webpack'
-import { OllyWebPluginOptions } from '../index'
+import { SplunkRumPluginOptions } from '../index'
 
 /**
  * The part of the webpack plugin responsible for injecting the sourceMapId code snippet into the JS bundles.
@@ -97,7 +97,7 @@ export function applySourceMapsInject(compiler: Compiler) {
 /**
  * The part of the webpack plugin responsible for uploading source maps from the output directory.
  */
-export function applySourceMapsUpload(compiler: Compiler, options: OllyWebPluginOptions): void {
+export function applySourceMapsUpload(compiler: Compiler, options: SplunkRumPluginOptions): void {
 	const logger = compiler.getInfrastructureLogger(PLUGIN_NAME)
 
 	compiler.hooks.afterEmit.tapAsync(PLUGIN_NAME, async (compilation, callback) => {
@@ -128,8 +128,8 @@ export function applySourceMapsUpload(compiler: Compiler, options: OllyWebPlugin
 		}
 		const parameters = Object.fromEntries(
 			[
-				['appName', options.sourceMaps.applicationName],
-				['appVersion', options.sourceMaps.version],
+				['appName', options.applicationName],
+				['appVersion', options.version],
 				// eslint-disable-next-line @typescript-eslint/no-unused-vars
 			].filter(([_, value]) => typeof value !== 'undefined'),
 		)
