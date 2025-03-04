@@ -16,7 +16,7 @@
  *
  */
 /* eslint-disable */
-const { ollyWebWebpackPlugin } = require('@splunk/olly-web-build-plugins')
+const { SplunkRumWebpackPlugin } = require('@splunk/otel-web-build-plugins')
 const path = require('path')
 const { getBaseConfig } = require('./webpack-utils')
 
@@ -24,13 +24,13 @@ module.exports = {
 	...getBaseConfig(__filename),
 	devtool: 'source-map',
 	plugins: [
-		ollyWebWebpackPlugin({
+		new SplunkRumWebpackPlugin({
+			applicationName: 'sample-app',
+			version: '0.1.0',
 			sourceMaps: {
-				applicationName: 'sample-app',
 				disableUpload: true,
 				realm: 'us0',
 				token: '<token>',
-				version: '0.1.0',
 			},
 		}),
 	],
