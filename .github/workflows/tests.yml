@@ -89,6 +89,14 @@ jobs:
             - name: Run Unit Tests
               run: npm run test:unit -- --browser.name=${{ matrix.browser }}
 
+            - name: Upload test:unit report
+              uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1
+              if: ${{ !cancelled() }}
+              with:
+                  name: vitest-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
+                  path: vitest-report/
+                  retention-days: 14
+
     merge-reports:
         name: Merge playwright reports
         if: ${{ !cancelled() }}
