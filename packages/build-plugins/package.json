@@ -1,5 +1,5 @@
 {
-	"name": "@splunk/olly-web-build-plugins",
+	"name": "@splunk/otel-web-build-plugins",
 	"private": true,
 	"version": "0.20.0-beta.2",
 	"description": "Build plugins for users of @splunk/otel-web",
