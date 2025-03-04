@@ -29,12 +29,19 @@ export default defineConfig({
 				{
 					browser: 'chromium',
 				},
+				{
+					browser: 'firefox',
+				},
+				{
+					browser: 'webkit',
+				},
 			],
 			api: {
 				host: '127.0.0.1',
 				port: 1234,
 			},
 		},
+		retry: 3,
 		clearMocks: true,
 		coverage: {
 			exclude: ['**/node_modules'],

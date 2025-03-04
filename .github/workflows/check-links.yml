@@ -7,6 +7,7 @@ on:
 
 jobs:
     linkChecker:
+        name: Link Checker
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4.2.2
