@@ -50,7 +50,7 @@
 		"eslint-config-prettier": "^10.0.2",
 		"eslint-plugin-headers": "^1.2.1",
 		"eslint-plugin-prettier": "^5.2.3",
-		"fastify": "^5.1.0",
+		"fastify": "^5.2.1",
 		"globals": "^16.0.0",
 		"markdownlint-cli": "^0.44.0",
 		"node-fetch": "^3.3.2",
