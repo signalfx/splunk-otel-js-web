@@ -29,14 +29,14 @@ module.exports = [
 	},
 
 	{
-		name: 'artifacts/splunk-otel-web.js',
+		name: 'artifacts/splunk-otel-web-legacy.js',
 		limit: '75 kB',
 		path: './packages/web/dist/artifacts/splunk-otel-web-legacy.js',
 	},
 
 	{
 		name: 'artifacts/splunk-otel-web-session-recorder.js',
-		limit: '101 kB',
+		limit: '89 kB',
 		path: './packages/session-recorder/dist/artifacts/splunk-otel-web-session-recorder.js',
 	},
 ]
