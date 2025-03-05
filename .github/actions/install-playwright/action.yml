@@ -37,6 +37,6 @@ runs:
               npx playwright install webkit
 
         - name: Install Playwright OS dependencies
-          if: steps.playwright-cache.outputs.cache-hit != 'true'
+          if: steps.playwright-cache.outputs.cache-hit == 'true'
           shell: bash
           run: npx playwright install-deps

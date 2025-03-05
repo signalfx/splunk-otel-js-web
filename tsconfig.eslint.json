@@ -8,7 +8,7 @@
 		"pretty": true,
 		"resolveJsonModule": true,
 		"target": "ES2017",
-		"types": ["vitest/global"],
+		"types": ["vitest/global", "@vitest/browser/providers/playwright"],
 		"noEmit": true,
 		"allowJs": true
 	},
