@@ -19,7 +19,6 @@ const path = require('path')
 const TerserPlugin = require('terser-webpack-plugin')
 
 const artifactsPath = path.resolve(__dirname, './dist/artifacts')
-const baseConfigPath = path.resolve(__dirname, './webpack.base.config.js')
 
 const getBaseConfig = (env, argv, isLegacy) => {
 	const isDevelopmentMode = argv.mode === 'development'
@@ -105,7 +104,6 @@ const browserLegacyConfig = (env, argv) => {
 	const baseConfig = getBaseConfig(env, argv, true)
 	return {
 		...baseConfig,
-		extends: baseConfigPath,
 		entry: path.resolve(__dirname, './src/indexBrowser.ts'),
 		output: {
 			...baseConfig.output,
@@ -123,7 +121,6 @@ const otelApiGlobalsConfig = (env, argv) => {
 	const baseConfig = getBaseConfig(env, argv, true)
 	return {
 		...baseConfig,
-		extends: baseConfigPath,
 		entry: path.resolve(__dirname, './src/otel-api-globals.ts'),
 		output: {
 			...baseConfig.output,
