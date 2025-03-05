@@ -2,6 +2,30 @@
 
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
+## 0.20.0
+* @splunk/otel-web
+   * fix: do not extend session from discarded session replay spans
+     - Session is not extended when span is discarded by session replay. Please see detailed info in [PR description](https://github.com/signalfx/splunk-otel-js-web/pull/939).
+     - **There is a possibly breaking change as the `Splunk.getSessionId()` can return undefined when previous session expired and there are no new spans. The API already was typed as returning `string | undefined` hence not considered as a breaking change. See PR for explanation. ([#939](https://github.com/signalfx/splunk-otel-js-web/pull/939))**
+   * internal: session management improvements
+      - Session state contains now `expiresAt` field. Session is only extended/created when span is emitted. The 1-minute periodic interval is removed. Thanks to that the session start time matches the first span time and the session will not contain blank time at the beginning. ([#899](https://github.com/signalfx/splunk-otel-js-web/pull/899))
+   * fix: decode correct part of the cookie
+      - Cookie decode could fail if document.cookie contained unescaped characters. ([#962](https://github.com/signalfx/splunk-otel-js-web/pull/962))
+   * feat: added `disableBots` config parameter ([docs](https://docs.splunk.com/observability/en/gdi/get-data-in/rum/browser/configure-rum-browser-instrumentation.html#general-settings))
+       - When enabled, bots traffic will be blocked. ([#950](https://github.com/signalfx/splunk-otel-js-web/pull/950), [#959](https://github.com/signalfx/splunk-otel-js-web/pull/959))
+   * feat: added `disableAutomationFrameworks` config parameter ([docs](https://docs.splunk.com/observability/en/gdi/get-data-in/rum/browser/configure-rum-browser-instrumentation.html#general-settings))
+     - When enabled, automation frameworks traffic will be blocked.  ([#950](https://github.com/signalfx/splunk-otel-js-web/pull/950), [#959](https://github.com/signalfx/splunk-otel-js-web/pull/959))
+   * feat: added `persistence` config parameter ([docs](https://docs.splunk.com/observability/en/gdi/get-data-in/rum/browser/configure-rum-browser-instrumentation.html#general-settings))
+      - The session state can now be persisted to local storage instead of cookie. ([#900](https://github.com/signalfx/splunk-otel-js-web/pull/900), [#904](https://github.com/signalfx/splunk-otel-js-web/pull/904))
+   * feat: add `http.status_code` to all resources spans
+      - Resource spans now contain status code. The status code is set always when browser reports it.
+      - Browser does not report status code for [cross-origin resources](https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/responseStatus#value) that do not have [`crossorigin` attribute set](https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/crossorigin). In such cases, status code is omitted. ([#936](https://github.com/signalfx/splunk-otel-js-web/pull/936))
+   * feat: added `_experimental_longtaskNoStartSession` config parameter.
+      - When enabled, `longtasks` spans will not start the new session when previous expired. They will be ignored. ([#899](https://github.com/signalfx/splunk-otel-js-web/pull/899))
+
+* internal
+  * Update dependencies, improve examples, and refactor tests
+
 ## 0.20.0-beta.4
 
 * `@splunk/otel-web`

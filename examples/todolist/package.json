@@ -12,7 +12,7 @@
 		"@rsbuild/core": "^1.2.14",
 		"@rsbuild/plugin-react": "^1.1.1",
 		"@splunk/otel": "3.0.1",
-		"@splunk/otel-web": "^0.19.3",
+		"@splunk/otel-web": "^0.20.0",
 		"@types/react": "^19.0.10",
 		"@types/react-dom": "^19.0.4",
 		"body-parser": "1.20.3",

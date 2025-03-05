@@ -21,6 +21,8 @@ import { SESSION_INACTIVITY_TIMEOUT_SECONDS, SESSION_STORAGE_KEY } from './const
 import { isSessionDurationExceeded, isSessionInactivityTimeoutReached, isSessionState } from './utils'
 import { throttle } from '../utils/throttle'
 
+const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+
 export const cookieStore = {
 	cachedValue: null,
 	set: (value: string) => {
@@ -90,7 +92,13 @@ export function renewCookieTimeout(
 		SESSION_STORAGE_KEY + '=' + cookieValue + '; path=/;' + domain + 'max-age=' + SESSION_INACTIVITY_TIMEOUT_SECONDS
 
 	if (isIframe()) {
-		cookie += ';SameSite=None; Secure'
+		// Safari does not set cookie when the SameSite attribute is set to None and Secure is set to true in an iframe
+		// It fails also in our unit tests since they are running in iframe and on localhost.
+		if (['localhost', '127.0.0.1'].includes(window.location.hostname) && isSafari) {
+			cookie += ';SameSite=None'
+		} else {
+			cookie += ';SameSite=None; Secure'
+		}
 	} else {
 		cookie += ';SameSite=Strict'
 	}

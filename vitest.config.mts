@@ -22,26 +22,35 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
 	test: {
 		browser: {
-			name: 'chromium',
+			enabled: true,
+			provider: 'playwright',
+			headless: true,
+			instances: [
+				{
+					browser: 'chromium',
+				},
+				{
+					browser: 'firefox',
+				},
+				{
+					browser: 'webkit',
+				},
+			],
 			api: {
 				host: '127.0.0.1',
 				port: 1234,
 			},
-			enabled: true,
-			headless: true,
-			provider: 'playwright',
 		},
+		retry: 3,
 		clearMocks: true,
 		coverage: {
 			exclude: ['**/node_modules'],
 			provider: 'istanbul',
 		},
-		exclude: ['**/node_modules', 'packages/web/test/**/*'],
 		include: ['**/*.test.ts'],
 		pool: 'forks',
 		root: path.resolve(__dirname),
 		reporters: ['default', 'html'],
-		outputFile: 'vitest-report/index.html',
 		globalSetup: ['./tests/global-setup.ts'],
 	},
 })
