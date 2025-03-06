@@ -243,11 +243,11 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 
 	setGlobalAttributes: (attributes: Attributes) => void
 
-	setUserTracking: (enabled: boolean) => void
+	setUserTrackingMode: (mode: SplunkOtelWebConfig['user']['trackingMode']) => void
 }
 
 let inited = false
-let userTracking = false
+let userTrackingMode: SplunkOtelWebConfig['user']['trackingMode'] = 'noTracking'
 let _deregisterInstrumentations: () => void | undefined
 let _deinitSessionTracking: () => void | undefined
 let _errorInstrumentation: SplunkErrorInstrumentation | undefined
@@ -277,7 +277,7 @@ export const SplunkRum: SplunkOtelWebType = {
 	},
 
 	init: function (options) {
-		userTracking = options.userTracking
+		userTrackingMode = options.user?.trackingMode ?? 'noTracking'
 		// "env" based config still a bad idea for web
 		if (!('OTEL_TRACES_EXPORTER' in _globalThis)) {
 			_globalThis.OTEL_TRACES_EXPORTER = 'none'
@@ -433,7 +433,7 @@ export const SplunkRum: SplunkOtelWebType = {
 				...(processedOptions.globalAttributes || {}),
 			},
 			this._processedOptions.persistence === 'localStorage',
-			() => userTracking,
+			() => userTrackingMode,
 		)
 		provider.addSpanProcessor(this.attributesProcessor)
 
@@ -553,12 +553,12 @@ export const SplunkRum: SplunkOtelWebType = {
 		return this.removeEventListener(name, callback)
 	},
 
-	setUserTracking(enabled: boolean) {
-		userTracking = enabled
+	setUserTrackingMode(mode: SplunkOtelWebConfig['user']['trackingMode']) {
+		userTrackingMode = mode
 	},
 
 	getAnonymousId() {
-		if (userTracking) {
+		if (userTrackingMode === 'anonymousTracking') {
 			return getOrCreateAnonymousId({ useLocalStorage: this._processedOptions.persistence === 'localStorage' })
 		}
 	},
