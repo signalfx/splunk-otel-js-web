@@ -55,7 +55,31 @@ const getBaseConfig = (env, argv, isLegacy) => {
 					exclude: /node_modules/,
 					use: {
 						loader: 'babel-loader',
-						...(isLegacy && { options: { envName: 'legacy' } }),
+						options: {
+							presets: [
+								[
+									'@babel/preset-env',
+									{
+										targets: {
+											ie: '11',
+											chrome: '52',
+											safari: '11',
+											firefox: '57',
+											edge: '79',
+										},
+									},
+								],
+							],
+							plugins: [
+								'@babel/plugin-transform-runtime',
+								{
+									absoluteRuntime: false,
+									corejs: isLegacy ? 3 : false,
+									helpers: true,
+									regenerator: true,
+								},
+							],
+						},
 					},
 				},
 				{
