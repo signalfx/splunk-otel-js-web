@@ -16,16 +16,18 @@
  *
  */
 
-import { useCallback, useState } from 'react'
-import TodoEdit from './TodoEdit'
+import { useCallback, useState, ChangeEvent } from 'react'
+import { TodoEdit } from './todo-edit'
 
-/**
- * @param {Object} props
- * @param {{id: number, text: string, completed: boolean}} props.item
- * @param {(id: number, {text?: string, completed?: boolean}) => Promise} props.editItem
- * @param {(id: number) => Promise} props.deleteItem
- */
-function TodoRow({ item, editItem, deleteItem }) {
+export function TodoRow({
+	item,
+	editItem,
+	deleteItem,
+}: {
+	deleteItem: (id: string) => void
+	editItem: (id: string, data: Partial<{ completed: boolean; text: string }>) => Promise<void>
+	item: { completed: boolean; id: string; text: string }
+}) {
 	const [isEditing, setIsEditing] = useState(false)
 
 	const deleteClick = useCallback(() => {
@@ -33,14 +35,14 @@ function TodoRow({ item, editItem, deleteItem }) {
 	}, [deleteItem, item.id])
 
 	const toggleComplete = useCallback(
-		(event) => {
-			editItem(item.id, { completed: event.target.checked })
+		(event: ChangeEvent<HTMLInputElement>) => {
+			void editItem(item.id, { completed: event.target.checked })
 		},
 		[editItem, item.id],
 	)
 
 	const editText = useCallback(
-		async (text) => {
+		async (text: string) => {
 			await editItem(item.id, { text: text })
 			setIsEditing(false)
 		},
@@ -73,5 +75,3 @@ function TodoRow({ item, editItem, deleteItem }) {
 		</li>
 	)
 }
-
-export default TodoRow

@@ -18,10 +18,17 @@
 import { initSocketIo, initWebSocketServer } from './servers'
 
 let teardown = false
+let isRunning = false
 
 export default function () {
+	if (isRunning) {
+		return
+	}
+
 	const closeSocketIoServer = initSocketIo()
 	const closeWebSocketServer = initWebSocketServer()
+
+	isRunning = true
 
 	return async () => {
 		if (teardown) {

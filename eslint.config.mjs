@@ -251,15 +251,8 @@ export default [
 			'.github/',
 			'.idea',
 			'.vscode/',
-			'examples/installing-npm',
 			'**/.next/',
 			'vitest-report',
 		],
-	},
-	{
-		files: ['examples/**'],
-		rules: {
-			'headers/header-format': 'off',
-		},
 	},
 ]

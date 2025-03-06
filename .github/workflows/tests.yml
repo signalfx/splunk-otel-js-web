@@ -1,16 +1,16 @@
-name: Playwright tests
+name: Unit & Integration Tests
 on:
     workflow_call:
 
 jobs:
-    playwright:
+    tests-linux:
+        name: Unit & Integration Tests - ${{ matrix.browser }}
         timeout-minutes: 60
         runs-on: ubuntu-latest
         strategy:
             fail-fast: false
             matrix:
                 browser: [chromium, firefox, chrome, edge]
-        name: Playwright Tests - ${{ matrix.browser }}
         steps:
             - name: Checkout
               uses: actions/checkout@v4.2.2
@@ -37,13 +37,29 @@ jobs:
                   path: packages/integration-tests/blob-report
                   retention-days: 1
 
-    playwright-macos:
+            - name: Run Unit Tests
+              if: ${{ matrix.browser != 'edge' && matrix.browser != 'chrome' }}
+              # Firefox tests are flaky.
+              # Remove once this issue is resolved: https://github.com/vitest-dev/vitest/issues/7377
+              continue-on-error: ${{ matrix.browser == 'firefox' }}
+              run: npm run test:unit -- --browser.name=${{ matrix.browser }}
+
+            - name: Upload test:unit report
+              uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1
+              if: ${{ !cancelled() && matrix.browser != 'edge' && matrix.browser != 'chrome' }}
+              with:
+                  name: vitest-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
+                  path: vitest-report/
+                  retention-days: 14
+
+    tests-macos:
         timeout-minutes: 60
         runs-on: macos-latest
         strategy:
             fail-fast: false
             matrix:
                 browser: [webkit]
+        name: Unit & Integration Tests - ${{ matrix.browser }}
         steps:
             - name: Checkout
               uses: actions/checkout@v4.2.2
@@ -70,9 +86,21 @@ jobs:
                   path: packages/integration-tests/blob-report
                   retention-days: 1
 
+            - name: Run Unit Tests
+              run: npm run test:unit -- --browser.name=${{ matrix.browser }}
+
+            - name: Upload test:unit report
+              uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1
+              if: ${{ !cancelled() }}
+              with:
+                  name: vitest-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
+                  path: vitest-report/
+                  retention-days: 14
+
     merge-reports:
+        name: Merge playwright reports
         if: ${{ !cancelled() }}
-        needs: [playwright, playwright-macos]
+        needs: [tests-linux, tests-macos]
 
         runs-on: ubuntu-latest
         steps:
@@ -104,13 +132,14 @@ jobs:
                   retention-days: 14
 
     check-failure:
-        needs: [playwright, playwright-macos, merge-reports]
+        name: Check if all tests passed
+        needs: [tests-linux, tests-macos, merge-reports]
         runs-on: ubuntu-latest
         if: ${{ always() }}
         steps:
             - name: Check if any playwright tests failed
               run: |
-                  if [ "${{ needs.playwright.result }}" != "success" ] || [ "${{ needs['playwright-macos'].result }}" != "success" ];  then
+                  if [ "${{ needs['tests-linux'].result }}" != "success" ] || [ "${{ needs['tests-macos'].result }}" != "success" ];  then
                   echo "One or more tests failed."
                   exit 1
                   else
