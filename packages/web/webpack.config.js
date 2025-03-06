@@ -20,8 +20,10 @@ const TerserPlugin = require('terser-webpack-plugin')
 
 const artifactsPath = path.resolve(__dirname, './dist/artifacts')
 
-const getBaseConfig = (env, argv, isLegacy) => {
+const getBaseConfig = (env, argv, options = {}) => {
 	const isDevelopmentMode = argv.mode === 'development'
+	const useCoreJS = options.useCoreJS === true
+	const ecma = options.ecma
 
 	return {
 		output: {
@@ -52,7 +54,7 @@ const getBaseConfig = (env, argv, isLegacy) => {
 				},
 				{
 					test: /\.js$/,
-					exclude: /node_modules/,
+					exclude: useCoreJS ? /node_modules\/core-js/ : /node_modules/,
 					use: {
 						loader: 'babel-loader',
 						options: {
@@ -71,13 +73,15 @@ const getBaseConfig = (env, argv, isLegacy) => {
 								],
 							],
 							plugins: [
-								'@babel/plugin-transform-runtime',
-								{
-									absoluteRuntime: false,
-									corejs: isLegacy ? 3 : false,
-									helpers: true,
-									regenerator: true,
-								},
+								[
+									'@babel/plugin-transform-runtime',
+									{
+										absoluteRuntime: false,
+										corejs: useCoreJS ? 3 : false,
+										helpers: true,
+										regenerator: true,
+									},
+								],
 							],
 						},
 					},
@@ -96,7 +100,7 @@ const getBaseConfig = (env, argv, isLegacy) => {
 				new TerserPlugin({
 					extractComments: false,
 					terserOptions: {
-						...(isLegacy && { ecma: 5 }),
+						ecma,
 						format: {
 							comments: false,
 						},
@@ -108,7 +112,7 @@ const getBaseConfig = (env, argv, isLegacy) => {
 }
 
 const browserConfig = (env, argv) => {
-	const baseConfig = getBaseConfig(env, argv, false)
+	const baseConfig = getBaseConfig(env, argv)
 	return {
 		...baseConfig,
 		entry: path.resolve(__dirname, './src/indexBrowser.ts'),
@@ -125,7 +129,7 @@ const browserConfig = (env, argv) => {
 }
 
 const browserLegacyConfig = (env, argv) => {
-	const baseConfig = getBaseConfig(env, argv, true)
+	const baseConfig = getBaseConfig(env, argv, { useCoreJS: true, ecma: 5 })
 	return {
 		...baseConfig,
 		entry: path.resolve(__dirname, './src/indexBrowser.ts'),
@@ -142,7 +146,7 @@ const browserLegacyConfig = (env, argv) => {
 }
 
 const otelApiGlobalsConfig = (env, argv) => {
-	const baseConfig = getBaseConfig(env, argv, true)
+	const baseConfig = getBaseConfig(env, argv, { ecma: 5 })
 	return {
 		...baseConfig,
 		entry: path.resolve(__dirname, './src/otel-api-globals.ts'),
