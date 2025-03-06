@@ -50,16 +50,43 @@ module.exports = {
 		rules: [
 			{
 				test: /\.ts$/,
+				loader: 'ts-loader',
 				exclude: /node_modules/,
-				use: [
-					{ loader: 'babel-loader' },
-					{
-						loader: 'ts-loader',
-						options: {
-							configFile: 'tsconfig.base.json',
-						},
+				options: { configFile: 'tsconfig.base.json' },
+			},
+			{
+				test: /\.js$/,
+				exclude: /node_modules/,
+				use: {
+					loader: 'babel-loader',
+					options: {
+						presets: [
+							[
+								'@babel/preset-env',
+								{
+									targets: {
+										ie: '11',
+										chrome: '52',
+										safari: '11',
+										firefox: '57',
+										edge: '79',
+									},
+								},
+							],
+						],
+						plugins: [
+							[
+								'@babel/plugin-transform-runtime',
+								{
+									absoluteRuntime: false,
+									corejs: false,
+									helpers: true,
+									regenerator: true,
+								},
+							],
+						],
 					},
-				],
+				},
 			},
 			{
 				test: /\.js$/,
