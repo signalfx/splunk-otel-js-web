@@ -20,14 +20,9 @@ import { safelyGetLocalStorage } from '../utils/storage'
 
 const KEY = 'splunk.anonymousId'
 let anonymousId: string | undefined
-let prolongTimestamp = 0
 
 export const getOrCreateAnonymousId = ({ useLocalStorage }: { useLocalStorage: boolean }) => {
 	if (anonymousId) {
-		if (!useLocalStorage && Date.now() - prolongTimestamp > 1000 * 60 * 60) {
-			setCookie(anonymousId)
-		}
-
 		return anonymousId
 	}
 
@@ -70,6 +65,5 @@ const getAnonymousIdFromCookie = () => {
 const generateAnonymousId = () => generateId(128)
 
 const setCookie = (newId: string) => {
-	prolongTimestamp = Date.now()
 	document.cookie = `${KEY}=${newId}; max-age=${60 * 60 * 24 * 400}`
 }
