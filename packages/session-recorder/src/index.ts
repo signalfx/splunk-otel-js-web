@@ -196,10 +196,16 @@ const SplunkRumRecorder = {
 			debug,
 			headers,
 			getResourceAttributes() {
-				return {
+				const newAttributes = {
 					...resource.attributes,
 					'splunk.rumSessionId': SplunkRum.getSessionId(),
 				}
+				const anonymousId = SplunkRum.getAnonymousId()
+				if (anonymousId) {
+					newAttributes['user.anonymousId'] = anonymousId
+				}
+
+				return newAttributes
 			},
 		})
 		const processor = new BatchLogProcessor(exporter, {})
