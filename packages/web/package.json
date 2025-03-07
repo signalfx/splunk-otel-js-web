@@ -5,8 +5,9 @@
 	"repository": "github:signalfx/splunk-otel-js-browser",
 	"scripts": {
 		"compile": "npm-run-all -s compile:*",
-		"compile:browser": "rollup -c",
-		"compile:tsc": "tsc --build tsconfig.cjs.json tsconfig.esm.json"
+		"compile:browser": "webpack --mode production --color",
+		"compile:tsc": "tsc --build tsconfig.cjs.json tsconfig.esm.json",
+		"dev": "webpack --mode development --watch --color"
 	},
 	"author": "Splunk Observability Instrumentals Team <ssg-observability-instrumentals-npm@splunk.com>",
 	"license": "Apache-2.0",
@@ -47,18 +48,13 @@
 		"@babel/plugin-transform-runtime": "^7.24.7",
 		"@babel/preset-env": "^7.24.7",
 		"@babel/runtime-corejs3": "^7.24.7",
-		"@rollup/plugin-babel": "^6.0.3",
-		"@rollup/plugin-commonjs": "^25.0.3",
-		"@rollup/plugin-json": "^6.0.0",
-		"@rollup/plugin-node-resolve": "^15.1.0",
-		"@rollup/plugin-terser": "^0.4.3",
-		"@rollup/plugin-typescript": "^11.1.2",
 		"@types/shimmer": "^1.2.0",
 		"npm-run-all": "^4.1.5",
-		"rollup": "^4.18.0",
-		"rollup-plugin-istanbul": "^4.0.0",
-		"rollup-plugin-polyfill-node": "^0.12.0",
-		"socket.io-client": "^4.8.1"
+		"socket.io-client": "^4.8.1",
+		"ts-loader": "^9.5.2",
+		"webpack": "^5.98.0",
+		"webpack-cli": "^6.0.1",
+		"webpack-dev-server": "^5.2.0"
 	},
 	"bugs": {
 		"url": "https://github.com/signalfx/splunk-otel-js-web/issues"
@@ -66,8 +62,5 @@
 	"homepage": "https://github.com/signalfx/splunk-otel-js-web#readme",
 	"publishConfig": {
 		"access": "public"
-	},
-	"optionalDependencies": {
-		"@rollup/rollup-linux-x64-gnu": "^4.18.0"
 	}
 }
