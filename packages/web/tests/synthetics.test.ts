@@ -17,11 +17,16 @@
  */
 
 import SplunkRum from '../src'
+import { setStoreType } from '../src/session'
 import { SYNTHETICS_RUN_ID_ATTRIBUTE } from '../src/synthetics'
 import { deinit, initWithSyncPipeline } from './utils'
-import { expect, it, describe } from 'vitest'
+import { expect, it, describe, beforeEach } from 'vitest'
 
 describe('synthetics integration', () => {
+	beforeEach(() => {
+		setStoreType("localStorage");
+	});
+
 	it('uses window', async () => {
 		window.syntheticsRunId = '1234abcd'.repeat(4)
 		const { getFinishedSpans, forceFlush } = initWithSyncPipeline()

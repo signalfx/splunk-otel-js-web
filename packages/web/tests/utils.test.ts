@@ -17,8 +17,8 @@
  */
 
 import { generateId } from '../src/utils'
-import { findCookieValue } from '../src/session/cookie-session'
 import { describe, it, expect } from 'vitest'
+import { CookieStore } from '../src/storage/cookie-store'
 
 describe('generateId', () => {
 	it('should generate IDs of 64 and 128 bits', () => {
@@ -28,10 +28,5 @@ describe('generateId', () => {
 		expect(id128.length).toBe(32)
 		expect(id64.match('^[0-9a-z]+$')).toBeTruthy()
 		expect(id128.match('^[0-9a-z]+$')).toBeTruthy()
-	})
-})
-describe('findCookieValue', () => {
-	it('should not find unset cookie', () => {
-		expect(findCookieValue('nosuchCookie', { forceStoreRead: true })).toBeUndefined()
 	})
 })

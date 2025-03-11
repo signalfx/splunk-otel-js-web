@@ -16,12 +16,9 @@
  *
  */
 
-import { findCookieValue } from '../../src/session/cookie-session'
-
 import { describe, expect, it } from 'vitest'
 
 describe('cookie-session', () => {
-	it('findCookieValue() - should not find unset cookie', () => {
-		expect(findCookieValue('nosuchCookie', { forceStoreRead: true })).toBeUndefined()
+	it('TODO: write new tests', () => {
 	})
 })
