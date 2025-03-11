@@ -37,7 +37,7 @@ describe('Session based sampler', () => {
 		)
 		document.cookie = SESSION_STORAGE_KEY + '=' + lowCookieValue + '; path=/; max-age=' + 10
 		const provider = createWebTracerProvider()
-		initSessionTracking(provider, lowSessionId, new InternalEventTarget())
+		initSessionTracking(provider, new InternalEventTarget())
 
 		const sampler = new SessionBasedSampler({ ratio: 0.5 })
 		expect(

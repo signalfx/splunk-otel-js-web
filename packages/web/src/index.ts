@@ -43,7 +43,7 @@ import { type SplunkExporterConfig } from './exporters/common'
 import { SplunkZipkinExporter } from './exporters/zipkin'
 import { ERROR_INSTRUMENTATION_NAME, SplunkErrorInstrumentation } from './SplunkErrorInstrumentation'
 import { generateId, getPluginConfig } from './utils'
-import { getRumSessionId, initSessionTracking, updateSessionStatus } from './session'
+import { getRumSessionId, initSessionTracking, setStoreType, updateSessionStatus } from './session'
 import { SplunkWebSocketInstrumentation } from './SplunkWebSocketInstrumentation'
 import { initWebVitals } from './webvitals'
 import { SplunkLongTaskInstrumentation } from './SplunkLongTaskInstrumentation'
@@ -67,6 +67,7 @@ import { BrowserInstanceService } from './services/BrowserInstanceService'
 import { SessionId } from './session'
 import { SplunkOtelWebConfig, SplunkOtelWebExporterOptions, SplunkOtelWebOptionsInstrumentations } from './types'
 import { isBot } from './utils/is-bot'
+import { SplunkSamplerWrapper } from './SplunkSamplerWrapper'
 
 export { type SplunkExporterConfig } from './exporters/common'
 export { SplunkZipkinExporter } from './exporters/zipkin'
@@ -328,6 +329,7 @@ export const SplunkRum: SplunkOtelWebType = {
 			)
 			return
 		}
+		setStoreType("cookie")
 
 		this._processedOptions = processedOptions
 
@@ -382,16 +384,17 @@ export const SplunkRum: SplunkOtelWebType = {
 		const provider = new SplunkWebTracerProvider({
 			...processedOptions.tracer,
 			resource: this.resource,
+			sampler: new SplunkSamplerWrapper({
+				decider: processedOptions.tracer?.sampler ?? new AlwaysOnSampler(),
+				allSpansAreActivity: this._processedOptions._experimental_allSpansExtendSession,
+			}),
 		})
 
-		// TODO
 		_deinitSessionTracking = initSessionTracking(
 			provider,
-			instanceId,
 			eventTarget,
 			processedOptions.cookieDomain,
 			!!options._experimental_allSpansExtendSession,
-			processedOptions.persistence === 'localStorage',
 		).deinit
 
 		const instrumentations = INSTRUMENTATIONS.map(({ Instrument, confKey, disable }) => {
@@ -424,8 +427,7 @@ export const SplunkRum: SplunkOtelWebType = {
 					: {}),
 				...(version ? { 'app.version': version } : {}),
 				...(processedOptions.globalAttributes || {}),
-			},
-			this._processedOptions.persistence === 'localStorage',
+			}
 		)
 		provider.addSpanProcessor(this.attributesProcessor)
 
@@ -549,7 +551,7 @@ export const SplunkRum: SplunkOtelWebType = {
 			return undefined
 		}
 
-		return getRumSessionId({ useLocalStorage: this._processedOptions.persistence === 'localStorage' })
+		return getRumSessionId()
 	},
 	_experimental_getSessionId() {
 		return this.getSessionId()
@@ -562,7 +564,6 @@ export const SplunkRum: SplunkOtelWebType = {
 
 		updateSessionStatus({
 			forceStore: false,
-			useLocalStorage: this._processedOptions.persistence === 'localStorage',
 			forceActivity: this._processedOptions._experimental_allSpansExtendSession,
 		})
 	},

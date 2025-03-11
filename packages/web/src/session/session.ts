@@ -19,12 +19,11 @@
 import { SpanProcessor, WebTracerProvider } from '@opentelemetry/sdk-trace-web'
 import { InternalEventTarget } from '../EventTarget'
 import { generateId } from '../utils'
-import { parseCookieToSessionState, renewCookieTimeout } from './cookie-session'
 import { SessionState, SessionId } from './types'
-import { getSessionStateFromLocalStorage, setSessionStateToLocalStorage } from './local-storage-session'
-import { SESSION_INACTIVITY_TIMEOUT_MS } from './constants'
-import { suppressTracing } from '@opentelemetry/core'
-import { context } from '@opentelemetry/api'
+import { SESSION_INACTIVITY_TIMEOUT_MS, SESSION_STORAGE_KEY } from './constants'
+import { CookieStore } from '../storage/cookie-store'
+import { LocalStore } from '../storage/local-store'
+import { isSessionDurationExceeded, isSessionInactivityTimeoutReached, isSessionState } from './utils'
 
 /*
     The basic idea is to let the browser expire cookies for us "naturally" once
@@ -49,6 +48,9 @@ let recentActivity = false
 let cookieDomain: string
 let eventTarget: InternalEventTarget | undefined
 
+const cookieStore = new CookieStore<SessionState>(SESSION_STORAGE_KEY);
+const localStore = new LocalStore<SessionState>(SESSION_STORAGE_KEY);
+
 export function markActivity(): void {
 	recentActivity = true
 }
@@ -61,10 +63,46 @@ function createSessionState(): SessionState {
 	}
 }
 
-export function getCurrentSessionState({ useLocalStorage = false, forceStoreRead = false }): SessionState | undefined {
-	return useLocalStorage
-		? getSessionStateFromLocalStorage({ forceStoreRead })
-		: parseCookieToSessionState({ forceStoreRead })
+type StoreType = "cookie" | "localStorage" | null;
+let storeType: StoreType = null;
+export function setStoreType(type: StoreType) {
+	storeType = type;
+}
+
+function getStore(): Store<SessionState> {
+	if (storeType == "cookie") {
+		return cookieStore;
+	}
+
+	if (storeType == "localStorage") {
+		return localStore;
+	}
+
+	throw new Error("Session store was accessed but not initialised.");
+}
+
+export function getOrInitShadowSession(): SessionState | undefined {
+	let sessionState = getCurrentSessionState({ forceDiskRead: false });
+
+	if (!sessionState) {
+		sessionState = updateSessionStatus({ forceStore: true, shadow: true });
+	}
+
+	return sessionState;
+}
+
+export function getCurrentSessionState({ forceDiskRead = false }): SessionState | undefined {
+	const sessionState = getStore().get({ forceDiskRead });
+
+	if (!isSessionState(sessionState)) {
+		return
+	}
+
+	if (isSessionDurationExceeded(sessionState) || isSessionInactivityTimeoutReached(sessionState)) {
+		return
+	}
+
+	return sessionState
 }
 
 // This is called periodically and has two purposes:
@@ -73,18 +111,18 @@ export function getCurrentSessionState({ useLocalStorage = false, forceStoreRead
 // (Only exported for testing purposes.)
 export function updateSessionStatus({
 	forceStore,
-	useLocalStorage = false,
 	forceActivity,
+	shadow = undefined,
 }: {
 	forceActivity?: boolean
 	forceStore: boolean
-	useLocalStorage: boolean
-}): void {
-	let sessionState = getCurrentSessionState({ useLocalStorage, forceStoreRead: forceStore })
+	shadow?: boolean
+}): SessionState {
+	let sessionState = getCurrentSessionState({ forceDiskRead: forceStore })
 	let shouldForceWrite = false
 	if (!sessionState) {
 		// Check if another tab has created a new session
-		sessionState = getCurrentSessionState({ useLocalStorage, forceStoreRead: true })
+		sessionState = getCurrentSessionState({ forceDiskRead: true })
 		if (!sessionState) {
 			sessionState = createSessionState()
 			recentActivity = true // force write of new cookie
@@ -92,18 +130,27 @@ export function updateSessionStatus({
 		}
 	}
 
+	if (sessionState.shadow !== shadow) {
+		sessionState.shadow = shadow;
+		shouldForceWrite = true;
+	}
+
 	eventTarget?.emit('session-changed', { sessionId: sessionState.id })
 
 	if (recentActivity || forceActivity) {
 		sessionState.expiresAt = Date.now() + SESSION_INACTIVITY_TIMEOUT_MS
-		if (useLocalStorage) {
-			setSessionStateToLocalStorage(sessionState, { forceStoreWrite: shouldForceWrite || forceStore })
-		} else {
-			renewCookieTimeout(sessionState, cookieDomain, { forceStoreWrite: shouldForceWrite || forceStore })
+
+		// TODO: review if this check makes sense
+		if (!isSessionDurationExceeded(sessionState)) {
+			cookieStore.set(sessionState, cookieDomain);
+			if (shouldForceWrite) {
+				cookieStore.flush()
+			}
 		}
 	}
 
 	recentActivity = false
+	return sessionState
 }
 
 function hasNativeSessionId(): boolean {
@@ -114,7 +161,6 @@ class SessionSpanProcessor implements SpanProcessor {
 	constructor(
 		private readonly options: {
 			allSpansAreActivity: boolean
-			useLocalStorage: boolean
 		},
 	) {}
 
@@ -125,16 +171,8 @@ class SessionSpanProcessor implements SpanProcessor {
 	onEnd(): void {}
 
 	onStart(): void {
-		if (this.options.allSpansAreActivity) {
-			markActivity()
-		}
-
-		context.with(suppressTracing(context.active()), () => {
-			updateSessionStatus({
-				forceStore: false,
-				useLocalStorage: this.options.useLocalStorage,
-			})
-		})
+		// responsibility taken over by SplunkBaseSampler
+		// TODO: remove this class as it now has no purpose
 	}
 
 	shutdown(): Promise<void> {
@@ -146,11 +184,9 @@ const ACTIVITY_EVENTS = ['click', 'scroll', 'mousedown', 'keydown', 'touchend', 
 
 export function initSessionTracking(
 	provider: WebTracerProvider,
-	instanceId: SessionId,
 	newEventTarget: InternalEventTarget,
 	domain?: string,
 	allSpansAreActivity = false,
-	useLocalStorage = false,
 ): { deinit: () => void } {
 	if (hasNativeSessionId()) {
 		// short-circuit and bail out - don't create cookie, watch for inactivity, or anything
@@ -167,9 +203,9 @@ export function initSessionTracking(
 	eventTarget = newEventTarget
 
 	ACTIVITY_EVENTS.forEach((type) => document.addEventListener(type, markActivity, { capture: true, passive: true }))
-	provider.addSpanProcessor(new SessionSpanProcessor({ allSpansAreActivity, useLocalStorage }))
+	provider.addSpanProcessor(new SessionSpanProcessor({ allSpansAreActivity }))
 
-	updateSessionStatus({ useLocalStorage, forceStore: true })
+	updateSessionStatus({ forceStore: true })
 
 	return {
 		deinit: () => {
@@ -179,10 +215,15 @@ export function initSessionTracking(
 	}
 }
 
-export function getRumSessionId({ useLocalStorage }: { useLocalStorage: boolean }): SessionId | undefined {
+export function getRumSessionId(): SessionId | undefined {
 	if (hasNativeSessionId()) {
 		return window['SplunkRumNative'].getNativeSessionId()
 	}
 
-	return getCurrentSessionState({ useLocalStorage, forceStoreRead: true })?.id
+	const sessionState = getCurrentSessionState({ forceDiskRead: true });
+	if (sessionState.shadow) {
+		return undefined;
+	}
+
+	return sessionState.id;
 }
