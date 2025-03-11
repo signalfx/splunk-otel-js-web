@@ -19,10 +19,23 @@ export const RENDER_AGENT_TEMPLATE = `
 	<script src="<%= file -%>" crossorigin="anonymous"></script>
 	<script src="<%= otelApiGlobalsFile -%>" crossorigin="anonymous"></script>
 	<script>
+		const options = <%- options -%>;
+
+		const samplingRatioRaw = (new URL(document.location)).searchParams.get('samplingRatio');
+		console.log('samplingRatioRaw', samplingRatioRaw);
+		if (samplingRatioRaw != null) {
+			console.log('setting sampling ration:', samplingRatioRaw);
+			options['tracer'] = {
+				sampler: new SplunkRum.SessionBasedSampler({
+					ratio: parseFloat(samplingRatioRaw),
+				})
+			}
+		}
+
 		<%if (noInit) { %>
-		  window.SplunkRumOptions = <%- options -%>;
+		  window.SplunkRumOptions = options;
 		<% } else { %>
-		  window.SplunkRum && window.SplunkRum.init(<%- options -%>);
+		  window.SplunkRum && window.SplunkRum.init(options);
 		<% } %>
 
 		let _testing = false;

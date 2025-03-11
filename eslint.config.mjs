@@ -253,6 +253,8 @@ export default [
 			'.vscode/',
 			'**/.next/',
 			'vitest-report',
+			'**/html/',
+			'**/playwright-report/',
 		],
 	},
 ]

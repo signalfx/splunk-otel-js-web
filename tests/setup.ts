@@ -15,17 +15,23 @@
  * limitations under the License.
  *
  */
+import { afterEach } from 'vitest'
 
-import { generateId } from '../src/utils'
-import { describe, it, expect } from 'vitest'
-
-describe('generateId', () => {
-	it('should generate IDs of 64 and 128 bits', () => {
-		const id64 = generateId(64)
-		const id128 = generateId(128)
-		expect(id64.length).toBe(16)
-		expect(id128.length).toBe(32)
-		expect(id64.match('^[0-9a-z]+$')).toBeTruthy()
-		expect(id128.match('^[0-9a-z]+$')).toBeTruthy()
-	})
+afterEach(() => {
+	assertSessionIsEmpty()
 })
+
+function assertSessionIsEmpty() {
+	try {
+		if (localStorage['_splunk_rum_sid']) {
+			throw new Error('Session is expected to be empty, but is set in localStorage.')
+		}
+
+		if (document.cookie.indexOf('_splunk_rum_sid') >= 0) {
+			throw new Error(`Session is expected to be empty, but is set in cookies: ${document.cookie}`)
+		}
+	} finally {
+		delete localStorage['_splunk_rum_sid']
+		document.cookie = '_splunk_rum_sid=;expires=Thu, 01 Jan 1970 00:00:00 GMT'
+	}
+}
