@@ -18,14 +18,13 @@
 
 import { Attributes } from '@opentelemetry/api'
 import { Span, SpanProcessor } from '@opentelemetry/sdk-trace-base'
-import { getRumSessionId } from './session'
+import { getRumSessionId, updateSessionStatus } from './session'
 
 export class SplunkSpanAttributesProcessor implements SpanProcessor {
 	private readonly _globalAttributes: Attributes
 
 	constructor(
 		globalAttributes: Attributes,
-		private useLocalStorageForSessionMetadata: boolean,
 	) {
 		this._globalAttributes = globalAttributes ?? {}
 	}
@@ -43,11 +42,14 @@ export class SplunkSpanAttributesProcessor implements SpanProcessor {
 	}
 
 	onStart(span: Span): void {
+		// now that we have started the span, the session is not a shadow anymore
+		const sessionState = updateSessionStatus({ forceStore: false, shadow: false });
+
 		span.setAttribute('location.href', location.href)
 		span.setAttributes(this._globalAttributes)
 		span.setAttribute(
 			'splunk.rumSessionId',
-			getRumSessionId({ useLocalStorage: this.useLocalStorageForSessionMetadata }),
+			sessionState.id,
 		)
 		span.setAttribute('browser.instance.visibility_state', document.visibilityState)
 	}

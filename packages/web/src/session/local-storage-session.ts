@@ -16,77 +16,12 @@
  *
  */
 import { SessionState } from './types'
-import { safelyGetLocalStorage, safelySetLocalStorage, safelyRemoveFromLocalStorage } from '../utils/storage'
 import { SESSION_STORAGE_KEY } from './constants'
-import { isSessionDurationExceeded, isSessionInactivityTimeoutReached, isSessionState } from './utils'
-import { throttle } from '../utils/throttle'
+import { LocalStore } from '../storage/local-store';
 
-export const localStore = {
-	cachedValue: undefined,
-	set: (value: string) => {
-		localStore.cachedValue = value
-		localStore._set(value)
-	},
+export const localStore: Store<SessionState> = new LocalStore(SESSION_STORAGE_KEY);
 
-	flush: () => {
-		localStore._set.flush()
-	},
-
-	_set: throttle((value: string) => {
-		safelySetLocalStorage(SESSION_STORAGE_KEY, value)
-	}, 1000),
-
-	get: ({ forceStoreRead }: { forceStoreRead: boolean }): string => {
-		if (localStore.cachedValue === undefined || forceStoreRead) {
-			localStore.cachedValue = safelyGetLocalStorage(SESSION_STORAGE_KEY)
-			return localStore.cachedValue
-		}
-
-		return localStore.cachedValue
-	},
-	remove: () => {
-		safelyRemoveFromLocalStorage(SESSION_STORAGE_KEY)
-		localStore.cachedValue = undefined
-	},
-}
-
-export const getSessionStateFromLocalStorage = ({
-	forceStoreRead,
-}: {
-	forceStoreRead: boolean
-}): SessionState | undefined => {
-	let sessionState: unknown = undefined
-	try {
-		sessionState = JSON.parse(localStore.get({ forceStoreRead }))
-	} catch {
-		return undefined
-	}
-
-	if (!isSessionState(sessionState)) {
-		return
-	}
-
-	if (isSessionDurationExceeded(sessionState) || isSessionInactivityTimeoutReached(sessionState)) {
-		return
-	}
-
-	return sessionState
-}
-
-export const setSessionStateToLocalStorage = (
-	sessionState: SessionState,
-	{ forceStoreWrite }: { forceStoreWrite: boolean },
-): void => {
-	if (isSessionDurationExceeded(sessionState)) {
-		return
-	}
-
-	localStore.set(JSON.stringify(sessionState))
-	if (forceStoreWrite) {
-		localStore.flush()
-	}
-}
-
+// TODO: remove
 export const clearSessionStateFromLocalStorage = (): void => {
 	localStore.remove()
 }

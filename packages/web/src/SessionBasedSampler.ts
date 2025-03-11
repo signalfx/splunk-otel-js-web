@@ -16,9 +16,9 @@
  *
  */
 
-import { Context, Link, Sampler, SamplingResult, SpanAttributes, SpanKind } from '@opentelemetry/api'
-import { AlwaysOffSampler, AlwaysOnSampler } from '@opentelemetry/core'
-import { getRumSessionId } from './session'
+import { Context, Link, Attributes, SpanKind } from '@opentelemetry/api'
+import { Sampler, SamplingResult, AlwaysOffSampler, AlwaysOnSampler } from '@opentelemetry/sdk-trace-web'
+import { getCurrentSessionState, getOrInitShadowSession } from './session/session'
 
 export interface SessionBasedSamplerConfig {
 	/**
@@ -40,7 +40,7 @@ export interface SessionBasedSamplerConfig {
 }
 
 export class SessionBasedSampler implements Sampler {
-	protected _currentSession: string
+	protected _currentSessionId: string
 
 	protected _currentSessionSampled: boolean
 
@@ -58,7 +58,6 @@ export class SessionBasedSampler implements Sampler {
 			sampled = new AlwaysOnSampler(),
 			notSampled = new AlwaysOffSampler(),
 		}: SessionBasedSamplerConfig = {},
-		private readonly useLocalStorageForSessionMetadata = false,
 	) {
 		this._ratio = this._normalize(ratio)
 		this._upperBound = Math.floor(this._ratio * 0xffffffff)
@@ -72,20 +71,22 @@ export class SessionBasedSampler implements Sampler {
 		traceId: string,
 		spanName: string,
 		spanKind: SpanKind,
-		attributes: SpanAttributes,
+		attributes: Attributes,
 		links: Link[],
 	): SamplingResult {
 		// Implementation based on @opentelemetry/core TraceIdRatioBasedSampler
 		// but replacing deciding based on traceId with sessionId
 		// (not extended from due to private methods)
-		const currentSession = getRumSessionId({ useLocalStorage: this.useLocalStorageForSessionMetadata })
-		if (this._currentSession !== currentSession) {
-			this._currentSessionSampled = this._accumulate(currentSession) < this._upperBound
-			this._currentSession = currentSession
+
+		// TODO: we are guaranteed to have a session here, so maybe error explicitly if that's not the case?
+
+		const currentSessionId = getOrInitShadowSession().id;
+		if (this._currentSessionId !== currentSessionId) {
+			this._currentSessionSampled = this._accumulate(currentSessionId) < this._upperBound
+			this._currentSessionId = currentSessionId
 		}
 
 		const sampler = this._currentSessionSampled ? this._sampled : this._notSampled
-
 		return sampler.shouldSample(context, traceId, spanName, spanKind, attributes, links)
 	}
 

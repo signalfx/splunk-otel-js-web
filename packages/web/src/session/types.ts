@@ -21,4 +21,5 @@ export type SessionState = {
 	expiresAt?: number
 	id: SessionId
 	startTime: number
+	shadow?: boolean
 }
