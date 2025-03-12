@@ -3,11 +3,11 @@
 		"forceConsistentCasingInFileNames": true,
 		"module": "ESNext",
 		"moduleResolution": "Bundler",
-		"esModuleInterop": false,
+		"esModuleInterop": true,
 		"noEmitOnError": true,
 		"pretty": true,
 		"resolveJsonModule": true,
-		"target": "ES2017",
+		"target": "ESNext",
 		"types": ["node"],
 		"skipLibCheck": true
 	},
