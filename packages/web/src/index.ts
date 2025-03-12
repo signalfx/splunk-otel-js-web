@@ -308,7 +308,7 @@ export const SplunkRum: SplunkOtelWebType = {
 		}
 
 		if (options.disableAutomationFrameworks && navigator.webdriver) {
-			this.disableAutomationFrameworks = true
+			this.disabledByAutomationFrameworkDetection = true
 			diag.error('SplunkRum will not be initialized, automation frameworks are not allowed.')
 			return
 		}
