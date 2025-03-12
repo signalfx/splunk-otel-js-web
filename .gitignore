@@ -22,3 +22,5 @@ tests_output/
 
 vitest-report
 __screenshots__
+
+html

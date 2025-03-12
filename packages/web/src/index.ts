@@ -43,7 +43,7 @@ import { type SplunkExporterConfig } from './exporters/common'
 import { SplunkZipkinExporter } from './exporters/zipkin'
 import { ERROR_INSTRUMENTATION_NAME, SplunkErrorInstrumentation } from './SplunkErrorInstrumentation'
 import { generateId, getPluginConfig } from './utils'
-import { getRumSessionId, initSessionTracking, updateSessionStatus } from './session'
+import { getOrCreateSessionIdAndUpdateExpirationIfNecessary, getRumSessionId, initSessionTracking } from './session'
 import { SplunkWebSocketInstrumentation } from './SplunkWebSocketInstrumentation'
 import { initWebVitals } from './webvitals'
 import { SplunkLongTaskInstrumentation } from './SplunkLongTaskInstrumentation'
@@ -387,7 +387,6 @@ export const SplunkRum: SplunkOtelWebType = {
 		// TODO
 		_deinitSessionTracking = initSessionTracking(
 			provider,
-			instanceId,
 			eventTarget,
 			processedOptions.cookieDomain,
 			!!options._experimental_allSpansExtendSession,
@@ -560,7 +559,7 @@ export const SplunkRum: SplunkOtelWebType = {
 			return
 		}
 
-		updateSessionStatus({
+		getOrCreateSessionIdAndUpdateExpirationIfNecessary({
 			forceStore: false,
 			useLocalStorage: this._processedOptions.persistence === 'localStorage',
 			forceActivity: this._processedOptions._experimental_allSpansExtendSession,

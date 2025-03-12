@@ -253,6 +253,7 @@ export default [
 			'.vscode/',
 			'**/.next/',
 			'vitest-report',
+			'html',
 		],
 	},
 ]

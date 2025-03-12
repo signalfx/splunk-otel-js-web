@@ -18,7 +18,7 @@
 
 import { SpanAttributes } from '@opentelemetry/api'
 import SplunkRum from '../src'
-import { updateSessionStatus } from '../src/session'
+import { getOrCreateSessionIdAndUpdateExpirationIfNecessary } from '../src/session'
 import { describe, expect, it, afterEach } from 'vitest'
 
 describe('SplunkOtelWeb', () => {
@@ -124,7 +124,7 @@ describe('SplunkOtelWeb', () => {
 			})
 
 			document.body.click()
-			updateSessionStatus({ forceStore: false, useLocalStorage: false })
+			getOrCreateSessionIdAndUpdateExpirationIfNecessary({ forceStore: false, useLocalStorage: false })
 
 			// Wait for promise chain to resolve
 			await Promise.resolve()
@@ -135,17 +135,17 @@ describe('SplunkOtelWeb', () => {
 
 	describe('.inited', () => {
 		it('should follow lifecycle', () => {
-			expect(SplunkRum.inited).toBe(false, 'Should be false in the beginning.')
+			expect(SplunkRum.inited, 'Should be false in the beginning.').toBe(false)
 
 			SplunkRum.init({
 				applicationName: 'app-name',
 				beaconEndpoint: 'https://beacon',
 				rumAccessToken: '<token>',
 			})
-			expect(SplunkRum.inited).toBe(true, 'Should be true after creating.')
+			expect(SplunkRum.inited, 'Should be true after creating.').toBe(true)
 
 			SplunkRum.deinit()
-			expect(SplunkRum.inited).toBe(false, 'Should be false after destroying.')
+			expect(SplunkRum.inited, 'Should be false after destroying.').toBe(false)
 		})
 	})
 })
