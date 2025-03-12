@@ -18,7 +18,7 @@
 
 import { Context, Link, Sampler, SamplingResult, SpanAttributes, SpanKind } from '@opentelemetry/api'
 import { AlwaysOffSampler, AlwaysOnSampler } from '@opentelemetry/core'
-import { getOrCreateSessionIdAndUpdateExpirationIfNecessary, getRumSessionId } from './session'
+import { getOrCreateSessionIdAndUpdateExpirationIfNecessary } from './session'
 
 export interface SessionBasedSamplerConfig {
 	/**
