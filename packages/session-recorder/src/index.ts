@@ -232,29 +232,42 @@ const SplunkRumRecorder = {
 
 			eventCounter += 1
 
-			const body = encoder.encode(JSON.stringify(context.data))
+			const body = context.type === 'proprietary' ? context.data : encoder.encode(JSON.stringify(context.data))
 			const totalC = Math.ceil(body.byteLength / MAX_CHUNK_SIZE)
 
 			console.log('TotalC:', totalC)
 
-			for (let i = 0; i < totalC; i++) {
-				const start = i * MAX_CHUNK_SIZE
-				const end = (i + 1) * MAX_CHUNK_SIZE
-				const log = convert(decoder.decode(body.slice(start, end)), time, {
-					'rr-web.offset': logCounter,
-					'rr-web.event': eventI,
-					'rr-web.chunk': i + 1,
-					'rr-web.total-chunks': totalC,
-				})
+			const log = convert(body, time, {
+				'rr-web.offset': logCounter,
+				'rr-web.event': eventI,
+				'rr-web.chunk': 1,
+				'rr-web.total-chunks': totalC,
+			})
 
-				logCounter += 1
-
-				if (debug) {
-					console.log(log)
-				}
-
-				processor.onEmit(log)
+			if (debug) {
+				console.log(log)
 			}
+
+			processor.onEmit(log)
+
+			// for (let i = 0; i < totalC; i++) {
+			// 	const start = i * MAX_CHUNK_SIZE
+			// 	const end = (i + 1) * MAX_CHUNK_SIZE
+			// 	const log = convert(decoder.decode(body.slice(start, end)), time, {
+			// 		'rr-web.offset': logCounter,
+			// 		'rr-web.event': eventI,
+			// 		'rr-web.chunk': i + 1,
+			// 		'rr-web.total-chunks': totalC,
+			// 	})
+
+			// 	logCounter += 1
+
+			// 	if (debug) {
+			// 		console.log(log)
+			// 	}
+
+			// 	processor.onEmit(log)
+			// }
 		}
 
 		const recorderConfig = { ...initRecorderConfig, onEmit }

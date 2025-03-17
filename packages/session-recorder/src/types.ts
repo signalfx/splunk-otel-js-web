@@ -20,7 +20,7 @@ import type { JsonObject, JsonValue } from 'type-fest'
 
 export interface Log {
 	attributes?: JsonObject
-	body?: JsonValue
+	body?: Uint8Array
 	timeUnixNano: number
 }
 

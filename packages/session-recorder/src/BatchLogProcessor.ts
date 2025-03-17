@@ -165,7 +165,7 @@ export class BatchLogProcessor {
 	}
 }
 
-export function convert(body: JsonValue, timeUnixNano: number, attributes?: JsonObject): Log {
+export function convert(body: Uint8Array, timeUnixNano: number, attributes?: JsonObject): Log {
 	return {
 		body,
 		timeUnixNano,

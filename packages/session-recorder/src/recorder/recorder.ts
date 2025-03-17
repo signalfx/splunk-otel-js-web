@@ -15,12 +15,19 @@
  * limitations under the License.
  *
  */
-export interface RecorderEmitContext {
-	data: Record<string, unknown>
-	onSessionChanged: () => void
-	startTime: number
-	type: 'proprietary' | 'rrweb'
-}
+export type RecorderEmitContext =
+	| {
+			data: Record<string, unknown>
+			onSessionChanged: () => void
+			startTime: number
+			type: 'rrweb'
+	  }
+	| {
+			data: Uint8Array
+			onSessionChanged: () => void
+			startTime: number
+			type: 'proprietary'
+	  }
 
 export interface RecorderConfig {
 	onEmit: (context: RecorderEmitContext) => void
