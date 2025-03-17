@@ -232,16 +232,14 @@ const SplunkRumRecorder = {
 
 			eventCounter += 1
 
-			const body = context.type === 'proprietary' ? context.data : encoder.encode(JSON.stringify(context.data))
-			const totalC = Math.ceil(body.byteLength / MAX_CHUNK_SIZE)
-
-			console.log('TotalC:', totalC)
+			const body =
+				context.type === 'proprietary' ? context.data : new Blob([encoder.encode(JSON.stringify(context.data))])
 
 			const log = convert(body, time, {
 				'rr-web.offset': logCounter,
 				'rr-web.event': eventI,
 				'rr-web.chunk': 1,
-				'rr-web.total-chunks': totalC,
+				'rr-web.total-chunks': 1,
 			})
 
 			if (debug) {

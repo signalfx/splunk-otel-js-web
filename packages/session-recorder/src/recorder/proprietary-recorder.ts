@@ -21,6 +21,7 @@ import {
 	SessionReplay,
 	SessionReplayPlainInstance,
 	SessionReplayPlainSegment,
+	SessionReplayBinarySegment,
 } from '../session-replay'
 
 export class ProprietaryRecorder extends Recorder {
@@ -72,11 +73,13 @@ export class ProprietaryRecorder extends Recorder {
 		this.sessionReplay?.stop()
 	}
 
-	private onSegment = (segment: SessionReplayPlainSegment) => {
+	private onSegment = (segment: SessionReplayBinarySegment) => {
 		console.log('Session replay segment: ', segment)
 
 		const context: RecorderEmitContext = {
-			data: { data: segment.data, metadata: segment.metadata },
+			// data: { data: segment.data, metadata: segment.metadata },
+			data: segment.data,
+			// metadata: segment.metadata,
 			onSessionChanged: this.onSessionChanged,
 			startTime: segment.metadata.startUnixMs,
 			type: 'proprietary',

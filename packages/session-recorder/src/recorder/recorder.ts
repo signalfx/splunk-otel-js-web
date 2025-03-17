@@ -23,7 +23,7 @@ export type RecorderEmitContext =
 			type: 'rrweb'
 	  }
 	| {
-			data: Uint8Array
+			data: Blob
 			onSessionChanged: () => void
 			startTime: number
 			type: 'proprietary'
