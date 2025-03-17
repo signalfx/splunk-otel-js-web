@@ -19,8 +19,9 @@
 import { context, trace } from '@opentelemetry/api'
 import { SpanProcessor } from '@opentelemetry/sdk-trace-base'
 import SplunkOtelWeb, { INSTRUMENTATIONS_ALL_DISABLED } from '../src'
-import { SpanCapturer } from './utils'
+import { deinit, SpanCapturer } from './utils'
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { getNullableStore } from '../src/session'
 
 describe('async context propagation', () => {
 	let capturer: SpanCapturer
@@ -41,12 +42,12 @@ describe('async context propagation', () => {
 	})
 
 	afterEach(() => {
-		SplunkOtelWeb.deinit()
+		deinit()
 		capturer.clear()
 	})
 
 	it('setTimeout', async () => {
-		const tracer = SplunkOtelWeb.provider.getTracer('test')
+		const tracer = SplunkOtelWeb.provider!.getTracer('test')
 		const span = tracer.startSpan('test-span')
 
 		await new Promise<void>((resolve) => {

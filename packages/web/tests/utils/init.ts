@@ -20,6 +20,7 @@ import { SpanCapturer } from './span-capturer'
 import { ZipkinSpan } from '../../src/exporters/zipkin'
 import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { buildInMemorySplunkExporter } from './memory-exporter'
+import { getNullableStore } from '../../src/session'
 
 export const initWithDefaultConfig = (capturer: SpanCapturer, additionalOptions = {}): void => {
 	SplunkRum._internalInit({
@@ -38,7 +39,7 @@ export const initWithDefaultConfig = (capturer: SpanCapturer, additionalOptions 
 		throw Error('SplunkRum not initialized')
 	}
 
-	SplunkRum.provider.addSpanProcessor(capturer)
+	SplunkRum.provider!.addSpanProcessor(capturer)
 }
 
 export function initWithSyncPipeline(additionalOptions = {}): {
@@ -68,5 +69,7 @@ export function initWithSyncPipeline(additionalOptions = {}): {
 }
 
 export const deinit = (force?: boolean): void => {
+	getNullableStore()?.remove()
+	getNullableStore()?.flush()
 	SplunkRum.deinit(force)
 }

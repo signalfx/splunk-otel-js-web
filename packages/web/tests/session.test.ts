@@ -17,26 +17,17 @@
  */
 
 import { InternalEventTarget } from '../src/EventTarget'
-import { initSessionTracking, getRumSessionId, updateSessionStatus, setStoreType } from '../src/session'
+import { initSessionTracking, getRumSessionId, updateSessionStatus, setStoreType, getNullableStore } from '../src/session'
 import { SESSION_STORAGE_KEY, SESSION_INACTIVITY_TIMEOUT_MS } from '../src/session/constants'
-import { clearSessionCookie, cookieStore } from '../src/session/cookie-session'
-import { clearSessionStateFromLocalStorage } from '../src/session/local-storage-session'
-import { expect, it, describe, beforeEach, afterEach, vi, MockInstance } from 'vitest'
-import { createWebTracerProvider } from './utils'
+import { expect, it, describe, afterEach, vi, MockInstance } from 'vitest'
+import { createWebTracerProvider, deinit } from './utils'
 
 describe('Session tracking', () => {
-	beforeEach(() => {
-		clearSessionCookie()
-	})
-
-	afterEach(() => {
-		clearSessionCookie()
-	})
 
 	it('should correctly handle expiry, garbage values, (in)activity, etc.', async () => {
 		// the init tests have possibly already started the setInterval for updateSessionStatus.  Try to accomodate this.
 		const provider = createWebTracerProvider()
-		const trackingHandle = initSessionTracking(provider, new InternalEventTarget())
+		const trackingHandle = initSessionTracking('cookie', provider, new InternalEventTarget())
 		const firstSessionId = getRumSessionId()
 
 		expect(firstSessionId).toHaveLength(32)
@@ -82,65 +73,62 @@ describe('Session tracking', () => {
 		expect(firstSessionId !== newSessionId).toBeTruthy()
 
 		trackingHandle.deinit()
+		trackingHandle.clearSession()
 	})
 })
 
-describe.skip('Activity tracking', () => {
-	let cookieSetStoreSpy: MockInstance<(value: string) => void>
-	beforeEach(() => {
-		cookieSetStoreSpy = vi.spyOn(cookieStore, 'set')
-	})
-
+describe('Activity tracking', () => {
+	let storeSetSpy: MockInstance<(value: string) => void>
 	afterEach(() => {
-		cookieSetStoreSpy.mockRestore()
+		storeSetSpy.mockRestore()
 	})
 
 	function subject(allSpansAreActivity = false) {
 		const provider = createWebTracerProvider()
 
-		initSessionTracking(provider, '1234', new InternalEventTarget(), undefined, allSpansAreActivity)
+		const handle = initSessionTracking('cookie', provider, new InternalEventTarget(), undefined, allSpansAreActivity)
+		handle.flush()
+
+		const store = getNullableStore()
+		console.log('store: ', store)
+		storeSetSpy = vi.spyOn(getNullableStore(), 'set')
 
 		provider.getTracer('tracer').startSpan('any-span').end()
-		updateSessionStatus({ forceStore: false, useLocalStorage: false })
+		handle.flush()
+
+		deinit()
 	}
 
 	it('non-activity spans do not trigger a new session', () => {
 		subject()
 
-		expect(cookieSetStoreSpy).toHaveBeenCalledTimes(1)
+		expect(storeSetSpy).toHaveBeenCalledTimes(0)
 	})
 
 	it('activity spans do trigger a new session when opt-in', () => {
 		subject(true)
 
-		expect(cookieSetStoreSpy).toHaveBeenCalledTimes(2)
+		expect(storeSetSpy).toHaveBeenCalledTimes(1)
 	})
 })
 
 describe('Session tracking - localStorage', () => {
-	beforeEach(() => {
-		clearSessionStateFromLocalStorage()
-		setStoreType("localStorage");
-	})
-
-	afterEach(() => {
-		clearSessionStateFromLocalStorage()
-		setStoreType(null);
-	})
-
 	it('should save session state to local storage', () => {
 		const provider = createWebTracerProvider()
 		const trackingHandle = initSessionTracking(
+			'localStorage',
 			provider,
 			new InternalEventTarget(),
-			undefined,
-			undefined,
 		)
 
 		const firstSessionId = getRumSessionId()
 		updateSessionStatus({ forceStore: true })
+
 		expect(firstSessionId).toBe(getRumSessionId())
+		// console.log('localStorage["_splunk_rum_sid"]', localStorage['_splunk_rum_sid'])
+		expect(JSON.parse(localStorage['_splunk_rum_sid'])['id']).toBe(getRumSessionId())
 
 		trackingHandle.deinit()
+		trackingHandle.clearSession()
 	})
 })

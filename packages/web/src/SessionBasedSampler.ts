@@ -18,7 +18,7 @@
 
 import { Context, Link, Attributes, SpanKind } from '@opentelemetry/api'
 import { Sampler, SamplingResult, AlwaysOffSampler, AlwaysOnSampler } from '@opentelemetry/sdk-trace-web'
-import { getCurrentSessionState, getOrInitShadowSession } from './session/session'
+import { getOrInitShadowSession } from './session/session'
 
 export interface SessionBasedSamplerConfig {
 	/**
@@ -40,17 +40,12 @@ export interface SessionBasedSamplerConfig {
 }
 
 export class SessionBasedSampler implements Sampler {
-	protected _currentSessionId: string
-
-	protected _currentSessionSampled: boolean
-
-	protected _notSampled: Sampler
-
-	protected _ratio: number
-
-	protected _sampled: Sampler
-
-	protected _upperBound: number
+	protected currentSessionId: string
+	protected currentSessionSampled: boolean
+	protected notSampled: Sampler
+	protected ratio: number
+	protected sampled: Sampler
+	protected upperBound: number
 
 	constructor(
 		{
@@ -59,11 +54,11 @@ export class SessionBasedSampler implements Sampler {
 			notSampled = new AlwaysOffSampler(),
 		}: SessionBasedSamplerConfig = {},
 	) {
-		this._ratio = this._normalize(ratio)
-		this._upperBound = Math.floor(this._ratio * 0xffffffff)
+		this.ratio = this._normalize(ratio)
+		this.upperBound = Math.floor(this.ratio * 0xffffffff)
 
-		this._sampled = sampled
-		this._notSampled = notSampled
+		this.sampled = sampled
+		this.notSampled = notSampled
 	}
 
 	shouldSample(
@@ -80,18 +75,18 @@ export class SessionBasedSampler implements Sampler {
 
 		// TODO: we are guaranteed to have a session here, so maybe error explicitly if that's not the case?
 
-		const currentSessionId = getOrInitShadowSession().id;
-		if (this._currentSessionId !== currentSessionId) {
-			this._currentSessionSampled = this._accumulate(currentSessionId) < this._upperBound
-			this._currentSessionId = currentSessionId
+		const currentSessionId = getOrInitShadowSession().id
+		if (this.currentSessionId !== currentSessionId) {
+			this.currentSessionSampled = this._accumulate(currentSessionId) < this.upperBound
+			this.currentSessionId = currentSessionId
 		}
 
-		const sampler = this._currentSessionSampled ? this._sampled : this._notSampled
+		const sampler = this.currentSessionSampled ? this.sampled : this.notSampled
 		return sampler.shouldSample(context, traceId, spanName, spanKind, attributes, links)
 	}
 
 	toString(): string {
-		return `SessionBased{ratio=${this._ratio}, sampled=${this._sampled.toString()}, notSampled=${this._notSampled.toString()}}`
+		return `SessionBased{ratio=${this.ratio}, sampled=${this.sampled.toString()}, notSampled=${this.notSampled.toString()}}`
 	}
 
 	private _accumulate(sessionId: string): number {

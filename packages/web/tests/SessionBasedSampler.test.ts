@@ -37,7 +37,7 @@ describe('Session based sampler', () => {
 		)
 		document.cookie = SESSION_STORAGE_KEY + '=' + lowCookieValue + '; path=/; max-age=' + 10
 		const provider = createWebTracerProvider()
-		initSessionTracking(provider, new InternalEventTarget())
+		const trackingHandle = initSessionTracking('cookie', provider, new InternalEventTarget())
 
 		const sampler = new SessionBasedSampler({ ratio: 0.5 })
 		expect(
@@ -55,14 +55,14 @@ describe('Session based sampler', () => {
 			}),
 		)
 		document.cookie = SESSION_STORAGE_KEY + '=' + highCookieValue + '; path=/; max-age=' + 10
-		updateSessionStatus({
-			forceStore: true,
-			useLocalStorage: false,
-		})
+		updateSessionStatus({ forceStore: true })
 
 		expect(
 			sampler.shouldSample(context.active(), '0000000000000000', 'test', 0, {}, []).decision,
 			'high session id should not be recorded',
 		).toBe(SamplingDecision.NOT_RECORD)
+
+		trackingHandle.deinit()
+		trackingHandle.clearSession()
 	})
 })

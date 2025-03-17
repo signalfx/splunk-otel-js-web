@@ -35,7 +35,8 @@ export class CookieStore<T> implements Store<T> {
 
 	remove(domain?: string) {
 		const domainPart = domain ? `domain=${domain};` : ''
-		const cookie = `${this.key}=;${domainPart};expires=Thu, 01 Jan 1970 00:00:00 GMT`
+		const cookie = `${this.key}=;${domainPart}path=/;expires=Thu, 01 Jan 1970 00:00:00 GMT`
+
 		this._throttledSetRaw(cookie);
 		this.flush();
 	}

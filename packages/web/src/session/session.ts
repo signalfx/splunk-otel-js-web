@@ -24,6 +24,8 @@ import { SESSION_INACTIVITY_TIMEOUT_MS, SESSION_STORAGE_KEY } from './constants'
 import { CookieStore } from '../storage/cookie-store'
 import { LocalStore } from '../storage/local-store'
 import { isSessionDurationExceeded, isSessionInactivityTimeoutReached, isSessionState } from './utils'
+import { PersistenceType } from '../types'
+import { buildStore } from '../storage/store'
 
 /*
     The basic idea is to let the browser expire cookies for us "naturally" once
@@ -63,19 +65,17 @@ function createSessionState(): SessionState {
 	}
 }
 
-type StoreType = "cookie" | "localStorage" | null;
-let storeType: StoreType = null;
-export function setStoreType(type: StoreType) {
-	storeType = type;
+let store: Store<SessionState> | null = null;
+
+export function getNullableStore(): Store<SessionState> {
+	return store;
 }
 
 function getStore(): Store<SessionState> {
-	if (storeType == "cookie") {
-		return cookieStore;
-	}
+	const store = getNullableStore();
 
-	if (storeType == "localStorage") {
-		return localStore;
+	if (store) {
+		return store;
 	}
 
 	throw new Error("Session store was accessed but not initialised.");
@@ -111,10 +111,10 @@ export function getCurrentSessionState({ forceDiskRead = false }): SessionState 
 // (Only exported for testing purposes.)
 export function updateSessionStatus({
 	forceStore,
-	forceActivity,
+	hadActivity,
 	shadow = undefined,
 }: {
-	forceActivity?: boolean
+	hadActivity?: boolean
 	forceStore: boolean
 	shadow?: boolean
 }): SessionState {
@@ -137,14 +137,14 @@ export function updateSessionStatus({
 
 	eventTarget?.emit('session-changed', { sessionId: sessionState.id })
 
-	if (recentActivity || forceActivity) {
+	if (recentActivity || hadActivity) {
 		sessionState.expiresAt = Date.now() + SESSION_INACTIVITY_TIMEOUT_MS
 
 		// TODO: review if this check makes sense
 		if (!isSessionDurationExceeded(sessionState)) {
-			cookieStore.set(sessionState, cookieDomain);
+			store.set(sessionState, cookieDomain);
 			if (shouldForceWrite) {
-				cookieStore.flush()
+				store.flush()
 			}
 		}
 	}
@@ -158,12 +158,6 @@ function hasNativeSessionId(): boolean {
 }
 
 class SessionSpanProcessor implements SpanProcessor {
-	constructor(
-		private readonly options: {
-			allSpansAreActivity: boolean
-		},
-	) {}
-
 	forceFlush(): Promise<void> {
 		return Promise.resolve()
 	}
@@ -171,8 +165,10 @@ class SessionSpanProcessor implements SpanProcessor {
 	onEnd(): void {}
 
 	onStart(): void {
-		// responsibility taken over by SplunkBaseSampler
-		// TODO: remove this class as it now has no purpose
+		updateSessionStatus({
+			forceStore: false,
+			hadActivity: true,
+		})
 	}
 
 	shutdown(): Promise<void> {
@@ -182,18 +178,32 @@ class SessionSpanProcessor implements SpanProcessor {
 
 const ACTIVITY_EVENTS = ['click', 'scroll', 'mousedown', 'keydown', 'touchend', 'visibilitychange']
 
+export type SessionTrackingHandle = {
+	deinit: () => void;
+	clearSession: () => void;
+	flush: () => void;
+}
+
 export function initSessionTracking(
+	persistence: NonNullable<PersistenceType>,
 	provider: WebTracerProvider,
 	newEventTarget: InternalEventTarget,
 	domain?: string,
 	allSpansAreActivity = false,
-): { deinit: () => void } {
+): SessionTrackingHandle {
 	if (hasNativeSessionId()) {
 		// short-circuit and bail out - don't create cookie, watch for inactivity, or anything
 		return {
 			deinit: () => {},
+			clearSession: () => {},
+			flush: () => {},
 		}
 	}
+
+	store = buildStore({
+		type: persistence,
+		key: SESSION_STORAGE_KEY,
+	})
 
 	if (domain) {
 		cookieDomain = domain
@@ -203,7 +213,10 @@ export function initSessionTracking(
 	eventTarget = newEventTarget
 
 	ACTIVITY_EVENTS.forEach((type) => document.addEventListener(type, markActivity, { capture: true, passive: true }))
-	provider.addSpanProcessor(new SessionSpanProcessor({ allSpansAreActivity }))
+
+	if (allSpansAreActivity) {
+		provider.addSpanProcessor(new SessionSpanProcessor())
+	}
 
 	updateSessionStatus({ forceStore: true })
 
@@ -212,6 +225,13 @@ export function initSessionTracking(
 			ACTIVITY_EVENTS.forEach((type) => document.removeEventListener(type, markActivity))
 			eventTarget = undefined
 		},
+		clearSession: () => {
+			store.remove()
+			store.flush()
+		},
+		flush: () => {
+			store.flush()
+		}
 	}
 }
 
@@ -221,7 +241,7 @@ export function getRumSessionId(): SessionId | undefined {
 	}
 
 	const sessionState = getCurrentSessionState({ forceDiskRead: true });
-	if (sessionState.shadow) {
+	if (!sessionState || sessionState.shadow) {
 		return undefined;
 	}
 

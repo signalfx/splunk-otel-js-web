@@ -61,6 +61,11 @@ export interface SplunkOtelWebExporterOptions {
 	otlp?: boolean
 }
 
+export type PersistenceType = 'cookie' | 'localStorage'
+export function isPersistenceType(value: string): value is PersistenceType {
+	return ['cookie', 'localStorage'].includes(value);
+}
+
 export interface SplunkOtelWebConfig {
 	/**
 	 * If enabled, all spans are treated as activity and extend the duration of the session. Defaults to false.
@@ -147,7 +152,7 @@ export interface SplunkOtelWebConfig {
 	 *
 	 * If not specified, `'cookie'` will be used as the default storage method.
 	 */
-	persistence?: 'cookie' | 'localStorage'
+	persistence?: PersistenceType
 
 	/**
 	 * The name of your organization’s realm. Automatically configures beaconUrl with correct URL

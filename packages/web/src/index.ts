@@ -65,7 +65,7 @@ import { SplunkOTLPTraceExporter } from './exporters/otlp'
 import { registerGlobal, unregisterGlobal } from './global-utils'
 import { BrowserInstanceService } from './services/BrowserInstanceService'
 import { SessionId } from './session'
-import { SplunkOtelWebConfig, SplunkOtelWebExporterOptions, SplunkOtelWebOptionsInstrumentations } from './types'
+import { isPersistenceType, SplunkOtelWebConfig, SplunkOtelWebExporterOptions, SplunkOtelWebOptionsInstrumentations } from './types'
 import { isBot } from './utils/is-bot'
 import { SplunkSamplerWrapper } from './SplunkSamplerWrapper'
 
@@ -106,6 +106,7 @@ const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
 			return new SplunkZipkinExporter(options)
 		},
 	},
+	persistence: 'cookie',
 	spanProcessor: {
 		factory: (exporter, config) => new BatchSpanProcessor(exporter, config),
 	},
@@ -323,13 +324,12 @@ export const SplunkRum: SplunkOtelWebType = {
 			},
 		)
 
-		if (!['localStorage', 'cookie', undefined].includes(processedOptions.persistence)) {
+		if (!isPersistenceType(processedOptions.persistence)) {
 			diag.error(
-				'Invalid persistence flag: The value for "persistence" must be either "cookie", "localStorage", or omitted entirely.',
+				`Invalid persistence flag: The value for "persistence" must be either "cookie", "localStorage", or omitted entirely, but was: ${processedOptions.persistence}`,
 			)
 			return
 		}
-		setStoreType("cookie")
 
 		this._processedOptions = processedOptions
 
@@ -391,6 +391,7 @@ export const SplunkRum: SplunkOtelWebType = {
 		})
 
 		_deinitSessionTracking = initSessionTracking(
+			processedOptions.persistence,
 			provider,
 			eventTarget,
 			processedOptions.cookieDomain,
@@ -564,7 +565,7 @@ export const SplunkRum: SplunkOtelWebType = {
 
 		updateSessionStatus({
 			forceStore: false,
-			forceActivity: this._processedOptions._experimental_allSpansExtendSession,
+			hadActivity: this._processedOptions._experimental_allSpansExtendSession,
 		})
 	},
 }

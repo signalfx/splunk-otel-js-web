@@ -24,9 +24,9 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { context, trace } from '@opentelemetry/api'
 
 const doesBeaconUrlEndWith = (suffix: string) => {
-	const sps = (SplunkRum.provider.getActiveSpanProcessor() as any)._spanProcessors
+	const sps = (SplunkRum.provider!.getActiveSpanProcessor() as any)._spanProcessors
 	// TODO: refactor to make beaconUrl field private
-	const beaconUrl = sps[2]._exporter.beaconUrl || sps[2]._exporter.url
+	const beaconUrl = sps[1]._exporter.beaconUrl || sps[1]._exporter.url
 	expect(beaconUrl.endsWith(suffix), `Checking beaconUrl if (${beaconUrl}) ends with ${suffix}`).toBeTruthy()
 }
 
@@ -88,6 +88,8 @@ describe('test init', () => {
 			})
 			expect(SplunkRum.inited).toBeTruthy()
 			doesBeaconUrlEndWith(path)
+
+			deinit()
 		})
 
 		it('can be forced via allowInsecureBeacon option', () => {
@@ -101,6 +103,8 @@ describe('test init', () => {
 
 			expect(SplunkRum.inited).toBeTruthy()
 			doesBeaconUrlEndWith(path)
+
+			deinit()
 		})
 
 		it('can use realm config option', () => {
@@ -108,6 +112,8 @@ describe('test init', () => {
 
 			expect(SplunkRum.inited).toBeTruthy()
 			doesBeaconUrlEndWith('https://rum-ingest.test.signalfx.com/v1/rum')
+
+			deinit()
 		})
 
 		it('can use realm + otlp config option', () => {
@@ -121,6 +127,8 @@ describe('test init', () => {
 			})
 			expect(SplunkRum.inited).toBeTruthy()
 			doesBeaconUrlEndWith('https://rum-ingest.test.signalfx.com/v1/rumotlp')
+
+			deinit()
 		})
 	})
 
@@ -139,7 +147,7 @@ describe('test init', () => {
 
 			expect(SplunkRum.inited).toBeTruthy()
 
-			SplunkRum.provider.addSpanProcessor(capturer)
+			SplunkRum.provider!.addSpanProcessor(capturer)
 
 			await new Promise<void>((resolve) => {
 				setTimeout(() => {
@@ -170,6 +178,8 @@ describe('test init', () => {
 
 			const resourceFetchSpan = capturer.spans.find((span) => span.name === 'resourceFetch')
 			expect(resourceFetchSpan, 'resourceFetch span presence.').toBeTruthy()
+
+			deinit()
 		})
 
 		it('is backwards compatible with 0.15.3 and earlier config options', () => {
@@ -182,6 +192,8 @@ describe('test init', () => {
 
 			expect(SplunkRum.inited).toBeTruthy()
 			doesBeaconUrlEndWith('/foo?auth=test123')
+
+			deinit()
 		})
 	})
 
@@ -198,6 +210,8 @@ describe('test init', () => {
 				rumAccessToken: undefined,
 			})
 			doesBeaconUrlEndWith('/foo')
+
+			deinit()
 		})
 	})
 
@@ -225,9 +239,11 @@ describe('test init', () => {
 				},
 				rumAccessToken: '123-no-warn-spam-in-console',
 			})
-			SplunkRum.provider.getTracer('test').startSpan('testSpan').end()
+			SplunkRum.provider!.getTracer('test').startSpan('testSpan').end()
 
 			await expect.poll(() => exportMock.mock.calls.length > 0).toBeTruthy()
+
+			deinit()
 		})
 	})
 
@@ -254,6 +270,8 @@ describe('test init', () => {
 			expect(typeof globalApi['splunk.rum.version'] === 'string').toBeTruthy()
 			expect(typeof globalApi['splunk.rum'] === 'object').toBeTruthy()
 			expect(globalApi['splunk.rum']).toBeTruthy()
+
+			deinit()
 		})
 
 		it('fails the init if the version does not match', () => {
@@ -261,6 +279,8 @@ describe('test init', () => {
 			window[Symbol.for('opentelemetry.js.api.1')]['splunk.rum.version'] = '1.2.3'
 			init()
 			expect(SplunkRum.inited).toBeFalsy()
+
+			deinit()
 		})
 
 		it('fails the init if splunk.rum already exists', () => {
@@ -269,6 +289,8 @@ describe('test init', () => {
 			window[Symbol.for('opentelemetry.js.api.1')]['splunk.rum'] = {}
 			init()
 			expect(SplunkRum.inited).toBeFalsy()
+
+			deinit()
 		})
 	})
 })
