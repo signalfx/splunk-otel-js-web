@@ -25,7 +25,7 @@ import { CookieStore } from '../storage/cookie-store'
 import { LocalStore } from '../storage/local-store'
 import { isSessionDurationExceeded, isSessionInactivityTimeoutReached, isSessionState } from './utils'
 import { PersistenceType } from '../types'
-import { buildStore } from '../storage/store'
+import { buildStore, Store } from '../storage/store'
 
 /*
     The basic idea is to let the browser expire cookies for us "naturally" once

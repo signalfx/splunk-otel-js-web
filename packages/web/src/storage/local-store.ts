@@ -17,6 +17,7 @@
  */
 
 import { throttle } from "../utils/throttle";
+import { Store } from "./store";
 
 export class LocalStore<T> implements Store<T> {
 	private cachedValue: T | undefined;

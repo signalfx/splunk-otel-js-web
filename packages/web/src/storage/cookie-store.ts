@@ -1,6 +1,7 @@
 import { SESSION_INACTIVITY_TIMEOUT_SECONDS } from "../session/constants";
 import { isIframe } from "../utils";
 import { throttle } from "../utils/throttle";
+import { Store } from "./store";
 
 const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
 

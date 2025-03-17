@@ -17,7 +17,7 @@
  */
 
 import { InternalEventTarget } from '../src/EventTarget'
-import { initSessionTracking, getRumSessionId, updateSessionStatus, setStoreType, getNullableStore } from '../src/session'
+import { initSessionTracking, getRumSessionId, updateSessionStatus, getNullableStore } from '../src/session'
 import { SESSION_STORAGE_KEY, SESSION_INACTIVITY_TIMEOUT_MS } from '../src/session/constants'
 import { expect, it, describe, afterEach, vi, MockInstance } from 'vitest'
 import { createWebTracerProvider, deinit } from './utils'
