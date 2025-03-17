@@ -16,7 +16,12 @@
  *
  */
 import { Recorder, RecorderConfig, RecorderEmitContext } from './recorder'
-import { SessionReplayPlain, SessionReplayPlainInstance, SessionReplayPlainSegment } from '../session-replay'
+import {
+	SessionReplayPlain,
+	SessionReplay,
+	SessionReplayPlainInstance,
+	SessionReplayPlainSegment,
+} from '../session-replay'
 
 export class ProprietaryRecorder extends Recorder {
 	private sessionReplay: SessionReplayPlainInstance | undefined
@@ -25,7 +30,7 @@ export class ProprietaryRecorder extends Recorder {
 		super(config)
 
 		if (SessionReplayPlain) {
-			this.sessionReplay = new SessionReplayPlain({
+			this.sessionReplay = new SessionReplay({
 				features: {
 					//backgroundServiceSrc: SESSION_REPLAY_BACKGROUND_SERVICE_URL,
 					cacheAssets: false,
