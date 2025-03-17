@@ -39,7 +39,7 @@ export const initWithDefaultConfig = (capturer: SpanCapturer, additionalOptions 
 		throw Error('SplunkRum not initialized')
 	}
 
-	SplunkRum.provider!.addSpanProcessor(capturer)
+	SplunkRum.provider.addSpanProcessor(capturer)
 }
 
 export function initWithSyncPipeline(additionalOptions = {}): {

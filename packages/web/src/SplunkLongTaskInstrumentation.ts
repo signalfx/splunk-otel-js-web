@@ -58,8 +58,8 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
 	init(): void {}
 
 	private _createSpanFromEntry(entry: PerformanceEntry) {
-		const sessionState = getCurrentSessionState({ forceDiskRead: false });
-		const sessionInactive = !sessionState || sessionState.shadow;
+		const sessionState = getCurrentSessionState({ forceDiskRead: false })
+		const sessionInactive = !sessionState || sessionState.shadow
 
 		if (!!this.initOptions._experimental_longtaskNoStartSession && sessionInactive) {
 			// session is inactive, we do not want to spawn new session from long tasks

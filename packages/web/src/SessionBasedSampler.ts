@@ -41,19 +41,22 @@ export interface SessionBasedSamplerConfig {
 
 export class SessionBasedSampler implements Sampler {
 	protected currentSessionId: string
+
 	protected currentSessionSampled: boolean
+
 	protected notSampled: Sampler
+
 	protected ratio: number
+
 	protected sampled: Sampler
+
 	protected upperBound: number
 
-	constructor(
-		{
-			ratio = 1,
-			sampled = new AlwaysOnSampler(),
-			notSampled = new AlwaysOffSampler(),
-		}: SessionBasedSamplerConfig = {},
-	) {
+	constructor({
+		ratio = 1,
+		sampled = new AlwaysOnSampler(),
+		notSampled = new AlwaysOffSampler(),
+	}: SessionBasedSamplerConfig = {}) {
 		this.ratio = this._normalize(ratio)
 		this.upperBound = Math.floor(this.ratio * 0xffffffff)
 

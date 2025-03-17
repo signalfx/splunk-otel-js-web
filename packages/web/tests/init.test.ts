@@ -24,7 +24,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { context, trace } from '@opentelemetry/api'
 
 const doesBeaconUrlEndWith = (suffix: string) => {
-	const sps = (SplunkRum.provider!.getActiveSpanProcessor() as any)._spanProcessors
+	const sps = (SplunkRum.provider.getActiveSpanProcessor() as any)._spanProcessors
 	// TODO: refactor to make beaconUrl field private
 	const beaconUrl = sps[1]._exporter.beaconUrl || sps[1]._exporter.url
 	expect(beaconUrl.endsWith(suffix), `Checking beaconUrl if (${beaconUrl}) ends with ${suffix}`).toBeTruthy()
@@ -147,7 +147,7 @@ describe('test init', () => {
 
 			expect(SplunkRum.inited).toBeTruthy()
 
-			SplunkRum.provider!.addSpanProcessor(capturer)
+			SplunkRum.provider.addSpanProcessor(capturer)
 
 			await new Promise<void>((resolve) => {
 				setTimeout(() => {
@@ -239,7 +239,7 @@ describe('test init', () => {
 				},
 				rumAccessToken: '123-no-warn-spam-in-console',
 			})
-			SplunkRum.provider!.getTracer('test').startSpan('testSpan').end()
+			SplunkRum.provider.getTracer('test').startSpan('testSpan').end()
 
 			await expect.poll(() => exportMock.mock.calls.length > 0).toBeTruthy()
 

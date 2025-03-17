@@ -63,7 +63,7 @@ export interface SplunkOtelWebExporterOptions {
 
 export type PersistenceType = 'cookie' | 'localStorage'
 export function isPersistenceType(value: string): value is PersistenceType {
-	return ['cookie', 'localStorage'].includes(value);
+	return ['cookie', 'localStorage'].includes(value)
 }
 
 export interface SplunkOtelWebConfig {

@@ -65,7 +65,12 @@ import { SplunkOTLPTraceExporter } from './exporters/otlp'
 import { registerGlobal, unregisterGlobal } from './global-utils'
 import { BrowserInstanceService } from './services/BrowserInstanceService'
 import { SessionId } from './session'
-import { isPersistenceType, SplunkOtelWebConfig, SplunkOtelWebExporterOptions, SplunkOtelWebOptionsInstrumentations } from './types'
+import {
+	isPersistenceType,
+	SplunkOtelWebConfig,
+	SplunkOtelWebExporterOptions,
+	SplunkOtelWebOptionsInstrumentations,
+} from './types'
 import { isBot } from './utils/is-bot'
 import { SplunkSamplerWrapper } from './SplunkSamplerWrapper'
 
@@ -421,15 +426,13 @@ export const SplunkRum: SplunkOtelWebType = {
 			return null
 		}).filter((a): a is Exclude<typeof a, null> => Boolean(a))
 
-		this.attributesProcessor = new SplunkSpanAttributesProcessor(
-			{
-				...(deploymentEnvironment
-					? { 'environment': deploymentEnvironment, 'deployment.environment': deploymentEnvironment }
-					: {}),
-				...(version ? { 'app.version': version } : {}),
-				...(processedOptions.globalAttributes || {}),
-			}
-		)
+		this.attributesProcessor = new SplunkSpanAttributesProcessor({
+			...(deploymentEnvironment
+				? { 'environment': deploymentEnvironment, 'deployment.environment': deploymentEnvironment }
+				: {}),
+			...(version ? { 'app.version': version } : {}),
+			...(processedOptions.globalAttributes || {}),
+		})
 		provider.addSpanProcessor(this.attributesProcessor)
 
 		if (processedOptions.beaconEndpoint) {

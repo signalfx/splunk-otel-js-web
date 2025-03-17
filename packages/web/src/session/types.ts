@@ -20,6 +20,6 @@ export type SessionId = string
 export type SessionState = {
 	expiresAt?: number
 	id: SessionId
-	startTime: number
 	shadow?: boolean
+	startTime: number
 }

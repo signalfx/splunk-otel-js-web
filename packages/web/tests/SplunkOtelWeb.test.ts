@@ -18,7 +18,7 @@
 
 import { SpanAttributes } from '@opentelemetry/api'
 import SplunkRum from '../src'
-import { getNullableStore, updateSessionStatus } from '../src/session'
+import { updateSessionStatus } from '../src/session'
 import { describe, expect, it, afterEach } from 'vitest'
 import { deinit } from './utils'
 

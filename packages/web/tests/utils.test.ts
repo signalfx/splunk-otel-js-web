@@ -18,7 +18,6 @@
 
 import { generateId } from '../src/utils'
 import { describe, it, expect } from 'vitest'
-import { CookieStore } from '../src/storage/cookie-store'
 
 describe('generateId', () => {
 	it('should generate IDs of 64 and 128 bits', () => {

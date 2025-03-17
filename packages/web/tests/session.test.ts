@@ -17,13 +17,12 @@
  */
 
 import { InternalEventTarget } from '../src/EventTarget'
-import { initSessionTracking, getRumSessionId, updateSessionStatus, getNullableStore } from '../src/session'
+import { initSessionTracking, getRumSessionId, updateSessionStatus, getNullableStore, SessionState } from '../src/session'
 import { SESSION_STORAGE_KEY, SESSION_INACTIVITY_TIMEOUT_MS } from '../src/session/constants'
 import { expect, it, describe, afterEach, vi, MockInstance } from 'vitest'
 import { createWebTracerProvider, deinit } from './utils'
 
 describe('Session tracking', () => {
-
 	it('should correctly handle expiry, garbage values, (in)activity, etc.', async () => {
 		// the init tests have possibly already started the setInterval for updateSessionStatus.  Try to accomodate this.
 		const provider = createWebTracerProvider()
@@ -32,7 +31,7 @@ describe('Session tracking', () => {
 
 		expect(firstSessionId).toHaveLength(32)
 		// no marked activity, should keep same state
-		updateSessionStatus({ forceStore: false,  })
+		updateSessionStatus({ forceStore: false })
 		expect(firstSessionId).toBe(getRumSessionId())
 
 		// set cookie to expire in 2 seconds, mark activity, and then updateSessionStatus.
@@ -78,7 +77,7 @@ describe('Session tracking', () => {
 })
 
 describe('Activity tracking', () => {
-	let storeSetSpy: MockInstance<(value: string) => void>
+	let storeSetSpy: MockInstance<(value: SessionState) => void>
 	afterEach(() => {
 		storeSetSpy.mockRestore()
 	})
@@ -86,11 +85,15 @@ describe('Activity tracking', () => {
 	function subject(allSpansAreActivity = false) {
 		const provider = createWebTracerProvider()
 
-		const handle = initSessionTracking('cookie', provider, new InternalEventTarget(), undefined, allSpansAreActivity)
+		const handle = initSessionTracking(
+			'cookie',
+			provider,
+			new InternalEventTarget(),
+			undefined,
+			allSpansAreActivity,
+		)
 		handle.flush()
 
-		const store = getNullableStore()
-		console.log('store: ', store)
 		storeSetSpy = vi.spyOn(getNullableStore(), 'set')
 
 		provider.getTracer('tracer').startSpan('any-span').end()
@@ -115,11 +118,7 @@ describe('Activity tracking', () => {
 describe('Session tracking - localStorage', () => {
 	it('should save session state to local storage', () => {
 		const provider = createWebTracerProvider()
-		const trackingHandle = initSessionTracking(
-			'localStorage',
-			provider,
-			new InternalEventTarget(),
-		)
+		const trackingHandle = initSessionTracking('localStorage', provider, new InternalEventTarget())
 
 		const firstSessionId = getRumSessionId()
 		updateSessionStatus({ forceStore: true })

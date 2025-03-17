@@ -21,8 +21,6 @@ import { InternalEventTarget } from '../EventTarget'
 import { generateId } from '../utils'
 import { SessionState, SessionId } from './types'
 import { SESSION_INACTIVITY_TIMEOUT_MS, SESSION_STORAGE_KEY } from './constants'
-import { CookieStore } from '../storage/cookie-store'
-import { LocalStore } from '../storage/local-store'
 import { isSessionDurationExceeded, isSessionInactivityTimeoutReached, isSessionState } from './utils'
 import { PersistenceType } from '../types'
 import { buildStore, Store } from '../storage/store'
@@ -50,9 +48,6 @@ let recentActivity = false
 let cookieDomain: string
 let eventTarget: InternalEventTarget | undefined
 
-const cookieStore = new CookieStore<SessionState>(SESSION_STORAGE_KEY);
-const localStore = new LocalStore<SessionState>(SESSION_STORAGE_KEY);
-
 export function markActivity(): void {
 	recentActivity = true
 }
@@ -65,34 +60,34 @@ function createSessionState(): SessionState {
 	}
 }
 
-let store: Store<SessionState> | null = null;
+let store: Store<SessionState> | null = null
 
 export function getNullableStore(): Store<SessionState> {
-	return store;
+	return store
 }
 
 function getStore(): Store<SessionState> {
-	const store = getNullableStore();
+	const str = getNullableStore()
 
-	if (store) {
-		return store;
+	if (str) {
+		return str
 	}
 
-	throw new Error("Session store was accessed but not initialised.");
+	throw new Error('Session store was accessed but not initialised.')
 }
 
 export function getOrInitShadowSession(): SessionState | undefined {
-	let sessionState = getCurrentSessionState({ forceDiskRead: false });
+	let sessionState = getCurrentSessionState({ forceDiskRead: false })
 
 	if (!sessionState) {
-		sessionState = updateSessionStatus({ forceStore: true, shadow: true });
+		sessionState = updateSessionStatus({ forceStore: true, shadow: true })
 	}
 
-	return sessionState;
+	return sessionState
 }
 
 export function getCurrentSessionState({ forceDiskRead = false }): SessionState | undefined {
-	const sessionState = getStore().get({ forceDiskRead });
+	const sessionState = getStore().get({ forceDiskRead })
 
 	if (!isSessionState(sessionState)) {
 		return
@@ -114,8 +109,8 @@ export function updateSessionStatus({
 	hadActivity,
 	shadow = undefined,
 }: {
-	hadActivity?: boolean
 	forceStore: boolean
+	hadActivity?: boolean
 	shadow?: boolean
 }): SessionState {
 	let sessionState = getCurrentSessionState({ forceDiskRead: forceStore })
@@ -131,8 +126,8 @@ export function updateSessionStatus({
 	}
 
 	if (sessionState.shadow !== shadow) {
-		sessionState.shadow = shadow;
-		shouldForceWrite = true;
+		sessionState.shadow = shadow
+		shouldForceWrite = true
 	}
 
 	eventTarget?.emit('session-changed', { sessionId: sessionState.id })
@@ -142,7 +137,7 @@ export function updateSessionStatus({
 
 		// TODO: review if this check makes sense
 		if (!isSessionDurationExceeded(sessionState)) {
-			store.set(sessionState, cookieDomain);
+			store.set(sessionState, cookieDomain)
 			if (shouldForceWrite) {
 				store.flush()
 			}
@@ -179,9 +174,9 @@ class SessionSpanProcessor implements SpanProcessor {
 const ACTIVITY_EVENTS = ['click', 'scroll', 'mousedown', 'keydown', 'touchend', 'visibilitychange']
 
 export type SessionTrackingHandle = {
-	deinit: () => void;
-	clearSession: () => void;
-	flush: () => void;
+	clearSession: () => void
+	deinit: () => void
+	flush: () => void
 }
 
 export function initSessionTracking(
@@ -231,7 +226,7 @@ export function initSessionTracking(
 		},
 		flush: () => {
 			store.flush()
-		}
+		},
 	}
 }
 
@@ -240,10 +235,10 @@ export function getRumSessionId(): SessionId | undefined {
 		return window['SplunkRumNative'].getNativeSessionId()
 	}
 
-	const sessionState = getCurrentSessionState({ forceDiskRead: true });
+	const sessionState = getCurrentSessionState({ forceDiskRead: true })
 	if (!sessionState || sessionState.shadow) {
-		return undefined;
+		return undefined
 	}
 
-	return sessionState.id;
+	return sessionState.id
 }

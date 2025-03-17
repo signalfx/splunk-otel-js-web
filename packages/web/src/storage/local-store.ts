@@ -16,35 +16,28 @@
  *
  */
 
-import { throttle } from "../utils/throttle";
-import { Store } from "./store";
+import { throttle } from '../utils/throttle'
+import { Store } from './store'
 
 export class LocalStore<T> implements Store<T> {
-	private cachedValue: T | undefined;
+	private cachedValue: T | undefined
 
-	private _throttledSetRaw = throttle((value: string) => {
-		safelySetLocalStorage(this.key, value);
-	}, 1000);
+	private throttledSetRaw = throttle((value: string) => {
+		safelySetLocalStorage(this.key, value)
+	}, 1000)
 
-	constructor(
-		private key: string,
-	) {}
-
-	set(value: T) {
-		this.cachedValue = value;
-		this._throttledSetRaw(JSON.stringify(value));
-	}
+	constructor(private key: string) {}
 
 	flush() {
-		this._throttledSetRaw.flush();
+		this.throttledSetRaw.flush()
 	}
 
 	get({ forceDiskRead = false }: { forceDiskRead?: boolean } = {}): T | undefined {
 		if (this.cachedValue === undefined || forceDiskRead) {
-			this.cachedValue = JSON.parse(safelyGetLocalStorage(this.key));
+			this.cachedValue = JSON.parse(safelyGetLocalStorage(this.key))
 		}
 
-		return this.cachedValue;
+		return this.cachedValue
 	}
 
 	remove() {
@@ -53,8 +46,12 @@ export class LocalStore<T> implements Store<T> {
 
 		this.flush()
 	}
-}
 
+	set(value: T) {
+		this.cachedValue = value
+		this.throttledSetRaw(JSON.stringify(value))
+	}
+}
 
 export const safelyGetLocalStorage = (key: string): string | null => {
 	let value = null

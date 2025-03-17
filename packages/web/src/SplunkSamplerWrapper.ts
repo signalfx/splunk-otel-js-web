@@ -16,20 +16,17 @@
  *
  */
 
-import { Context, Link, Attributes, SpanKind, context } from '@opentelemetry/api'
+import { Context, Link, Attributes, SpanKind } from '@opentelemetry/api'
 import { Sampler, SamplingResult } from '@opentelemetry/sdk-trace-web'
-import { updateSessionStatus } from './session'
-import { suppressTracing } from '@opentelemetry/core'
-import { getOrInitShadowSession, markActivity } from './session/session'
+import { getOrInitShadowSession } from './session/session'
 
 export class SplunkSamplerWrapper implements Sampler {
-
 	constructor(
 		private readonly options: {
-			decider: Sampler,
 			allSpansAreActivity: boolean
+			decider: Sampler
 		},
-	) { }
+	) {}
 
 	shouldSample(
 		context: Context,
@@ -44,16 +41,8 @@ export class SplunkSamplerWrapper implements Sampler {
 		// (not extended from due to private methods)
 
 		// this ensure that samplers which rely on session ID do actually have access to one
-		getOrInitShadowSession();
-		return this.options.decider.shouldSample(context, traceId, spanName, spanKind, attributes, links);;
-	}
-
-	protected _updateSession(potentialSessionId: string | null) {
-		context.with(suppressTracing(context.active()), () => {
-			updateSessionStatus({
-				forceStore: false,
-			})
-		})
+		getOrInitShadowSession()
+		return this.options.decider.shouldSample(context, traceId, spanName, spanKind, attributes, links)
 	}
 
 	toString(): string {
