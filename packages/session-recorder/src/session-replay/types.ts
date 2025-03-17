@@ -27,10 +27,15 @@ interface SessionReplayBase {
 export interface SessionReplayClass extends SessionReplayClassBase {
 	compressData: (dataToCompress: ReadableStream<Uint8Array>, format: 'deflate' | 'gzip') => Promise<Blob>
 	isCompressionSupported: () => Promise<boolean>
+	new (config: SessionReplayConfig): SessionReplayInstance
 }
 
+export type SessionReplayInstance = SessionReplayBase
+
 export interface SessionReplayPlainClass extends SessionReplayClassBase {
-	new (config: SessionReplayConfig): SessionReplayPlainInstance
+	new (
+		config: SessionReplayConfig & { onSegment: (segment: SessionReplayBinarySegment) => void },
+	): SessionReplayPlainInstance
 }
 
 export type SessionReplayPlainInstance = SessionReplayBase
@@ -59,6 +64,11 @@ export interface SessionReplayPlainSegment {
 		assets: ProcessedAsset[]
 		events: ReplayEvent[]
 	}
+	metadata: SessionReplayMetadata
+}
+
+export interface SessionReplayBinarySegment {
+	data: Blob
 	metadata: SessionReplayMetadata
 }
 
