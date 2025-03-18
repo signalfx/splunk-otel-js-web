@@ -176,4 +176,14 @@ test.describe('errors', () => {
 			),
 		).toBeTruthy()
 	})
+
+	test('module error', async ({ recordPage }) => {
+		await recordPage.goTo('/errors/views/module-error.ejs')
+		await recordPage.waitForTimeoutAndFlushData(1000)
+		const errorSpans = recordPage.receivedSpans.filter((span) => span.name === 'unhandledrejection')
+
+		expect(errorSpans).toHaveLength(0)
+		// As error message is generic [object Module], it is being dropped
+		// expect(errorSpans[0].tags['error.message']).toBe('[object Module]')
+	})
 })
