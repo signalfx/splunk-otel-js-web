@@ -52,10 +52,22 @@ export function markActivity(): void {
 	recentActivity = true
 }
 
+function generateSessionId(id?: string): string {
+	if (window['__integrationTestSessionId']) {
+		return window['__integrationTestSessionId']
+	}
+
+	if (id) {
+		return id
+	}
+
+	return generateId(128)
+}
+
 function createSessionState(id?: string): SessionState {
 	return {
 		expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
-		id: id ?? generateId(128),
+		id: generateSessionId(id),
 		startTime: Date.now(),
 	}
 }

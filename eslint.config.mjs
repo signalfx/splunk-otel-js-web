@@ -254,6 +254,7 @@ export default [
 			'**/.next/',
 			'vitest-report',
 			'**/html/',
+			'**/playwright-report/',
 		],
 	},
 ]
