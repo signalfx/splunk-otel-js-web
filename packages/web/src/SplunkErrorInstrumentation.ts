@@ -38,7 +38,17 @@ function stringifyValue(value: unknown) {
 		return '(undefined)'
 	}
 
-	return value.toString()
+	// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object#null-prototype_objects
+	// Check for null-prototype objects
+	if (value.toString) {
+		return value.toString()
+	}
+
+	try {
+		return Object.prototype.toString.call(value)
+	} catch {
+		return '(unknown)'
+	}
 }
 
 function parseErrorStack(stack: string): string {
