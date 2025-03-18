@@ -66,6 +66,7 @@ import { registerGlobal, unregisterGlobal } from './global-utils'
 import { BrowserInstanceService } from './services/BrowserInstanceService'
 import { SessionId } from './session'
 import { SplunkOtelWebConfig, SplunkOtelWebExporterOptions, SplunkOtelWebOptionsInstrumentations } from './types'
+import { forgetAnonymousId, getOrCreateAnonymousId } from './user-tracking'
 import { isBot } from './utils/is-bot'
 
 export { type SplunkExporterConfig } from './exporters/common'
@@ -220,6 +221,8 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 
 	error: (...args: Array<any>) => void
 
+	getAnonymousId: () => string | undefined
+
 	/**
 	 * This method provides access to computed, final value of global attributes, which are applied to all created spans.
 	 */
@@ -239,9 +242,12 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	readonly resource?: Resource
 
 	setGlobalAttributes: (attributes: Attributes) => void
+
+	setUserTrackingMode: (mode: SplunkOtelWebConfig['user']['trackingMode']) => void
 }
 
 let inited = false
+let userTrackingMode: SplunkOtelWebConfig['user']['trackingMode'] = 'noTracking'
 let _deregisterInstrumentations: () => void | undefined
 let _deinitSessionTracking: () => void | undefined
 let _errorInstrumentation: SplunkErrorInstrumentation | undefined
@@ -271,6 +277,7 @@ export const SplunkRum: SplunkOtelWebType = {
 	},
 
 	init: function (options) {
+		userTrackingMode = options.user?.trackingMode ?? 'noTracking'
 		// "env" based config still a bad idea for web
 		if (!('OTEL_TRACES_EXPORTER' in _globalThis)) {
 			_globalThis.OTEL_TRACES_EXPORTER = 'none'
@@ -426,6 +433,7 @@ export const SplunkRum: SplunkOtelWebType = {
 				...(processedOptions.globalAttributes || {}),
 			},
 			this._processedOptions.persistence === 'localStorage',
+			() => userTrackingMode,
 		)
 		provider.addSpanProcessor(this.attributesProcessor)
 
@@ -496,6 +504,7 @@ export const SplunkRum: SplunkOtelWebType = {
 		unregisterGlobal('splunk.rum')
 		unregisterGlobal('splunk.rum.version')
 
+		forgetAnonymousId()
 		inited = false
 	},
 
@@ -542,6 +551,16 @@ export const SplunkRum: SplunkOtelWebType = {
 
 	_experimental_removeEventListener(name, callback): void {
 		return this.removeEventListener(name, callback)
+	},
+
+	setUserTrackingMode(mode: SplunkOtelWebConfig['user']['trackingMode']) {
+		userTrackingMode = mode
+	},
+
+	getAnonymousId() {
+		if (userTrackingMode === 'anonymousTracking') {
+			return getOrCreateAnonymousId({ useLocalStorage: this._processedOptions.persistence === 'localStorage' })
+		}
 	},
 
 	getSessionId() {
