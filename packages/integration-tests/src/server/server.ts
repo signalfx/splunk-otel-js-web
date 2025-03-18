@@ -110,11 +110,16 @@ fastify.get<{
 	const parsedUrl = new URL(request.url, `http://${request.host}`)
 	const filePath = path.join(__dirname, '../tests', parsedUrl.pathname)
 
+	const _experimental_longtaskNoStartSession = JSON.parse(
+		request.query['_experimental_longtaskNoStartSession'] ?? 'null',
+	)
+
 	if (fs.existsSync(filePath)) {
 		if (parsedUrl.pathname.endsWith('.ejs')) {
 			return reply.viewAsync(parsedUrl.pathname, {
 				renderAgent(userOpts = {}, noInit = false, file = defaultFile, cdnVersion = null) {
 					const options: Record<string, unknown> = {
+						_experimental_longtaskNoStartSession,
 						beaconEndpoint: beaconUrl.toString(),
 						applicationName: 'splunk-otel-js-dummy-app',
 						debug: true,

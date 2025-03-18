@@ -18,7 +18,7 @@
 
 import { Context, Link, Attributes, SpanKind } from '@opentelemetry/api'
 import { Sampler, SamplingResult, AlwaysOffSampler, AlwaysOnSampler } from '@opentelemetry/sdk-trace-web'
-import { getOrInitShadowSession } from './session/session'
+import { getOrInitInactiveSession } from './session/session'
 
 export interface SessionBasedSamplerConfig {
 	/**
@@ -78,7 +78,7 @@ export class SessionBasedSampler implements Sampler {
 
 		// TODO: we are guaranteed to have a session here, so maybe error explicitly if that's not the case?
 
-		const currentSessionId = getOrInitShadowSession().id
+		const currentSessionId = getOrInitInactiveSession().id
 		if (this.currentSessionId !== currentSessionId) {
 			this.currentSessionSampled = this._accumulate(currentSessionId) < this.upperBound
 			this.currentSessionId = currentSessionId

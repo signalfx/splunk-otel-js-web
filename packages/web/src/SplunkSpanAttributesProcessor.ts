@@ -40,8 +40,8 @@ export class SplunkSpanAttributesProcessor implements SpanProcessor {
 	}
 
 	onStart(span: Span): void {
-		// now that we have started the span, the session is not a shadow anymore
-		const sessionState = updateSessionStatus({ forceStore: false, shadow: false })
+		// now that we have started the span, the session is not inactive anymore
+		const sessionState = updateSessionStatus({ forceStore: false, inactive: false })
 
 		span.setAttribute('location.href', location.href)
 		span.setAttributes(this._globalAttributes)

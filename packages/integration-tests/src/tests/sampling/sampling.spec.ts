@@ -42,4 +42,23 @@ test.describe('sampling', () => {
 
 		expect(recordPage.receivedSpans).toHaveLength(0)
 	})
+
+	test('all spans arrive if session was sampled even if longtasks do not start a new session', async ({
+		recordPage,
+	}) => {
+		await recordPage.goTo(
+			'/sampling/index.ejs?samplingRatio=0.99&forceSessionId=a0000000000000000000000000000000&_experimental_longtaskNoStartSession=true',
+		)
+
+		// spans have arrived
+		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'guard-span').length === 1)
+
+		// we have a cookie
+		const sessionCookieEncoded = await recordPage.getCookie('_splunk_rum_sid')
+		expect(sessionCookieEncoded).toBeTruthy()
+
+		// and the session is active
+		const sessionCookieRaw = decodeURIComponent(sessionCookieEncoded.value)
+		expect(JSON.parse(sessionCookieRaw).inactive).toBeFalsy()
+	})
 })

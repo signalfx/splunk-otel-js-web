@@ -18,7 +18,7 @@
 
 import { Context, Link, Attributes, SpanKind } from '@opentelemetry/api'
 import { Sampler, SamplingResult } from '@opentelemetry/sdk-trace-web'
-import { getOrInitShadowSession } from './session/session'
+import { getOrInitInactiveSession } from './session/session'
 
 export class SplunkSamplerWrapper implements Sampler {
 	constructor(
@@ -41,7 +41,7 @@ export class SplunkSamplerWrapper implements Sampler {
 		// (not extended from due to private methods)
 
 		// this ensure that samplers which rely on session ID do actually have access to one
-		getOrInitShadowSession()
+		getOrInitInactiveSession()
 		return this.options.decider.shouldSample(context, traceId, spanName, spanKind, attributes, links)
 	}
 

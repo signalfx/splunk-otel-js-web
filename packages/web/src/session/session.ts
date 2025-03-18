@@ -88,11 +88,11 @@ function getStore(): Store<SessionState> {
 	throw new Error('Session store was accessed but not initialised.')
 }
 
-export function getOrInitShadowSession(): SessionState | undefined {
+export function getOrInitInactiveSession(): SessionState {
 	let sessionState = getCurrentSessionState({ forceDiskRead: false })
 
 	if (!sessionState) {
-		sessionState = updateSessionStatus({ forceStore: true, shadow: true })
+		sessionState = updateSessionStatus({ forceStore: true, inactive: true })
 	}
 
 	return sessionState
@@ -119,11 +119,11 @@ export function getCurrentSessionState({ forceDiskRead = false }): SessionState 
 export function updateSessionStatus({
 	forceStore,
 	hadActivity,
-	shadow = undefined,
+	inactive = undefined,
 }: {
 	forceStore: boolean
 	hadActivity?: boolean
-	shadow?: boolean
+	inactive?: boolean
 }): SessionState {
 	let sessionState = getCurrentSessionState({ forceDiskRead: forceStore })
 	let shouldForceWrite = false
@@ -137,8 +137,8 @@ export function updateSessionStatus({
 		}
 	}
 
-	if (sessionState.shadow !== shadow) {
-		sessionState.shadow = shadow
+	if (sessionState.inactive !== inactive) {
+		sessionState.inactive = inactive
 		shouldForceWrite = true
 	}
 
@@ -263,7 +263,7 @@ export function getRumSessionId(): SessionId | undefined {
 	}
 
 	const sessionState = getCurrentSessionState({ forceDiskRead: true })
-	if (!sessionState || sessionState.shadow) {
+	if (!sessionState || sessionState.inactive) {
 		return undefined
 	}
 
