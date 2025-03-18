@@ -52,10 +52,10 @@ export function markActivity(): void {
 	recentActivity = true
 }
 
-function createSessionState(): SessionState {
+function createSessionState(id?: string): SessionState {
 	return {
 		expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
-		id: generateId(128),
+		id: id ?? generateId(128),
 		startTime: Date.now(),
 	}
 }
@@ -188,6 +188,21 @@ export function initSessionTracking(
 ): SessionTrackingHandle {
 	if (hasNativeSessionId()) {
 		// short-circuit and bail out - don't create cookie, watch for inactivity, or anything
+
+		const sessionId = window['SplunkRumNative'].getNativeSessionId()
+		const sessionState = createSessionState(sessionId)
+
+		store = {
+			get: () => sessionState,
+			flush: () => {},
+			set: () => {
+				throw new Error('Cannot override native RUM session ID.')
+			},
+			remove: () => {
+				throw new Error('Cannot clear native RUM session ID.')
+			},
+		}
+
 		return {
 			deinit: () => {},
 			clearSession: () => {},
