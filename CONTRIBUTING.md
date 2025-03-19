@@ -108,7 +108,7 @@ npm run test
 ### Debugging Vitest in Visual Studio Code
 
 1. Install [Vitest](https://marketplace.visualstudio.com/items?itemName=vitest.explorer) extension.
-2. Open *Run and Debug* tab and create launch.json file the content below.
+2. Open *Run and Debug* tab and click *create a launch.json file*, then fill it with the content below.
 3. Select *Debug Vitest Browser* and click *Start Debugging*.
 
 ```json
