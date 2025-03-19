@@ -131,9 +131,9 @@ test.describe('errors', () => {
 		expect(errorSpans[0].tags['error.message']).toBe(errorMessages[browserName])
 
 		const errorStackMap = {
-			chromium: `TypeError: Cannot set properties of null (setting 'anyField')\n    at ${url}:63:25`,
-			firefox: `@${url}:63:7\n`,
-			webkit: `global code@${url}:63:15`,
+			chromium: `TypeError: Cannot set properties of null (setting 'anyField')\n    at ${url}:76:25`,
+			firefox: `@${url}:76:7\n`,
+			webkit: `global code@${url}:76:15`,
 		}
 
 		expect(errorSpans[0].tags['error.stack']).toBe(errorStackMap[browserName])

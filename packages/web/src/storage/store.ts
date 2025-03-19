@@ -15,13 +15,25 @@
  * limitations under the License.
  *
  */
+import { PersistenceType } from '../types'
+import { CookieStore } from './cookie-store'
+import { LocalStore } from './local-store'
 
-import { findCookieValue } from '../../src/session/cookie-session'
+export interface Store<T> {
+	flush: () => void
+	get: ({ forceDiskRead }: { forceDiskRead?: boolean }) => T
+	remove: (domain?: string) => void
+	set: (value: T, domain?: string) => void
+}
 
-import { describe, expect, it } from 'vitest'
+export function buildStore<T>(config: { key: string; type: PersistenceType }): Store<T> {
+	if (config.type == 'localStorage') {
+		return new LocalStore(config.key)
+	}
 
-describe('cookie-session', () => {
-	it('findCookieValue() - should not find unset cookie', () => {
-		expect(findCookieValue('nosuchCookie', { forceStoreRead: true })).toBeUndefined()
-	})
-})
+	if (config.type == 'cookie') {
+		return new CookieStore(config.key)
+	}
+
+	throw new Error('Unknown store type')
+}
