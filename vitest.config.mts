@@ -52,5 +52,6 @@ export default defineConfig({
 		root: path.resolve(__dirname),
 		reporters: ['default', 'html'],
 		globalSetup: ['./tests/global-setup.ts'],
+		setupFiles: ['./tests/setup.ts'],
 	},
 })

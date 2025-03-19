@@ -131,9 +131,9 @@ test.describe('errors', () => {
 		expect(errorSpans[0].tags['error.message']).toBe(errorMessages[browserName])
 
 		const errorStackMap = {
-			chromium: `TypeError: Cannot set properties of null (setting 'anyField')\n    at ${url}:63:25`,
-			firefox: `@${url}:63:7\n`,
-			webkit: `global code@${url}:63:15`,
+			chromium: `TypeError: Cannot set properties of null (setting 'anyField')\n    at ${url}:76:25`,
+			firefox: `@${url}:76:7\n`,
+			webkit: `global code@${url}:76:15`,
 		}
 
 		expect(errorSpans[0].tags['error.stack']).toBe(errorStackMap[browserName])
@@ -175,5 +175,15 @@ test.describe('errors', () => {
 				'9793573cdc2ab308a0b1996bea14253ec8832bc036210475ded0813cafa27066',
 			),
 		).toBeTruthy()
+	})
+
+	test('module error', async ({ recordPage }) => {
+		await recordPage.goTo('/errors/views/module-error.ejs')
+		await recordPage.waitForTimeoutAndFlushData(1000)
+		const errorSpans = recordPage.receivedSpans.filter((span) => span.name === 'unhandledrejection')
+
+		expect(errorSpans).toHaveLength(0)
+		// As error message is generic [object Module], it is being dropped
+		// expect(errorSpans[0].tags['error.message']).toBe('[object Module]')
 	})
 })

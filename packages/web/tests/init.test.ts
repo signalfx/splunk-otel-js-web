@@ -26,7 +26,7 @@ import { context, trace } from '@opentelemetry/api'
 const doesBeaconUrlEndWith = (suffix: string) => {
 	const sps = (SplunkRum.provider.getActiveSpanProcessor() as any)._spanProcessors
 	// TODO: refactor to make beaconUrl field private
-	const beaconUrl = sps[2]._exporter.beaconUrl || sps[2]._exporter.url
+	const beaconUrl = sps[1]._exporter.beaconUrl || sps[1]._exporter.url
 	expect(beaconUrl.endsWith(suffix), `Checking beaconUrl if (${beaconUrl}) ends with ${suffix}`).toBeTruthy()
 }
 
@@ -42,6 +42,8 @@ describe('test init', () => {
 		expect(!window[Symbol.for('opentelemetry.js.api.1')]['diag'])
 
 		window[Symbol.for('opentelemetry.js.api.1')] = undefined
+
+		deinit()
 	})
 
 	beforeEach(() => {

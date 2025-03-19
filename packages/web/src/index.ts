@@ -65,8 +65,14 @@ import { SplunkOTLPTraceExporter } from './exporters/otlp'
 import { registerGlobal, unregisterGlobal } from './global-utils'
 import { BrowserInstanceService } from './services/BrowserInstanceService'
 import { SessionId } from './session'
-import { SplunkOtelWebConfig, SplunkOtelWebExporterOptions, SplunkOtelWebOptionsInstrumentations } from './types'
+import {
+	isPersistenceType,
+	SplunkOtelWebConfig,
+	SplunkOtelWebExporterOptions,
+	SplunkOtelWebOptionsInstrumentations,
+} from './types'
 import { isBot } from './utils/is-bot'
+import { SplunkSamplerWrapper } from './SplunkSamplerWrapper'
 
 export { type SplunkExporterConfig } from './exporters/common'
 export { SplunkZipkinExporter } from './exporters/zipkin'
@@ -105,6 +111,7 @@ const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
 			return new SplunkZipkinExporter(options)
 		},
 	},
+	persistence: 'cookie',
 	spanProcessor: {
 		factory: (exporter, config) => new BatchSpanProcessor(exporter, config),
 	},
@@ -322,9 +329,9 @@ export const SplunkRum: SplunkOtelWebType = {
 			},
 		)
 
-		if (!['localStorage', 'cookie', undefined].includes(processedOptions.persistence)) {
+		if (!isPersistenceType(processedOptions.persistence)) {
 			diag.error(
-				'Invalid persistence flag: The value for "persistence" must be either "cookie", "localStorage", or omitted entirely.',
+				`Invalid persistence flag: The value for "persistence" must be either "cookie", "localStorage", or omitted entirely, but was: ${processedOptions.persistence}`,
 			)
 			return
 		}
@@ -382,16 +389,18 @@ export const SplunkRum: SplunkOtelWebType = {
 		const provider = new SplunkWebTracerProvider({
 			...processedOptions.tracer,
 			resource: this.resource,
+			sampler: new SplunkSamplerWrapper({
+				decider: processedOptions.tracer?.sampler ?? new AlwaysOnSampler(),
+				allSpansAreActivity: this._processedOptions._experimental_allSpansExtendSession,
+			}),
 		})
 
-		// TODO
 		_deinitSessionTracking = initSessionTracking(
+			processedOptions.persistence,
 			provider,
-			instanceId,
 			eventTarget,
 			processedOptions.cookieDomain,
 			!!options._experimental_allSpansExtendSession,
-			processedOptions.persistence === 'localStorage',
 		).deinit
 
 		const instrumentations = INSTRUMENTATIONS.map(({ Instrument, confKey, disable }) => {
@@ -417,16 +426,13 @@ export const SplunkRum: SplunkOtelWebType = {
 			return null
 		}).filter((a): a is Exclude<typeof a, null> => Boolean(a))
 
-		this.attributesProcessor = new SplunkSpanAttributesProcessor(
-			{
-				...(deploymentEnvironment
-					? { 'environment': deploymentEnvironment, 'deployment.environment': deploymentEnvironment }
-					: {}),
-				...(version ? { 'app.version': version } : {}),
-				...(processedOptions.globalAttributes || {}),
-			},
-			this._processedOptions.persistence === 'localStorage',
-		)
+		this.attributesProcessor = new SplunkSpanAttributesProcessor({
+			...(deploymentEnvironment
+				? { 'environment': deploymentEnvironment, 'deployment.environment': deploymentEnvironment }
+				: {}),
+			...(version ? { 'app.version': version } : {}),
+			...(processedOptions.globalAttributes || {}),
+		})
 		provider.addSpanProcessor(this.attributesProcessor)
 
 		if (processedOptions.beaconEndpoint) {
@@ -549,7 +555,7 @@ export const SplunkRum: SplunkOtelWebType = {
 			return undefined
 		}
 
-		return getRumSessionId({ useLocalStorage: this._processedOptions.persistence === 'localStorage' })
+		return getRumSessionId()
 	},
 	_experimental_getSessionId() {
 		return this.getSessionId()
@@ -562,8 +568,7 @@ export const SplunkRum: SplunkOtelWebType = {
 
 		updateSessionStatus({
 			forceStore: false,
-			useLocalStorage: this._processedOptions.persistence === 'localStorage',
-			forceActivity: this._processedOptions._experimental_allSpansExtendSession,
+			hadActivity: this._processedOptions._experimental_allSpansExtendSession,
 		})
 	},
 }

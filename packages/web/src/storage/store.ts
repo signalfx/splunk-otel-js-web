@@ -15,17 +15,25 @@
  * limitations under the License.
  *
  */
+import { PersistenceType } from '../types'
+import { CookieStore } from './cookie-store'
+import { LocalStore } from './local-store'
 
-import { generateId } from '../src/utils'
-import { describe, it, expect } from 'vitest'
+export interface Store<T> {
+	flush: () => void
+	get: ({ forceDiskRead }: { forceDiskRead?: boolean }) => T
+	remove: (domain?: string) => void
+	set: (value: T, domain?: string) => void
+}
 
-describe('generateId', () => {
-	it('should generate IDs of 64 and 128 bits', () => {
-		const id64 = generateId(64)
-		const id128 = generateId(128)
-		expect(id64.length).toBe(16)
-		expect(id128.length).toBe(32)
-		expect(id64.match('^[0-9a-z]+$')).toBeTruthy()
-		expect(id128.match('^[0-9a-z]+$')).toBeTruthy()
-	})
-})
+export function buildStore<T>(config: { key: string; type: PersistenceType }): Store<T> {
+	if (config.type == 'localStorage') {
+		return new LocalStore(config.key)
+	}
+
+	if (config.type == 'cookie') {
+		return new CookieStore(config.key)
+	}
+
+	throw new Error('Unknown store type')
+}
