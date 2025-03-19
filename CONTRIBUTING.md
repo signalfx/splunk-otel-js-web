@@ -105,6 +105,45 @@ cd packages/integration-tests
 npm run test
 ```
 
+### Debugging Vitest in Visual Studio Code
+
+1. Install [Vitest](https://marketplace.visualstudio.com/items?itemName=vitest.explorer) extension.
+2. Open _Run and Debug_ tab and create launch.json file with following content.
+```json
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"type": "node",
+			"request": "launch",
+			"name": "Run Vitest Browser",
+			"program": "${workspaceRoot}/node_modules/vitest/vitest.mjs",
+			"console": "integratedTerminal",
+			"args": ["--inspect", "--browser", "--no-file-parallelism", "--config", "vitest.config.debug.mts"]
+		},
+		{
+			"type": "chrome",
+			"request": "attach",
+			"name": "Attach to Vitest Browser",
+			"port": 9229
+		}
+	],
+	"compounds": [
+		{
+			"name": "Debug Vitest Browser",
+			"configurations": ["Attach to Vitest Browser", "Run Vitest Browser"],
+			"stopAll": true
+		}
+	]
+}
+```
+3. Select _Debug Vitest Browser_ and click _Start Debugging_.
+
+### Debugging Playwright in Visual Studio Code
+
+1. Install [Playwright Test for VSCode](https://marketplace.visualstudio.com/items?itemName=ms-playwright.playwright) extension.
+2. Debug tests by using the context menu of the green triangle to the left of the line numbers.
+
 ## Licensing
 
 See the [LICENSE](LICENSE) file for our repository's licensing. We will ask you to
