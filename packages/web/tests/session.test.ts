@@ -130,7 +130,6 @@ describe('Session tracking - localStorage', () => {
 		updateSessionStatus({ forceStore: true })
 
 		expect(firstSessionId).toBe(getRumSessionId())
-		// console.log('localStorage["_splunk_rum_sid"]', localStorage['_splunk_rum_sid'])
 		expect(JSON.parse(localStorage['_splunk_rum_sid'])['id']).toBe(getRumSessionId())
 
 		trackingHandle.deinit()
