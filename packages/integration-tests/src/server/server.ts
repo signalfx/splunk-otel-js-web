@@ -119,7 +119,7 @@ fastify.get<{
 				renderAgent(userOpts = {}, noInit = false, file = defaultFile, cdnVersion = null) {
 					const options: Record<string, unknown> = {
 						_experimental_longtaskNoStartSession:
-							request.query._experimental_longtaskNoStartSession === 'true' ? true : false,
+							request.query._experimental_longtaskNoStartSession === 'true',
 						beaconEndpoint: beaconUrl.toString(),
 						applicationName: 'splunk-otel-js-dummy-app',
 						debug: true,
