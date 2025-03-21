@@ -22,19 +22,19 @@ test.describe('xhr', () => {
 	test('XHR request is registered', async ({ recordPage }) => {
 		await recordPage.goTo('/xhr/xhr-basic.ejs')
 		await recordPage.waitForSpans(
-			(spans) => spans.filter((span) => span.tags['http.url'] === 'http://localhost:3000/some-data').length === 1,
+			(spans) => spans.filter((span) => span.tags['url.full'] === 'http://localhost:3000/some-data').length === 1,
 		)
 		const xhrSpans = recordPage.receivedSpans.filter(
-			(span) => span.tags['http.url'] === 'http://localhost:3000/some-data',
+			(span) => span.tags['url.full'] === 'http://localhost:3000/some-data',
 		)
 
 		expect(xhrSpans).toHaveLength(1)
 		expect(xhrSpans[0].tags['component']).toBe('xml-http-request')
-		expect(xhrSpans[0].tags['http.status_code']).toBe('200')
+		expect(xhrSpans[0].tags['http.response.status_code']).toBe('200')
 		expect(xhrSpans[0].tags['http.status_text']).toBe('OK')
-		expect(xhrSpans[0].tags['http.method']).toBe('GET')
-		expect(xhrSpans[0].tags['http.url']).toBe('http://localhost:3000/some-data')
-		expect(xhrSpans[0].tags['http.response_content_length']).toBe('49')
+		expect(xhrSpans[0].tags['http.request.method']).toBe('GET')
+		expect(xhrSpans[0].tags['url.full']).toBe('http://localhost:3000/some-data')
+		expect(xhrSpans[0].tags['http.response.body.size']).toBe('49')
 		expect(xhrSpans[0].tags['link.traceId']).toBeTruthy()
 		expect(xhrSpans[0].tags['link.spanId']).toBeTruthy()
 	})
@@ -44,7 +44,7 @@ test.describe('xhr', () => {
 		await recordPage.waitForTimeout(1000)
 
 		const xhrSpans = recordPage.receivedSpans.filter(
-			(span) => span.tags['http.url'] === 'http://localhost:3000/some-data',
+			(span) => span.tags['url.full'] === 'http://localhost:3000/some-data',
 		)
 
 		expect(xhrSpans).toHaveLength(0)
@@ -57,7 +57,7 @@ test.describe('xhr', () => {
 
 		const xhrSpans = recordPage.receivedSpans.filter((span) =>
 			['http://localhost:3000/some-data', 'http://localhost:3000/no-server-timings'].includes(
-				span.tags['http.url'] as string,
+				span.tags['url.full'] as string,
 			),
 		)
 		const guardSpans = recordPage.receivedSpans.filter((span) => span.name === 'guard-span')

@@ -127,8 +127,8 @@ export class SplunkZipkinExporter implements SpanExporter {
 		// Remove inaccurate CORS timings
 		const zero = performance.timeOrigin * 1000
 		if (
-			span.tags['http.url'] &&
-			!(span.tags['http.url'] as string).startsWith(location.origin) &&
+			span.tags['url.full'] &&
+			!(span.tags['url.full'] as string).startsWith(location.origin) &&
 			span.timestamp > zero &&
 			span.annotations
 		) {
@@ -150,7 +150,7 @@ export class SplunkZipkinExporter implements SpanExporter {
 			name: span.name,
 			kind: span.kind,
 			spanContext: span.spanContext.bind(span),
-			parentSpanId: span.parentSpanId,
+			parentSpanContext: span.parentSpanContext,
 			startTime: span.startTime,
 			endTime: span.endTime,
 			status: span.status,
@@ -158,7 +158,7 @@ export class SplunkZipkinExporter implements SpanExporter {
 			events: span.events,
 			duration: span.duration,
 			ended: span.ended,
-			instrumentationLibrary: span.instrumentationLibrary,
+			instrumentationScope: span.instrumentationScope,
 
 			resource: span.resource,
 			attributes: this._onAttributesSerializing

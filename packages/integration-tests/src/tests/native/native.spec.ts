@@ -25,9 +25,7 @@ test.describe('native', () => {
 		await recordPage.waitForSpans((spans) => spans.some((s) => s.name === 'documentFetch'))
 		const receivedSpans = recordPage.receivedSpans
 
-		expect(
-			receivedSpans.every((span) => span.tags['splunk.rumSessionId'] === '12341234123412341234123412341234'),
-		).toBe(true)
+		expect(receivedSpans.every((span) => span.tags['session.id'] === '12341234123412341234123412341234')).toBe(true)
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})
 })

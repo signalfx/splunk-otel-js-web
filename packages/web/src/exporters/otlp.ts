@@ -16,59 +16,60 @@
  *
  */
 
-import { diag } from '@opentelemetry/api'
-import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
-import {
-	NOOP_ATTRIBUTES_TRANSFORMER,
-	NATIVE_XHR_SENDER,
-	NATIVE_BEACON_SENDER,
-	type SplunkExporterConfig,
-} from './common'
-import { ReadableSpan } from '@opentelemetry/sdk-trace-base'
+// import { diag } from '@opentelemetry/api'
+// import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
+// import {
+// 	NOOP_ATTRIBUTES_TRANSFORMER,
+// 	NATIVE_XHR_SENDER,
+// 	NATIVE_BEACON_SENDER,
+// 	type SplunkExporterConfig,
+// } from './common'
+// import { ReadableSpan } from '@opentelemetry/sdk-trace-base'
+// import { ExportResult } from '@opentelemetry/core'
 
-export class SplunkOTLPTraceExporter extends OTLPTraceExporter {
-	protected readonly _beaconSender: SplunkExporterConfig['beaconSender'] =
-		typeof navigator !== 'undefined' && navigator.sendBeacon ? NATIVE_BEACON_SENDER : undefined
+// export class SplunkOTLPTraceExporter extends OTLPTraceExporter {
+// 	protected readonly _beaconSender: SplunkExporterConfig['beaconSender'] =
+// 		typeof navigator !== 'undefined' && navigator.sendBeacon ? NATIVE_BEACON_SENDER : undefined
 
-	protected readonly _onAttributesSerializing: SplunkExporterConfig['onAttributesSerializing']
+// 	protected readonly _onAttributesSerializing: SplunkExporterConfig['onAttributesSerializing']
 
-	protected readonly _xhrSender: SplunkExporterConfig['xhrSender'] = NATIVE_XHR_SENDER
+// 	protected readonly _xhrSender: SplunkExporterConfig['xhrSender'] = NATIVE_XHR_SENDER
 
-	constructor(options: SplunkExporterConfig) {
-		super(options)
-		this._onAttributesSerializing = options.onAttributesSerializing || NOOP_ATTRIBUTES_TRANSFORMER
-	}
+// 	constructor(options: SplunkExporterConfig) {
+// 		super(options)
+// 		this._onAttributesSerializing = options.onAttributesSerializing || NOOP_ATTRIBUTES_TRANSFORMER
+// 	}
 
-	send(items: ReadableSpan[], onSuccess: () => void): void {
-		if (this._shutdownOnce.isCalled) {
-			diag.debug('Shutdown already started. Cannot send objects')
-			return
-		}
+// 	export(items: ReadableSpan[], resultCallback: (result: ExportResult) => void): void {
+// 		if (this._shutdownOnce.isCalled) {
+// 			diag.debug('Shutdown already started. Cannot send objects')
+// 			return
+// 		}
 
-		items = items.map((span) => {
-			// @ts-expect-error Yep we're overwriting a readonly property here. Deal with it
-			span.attributes = this._onAttributesSerializing
-				? this._onAttributesSerializing(span.attributes, span)
-				: span.attributes
-			return span
-		})
+// 		items = items.map((span) => {
+// 			// @ts-expect-error Yep we're overwriting a readonly property here. Deal with it
+// 			span.attributes = this._onAttributesSerializing
+// 				? this._onAttributesSerializing(span.attributes, span)
+// 				: span.attributes
+// 			return span
+// 		})
 
-		// @ts-expect-error Say no to private
-		const body = this._serializer.serializeRequest(items) ?? new Uint8Array()
+// 		// @ts-expect-error Say no to private
+// 		const body = this._serializer.serializeRequest(items) ?? new Uint8Array()
 
-		// Changed: Determine which exporter to use at the time of export
-		if (document.hidden && this._beaconSender && body.length <= 64000) {
-			this._beaconSender(this.url, body, { type: 'application/json' })
-		} else {
-			this._xhrSender(this.url, body, {
-				// These headers may only be necessary for otel's collector,
-				// need to test with actual ingest
-				'Accept': 'application/json',
-				'Content-Type': 'application/json',
-				...this.headers,
-			})
-		}
+// 		// Changed: Determine which exporter to use at the time of export
+// 		if (document.hidden && this._beaconSender && body.length <= 64000) {
+// 			this._beaconSender(this.url, body, { type: 'application/json' })
+// 		} else {
+// 			this._xhrSender(this.url, body, {
+// 				// These headers may only be necessary for otel's collector,
+// 				// need to test with actual ingest
+// 				'Accept': 'application/json',
+// 				'Content-Type': 'application/json',
+// 				...this.headers,
+// 			})
+// 		}
 
-		onSuccess()
-	}
-}
+// 		onSuccess()
+// 	}
+// }

@@ -143,7 +143,7 @@ describe('SplunkZipkinExporter', () => {
 		const dummySpan = buildDummySpan({
 			name: 'asd',
 			attributes: {
-				'http.url': 'https://example.com/resource.png',
+				'url.full': 'https://example.com/resource.png',
 			},
 		})
 		dummySpan.events.push({

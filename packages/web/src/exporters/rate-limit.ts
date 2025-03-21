@@ -56,8 +56,8 @@ export class RateLimitProcessor implements SpanProcessor {
 	}
 
 	protected _filter(span: ReadableSpan): boolean {
-		if (span.parentSpanId) {
-			this._parents.set(span.parentSpanId, true)
+		if (span.parentSpanContext.spanId) {
+			this._parents.set(span.parentSpanContext.spanId, true)
 		}
 
 		const component = (span.attributes?.component ?? 'unknown').toString()

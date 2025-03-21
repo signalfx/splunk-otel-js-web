@@ -304,7 +304,7 @@ describe('creating spans is possible', () => {
 		expect(exposedSpan.attributes['environment']).toBe('my-env')
 		expect(exposedSpan.attributes['app.version']).toBe('1.2-test.3')
 		expect(exposedSpan.attributes.customerType).toBe('GOLD')
-		expect(exposedSpan.attributes['splunk.rumSessionId'], 'Checking splunk.rumSessionId').toBeTruthy()
+		expect(exposedSpan.attributes['session.id'], 'Checking session.id').toBeTruthy()
 
 		// Attributes set on resource that zipkin exporter merges to span tags
 		expect(exposedSpan.resource.attributes['telemetry.sdk.name'], 'Checking telemetry.sdk.name').toBeTruthy()
@@ -372,14 +372,14 @@ describe('test xhr', () => {
 
 		const span = capturer.spans.find(
 			(s) =>
-				(s.attributes.component === 'xml-http-request' && (s.attributes['http.url'] as string)) ===
+				(s.attributes.component === 'xml-http-request' && (s.attributes['url.full'] as string)) ===
 				location.href,
 		)
 		expect(span.name).toBe('HTTP GET')
 		expect(span.attributes.component).toBe('xml-http-request')
-		expect((span.attributes['http.response_content_length'] as number) > 0).toBeTruthy()
+		expect((span.attributes['http.response.body.size'] as number) > 0).toBeTruthy()
 		// expect(span.attributes['link.spanId']).toBe('0000000000000002')
-		expect(span.attributes['http.url']).toBe(location.href)
+		expect(span.attributes['url.full']).toBe(location.href)
 
 		capturer.clear()
 	})
@@ -412,10 +412,10 @@ describe('test fetch', () => {
 		expect(fetchSpan.name).toBe('HTTP GET')
 
 		// note: temporarily disabled because of instabilities in OTel's code
-		// assert.ok(fetchSpan.attributes['http.response_content_length'] > 0, 'Checking response_content_length.');
+		// assert.ok(fetchSpan.attributes['http.response.body.size'] > 0, 'Checking response_content_length.');
 
 		// expect(fetchSpan.attributes['link.spanId']).toBe('0000000000000002')
-		expect(fetchSpan.attributes['http.url']).toBe(location.href)
+		expect(fetchSpan.attributes['url.full']).toBe(location.href)
 	})
 })
 

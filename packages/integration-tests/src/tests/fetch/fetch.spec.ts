@@ -24,19 +24,19 @@ test.describe('fetch', () => {
 		await recordPage.goTo('/fetch/fetch.ejs')
 
 		await recordPage.waitForSpans(
-			(spans) => spans.filter((span) => span.tags['http.url'] === 'http://localhost:3000/some-data').length === 1,
+			(spans) => spans.filter((span) => span.tags['url.full'] === 'http://localhost:3000/some-data').length === 1,
 		)
 		const fetchSpans = recordPage.receivedSpans.filter(
-			(span) => span.tags['http.url'] === 'http://localhost:3000/some-data',
+			(span) => span.tags['url.full'] === 'http://localhost:3000/some-data',
 		)
 
 		expect(fetchSpans).toHaveLength(1)
 		expect(fetchSpans[0].tags['component']).toBe('fetch')
-		expect(fetchSpans[0].tags['http.status_code']).toBe('200')
+		expect(fetchSpans[0].tags['http.response.status_code']).toBe('200')
 		expect(fetchSpans[0].tags['http.status_text']).toBe('OK')
-		expect(fetchSpans[0].tags['http.method']).toBe('GET')
-		expect(fetchSpans[0].tags['http.url']).toBe('http://localhost:3000/some-data')
-		expect(fetchSpans[0].tags['http.response_content_length']).toBe('49')
+		expect(fetchSpans[0].tags['http.request.method']).toBe('GET')
+		expect(fetchSpans[0].tags['url.full']).toBe('http://localhost:3000/some-data')
+		expect(fetchSpans[0].tags['http.response.body.size']).toBe('49')
 		expect(fetchSpans[0].tags['link.traceId']).toBeTruthy()
 		expect(fetchSpans[0].tags['link.spanId']).toBeTruthy()
 
@@ -59,7 +59,7 @@ test.describe('fetch', () => {
 
 		const fetchSpans = recordPage.receivedSpans.filter((span) =>
 			['http://localhost:3000/some-data', 'http://localhost:3000/no-server-timings'].includes(
-				span.tags['http.url'] as string,
+				span.tags['url.full'] as string,
 			),
 		)
 		const guardSpans = recordPage.receivedSpans.filter((span) => span.name === 'guard-span')
@@ -73,7 +73,7 @@ test.describe('fetch', () => {
 		await recordPage.waitForTimeout(1000)
 
 		const xhrSpans = recordPage.receivedSpans.filter(
-			(span) => span.tags['http.url'] === 'http://localhost:3000/some-data',
+			(span) => span.tags['url.full'] === 'http://localhost:3000/some-data',
 		)
 
 		expect(xhrSpans).toHaveLength(0)
@@ -82,7 +82,7 @@ test.describe('fetch', () => {
 	test('request body exists in request object (open-telemetry/opentelemetry-js#2411)', async ({ recordPage }) => {
 		await recordPage.goTo('/fetch/fetch-post.ejs')
 		await recordPage.waitForSpans(
-			(spans) => spans.filter((span) => span.tags['http.url'] === 'http://localhost:3000/echo').length === 1,
+			(spans) => spans.filter((span) => span.tags['url.full'] === 'http://localhost:3000/echo').length === 1,
 		)
 
 		const resultElementText = await recordPage.locator('#result').textContent()
@@ -96,18 +96,18 @@ test.describe('fetch', () => {
 
 		await recordPage.goTo(url.toString())
 		await recordPage.waitForSpans(
-			(spans) => spans.filter((span) => span.tags['http.url'] === 'http://localhost:3001/some-data').length === 1,
+			(spans) => spans.filter((span) => span.tags['url.full'] === 'http://localhost:3001/some-data').length === 1,
 		)
 
 		const fetchSpans = recordPage.receivedSpans.filter(
-			(span) => span.tags['http.url'] === 'http://localhost:3001/some-data',
+			(span) => span.tags['url.full'] === 'http://localhost:3001/some-data',
 		)
 
 		expect(fetchSpans).toHaveLength(1)
 		expect(fetchSpans[0].tags['component']).toBe('fetch')
-		expect(fetchSpans[0].tags['http.status_code']).toBe('200')
+		expect(fetchSpans[0].tags['http.response.status_code']).toBe('200')
 		expect(fetchSpans[0].tags['http.status_text']).toBe('OK')
-		expect(fetchSpans[0].tags['http.method']).toBe('GET')
+		expect(fetchSpans[0].tags['http.request.method']).toBe('GET')
 		expect(fetchSpans[0].tags['http.host']).toBe('localhost:3001')
 
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)

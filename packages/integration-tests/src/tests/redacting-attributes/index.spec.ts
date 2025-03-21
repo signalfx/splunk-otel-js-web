@@ -28,6 +28,6 @@ test.describe('redacting-attributes', () => {
 		const receivedSpans = recordPage.receivedSpans
 		const clickSpans = receivedSpans.filter((span) => span.name === 'click')
 
-		expect(clickSpans.every((s) => s.tags['http.url'] === '[redacted]'))
+		expect(clickSpans.every((s) => s.tags['url.full'] === '[redacted]'))
 	})
 })

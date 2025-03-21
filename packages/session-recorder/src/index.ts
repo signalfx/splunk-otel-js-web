@@ -198,7 +198,7 @@ const SplunkRumRecorder = {
 			getResourceAttributes() {
 				return {
 					...resource.attributes,
-					'splunk.rumSessionId': SplunkRum.getSessionId(),
+					'session.id': SplunkRum.getSessionId(),
 				}
 			},
 		})

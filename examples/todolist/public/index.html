@@ -26,10 +26,10 @@
 					// injected into HTML.
 					onAttributesSerializing: (attributes) => ({
 						...attributes,
-						'http.url':
-							typeof attributes['http.url'] === 'string'
-								? attributes['http.url'].replace(/([?&]token=)[^&]+(&|$)/g, '$1<token>$2')
-								: attributes['http.url'],
+						'url.full':
+							typeof attributes['url.full'] === 'string'
+								? attributes['url.full'].replace(/([?&]token=)[^&]+(&|$)/g, '$1<token>$2')
+								: attributes['url.full'],
 					}),
 				},
 			})

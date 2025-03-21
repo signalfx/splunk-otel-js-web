@@ -29,14 +29,14 @@ test.describe('causality', () => {
 			(spans) =>
 				spans.filter((span) => span.name === 'click' && span.tags['target_xpath'] === '//*[@id="btn1"]')
 					.length === 1 &&
-				spans.filter((span) => span.tags['http.url'] === 'http://localhost:3000/some-data').length === 1,
+				spans.filter((span) => span.tags['url.full'] === 'http://localhost:3000/some-data').length === 1,
 		)
 
 		const clickSpans = recordPage.receivedSpans.filter(
 			(span) => span.name === 'click' && span.tags['target_xpath'] === '//*[@id="btn1"]',
 		)
 		const fetchSpans = recordPage.receivedSpans.filter(
-			(span) => span.tags['http.url'] === 'http://localhost:3000/some-data',
+			(span) => span.tags['url.full'] === 'http://localhost:3000/some-data',
 		)
 
 		expect(clickSpans).toHaveLength(1)

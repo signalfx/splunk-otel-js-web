@@ -53,7 +53,7 @@ import { SplunkPostDocLoadResourceInstrumentation } from './SplunkPostDocLoadRes
 import { SplunkWebTracerProvider } from './SplunkWebTracerProvider'
 import { InternalEventTarget, SplunkOtelWebEventTarget } from './EventTarget'
 import { SplunkContextManager } from './SplunkContextManager'
-import { Resource, ResourceAttributes } from '@opentelemetry/resources'
+import { Resource, resourceFromAttributes } from '@opentelemetry/resources'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 import { SDK_INFO, _globalThis } from '@opentelemetry/core'
 import { VERSION } from './version'
@@ -61,7 +61,7 @@ import { getSyntheticsRunId, SYNTHETICS_RUN_ID_ATTRIBUTE } from './synthetics'
 import { SplunkSpanAttributesProcessor } from './SplunkSpanAttributesProcessor'
 import { SessionBasedSampler } from './SessionBasedSampler'
 import { SplunkSocketIoClientInstrumentation } from './SplunkSocketIoClientInstrumentation'
-import { SplunkOTLPTraceExporter } from './exporters/otlp'
+// import { SplunkOTLPTraceExporter } from './exporters/otlp'
 import { registerGlobal, unregisterGlobal } from './global-utils'
 import { BrowserInstanceService } from './services/BrowserInstanceService'
 import { SessionId } from './session'
@@ -105,7 +105,7 @@ const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
 	exporter: {
 		factory: (options) => {
 			if (options.otlp) {
-				return new SplunkOTLPTraceExporter(options)
+				//return new SplunkOTLPTraceExporter(options)
 			}
 
 			return new SplunkZipkinExporter(options)
@@ -248,6 +248,25 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	setGlobalAttributes: (attributes: Attributes) => void
 }
 
+class SessionSpanProcessor implements SpanProcessor {
+	forceFlush(): Promise<void> {
+		return Promise.resolve()
+	}
+
+	onEnd(): void {}
+
+	onStart(): void {
+		updateSessionStatus({
+			forceStore: false,
+			hadActivity: true,
+		})
+	}
+
+	shutdown(): Promise<void> {
+		return Promise.resolve()
+	}
+}
+
 let inited = false
 let _deregisterInstrumentations: () => void | undefined
 let _deinitSessionTracking: () => void | undefined
@@ -365,7 +384,7 @@ export const SplunkRum: SplunkOtelWebType = {
 		// they will be enabled in registerInstrumentations
 		const pluginDefaults = { ignoreUrls, enabled: false }
 
-		const resourceAttrs: ResourceAttributes = {
+		const resourceAttrs = {
 			...SDK_INFO,
 			[SemanticResourceAttributes.TELEMETRY_SDK_NAME]: '@splunk/otel-web',
 			[SemanticResourceAttributes.TELEMETRY_SDK_VERSION]: VERSION,
@@ -384,7 +403,37 @@ export const SplunkRum: SplunkOtelWebType = {
 			resourceAttrs[SYNTHETICS_RUN_ID_ATTRIBUTE] = syntheticsRunId
 		}
 
-		this.resource = new Resource(resourceAttrs)
+		this.resource = resourceFromAttributes(resourceAttrs)
+
+		const spanProcessors: SpanProcessor[] = []
+
+		this.attributesProcessor = new SplunkSpanAttributesProcessor({
+			...(deploymentEnvironment
+				? { 'environment': deploymentEnvironment, 'deployment.environment': deploymentEnvironment }
+				: {}),
+			...(version ? { 'app.version': version } : {}),
+			...(processedOptions.globalAttributes || {}),
+		})
+
+		spanProcessors.push(this.attributesProcessor)
+
+		if (processedOptions.beaconEndpoint) {
+			const exporter = buildExporter(processedOptions)
+			const spanProcessor = processedOptions.spanProcessor.factory(exporter, {
+				scheduledDelayMillis: processedOptions.bufferTimeout,
+				maxExportBatchSize: processedOptions.bufferSize,
+			})
+			spanProcessors.push(spanProcessor)
+			this._processor = spanProcessor
+		}
+
+		if (processedOptions.debug) {
+			spanProcessors.push(new SimpleSpanProcessor(new ConsoleSpanExporter()))
+		}
+
+		if (this._processedOptions._experimental_allSpansExtendSession) {
+			spanProcessors.push(new SessionSpanProcessor())
+		}
 
 		const provider = new SplunkWebTracerProvider({
 			...processedOptions.tracer,
@@ -393,14 +442,13 @@ export const SplunkRum: SplunkOtelWebType = {
 				decider: processedOptions.tracer?.sampler ?? new AlwaysOnSampler(),
 				allSpansAreActivity: this._processedOptions._experimental_allSpansExtendSession,
 			}),
+			spanProcessors,
 		})
 
 		_deinitSessionTracking = initSessionTracking(
 			processedOptions.persistence,
-			provider,
 			eventTarget,
 			processedOptions.cookieDomain,
-			!!options._experimental_allSpansExtendSession,
 		).deinit
 
 		const instrumentations = INSTRUMENTATIONS.map(({ Instrument, confKey, disable }) => {
@@ -425,29 +473,6 @@ export const SplunkRum: SplunkOtelWebType = {
 
 			return null
 		}).filter((a): a is Exclude<typeof a, null> => Boolean(a))
-
-		this.attributesProcessor = new SplunkSpanAttributesProcessor({
-			...(deploymentEnvironment
-				? { 'environment': deploymentEnvironment, 'deployment.environment': deploymentEnvironment }
-				: {}),
-			...(version ? { 'app.version': version } : {}),
-			...(processedOptions.globalAttributes || {}),
-		})
-		provider.addSpanProcessor(this.attributesProcessor)
-
-		if (processedOptions.beaconEndpoint) {
-			const exporter = buildExporter(processedOptions)
-			const spanProcessor = processedOptions.spanProcessor.factory(exporter, {
-				scheduledDelayMillis: processedOptions.bufferTimeout,
-				maxExportBatchSize: processedOptions.bufferSize,
-			})
-			provider.addSpanProcessor(spanProcessor)
-			this._processor = spanProcessor
-		}
-
-		if (processedOptions.debug) {
-			provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()))
-		}
 
 		window.addEventListener('visibilitychange', () => {
 			// this condition applies when the page is hidden or when it's closed

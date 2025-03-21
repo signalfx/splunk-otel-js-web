@@ -49,11 +49,11 @@ test.describe('cdn', () => {
 		expect(errorSpan.tags['error.message']).toBe(expectedMessage)
 
 		const rumScriptFetchSpans = recordPage.receivedSpans.filter(
-			(s) => s.name === 'resourceFetch' && (<string>s.tags['http.url']).includes('cdn.signalfx.com'),
+			(s) => s.name === 'resourceFetch' && (<string>s.tags['url.full']).includes('cdn.signalfx.com'),
 		)
 		expect(rumScriptFetchSpans).toHaveLength(1)
 		const rumScriptFetchSpan = rumScriptFetchSpans[0]
-		expect(rumScriptFetchSpan.tags['http.url']).toBe(
+		expect(rumScriptFetchSpan.tags['url.full']).toBe(
 			'https://cdn.signalfx.com/o11y-gdi-rum/latest/splunk-otel-web.js',
 		)
 		expect(rumScriptFetchSpan.tags['splunk.rumVersion']).toBe('0.20.0')

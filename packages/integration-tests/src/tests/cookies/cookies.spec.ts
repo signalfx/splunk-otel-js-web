@@ -32,9 +32,7 @@ test.describe('cookies', () => {
 		expect(documentFetchSpans[1].tags['location.href']).toBe('http://localhost:3000/cookies/cookies.ejs')
 
 		// same sessionId& instanceId
-		expect(documentFetchSpans[0].tags['splunk.rumSessionId']).toBe(
-			documentFetchSpans[1].tags['splunk.rumSessionId'],
-		)
+		expect(documentFetchSpans[0].tags['session.id']).toBe(documentFetchSpans[1].tags['session.id'])
 		expect(documentFetchSpans[0].tags['browser.instance.id']).toBe(
 			documentFetchSpans[1].tags['browser.instance.id'],
 		)
@@ -62,7 +60,7 @@ test.describe('cookies', () => {
 		)
 		const documentFetchSpans = recordPage.receivedSpans.filter((span) => span.name === 'documentFetch')
 		expect(documentFetchSpans).toHaveLength(1)
-		expect(documentFetchSpans[0].tags['splunk.rumSessionId']).toBeTruthy()
+		expect(documentFetchSpans[0].tags['session.id']).toBeTruthy()
 
 		const cookie = await recordPage.getCookie('_splunk_rum_sid')
 		expect(cookie).toBeTruthy()

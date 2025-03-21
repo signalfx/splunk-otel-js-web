@@ -24,19 +24,19 @@ test.describe('resource observer', () => {
 
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'guard-span').length === 1)
 		const agentSpans = recordPage.receivedSpans.filter(
-			(span) => typeof span.tags['http.url'] === 'string' && span.tags['http.url'].endsWith('splunk-otel-web.js'),
+			(span) => typeof span.tags['url.full'] === 'string' && span.tags['url.full'].endsWith('splunk-otel-web.js'),
 		)
 		const imageSpans = recordPage.receivedSpans.filter(
 			(span) =>
-				typeof span.tags['http.url'] === 'string' && span.tags['http.url'].endsWith('image.png?noCache=true'),
+				typeof span.tags['url.full'] === 'string' && span.tags['url.full'].endsWith('image.png?noCache=true'),
 		)
 		const imageBlackSpans = recordPage.receivedSpans.filter(
 			(span) =>
-				typeof span.tags['http.url'] === 'string' &&
-				span.tags['http.url'].endsWith('splunk-black.svg?delay=100'),
+				typeof span.tags['url.full'] === 'string' &&
+				span.tags['url.full'].endsWith('splunk-black.svg?delay=100'),
 		)
 		const scriptSpans = recordPage.receivedSpans.filter(
-			(span) => typeof span.tags['http.url'] === 'string' && span.tags['http.url'].endsWith('test.js'),
+			(span) => typeof span.tags['url.full'] === 'string' && span.tags['url.full'].endsWith('test.js'),
 		)
 
 		expect(agentSpans).toHaveLength(1)
@@ -44,13 +44,13 @@ test.describe('resource observer', () => {
 
 		expect(imageBlackSpans).toHaveLength(1)
 		expect(imageBlackSpans[0].annotations.length).toBe(8)
-		expect(imageBlackSpans[0].tags['http.url']).toBe(
+		expect(imageBlackSpans[0].tags['url.full']).toBe(
 			'http://localhost:3000/resource-observer/assets/splunk-black.svg?delay=100',
 		)
 
 		expect(scriptSpans).toHaveLength(1)
 		expect(scriptSpans[0].annotations.length).toBe(8)
-		expect(scriptSpans[0].tags['http.url']).toBe('http://localhost:3000/resource-observer/assets/test.js')
+		expect(scriptSpans[0].tags['url.full']).toBe('http://localhost:3000/resource-observer/assets/test.js')
 	})
 
 	test('resources can be ignored', async ({ recordPage }) => {
@@ -58,10 +58,10 @@ test.describe('resource observer', () => {
 
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'guard-span').length === 1)
 		const imageBlackSpans = recordPage.receivedSpans.filter(
-			(span) => typeof span.tags['http.url'] === 'string' && span.tags['http.url'].endsWith('splunk-black.svg'),
+			(span) => typeof span.tags['url.full'] === 'string' && span.tags['url.full'].endsWith('splunk-black.svg'),
 		)
 		const scriptSpans = recordPage.receivedSpans.filter(
-			(span) => typeof span.tags['http.url'] === 'string' && span.tags['http.url'].endsWith('test.js'),
+			(span) => typeof span.tags['url.full'] === 'string' && span.tags['url.full'].endsWith('test.js'),
 		)
 
 		expect(imageBlackSpans).toHaveLength(0)
@@ -73,7 +73,7 @@ test.describe('resource observer', () => {
 
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'guard-span').length === 1)
 		const imageBlackSpans = recordPage.receivedSpans.filter(
-			(span) => typeof span.tags['http.url'] === 'string' && span.tags['http.url'].endsWith('splunk-black.svg'),
+			(span) => typeof span.tags['url.full'] === 'string' && span.tags['url.full'].endsWith('splunk-black.svg'),
 		)
 
 		expect(imageBlackSpans).toHaveLength(1)
@@ -91,7 +91,7 @@ test.describe('resource observer', () => {
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'guard-span').length === 1)
 		const imageSpans = recordPage.receivedSpans.filter(
 			(span) =>
-				typeof span.tags['http.url'] === 'string' && span.tags['http.url'].endsWith('image.png?noCache=true'),
+				typeof span.tags['url.full'] === 'string' && span.tags['url.full'].endsWith('image.png?noCache=true'),
 		)
 
 		expect(imageSpans).toHaveLength(2)
@@ -107,15 +107,15 @@ test.describe('resource observer', () => {
 
 		const imageRootSpans = recordPage.receivedSpans.filter(
 			(span) =>
-				typeof span.tags['http.url'] === 'string' &&
-				span.tags['http.url'].endsWith('splunk-black.png') &&
+				typeof span.tags['url.full'] === 'string' &&
+				span.tags['url.full'].endsWith('splunk-black.png') &&
 				span.tags['component'] === 'splunk-post-doc-load-resource',
 		)
 		const imageParentSpans = recordPage.receivedSpans.filter((span) => span.name === 'image-parent')
 		const imageChildSpans = recordPage.receivedSpans.filter(
 			(span) =>
-				typeof span.tags['http.url'] === 'string' &&
-				span.tags['http.url'].endsWith('splunk-black.svg') &&
+				typeof span.tags['url.full'] === 'string' &&
+				span.tags['url.full'].endsWith('splunk-black.svg') &&
 				span.tags['component'] === 'splunk-post-doc-load-resource',
 		)
 
@@ -132,15 +132,15 @@ test.describe('resource observer', () => {
 
 		const scriptRootSpans = recordPage.receivedSpans.filter(
 			(span) =>
-				typeof span.tags['http.url'] === 'string' &&
-				span.tags['http.url'].endsWith('test.js') &&
+				typeof span.tags['url.full'] === 'string' &&
+				span.tags['url.full'].endsWith('test.js') &&
 				span.tags['component'] === 'splunk-post-doc-load-resource',
 		)
 		const scriptParentSpans = recordPage.receivedSpans.filter((span) => span.name === 'script-parent')
 		const scriptChildSpans = recordPage.receivedSpans.filter(
 			(span) =>
-				typeof span.tags['http.url'] === 'string' &&
-				span.tags['http.url'].endsWith('test-alt.js') &&
+				typeof span.tags['url.full'] === 'string' &&
+				span.tags['url.full'].endsWith('test-alt.js') &&
 				span.tags['component'] === 'splunk-post-doc-load-resource',
 		)
 

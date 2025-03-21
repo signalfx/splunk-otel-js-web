@@ -31,7 +31,7 @@ test.describe('docload', () => {
 		const resources = ['css-font-img.css', 'splunk-black.png?delay=300', 'iframe.ejs', 'splunk.woff']
 		for (const urlEnd of resources) {
 			const resourceSpans = recordPage.receivedSpans.filter(
-				(span) => span.tags['http.url'] && (span.tags['http.url'] as string).endsWith(urlEnd),
+				(span) => span.tags['url.full'] && (span.tags['url.full'] as string).endsWith(urlEnd),
 			)
 
 			expect(docLoadSpans[0].traceId, `${urlEnd} has correct traceId`).toBe(resourceSpans[0].traceId)
@@ -42,8 +42,8 @@ test.describe('docload', () => {
 			const resourceSpans = recordPage.receivedSpans.filter(
 				(span) =>
 					span.tags['component'] === 'document-load' &&
-					typeof span.tags['http.url'] === 'string' &&
-					span.tags['http.url'].endsWith(urlEnd),
+					typeof span.tags['url.full'] === 'string' &&
+					span.tags['url.full'].endsWith(urlEnd),
 			)
 
 			expect(resourceSpans, `${urlEnd} is not captured`).toHaveLength(0)
@@ -59,14 +59,14 @@ test.describe('docload', () => {
 		const scriptFetchSpans = recordPage.receivedSpans.filter(
 			(span) =>
 				span.name === 'resourceFetch' &&
-				typeof span.tags['http.url'] === 'string' &&
-				span.tags['http.url'].includes('splunk-otel-web.js'),
+				typeof span.tags['url.full'] === 'string' &&
+				span.tags['url.full'].includes('splunk-otel-web.js'),
 		)
 		const brokenImageFetchSpans = recordPage.receivedSpans.filter(
 			(span) =>
 				span.name === 'resourceFetch' &&
-				typeof span.tags['http.url'] === 'string' &&
-				span.tags['http.url'].includes('/nosuchimage.jpg'),
+				typeof span.tags['url.full'] === 'string' &&
+				span.tags['url.full'].includes('/nosuchimage.jpg'),
 		)
 
 		expect(docFetchSpans).toHaveLength(1)
@@ -82,7 +82,7 @@ test.describe('docload', () => {
 		expect(scriptFetchSpans[0].tags['component']).toBe('document-load')
 		if (browserName !== 'webkit') {
 			// Webkit does not support https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/responseStatus
-			expect(parseInt(scriptFetchSpans[0].tags['http.status_code'] as string)).toBe(200)
+			expect(parseInt(scriptFetchSpans[0].tags['http.response.status_code'] as string)).toBe(200)
 		}
 
 		expect(brokenImageFetchSpans.length).toBeGreaterThanOrEqual(1)
@@ -90,7 +90,7 @@ test.describe('docload', () => {
 		expect(brokenImageFetchSpans[0].parentId).toBe(docLoadSpans[0].id)
 		if (browserName !== 'webkit') {
 			// Webkit does not support https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/responseStatus
-			expect(parseInt(brokenImageFetchSpans[0].tags['http.status_code'] as string)).toBe(404)
+			expect(parseInt(brokenImageFetchSpans[0].tags['http.response.status_code'] as string)).toBe(404)
 		}
 
 		expect(docFetchSpans[0].tags['component']).toBe('document-load')
@@ -106,10 +106,10 @@ test.describe('docload', () => {
 		expect(docFetchSpans[0].tags['link.spanId']).toBeDefined()
 		if (browserName !== 'webkit') {
 			// Webkit does not support https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/responseStatus
-			expect(parseInt(docFetchSpans[0].tags['http.status_code'] as string)).toBe(200)
+			expect(parseInt(docFetchSpans[0].tags['http.response.status_code'] as string)).toBe(200)
 		}
 
-		expect(parseInt(scriptFetchSpans[0].tags['http.response_content_length'] as string)).toBeGreaterThan(0)
+		expect(parseInt(scriptFetchSpans[0].tags['http.response.body.size'] as string)).toBeGreaterThan(0)
 
 		expect(docLoadSpans[0].tags['component']).toBe('document-load')
 		expect(docLoadSpans[0].tags['location.href']).toBe('http://localhost:3000/docload/docload.ejs')
@@ -131,7 +131,7 @@ test.describe('docload', () => {
 
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'documentFetch').length === 1)
 		const ignoredResourceFetchSpans = recordPage.receivedSpans.filter(
-			(span) => span.tags['http.url'] === 'http://localhost:3000/non-impactful-resource.jpg',
+			(span) => span.tags['url.full'] === 'http://localhost:3000/non-impactful-resource.jpg',
 		)
 
 		expect(ignoredResourceFetchSpans).toHaveLength(0)

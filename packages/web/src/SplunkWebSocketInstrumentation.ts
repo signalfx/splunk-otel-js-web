@@ -22,7 +22,10 @@ import { SpanKind, trace, context, Span } from '@opentelemetry/api'
 import { isUrlIgnored } from '@opentelemetry/core'
 import { VERSION } from './version'
 
+import {} from '@opentelemetry/semantic-conventions'
+
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
+import { ATTR_HTTP_RESPONSE_BODY_SIZE } from '@opentelemetry/semantic-conventions/incubating'
 
 function size(o) {
 	return o.byteLength || o.size || o.length || undefined
@@ -63,7 +66,7 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase {
 						},
 					})
 					if (url) {
-						connectSpan.setAttribute('http.url', url)
+						connectSpan.setAttribute('url.full', url)
 					}
 
 					if (protocols) {
@@ -164,7 +167,7 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase {
 
 				const span = instrumentation.startSpan(ws, 'onmessage', SpanKind.CONSUMER)
 				if (capturedArgs && capturedArgs[0] && capturedArgs[0].data) {
-					span.setAttribute('http.response_content_length', size(capturedArgs[0].data))
+					span.setAttribute('http.response.body.size', size(capturedArgs[0].data))
 				}
 
 				// FIXME fill out message details, size, etc.
@@ -206,7 +209,7 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase {
 		ws.send = function instrumentedSend(...args) {
 			const span = instrumentation.startSpan(ws, 'send', SpanKind.PRODUCER)
 			const sendSize = args.length > 0 ? size(args[0]) : undefined
-			span.setAttribute('http.request_content_length', sendSize)
+			span.setAttribute(ATTR_HTTP_RESPONSE_BODY_SIZE, sendSize)
 			let retVal = undefined
 
 			try {
@@ -248,7 +251,7 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase {
 		const span = this.tracer.startSpan(name, { kind: spanKind })
 		span.setAttribute('component', 'websocket')
 		span.setAttribute('protocol', ws.protocol)
-		span.setAttribute('http.url', ws.url)
+		span.setAttribute('url.full', ws.url)
 		// FIXME anything else?
 		return span
 	}
