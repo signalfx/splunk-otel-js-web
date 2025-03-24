@@ -24,6 +24,7 @@ import { SESSION_INACTIVITY_TIMEOUT_MS, SESSION_STORAGE_KEY } from './constants'
 import { isSessionDurationExceeded, isSessionInactivityTimeoutReached, isSessionState } from './utils'
 import { PersistenceType } from '../types'
 import { buildStore, Store } from '../storage/store'
+import { getGlobal } from '../global-utils'
 
 /*
     The basic idea is to let the browser expire cookies for us "naturally" once
@@ -53,8 +54,8 @@ export function markActivity(): void {
 }
 
 function generateSessionId(id?: string): string {
-	if (window['__integrationTestSessionId']) {
-		return window['__integrationTestSessionId']
+	if (window['__splunkRumIntegrationTestSessionId']) {
+		return window['__splunkRumIntegrationTestSessionId']
 	}
 
 	if (id) {
@@ -85,7 +86,7 @@ function getStore(): Store<SessionState> {
 		return str
 	}
 
-	throw new Error('Session store was accessed but not initialised.')
+	throw new Error('Session store was accessed but not initialized.')
 }
 
 export function getOrInitInactiveSession(): SessionState {
@@ -102,11 +103,11 @@ export function getCurrentSessionState({ forceDiskRead = false }): SessionState 
 	const sessionState = getStore().get({ forceDiskRead })
 
 	if (!isSessionState(sessionState)) {
-		return
+		return undefined
 	}
 
 	if (isSessionDurationExceeded(sessionState) || isSessionInactivityTimeoutReached(sessionState)) {
-		return
+		return undefined
 	}
 
 	return sessionState
@@ -241,6 +242,12 @@ export function initSessionTracking(
 	}
 
 	updateSessionStatus({ forceStore: true })
+
+	// TODO: For integration tests, find better solution
+	const SplunkRum = getGlobal()
+	if (SplunkRum) {
+		SplunkRum['store'] = store
+	}
 
 	return {
 		deinit: () => {
