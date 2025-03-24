@@ -14,7 +14,7 @@
 		"react-dom": "^19.0.0"
 	},
 	"devDependencies": {
-		"@splunk/otel-web": "^0.20.0",
+		"@splunk/otel-web": "^0.20.1",
 		"@splunk/otel-web-session-recorder": "^0.20.0",
 		"@types/node": "^20",
 		"@types/react": "^19",
