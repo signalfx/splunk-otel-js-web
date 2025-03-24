@@ -291,7 +291,7 @@ export const SplunkRum: SplunkOtelWebType = {
 		// touches otel globals, our registerGlobal requires this first
 		diag.setLogger(new DiagConsoleLogger(), options?.debug ? DiagLogLevel.DEBUG : DiagLogLevel.WARN)
 
-		const registered = registerGlobal('splunk.rum', this)
+		const registered = registerGlobal(this)
 		if (!registered) {
 			return
 		}
@@ -499,8 +499,7 @@ export const SplunkRum: SplunkOtelWebType = {
 		eventTarget = undefined
 
 		diag.disable()
-		unregisterGlobal('splunk.rum')
-		unregisterGlobal('splunk.rum.version')
+		unregisterGlobal()
 
 		inited = false
 	},

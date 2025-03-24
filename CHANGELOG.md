@@ -2,6 +2,18 @@
 
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
+## 0.20.1
+* @splunk/otel-web
+   * fix: error-instrumentation and null-prototype objects missing toString method [PR description](https://github.com/signalfx/splunk-otel-js-web/pull/1042)
+     -  Fixes [issue 1041](https://github.com/signalfx/splunk-otel-js-web/issues/1041)
+   * fix: SessionBasedSampler returning error after session expires [PR description](https://github.com/signalfx/splunk-otel-js-web/pull/1048)
+     - There's an error which starts happening after the session expires when using a SessionBasedSampler
+     - Fixes [issue 1040](https://github.com/signalfx/splunk-otel-js-web/issues/1040)
+* internal
+  * Added integration tests
+  * Added instructions on how to debug unit tests
+  * Updated dependencies
+
 ## 0.20.0
 * @splunk/otel-web
    * fix: do not extend session from discarded session replay spans

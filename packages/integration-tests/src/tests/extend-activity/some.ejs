@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>All spans extend session</title>
+
+	<%- renderAgent() %>
+</head>
+<body>
+  <h1>All spans extend session to false</h1>
+  <button type="button" id="btnSpan">Produce a span</button>
+  <pre id="scenarioDisplay"></pre>
+  <script id="scenario">
+    document.querySelector('#btnSpan').addEventListener('click', () => {
+		SplunkRum.provider.getTracer('guard').startSpan('guard-span').end(); 	
+    });
+  </script>
+  <script>scenarioDisplay.innerHTML = scenario.innerHTML;</script>
+</body>
+</html>
