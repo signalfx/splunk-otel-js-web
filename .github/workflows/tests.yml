@@ -114,7 +114,7 @@ jobs:
             - run: npm run compile
 
             - name: Download blob reports from GitHub Actions Artifacts
-              uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806
+              uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e
               with:
                   path: packages/integration-tests/all-blob-reports
                   pattern: blob-report-*
