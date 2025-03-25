@@ -19,7 +19,7 @@
 		"@playwright/test": "^1.50.1",
 		"@types/ejs": "^3.1.5",
 		"@types/express": "^5.0.0",
-		"@types/node": "^22.13.9",
+		"@types/node": "^22.13.13",
 		"cors": "^2.8.5",
 		"ejs": "^3.1.10"
 	},
