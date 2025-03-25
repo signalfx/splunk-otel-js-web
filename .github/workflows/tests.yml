@@ -14,7 +14,7 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v4.2.2
-            - uses: actions/setup-node@v4.2.0
+            - uses: actions/setup-node@v4.3.0
               with:
                   node-version: '22'
                   cache: 'npm'
@@ -31,7 +31,7 @@ jobs:
 
             - name: Upload blob report to GitHub Actions Artifacts
               if: ${{ !cancelled() }}
-              uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
               with:
                   name: blob-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
                   path: packages/integration-tests/blob-report
@@ -45,7 +45,7 @@ jobs:
               run: npm run test:unit -- --browser.name=${{ matrix.browser }}
 
             - name: Upload test:unit report
-              uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
               if: ${{ !cancelled() && matrix.browser != 'edge' && matrix.browser != 'chrome' }}
               with:
                   name: vitest-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
@@ -63,7 +63,7 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v4.2.2
-            - uses: actions/setup-node@v4.2.0
+            - uses: actions/setup-node@v4.3.0
               with:
                   node-version: '22'
                   cache: 'npm'
@@ -80,7 +80,7 @@ jobs:
 
             - name: Upload blob report to GitHub Actions Artifacts
               if: ${{ !cancelled() }}
-              uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
               with:
                   name: blob-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
                   path: packages/integration-tests/blob-report
@@ -90,7 +90,7 @@ jobs:
               run: npm run test:unit -- --browser.name=${{ matrix.browser }}
 
             - name: Upload test:unit report
-              uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
               if: ${{ !cancelled() }}
               with:
                   name: vitest-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
@@ -106,7 +106,7 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v4.2.2
-            - uses: actions/setup-node@v4.2.0
+            - uses: actions/setup-node@v4.3.0
               with:
                   node-version: '22'
                   cache: 'npm'
@@ -114,7 +114,7 @@ jobs:
             - run: npm run compile
 
             - name: Download blob reports from GitHub Actions Artifacts
-              uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806
+              uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e
               with:
                   path: packages/integration-tests/all-blob-reports
                   pattern: blob-report-*
@@ -125,7 +125,7 @@ jobs:
               working-directory: ./packages/integration-tests
 
             - name: Upload HTML report
-              uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
               with:
                   name: playwright-report--attempt-${{ github.run_attempt }}
                   path: packages/integration-tests/playwright-report
