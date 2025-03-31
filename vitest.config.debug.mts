@@ -15,13 +15,15 @@
  * limitations under the License.
  *
  */
+import { defineConfig } from 'vitest/config'
+import config from './vitest.config.mjs'
 
-import { findCookieValue } from '../../src/session/cookie-session'
-
-import { describe, expect, it } from 'vitest'
-
-describe('cookie-session', () => {
-	it('findCookieValue() - should not find unset cookie', () => {
-		expect(findCookieValue('nosuchCookie', { forceStoreRead: true })).toBeUndefined()
-	})
+export default defineConfig({
+	test: {
+		...config.test,
+		browser: {
+			...config.test?.browser,
+			instances: [{ browser: 'chromium' }],
+		},
+	},
 })

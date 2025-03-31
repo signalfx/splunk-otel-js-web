@@ -19,7 +19,7 @@
 import { context, trace, SpanStatusCode } from '@opentelemetry/api'
 
 import SplunkOtelWeb, { INSTRUMENTATIONS_ALL_DISABLED } from '../src'
-import { SpanCapturer } from './utils'
+import { deinit, SpanCapturer } from './utils'
 
 import { describe, it, expect, beforeEach, afterEach, assert } from 'vitest'
 
@@ -40,7 +40,7 @@ describe('Transitive API', () => {
 	})
 
 	afterEach(() => {
-		SplunkOtelWeb.deinit()
+		deinit()
 	})
 
 	describe('Tracer', () => {

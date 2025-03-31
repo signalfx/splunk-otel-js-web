@@ -56,6 +56,6 @@ test.describe('cdn', () => {
 		expect(rumScriptFetchSpan.tags['http.url']).toBe(
 			'https://cdn.signalfx.com/o11y-gdi-rum/latest/splunk-otel-web.js',
 		)
-		expect(rumScriptFetchSpan.tags['splunk.rumVersion']).toBe('0.20.0')
+		expect(rumScriptFetchSpan.tags['splunk.rumVersion']).toBe('0.20.1')
 	})
 })
