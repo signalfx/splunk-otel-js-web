@@ -9,5 +9,11 @@
 <body>
 	<p>Docload</p>
 	<img src="/nosuchimage.jpg">
+	<script>
+		setTimeout(() => {
+			// Trigger load event again to check for instances where custom code does this
+			dispatchEvent(new Event('load'));
+	}, 0)
+	</script>
 </body>
 </html>

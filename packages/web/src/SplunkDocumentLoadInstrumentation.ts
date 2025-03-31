@@ -56,8 +56,10 @@ type ExposedSuper = {
 		resource: PerformanceResourceTiming,
 		applyCustomAttributesOnSpan: ResourceFetchCustomAttributeFunction | undefined,
 	)
+	_collectPerformance(): void
 	_endSpan(span: api.Span | undefined, performanceName: string, entries: PerformanceEntries): void
 	_initResourceSpan(resource: PerformanceResourceTiming, parentSpan: api.Span): void
+	_onDocumentLoaded(event: Event): void
 	_startSpan(
 		spanName: string,
 		performanceName: string,
@@ -74,6 +76,20 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 		const exposedSuper = this as any as ExposedSuper
 
 		const _superEndSpan: ExposedSuper['_endSpan'] = exposedSuper._endSpan.bind(this)
+
+		exposedSuper._onDocumentLoaded = (event: Event) => {
+			if (!event.isTrusted) {
+				// React only to browser triggered load event
+				return
+			}
+
+			// Timeout is needed as load event doesn't have yet the performance metrics for loadEnd.
+			// Support for event "loadend" is very limited and cannot be used
+			window.setTimeout(() => {
+				exposedSuper._collectPerformance()
+			})
+		}
+
 		exposedSuper._endSpan = (span, performanceName, entries) => {
 			// TODO: upstream exposed name on api.Span, then fix
 			const exposedSpan = span as any as Span

@@ -69,6 +69,9 @@ test.describe('docload', () => {
 				span.tags['http.url'].includes('/nosuchimage.jpg'),
 		)
 
+		expect(scriptFetchSpans).toHaveLength(1)
+		expect(brokenImageFetchSpans).toHaveLength(1)
+
 		expect(docFetchSpans).toHaveLength(1)
 		expect(docLoadSpans).toHaveLength(1)
 		expect(docLoadSpans[0].traceId.match(/[a-f0-9]+/), 'Checking sanity of traceId').toBeTruthy()

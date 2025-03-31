@@ -67,8 +67,8 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 
 	enable(): void {
 		if (window.PerformanceObserver) {
-			window.addEventListener('load', () => {
-				this._startPerformanceObserver()
+			window.addEventListener('load', (e) => {
+				this._startPerformanceObserver(e)
 			})
 		}
 
@@ -139,7 +139,12 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 		this.headMutationObserver.observe(document.head, { childList: true })
 	}
 
-	private _startPerformanceObserver() {
+	private _startPerformanceObserver(event: Event) {
+		if (!event.isTrusted) {
+			// React only to browser triggered load event
+			return
+		}
+
 		this.performanceObserver = new PerformanceObserver((list) => {
 			if (window.document.readyState === 'complete') {
 				list.getEntries().forEach((entry) => {
