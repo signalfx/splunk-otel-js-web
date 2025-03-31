@@ -34,7 +34,7 @@ export type SessionReplayInstance = SessionReplayBase
 
 export interface SessionReplayPlainClass extends SessionReplayClassBase {
 	new (
-		config: SessionReplayConfig & { onSegment: (segment: SessionReplayBinarySegment) => void },
+		config: SessionReplayConfig & { onSegment: (segment: SessionReplayPlainSegment) => void },
 	): SessionReplayPlainInstance
 }
 
