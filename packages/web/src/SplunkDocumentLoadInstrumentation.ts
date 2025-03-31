@@ -77,8 +77,8 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 
 		const _superEndSpan: ExposedSuper['_endSpan'] = exposedSuper._endSpan.bind(this)
 
-		exposedSuper._onDocumentLoaded = (event: Event) => {
-			if (!event.isTrusted) {
+		exposedSuper._onDocumentLoaded = (event?: Event) => {
+			if (event && !event.isTrusted) {
 				// React only to browser triggered load event
 				return
 			}
