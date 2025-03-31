@@ -40,8 +40,12 @@ export class BatchLogProcessor {
 		this.scheduledDelayMillis = config?.scheduledDelayMillis || 5000
 		this.exporter = exporter
 
-		window.addEventListener('unload', () => {
-			this._flushAll()
+		// Use visibility event instead of unload event
+		// https://developer.chrome.com/docs/web-platform/deprecating-unload
+		window.addEventListener('visibilitychange', () => {
+			if (document.visibilityState === 'hidden') {
+				this._flushAll()
+			}
 		})
 	}
 
