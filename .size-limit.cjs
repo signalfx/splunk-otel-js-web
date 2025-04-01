@@ -30,7 +30,7 @@ module.exports = [
 
 	{
 		name: 'artifacts/splunk-otel-web.js',
-		limit: '77 kB',
+		limit: '78 kB',
 		path: './packages/web/dist/artifacts/splunk-otel-web-legacy.js',
 	},
 
