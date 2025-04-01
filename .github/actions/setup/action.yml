@@ -10,7 +10,7 @@ runs:
 
         - name: Install dependencies
           shell: bash
-          run: npm ci
+          run: npm ci --verbose
 
         - name: Build project
           shell: bash
