@@ -1,6 +1,6 @@
 {
 	"name": "@splunk/otel-web-session-recorder",
-	"version": "0.20.0",
+	"version": "0.20.1",
 	"description": "Splunk distribution of rrweb for recording session",
 	"repository": "github:signalfx/splunk-otel-js-browser",
 	"scripts": {
@@ -28,7 +28,7 @@
 		"dist/esm/**/*.d.ts"
 	],
 	"dependencies": {
-		"@babel/runtime": "~7.24.7",
+		"@babel/runtime": "~7.26.10",
 		"@opentelemetry/api": "^1.9.0",
 		"@opentelemetry/core": "^1.25.1",
 		"@opentelemetry/resources": "^1.25.1",
@@ -37,7 +37,7 @@
 		"type-fest": "^4.37.0"
 	},
 	"peerDependencies": {
-		"@splunk/otel-web": "^0.20.0-beta.0"
+		"@splunk/otel-web": "^0.20.0"
 	},
 	"devDependencies": {
 		"@babel/plugin-transform-runtime": "^7.22.9",
@@ -45,11 +45,11 @@
 		"@babel/runtime-corejs3": "^7.22.6",
 		"@rollup/plugin-commonjs": "^25.0.3",
 		"@rollup/plugin-json": "^6.0.0",
-		"@rollup/plugin-node-resolve": "^15.1.0",
+		"@rollup/plugin-node-resolve": "^16.0.1",
 		"@rollup/plugin-terser": "^0.4.3",
 		"@rollup/plugin-typescript": "^11.1.2",
 		"npm-run-all": "^4.1.5",
-		"protobufjs-cli": "^1.1.1",
+		"protobufjs-cli": "^1.1.3",
 		"rollup": "^3.26.3",
 		"rollup-plugin-istanbul": "^4.0.0",
 		"rollup-plugin-polyfill-node": "^0.12.0"
@@ -62,6 +62,6 @@
 		"access": "public"
 	},
 	"optionalDependencies": {
-		"@rollup/rollup-linux-x64-gnu": "^4.18.0"
+		"@rollup/rollup-linux-x64-gnu": "^4.37.0"
 	}
 }

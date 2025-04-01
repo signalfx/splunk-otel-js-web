@@ -1,6 +1,6 @@
 {
 	"name": "@splunk/otel-web",
-	"version": "0.20.0",
+	"version": "0.20.1",
 	"description": "Splunk distribution of Open Telemetry for browser environment.",
 	"repository": "github:signalfx/splunk-otel-js-browser",
 	"scripts": {
@@ -27,7 +27,7 @@
 		"dist/esm/**/*.d.ts"
 	],
 	"dependencies": {
-		"@babel/runtime": "^7.24.7",
+		"@babel/runtime": "^7.26.10",
 		"@opentelemetry/api": "^1.9.0",
 		"@opentelemetry/core": "^1.25.1",
 		"@opentelemetry/exporter-trace-otlp-http": "^0.52.1",
@@ -50,7 +50,7 @@
 		"@rollup/plugin-babel": "^6.0.3",
 		"@rollup/plugin-commonjs": "^25.0.3",
 		"@rollup/plugin-json": "^6.0.0",
-		"@rollup/plugin-node-resolve": "^15.1.0",
+		"@rollup/plugin-node-resolve": "^16.0.1",
 		"@rollup/plugin-terser": "^0.4.3",
 		"@rollup/plugin-typescript": "^11.1.2",
 		"@types/shimmer": "^1.2.0",
@@ -68,6 +68,6 @@
 		"access": "public"
 	},
 	"optionalDependencies": {
-		"@rollup/rollup-linux-x64-gnu": "^4.18.0"
+		"@rollup/rollup-linux-x64-gnu": "^4.37.0"
 	}
 }

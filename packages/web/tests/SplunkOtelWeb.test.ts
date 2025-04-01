@@ -20,10 +20,11 @@ import { SpanAttributes } from '@opentelemetry/api'
 import SplunkRum from '../src'
 import { updateSessionStatus } from '../src/session'
 import { describe, expect, it, afterEach } from 'vitest'
+import { deinit } from './utils'
 
 describe('SplunkOtelWeb', () => {
 	afterEach(() => {
-		SplunkRum.deinit()
+		deinit()
 	})
 
 	describe('global attributes', () => {

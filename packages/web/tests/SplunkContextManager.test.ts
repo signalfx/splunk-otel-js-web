@@ -19,7 +19,7 @@
 import { context, trace } from '@opentelemetry/api'
 import { SpanProcessor } from '@opentelemetry/sdk-trace-base'
 import SplunkOtelWeb, { INSTRUMENTATIONS_ALL_DISABLED } from '../src'
-import { SpanCapturer } from './utils'
+import { deinit, SpanCapturer } from './utils'
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 
 describe('async context propagation', () => {
@@ -41,7 +41,7 @@ describe('async context propagation', () => {
 	})
 
 	afterEach(() => {
-		SplunkOtelWeb.deinit()
+		deinit()
 		capturer.clear()
 	})
 

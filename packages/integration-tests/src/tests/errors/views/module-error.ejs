@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Errors test</title>
+  <%- renderAgent({}) %>
+  <script id="scenario">
+	const loadModule = () => {
+		setTimeout(function() {
+    		const module = import('./module.js').then(module => {
+				throw module
+			})
+		});
+	}
+	loadModule()
+  </script>
+</head>
+<body>
+  <h1>Module error</h1>
+  <pre id="scenarioDisplay"></pre>
+  <script>scenarioDisplay.innerHTML = scenario.innerHTML;</script>
+</body>
+</html>

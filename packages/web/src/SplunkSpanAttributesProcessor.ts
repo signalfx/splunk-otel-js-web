@@ -18,9 +18,9 @@
 
 import { Attributes } from '@opentelemetry/api'
 import { Span, SpanProcessor } from '@opentelemetry/sdk-trace-base'
-import { getRumSessionId } from './session'
 import { forgetAnonymousId, getOrCreateAnonymousId } from './user-tracking'
 import { SplunkOtelWebConfig } from './types/config'
+import { updateSessionStatus } from './session'
 
 export class SplunkSpanAttributesProcessor implements SpanProcessor {
 	private readonly _globalAttributes: Attributes
@@ -46,12 +46,13 @@ export class SplunkSpanAttributesProcessor implements SpanProcessor {
 	}
 
 	onStart(span: Span): void {
+		// now that we have started the span, the session is not inactive anymore
+		const sessionState = updateSessionStatus({ forceStore: false, inactive: false })
+
 		span.setAttribute('location.href', location.href)
 		span.setAttributes(this._globalAttributes)
-		span.setAttribute(
-			'splunk.rumSessionId',
-			getRumSessionId({ useLocalStorage: this.useLocalStorageForSessionMetadata }),
-		)
+		span.setAttribute('splunk.rumSessionId', sessionState.id)
+
 		if (this.getUserTracking() === 'anonymousTracking') {
 			span.setAttribute(
 				'user.anonymousId',
