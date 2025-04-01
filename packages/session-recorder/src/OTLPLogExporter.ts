@@ -35,6 +35,8 @@ interface OTLPLogExporterConfig {
 	usePersistentExportQueue: boolean
 }
 
+const KEEPALIVE_MAX_LENGTH = 65536
+
 const defaultHeaders = {
 	'Content-Type': 'application/json',
 	'Content-Encoding': 'gzip',
@@ -167,8 +169,10 @@ export default class OTLPLogExporter {
 			const compressedData = gzipSync(uint8ArrayData)
 			console.debug('🗜️ dbg: SYNC compress', { endpoint, headers, compressedData })
 
-			// Use fetch with keepalive option instead of beacon
-			void sendByFetch(endpoint, headers, compressedData, onFetchSuccess, true)
+			// Use fetch with keepalive option instead of beacon.
+			// Fetch with keepalive option has limit of 64kB.
+			const shouldUseKeepAliveOption = compressedData.byteLength < KEEPALIVE_MAX_LENGTH
+			void sendByFetch(endpoint, headers, compressedData, onFetchSuccess, shouldUseKeepAliveOption)
 		} else {
 			compressAsync(uint8ArrayData)
 				.then((compressedData) => {
