@@ -16,28 +16,38 @@
  *
  */
 import { Recorder, RecorderConfig, RecorderEmitContext } from './recorder'
-import { SessionReplayPlain, SessionReplayPlainInstance, SessionReplayPlainSegment } from '../session-replay'
+import {
+	SessionReplayPlain,
+	SessionReplayPlainInstance,
+	SessionReplayPlainSegment,
+	SessionReplayConfig,
+} from '../session-replay'
+
+export type ProprietaryRecorderPublicConfig = Omit<SessionReplayConfig, 'onSegment'>
+
+type ProprietaryRecorderConfig = ProprietaryRecorderPublicConfig & RecorderConfig
 
 export class ProprietaryRecorder extends Recorder {
 	private sessionReplay: SessionReplayPlainInstance | undefined
 
-	constructor(config: RecorderConfig) {
+	constructor(private readonly config: ProprietaryRecorderConfig) {
 		super(config)
 
 		if (SessionReplayPlain) {
 			this.sessionReplay = new SessionReplayPlain({
 				features: {
-					//backgroundServiceSrc: SESSION_REPLAY_BACKGROUND_SERVICE_URL,
-					cacheAssets: false,
-					iframes: false,
-					imageBitmap: false,
-					packAssets: false,
+					backgroundServiceSrc: this.config.features?.backgroundServiceSrc,
+					cacheAssets: this.config.features?.cacheAssets ?? false,
+					iframes: this.config.features?.iframes ?? false,
+					imageBitmap: this.config.features?.imageBitmap ?? false,
+					packAssets: this.config.features?.packAssets ?? false,
 				},
-				logLevel: 'debug',
-				maskAllInputs: false,
-				maskAllText: false,
-				maxExportIntervalMs: 5000,
+				logLevel: this.config.logLevel ?? 'error',
+				maskAllInputs: this.config.maskAllInputs ?? true,
+				maskAllText: this.config.maskAllText ?? true,
+				maxExportIntervalMs: this.config.maxExportIntervalMs ?? 5000,
 				onSegment: this.onSegment,
+				sensitivityRules: this.config.sensitivityRules ?? [],
 			})
 		} else {
 			console.warn('SessionReplayPlain is not available. Proprietary recording is disabled.')

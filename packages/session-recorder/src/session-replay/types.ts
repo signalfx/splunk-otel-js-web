@@ -42,6 +42,14 @@ export type SessionReplayPlainInstance = SessionReplayBase
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 
+export const SensitivityRuleTypesArray = ['mask', 'unmask', 'exclude'] as const
+export type SensitivityRuleType = (typeof SensitivityRuleTypesArray)[number]
+
+export interface SensitivityRule {
+	rule: SensitivityRuleType
+	selector: string
+}
+
 interface ConfigFeatures {
 	backgroundServiceSrc?: string
 	cacheAssets?: boolean
@@ -57,6 +65,7 @@ export interface SessionReplayConfig {
 	maskAllText?: boolean
 	maxExportIntervalMs?: number
 	onSegment: (segment: SessionReplayPlainSegment) => void
+	sensitivityRules?: SensitivityRule[]
 }
 
 export interface SessionReplayPlainSegment {

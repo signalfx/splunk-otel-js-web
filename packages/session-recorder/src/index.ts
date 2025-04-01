@@ -31,6 +31,7 @@ import {
 	RRWebRecorder,
 	RecorderEmitContext,
 	RRWebRecorderPublicConfig,
+	ProprietaryRecorderPublicConfig,
 } from './recorder'
 
 interface BasicTracerProvider extends TracerProvider {
@@ -43,6 +44,9 @@ export type SplunkRumRecorderConfig = {
 
 	/** Debug mode */
 	debug?: boolean
+
+	/** Proprietary recorder configuration */
+	proprietary?: ProprietaryRecorderPublicConfig
 
 	/**
 	 * The name of your organization’s realm. Automatically configures beaconUrl with correct URL
@@ -126,7 +130,15 @@ const SplunkRumRecorder = {
 
 		const resource = SplunkRum.resource
 
-		const { beaconEndpoint, debug, realm, rumAccessToken, recorder: recorderType, ...initRecorderConfig } = config
+		const {
+			beaconEndpoint,
+			debug,
+			realm,
+			rumAccessToken,
+			recorder: recorderType,
+			proprietary,
+			...initRecorderConfig
+		} = config
 		const isProprietaryRecorder = recorderType === 'proprietary'
 
 		// Mark recorded session as proprietary
@@ -257,8 +269,9 @@ const SplunkRumRecorder = {
 			}
 		}
 
-		const recorderConfig = { ...initRecorderConfig, onEmit }
-		recorder = isProprietaryRecorder ? new ProprietaryRecorder(recorderConfig) : new RRWebRecorder(recorderConfig)
+		recorder = isProprietaryRecorder
+			? new ProprietaryRecorder({ ...proprietary, onEmit })
+			: new RRWebRecorder({ ...initRecorderConfig, onEmit })
 		recorder.start()
 		inited = true
 	},
