@@ -18,3 +18,4 @@
 export * from './recorder'
 export * from './rrweb-recorder'
 export * from './proprietary-recorder'
+export * from './utils'

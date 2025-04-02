@@ -32,6 +32,7 @@ import {
 	RecorderEmitContext,
 	RRWebRecorderPublicConfig,
 	ProprietaryRecorderPublicConfig,
+	migrateRRWebConfigToProprietary,
 } from './recorder'
 
 interface BasicTracerProvider extends TracerProvider {
@@ -44,9 +45,6 @@ export type SplunkRumRecorderConfig = {
 
 	/** Debug mode */
 	debug?: boolean
-
-	/** Proprietary recorder configuration */
-	proprietary?: ProprietaryRecorderPublicConfig
 
 	/**
 	 * The name of your organization’s realm. Automatically configures beaconUrl with correct URL
@@ -61,7 +59,8 @@ export type SplunkRumRecorderConfig = {
 	 * with only RUM scope as it's visible to every user of your app
 	 **/
 	rumAccessToken?: string
-} & RRWebRecorderPublicConfig
+} & RRWebRecorderPublicConfig &
+	ProprietaryRecorderPublicConfig
 
 // Hard limit of 4 hours of maximum recording during one session
 const MAX_RECORDING_LENGTH = (4 * 60 + 1) * 60 * 1000
@@ -130,15 +129,7 @@ const SplunkRumRecorder = {
 
 		const resource = SplunkRum.resource
 
-		const {
-			beaconEndpoint,
-			debug,
-			realm,
-			rumAccessToken,
-			recorder: recorderType,
-			proprietary,
-			...initRecorderConfig
-		} = config
+		const { beaconEndpoint, debug, realm, rumAccessToken, recorder: recorderType, ...initRecorderConfig } = config
 		const isProprietaryRecorder = recorderType === 'proprietary'
 
 		// Mark recorded session as proprietary
@@ -270,7 +261,7 @@ const SplunkRumRecorder = {
 		}
 
 		recorder = isProprietaryRecorder
-			? new ProprietaryRecorder({ ...proprietary, onEmit })
+			? new ProprietaryRecorder({ ...migrateRRWebConfigToProprietary(initRecorderConfig), onEmit })
 			: new RRWebRecorder({ ...initRecorderConfig, onEmit })
 		recorder.start()
 		inited = true
