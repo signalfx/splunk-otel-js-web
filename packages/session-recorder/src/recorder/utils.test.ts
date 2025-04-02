@@ -18,6 +18,12 @@
 import { describe, it, expect } from 'vitest'
 import { migrateRRWebConfigToProprietary } from './utils'
 
+const defaultSensitivityRules = [
+	{ rule: 'mask', selector: '.rr-mask' },
+	{ rule: 'exclude', selector: '.rr-block' },
+	{ rule: 'mask', selector: '.rr-ignore' },
+]
+
 describe('migrateRRWebConfigToProprietary', () => {
 	it('migrates rrweb config to proprietary', () => {
 		const actual = migrateRRWebConfigToProprietary({
@@ -45,12 +51,31 @@ describe('migrateRRWebConfigToProprietary', () => {
 		const actual = migrateRRWebConfigToProprietary({})
 		const expected = {
 			maskAllInputs: undefined,
-			sensitivityRules: [
-				{ rule: 'mask', selector: '.rr-mask' },
-				{ rule: 'exclude', selector: '.rr-block' },
-				{ rule: 'mask', selector: '.rr-ignore' },
-			],
+			sensitivityRules: defaultSensitivityRules,
 		}
 		expect(actual).toStrictEqual(expected)
+	})
+
+	it('ignores maskTextSelector with invalid values', () => {
+		// Empty string
+		const actualEmptyString = migrateRRWebConfigToProprietary({
+			maskTextSelector: '',
+		})
+		const expectedEmptyString = {
+			maskAllInputs: undefined,
+			sensitivityRules: defaultSensitivityRules,
+		}
+		expect(actualEmptyString).toStrictEqual(expectedEmptyString)
+
+		// Boolean
+		const actualBool = migrateRRWebConfigToProprietary({
+			// @ts-expect-error Boolean value
+			maskTextSelector: false,
+		})
+		const expectedBool = {
+			maskAllInputs: undefined,
+			sensitivityRules: defaultSensitivityRules,
+		}
+		expect(actualBool).toStrictEqual(expectedBool)
 	})
 })

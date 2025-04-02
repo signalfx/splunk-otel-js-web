@@ -18,6 +18,7 @@
 import { ProprietaryRecorderPublicConfig } from './proprietary-recorder'
 import { RRWebRecorderPublicConfig } from './rrweb-recorder'
 import { SensitivityRule, SensitivityRuleType } from '../session-replay'
+import { isString } from '../type-guards'
 
 export const migrateRRWebConfigToProprietary = (
 	config: NonNullable<RRWebRecorderPublicConfig>,
@@ -52,7 +53,7 @@ const migratePrivacyOptionsToSensitivityRules = ({
 const migratePrivacyClass = (privacyClass: string | RegExp, rule: SensitivityRuleType): SensitivityRule[] => {
 	const rules: SensitivityRule[] = []
 
-	if (typeof privacyClass === 'string') {
+	if (isString(privacyClass)) {
 		rules.push({ rule, selector: `.${privacyClass}` })
 	}
 
@@ -62,7 +63,7 @@ const migratePrivacyClass = (privacyClass: string | RegExp, rule: SensitivityRul
 }
 
 const migratePrivacySelector = (privacySelector: string | undefined, rule: SensitivityRuleType): SensitivityRule[] => {
-	if (privacySelector) {
+	if (isString(privacySelector) && privacySelector.length > 0) {
 		return [{ rule, selector: privacySelector }]
 	}
 
