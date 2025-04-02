@@ -31,16 +31,20 @@ const migratePrivacyOptionsToSensitivityRules = ({
 	maskTextSelector,
 	blockClass = 'rr-block',
 	blockSelector,
+	ignoreClass = 'rr-ignore',
 }: NonNullable<RRWebRecorderPublicConfig>): SensitivityRule[] | undefined => {
 	const rules: SensitivityRule[] = []
 
-	// Masking
+	// Mask
 	rules.push(...migratePrivacyClass(maskTextClass, 'mask'))
 	rules.push(...migratePrivacySelector(maskTextSelector, 'mask'))
 
-	// Blocking
+	// Block
 	rules.push(...migratePrivacyClass(blockClass, 'exclude'))
 	rules.push(...migratePrivacySelector(blockSelector, 'exclude'))
+
+	// Ignore
+	rules.push(...migratePrivacyClass(ignoreClass, 'mask'))
 
 	return rules.length > 0 ? rules : undefined
 }

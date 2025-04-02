@@ -26,6 +26,7 @@ describe('migrateRRWebConfigToProprietary', () => {
 			maskTextSelector: '.mask-selector',
 			blockClass: 'block-class',
 			blockSelector: '.block-selector',
+			ignoreClass: 'ignore-class',
 		})
 		const expected = {
 			maskAllInputs: true,
@@ -34,6 +35,7 @@ describe('migrateRRWebConfigToProprietary', () => {
 				{ rule: 'mask', selector: '.mask-selector' },
 				{ rule: 'exclude', selector: '.block-class' },
 				{ rule: 'exclude', selector: '.block-selector' },
+				{ rule: 'mask', selector: '.ignore-class' },
 			],
 		}
 		expect(actual).toStrictEqual(expected)
@@ -46,6 +48,7 @@ describe('migrateRRWebConfigToProprietary', () => {
 			sensitivityRules: [
 				{ rule: 'mask', selector: '.rr-mask' },
 				{ rule: 'exclude', selector: '.rr-block' },
+				{ rule: 'mask', selector: '.rr-ignore' },
 			],
 		}
 		expect(actual).toStrictEqual(expected)
