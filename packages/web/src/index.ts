@@ -79,6 +79,8 @@ export { SplunkZipkinExporter } from './exporters/zipkin'
 export * from './SplunkWebTracerProvider'
 export * from './SessionBasedSampler'
 
+export { SplunkOtelWebConfig, SplunkOtelWebExporterOptions }
+
 interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
 	bufferSize?: number
 	bufferTimeout?: number
