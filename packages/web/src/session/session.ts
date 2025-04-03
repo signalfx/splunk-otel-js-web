@@ -48,6 +48,7 @@ import { getGlobal } from '../global-utils'
 let recentActivity = false
 let cookieDomain: string
 let eventTarget: InternalEventTarget | undefined
+let isNewSessionId = false
 
 export function markActivity(): void {
 	recentActivity = true
@@ -135,6 +136,7 @@ export function updateSessionStatus({
 			sessionState = createSessionState()
 			recentActivity = true // force write of new cookie
 			shouldForceWrite = true
+			isNewSessionId = true
 		}
 	}
 
@@ -275,4 +277,8 @@ export function getRumSessionId(): SessionId | undefined {
 	}
 
 	return sessionState.id
+}
+
+export function getIsNewSession(): boolean {
+	return isNewSessionId
 }

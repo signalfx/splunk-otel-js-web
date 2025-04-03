@@ -32,10 +32,8 @@ interface SplunkWebSocketInstrumentationConfig extends InstrumentationConfig {
 	ignoreUrls?: (string | RegExp)[]
 }
 
-export class SplunkWebSocketInstrumentation extends InstrumentationBase {
+export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWebSocketInstrumentationConfig> {
 	listener2ws2patched = new WeakMap()
-
-	protected _config: SplunkWebSocketInstrumentationConfig
 
 	constructor(config: SplunkWebSocketInstrumentationConfig) {
 		super('splunk-websocket', VERSION, config)
