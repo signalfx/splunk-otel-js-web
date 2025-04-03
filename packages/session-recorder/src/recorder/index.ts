@@ -17,5 +17,5 @@
  */
 export * from './recorder'
 export * from './rrweb-recorder'
-export * from './proprietary-recorder'
+export * from './splunk-recorder'
 export * from './utils'

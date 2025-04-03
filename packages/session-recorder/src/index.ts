@@ -27,12 +27,12 @@ import type { SplunkOtelWebType } from '@splunk/otel-web'
 
 import {
 	Recorder,
-	ProprietaryRecorder,
+	SplunkRecorder,
 	RRWebRecorder,
 	RecorderEmitContext,
 	RRWebRecorderPublicConfig,
-	ProprietaryRecorderPublicConfig,
-	migrateRRWebConfigToProprietary,
+	SplunkRecorderPublicConfig,
+	migrateRRWebConfigToSplunkConfig,
 } from './recorder'
 
 interface BasicTracerProvider extends TracerProvider {
@@ -52,7 +52,7 @@ export type SplunkRumRecorderConfig = {
 	realm?: string
 
 	/** Type of the recorder */
-	recorder?: 'rrweb' | 'proprietary'
+	recorder?: 'rrweb' | 'splunk'
 
 	/**
 	 * RUM authorization token for data sending. Please make sure this is a token
@@ -60,7 +60,7 @@ export type SplunkRumRecorderConfig = {
 	 **/
 	rumAccessToken?: string
 } & RRWebRecorderPublicConfig &
-	ProprietaryRecorderPublicConfig
+	SplunkRecorderPublicConfig
 
 // Hard limit of 4 hours of maximum recording during one session
 const MAX_RECORDING_LENGTH = (4 * 60 + 1) * 60 * 1000
@@ -130,11 +130,11 @@ const SplunkRumRecorder = {
 		const resource = SplunkRum.resource
 
 		const { beaconEndpoint, debug, realm, rumAccessToken, recorder: recorderType, ...initRecorderConfig } = config
-		const isProprietaryRecorder = recorderType === 'proprietary'
+		const isSplunkRecorder = recorderType === 'splunk'
 
-		// Mark recorded session as proprietary
-		if (isProprietaryRecorder && SplunkRum.provider) {
-			SplunkRum.provider.resource.attributes['splunk.sessionReplay'] = 'proprietary'
+		// Mark recorded session as splunk
+		if (isSplunkRecorder && SplunkRum.provider) {
+			SplunkRum.provider.resource.attributes['splunk.sessionReplay'] = 'proprietary' // TODO: change to splunk
 		}
 
 		tracer = trace.getTracer('splunk.rr-web', VERSION)
@@ -177,15 +177,15 @@ const SplunkRumRecorder = {
 				}
 			},
 			sessionId: SplunkRum.getSessionId() ?? '',
-			usePersistentExportQueue: isProprietaryRecorder,
+			usePersistentExportQueue: isSplunkRecorder,
 		})
 		const processor = new BatchLogProcessor(exporter)
 
 		lastKnownSession = SplunkRum.getSessionId()
 
-		if (isProprietaryRecorder && SplunkRum.isNewSessionId()) {
+		if (isSplunkRecorder && SplunkRum.isNewSessionId()) {
 			console.log('SplunkRum.isNewSessionId()')
-			ProprietaryRecorder.clear()
+			SplunkRecorder.clear()
 		}
 
 		sessionStartTime = Date.now()
@@ -230,7 +230,7 @@ const SplunkRumRecorder = {
 				}
 			}
 
-			const time = context.type === 'proprietary' ? Math.floor(context.startTime) : context.startTime
+			const time = context.type === 'splunk' ? Math.floor(context.startTime) : context.startTime
 			const eventI = eventCounter
 
 			eventCounter += 1
@@ -261,8 +261,8 @@ const SplunkRumRecorder = {
 		}
 
 		try {
-			recorder = isProprietaryRecorder
-				? new ProprietaryRecorder({ ...migrateRRWebConfigToProprietary(initRecorderConfig), onEmit })
+			recorder = isSplunkRecorder
+				? new SplunkRecorder({ ...migrateRRWebConfigToSplunkConfig(initRecorderConfig), onEmit })
 				: new RRWebRecorder({ ...initRecorderConfig, onEmit })
 			recorder.start()
 			inited = true

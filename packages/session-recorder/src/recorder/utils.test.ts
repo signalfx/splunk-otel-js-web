@@ -16,7 +16,7 @@
  *
  */
 import { describe, it, expect } from 'vitest'
-import { migrateRRWebConfigToProprietary } from './utils'
+import { migrateRRWebConfigToSplunkConfig } from './utils'
 
 const defaultSensitivityRules = [
 	{ rule: 'mask', selector: '.rr-mask' },
@@ -24,9 +24,9 @@ const defaultSensitivityRules = [
 	{ rule: 'mask', selector: '.rr-ignore' },
 ]
 
-describe('migrateRRWebConfigToProprietary', () => {
-	it('migrates rrweb config to proprietary', () => {
-		const actual = migrateRRWebConfigToProprietary({
+describe('migrateRRWebConfigToSplunkConfig', () => {
+	it('migrates rrweb config to splunk config', () => {
+		const actual = migrateRRWebConfigToSplunkConfig({
 			maskAllInputs: true,
 			maskTextClass: 'mask-class',
 			maskTextSelector: '.mask-selector',
@@ -48,7 +48,7 @@ describe('migrateRRWebConfigToProprietary', () => {
 	})
 
 	it('migrate default rrweb mask and block classes to sensitivity rules', () => {
-		const actual = migrateRRWebConfigToProprietary({})
+		const actual = migrateRRWebConfigToSplunkConfig({})
 		const expected = {
 			maskAllInputs: undefined,
 			sensitivityRules: defaultSensitivityRules,
@@ -58,7 +58,7 @@ describe('migrateRRWebConfigToProprietary', () => {
 
 	it('ignores maskTextSelector with invalid values', () => {
 		// Empty string
-		const actualEmptyString = migrateRRWebConfigToProprietary({
+		const actualEmptyString = migrateRRWebConfigToSplunkConfig({
 			maskTextSelector: '',
 		})
 		const expectedEmptyString = {
@@ -68,7 +68,7 @@ describe('migrateRRWebConfigToProprietary', () => {
 		expect(actualEmptyString).toStrictEqual(expectedEmptyString)
 
 		// Boolean
-		const actualBool = migrateRRWebConfigToProprietary({
+		const actualBool = migrateRRWebConfigToSplunkConfig({
 			// @ts-expect-error Boolean value
 			maskTextSelector: false,
 		})
@@ -82,7 +82,7 @@ describe('migrateRRWebConfigToProprietary', () => {
 	it('throws error for regex privacy class', () => {
 		const privacyClass = /regex/
 		expect(() => {
-			migrateRRWebConfigToProprietary({ maskTextClass: privacyClass })
+			migrateRRWebConfigToSplunkConfig({ maskTextClass: privacyClass })
 		}).toThrowError(
 			`Config migration failed: Privacy class is a regex: ${privacyClass}. Cannot be converted to a CSS selector.`,
 		)
@@ -93,7 +93,7 @@ describe('migrateRRWebConfigToProprietary', () => {
 
 		unsupportedOptions.forEach((option) => {
 			expect(() => {
-				migrateRRWebConfigToProprietary({ [option]: true })
+				migrateRRWebConfigToSplunkConfig({ [option]: true })
 			}).toThrowError(`Config option "${option}" cannot be migrated automatically.`)
 		})
 	})

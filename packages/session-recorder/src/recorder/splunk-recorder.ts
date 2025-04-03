@@ -23,14 +23,14 @@ import {
 	SessionReplayConfig,
 } from '../session-replay'
 
-export type ProprietaryRecorderPublicConfig = Omit<SessionReplayConfig, 'onSegment'>
+export type SplunkRecorderPublicConfig = Omit<SessionReplayConfig, 'onSegment'>
 
-type ProprietaryRecorderConfig = ProprietaryRecorderPublicConfig & RecorderConfig
+type SplunkRecorderConfig = SplunkRecorderPublicConfig & RecorderConfig
 
-export class ProprietaryRecorder extends Recorder {
+export class SplunkRecorder extends Recorder {
 	private sessionReplay: SessionReplayPlainInstance | undefined
 
-	constructor(private readonly config: ProprietaryRecorderConfig) {
+	constructor(private readonly config: SplunkRecorderConfig) {
 		super(config)
 
 		if (SessionReplayPlain) {
@@ -50,13 +50,13 @@ export class ProprietaryRecorder extends Recorder {
 				sensitivityRules: this.config.sensitivityRules ?? [],
 			})
 		} else {
-			console.warn('SessionReplayPlain is not available. Proprietary recording is disabled.')
+			console.warn('SessionReplayPlain is not available. Recording is disabled.')
 		}
 	}
 
 	static clear() {
 		if (SessionReplayPlain) {
-			console.log('ProprietaryRecorder: Clearing assets')
+			console.log('SplunkRecorder: Clearing assets')
 			SessionReplayPlain.clear()
 		}
 	}
@@ -84,16 +84,16 @@ export class ProprietaryRecorder extends Recorder {
 			data: { data: segment.data, metadata: segment.metadata },
 			onSessionChanged: this.onSessionChanged,
 			startTime: segment.metadata.startUnixMs,
-			type: 'proprietary',
+			type: 'splunk',
 		}
 
 		this.onEmit(context)
 	}
 
 	private onSessionChanged = () => {
-		console.log('ProprietaryRecorder: onSessionChanged')
+		console.log('SplunkRecorder: onSessionChanged')
 		this.stop()
-		ProprietaryRecorder.clear()
+		SplunkRecorder.clear()
 		this.start()
 	}
 }

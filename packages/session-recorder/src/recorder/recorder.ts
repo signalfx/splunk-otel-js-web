@@ -19,7 +19,7 @@ export interface RecorderEmitContext {
 	data: Record<string, unknown>
 	onSessionChanged: () => void
 	startTime: number
-	type: 'proprietary' | 'rrweb'
+	type: 'splunk' | 'rrweb'
 }
 
 export interface RecorderConfig {
