@@ -2,6 +2,16 @@
 
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
+## 0.20.2
+* @splunk/otel-web
+    * fix: handle case when "load" event is triggered multiple times [PR description](https://github.com/signalfx/splunk-otel-js-web/pull/1065)
+    * fix: add missing SplunkOtelWebConfig and SplunkOtelWebExporterOptions types [PR description](https://github.com/signalfx/splunk-otel-js-web/pull/1077)
+        - Fixes [issue 1076](https://github.com/signalfx/splunk-otel-js-web/issues/1076)
+* @splunk/otel-web-session-recorder
+    * fix: replace deprecated "unload" event and improve data sending on window/tab unloading [PR description](https://github.com/signalfx/splunk-otel-js-web/pull/1066)
+* internal
+    * Updated dependencies
+
 ## 0.20.1
 * @splunk/otel-web
    * fix: error-instrumentation and null-prototype objects missing toString method [PR description](https://github.com/signalfx/splunk-otel-js-web/pull/1042)
