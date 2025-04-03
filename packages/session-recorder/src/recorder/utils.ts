@@ -33,7 +33,22 @@ const migratePrivacyOptionsToSensitivityRules = ({
 	blockClass = 'rr-block',
 	blockSelector,
 	ignoreClass = 'rr-ignore',
+	maskInputFn,
+	maskTextFn,
+	maskInputOptions,
 }: NonNullable<RRWebRecorderPublicConfig>): SensitivityRule[] | undefined => {
+	if (maskInputFn) {
+		throwOnUnsupportedOption('Config option "maskInputFn" cannot be migrated automatically.')
+	}
+
+	if (maskTextFn) {
+		throwOnUnsupportedOption('Config option "maskTextFn" cannot be migrated automatically.')
+	}
+
+	if (maskInputOptions) {
+		throwOnUnsupportedOption('Config option "maskInputOptions" cannot be migrated automatically.')
+	}
+
 	const rules: SensitivityRule[] = []
 
 	// Mask
@@ -55,9 +70,10 @@ const migratePrivacyClass = (privacyClass: string | RegExp, rule: SensitivityRul
 
 	if (isString(privacyClass)) {
 		rules.push({ rule, selector: `.${privacyClass}` })
+	} else {
+		// Privacy class is a regex: Cannot be converted to a selector => throw error
+		throwOnUnsupportedOption(`Privacy class is a regex: ${privacyClass}. Cannot be converted to a CSS selector.`)
 	}
-
-	// TODO: Convert regex class?
 
 	return rules
 }
@@ -68,4 +84,8 @@ const migratePrivacySelector = (privacySelector: string | undefined, rule: Sensi
 	}
 
 	return []
+}
+
+const throwOnUnsupportedOption = (errorMessage: string) => {
+	throw new Error(`Config migration failed: ${errorMessage}`)
 }

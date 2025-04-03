@@ -78,4 +78,23 @@ describe('migrateRRWebConfigToProprietary', () => {
 		}
 		expect(actualBool).toStrictEqual(expectedBool)
 	})
+
+	it('throws error for regex privacy class', () => {
+		const privacyClass = /regex/
+		expect(() => {
+			migrateRRWebConfigToProprietary({ maskTextClass: privacyClass })
+		}).toThrowError(
+			`Config migration failed: Privacy class is a regex: ${privacyClass}. Cannot be converted to a CSS selector.`,
+		)
+	})
+
+	it('throws error for unsupported options', () => {
+		const unsupportedOptions = ['maskInputFn', 'maskTextFn', 'maskInputOptions']
+
+		unsupportedOptions.forEach((option) => {
+			expect(() => {
+				migrateRRWebConfigToProprietary({ [option]: true })
+			}).toThrowError(`Config option "${option}" cannot be migrated automatically.`)
+		})
+	})
 })

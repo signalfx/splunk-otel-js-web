@@ -260,11 +260,15 @@ const SplunkRumRecorder = {
 			}
 		}
 
-		recorder = isProprietaryRecorder
-			? new ProprietaryRecorder({ ...migrateRRWebConfigToProprietary(initRecorderConfig), onEmit })
-			: new RRWebRecorder({ ...initRecorderConfig, onEmit })
-		recorder.start()
-		inited = true
+		try {
+			recorder = isProprietaryRecorder
+				? new ProprietaryRecorder({ ...migrateRRWebConfigToProprietary(initRecorderConfig), onEmit })
+				: new RRWebRecorder({ ...initRecorderConfig, onEmit })
+			recorder.start()
+			inited = true
+		} catch (error) {
+			console.error('SplunkSessionRecorder: Failed to initialize recorder', error)
+		}
 	},
 
 	resume(): void {
