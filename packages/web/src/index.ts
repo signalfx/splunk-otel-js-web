@@ -16,6 +16,10 @@
  *
  */
 
+if (typeof window !== 'object') {
+	throw Error('SplunkRum: Non-browser environment detected, aborting.')
+}
+
 import './polyfill-safari10'
 import { registerInstrumentations } from '@opentelemetry/instrumentation'
 import {
@@ -302,11 +306,6 @@ export const SplunkRum: SplunkOtelWebType = {
 
 		const registered = registerGlobal(this)
 		if (!registered) {
-			return
-		}
-
-		if (typeof window !== 'object') {
-			diag.error('SplunkRum: Non-browser environment detected, aborting')
 			return
 		}
 
