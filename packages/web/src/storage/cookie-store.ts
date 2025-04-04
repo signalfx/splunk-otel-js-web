@@ -20,7 +20,7 @@ import { isIframe } from '../utils'
 import { throttle } from '../utils/throttle'
 import { Store } from './store'
 
-const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+const isSafari = /^((?!chrome|android).)*safari/i.test(globalThis.navigator?.userAgent) // navigator is defined in node since v21
 
 export class CookieStore<T> implements Store<T> {
 	private cachedValue: T | undefined
