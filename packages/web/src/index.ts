@@ -15,9 +15,9 @@
  * limitations under the License.
  *
  */
-if (typeof process !== 'undefined' && process.version) {
-	console.error('@splunk/otel-web is not supported in Node.js. Please use it in a browser environment.')
-	process.exit()
+
+if (typeof window !== 'object') {
+	throw Error('SplunkRum: Non-browser environment detected, aborting.')
 }
 
 import './polyfill-safari10'
@@ -306,11 +306,6 @@ export const SplunkRum: SplunkOtelWebType = {
 
 		const registered = registerGlobal(this)
 		if (!registered) {
-			return
-		}
-
-		if (typeof window !== 'object') {
-			diag.error('SplunkRum: Non-browser environment detected, aborting')
 			return
 		}
 
