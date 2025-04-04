@@ -15,6 +15,10 @@
  * limitations under the License.
  *
  */
+if (typeof process !== 'undefined' && process.version) {
+	console.error('@splunk/otel-web is not supported in Node.js. Please use it in a browser environment.')
+	process.exit()
+}
 
 import './polyfill-safari10'
 import { registerInstrumentations } from '@opentelemetry/instrumentation'
