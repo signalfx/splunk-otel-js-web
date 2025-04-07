@@ -33,6 +33,9 @@ import {
 	RRWebRecorderPublicConfig,
 	SplunkRecorderPublicConfig,
 	migrateRRWebConfigToSplunkConfig,
+	RecorderType,
+	getRecorderMetadata,
+	setRecorderMetadata,
 } from './recorder'
 
 interface BasicTracerProvider extends TracerProvider {
@@ -52,7 +55,7 @@ export type SplunkRumRecorderConfig = {
 	realm?: string
 
 	/** Type of the recorder */
-	recorder?: 'rrweb' | 'splunk'
+	recorder?: RecorderType
 
 	/**
 	 * RUM authorization token for data sending. Please make sure this is a token
@@ -129,7 +132,14 @@ const SplunkRumRecorder = {
 
 		const resource = SplunkRum.resource
 
-		const { beaconEndpoint, debug, realm, rumAccessToken, recorder: recorderType, ...initRecorderConfig } = config
+		const {
+			beaconEndpoint,
+			debug,
+			realm,
+			rumAccessToken,
+			recorder: recorderType = 'rrweb',
+			...initRecorderConfig
+		} = config
 		const isSplunkRecorder = recorderType === 'splunk'
 
 		// Mark recorded session as splunk
@@ -166,6 +176,22 @@ const SplunkRumRecorder = {
 		if (rumAccessToken) {
 			exportUrl += `?auth=${rumAccessToken}`
 		}
+
+		const recorderMetadata = getRecorderMetadata()
+		if (recorderMetadata) {
+			// Recorder changed during the same session => create new session
+			if (
+				recorderMetadata.sessionId === SplunkRum.getSessionId() &&
+				recorderMetadata.recorderType !== recorderType
+			) {
+				SplunkRum._internalCreateNewSession()
+			}
+		} else {
+			// No recorder metadata in local storage, recorder could change in meantime => create new session
+			SplunkRum._internalCreateNewSession()
+		}
+
+		setRecorderMetadata({ sessionId: SplunkRum.getSessionId() ?? '', recorderType })
 
 		const exporter = new OTLPLogExporter({
 			beaconUrl: exportUrl,

@@ -204,6 +204,11 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	_experimental_getSessionId: () => SessionId | undefined
 
 	/**
+	 * Used internally by the SplunkSessionRecorder - change of recorder type during the same session triggers new session
+	 */
+	_internalCreateNewSession: () => void
+
+	/**
 	 * Allows experimental options to be passed. No versioning guarantees are given for this method.
 	 */
 	_internalInit: (options: Partial<SplunkOtelWebConfigInternal>) => void
@@ -576,6 +581,10 @@ export const SplunkRum: SplunkOtelWebType = {
 			forceStore: false,
 			hadActivity: this._processedOptions._experimental_allSpansExtendSession,
 		})
+	},
+	_internalCreateNewSession() {
+		console.log('Creating new session')
+		// TODO: create new session
 	},
 }
 
