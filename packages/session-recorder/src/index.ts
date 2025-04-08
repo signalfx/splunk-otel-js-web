@@ -94,7 +94,7 @@ const MAX_CHUNK_SIZE = 950 * 1024 // ~950KB
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()
 
-let inited: (() => void) | false | undefined = false
+let initCleanUp: (() => void) | false | undefined = false
 let tracer: Tracer
 let lastKnownSession: string
 let sessionStartTime = 0
@@ -104,17 +104,18 @@ let logCounter = 1
 
 const SplunkRumRecorder = {
 	get inited(): boolean {
-		return Boolean(inited)
+		return Boolean(initCleanUp)
 	},
 
 	init(config: SplunkRumRecorderConfig): void {
-		if (inited) {
+		if (initCleanUp) {
 			return
 		}
 
-		if (typeof window === 'undefined') {
-			console.error("SplunkSessionRecorder can't be run in non-browser environments.")
-			return
+		if (typeof window !== 'object') {
+			throw Error(
+				'SplunkSessionRecorder Error: This library is intended to run in a browser environment. Please ensure the code is evaluated within a browser context.',
+			)
 		}
 
 		let tracerProvider: BasicTracerProvider | ProxyTracerProvider = trace.getTracerProvider() as BasicTracerProvider
@@ -213,7 +214,7 @@ const SplunkRumRecorder = {
 		lastKnownSession = SplunkRum.getSessionId()
 		sessionStartTime = Date.now()
 
-		inited = record({
+		const initParams = {
 			maskAllInputs: true,
 			maskTextSelector: '*',
 			...rrwebConf,
@@ -284,10 +285,21 @@ const SplunkRumRecorder = {
 					processor.onLog(log)
 				}
 			},
-		})
+		}
+
+		const initFn = () => {
+			initCleanUp = record(initParams)
+		}
+
+		if (document.readyState === 'complete' || document.readyState === 'interactive') {
+			initFn()
+		} else {
+			window.addEventListener('load', initFn, { once: true })
+			initCleanUp = () => window.removeEventListener('load', initFn)
+		}
 	},
 	resume(): void {
-		if (!inited) {
+		if (!initCleanUp) {
 			return
 		}
 
@@ -299,7 +311,7 @@ const SplunkRumRecorder = {
 		}
 	},
 	stop(): void {
-		if (!inited) {
+		if (!initCleanUp) {
 			return
 		}
 
@@ -310,12 +322,12 @@ const SplunkRumRecorder = {
 		paused = true
 	},
 	deinit(): void {
-		if (!inited) {
+		if (!initCleanUp) {
 			return
 		}
 
-		inited()
-		inited = false
+		initCleanUp()
+		initCleanUp = false
 	},
 }
 
