@@ -16,7 +16,6 @@
  *
  */
 
-import './check-browser'
 import './polyfill-safari10'
 import { registerInstrumentations } from '@opentelemetry/instrumentation'
 import {
@@ -288,6 +287,13 @@ export const SplunkRum: SplunkOtelWebType = {
 
 	init: function (options) {
 		userTrackingMode = options.user?.trackingMode ?? 'noTracking'
+
+		if (typeof window !== 'object') {
+			throw Error(
+				'SplunkRum Error: This library is intended to run in a browser environment. Please ensure the code is evaluated within a browser context.',
+			)
+		}
+
 		// "env" based config still a bad idea for web
 		if (!('OTEL_TRACES_EXPORTER' in _globalThis)) {
 			_globalThis.OTEL_TRACES_EXPORTER = 'none'
