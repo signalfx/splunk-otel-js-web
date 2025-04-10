@@ -158,14 +158,24 @@ const SplunkRumRecorder = {
 
 		const { apiToken, beaconEndpoint, debug, realm, rumAccessToken, ...rrwebConf } = config
 		tracer = trace.getTracer('splunk.rr-web', VERSION)
-		const span = tracer.startSpan('record init')
+		{
+			const span = tracer.startSpan('record init')
 
-		// Check if sampler is ignoring this
-		if (!span.isRecording()) {
-			return
+			// Check if sampler is ignoring this
+			if (!span.isRecording()) {
+				SplunkRum.addEventListener(
+					'session-changed',
+					() => {
+						SplunkRumRecorder.init(config)
+					},
+					{ once: true },
+				)
+
+				return
+			}
+
+			span.end()
 		}
-
-		span.end()
 
 		let exportUrl = beaconEndpoint
 		if (realm) {
@@ -224,6 +234,11 @@ const SplunkRumRecorder = {
 				}
 
 				let isExtended = false
+
+				const span = tracer.startSpan('record chunk')
+				if (!span.isRecording()) {
+					return
+				}
 
 				// Safeguards from our ingest getting DDOSed:
 				// 1. A session can send up to 4 hours of data
