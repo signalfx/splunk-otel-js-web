@@ -1,41 +1,148 @@
-# Next.js SSR Sample App
+# Next.js client instrumentation
 
-This is a [Next.js](https://nextjs.org/) project bootstrapped using [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+This package provides an example of how to instrument a Next.js application with Splunk. 
+It focuses on the client-side instrumentation of the application.
+The package contains simple application bootstrapped using [`npx create-next-app@latest` command](https://nextjs.org/docs/app/getting-started/installation).
 
-## Instrumenting with Splunk RUM using NPM installation method
+There are two ways to instrument a Next.js application:
+- [Using the Splunk CDN (**recommended**)](#using-the-splunk-cdn-recommended)
+- [Using the NPM package](#using-the-npm-package)
 
-Next.js uses static generation by default to generate the output HTML for most pages. As static generation is done using the node.js runtime, it isn't compatible with RUM. Check that RUM is only imported and activated in the browser environment.
 
-1. Install Splunk RUM for Browser: `npm install @splunk/otel-web --save`
-2. Create file `src/instrument.js` that imports `@splunk/otel-web` and calls `SplunkOtelWeb.init()`. You can use the Data Setup guided setup in Splunk Observability to get the correct values for your organization.
-3. (Optional) Set the values in environment variables that are replaced at build time with values in the `.env` file. This lets you set [different values for different environments](https://nextjs.org/docs/basic-features/environment-variables). See [`src/instrument.js`](src/instrument.js) and [`.env.example`](.env.example) files as an example.
-4. Create or edit `next.config.js` to prepend `src/instrument.js` to webpack's `main` entryfile. See [`next.config.js`](next.config.js) in this folder as an example.
+### Prerequisites
+Set up an [environment variables](./.env.example). Create `.env` file in the root with the following content:
 
-## Adding Splunk APM
-
-Follow installation instructions for [`@splunk/otel` & any instrumentations you want](https://github.com/signalfx/splunk-otel-js). As Next.js command doesn't support the `-r` flag, edit the start command so that node calls the Next.js binary, like in the following example:
-
-```bash
-node -r @splunk/otel/instrument ./node_modules/.bin/next start
+```env
+NEXT_PUBLIC_SPLUNK_RUM_ACCESS_TOKEN=
+NEXT_PUBLIC_SPLUNK_RUM_APPLICATION_NAME=
+NEXT_PUBLIC_SPLUNK_RUM_DEPLOYMENT_ENVIROMENT=
+NEXT_PUBLIC_SPLUNK_RUM_BEACON_ENDPOINT=
+NEXT_PUBLIC_SPLUNK_RUM_SESSION_REPLAY_BEACON_ENDPOINT=
+NEXT_PUBLIC_SPLUNK_REALM=
+NEXT_PUBLIC_SPLUNK_CDN_VERSION=
 ```
 
-See the `start:apm` script in the [package.json](package.json) file as an example.
+## Using the Splunk CDN (Recommended)
+The process of instrumenting a Next.js application with the Splunk CDN is straightforward. 
+You just need to add the Splunk CDN script to your application. 
+You can do that by adjusting the [`_layout.tsx` file in your Next.js application](./app/layout.tsx). See the example below:
 
-Due to order in which packages are loaded, variables in the `.env` file aren't set before APM is loaded: You must set configuration and environment variables separately.
-
-For example, to run the demo without the OTel Collector, you would export settings as in the following example:
-
-```bash
-export OTEL_TRACES_EXPORTER=jaeger-thrift-splunk
-export OTEL_EXPORTER_JAEGER_ENDPOINT=https://ingest.us0.signalfx.com/v2/trace
-export SPLUNK_ACCESS_TOKEN=your-access-token-here
-npm run start:apm
+```tsx
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+	return (
+		<html lang="en">
+			<head>
+				<Script
+					src={`https://cdn.signalfx.com/o11y-gdi-rum/${process.env.NEXT_PUBLIC_SPLUNK_CDN_VERSION}/splunk-otel-web.js`}
+					strategy="beforeInteractive"
+					crossOrigin="anonymous"
+				/>
+				<Script
+					id="splunk-rum-init"
+					strategy="beforeInteractive"
+					dangerouslySetInnerHTML={{
+						__html: `
+						  SplunkRum.init({
+							realm: "${process.env.NEXT_PUBLIC_SPLUNK_REALM}",
+							rumAccessToken: "${process.env.NEXT_PUBLIC_SPLUNK_RUM_ACCESS_TOKEN}",
+							applicationName: "${process.env.NEXT_PUBLIC_SPLUNK_RUM_DEPLOYMENT_ENVIROMENT}",
+							deploymentEnvironment: "${process.env.NEXT_PUBLIC_SPLUNK_RUM_DEPLOYMENT_ENVIROMENT}",
+						  });
+						`,
+					}}
+				/>
+				<Script
+					src={`https://cdn.signalfx.com/o11y-gdi-rum/${process.env.NEXT_PUBLIC_SPLUNK_CDN_VERSION}/splunk-otel-web-session-recorder.js`}
+					strategy="beforeInteractive"
+					crossOrigin="anonymous"
+				/>
+				<Script
+					id="splunk-rum-init"
+					strategy="beforeInteractive"
+					dangerouslySetInnerHTML={{
+						__html: `
+							SplunkSessionRecorder.init({
+								realm: "${process.env.NEXT_PUBLIC_SPLUNK_REALM}",
+								rumAccessToken: "${process.env.NEXT_PUBLIC_SPLUNK_RUM_ACCESS_TOKEN}"
+							});
+						`,
+					}}
+				/>
+			</head>
+			<body>{children}</body>
+		</html>
+	)
+}
 ```
 
-## Running this sample app
+## Using the NPM package
 
-1. Run `npm install` in this directory.
-2. Copy `.env.example` to `.env` and replace the values inside `.env`.
-3. Run `npm run dev` to see it running in dev mode.
-4. Run `npm run build` to compile and `npm run start` to serve the built application.
-5. To test APM usage, run `npm run start:apm`.
+To instrument a Next.js application with the Splunk NPM package,
+you need to adjust the next.config.js file in your Next.js application. 
+You need to insert the Splunk instrumentation script to all client side code.
+
+Override the webpack configuration in your [`next.config.js` file with the following content](./next.config.ts):
+
+```js
+import type { NextConfig } from 'next'
+
+const nextConfig: NextConfig = {
+	webpack: (config, options) => {
+		if (options.dev) {
+			// Do not instrument code in development
+			return config
+		}
+
+		if (options.isServer) {
+			// Do not instrument server code
+			return config
+		}
+
+		const previousEntryFunction = config.entry
+
+		config.entry = async () => {
+			const newEntries = await previousEntryFunction()
+			for (const [key, value] of Object.entries(newEntries)) {
+				if (!['main-app', 'pages/_app'].includes(key)) {
+					continue
+				}
+
+				if (!Array.isArray(value)) {
+					continue
+				}
+
+				newEntries[key] = ['./instrumentation.client.ts', ...value]
+			}
+
+			return newEntries
+		}
+
+		return config
+	},
+}
+
+export default nextConfig
+```
+
+Then, create a [file called `instrumentation.client.ts` in the root of your Next.js application](./instrumentation.client.ts) with the following content:
+
+```ts
+import SplunkOtelWeb from '@splunk/otel-web'
+import SplunkSessionRecorder from '@splunk/otel-web-session-recorder'
+
+SplunkOtelWeb.init({
+	beaconEndpoint: process.env.NEXT_PUBLIC_SPLUNK_RUM_BEACON_ENDPOINT,
+	rumAccessToken: process.env.NEXT_PUBLIC_SPLUNK_RUM_ACCESS_TOKEN,
+	applicationName: process.env.NEXT_PUBLIC_SPLUNK_RUM_APPLICATION_NAME,
+	deploymentEnvironment: process.env.NEXT_PUBLIC_SPLUNK_RUM_DEPLOYMENT_ENVIROMENT,
+})
+
+SplunkSessionRecorder.init({
+	rumAccessToken: process.env.NEXT_PUBLIC_SPLUNK_RUM_ACCESS_TOKEN,
+	beaconEndpoint: process.env.NEXT_PUBLIC_SPLUNK_RUM_SESSION_REPLAY_BEACON_ENDPOINT,
+})
+```
+
+### Backend Instrumentation
+
+To instrument the backend of your Next.js application please refer to [Next.js instrumentation docs](https://nextjs.org/docs/app/building-your-application/optimizing/instrumentation) and [`@splunk/otel` repository](https://github.com/signalfx/splunk-otel-js#readme).

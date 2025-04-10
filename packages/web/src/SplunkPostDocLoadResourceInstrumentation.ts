@@ -67,9 +67,13 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 
 	enable(): void {
 		if (window.PerformanceObserver) {
-			window.addEventListener('load', () => {
+			if (window.document.readyState === 'complete') {
 				this._startPerformanceObserver()
-			})
+			} else {
+				window.addEventListener('load', (e) => {
+					this._startPerformanceObserver(e)
+				})
+			}
 		}
 
 		if (window.MutationObserver) {
@@ -139,7 +143,17 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 		this.headMutationObserver.observe(document.head, { childList: true })
 	}
 
-	private _startPerformanceObserver() {
+	private _startPerformanceObserver(event?: Event) {
+		if (event && !event.isTrusted) {
+			// React only to browser triggered load event
+			return
+		}
+
+		if (this.performanceObserver) {
+			// Gate keep
+			return
+		}
+
 		this.performanceObserver = new PerformanceObserver((list) => {
 			if (window.document.readyState === 'complete') {
 				list.getEntries().forEach((entry) => {

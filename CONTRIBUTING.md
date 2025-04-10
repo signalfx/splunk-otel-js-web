@@ -89,29 +89,61 @@ npm run compile
 ```
 
 ## Functional tests
-2 nightwatch configurations are present in this repository:
-1. local Selenium-based, non-parallel, multi-browser
-1. remote browserstack-based, Selenium-based, semi-parallel (BrowserStack provides parallelization), multi-browser
 
-To explore all options see `package.json`. The easiest way to start is with `npm run test:integration:local` (you need Google Chrome for this).
-
-### Executing integration tests from your own machine
-1. Copy `.env.example` as `.env`
-1. Fill in `BROWSERSTACK_USER` and `BROWSERSTACK_KEY`
-1. `npm run test:integration`
-
-### SSL certs
-Some of the features, we're testing for, require safe context, which means that `http://localhost` is not sufficient for these features to be enabled, and HTTPS is required. For your convenience dummy self-signed certs are provided out of the box and Selenium is configured to disable SSL verification.
-
-### Local tunnel/proxy
-By running BrowserStack-based tests you are exposing your local network to the test runner. Please see `integration-tests/utils/browserstack.runner.js` for more details.
-
-### Safari
-Requires the code below to be run once, to enable running integration tests in Safari locally.
+We use vitest for unit tests. To run the tests, use the following command in the root:
 
 ```bash
-$ /usr/bin/safaridriver --enable
+npm run test:unit
 ```
+
+### Executing integration tests from your own machine
+
+We use playwright for integration tests. To run the tests, use the following command in the root:
+
+```bash
+cd packages/integration-tests
+npm run test
+```
+
+### Debugging Vitest in Visual Studio Code
+
+1. Install [Vitest](https://marketplace.visualstudio.com/items?itemName=vitest.explorer) extension.
+2. Open *Run and Debug* tab and click *create a launch.json file*, then fill it with the content below.
+3. Select *Debug Vitest Browser* and click *Start Debugging*.
+
+```json
+{
+ "version": "0.2.0",
+ "configurations": [
+  {
+   "type": "node",
+   "request": "launch",
+   "name": "Run Vitest Browser",
+   "program": "${workspaceRoot}/node_modules/vitest/vitest.mjs",
+   "console": "integratedTerminal",
+   "args": ["--inspect", "--browser", "--no-file-parallelism", "--config", "vitest.config.debug.mts"]
+  },
+  {
+   "type": "chrome",
+   "request": "attach",
+   "name": "Attach to Vitest Browser",
+   "port": 9229
+  }
+ ],
+ "compounds": [
+  {
+   "name": "Debug Vitest Browser",
+   "configurations": ["Attach to Vitest Browser", "Run Vitest Browser"],
+   "stopAll": true
+  }
+ ]
+}
+```
+
+### Debugging Playwright in Visual Studio Code
+
+1. Install [Playwright Test for VSCode](https://marketplace.visualstudio.com/items?itemName=ms-playwright.playwright) extension.
+2. Debug tests by using the context menu of the green triangle to the left of the line numbers.
 
 ## Licensing
 

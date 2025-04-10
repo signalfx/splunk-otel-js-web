@@ -6,14 +6,14 @@ runs:
         - name: Get Node.js version
           id: node-version
           shell: bash
-          run: echo "node=$(node -v)" >> $GITHUB_ENV
+          run: echo "node_version=$(node -v)" >> $GITHUB_ENV
 
         - name: Get installed Playwright version
           id: playwright-version
           shell: bash
           working-directory: ./packages/integration-tests
           run: |
-              PLAYWRIGHT_VERSION=$(npm ls --json "@playwright/test" | jq --raw-output '.dependencies["@playwright/test"].version')
+              PLAYWRIGHT_VERSION=$(npm ls --json "@playwright/test" | jq --raw-output '.dependencies["@splunk/otel-js-web-integration-tests"].dependencies["@playwright/test"].version')
               echo "PLAYWRIGHT_VERSION=$PLAYWRIGHT_VERSION" >> $GITHUB_ENV
 
         - name: Set up path for Playwright cache
@@ -21,11 +21,11 @@ runs:
           run: echo "PLAYWRIGHT_CACHE_PATH=$(if [[ $RUNNER_OS == 'macOS' ]]; then echo '~/Library/Caches/ms-playwright'; else echo '~/.cache/ms-playwright'; fi)" >> $GITHUB_ENV
 
         - name: Cache Playwright binaries
-          uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
+          uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf
           id: playwright-cache
           with:
               path: ${{ env.PLAYWRIGHT_CACHE_PATH }}
-              key: '${{ runner.os }}-node-${{ steps.node-version.outputs.node }}-playwright-cache-${{ env.PLAYWRIGHT_VERSION }}-splunk-otel-js-web-artifacts'
+              key: '${{ runner.os }}-node-${{ env.node_version }}-playwright-cache-${{ env.PLAYWRIGHT_VERSION }}-splunk-otel-js-web-artifacts'
 
         - name: Install Playwright browser binaries
           if: steps.playwright-cache.outputs.cache-hit != 'true'
@@ -37,6 +37,6 @@ runs:
               npx playwright install webkit
 
         - name: Install Playwright OS dependencies
-          if: steps.playwright-cache.outputs.cache-hit != 'true'
+          if: steps.playwright-cache.outputs.cache-hit == 'true'
           shell: bash
           run: npx playwright install-deps

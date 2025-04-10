@@ -21,7 +21,7 @@ import { record } from 'rrweb'
 import OTLPLogExporter from './OTLPLogExporter'
 import { BatchLogProcessor, convert } from './BatchLogProcessor'
 import { VERSION } from './version'
-import { getGlobal } from './utils'
+import { getSplunkRumVersion, getGlobal } from './utils'
 
 import type { Resource } from '@opentelemetry/resources'
 import type { SplunkOtelWebType } from '@splunk/otel-web'
@@ -94,7 +94,7 @@ const MAX_CHUNK_SIZE = 950 * 1024 // ~950KB
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()
 
-let inited: (() => void) | false | undefined = false
+let initCleanUp: (() => void) | false | undefined = false
 let tracer: Tracer
 let lastKnownSession: string
 let sessionStartTime = 0
@@ -104,28 +104,51 @@ let logCounter = 1
 
 const SplunkRumRecorder = {
 	get inited(): boolean {
-		return Boolean(inited)
+		return Boolean(initCleanUp)
 	},
 
 	init(config: SplunkRumRecorderConfig): void {
-		if (inited) {
+		if (initCleanUp) {
 			return
 		}
 
-		if (typeof window === 'undefined') {
-			console.error("Session recorder can't be ran in non-browser environments")
-			return
+		if (typeof window !== 'object') {
+			throw Error(
+				'SplunkSessionRecorder Error: This library is intended to run in a browser environment. Please ensure the code is evaluated within a browser context.',
+			)
 		}
-
-		const SplunkRum = getGlobal<SplunkOtelWebType>('splunk.rum')
 
 		let tracerProvider: BasicTracerProvider | ProxyTracerProvider = trace.getTracerProvider() as BasicTracerProvider
 		if (tracerProvider && 'getDelegate' in tracerProvider) {
 			tracerProvider = (tracerProvider as unknown as ProxyTracerProvider).getDelegate() as BasicTracerProvider
 		}
 
-		if (!SplunkRum || !SplunkRum.resource) {
-			console.error('Splunk OTEL Web must be inited before session recorder.')
+		const SplunkRum = getGlobal<SplunkOtelWebType>()
+		if (!SplunkRum) {
+			console.error('SplunkRum must be initialized before session recorder.')
+			return
+		}
+
+		if (SplunkRum.disabledByBotDetection) {
+			console.error('SplunkSessionRecorder will not be initialized, bots are not allowed.')
+			return
+		}
+
+		if (SplunkRum.disabledByAutomationFrameworkDetection) {
+			console.error('SplunkSessionRecorder will not be initialized, automation frameworks are not allowed.')
+			return
+		}
+
+		const splunkRumVersion = getSplunkRumVersion()
+		if (!splunkRumVersion || splunkRumVersion !== VERSION) {
+			console.error(
+				`SplunkSessionRecorder will not be initialized. Version mismatch with SplunkRum (SplunkRum: ${splunkRumVersion ?? 'N/A'}, SplunkSessionRecorder: ${VERSION})`,
+			)
+			return
+		}
+
+		if (!SplunkRum.resource) {
+			console.error('Splunk OTEL Web must be initialized before session recorder.')
 			return
 		}
 
@@ -149,13 +172,13 @@ const SplunkRumRecorder = {
 			if (!exportUrl) {
 				exportUrl = `https://rum-ingest.${realm}.signalfx.com/v1/rumreplay`
 			} else {
-				console.warn('Splunk Session Recorder: Realm value ignored (beaconEndpoint has been specified)')
+				console.warn('SplunkSessionRecorder: Realm value ignored (beaconEndpoint has been specified)')
 			}
 		}
 
 		if (!exportUrl) {
 			console.error(
-				'Session recorder could not determine `exportUrl`, please ensure that `realm` or `beaconEndpoint` is specified and try again',
+				'SplunkSessionRecorder could not determine `exportUrl`, please ensure that `realm` or `beaconEndpoint` is specified and try again',
 			)
 			return
 		}
@@ -174,10 +197,16 @@ const SplunkRumRecorder = {
 			debug,
 			headers,
 			getResourceAttributes() {
-				return {
+				const newAttributes = {
 					...resource.attributes,
 					'splunk.rumSessionId': SplunkRum.getSessionId(),
 				}
+				const anonymousId = SplunkRum.getAnonymousId()
+				if (anonymousId) {
+					newAttributes['user.anonymousId'] = anonymousId
+				}
+
+				return newAttributes
 			},
 		})
 		const processor = new BatchLogProcessor(exporter, {})
@@ -185,7 +214,7 @@ const SplunkRumRecorder = {
 		lastKnownSession = SplunkRum.getSessionId()
 		sessionStartTime = Date.now()
 
-		inited = record({
+		const initParams = {
 			maskAllInputs: true,
 			maskTextSelector: '*',
 			...rrwebConf,
@@ -256,10 +285,21 @@ const SplunkRumRecorder = {
 					processor.onLog(log)
 				}
 			},
-		})
+		}
+
+		const initFn = () => {
+			initCleanUp = record(initParams)
+		}
+
+		if (document.readyState === 'complete' || document.readyState === 'interactive') {
+			initFn()
+		} else {
+			window.addEventListener('load', initFn, { once: true })
+			initCleanUp = () => window.removeEventListener('load', initFn)
+		}
 	},
 	resume(): void {
-		if (!inited) {
+		if (!initCleanUp) {
 			return
 		}
 
@@ -271,7 +311,7 @@ const SplunkRumRecorder = {
 		}
 	},
 	stop(): void {
-		if (!inited) {
+		if (!initCleanUp) {
 			return
 		}
 
@@ -282,12 +322,12 @@ const SplunkRumRecorder = {
 		paused = true
 	},
 	deinit(): void {
-		if (!inited) {
+		if (!initCleanUp) {
 			return
 		}
 
-		inited()
-		inited = false
+		initCleanUp()
+		initCleanUp = false
 	},
 }
 
