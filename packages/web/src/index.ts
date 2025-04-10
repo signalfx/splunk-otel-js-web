@@ -583,8 +583,7 @@ export const SplunkRum: SplunkOtelWebType = {
 		})
 	},
 	_internalCreateNewSession() {
-		console.log('Creating new session')
-		// TODO: create new session
+		updateSessionStatus({ forceStore: true, forceNewSession: true })
 	},
 }
 

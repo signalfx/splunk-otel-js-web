@@ -142,9 +142,32 @@ const SplunkRumRecorder = {
 		} = config
 		const isSplunkRecorder = recorderType === 'splunk'
 
+		// Handle recorder type change (splunk -> rrweb or rrweb -> splunk)
+		const recorderMetadata = getRecorderMetadata()
+		if (recorderMetadata) {
+			// Recorder changed during the same session => create new session
+			if (
+				recorderMetadata.sessionId === SplunkRum.getSessionId() &&
+				recorderMetadata.recorderType !== recorderType
+			) {
+				console.debug('SplunkSessionRecorder: Recorder type changed, creating new session.')
+				SplunkRum._internalCreateNewSession()
+			}
+		} else {
+			// No recorder metadata in local storage, recorder could change in meantime => create new session
+			console.debug('SplunkSessionRecorder: No recorder metadata found, creating new session.')
+			SplunkRum._internalCreateNewSession()
+		}
+
+		setRecorderMetadata({ sessionId: SplunkRum.getSessionId() ?? '', recorderType })
+
 		// Mark recorded session as splunk
-		if (isSplunkRecorder && SplunkRum.provider) {
-			SplunkRum.provider.resource.attributes['splunk.sessionReplay'] = 'proprietary' // TODO: change to splunk
+		if (SplunkRum.provider) {
+			const sessionReplayAttribute = isSplunkRecorder ? 'splunk' : 'rrweb'
+			SplunkRum.provider.resource.attributes['splunk.sessionReplay'] = sessionReplayAttribute
+			console.debug(
+				`SplunkSessionRecorder: splunk.sessionReplay resource attribute set to '${sessionReplayAttribute}'.`,
+			)
 		}
 
 		tracer = trace.getTracer('splunk.rr-web', VERSION)
@@ -176,22 +199,6 @@ const SplunkRumRecorder = {
 		if (rumAccessToken) {
 			exportUrl += `?auth=${rumAccessToken}`
 		}
-
-		const recorderMetadata = getRecorderMetadata()
-		if (recorderMetadata) {
-			// Recorder changed during the same session => create new session
-			if (
-				recorderMetadata.sessionId === SplunkRum.getSessionId() &&
-				recorderMetadata.recorderType !== recorderType
-			) {
-				SplunkRum._internalCreateNewSession()
-			}
-		} else {
-			// No recorder metadata in local storage, recorder could change in meantime => create new session
-			SplunkRum._internalCreateNewSession()
-		}
-
-		setRecorderMetadata({ sessionId: SplunkRum.getSessionId() ?? '', recorderType })
 
 		const exporter = new OTLPLogExporter({
 			beaconUrl: exportUrl,
