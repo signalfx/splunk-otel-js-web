@@ -5,6 +5,6 @@
 	},
 	"devDependencies": {
 		"@rsbuild/core": "^1.2.14",
-		"@splunk/otel-web": "^0.20.2"
+		"@splunk/otel-web": "^0.20.3"
 	}
 }
