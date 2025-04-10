@@ -8,6 +8,25 @@ updates:
       # Check the npm registry for updates every day (weekdays)
       schedule:
           interval: 'weekly'
+      open-pull-requests-limit: 10
+      groups:
+          size-limit:
+              patterns:
+                  - '@size-limit/*'
+                  - 'size-limit*'
+          playwright:
+              patterns:
+                  - '@playwright/*'
+                  - 'playwright*'
+          eslint:
+              patterns:
+                  - '@eslint/*'
+                  - '*eslint*'
+          vitest:
+              patterns:
+                  - '@vitest/*'
+                  - 'vitest*'
+
     - package-ecosystem: 'github-actions'
       directory: '/'
       schedule:

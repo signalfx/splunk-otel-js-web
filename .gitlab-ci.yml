@@ -1,5 +1,5 @@
 default:
-    image: 'cimg/node:20.5-browsers'
+    image: 'cimg/node:22.13.0-browsers'
 
 include:
     - project: 'ci-cd/templates'
@@ -73,7 +73,8 @@ unit_test:
     stage: test
     script:
         - npm ci --include=dev
-        - npm run test:unit:ci
+        - npx playwright install --with-deps
+        - npm run test:unit -- --browser.name chromium
 
 oss-scan:
     stage: test
@@ -89,8 +90,7 @@ release_npm:
     script:
         # release to NPM
         - echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
-        # January: remove --tag beta
-        - for f in artifacts/*.tgz; do npm publish --tag beta ./$f; done;
+        - for f in artifacts/*.tgz; do npm publish ./$f; done;
         - rm -f ~/.npmrc
 
 release_github:
@@ -105,9 +105,7 @@ release_github:
         - echo "deb [arch=$(dpkg --print-architecture)] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
         - sudo apt update
         - sudo apt install gh
-
-        # January: remove --prerelease
-        - gh release create v${CI_COMMIT_REF_NAME:1} ./artifacts/* --prerelease --target $CI_COMMIT_SHA --repo $GITHUB_REPOSITORY
+        - gh release create v${CI_COMMIT_REF_NAME:1} ./artifacts/* --target $CI_COMMIT_SHA --repo $GITHUB_REPOSITORY
 
 release_cdn:
     artifacts:

@@ -24,7 +24,12 @@ import {
 import { ExportResult, ExportResultCode } from '@opentelemetry/core'
 import { ReadableSpan, SpanExporter } from '@opentelemetry/sdk-trace-base'
 import { limitLen } from '../utils'
-import { NOOP_ATTRIBUTES_TRANSFORMER, NATIVE_XHR_SENDER, NATIVE_BEACON_SENDER, SplunkExporterConfig } from './common'
+import {
+	NOOP_ATTRIBUTES_TRANSFORMER,
+	NATIVE_XHR_SENDER,
+	NATIVE_BEACON_SENDER,
+	type SplunkExporterConfig,
+} from './common'
 
 const MAX_VALUE_LIMIT = 4096
 const SERVICE_NAME = 'browser'

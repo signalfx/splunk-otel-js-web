@@ -58,13 +58,11 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
 	init(): void {}
 
 	private _createSpanFromEntry(entry: PerformanceEntry) {
-		if (
-			!!this.initOptions._experimental_longtaskNoStartSession &&
-			!getCurrentSessionState({
-				forceStoreRead: false,
-			})
-		) {
-			// session expired, we do not want to spawn new session from long tasks
+		const sessionState = getCurrentSessionState({ forceDiskRead: false })
+		const sessionInactive = !sessionState || sessionState.inactive
+
+		if (!!this.initOptions._experimental_longtaskNoStartSession && sessionInactive) {
+			// session is inactive, we do not want to spawn new session from long tasks
 			return
 		}
 
