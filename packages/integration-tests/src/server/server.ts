@@ -100,8 +100,11 @@ fastify.get('/', (request, reply) => {
 
 fastify.get<{
 	Querystring: {
+		_experimental_longtaskNoStartSession?: string
 		beaconEndpoint?: string
 		disableInstrumentation?: string
+		forceSessionId?: string
+		samplingRatio?: string
 	}
 }>('*', async (request, reply) => {
 	const beaconUrl = new URL(`http://${request.headers.host}/api/v2/spans`)
@@ -115,11 +118,22 @@ fastify.get<{
 			return reply.viewAsync(parsedUrl.pathname, {
 				renderAgent(userOpts = {}, noInit = false, file = defaultFile, cdnVersion = null) {
 					const options: Record<string, unknown> = {
+						_experimental_longtaskNoStartSession:
+							request.query._experimental_longtaskNoStartSession === 'true',
 						beaconEndpoint: beaconUrl.toString(),
 						applicationName: 'splunk-otel-js-dummy-app',
 						debug: true,
 						bufferTimeout: GLOBAL_TEST_BUFFER_TIMEOUT,
 						...userOpts,
+					}
+
+					const customOptions: Record<string, unknown> = {}
+					if (typeof request.query.samplingRatio === 'string') {
+						customOptions['samplingRatio'] = parseFloat(request.query.samplingRatio)
+					}
+
+					if (typeof request.query.forceSessionId === 'string') {
+						customOptions['forceSessionId'] = request.query.forceSessionId
 					}
 
 					if (typeof request.query.disableInstrumentation === 'string') {
@@ -144,6 +158,7 @@ fastify.get<{
 						file,
 						noInit,
 						options: JSON.stringify(options),
+						customOptions: JSON.stringify(customOptions),
 						otelApiGlobalsFile: '/artifacts/otel-api-globals.js',
 					})
 				},

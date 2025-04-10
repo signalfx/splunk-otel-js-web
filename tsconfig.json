@@ -1,0 +1,24 @@
+{
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"compilerOptions": {
+		"baseUrl": ".",
+		"moduleResolution": "NodeNext",
+		"noImplicitAny": true,
+		"module": "NodeNext",
+		"target": "esnext",
+		"inlineSourceMap": true,
+		"inlineSources": true,
+		"strict": true,
+		"lib": ["ESNext", "DOM"],
+		"declaration": true,
+		"downlevelIteration": false,
+		"skipLibCheck": true,
+		"experimentalDecorators": true,
+		"incremental": true,
+		"noEmit": true,
+		"allowJs": true,
+		"esModuleInterop": true
+	},
+	"include": ["*.ts", "*.js", "*.cjs", ".*.cjs", "*.mjs", "*.mts", "tests/**/*.ts"],
+	"exclude": ["node_modules", "dist"]
+}

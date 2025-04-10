@@ -23,59 +23,92 @@ export function throttle<T extends (...args: unknown[]) => any>(func: T, limit: 
 
 	const executeFunc = (...args: Parameters<T>) => {
 		lastExecutionTime = performance.now()
-		return func(...args)
+
+		try {
+			func(...args)
+		} finally {
+			lastArgs = undefined
+		}
+	}
+
+	const removeVisibilityListener = () => {
+		if (visibilityListener) {
+			document.removeEventListener('visibilitychange', visibilityListener, { capture: true })
+			visibilityListener = null
+		}
+	}
+
+	const attachVisibilityListener = (...args: Parameters<T>) => {
+		if (visibilityListener) {
+			// Remove the previous listener. This is to ensure that we don't have multiple listeners attached.
+			document.removeEventListener('visibilitychange', visibilityListener, { capture: true })
+		}
+
+		visibilityListener = () => {
+			if (document.visibilityState === 'hidden') {
+				try {
+					executeFunc(...args)
+				} finally {
+					removeTimeout()
+					removeVisibilityListener()
+				}
+			}
+		}
+
+		document.addEventListener('visibilitychange', visibilityListener, { capture: true })
+	}
+
+	const removeTimeout = () => {
+		if (timeout !== null) {
+			clearTimeout(timeout)
+			timeout = null
+		}
+	}
+
+	const attachTimeout = (...args: Parameters<T>) => {
+		if (timeout !== null) {
+			// Remove the previous listener. This is to ensure that we don't have multiple listeners attached
+			removeTimeout()
+		}
+
+		timeout = setTimeout(
+			() => {
+				try {
+					executeFunc(...args)
+				} finally {
+					removeVisibilityListener()
+					removeTimeout()
+				}
+			},
+			limit - (performance.now() - lastExecutionTime),
+		)
 	}
 
 	const throttled = (...args: Parameters<T>) => {
 		lastArgs = args
 
-		if (visibilityListener) {
-			document.removeEventListener('visibilitychange', visibilityListener)
-			visibilityListener = null
-		}
+		removeVisibilityListener()
+		removeTimeout()
 
 		const now = performance.now()
-		const timeSinceLastExecution = now - lastExecutionTime
+		const elapsedTimeSinceLastExecution = now - lastExecutionTime
 
-		if (timeout) {
-			clearTimeout(timeout)
-			timeout = null
-		}
-
-		if (timeSinceLastExecution >= limit || lastExecutionTime === 0) {
+		if (elapsedTimeSinceLastExecution >= limit || lastExecutionTime === 0) {
 			executeFunc(...args)
 		} else {
-			timeout = setTimeout(() => {
-				executeFunc(...args)
-			}, limit - timeSinceLastExecution)
-
-			visibilityListener = () => {
-				if (document.visibilityState === 'hidden') {
-					if (timeout !== null) {
-						clearTimeout(timeout)
-					}
-
-					executeFunc(...args)
-				}
-
-				document.removeEventListener('visibilitychange', visibilityListener)
-			}
+			attachTimeout(...args)
+			attachVisibilityListener(...args)
 		}
 	}
 
 	throttled.flush = () => {
-		if (timeout) {
-			clearTimeout(timeout)
-			timeout = null
-		}
-
-		if (visibilityListener) {
-			document.removeEventListener('visibilitychange', visibilityListener)
-			visibilityListener = null
-		}
-
-		if (lastArgs) {
-			executeFunc(...lastArgs)
+		try {
+			if (lastArgs) {
+				executeFunc(...lastArgs)
+			}
+		} finally {
+			removeVisibilityListener()
+			removeTimeout()
 		}
 	}
 

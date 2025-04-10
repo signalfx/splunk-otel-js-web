@@ -39,7 +39,7 @@ import {
 	DEFAULT_AUTO_INSTRUMENTED_EVENT_NAMES,
 	UserInteractionEventsConfig,
 } from './SplunkUserInteractionInstrumentation'
-import { SplunkExporterConfig } from './exporters/common'
+import { type SplunkExporterConfig } from './exporters/common'
 import { SplunkZipkinExporter } from './exporters/zipkin'
 import { ERROR_INSTRUMENTATION_NAME, SplunkErrorInstrumentation } from './SplunkErrorInstrumentation'
 import { generateId, getPluginConfig } from './utils'
@@ -65,12 +65,22 @@ import { SplunkOTLPTraceExporter } from './exporters/otlp'
 import { registerGlobal, unregisterGlobal } from './global-utils'
 import { BrowserInstanceService } from './services/BrowserInstanceService'
 import { SessionId } from './session'
-import { SplunkOtelWebConfig, SplunkOtelWebExporterOptions, SplunkOtelWebOptionsInstrumentations } from './types'
+import { forgetAnonymousId, getOrCreateAnonymousId } from './user-tracking'
+import {
+	isPersistenceType,
+	SplunkOtelWebConfig,
+	SplunkOtelWebExporterOptions,
+	SplunkOtelWebOptionsInstrumentations,
+} from './types'
+import { isBot } from './utils/is-bot'
+import { SplunkSamplerWrapper } from './SplunkSamplerWrapper'
 
-export { SplunkExporterConfig } from './exporters/common'
+export { type SplunkExporterConfig } from './exporters/common'
 export { SplunkZipkinExporter } from './exporters/zipkin'
 export * from './SplunkWebTracerProvider'
 export * from './SessionBasedSampler'
+
+export type { SplunkOtelWebConfig, SplunkOtelWebExporterOptions }
 
 interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
 	bufferSize?: number
@@ -88,6 +98,8 @@ interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
 }
 
 const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
+	disableBots: false,
+	disableAutomationFrameworks: false,
 	applicationName: 'unknown-browser-app',
 	beaconEndpoint: undefined,
 	bufferTimeout: 4000, //millis, tradeoff between batching and loss of spans by not sending before page close
@@ -102,6 +114,7 @@ const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
 			return new SplunkZipkinExporter(options)
 		},
 	},
+	persistence: 'cookie',
 	spanProcessor: {
 		factory: (exporter, config) => new BatchSpanProcessor(exporter, config),
 	},
@@ -205,7 +218,19 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 
 	deinit: (force?: boolean) => void
 
+	/**
+	 * True if library detected an automation framework and was disabled based on 'disableAutomationFrameworks' setting.
+	 */
+	disabledByAutomationFrameworkDetection?: boolean
+
+	/**
+	 * True if library detected a bot and was disabled based on 'disableBots' setting.
+	 */
+	disabledByBotDetection?: boolean
+
 	error: (...args: Array<any>) => void
+
+	getAnonymousId: () => string | undefined
 
 	/**
 	 * This method provides access to computed, final value of global attributes, which are applied to all created spans.
@@ -226,9 +251,12 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	readonly resource?: Resource
 
 	setGlobalAttributes: (attributes: Attributes) => void
+
+	setUserTrackingMode: (mode: SplunkOtelWebConfig['user']['trackingMode']) => void
 }
 
 let inited = false
+let userTrackingMode: SplunkOtelWebConfig['user']['trackingMode'] = 'noTracking'
 let _deregisterInstrumentations: () => void | undefined
 let _deinitSessionTracking: () => void | undefined
 let _errorInstrumentation: SplunkErrorInstrumentation | undefined
@@ -258,31 +286,46 @@ export const SplunkRum: SplunkOtelWebType = {
 	},
 
 	init: function (options) {
+		userTrackingMode = options.user?.trackingMode ?? 'noTracking'
+
+		if (typeof window !== 'object') {
+			throw Error(
+				'SplunkRum Error: This library is intended to run in a browser environment. Please ensure the code is evaluated within a browser context.',
+			)
+		}
+
 		// "env" based config still a bad idea for web
 		if (!('OTEL_TRACES_EXPORTER' in _globalThis)) {
 			_globalThis.OTEL_TRACES_EXPORTER = 'none'
 		}
 
 		if (inited) {
-			console.warn('SplunkRum already init()ed.')
+			console.warn('SplunkRum already initialized.')
 			return
 		}
 
 		// touches otel globals, our registerGlobal requires this first
 		diag.setLogger(new DiagConsoleLogger(), options?.debug ? DiagLogLevel.DEBUG : DiagLogLevel.WARN)
 
-		const registered = registerGlobal('splunk.rum', this)
+		const registered = registerGlobal(this)
 		if (!registered) {
-			return
-		}
-
-		if (typeof window !== 'object') {
-			diag.error('SplunkRum: Non-browser environment detected, aborting')
 			return
 		}
 
 		if (typeof Symbol !== 'function') {
 			diag.error('SplunkRum: browser not supported, disabling instrumentation.')
+			return
+		}
+
+		if (options.disableBots && isBot(navigator.userAgent)) {
+			this.disabledByBotDetection = true
+			diag.error('SplunkRum will not be initialized, bots are not allowed.')
+			return
+		}
+
+		if (options.disableAutomationFrameworks && navigator.webdriver) {
+			this.disabledByAutomationFrameworkDetection = true
+			diag.error('SplunkRum will not be initialized, automation frameworks are not allowed.')
 			return
 		}
 
@@ -297,9 +340,9 @@ export const SplunkRum: SplunkOtelWebType = {
 			},
 		)
 
-		if (!['localStorage', 'cookie', undefined].includes(processedOptions.persistence)) {
+		if (!isPersistenceType(processedOptions.persistence)) {
 			diag.error(
-				'Invalid persistence flag: The value for "persistence" must be either "cookie", "localStorage", or omitted entirely.',
+				`Invalid persistence flag: The value for "persistence" must be either "cookie", "localStorage", or omitted entirely, but was: ${processedOptions.persistence}`,
 			)
 			return
 		}
@@ -357,16 +400,18 @@ export const SplunkRum: SplunkOtelWebType = {
 		const provider = new SplunkWebTracerProvider({
 			...processedOptions.tracer,
 			resource: this.resource,
+			sampler: new SplunkSamplerWrapper({
+				decider: processedOptions.tracer?.sampler ?? new AlwaysOnSampler(),
+				allSpansAreActivity: this._processedOptions._experimental_allSpansExtendSession,
+			}),
 		})
 
-		// TODO
 		_deinitSessionTracking = initSessionTracking(
+			processedOptions.persistence,
 			provider,
-			instanceId,
 			eventTarget,
 			processedOptions.cookieDomain,
 			!!options._experimental_allSpansExtendSession,
-			processedOptions.persistence === 'localStorage',
 		).deinit
 
 		const instrumentations = INSTRUMENTATIONS.map(({ Instrument, confKey, disable }) => {
@@ -401,6 +446,7 @@ export const SplunkRum: SplunkOtelWebType = {
 				...(processedOptions.globalAttributes || {}),
 			},
 			this._processedOptions.persistence === 'localStorage',
+			() => userTrackingMode,
 		)
 		provider.addSpanProcessor(this.attributesProcessor)
 
@@ -468,9 +514,9 @@ export const SplunkRum: SplunkOtelWebType = {
 		eventTarget = undefined
 
 		diag.disable()
-		unregisterGlobal('splunk.rum')
-		unregisterGlobal('splunk.rum.version')
+		unregisterGlobal()
 
+		forgetAnonymousId()
 		inited = false
 	},
 
@@ -519,12 +565,22 @@ export const SplunkRum: SplunkOtelWebType = {
 		return this.removeEventListener(name, callback)
 	},
 
+	setUserTrackingMode(mode: SplunkOtelWebConfig['user']['trackingMode']) {
+		userTrackingMode = mode
+	},
+
+	getAnonymousId() {
+		if (userTrackingMode === 'anonymousTracking') {
+			return getOrCreateAnonymousId({ useLocalStorage: this._processedOptions.persistence === 'localStorage' })
+		}
+	},
+
 	getSessionId() {
 		if (!inited) {
 			return undefined
 		}
 
-		return getRumSessionId({ useLocalStorage: this._processedOptions.persistence === 'localStorage' })
+		return getRumSessionId()
 	},
 	_experimental_getSessionId() {
 		return this.getSessionId()
@@ -537,8 +593,7 @@ export const SplunkRum: SplunkOtelWebType = {
 
 		updateSessionStatus({
 			forceStore: false,
-			useLocalStorage: this._processedOptions.persistence === 'localStorage',
-			forceActivity: this._processedOptions._experimental_allSpansExtendSession,
+			hadActivity: this._processedOptions._experimental_allSpansExtendSession,
 		})
 	},
 }

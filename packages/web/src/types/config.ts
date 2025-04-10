@@ -61,6 +61,11 @@ export interface SplunkOtelWebExporterOptions {
 	otlp?: boolean
 }
 
+export type PersistenceType = 'cookie' | 'localStorage'
+export function isPersistenceType(value: string): value is PersistenceType {
+	return ['cookie', 'localStorage'].includes(value)
+}
+
 export interface SplunkOtelWebConfig {
 	/**
 	 * If enabled, all spans are treated as activity and extend the duration of the session. Defaults to false.
@@ -106,6 +111,16 @@ export interface SplunkOtelWebConfig {
 	 * */
 	deploymentEnvironment?: string
 
+	/*
+	 * If true, automation frameworks like Cypress, Selenium, Playwright, Synthetics will not be tracked. Defaults to false.
+	 */
+	disableAutomationFrameworks?: boolean
+
+	/*
+	 * If true, bots like google bot, bing bot, and others will be blocked. Defaults to false.
+	 */
+	disableBots?: boolean
+
 	/**
 	 * Sets a value for the `environment` attribute (persists through calls to `setGlobalAttributes()`)
 	 * @deprecated Renamed to `deploymentEnvironment`
@@ -137,7 +152,7 @@ export interface SplunkOtelWebConfig {
 	 *
 	 * If not specified, `'cookie'` will be used as the default storage method.
 	 */
-	persistence?: 'cookie' | 'localStorage'
+	persistence?: PersistenceType
 
 	/**
 	 * The name of your organization’s realm. Automatically configures beaconUrl with correct URL
@@ -161,6 +176,11 @@ export interface SplunkOtelWebConfig {
 	 * Config options passed to web tracer
 	 */
 	tracer?: WebTracerConfig
+
+	user?: {
+		/** Sets tracking mode of user. Defaults to 'noTracking'. */
+		trackingMode?: 'noTracking' | 'anonymousTracking'
+	}
 
 	/**
 	 * Sets a value for the 'app.version' attribute

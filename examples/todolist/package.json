@@ -2,31 +2,23 @@
 	"name": "todolist",
 	"version": "0.1.0",
 	"private": true,
-	"dependencies": {
-		"@splunk/otel": "2.14.0",
-		"body-parser": "1.20.3",
-		"cors": "^2.8.5",
-		"express": "^4.21.1",
-		"react": "^18.1.0",
-		"react-dom": "^18.1.0",
-		"react-scripts": "5.0.1"
-	},
+	"type": "module",
 	"scripts": {
 		"backend": "node server/index.mjs",
-		"build": "react-scripts build",
-		"eject": "react-scripts eject",
-		"start": "react-scripts start"
+		"build": "rsbuild build",
+		"start": "rsbuild dev"
 	},
-	"browserslist": {
-		"production": [
-			">0.2%",
-			"not dead",
-			"not op_mini all"
-		],
-		"development": [
-			"last 1 chrome version",
-			"last 1 firefox version",
-			"last 1 safari version"
-		]
+	"devDependencies": {
+		"@rsbuild/core": "^1.2.14",
+		"@rsbuild/plugin-react": "^1.1.1",
+		"@splunk/otel": "3.0.1",
+		"@splunk/otel-web": "^0.20.3",
+		"@types/react": "^19.0.10",
+		"@types/react-dom": "^19.0.4",
+		"body-parser": "1.20.3",
+		"cors": "2.8.5",
+		"express": "4.21.2",
+		"react": "19.0.0",
+		"react-dom": "19.0.0"
 	}
 }

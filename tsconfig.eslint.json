@@ -1,0 +1,17 @@
+{
+	"compilerOptions": {
+		"forceConsistentCasingInFileNames": true,
+		"module": "ESNext",
+		"moduleResolution": "Bundler",
+		"esModuleInterop": false,
+		"noEmitOnError": true,
+		"pretty": true,
+		"resolveJsonModule": true,
+		"target": "ES2017",
+		"types": ["vitest/global", "@vitest/browser/providers/playwright"],
+		"noEmit": true,
+		"allowJs": true
+	},
+	"include": ["**/*.test.ts"],
+	"exclude": ["node_modules"]
+}

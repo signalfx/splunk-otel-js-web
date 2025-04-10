@@ -45,8 +45,8 @@ export class RecordPage {
 
 	async flushData() {
 		await this.page.evaluate(() => {
-			if (window.SplunkRum) {
-				window.SplunkRum._processor.forceFlush()
+			if ((window as any).SplunkRum) {
+				;(window as any).SplunkRum._processor.forceFlush()
 			}
 		})
 	}

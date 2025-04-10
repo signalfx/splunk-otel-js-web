@@ -231,6 +231,19 @@ export default [
 		},
 	},
 	{
+		files: ['**/*.test.ts', '**/tests/utils/**/*.ts'],
+		languageOptions: {
+			globals: {
+				...globals.browser,
+			},
+			parser: tseslint.parser,
+			parserOptions: {
+				ecmaVersion: 2020,
+				project: 'tsconfig.eslint.json',
+			},
+		},
+	},
+	{
 		ignores: [
 			'**/dist/',
 			'**/node_modules/',
@@ -238,8 +251,10 @@ export default [
 			'.github/',
 			'.idea',
 			'.vscode/',
-			'examples/installing-npm',
-			'examples/next-ssr-example',
+			'**/.next/',
+			'vitest-report',
+			'**/html/',
+			'**/playwright-report/',
 		],
 	},
 ]

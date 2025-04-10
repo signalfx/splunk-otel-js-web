@@ -3,6 +3,7 @@
 	"compilerOptions": {
 		"allowSyntheticDefaultImports": true,
 		"target": "esnext",
-		"moduleResolution": "nodenext"
+		"moduleResolution": "nodenext",
+		"module": "NodeNext"
 	}
 }

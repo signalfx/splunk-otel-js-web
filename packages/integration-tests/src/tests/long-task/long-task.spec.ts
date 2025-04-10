@@ -87,4 +87,111 @@ test.describe('long task', () => {
 
 		expect(longTaskSpans).toHaveLength(0)
 	})
+
+	test('longtask will spawn new session', async ({ recordPage, browserName }) => {
+		if (browserName === 'webkit' || browserName === 'firefox') {
+			test.skip()
+		}
+
+		await recordPage.goTo(
+			'/long-task/index.ejs?_experimental_longtaskNoStartSession=false&disableInstrumentation=connectivity,document,errors,fetch,interactions,postload,socketio,visibility,websocket,webvitals,xhr',
+		)
+
+		await recordPage.locator('#btnLongtask').click()
+
+		const sessionCookie1 = await recordPage.getCookie('_splunk_rum_sid')
+		expect(sessionCookie1).toBeTruthy()
+
+		const sessionCookie1Parsed = JSON.parse(decodeURIComponent(sessionCookie1.value))
+
+		await recordPage.waitForTimeoutAndFlushData(1000)
+
+		const allSpans1 = recordPage.receivedSpans
+
+		expect(allSpans1).toHaveLength(1)
+
+		// Set session as expired using expiresAt
+		await recordPage.evaluate(
+			([expiresAt, id, startTime]) => {
+				globalThis[Symbol.for('opentelemetry.js.api.1')]['splunk.rum']['store'].set({
+					expiresAt,
+					id,
+					startTime,
+				})
+			},
+			[Date.now(), sessionCookie1Parsed.id, sessionCookie1Parsed.startTime],
+		)
+
+		await recordPage.locator('#btnLongtask').click()
+
+		await recordPage.waitForTimeoutAndFlushData(1000)
+
+		const sessionCookie3 = await recordPage.getCookie('_splunk_rum_sid')
+		expect(sessionCookie3).toBeTruthy()
+
+		const allSpans2 = recordPage.receivedSpans
+		expect(allSpans2).toHaveLength(2)
+
+		const sessionCookie3Parsed = JSON.parse(decodeURIComponent(sessionCookie3.value))
+
+		expect(sessionCookie1Parsed.id).not.toBe(sessionCookie3Parsed.id)
+	})
+
+	test('longtask will not spawn new session', async ({ recordPage, browserName }) => {
+		if (browserName === 'webkit' || browserName === 'firefox') {
+			test.skip()
+		}
+
+		await recordPage.goTo(
+			'/long-task/index.ejs?_experimental_longtaskNoStartSession=true&disableInstrumentation=connectivity,document,errors,fetch,interactions,postload,socketio,visibility,websocket,webvitals,xhr',
+		)
+
+		await recordPage.locator('#btnLongtask').click()
+
+		const sessionCookie1 = await recordPage.getCookie('_splunk_rum_sid')
+
+		expect(sessionCookie1).toBeTruthy()
+
+		const sessionCookie1Parsed = JSON.parse(decodeURIComponent(sessionCookie1.value))
+
+		await recordPage.waitForTimeoutAndFlushData(1000)
+
+		const allSpans1 = recordPage.receivedSpans
+
+		expect(allSpans1).toHaveLength(1)
+
+		const onlyLongTask = allSpans1[0]
+
+		// Set session as expired using expiresAt
+		await recordPage.evaluate(
+			([expiresAt, id, startTime]) => {
+				globalThis[Symbol.for('opentelemetry.js.api.1')]['splunk.rum']['store'].set({
+					expiresAt,
+					id,
+					startTime,
+				})
+			},
+			[Date.now(), sessionCookie1Parsed.id, sessionCookie1Parsed.startTime],
+		)
+
+		await recordPage.waitForTimeout(1000)
+
+		await recordPage.locator('#btnLongtask').click()
+
+		await recordPage.waitForTimeoutAndFlushData(1000)
+
+		const allSpans2 = recordPage.receivedSpans
+
+		expect(allSpans2).toHaveLength(1)
+
+		expect(allSpans2[0].id).toBe(onlyLongTask.id)
+
+		const sessionCookie2 = await recordPage.getCookie('_splunk_rum_sid')
+
+		expect(sessionCookie2).toBeTruthy()
+
+		const sessionCookie2Parsed = JSON.parse(decodeURIComponent(sessionCookie1.value))
+
+		expect(sessionCookie2Parsed.id).toBe(sessionCookie1Parsed.id)
+	})
 })

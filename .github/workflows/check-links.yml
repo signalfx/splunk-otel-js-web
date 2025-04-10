@@ -7,11 +7,12 @@ on:
 
 jobs:
     linkChecker:
+        name: Link Checker
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4.2.2
 
             - name: Link Checker
-              uses: lycheeverse/lychee-action@v2.2.0
+              uses: lycheeverse/lychee-action@v2.3.0
               with:
                   fail: true

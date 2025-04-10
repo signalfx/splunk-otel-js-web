@@ -128,10 +128,15 @@ export default class OTLPLogExporter {
 
 		const compressed = gzipSync(strToU8(JSON.stringify(logsData)))
 
+		// There is a limit for fetchAlive param of 64kB, use it only when under limit and page is 'hidden' - which could
+		// be when page is unloading
+		const sentDataUsingBeaconLikeRequest = compressed.byteLength < 65536 && document.visibilityState === 'hidden'
+
 		fetch(this.config.beaconUrl, {
 			method: 'POST',
 			body: compressed,
 			headers: headers,
+			keepalive: sentDataUsingBeaconLikeRequest,
 		}).catch(() => {
 			// TODO remove this once we have ingest with correct cors headers
 		})

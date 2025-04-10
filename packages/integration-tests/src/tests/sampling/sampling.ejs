@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Session sampling</title>
+	<%- renderAgent() %>
+</head>
+<body>
+  <h1>Session sampling</h1>
+  <script>
+    setTimeout(() => {
+      SplunkRum.provider.getTracer('guard').startSpan('guard-span').end();
+    }, 100);
+  </script>
+</body>
+</html>

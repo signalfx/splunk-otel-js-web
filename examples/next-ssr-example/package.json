@@ -1,20 +1,24 @@
 {
-	"name": "next-ssr-example",
+	"name": "my-app",
 	"version": "0.1.0",
 	"private": true,
 	"scripts": {
 		"dev": "next dev",
 		"build": "next build",
 		"start": "next start",
-		"start:apm": "cross-env OTEL_SERVICE_NAME=rum-nextjs-example OTEL_RESOURCE_ATTRIBUTES=\"deployment.environment=demo\" node -r @splunk/otel/instrument ./node_modules/.bin/next start"
+		"lint": "next lint"
 	},
 	"dependencies": {
-		"@opentelemetry/instrumentation-http": "^0.28.0",
-		"@splunk/otel": "^0.18.0",
-		"@splunk/otel-web": "^0.10.3",
-		"cross-env": "^7.0.3",
-		"next": "12.1.6",
-		"react": "18.1.0",
-		"react-dom": "18.1.0"
+		"next": "15.2.3",
+		"react": "^19.0.0",
+		"react-dom": "^19.0.0"
+	},
+	"devDependencies": {
+		"@splunk/otel-web": "^0.20.3",
+		"@splunk/otel-web-session-recorder": "^0.20.3",
+		"@types/node": "^20",
+		"@types/react": "^19",
+		"@types/react-dom": "^19",
+		"typescript": "^5"
 	}
 }

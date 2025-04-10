@@ -1,22 +1,22 @@
-name: Playwright tests
+name: Unit & Integration Tests
 on:
     workflow_call:
 
 jobs:
-    playwright:
+    tests-linux:
+        name: Unit & Integration Tests - ${{ matrix.browser }}
         timeout-minutes: 60
         runs-on: ubuntu-latest
         strategy:
             fail-fast: false
             matrix:
                 browser: [chromium, firefox, chrome, edge]
-        name: Playwright Tests - ${{ matrix.browser }}
         steps:
             - name: Checkout
               uses: actions/checkout@v4.2.2
-            - uses: actions/setup-node@v4.0.3
+            - uses: actions/setup-node@v4.3.0
               with:
-                  node-version: '18'
+                  node-version: '22'
                   cache: 'npm'
             - run: npm ci
             - run: npm run compile
@@ -31,25 +31,41 @@ jobs:
 
             - name: Upload blob report to GitHub Actions Artifacts
               if: ${{ !cancelled() }}
-              uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
               with:
                   name: blob-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
                   path: packages/integration-tests/blob-report
                   retention-days: 1
 
-    playwright-macos:
+            - name: Run Unit Tests
+              if: ${{ matrix.browser != 'edge' && matrix.browser != 'chrome' }}
+              # Firefox tests are flaky.
+              # Remove once this issue is resolved: https://github.com/vitest-dev/vitest/issues/7377
+              continue-on-error: ${{ matrix.browser == 'firefox' }}
+              run: npm run test:unit -- --browser.name=${{ matrix.browser }}
+
+            - name: Upload test:unit report
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+              if: ${{ !cancelled() && matrix.browser != 'edge' && matrix.browser != 'chrome' }}
+              with:
+                  name: vitest-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
+                  path: vitest-report/
+                  retention-days: 14
+
+    tests-macos:
         timeout-minutes: 60
         runs-on: macos-latest
         strategy:
             fail-fast: false
             matrix:
                 browser: [webkit]
+        name: Unit & Integration Tests - ${{ matrix.browser }}
         steps:
             - name: Checkout
               uses: actions/checkout@v4.2.2
-            - uses: actions/setup-node@v4.0.3
+            - uses: actions/setup-node@v4.3.0
               with:
-                  node-version: '18'
+                  node-version: '22'
                   cache: 'npm'
             - run: npm ci
             - run: npm run compile
@@ -64,29 +80,41 @@ jobs:
 
             - name: Upload blob report to GitHub Actions Artifacts
               if: ${{ !cancelled() }}
-              uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
               with:
                   name: blob-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
                   path: packages/integration-tests/blob-report
                   retention-days: 1
 
+            - name: Run Unit Tests
+              run: npm run test:unit -- --browser.name=${{ matrix.browser }}
+
+            - name: Upload test:unit report
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+              if: ${{ !cancelled() }}
+              with:
+                  name: vitest-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
+                  path: vitest-report/
+                  retention-days: 14
+
     merge-reports:
+        name: Merge playwright reports
         if: ${{ !cancelled() }}
-        needs: [playwright, playwright-macos]
+        needs: [tests-linux, tests-macos]
 
         runs-on: ubuntu-latest
         steps:
             - name: Checkout
               uses: actions/checkout@v4.2.2
-            - uses: actions/setup-node@v4.0.3
+            - uses: actions/setup-node@v4.3.0
               with:
-                  node-version: '18'
+                  node-version: '22'
                   cache: 'npm'
             - run: npm ci
             - run: npm run compile
 
             - name: Download blob reports from GitHub Actions Artifacts
-              uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16
+              uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e
               with:
                   path: packages/integration-tests/all-blob-reports
                   pattern: blob-report-*
@@ -97,20 +125,21 @@ jobs:
               working-directory: ./packages/integration-tests
 
             - name: Upload HTML report
-              uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
               with:
                   name: playwright-report--attempt-${{ github.run_attempt }}
                   path: packages/integration-tests/playwright-report
                   retention-days: 14
 
     check-failure:
-        needs: [playwright, playwright-macos, merge-reports]
+        name: Check if all tests passed
+        needs: [tests-linux, tests-macos, merge-reports]
         runs-on: ubuntu-latest
         if: ${{ always() }}
         steps:
             - name: Check if any playwright tests failed
               run: |
-                  if [ "${{ needs.playwright.result }}" != "success" ] || [ "${{ needs['playwright-macos'].result }}" != "success" ];  then
+                  if [ "${{ needs['tests-linux'].result }}" != "success" ] || [ "${{ needs['tests-macos'].result }}" != "success" ];  then
                   echo "One or more tests failed."
                   exit 1
                   else
