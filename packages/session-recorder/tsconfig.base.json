@@ -2,6 +2,7 @@
 	"compilerOptions": {
 		"allowJs": true,
 		"checkJs": false,
+		"esModuleInterop": true,
 		"forceConsistentCasingInFileNames": true,
 		"moduleResolution": "node",
 		"noEmitOnError": true,
@@ -9,7 +10,8 @@
 		"resolveJsonModule": true,
 		"target": "ES2017",
 		"types": ["node"],
-		"skipLibCheck": true
+		"skipLibCheck": true,
+		"strict": true
 	},
 	"include": ["src/**/*.ts", "src/**/*.js"],
 	"exclude": ["node_modules"]

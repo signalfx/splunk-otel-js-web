@@ -43,7 +43,7 @@ import { type SplunkExporterConfig } from './exporters/common'
 import { SplunkZipkinExporter } from './exporters/zipkin'
 import { ERROR_INSTRUMENTATION_NAME, SplunkErrorInstrumentation } from './SplunkErrorInstrumentation'
 import { generateId, getPluginConfig } from './utils'
-import { getRumSessionId, initSessionTracking, updateSessionStatus } from './session'
+import { getIsNewSession, getRumSessionId, initSessionTracking, updateSessionStatus } from './session'
 import { SplunkWebSocketInstrumentation } from './SplunkWebSocketInstrumentation'
 import { initWebVitals } from './webvitals'
 import { SplunkLongTaskInstrumentation } from './SplunkLongTaskInstrumentation'
@@ -245,6 +245,8 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	init: (options: SplunkOtelWebConfig) => void
 
 	readonly inited: boolean
+
+	isNewSessionId: () => boolean
 
 	provider?: SplunkWebTracerProvider
 
@@ -581,6 +583,9 @@ export const SplunkRum: SplunkOtelWebType = {
 		}
 
 		return getRumSessionId()
+	},
+	isNewSessionId() {
+		return getIsNewSession()
 	},
 	_experimental_getSessionId() {
 		return this.getSessionId()
