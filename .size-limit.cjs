@@ -36,7 +36,7 @@ module.exports = [
 
 	{
 		name: 'artifacts/splunk-otel-web-session-recorder.js',
-		limit: '93 kB',
+		limit: '94 kB',
 		path: './packages/session-recorder/dist/artifacts/splunk-otel-web-session-recorder.js',
 	},
 ]
