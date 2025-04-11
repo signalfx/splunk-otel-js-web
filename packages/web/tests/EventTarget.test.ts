@@ -76,4 +76,27 @@ describe('InternalEventTarget', () => {
 			target.removeEventListener('global-attributes-changed', listener)
 		}).not.toThrow()
 	})
+
+	it('should log an error to the console when listener throws an error and emit does not throw', () => {
+		const target = new InternalEventTarget()
+		const listener = vi.fn(() => {
+			throw new Error('Listener error')
+		})
+		const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+		target.addEventListener('global-attributes-changed', listener)
+
+		expect(() => {
+			target.emit('global-attributes-changed', { attributes: { key: 'value' } })
+		}).not.toThrow()
+
+		expect(listener).toHaveBeenCalledTimes(1)
+		expect(consoleErrorSpy).toHaveBeenCalledWith('Error in event listener', expect.any(Error))
+		expect(consoleErrorSpy).toHaveBeenCalledWith(
+			'Error in event listener',
+			expect.objectContaining({ message: 'Listener error' }),
+		)
+
+		consoleErrorSpy.mockRestore()
+	})
 })

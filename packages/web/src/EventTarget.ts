@@ -63,7 +63,7 @@ export class InternalEventTarget {
 				// Avoid breaking the agent if the listener throws an error
 				listener({ payload })
 			} catch (e) {
-				console.error('Error in event listener:', e)
+				console.error('Error in event listener', e)
 			}
 
 			if (options.once) {
