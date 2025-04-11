@@ -59,8 +59,12 @@ export class InternalEventTarget {
 		}
 
 		listeners.forEach(({ listener, options }) => {
-			// Run it as promise so any broken code inside listener doesn't break the agent
-			void Promise.resolve({ payload }).then(listener)
+			try {
+				// Avoid breaking the agent if the listener throws an error
+				listener({ payload })
+			} catch (e) {
+				console.error('Error in event listener:', e)
+			}
 
 			if (options.once) {
 				this.removeEventListener(type, listener)
