@@ -92,33 +92,32 @@ release_npm:
         - echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
         - for f in artifacts/*.tgz; do npm publish ./$f; done;
         - rm -f ~/.npmrc
+# release_github:
+#     artifacts:
+#         paths:
+#             - artifacts/
+#     stage: release
+#     only:
+#         - /^v[0-9]+\..*/
+#     script:
+#         - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-key 23F3D4EA75716059
+#         - echo "deb [arch=$(dpkg --print-architecture)] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+#         - sudo apt update
+#         - sudo apt install gh
+#         - gh release create v${CI_COMMIT_REF_NAME:1} ./artifacts/* --target $CI_COMMIT_SHA --repo $GITHUB_REPOSITORY
 
-release_github:
-    artifacts:
-        paths:
-            - artifacts/
-    stage: release
-    only:
-        - /^v[0-9]+\..*/
-    script:
-        - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-key 23F3D4EA75716059
-        - echo "deb [arch=$(dpkg --print-architecture)] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-        - sudo apt update
-        - sudo apt install gh
-        - gh release create v${CI_COMMIT_REF_NAME:1} ./artifacts/* --target $CI_COMMIT_SHA --repo $GITHUB_REPOSITORY
-
-release_cdn:
-    artifacts:
-        paths:
-            - artifacts/
-    stage: release
-    only:
-        - /^v[0-9]+\..*/
-    needs: ['release_github']
-    id_tokens:
-        CI_JOB_JWT:
-            aud: $CICD_VAULT_ADDR
-    script:
-        # authenticate and release to CDN
-        - creds-helper init && eval $(creds-helper aws --eval aws:v1/o11y-infra/role/o11y_gdi_otel_js_web_releaser_role)
-        - node scripts/release-cdn.mjs v${CI_COMMIT_REF_NAME:1}
+# release_cdn:
+#     artifacts:
+#         paths:
+#             - artifacts/
+#     stage: release
+#     only:
+#         - /^v[0-9]+\..*/
+#     needs: ['release_github']
+#     id_tokens:
+#         CI_JOB_JWT:
+#             aud: $CICD_VAULT_ADDR
+#     script:
+#         # authenticate and release to CDN
+#         - creds-helper init && eval $(creds-helper aws --eval aws:v1/o11y-infra/role/o11y_gdi_otel_js_web_releaser_role)
+#         - node scripts/release-cdn.mjs v${CI_COMMIT_REF_NAME:1}
