@@ -1,6 +1,6 @@
 {
 	"name": "@splunk/rum-build-plugins",
-	"version": "0.0.1-alpha",
+	"version": "0.0.1-alpha.0",
 	"description": "Build plugins for users of @splunk/otel-web",
 	"repository": "github:signalfx/splunk-otel-js-browser",
 	"scripts": {
@@ -44,6 +44,9 @@
 	},
 	"peerDependencies": {
 		"webpack": "^5"
+	},
+	"publishConfig": {
+		"access": "public"
 	},
 	"bugs": {
 		"url": "https://github.com/signalfx/splunk-otel-js-browser/issues"
