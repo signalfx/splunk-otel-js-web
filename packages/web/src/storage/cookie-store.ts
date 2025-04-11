@@ -20,7 +20,7 @@ import { isIframe } from '../utils'
 import { throttle } from '../utils/throttle'
 import { Store } from './store'
 
-const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+const isSafari = () => /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
 
 export class CookieStore<T> implements Store<T> {
 	private cachedValue: T | undefined
@@ -92,7 +92,7 @@ export class CookieStore<T> implements Store<T> {
 		if (isIframe()) {
 			// Safari does not set cookie when the SameSite attribute is set to None and Secure is set to true in an iframe
 			// It fails also in our unit tests since they are running in iframe and on localhost.
-			if (['localhost', '127.0.0.1'].includes(window.location.hostname) && isSafari) {
+			if (['localhost', '127.0.0.1'].includes(window.location.hostname) && isSafari()) {
 				rawCookie += ';SameSite=None'
 			} else {
 				rawCookie += ';SameSite=None; Secure'

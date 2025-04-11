@@ -37,6 +37,21 @@ export class RRWebRecorder extends Recorder {
 	}
 
 	start = () => {
+		if (document.readyState === 'complete' || document.readyState === 'interactive') {
+			this.startRecording()
+		} else {
+			window.addEventListener('load', this.startRecording, { once: true })
+			this.stopRecording = () => window.removeEventListener('load', this.startRecording)
+		}
+	}
+
+	stop() {
+		if (this.stopRecording) {
+			this.stopRecording()
+		}
+	}
+
+	private startRecording = () => {
 		this.stopRecording = record({
 			maskAllInputs: true,
 			maskTextSelector: '*',
@@ -54,11 +69,5 @@ export class RRWebRecorder extends Recorder {
 				this.onEmit(context)
 			},
 		})
-	}
-
-	stop() {
-		if (this.stopRecording) {
-			this.stopRecording()
-		}
 	}
 }

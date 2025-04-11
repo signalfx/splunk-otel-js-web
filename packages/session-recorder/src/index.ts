@@ -24,6 +24,7 @@ import { getSplunkRumVersion, getGlobal } from './utils'
 
 import type { Resource } from '@opentelemetry/resources'
 import type { SplunkOtelWebType } from '@splunk/otel-web'
+import { JsonObject } from 'type-fest'
 
 import {
 	Recorder,
@@ -88,9 +89,10 @@ const SplunkRumRecorder = {
 			return
 		}
 
-		if (typeof window === 'undefined') {
-			console.error("SplunkSessionRecorder can't be run in non-browser environments.")
-			return
+		if (typeof window !== 'object') {
+			throw Error(
+				'SplunkSessionRecorder Error: This library is intended to run in a browser environment. Please ensure the code is evaluated within a browser context.',
+			)
 		}
 
 		let tracerProvider: BasicTracerProvider | ProxyTracerProvider = trace.getTracerProvider() as BasicTracerProvider
@@ -171,10 +173,16 @@ const SplunkRumRecorder = {
 			beaconUrl: exportUrl,
 			debug,
 			getResourceAttributes() {
-				return {
+				const newAttributes: JsonObject = {
 					...resource.attributes,
 					'splunk.rumSessionId': SplunkRum.getSessionId() ?? '',
 				}
+				const anonymousId = SplunkRum.getAnonymousId()
+				if (anonymousId) {
+					newAttributes['user.anonymousId'] = anonymousId
+				}
+
+				return newAttributes
 			},
 			sessionId: SplunkRum.getSessionId() ?? '',
 			usePersistentExportQueue: isSplunkRecorder,
