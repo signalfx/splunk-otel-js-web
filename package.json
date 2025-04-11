@@ -4,9 +4,9 @@
 	"version": "0.20.3",
 	"--workspaces": "Hardcoded so npm runs workspaces commands in order",
 	"workspaces": [
-		"packages/build-plugins",
 		"packages/web",
 		"packages/session-recorder",
+		"packages/build-plugins",
 		"packages/integration-tests"
 	],
 	"engines": {

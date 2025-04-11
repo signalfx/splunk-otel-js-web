@@ -48,6 +48,7 @@ export default defineConfig({
 			provider: 'istanbul',
 		},
 		include: ['**/*.test.ts'],
+		exclude: ['./node_modules/**/*.test.ts', './packages/build-plugins/**/*.test.ts'],
 		pool: 'forks',
 		root: path.resolve(__dirname),
 		reporters: ['default', 'html'],
