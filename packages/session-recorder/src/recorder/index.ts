@@ -18,4 +18,6 @@
 export * from './recorder'
 export * from './rrweb-recorder'
 export * from './splunk-recorder'
-export * from './utils'
+export * from './migrations/config-migration'
+export * from './migrations/session-migration'
+export * from './types'

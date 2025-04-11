@@ -119,20 +119,22 @@ export function getCurrentSessionState({ forceDiskRead = false }): SessionState 
 // 2) If activity has occurred since the last periodic invocation, renew the cookie timeout
 // (Only exported for testing purposes.)
 export function updateSessionStatus({
+	forceNewSession = false,
 	forceStore,
 	hadActivity,
 	inactive = undefined,
 }: {
+	forceNewSession?: boolean
 	forceStore: boolean
 	hadActivity?: boolean
 	inactive?: boolean
 }): SessionState {
 	let sessionState = getCurrentSessionState({ forceDiskRead: forceStore })
 	let shouldForceWrite = false
-	if (!sessionState) {
+	if (!sessionState || forceNewSession) {
 		// Check if another tab has created a new session
 		sessionState = getCurrentSessionState({ forceDiskRead: true })
-		if (!sessionState) {
+		if (!sessionState || forceNewSession) {
 			sessionState = createSessionState()
 			recentActivity = true // force write of new cookie
 			shouldForceWrite = true

@@ -16,7 +16,7 @@
  *
  */
 import { describe, it, expect } from 'vitest'
-import { migrateRRWebConfigToSplunkConfig } from './utils'
+import { migrateRRWebConfigToSplunkConfig } from './config-migration'
 
 const defaultSensitivityRules = [
 	{ rule: 'mask', selector: '.rr-mask' },
