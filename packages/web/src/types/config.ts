@@ -177,6 +177,11 @@ export interface SplunkOtelWebConfig {
 	 */
 	tracer?: WebTracerConfig
 
+	user?: {
+		/** Sets tracking mode of user. Defaults to 'noTracking'. */
+		trackingMode?: 'noTracking' | 'anonymousTracking'
+	}
+
 	/**
 	 * Sets a value for the 'app.version' attribute
 	 */

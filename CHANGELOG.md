@@ -2,6 +2,15 @@
 
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
+## 0.20.3
+* @splunk/otel-web
+    * fix: throw exception with a proper message when running in non-browser environment [#1083](https://github.com/signalfx/splunk-otel-js-web/pull/1083) [#1088](https://github.com/signalfx/splunk-otel-js-web/pull/1088)
+      - **There is a possibly breaking change if the package was used incorrectly. Do not `init` SplunkRum in non-browser environments**
+* @splunk/otel-web-session-recorder
+    * fix: rrweb 'load' handlers clean up fix bypass [#1089](https://github.com/signalfx/splunk-otel-js-web/pull/1089)
+    * fix: throw exception when running in non-browser environment [#1089](https://github.com/signalfx/splunk-otel-js-web/pull/1089)
+      - **There is a possibly breaking change if the package was used incorrectly. Do not `init` SplunkSessionRecorder in non-browser environments**
+
 ## 0.20.2
 * @splunk/otel-web
     * fix: handle case when "load" event is triggered multiple times [PR description](https://github.com/signalfx/splunk-otel-js-web/pull/1065)
