@@ -65,8 +65,9 @@ build_artifacts:
         - npm run compile
         - npm pack --pack-destination artifacts --workspace packages/session-recorder --workspace packages/web --workspace packages/build-plugins
 
-        # complete artifacts & checksums
-        - cp packages/*/dist/artifacts/* artifacts/
+        # complete artifacts from web and session recorder packages & checksums
+        - cp packages/web/dist/artifacts/* artifacts/
+        - cp packages/session-recorder/dist/artifacts/* artifacts/
         - shasum -a 256 artifacts/* > artifacts/checksums.txt
 
 unit_test:
