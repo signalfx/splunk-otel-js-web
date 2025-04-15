@@ -103,7 +103,6 @@ jobs:
             - name: Run Unit Tests (Plugin)
               run: npm run test:plugin
 
-
     merge-reports:
         name: Merge playwright reports
         if: ${{ !cancelled() }}
