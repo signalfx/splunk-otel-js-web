@@ -1,7 +1,7 @@
 {
 	"name": "@splunk/otel-web-dev-root",
 	"private": true,
-	"version": "0.0.1-alpha.0",
+	"version": "0.20.3",
 	"--workspaces": "Hardcoded so npm runs workspaces commands in order",
 	"workspaces": [
 		"packages/web",
