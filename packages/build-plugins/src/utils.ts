@@ -18,7 +18,7 @@
 import { createHash } from 'crypto'
 import { createReadStream } from 'fs'
 
-export const PLUGIN_NAME = 'OllyWebPlugin'
+export const PLUGIN_NAME = 'SplunkRumPlugin'
 
 export const JS_FILE_REGEX = /\.(js|cjs|mjs)$/
 
