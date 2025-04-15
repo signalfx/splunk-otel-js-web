@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-import { expect } from 'chai'
+import { describe, expect, it, vi } from 'vitest'
 import {
 	computeSourceMapId,
 	computeSourceMapIdFromFile,

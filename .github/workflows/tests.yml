@@ -52,6 +52,9 @@ jobs:
                   path: vitest-report/
                   retention-days: 14
 
+            - name: Run Unit Tests (Plugin)
+              run: npm run test:plugin
+
     tests-macos:
         timeout-minutes: 60
         runs-on: macos-latest
@@ -96,6 +99,10 @@ jobs:
                   name: vitest-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
                   path: vitest-report/
                   retention-days: 14
+
+            - name: Run Unit Tests (Plugin)
+              run: npm run test:plugin
+
 
     merge-reports:
         name: Merge playwright reports

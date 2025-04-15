@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-import { expect } from 'chai'
+import { describe, expect, it } from 'vitest'
 import { readFileSync, existsSync } from 'fs'
 import * as path from 'path'
 import { computeSourceMapIdFromFile } from '../src/utils'

@@ -24,6 +24,7 @@
 		"lint:prettier:fix": "npm run lint:prettier -- --write",
 		"lint:markdown": "markdownlint *.md docs/*.md --ignore CHANGELOG.md",
 		"lint:markdown:fix": "npm run lint:markdown -- --fix",
+		"test:plugin": "npm run --workspace=packages/build-plugins test:unit",
 		"test:unit": "vitest --run --watch false",
 		"test:unit:watch": "vitest --watch",
 		"postversion": "node ./scripts/version-update.mjs",

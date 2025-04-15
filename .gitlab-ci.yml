@@ -75,6 +75,7 @@ unit_test:
         - npm ci --include=dev
         - npx playwright install --with-deps
         - npm run test:unit -- --browser.name chromium
+        - npm run test:plugin
 
 oss-scan:
     stage: test
