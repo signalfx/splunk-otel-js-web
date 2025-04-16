@@ -49,7 +49,7 @@ export class ApiError extends Error {
 
 	readonly visibilityState: DocumentVisibilityState
 
-	wasBeaconFallbackUsed: boolean
+	readonly wasBeaconFallbackUsed: boolean
 
 	get isConnectionError(): boolean {
 		return this.status < 0 && !this.isAbortedByRecorder && !this.isAbortedByUserAgent

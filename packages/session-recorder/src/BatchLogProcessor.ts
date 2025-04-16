@@ -96,7 +96,7 @@ export class BatchLogProcessor {
 
 	private flushAll(): Promise<void> {
 		return new Promise((resolve, reject) => {
-			const promises = []
+			const promises: Promise<void>[] = []
 			promises.push(this.flushOneBatch())
 
 			Promise.all(promises)
@@ -119,7 +119,7 @@ export class BatchLogProcessor {
 					this.exportLogs(this.finishedLogs.splice(0, this.finishedLogs.length)),
 					this.exportTimeoutMillis,
 				)
-					.then(() => resolve())
+					.then(resolve)
 					.catch(reject)
 			})
 		})
