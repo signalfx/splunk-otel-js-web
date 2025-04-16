@@ -23,7 +23,7 @@ import type { JsonArray, JsonObject, JsonValue } from 'type-fest'
 import { IAnyValue, Log } from './types'
 import { VERSION } from './version'
 import { compressAsync } from './session-replay/utils'
-import { apiFetch } from './api/api-fetch'
+import { apiFetch, ApiParams } from './api/api-fetch'
 import { addLogToQueue, removeQueuedLog, QueuedLog, getQueuedLogs, removeQueuedLogs } from './export-log-queue'
 
 interface OTLPLogExporterConfig {
@@ -172,12 +172,16 @@ export default class OTLPLogExporter {
 			// Use fetch with keepalive option instead of beacon.
 			// Fetch with keepalive option has limit of 64kB.
 			const shouldUseKeepAliveOption = compressedData.byteLength < KEEPALIVE_MAX_LENGTH
-			void sendByFetch(endpoint, headers, compressedData, onFetchSuccess, shouldUseKeepAliveOption)
+			void sendByFetch(
+				endpoint,
+				{ headers, body: compressedData, keepalive: shouldUseKeepAliveOption },
+				onFetchSuccess,
+			)
 		} else {
 			compressAsync(uint8ArrayData)
 				.then((compressedData) => {
 					console.debug('🗜️ dbg: ASYNC compress', { endpoint, headers, compressedData })
-					void sendByFetch(endpoint, headers, compressedData, onFetchSuccess)
+					void sendByFetch(endpoint, { headers, body: compressedData }, onFetchSuccess)
 				})
 				.catch((error) => {
 					console.error('Could not compress data', error)
@@ -208,7 +212,7 @@ export default class OTLPLogExporter {
 
 			compressAsync(log.data)
 				.then((compressedData) => {
-					void sendByFetch(log.url, log.headers, compressedData, () => {
+					void sendByFetch(log.url, { headers: log.headers, body: compressedData }, () => {
 						console.log('exportQueuedLogs - success', { ...log, data: '[truncated]' })
 					})
 				})
@@ -221,25 +225,21 @@ export default class OTLPLogExporter {
 
 const sendByFetch = async (
 	endpoint: string,
-	headers: HeadersInit,
-	data: BodyInit,
+	fetchParams: Pick<ApiParams, 'headers' | 'keepalive' | 'body'>,
 	onSuccess: () => void,
-	keepalive?: boolean,
 ) => {
 	try {
 		await apiFetch(endpoint, {
 			method: 'POST',
-			headers,
-			keepalive,
-			body: data,
 			abortPreviousRequest: false,
 			doNotConvert: true,
 			doNotRetryOnDocumentHidden: true,
 			retryCount: 100,
 			retryOnHttpErrorStatusCodes: true,
+			...fetchParams,
 		})
 
-		console.debug('📦 dbg: sendByFetch', { keepalive })
+		console.debug('📦 dbg: sendByFetch', { keepalive: fetchParams.keepalive })
 		onSuccess()
 	} catch (error) {
 		console.error('Could not sent data to BE - fetch', error)

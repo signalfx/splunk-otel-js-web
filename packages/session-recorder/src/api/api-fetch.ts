@@ -20,7 +20,7 @@ import { waitForOnline, createUrl, isTrustedEvent } from './utils'
 
 type RequestInit = Parameters<typeof fetch>[1]
 
-type ApiParams = RequestInit & {
+export type ApiParams = RequestInit & {
 	abortPreviousRequest: boolean
 	baseUrl?: string
 	discardExistingPath?: boolean
