@@ -15,8 +15,6 @@
  * limitations under the License.
  *
  */
-/* eslint-disable */
-const path = require('path')
 const { getBaseConfig } = require('./webpack-utils')
 
 module.exports = {
