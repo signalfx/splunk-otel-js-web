@@ -15,7 +15,9 @@
  * limitations under the License.
  *
  */
-export const RENDER_AGENT_TEMPLATE = `
+import { html } from './utils'
+
+export const RENDER_AGENT_TEMPLATE = html`
 	<script src="<%= file -%>" crossorigin="anonymous"></script>
 	<script src="<%= otelApiGlobalsFile -%>" crossorigin="anonymous"></script>
 	<script>
