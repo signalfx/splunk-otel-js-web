@@ -19,7 +19,7 @@
 import { SpanProcessor, WebTracerProvider } from '@opentelemetry/sdk-trace-web'
 import { InternalEventTarget } from '../EventTarget'
 import { generateId } from '../utils'
-import { SessionState, SessionId } from './types'
+import { SessionState, SessionId, RecorderType } from './types'
 import { SESSION_INACTIVITY_TIMEOUT_MS, SESSION_STORAGE_KEY } from './constants'
 import { isSessionDurationExceeded, isSessionInactivityTimeoutReached, isSessionState } from './utils'
 import { PersistenceType } from '../types'
@@ -123,11 +123,13 @@ export function updateSessionStatus({
 	forceStore,
 	hadActivity,
 	inactive = undefined,
+	recorderType = undefined,
 }: {
 	forceNewSession?: boolean
 	forceStore: boolean
 	hadActivity?: boolean
 	inactive?: boolean
+	recorderType?: RecorderType
 }): SessionState {
 	let sessionState = getCurrentSessionState({ forceDiskRead: forceStore })
 	let shouldForceWrite = false
@@ -144,6 +146,11 @@ export function updateSessionStatus({
 
 	if (sessionState.inactive !== inactive) {
 		sessionState.inactive = inactive
+		shouldForceWrite = true
+	}
+
+	if (recorderType && sessionState.rt !== recorderType) {
+		sessionState.rt = recorderType
 		shouldForceWrite = true
 	}
 
@@ -283,4 +290,12 @@ export function getRumSessionId(): SessionId | undefined {
 
 export function getIsNewSession(): boolean {
 	return isNewSessionId
+}
+
+export function checkSessionRecorderType(recorderType: RecorderType): void {
+	const sessionState = getCurrentSessionState({ forceDiskRead: true })
+	if (sessionState && sessionState.rt !== recorderType) {
+		updateSessionStatus({ forceStore: true, forceNewSession: true, recorderType })
+		console.debug('Session recorder type changed, creating new session', { recorderType })
+	}
 }

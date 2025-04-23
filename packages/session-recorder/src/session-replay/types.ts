@@ -65,6 +65,7 @@ export interface SessionReplayConfig {
 	maskAllText?: boolean
 	maxExportIntervalMs?: number
 	onSegment: (segment: SessionReplayPlainSegment) => void
+	originalFetch?: typeof fetch
 	sensitivityRules?: SensitivityRule[]
 }
 

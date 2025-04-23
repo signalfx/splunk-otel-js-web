@@ -16,7 +16,8 @@
  *
  */
 
-import { ProxyTracerProvider, TracerProvider, trace, Tracer } from '@opentelemetry/api'
+import { ProxyTracerProvider, TracerProvider, trace, Tracer, context } from '@opentelemetry/api'
+import { suppressTracing } from '@opentelemetry/core'
 import OTLPLogExporter from './OTLPLogExporter'
 import { BatchLogProcessor, convert } from './BatchLogProcessor'
 import { VERSION } from './version'
@@ -35,8 +36,6 @@ import {
 	SplunkRecorderPublicConfig,
 	migrateRRWebConfigToSplunkConfig,
 	RecorderType,
-	getRecorderMetadata,
-	setRecorderMetadata,
 } from './recorder'
 
 interface BasicTracerProvider extends TracerProvider {
@@ -145,23 +144,7 @@ const SplunkRumRecorder = {
 		const isSplunkRecorder = recorderType === 'splunk'
 
 		// Handle recorder type change (splunk -> rrweb or rrweb -> splunk)
-		const recorderMetadata = getRecorderMetadata()
-		if (recorderMetadata) {
-			// Recorder changed during the same session => create new session
-			if (
-				recorderMetadata.sessionId === SplunkRum.getSessionId() &&
-				recorderMetadata.recorderType !== recorderType
-			) {
-				console.debug('SplunkSessionRecorder: Recorder type changed, creating new session.')
-				SplunkRum._internalCreateNewSession()
-			}
-		} else {
-			// No recorder metadata in local storage, recorder could change in meantime => create new session
-			console.debug('SplunkSessionRecorder: No recorder metadata found, creating new session.')
-			SplunkRum._internalCreateNewSession()
-		}
-
-		setRecorderMetadata({ sessionId: SplunkRum.getSessionId() ?? '', recorderType })
+		SplunkRum._internalCheckSessionRecorderType(recorderType)
 
 		// Mark recorded session as splunk
 		if (SplunkRum.provider) {
@@ -231,7 +214,7 @@ const SplunkRumRecorder = {
 
 		sessionStartTime = Date.now()
 
-		const onEmit = (context: RecorderEmitContext) => {
+		const onEmit = (emitContext: RecorderEmitContext) => {
 			if (paused) {
 				return
 			}
@@ -258,10 +241,10 @@ const SplunkRumRecorder = {
 				// reset counters
 				eventCounter = 1
 				logCounter = 1
-				context.onSessionChanged()
+				emitContext.onSessionChanged()
 			}
 
-			if (context.startTime > sessionStartTime + MAX_RECORDING_LENGTH) {
+			if (emitContext.startTime > sessionStartTime + MAX_RECORDING_LENGTH) {
 				return
 			}
 
@@ -271,12 +254,12 @@ const SplunkRumRecorder = {
 				}
 			}
 
-			const time = context.type === 'splunk' ? Math.floor(context.startTime) : context.startTime
+			const time = emitContext.type === 'splunk' ? Math.floor(emitContext.startTime) : emitContext.startTime
 			const eventI = eventCounter
 
 			eventCounter += 1
 
-			const body = encoder.encode(JSON.stringify(context.data))
+			const body = encoder.encode(JSON.stringify(emitContext.data))
 			const totalC = Math.ceil(body.byteLength / MAX_CHUNK_SIZE)
 
 			console.log('TotalC:', totalC)
@@ -303,7 +286,19 @@ const SplunkRumRecorder = {
 
 		try {
 			recorder = isSplunkRecorder
-				? new SplunkRecorder({ ...migrateRRWebConfigToSplunkConfig(initRecorderConfig), onEmit })
+				? new SplunkRecorder({
+						originalFetch: (...args) =>
+							new Promise((resolve, reject) => {
+								context.with(suppressTracing(context.active()), () => {
+									window
+										.fetch(...args)
+										.then(resolve)
+										.catch(reject)
+								})
+							}),
+						...migrateRRWebConfigToSplunkConfig(initRecorderConfig),
+						onEmit,
+					})
 				: new RRWebRecorder({ ...initRecorderConfig, onEmit })
 			recorder.start()
 			inited = true

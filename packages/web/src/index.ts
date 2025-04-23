@@ -43,7 +43,14 @@ import { type SplunkExporterConfig } from './exporters/common'
 import { SplunkZipkinExporter } from './exporters/zipkin'
 import { ERROR_INSTRUMENTATION_NAME, SplunkErrorInstrumentation } from './SplunkErrorInstrumentation'
 import { generateId, getPluginConfig } from './utils'
-import { getIsNewSession, getRumSessionId, initSessionTracking, updateSessionStatus } from './session'
+import {
+	checkSessionRecorderType,
+	getIsNewSession,
+	getRumSessionId,
+	initSessionTracking,
+	RecorderType,
+	updateSessionStatus,
+} from './session'
 import { SplunkWebSocketInstrumentation } from './SplunkWebSocketInstrumentation'
 import { initWebVitals } from './webvitals'
 import { SplunkLongTaskInstrumentation } from './SplunkLongTaskInstrumentation'
@@ -205,9 +212,9 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	_experimental_getSessionId: () => SessionId | undefined
 
 	/**
-	 * Used internally by the SplunkSessionRecorder - change of recorder type during the same session triggers new session
+	 * Used internally by the SplunkSessionRecorder - checks if the current session is assigned to a correct recorder type.
 	 */
-	_internalCreateNewSession: () => void
+	_internalCheckSessionRecorderType: (recorderType: RecorderType) => void
 
 	/**
 	 * Allows experimental options to be passed. No versioning guarantees are given for this method.
@@ -606,8 +613,8 @@ export const SplunkRum: SplunkOtelWebType = {
 			hadActivity: this._processedOptions._experimental_allSpansExtendSession,
 		})
 	},
-	_internalCreateNewSession() {
-		updateSessionStatus({ forceStore: true, forceNewSession: true })
+	_internalCheckSessionRecorderType(recorderType: RecorderType) {
+		checkSessionRecorderType(recorderType)
 	},
 }
 

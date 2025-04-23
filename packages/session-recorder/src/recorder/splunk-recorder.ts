@@ -47,6 +47,7 @@ export class SplunkRecorder extends Recorder {
 				maskAllText: this.config.maskAllText ?? true,
 				maxExportIntervalMs: this.config.maxExportIntervalMs ?? 5000,
 				onSegment: this.onSegment,
+				originalFetch: this.config.originalFetch,
 				sensitivityRules: this.config.sensitivityRules ?? [],
 			})
 		} else {
