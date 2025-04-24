@@ -55,36 +55,18 @@ module.exports = {
 				options: { configFile: 'tsconfig.base.json' },
 			},
 			{
-				test: /\.js$/,
-				exclude: /node_modules/,
+				test: /\.m?js$/,
+				exclude: /(node_modules)/,
 				use: {
-					loader: 'babel-loader',
+					loader: 'swc-loader',
 					options: {
-						presets: [
-							[
-								'@babel/preset-env',
-								{
-									targets: {
-										ie: '11',
-										chrome: '52',
-										safari: '11',
-										firefox: '57',
-										edge: '79',
-									},
-								},
-							],
-						],
-						plugins: [
-							[
-								'@babel/plugin-transform-runtime',
-								{
-									absoluteRuntime: false,
-									corejs: false,
-									helpers: true,
-									regenerator: true,
-								},
-							],
-						],
+						jsc: {
+							parser: {
+								syntax: 'ecmascript',
+							},
+							target: 'es5',
+							externalHelpers: true,
+						},
 					},
 				},
 			},

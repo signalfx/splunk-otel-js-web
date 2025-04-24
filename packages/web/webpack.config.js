@@ -53,36 +53,22 @@ const getBaseConfig = (env, argv, options = {}) => {
 					options: { configFile: 'tsconfig.base.json' },
 				},
 				{
-					test: /\.js$/,
-					exclude: useCoreJS ? /node_modules\/core-js/ : /node_modules/,
+					test: /\.m?js$/,
+					exclude: /(node_modules)/,
 					use: {
-						loader: 'babel-loader',
+						loader: 'swc-loader',
 						options: {
-							presets: [
-								[
-									'@babel/preset-env',
-									{
-										targets: {
-											ie: '11',
-											chrome: '52',
-											safari: '11',
-											firefox: '57',
-											edge: '79',
-										},
-									},
-								],
-							],
-							plugins: [
-								[
-									'@babel/plugin-transform-runtime',
-									{
-										absoluteRuntime: false,
-										corejs: useCoreJS ? 3 : false,
-										helpers: true,
-										regenerator: true,
-									},
-								],
-							],
+							jsc: {
+								parser: {
+									syntax: 'ecmascript',
+								},
+								target: `es${ecma}`,
+								externalHelpers: true,
+							},
+							env: {
+								mode: useCoreJS ? 'usage' : undefined,
+								coreJs: useCoreJS ? '3.41' : undefined,
+							},
 						},
 					},
 				},
@@ -112,7 +98,7 @@ const getBaseConfig = (env, argv, options = {}) => {
 }
 
 const browserConfig = (env, argv) => {
-	const baseConfig = getBaseConfig(env, argv)
+	const baseConfig = getBaseConfig(env, argv, { ecma: 2020 })
 	return {
 		...baseConfig,
 		entry: path.resolve(__dirname, './src/indexBrowser.ts'),
