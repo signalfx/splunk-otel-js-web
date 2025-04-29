@@ -9,7 +9,7 @@
 		"pretty": true,
 		"resolveJsonModule": true,
 		"target": "ES2017",
-		"types": ["node"],
+		"types": ["node", "./src/session-replay/cdn-module.d.ts"],
 		"skipLibCheck": true,
 		"strict": true
 	},

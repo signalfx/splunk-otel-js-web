@@ -16,13 +16,11 @@
  *
  */
 
-import {
-	SessionReplay as SessionReplayOriginal,
-	SessionReplayPlain as SessionReplayPlainOriginal,
-	// @ts-expect-error Remote module
+export {
+	SessionReplay,
+	SessionReplayPlain,
+	SessionReplayConfig,
+	SessionReplayPlainSegment,
+	SensitivityRule,
+	SensitivityRuleType,
 } from 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v1.33.0/session-replay.module.legacy.min.js'
-import { SessionReplayPlainClass, SessionReplayClass } from './types'
-
-export const SessionReplay: SessionReplayClass = SessionReplayOriginal
-
-export const SessionReplayPlain: SessionReplayPlainClass = SessionReplayPlainOriginal

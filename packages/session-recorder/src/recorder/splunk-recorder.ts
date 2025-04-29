@@ -16,19 +16,14 @@
  *
  */
 import { Recorder, RecorderConfig, RecorderEmitContext } from './recorder'
-import {
-	SessionReplayPlain,
-	SessionReplayPlainInstance,
-	SessionReplayPlainSegment,
-	SessionReplayConfig,
-} from '../session-replay'
+import { SessionReplayPlain, SessionReplayConfig, SessionReplayPlainSegment } from '../session-replay'
 
 export type SplunkRecorderPublicConfig = Omit<SessionReplayConfig, 'onSegment'>
 
 type SplunkRecorderConfig = SplunkRecorderPublicConfig & RecorderConfig
 
 export class SplunkRecorder extends Recorder {
-	private sessionReplay: SessionReplayPlainInstance | undefined
+	private sessionReplay: SessionReplayPlain | undefined
 
 	constructor(private readonly config: SplunkRecorderConfig) {
 		super(config)
