@@ -18,5 +18,5 @@
 export * from './recorder'
 export * from './rrweb-recorder'
 export * from './splunk-recorder'
-export * from './migrations/config-migration'
+export * from './config'
 export * from './types'

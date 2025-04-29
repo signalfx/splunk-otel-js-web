@@ -23,7 +23,6 @@ import { isString } from '../../type-guards'
 export const migrateRRWebConfigToSplunkConfig = (
 	config: NonNullable<RRWebRecorderPublicConfig>,
 ): SplunkRecorderPublicConfig => ({
-	...config,
 	maskAllInputs: config.maskAllInputs,
 	sensitivityRules: migratePrivacyOptionsToSensitivityRules(config),
 })

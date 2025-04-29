@@ -34,8 +34,8 @@ import {
 	RecorderEmitContext,
 	RRWebRecorderPublicConfig,
 	SplunkRecorderPublicConfig,
-	migrateRRWebConfigToSplunkConfig,
 	RecorderType,
+	getSplunkRecorderConfig,
 } from './recorder'
 
 interface BasicTracerProvider extends TracerProvider {
@@ -296,7 +296,7 @@ const SplunkRumRecorder = {
 										.catch(reject)
 								})
 							}),
-						...migrateRRWebConfigToSplunkConfig(initRecorderConfig),
+						...getSplunkRecorderConfig(initRecorderConfig),
 						onEmit,
 					})
 				: new RRWebRecorder({ ...initRecorderConfig, onEmit })
