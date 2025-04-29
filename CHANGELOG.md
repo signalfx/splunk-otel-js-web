@@ -2,6 +2,12 @@
 
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
+## 0.20.4
+* @splunk/otel-web
+	* fix: compatibility with Internet Explorer [#1108](https://github.com/signalfx/splunk-otel-js-web/pull/1108) [#1099](https://github.com/signalfx/splunk-otel-js-web/pull/1099)
+* internal
+	* Updated dependencies 
+
 ## 0.20.3
 * @splunk/otel-web
     * fix: throw exception with a proper message when running in non-browser environment [#1083](https://github.com/signalfx/splunk-otel-js-web/pull/1083) [#1088](https://github.com/signalfx/splunk-otel-js-web/pull/1088)
