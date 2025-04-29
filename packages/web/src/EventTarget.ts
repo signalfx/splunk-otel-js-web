@@ -80,10 +80,12 @@ export class InternalEventTarget {
 			return
 		}
 
-		const i = this.events[type].findIndex(({ listener }) => listener === listenerToRemove)
-
-		if (i >= 0) {
-			this.events[type].splice(i, 1)
+		for (let i = 0; i < this.events[type].length; i++) {
+			const { listener } = this.events[type][i]
+			if (listener === listenerToRemove) {
+				this.events[type].splice(i, 1)
+				break
+			}
 		}
 	}
 }
