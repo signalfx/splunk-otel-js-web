@@ -66,7 +66,6 @@ export const safelyGetLocalStorage = (key: string): string | null => {
 
 export const safelySetLocalStorage = (key: string, value: string): boolean => {
 	try {
-		console.log('localStorage setting', key, value)
 		window.localStorage.setItem(key, value)
 		return true
 	} catch {
