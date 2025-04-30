@@ -33,7 +33,7 @@
 		"@opentelemetry/exporter-trace-otlp-http": "^0.52.1",
 		"@opentelemetry/exporter-zipkin": "^1.25.1",
 		"@opentelemetry/instrumentation": "^0.52.1",
-		"@opentelemetry/instrumentation-document-load": "^0.39.0",
+		"@opentelemetry/instrumentation-document-load": "^0.45.0",
 		"@opentelemetry/instrumentation-fetch": "^0.52.1",
 		"@opentelemetry/instrumentation-xml-http-request": "^0.52.1",
 		"@opentelemetry/resources": "^1.25.1",
