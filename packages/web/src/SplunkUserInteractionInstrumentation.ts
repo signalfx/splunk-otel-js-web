@@ -21,6 +21,7 @@ import { UserInteractionInstrumentation } from './upstream/user-interaction/inst
 // import { UserInteractionInstrumentation } from '@opentelemetry/instrumentation-user-interaction';
 import { UserInteractionInstrumentationConfig } from './upstream/user-interaction/types'
 // import { UserInteractionInstrumentationConfig } from '@opentelemetry/instrumentation-user-interaction/build/src/types';
+import { isUrlIgnored } from '@opentelemetry/core'
 
 export type UserInteractionEventsConfig = {
 	[type: string]: boolean
@@ -56,6 +57,7 @@ const ROUTING_INSTRUMENTATION_VERSION = '1'
 
 export interface SplunkUserInteractionInstrumentationConfig extends UserInteractionInstrumentationConfig {
 	events?: UserInteractionEventsConfig
+	ignoreUrls?: (string | RegExp)[]
 }
 
 function isPatchableEventListner(listener: Parameters<EventTarget['addEventListener']>[1]) {
@@ -71,7 +73,7 @@ type ExposedSuper = {
 	_patchAddEventListener: () => (original: EventTarget['addEventListener']) => EventTarget['addEventListener']
 }
 
-export class SplunkUserInteractionInstrumentation extends UserInteractionInstrumentation {
+export class SplunkUserInteractionInstrumentation extends UserInteractionInstrumentation<SplunkUserInteractionInstrumentationConfig> {
 	private __hashChangeHandler: (ev: Event) => void
 
 	private _routingTracer: Tracer
@@ -182,6 +184,11 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 	}
 
 	private _emitRouteChangeSpan(oldHref) {
+		const config = this.getConfig()
+		if (isUrlIgnored(location.href, config.ignoreUrls)) {
+			return
+		}
+
 		const now = Date.now()
 		const span = this._routingTracer.startSpan('routeChange', { startTime: now })
 		span.setAttribute('component', this.moduleName)
