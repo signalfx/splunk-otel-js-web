@@ -22,6 +22,7 @@ import { LocalStore } from './local-store'
 export interface Store<T> {
 	flush: () => void
 	get: ({ forceDiskRead }: { forceDiskRead?: boolean }) => T
+	peek: () => T
 	remove: (domain?: string) => void
 	set: (value: T, domain?: string) => void
 }

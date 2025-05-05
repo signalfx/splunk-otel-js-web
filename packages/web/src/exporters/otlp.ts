@@ -39,6 +39,11 @@ export class SplunkOTLPTraceExporter extends OTLPTraceExporter {
 	}
 
 	send(items: ReadableSpan[], onSuccess: () => void): void {
+		if (globalThis[Symbol.for('opentelemetry.js.api.1')]['splunk.rum']['durationMax'] === true) {
+			// console.log('Max duration exceeded, no export')
+			return
+		}
+
 		if (this._shutdownOnce.isCalled) {
 			diag.debug('Shutdown already started. Cannot send objects')
 			return

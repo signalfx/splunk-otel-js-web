@@ -94,6 +94,12 @@ export class SplunkZipkinExporter implements SpanExporter {
 	}
 
 	export(spans: ReadableSpan[], resultCallback: (result: ExportResult) => void): void {
+		if (globalThis[Symbol.for('opentelemetry.js.api.1')]['splunk.rum']['durationMax'] === true) {
+			// console.log('Max duration exceeded, no export')
+			resultCallback({ code: ExportResultCode.SUCCESS })
+			return
+		}
+
 		const zspans = spans.map((span) => this._mapToZipkinSpan(span))
 		const zJson = JSON.stringify(zspans)
 		if (document.hidden && this._beaconSender && zJson.length <= 64000) {

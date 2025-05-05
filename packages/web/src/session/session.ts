@@ -16,7 +16,7 @@
  *
  */
 
-import { SpanProcessor, WebTracerProvider } from '@opentelemetry/sdk-trace-web'
+import { WebTracerProvider } from '@opentelemetry/sdk-trace-web'
 import { InternalEventTarget } from '../EventTarget'
 import { generateId } from '../utils'
 import { SessionState, SessionId } from './types'
@@ -106,10 +106,6 @@ export function getCurrentSessionState({ forceDiskRead = false }): SessionState 
 		return undefined
 	}
 
-	if (isSessionDurationExceeded(sessionState) || isSessionInactivityTimeoutReached(sessionState)) {
-		return undefined
-	}
-
 	return sessionState
 }
 
@@ -119,23 +115,66 @@ export function getCurrentSessionState({ forceDiskRead = false }): SessionState 
 // (Only exported for testing purposes.)
 export function updateSessionStatus({
 	forceStore,
-	hadActivity,
 	inactive = undefined,
 }: {
 	forceStore: boolean
 	hadActivity?: boolean
 	inactive?: boolean
 }): SessionState {
+	if (recentActivity) {
+		globalThis[Symbol.for('opentelemetry.js.api.1')]['splunk.rum']['durationMax'] = false
+	}
+
 	let sessionState = getCurrentSessionState({ forceDiskRead: forceStore })
+
+	// console.log('Current session state 1', sessionState)
+
+	const peekedSessionState = getStore().peek()
+
+	if (sessionState && peekedSessionState) {
+		if (sessionState.id !== peekedSessionState.id) {
+			sessionState = undefined
+		}
+	}
+
 	let shouldForceWrite = false
 	if (!sessionState) {
+		// console.log('Current session state 2', sessionState)
 		// Check if another tab has created a new session
 		sessionState = getCurrentSessionState({ forceDiskRead: true })
+		// console.log('Current session state 3', sessionState)
 		if (!sessionState) {
 			sessionState = createSessionState()
 			recentActivity = true // force write of new cookie
 			shouldForceWrite = true
+			// console.log('Current session state 4', sessionState)
 		}
+	}
+
+	// console.log('Current session state 5', sessionState)
+
+	if (isSessionInactivityTimeoutReached(sessionState)) {
+		// console.log('session timeouted')
+	}
+
+	if (isSessionDurationExceeded(sessionState)) {
+		// console.log('session duration exceeded')
+	}
+
+	if (
+		recentActivity &&
+		(isSessionInactivityTimeoutReached(sessionState) || isSessionDurationExceeded(sessionState))
+	) {
+		sessionState = createSessionState()
+		recentActivity = true // force write of new cookie
+		shouldForceWrite = true
+		// console.log('Current session state 6', sessionState, 'inactivity or max length reached')
+	}
+
+	if (isSessionDurationExceeded(sessionState)) {
+		// console.log('Current session state 7', 'ending')
+		globalThis[Symbol.for('opentelemetry.js.api.1')]['splunk.rum']['durationMax'] = true
+		return sessionState
 	}
 
 	if (sessionState.inactive !== inactive) {
@@ -145,7 +184,7 @@ export function updateSessionStatus({
 
 	eventTarget?.emit('session-changed', { sessionId: sessionState.id })
 
-	if (recentActivity || hadActivity) {
+	if (recentActivity) {
 		sessionState.expiresAt = Date.now() + SESSION_INACTIVITY_TIMEOUT_MS
 
 		// TODO: review if this check makes sense
@@ -163,25 +202,6 @@ export function updateSessionStatus({
 
 function hasNativeSessionId(): boolean {
 	return typeof window !== 'undefined' && window['SplunkRumNative'] && window['SplunkRumNative'].getNativeSessionId
-}
-
-class SessionSpanProcessor implements SpanProcessor {
-	forceFlush(): Promise<void> {
-		return Promise.resolve()
-	}
-
-	onEnd(): void {}
-
-	onStart(): void {
-		updateSessionStatus({
-			forceStore: false,
-			hadActivity: true,
-		})
-	}
-
-	shutdown(): Promise<void> {
-		return Promise.resolve()
-	}
 }
 
 const ACTIVITY_EVENTS = ['click', 'scroll', 'mousedown', 'keydown', 'touchend', 'visibilitychange']
@@ -211,6 +231,7 @@ export function initSessionTracking(
 			set: () => {
 				throw new Error('Cannot override native RUM session ID.')
 			},
+			peek: () => sessionState,
 			remove: () => {
 				throw new Error('Cannot clear native RUM session ID.')
 			},
@@ -238,7 +259,7 @@ export function initSessionTracking(
 	ACTIVITY_EVENTS.forEach((type) => document.addEventListener(type, markActivity, { capture: true, passive: true }))
 
 	if (allSpansAreActivity) {
-		provider.addSpanProcessor(new SessionSpanProcessor())
+		// provider.addSpanProcessor(new SessionSpanProcessor())
 	}
 
 	updateSessionStatus({ forceStore: true })

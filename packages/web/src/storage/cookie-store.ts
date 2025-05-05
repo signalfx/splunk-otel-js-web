@@ -44,6 +44,10 @@ export class CookieStore<T> implements Store<T> {
 		return this.cachedValue
 	}
 
+	peek(): T | undefined {
+		return this._deserialize(this._getRaw(this.key))
+	}
+
 	remove(domain?: string) {
 		const domainPart = domain ? `domain=${domain};` : ''
 		const cookie = `${this.key}=;${domainPart}path=/;expires=Thu, 01 Jan 1970 00:00:00 GMT`

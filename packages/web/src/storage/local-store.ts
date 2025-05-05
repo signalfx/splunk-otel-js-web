@@ -40,6 +40,10 @@ export class LocalStore<T> implements Store<T> {
 		return this.cachedValue
 	}
 
+	peek(): T | undefined {
+		return JSON.parse(safelyGetLocalStorage(this.key))
+	}
+
 	remove() {
 		safelyRemoveFromLocalStorage(this.key)
 		this.cachedValue = undefined
