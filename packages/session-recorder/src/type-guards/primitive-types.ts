@@ -15,28 +15,16 @@
  * limitations under the License.
  *
  */
-module.exports = [
-	{
-		name: 'artifacts/otel-api-globals.js',
-		limit: '3 kB',
-		path: './packages/web/dist/artifacts/otel-api-globals.js',
-	},
+export const isString = (maybeString: unknown): maybeString is string => typeof maybeString === 'string'
 
-	{
-		name: 'artifacts/splunk-otel-web.js',
-		limit: '45 kB',
-		path: './packages/web/dist/artifacts/splunk-otel-web.js',
-	},
+export function isObject(obj: unknown): obj is object {
+	return typeof obj == 'object' && !Array.isArray(obj) && obj !== null
+}
 
-	{
-		name: 'artifacts/splunk-otel-web-legacy.js',
-		limit: '82 kB',
-		path: './packages/web/dist/artifacts/splunk-otel-web-legacy.js',
-	},
+export function isNumber(value: unknown): value is number {
+	return typeof value == 'number'
+}
 
-	{
-		name: 'artifacts/splunk-otel-web-session-recorder.js',
-		limit: '109 kB',
-		path: './packages/session-recorder/dist/artifacts/splunk-otel-web-session-recorder.js',
-	},
-]
+export function isBoolean(value: unknown): value is boolean {
+	return typeof value == 'boolean'
+}

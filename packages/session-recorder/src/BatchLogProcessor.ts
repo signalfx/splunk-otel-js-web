@@ -17,7 +17,7 @@
  */
 
 import { context } from '@opentelemetry/api'
-import { suppressTracing } from '@opentelemetry/core'
+import { suppressTracing, BindOnceFuture, callWithTimeout, globalErrorHandler, unrefTimer } from '@opentelemetry/core'
 import type { JsonValue, JsonObject } from 'type-fest'
 import type { Log, LogExporter } from './types'
 
@@ -26,47 +26,142 @@ export interface BatchLogProcessorConfig {
 }
 
 export class BatchLogProcessor {
-	exporter: LogExporter
+	private readonly exportTimeoutMillis = 30000
 
-	lastBatchSent: number
+	private finishedLogs: Log[] = []
 
-	scheduledDelayMillis: number
+	private pageHideListener?: () => void
 
-	timeout: NodeJS.Timeout | undefined
+	private readonly scheduledDelayMillis: number
 
-	private logs: Log[] = []
+	private shutdownOnce: BindOnceFuture<void>
 
-	constructor(exporter: LogExporter, config: BatchLogProcessorConfig) {
-		this.scheduledDelayMillis = config?.scheduledDelayMillis || 5000
-		this.exporter = exporter
+	private timer: NodeJS.Timeout | undefined
 
-		// Use visibility event instead of unload event
-		// https://developer.chrome.com/docs/web-platform/deprecating-unload
-		window.addEventListener('visibilitychange', () => {
-			if (document.visibilityState === 'hidden') {
-				this._flushAll()
-			}
-		})
+	private visibilityChangeListener?: () => void
+
+	constructor(
+		private readonly exporter: LogExporter,
+		config?: BatchLogProcessorConfig,
+	) {
+		this.scheduledDelayMillis = config?.scheduledDelayMillis ?? 5000
+		this.shutdownOnce = new BindOnceFuture(this.shutdown, this)
+
+		this.onInit()
 	}
 
-	_flushAll(): void {
-		this.lastBatchSent = Date.now()
-
-		context.with(suppressTracing(context.active()), () => {
-			const logsToExport = this.logs.splice(0, this.logs.length)
-			this.exporter.export(logsToExport)
-		})
-	}
-
-	onLog(log: Log): void {
-		this.logs.push(log)
-
-		if (this.timeout === undefined) {
-			this.timeout = setTimeout(() => {
-				this.timeout = undefined
-				this._flushAll()
-			}, this.scheduledDelayMillis)
+	public forceFlush(): Promise<void> {
+		if (this.shutdownOnce.isCalled) {
+			return this.shutdownOnce.promise
 		}
+
+		return this.flushAll()
+	}
+
+	public onEmit(log: Log): void {
+		if (this.shutdownOnce.isCalled) {
+			return
+		}
+
+		this.addToBuffer(log)
+	}
+
+	protected onShutdown(): void {
+		if (this.visibilityChangeListener) {
+			document.removeEventListener('visibilitychange', this.visibilityChangeListener)
+		}
+
+		if (this.pageHideListener) {
+			document.removeEventListener('pagehide', this.pageHideListener)
+		}
+	}
+
+	private addToBuffer(log: Log) {
+		this.finishedLogs.push(log)
+		this.maybeStartTimer()
+	}
+
+	private clearTimer() {
+		if (this.timer !== undefined) {
+			clearTimeout(this.timer)
+			this.timer = undefined
+		}
+	}
+
+	private exportLogs(logs: Log[]): Promise<void> {
+		console.debug('🌊 dbg: batch log processor export', logs)
+		this.exporter.export(logs)
+		return Promise.resolve()
+	}
+
+	private flushAll(): Promise<void> {
+		return new Promise((resolve, reject) => {
+			const promises: Promise<void>[] = []
+			promises.push(this.flushOneBatch())
+
+			Promise.all(promises)
+				.then(() => {
+					resolve()
+				})
+				.catch(reject)
+		})
+	}
+
+	private flushOneBatch(): Promise<void> {
+		this.clearTimer()
+		if (this.finishedLogs.length === 0) {
+			return Promise.resolve()
+		}
+
+		return new Promise((resolve, reject) => {
+			context.with(suppressTracing(context.active()), () => {
+				callWithTimeout(
+					this.exportLogs(this.finishedLogs.splice(0, this.finishedLogs.length)),
+					this.exportTimeoutMillis,
+				)
+					.then(resolve)
+					.catch(reject)
+			})
+		})
+	}
+
+	private maybeStartTimer() {
+		if (this.timer !== undefined) {
+			return
+		}
+
+		this.timer = setTimeout(() => {
+			this.flushOneBatch()
+				.then(() => {
+					if (this.finishedLogs.length > 0) {
+						this.clearTimer()
+						this.maybeStartTimer()
+					}
+				})
+				.catch((e) => {
+					globalErrorHandler(e)
+				})
+		}, this.scheduledDelayMillis)
+		unrefTimer(this.timer)
+	}
+
+	private onInit(): void {
+		this.visibilityChangeListener = () => {
+			if (document.visibilityState === 'hidden') {
+				void this.forceFlush()
+			}
+		}
+		this.pageHideListener = () => {
+			void this.forceFlush()
+		}
+		document.addEventListener('visibilitychange', this.visibilityChangeListener)
+
+		document.addEventListener('pagehide', this.pageHideListener)
+	}
+
+	private async shutdown(): Promise<void> {
+		this.onShutdown()
+		await this.flushAll()
 	}
 }
 
