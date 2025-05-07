@@ -41,7 +41,10 @@ export function NATIVE_XHR_SENDER(url: string, data: string, headers?: Record<st
 	})
 	xhr.send(data)
 }
-export function NATIVE_BEACON_SENDER(url: string, data: string, blobPropertyBag?: BlobPropertyBag): void {
-	const payload = blobPropertyBag ? new Blob([data], blobPropertyBag) : data
-	navigator.sendBeacon(url, payload)
-}
+export const NATIVE_BEACON_SENDER: SplunkExporterConfig['beaconSender'] =
+	typeof navigator !== 'undefined' && navigator.sendBeacon
+		? (url: string, data: string, blobPropertyBag?: BlobPropertyBag) => {
+				const payload = blobPropertyBag ? new Blob([data], blobPropertyBag) : data
+				navigator.sendBeacon(url, payload)
+			}
+		: undefined
