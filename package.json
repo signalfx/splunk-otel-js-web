@@ -15,6 +15,7 @@
 	},
 	"scripts": {
 		"compile": "npm run --ws compile --",
+		"dev": "npm run --ws dev --",
 		"lint": "run-p lint:eslint lint:prettier lint:markdown",
 		"lint:fix": "run-p lint:eslint:fix lint:prettier:fix lint:markdown:fix",
 		"lint:eslint": "eslint .",

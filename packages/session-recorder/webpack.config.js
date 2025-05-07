@@ -16,6 +16,7 @@
  *
  */
 const path = require('path')
+const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin')
 const TerserPlugin = require('terser-webpack-plugin')
 
 module.exports = {
@@ -49,23 +50,21 @@ module.exports = {
 	module: {
 		rules: [
 			{
-				test: /\.ts$/,
-				loader: 'ts-loader',
+				test: /\.tsx?$/,
 				exclude: /node_modules/,
-				options: { configFile: 'tsconfig.base.json' },
-			},
-			{
-				test: /\.m?js$/,
-				exclude: /(node_modules)/,
 				use: {
 					loader: 'swc-loader',
 					options: {
 						jsc: {
 							parser: {
-								syntax: 'ecmascript',
+								syntax: 'typescript',
 							},
-							target: 'es5',
 							externalHelpers: true,
+						},
+						env: {
+							targets: 'defaults, chrome >= 71, safari >= 12.1, firefox >= 65',
+							mode: 'usage',
+							coreJs: '3.41',
 						},
 					},
 				},
@@ -77,6 +76,14 @@ module.exports = {
 			},
 		],
 	},
+	plugins: [
+		new ForkTsCheckerWebpackPlugin({
+			typescript: {
+				configFile: 'tsconfig.base.json',
+				diagnosticOptions: { semantic: true, syntactic: true },
+			},
+		}),
+	],
 	devtool: 'source-map',
 	optimization: {
 		minimize: true,
@@ -84,6 +91,7 @@ module.exports = {
 			new TerserPlugin({
 				extractComments: false,
 				terserOptions: {
+					ecma: 6,
 					format: {
 						comments: false,
 					},

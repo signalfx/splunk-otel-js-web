@@ -16,14 +16,14 @@
  *
  */
 const path = require('path')
+const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin')
 const TerserPlugin = require('terser-webpack-plugin')
 
 const artifactsPath = path.resolve(__dirname, './dist/artifacts')
 
 const getBaseConfig = (env, argv, options = {}) => {
 	const isDevelopmentMode = argv.mode === 'development'
-	const useCoreJS = options.useCoreJS === true
-	const ecma = options.ecma
+	const isLegacyBuild = options.isLegacyBuild === true
 
 	return {
 		output: {
@@ -47,30 +47,28 @@ const getBaseConfig = (env, argv, options = {}) => {
 		module: {
 			rules: [
 				{
-					test: /\.ts$/,
-					loader: 'ts-loader',
+					test: /\.tsx?$/,
 					exclude: /node_modules/,
-					options: { configFile: 'tsconfig.base.json' },
-				},
-				{
-					test: /\.m?js$/,
-					exclude: /(node_modules)/,
-					use: {
-						loader: 'swc-loader',
-						options: {
-							jsc: {
-								parser: {
-									syntax: 'ecmascript',
+					use: [
+						{
+							loader: 'swc-loader',
+							options: {
+								jsc: {
+									parser: {
+										syntax: 'typescript',
+									},
+									externalHelpers: true,
 								},
-								target: `es${ecma}`,
-								externalHelpers: true,
-							},
-							env: {
-								mode: useCoreJS ? 'usage' : undefined,
-								coreJs: useCoreJS ? '3.41' : undefined,
+								env: {
+									targets: isLegacyBuild
+										? 'defaults, chrome >= 50, safari >= 11, firefox >= 50'
+										: 'defaults, chrome >= 71, safari >= 12.1, firefox >= 65',
+									mode: isLegacyBuild ? 'usage' : undefined,
+									coreJs: isLegacyBuild ? '3.41' : undefined,
+								},
 							},
 						},
-					},
+					],
 				},
 				{
 					test: /\.js$/,
@@ -79,6 +77,14 @@ const getBaseConfig = (env, argv, options = {}) => {
 				},
 			],
 		},
+		plugins: [
+			new ForkTsCheckerWebpackPlugin({
+				typescript: {
+					configFile: 'tsconfig.base.json',
+					diagnosticOptions: { semantic: true, syntactic: true },
+				},
+			}),
+		],
 		devtool: isDevelopmentMode ? 'inline-source-map' : 'source-map',
 		optimization: {
 			minimize: true,
@@ -86,7 +92,7 @@ const getBaseConfig = (env, argv, options = {}) => {
 				new TerserPlugin({
 					extractComments: false,
 					terserOptions: {
-						ecma,
+						ecma: isLegacyBuild ? 5 : 6,
 						format: {
 							comments: false,
 						},
@@ -98,7 +104,7 @@ const getBaseConfig = (env, argv, options = {}) => {
 }
 
 const browserConfig = (env, argv) => {
-	const baseConfig = getBaseConfig(env, argv, { ecma: 2020 })
+	const baseConfig = getBaseConfig(env, argv)
 	return {
 		...baseConfig,
 		entry: path.resolve(__dirname, './src/indexBrowser.ts'),
@@ -115,10 +121,10 @@ const browserConfig = (env, argv) => {
 }
 
 const browserLegacyConfig = (env, argv) => {
-	const baseConfig = getBaseConfig(env, argv, { useCoreJS: true, ecma: 5 })
+	const baseConfig = getBaseConfig(env, argv, { isLegacyBuild: true })
 	return {
 		...baseConfig,
-		entry: path.resolve(__dirname, './src/indexBrowser.ts'),
+		entry: [path.resolve(__dirname, './src/polyfills/index.ts'), path.resolve(__dirname, './src/indexBrowser.ts')],
 		output: {
 			...baseConfig.output,
 			filename: 'splunk-otel-web-legacy.js',
@@ -132,7 +138,7 @@ const browserLegacyConfig = (env, argv) => {
 }
 
 const otelApiGlobalsConfig = (env, argv) => {
-	const baseConfig = getBaseConfig(env, argv, { ecma: 5 })
+	const baseConfig = getBaseConfig(env, argv)
 	return {
 		...baseConfig,
 		entry: path.resolve(__dirname, './src/otel-api-globals.ts'),
