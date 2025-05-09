@@ -31,15 +31,25 @@ type SplunkEventListener<type extends keyof SplunkOtelWebEventTypes> = (event: {
 	payload: SplunkOtelWebEventTypes[type]
 }) => void
 
-export class InternalEventTarget {
-	protected events: Partial<{ [T in keyof SplunkOtelWebEventTypes]: SplunkEventListener<T>[] }> = {}
+type AddEventListenerOptions = {
+	once?: boolean
+}
 
-	addEventListener<T extends keyof SplunkOtelWebEventTypes>(type: T, listener: SplunkEventListener<T>): void {
+export class InternalEventTarget {
+	protected events: Partial<{
+		[T in keyof SplunkOtelWebEventTypes]: { listener: SplunkEventListener<T>; options: AddEventListenerOptions }[]
+	}> = {}
+
+	addEventListener<T extends keyof SplunkOtelWebEventTypes>(
+		type: T,
+		listener: SplunkEventListener<T>,
+		options: AddEventListenerOptions = {},
+	): void {
 		if (!this.events[type]) {
 			this.events[type] = []
 		}
 
-		;(this.events[type] as SplunkEventListener<T>[]).push(listener)
+		this.events[type].push({ listener, options })
 	}
 
 	emit<T extends keyof SplunkOtelWebEventTypes>(type: T, payload: SplunkOtelWebEventTypes[T]): void {
@@ -48,21 +58,34 @@ export class InternalEventTarget {
 			return
 		}
 
-		listeners.forEach((listener) => {
-			// Run it as promise so any broken code inside listener doesn't break the agent
-			void Promise.resolve({ payload }).then(listener)
+		listeners.forEach(({ listener, options }) => {
+			try {
+				// Avoid breaking the agent if the listener throws an error
+				listener({ payload })
+			} catch (e) {
+				console.error('Error in event listener', e)
+			}
+
+			if (options.once) {
+				this.removeEventListener(type, listener)
+			}
 		})
 	}
 
-	removeEventListener<T extends keyof SplunkOtelWebEventTypes>(type: T, listener: SplunkEventListener<T>): void {
+	removeEventListener<T extends keyof SplunkOtelWebEventTypes>(
+		type: T,
+		listenerToRemove: SplunkEventListener<T>,
+	): void {
 		if (!this.events[type]) {
 			return
 		}
 
-		const i = (this.events[type] as SplunkEventListener<T>[]).indexOf(listener)
-
-		if (i >= 0) {
-			this.events[type].splice(i, 1)
+		for (let i = 0; i < this.events[type].length; i++) {
+			const { listener } = this.events[type][i]
+			if (listener === listenerToRemove) {
+				this.events[type].splice(i, 1)
+				break
+			}
 		}
 	}
 }

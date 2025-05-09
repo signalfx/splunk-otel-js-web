@@ -8,6 +8,7 @@
 		"server:same-origin": "PORT=3000 tsx src/server/server.ts",
 		"server:cross-origin": "PORT=3001 tsx src/server/server.ts",
 		"server:socketio": "PORT=3002 tsx src/server/server-socketio.ts",
+		"start": "nodemon --exec run-p server:* --ext js,ts,ejs",
 		"test": "npx playwright test",
 		"compile": "exit 0;"
 	},
@@ -21,7 +22,8 @@
 		"@types/express": "^5.0.0",
 		"@types/node": "^22.13.13",
 		"cors": "^2.8.5",
-		"ejs": "^3.1.10"
+		"ejs": "^3.1.10",
+		"nodemon": "^3.1.9"
 	},
 	"bugs": {
 		"url": "https://github.com/signalfx/splunk-otel-js-web/issues"
