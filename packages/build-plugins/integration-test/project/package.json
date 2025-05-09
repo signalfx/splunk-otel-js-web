@@ -1,0 +1,14 @@
+{
+	"name": "build-plugins-test-project",
+	"description": "a helper project for testing integration of plugins with build tools using different configurations",
+	"private": true,
+	"scripts": {
+		"compile": "npm-run-all -s compile:*",
+		"compile:webpack": "find . -name \"webpack.config.*\" -print0 | xargs -t -0 -I {} npx webpack --config {}"
+	},
+	"devDependencies": {
+		"webpack": "^5.76.0",
+		"webpack-cli": "^6.0.1",
+		"@splunk/otel-web-build-plugins": "file://../../"
+	}
+}

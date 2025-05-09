@@ -9,7 +9,12 @@
     <h1>Minified files with source map ids</h1>
     <button id="button1">Button 1</button>
     <button id="button2">Button 2</button>
+    <button id="button3">Button 3</button>
     <script src="/errors/views/script1.min.js" type="module"></script>
     <script src="/errors/views/script2.min.js"></script>
+    <script src="/build-plugins-test-project-artifacts/webpack-config-devtool-source-map-js/main.js"></script>
+    <script>
+        document.getElementById('button3').addEventListener('click', () => window.globalFunctionThatThrowsError())
+    </script>
 </body>
 </html>
