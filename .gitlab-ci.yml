@@ -58,7 +58,7 @@ build:
 build_artifacts:
     stage: build
     only:
-        - /^v[0-9]+\..*/
+        - /^(v\d+\.\d+\.\d+(-[a-zA-Z]+\.\d)?|main)$/
     artifacts:
         paths:
             - artifacts/
@@ -91,11 +91,22 @@ release_npm:
             - artifacts/
     stage: release
     only:
-        - /^v[0-9]+\..*/
+        - /^v\d+\.\d+\.\d+(-beta+\.\d)?$/
     script:
-        # release to NPM
         - echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
-        - for f in artifacts/*.tgz; do npm publish ./$f; done;
+        - |
+            tag_flag=""
+            if [[ $CI_COMMIT_TAG =~ -([a-zA-Z]+)\.[0-9]+$ ]]; then
+                tag_name="${BASH_REMATCH[1]}"
+                tag_flag="--tag $tag_name"
+                echo "Publishing with tag: $tag_name"
+            else
+                echo "No tag suffix found, publishing without tag"
+            fi
+
+            for f in artifacts/*.tgz; do
+              npm publish $tag_flag "./$f"
+            done
         - rm -f ~/.npmrc
 
 release_github:
@@ -104,13 +115,23 @@ release_github:
             - artifacts/
     stage: release
     only:
-        - /^v[0-9]+\..*/
+        - /^(v\d+\.\d+\.\d+(-[a-zA-Z]+\.\d)?|main)$/
     script:
+        - |
+            if [[ ! $CI_COMMIT_TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-beta\.[0-9]+)?$ ]]; then
+              echo "Tag does not match allowed format (vX.Y.Z or vX.Y.Z-beta.N), skipping..."
+              exit 0
+            fi
         - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-key 23F3D4EA75716059
         - echo "deb [arch=$(dpkg --print-architecture)] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
         - sudo apt update
         - sudo apt install gh
-        - gh release create v${CI_COMMIT_REF_NAME:1} ./artifacts/* --target $CI_COMMIT_SHA --repo $GITHUB_REPOSITORY
+        - |
+            prerelease_flag=""
+            if [[ "$CI_COMMIT_REF_NAME" == *"-beta"* ]]; then
+              prerelease_flag="--prerelease"
+            fi
+            gh release create v${CI_COMMIT_REF_NAME:1} ./artifacts/* --target $CI_COMMIT_SHA --repo $GITHUB_REPOSITORY $prerelease_flag
 
 release_cdn:
     artifacts:
@@ -118,12 +139,13 @@ release_cdn:
             - artifacts/
     stage: release
     only:
-        - /^v[0-9]+\..*/
+        - /^(v\d+\.\d+\.\d+(-[a-zA-Z]+\.\d)?|main)$/
     needs: ['release_github']
     id_tokens:
         CI_JOB_JWT:
             aud: $CICD_VAULT_ADDR
     script:
+        - npm ci --include=dev
         # authenticate and release to CDN
         - creds-helper init && eval $(creds-helper aws --eval aws:v1/o11y-infra/role/o11y_gdi_otel_js_web_releaser_role)
-        - node scripts/release-cdn.mjs v${CI_COMMIT_REF_NAME:1}
+        - npx tsx scripts/release-cdn.mts ${CI_COMMIT_REF_NAME}

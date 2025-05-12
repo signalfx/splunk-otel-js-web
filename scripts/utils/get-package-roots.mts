@@ -15,23 +15,25 @@
  * limitations under the License.
  *
  */
+import { accessSync, readdirSync } from 'fs'
+import { resolve } from 'path'
 
-const { exec } = require('child_process')
-const path = require('path')
+export const getPackageRoots = () => {
+	const appRoot = process.cwd()
+	const packagesDir = resolve(appRoot, 'packages')
 
-const appRoot = process.cwd()
-const packageJsonUrl = path.join(appRoot, 'package.json')
-const { version } = require(packageJsonUrl)
+	return readdirSync(packagesDir, { withFileTypes: true })
+		.filter((dirent) => {
+			if (!dirent.isDirectory()) {
+				return false
+			}
 
-exec('git tag -l --contains HEAD', (err, stdout) => {
-	if (err) {
-		console.error('Could not acquire git tags for HEAD.')
-		process.exitCode = 1
-	}
-
-	const hasMatchingTag = stdout.split('\n').some((line) => line === `v${version}`)
-	if (!hasMatchingTag) {
-		console.error('We could not find any matching tags for the current version.')
-		process.exitCode = 1
-	}
-})
+			try {
+				accessSync(resolve(packagesDir, dirent.name, 'package.json'))
+				return true
+			} catch {
+				return false
+			}
+		})
+		.map((dirent) => resolve(packagesDir, dirent.name))
+}

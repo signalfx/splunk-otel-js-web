@@ -19,6 +19,16 @@
 		"allowJs": true,
 		"esModuleInterop": true
 	},
-	"include": ["*.ts", "*.js", "*.cjs", ".*.cjs", "*.mjs", "*.mts", "tests/**/*.ts"],
+	"include": [
+		"*.ts",
+		"*.js",
+		"*.cjs",
+		".*.cjs",
+		"*.mjs",
+		"*.mts",
+		"tests/**/*.ts",
+		"scripts/**/*.ts",
+		"scripts/**/*.mts"
+	],
 	"exclude": ["node_modules", "dist"]
 }
