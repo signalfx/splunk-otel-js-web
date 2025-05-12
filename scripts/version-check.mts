@@ -18,16 +18,16 @@
 
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
-import { getPackageRoots } from './_utils.mjs'
+import { getPackageRoots } from './utils/index.mjs'
 
 getPackageRoots().forEach((packagePath) => {
-	const packageJsonUrl = resolve(packagePath, 'package.json')
-	const { name, version } = JSON.parse(readFileSync(packageJsonUrl))
+	const packageJsonPath = resolve(packagePath, 'package.json')
+	const { name, version } = JSON.parse(readFileSync(packageJsonPath, 'utf-8'))
 
-	const versionFileUrl = resolve(packagePath, 'src', 'version.ts')
-	const versionFileContent = readFileSync(versionFileUrl).toString()
+	const versionFilePath = resolve(packagePath, 'src', 'version.ts')
+	const versionFileContent = readFileSync(versionFilePath, 'utf-8')
 
-	const hasMatchingInternalVersion = versionFileContent.indexOf(`export const VERSION = '${version}'`) > -1
+	const hasMatchingInternalVersion = versionFileContent.includes(`export const VERSION = '${version}'`)
 	if (!hasMatchingInternalVersion) {
 		console.error(`The version in src/version.ts does not match the ${name} package version.`)
 		process.exitCode = 1
