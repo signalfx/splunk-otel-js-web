@@ -244,6 +244,19 @@ export default [
 		},
 	},
 	{
+		files: ['scripts/**/*.ts', 'scripts/**/*.mts'],
+		languageOptions: {
+			globals: {
+				...globals.node,
+			},
+			parser: tseslint.parser,
+			parserOptions: {
+				ecmaVersion: 2020,
+				project: 'tsconfig.json',
+			},
+		},
+	},
+	{
 		ignores: [
 			'**/dist/',
 			'**/node_modules/',

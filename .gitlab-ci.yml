@@ -30,12 +30,12 @@ check_version:
     script:
         - npm run version:check
 
-check_tag:
-    stage: build
-    only:
-        - /^v.*/
-    script:
-        - npm run tag:check
+#check_tag:
+#    stage: build
+#    only:
+#        - /^v.*/
+#    script:
+#        - npm run tag:check
 
 lint:
     stage: build

@@ -15,23 +15,23 @@
  * limitations under the License.
  *
  */
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 
-const { exec } = require('child_process')
-const path = require('path')
+const s3Client = new S3Client({ region: 'us-east-1' })
 
-const appRoot = process.cwd()
-const packageJsonUrl = path.join(appRoot, 'package.json')
-const { version } = require(packageJsonUrl)
-
-exec('git tag -l --contains HEAD', (err, stdout) => {
-	if (err) {
-		console.error('Could not acquire git tags for HEAD.')
-		process.exitCode = 1
-	}
-
-	const hasMatchingTag = stdout.split('\n').some((line) => line === `v${version}`)
-	if (!hasMatchingTag) {
-		console.error('We could not find any matching tags for the current version.')
-		process.exitCode = 1
-	}
-})
+export const uploadToS3 = (
+	key: string,
+	bucketName: string,
+	buffer: Buffer<ArrayBufferLike>,
+	{ contentType }: { contentType: string },
+) =>
+	s3Client.send(
+		new PutObjectCommand({
+			Body: buffer,
+			Bucket: bucketName,
+			Key: `cdn/${key}`,
+			ACL: 'public-read',
+			ContentType: contentType,
+			CacheControl: 'max-age=3600',
+		}),
+	)

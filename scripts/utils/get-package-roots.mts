@@ -15,11 +15,10 @@
  * limitations under the License.
  *
  */
-
 import { accessSync, readdirSync } from 'fs'
 import { resolve } from 'path'
 
-export function getPackageRoots() {
+export const getPackageRoots = () => {
 	const appRoot = process.cwd()
 	const packagesDir = resolve(appRoot, 'packages')
 
