@@ -27,8 +27,7 @@ import {
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base'
 
 export class SplunkOTLPTraceExporter extends OTLPTraceExporter {
-	protected readonly _beaconSender: SplunkExporterConfig['beaconSender'] =
-		typeof navigator !== 'undefined' && navigator.sendBeacon ? NATIVE_BEACON_SENDER : undefined
+	protected readonly _beaconSender: SplunkExporterConfig['beaconSender'] = NATIVE_BEACON_SENDER
 
 	protected readonly _onAttributesSerializing: SplunkExporterConfig['onAttributesSerializing']
 

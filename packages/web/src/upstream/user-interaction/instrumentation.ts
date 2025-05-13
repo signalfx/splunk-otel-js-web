@@ -37,7 +37,9 @@ function defaultShouldPreventSpanCreation() {
  * If zone.js is available then it patches the zone otherwise it patches
  * addEventListener of Element
  */
-export class UserInteractionInstrumentation extends InstrumentationBase<unknown> {
+export class UserInteractionInstrumentation<
+	T extends UserInteractionInstrumentationConfig,
+> extends InstrumentationBase<T> {
 	readonly moduleName: string = 'user-interaction'
 
 	readonly version = VERSION
@@ -59,7 +61,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
 
 	private _zonePatched?: boolean
 
-	constructor(config?: UserInteractionInstrumentationConfig) {
+	constructor(config?: T) {
 		super('@opentelemetry/instrumentation-user-interaction', VERSION, config)
 		this._eventNames = new Set(config?.eventNames ?? DEFAULT_EVENT_NAMES)
 		this._shouldPreventSpanCreation =
