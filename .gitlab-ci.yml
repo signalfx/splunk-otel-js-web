@@ -63,10 +63,11 @@ build_artifacts:
     script:
         - if [ ! -d "artifacts" ]; then mkdir artifacts; fi
         - npm run compile
-        - npm pack --pack-destination artifacts --workspace packages/session-recorder --workspace packages/web
+        - npm pack --pack-destination artifacts --workspace packages/session-recorder --workspace packages/web --workspace packages/build-plugins
 
-        # complete artifacts & checksums
-        - cp packages/*/dist/artifacts/* artifacts/
+        # complete artifacts from web and session recorder packages & checksums
+        - cp packages/web/dist/artifacts/* artifacts/
+        - cp packages/session-recorder/dist/artifacts/* artifacts/
         - shasum -a 256 artifacts/* > artifacts/checksums.txt
 
 unit_test:
@@ -75,6 +76,7 @@ unit_test:
         - npm ci --include=dev
         - npx playwright install --with-deps
         - npm run test:unit -- --browser.name chromium
+        - npm run test:plugin
 
 oss-scan:
     stage: test
