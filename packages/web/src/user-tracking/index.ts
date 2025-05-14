@@ -65,5 +65,5 @@ const getAnonymousIdFromCookie = () => {
 const generateAnonymousId = () => generateId(128)
 
 const setCookie = (newId: string) => {
-	document.cookie = `${KEY}=${newId}; max-age=${60 * 60 * 24 * 400}`
+	document.cookie = `${KEY}=${newId}; max-age=${60 * 60 * 24 * 400}; path=/`
 }
