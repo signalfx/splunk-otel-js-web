@@ -21,12 +21,13 @@ import { generateId } from '../utils'
 const KEY = 'splunk.anonymousId'
 let anonymousId: string | undefined
 
-export const getOrCreateAnonymousId = ({ useLocalStorage }: { useLocalStorage: boolean }) => {
+// TODO use cookie/local store
+export const getOrCreateAnonymousId = ({ useLocalStorage, domain }: { domain: string; useLocalStorage: boolean }) => {
 	if (anonymousId) {
 		return anonymousId
 	}
 
-	const id = useLocalStorage ? getAnonymousIdFromLocalStorage() : getAnonymousIdFromCookie()
+	const id = useLocalStorage ? getAnonymousIdFromLocalStorage() : getAnonymousIdFromCookie(domain)
 	anonymousId = id
 	return id
 }
@@ -46,24 +47,25 @@ const getAnonymousIdFromLocalStorage = () => {
 	return newId
 }
 
-const getAnonymousIdFromCookie = () => {
+const getAnonymousIdFromCookie = (domain: string) => {
 	const cookieValue = document.cookie
 		.split('; ')
 		.find((row) => row.startsWith(KEY + '='))
 		?.split('=')[1]
 
 	if (cookieValue) {
-		setCookie(cookieValue)
+		setCookie(cookieValue, domain)
 		return cookieValue
 	}
 
 	const newId = generateAnonymousId()
-	setCookie(newId)
+	setCookie(newId, domain)
 	return newId
 }
 
 const generateAnonymousId = () => generateId(128)
 
-const setCookie = (newId: string) => {
-	document.cookie = `${KEY}=${newId}; max-age=${60 * 60 * 24 * 400}; path=/`
+const setCookie = (newId: string, domain: string) => {
+	const domainPart = domain ? `domain=${domain};` : ''
+	document.cookie = `${KEY}=${newId};max-age=${60 * 60 * 24 * 400};path=/;${domainPart}`
 }

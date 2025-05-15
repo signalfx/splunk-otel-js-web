@@ -447,6 +447,7 @@ export const SplunkRum: SplunkOtelWebType = {
 			},
 			this._processedOptions.persistence === 'localStorage',
 			() => userTrackingMode,
+			processedOptions.cookieDomain,
 		)
 		provider.addSpanProcessor(this.attributesProcessor)
 
@@ -571,7 +572,10 @@ export const SplunkRum: SplunkOtelWebType = {
 
 	getAnonymousId() {
 		if (userTrackingMode === 'anonymousTracking') {
-			return getOrCreateAnonymousId({ useLocalStorage: this._processedOptions.persistence === 'localStorage' })
+			return getOrCreateAnonymousId({
+				useLocalStorage: this._processedOptions.persistence === 'localStorage',
+				domain: this._processedOptions.cookieDomain,
+			})
 		}
 	},
 
