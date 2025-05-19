@@ -29,7 +29,7 @@ export class SplunkSpanAttributesProcessor implements SpanProcessor {
 		globalAttributes: Attributes,
 		private useLocalStorageForSessionMetadata: boolean,
 		private getUserTracking: () => SplunkOtelWebConfig['user']['trackingMode'],
-		private domain: string,
+		private domain?: string,
 	) {
 		this._globalAttributes = globalAttributes ?? {}
 	}

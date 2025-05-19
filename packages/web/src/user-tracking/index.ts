@@ -22,7 +22,7 @@ const KEY = 'splunk.anonymousId'
 let anonymousId: string | undefined
 
 // TODO use cookie/local store
-export const getOrCreateAnonymousId = ({ useLocalStorage, domain }: { domain: string; useLocalStorage: boolean }) => {
+export const getOrCreateAnonymousId = ({ useLocalStorage, domain }: { domain?: string; useLocalStorage: boolean }) => {
 	if (anonymousId) {
 		return anonymousId
 	}
@@ -47,7 +47,7 @@ const getAnonymousIdFromLocalStorage = () => {
 	return newId
 }
 
-const getAnonymousIdFromCookie = (domain: string) => {
+const getAnonymousIdFromCookie = (domain?: string) => {
 	const cookieValue = document.cookie
 		.split('; ')
 		.find((row) => row.startsWith(KEY + '='))
@@ -65,7 +65,7 @@ const getAnonymousIdFromCookie = (domain: string) => {
 
 const generateAnonymousId = () => generateId(128)
 
-const setCookie = (newId: string, domain: string) => {
+const setCookie = (newId: string, domain?: string) => {
 	const domainPart = domain ? `domain=${domain};` : ''
 	document.cookie = `${KEY}=${newId};max-age=${60 * 60 * 24 * 400};path=/;${domainPart}`
 }
