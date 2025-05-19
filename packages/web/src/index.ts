@@ -184,6 +184,25 @@ function buildExporter(options: SplunkOtelWebConfigInternal) {
 	})
 }
 
+class SessionSpanProcessor implements SpanProcessor {
+	forceFlush(): Promise<void> {
+		return Promise.resolve()
+	}
+
+	onEnd(): void {}
+
+	onStart(): void {
+		updateSessionStatus({
+			forceStore: false,
+			hadActivity: true,
+		})
+	}
+
+	shutdown(): Promise<void> {
+		return Promise.resolve()
+	}
+}
+
 export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	AlwaysOffSampler: typeof AlwaysOffSampler
 	AlwaysOnSampler: typeof AlwaysOnSampler
@@ -397,6 +416,43 @@ export const SplunkRum: SplunkOtelWebType = {
 
 		this.resource = new Resource(resourceAttrs)
 
+		this.attributesProcessor = new SplunkSpanAttributesProcessor(
+			{
+				...(deploymentEnvironment
+					? { 'environment': deploymentEnvironment, 'deployment.environment': deploymentEnvironment }
+					: {}),
+				...(version ? { 'app.version': version } : {}),
+				...(processedOptions.globalAttributes || {}),
+			},
+			this._processedOptions.persistence === 'localStorage',
+			() => userTrackingMode,
+			processedOptions.cookieDomain,
+		)
+
+		const spanProcessors = [this.attributesProcessor]
+
+		if (processedOptions.beaconEndpoint) {
+			const exporter = buildExporter(processedOptions)
+			const spanProcessor = processedOptions.spanProcessor.factory(exporter, {
+				scheduledDelayMillis: processedOptions.bufferTimeout,
+				maxExportBatchSize: processedOptions.bufferSize,
+			})
+			spanProcessors.push(spanProcessor)
+			this._processor = spanProcessor
+		}
+
+		if (processedOptions.debug) {
+			spanProcessors.push(new SimpleSpanProcessor(new ConsoleSpanExporter()))
+		}
+
+		if (options._experimental_allSpansExtendSession) {
+			spanProcessors.push(new SessionSpanProcessor())
+		}
+
+		if (options.spanProcessors) {
+			spanProcessors.push(...options.spanProcessors)
+		}
+
 		const provider = new SplunkWebTracerProvider({
 			...processedOptions.tracer,
 			resource: this.resource,
@@ -404,14 +460,13 @@ export const SplunkRum: SplunkOtelWebType = {
 				decider: processedOptions.tracer?.sampler ?? new AlwaysOnSampler(),
 				allSpansAreActivity: this._processedOptions._experimental_allSpansExtendSession,
 			}),
+			spanProcessors,
 		})
 
 		_deinitSessionTracking = initSessionTracking(
 			processedOptions.persistence,
-			provider,
 			eventTarget,
 			processedOptions.cookieDomain,
-			!!options._experimental_allSpansExtendSession,
 		).deinit
 
 		const instrumentations = INSTRUMENTATIONS.map(({ Instrument, confKey, disable }) => {
@@ -436,34 +491,6 @@ export const SplunkRum: SplunkOtelWebType = {
 
 			return null
 		}).filter((a): a is Exclude<typeof a, null> => Boolean(a))
-
-		this.attributesProcessor = new SplunkSpanAttributesProcessor(
-			{
-				...(deploymentEnvironment
-					? { 'environment': deploymentEnvironment, 'deployment.environment': deploymentEnvironment }
-					: {}),
-				...(version ? { 'app.version': version } : {}),
-				...(processedOptions.globalAttributes || {}),
-			},
-			this._processedOptions.persistence === 'localStorage',
-			() => userTrackingMode,
-			processedOptions.cookieDomain,
-		)
-		provider.addSpanProcessor(this.attributesProcessor)
-
-		if (processedOptions.beaconEndpoint) {
-			const exporter = buildExporter(processedOptions)
-			const spanProcessor = processedOptions.spanProcessor.factory(exporter, {
-				scheduledDelayMillis: processedOptions.bufferTimeout,
-				maxExportBatchSize: processedOptions.bufferSize,
-			})
-			provider.addSpanProcessor(spanProcessor)
-			this._processor = spanProcessor
-		}
-
-		if (processedOptions.debug) {
-			provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()))
-		}
 
 		window.addEventListener('visibilitychange', () => {
 			// this condition applies when the page is hidden or when it's closed

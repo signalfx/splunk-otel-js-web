@@ -22,7 +22,6 @@ import { initSessionTracking, updateSessionStatus } from '../src/session'
 import { context, SamplingDecision } from '@opentelemetry/api'
 import { SESSION_INACTIVITY_TIMEOUT_MS, SESSION_STORAGE_KEY } from '../src/session/constants'
 import { describe, it, expect } from 'vitest'
-import { createWebTracerProvider } from './utils'
 
 describe('Session based sampler', () => {
 	it('decide sampling based on session id and ratio', () => {
@@ -36,8 +35,7 @@ describe('Session based sampler', () => {
 			}),
 		)
 		document.cookie = SESSION_STORAGE_KEY + '=' + lowCookieValue + '; path=/; max-age=' + 10
-		const provider = createWebTracerProvider()
-		const trackingHandle = initSessionTracking('cookie', provider, new InternalEventTarget())
+		const trackingHandle = initSessionTracking('cookie', new InternalEventTarget())
 
 		const sampler = new SessionBasedSampler({ ratio: 0.5 })
 		expect(

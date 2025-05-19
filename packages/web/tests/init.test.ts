@@ -137,11 +137,10 @@ describe('test init', () => {
 					websocket: true,
 				},
 				rumAccessToken: undefined,
+				spanProcessors: [capturer],
 			})
 
 			expect(SplunkRum.inited).toBeTruthy()
-
-			SplunkRum.provider.addSpanProcessor(capturer)
 
 			await new Promise<void>((resolve) => {
 				setTimeout(() => {
