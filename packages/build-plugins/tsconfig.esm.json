@@ -1,0 +1,10 @@
+{
+	"compilerOptions": {
+		"declaration": true,
+		"module": "ES6",
+		"outDir": "./dist/esm",
+		"rootDir": "src",
+		"sourceMap": true
+	},
+	"extends": "./tsconfig.base.json"
+}

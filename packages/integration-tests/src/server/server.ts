@@ -60,6 +60,12 @@ fastify.register(fastifyStatic, {
 	decorateReply: false,
 })
 
+fastify.register(fastifyStatic, {
+	root: path.join(__dirname, '../../../build-plugins/integration-test/project/dist/'),
+	prefix: '/build-plugins-test-project-artifacts/',
+	decorateReply: false,
+})
+
 fastify.addHook('preHandler', delayMiddleware)
 fastify.addHook('onSend', serverTimingMiddleware)
 fastify.addHook('onSend', noCacheMiddleware)
