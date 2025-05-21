@@ -2,6 +2,12 @@
 
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
+## 0.22.0
+* @splunk/rum-build-plugins
+	* feat: Add `@splunk/rum-build-plugins` and new `SplunkRumWebpackPlugin`. 
+    * This is part of the symbolication effort, and is one of the ways that browser customers can make 
+    * use of symbolication feature. [#1098](https://github.com/signalfx/splunk-otel-js-web/pull/1098)
+
 ## 0.21.0
 * @splunk/otel-web
 	* feat: respect `ignoreUrls` option for `routeChange` span creation [#1112](https://github.com/signalfx/splunk-otel-js-web/pull/1112)
