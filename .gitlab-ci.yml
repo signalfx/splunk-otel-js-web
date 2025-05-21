@@ -77,6 +77,7 @@ unit_test:
     script:
         - npm ci --include=dev
         - npx playwright install --with-deps
+        - npm run compile
         - npm run test:unit -- --browser.name chromium
         - npm run test:plugin
 
