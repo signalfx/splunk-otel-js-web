@@ -50,6 +50,8 @@ build:
     artifacts:
         paths:
             - packages/*/dist/
+            - packages/build-plugins/integration-test/dist/
+            - packages/build-plugins/integration-test/project/dist/
     script:
         - npm run compile
 
