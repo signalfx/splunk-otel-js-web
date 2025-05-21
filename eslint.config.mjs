@@ -211,6 +211,7 @@ export default [
 			'packages/web/performance-tests/**/*.{js,mjs,cjs}',
 			'packages/web/integration-tests/**/*.{js,mjs,cjs}',
 			'**/*.conf.js',
+			'**/*.config.js',
 			'.size-limit.cjs',
 			'.prettierrc.cjs',
 		],

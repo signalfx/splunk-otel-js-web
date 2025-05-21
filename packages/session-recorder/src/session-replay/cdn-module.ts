@@ -15,28 +15,12 @@
  * limitations under the License.
  *
  */
-module.exports = [
-	{
-		name: 'artifacts/otel-api-globals.js',
-		limit: '3 kB',
-		path: './packages/web/dist/artifacts/otel-api-globals.js',
-	},
 
-	{
-		name: 'artifacts/splunk-otel-web.js',
-		limit: '45 kB',
-		path: './packages/web/dist/artifacts/splunk-otel-web.js',
-	},
-
-	{
-		name: 'artifacts/splunk-otel-web-legacy.js',
-		limit: '82 kB',
-		path: './packages/web/dist/artifacts/splunk-otel-web-legacy.js',
-	},
-
-	{
-		name: 'artifacts/splunk-otel-web-session-recorder.js',
-		limit: '109 kB',
-		path: './packages/session-recorder/dist/artifacts/splunk-otel-web-session-recorder.js',
-	},
-]
+export {
+	SessionReplay,
+	SessionReplayPlain,
+	type SessionReplayConfig,
+	type SessionReplayPlainSegment,
+	type SensitivityRule,
+	type SensitivityRuleType,
+} from 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v1.35.0/session-replay.module.legacy.min.js'

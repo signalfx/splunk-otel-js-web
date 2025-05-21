@@ -43,7 +43,14 @@ import { type SplunkExporterConfig } from './exporters/common'
 import { SplunkZipkinExporter } from './exporters/zipkin'
 import { ERROR_INSTRUMENTATION_NAME, SplunkErrorInstrumentation } from './SplunkErrorInstrumentation'
 import { generateId, getPluginConfig } from './utils'
-import { getRumSessionId, initSessionTracking, updateSessionStatus } from './session'
+import {
+	checkSessionRecorderType,
+	getIsNewSession,
+	getRumSessionId,
+	initSessionTracking,
+	RecorderType,
+	updateSessionStatus,
+} from './session'
 import { SplunkWebSocketInstrumentation } from './SplunkWebSocketInstrumentation'
 import { initWebVitals } from './webvitals'
 import { SplunkLongTaskInstrumentation } from './SplunkLongTaskInstrumentation'
@@ -205,6 +212,11 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	_experimental_getSessionId: () => SessionId | undefined
 
 	/**
+	 * Used internally by the SplunkSessionRecorder - checks if the current session is assigned to a correct recorder type.
+	 */
+	_internalCheckSessionRecorderType: (recorderType: RecorderType) => void
+
+	/**
 	 * Allows experimental options to be passed. No versioning guarantees are given for this method.
 	 */
 	_internalInit: (options: Partial<SplunkOtelWebConfigInternal>) => void
@@ -245,6 +257,8 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	init: (options: SplunkOtelWebConfig) => void
 
 	readonly inited: boolean
+
+	isNewSessionId: () => boolean
 
 	provider?: SplunkWebTracerProvider
 
@@ -586,6 +600,9 @@ export const SplunkRum: SplunkOtelWebType = {
 
 		return getRumSessionId()
 	},
+	isNewSessionId() {
+		return getIsNewSession()
+	},
 	_experimental_getSessionId() {
 		return this.getSessionId()
 	},
@@ -599,6 +616,9 @@ export const SplunkRum: SplunkOtelWebType = {
 			forceStore: false,
 			hadActivity: this._processedOptions._experimental_allSpansExtendSession,
 		})
+	},
+	_internalCheckSessionRecorderType(recorderType: RecorderType) {
+		checkSessionRecorderType(recorderType)
 	},
 }
 
