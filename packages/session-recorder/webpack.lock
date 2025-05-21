@@ -1,0 +1,4 @@
+{
+  "https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v1.35.0/session-replay.module.legacy.min.js": { "integrity": "sha512-98rXonvhZc4z8hdCIl+t/0EeG7BRwNplToj7MggYSyjkG6P5x6Vlkh65zKVRy22SCMqDlUzkJrMVFANFmYinXw==", "contentType": "text/javascript" },
+  "version": 1
+}

@@ -29,9 +29,11 @@ const GLOBAL_SPLUNK_RUM_VERSION_KEY = `${GLOBAL_SPLUNK_RUM_KEY}.version`
  * eg. sharing session id manager with session recorder
  */
 export function getGlobal<Type>(): Type | undefined {
+	// @ts-expect-error FIXME: Symbol type is not assignable to string
 	return globalThis[GLOBAL_OPENTELEMETRY_API_KEY]?.[GLOBAL_SPLUNK_RUM_KEY]
 }
 
 export function getSplunkRumVersion(): string | undefined {
+	// @ts-expect-error FIXME: Symbol type is not assignable to string
 	return globalThis[GLOBAL_OPENTELEMETRY_API_KEY]?.[GLOBAL_SPLUNK_RUM_VERSION_KEY]
 }

@@ -25,7 +25,7 @@ SplunkOtelWeb.init({
 	deploymentEnvironment: process.env.NEXT_PUBLIC_SPLUNK_RUM_DEPLOYMENT_ENVIROMENT,
 })
 
-SplunkSessionRecorder.init({
+void SplunkSessionRecorder.init({
 	rumAccessToken: process.env.NEXT_PUBLIC_SPLUNK_RUM_ACCESS_TOKEN,
 	beaconEndpoint: process.env.NEXT_PUBLIC_SPLUNK_RUM_SESSION_REPLAY_BEACON_ENDPOINT,
 })

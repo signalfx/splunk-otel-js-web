@@ -1,12 +1,13 @@
 {
 	"name": "@splunk/otel-web",
-	"version": "0.21.0",
+	"version": "0.22.0",
 	"description": "Splunk distribution of Open Telemetry for browser environment.",
 	"repository": "github:signalfx/splunk-otel-js-browser",
 	"scripts": {
 		"compile": "npm-run-all -s compile:*",
-		"compile:browser": "rollup -c",
-		"compile:tsc": "tsc --build tsconfig.cjs.json tsconfig.esm.json"
+		"compile:browser": "webpack --mode production --color",
+		"compile:tsc": "tsc --build tsconfig.cjs.json tsconfig.esm.json",
+		"dev": "webpack --mode development --watch --color"
 	},
 	"author": "Splunk Observability Instrumentals Team <ssg-observability-instrumentals-npm@splunk.com>",
 	"license": "Apache-2.0",
@@ -27,7 +28,6 @@
 		"dist/esm/**/*.d.ts"
 	],
 	"dependencies": {
-		"@babel/runtime": "^7.26.10",
 		"@opentelemetry/api": "^1.9.0",
 		"@opentelemetry/core": "^1.25.1",
 		"@opentelemetry/exporter-trace-otlp-http": "^0.52.1",
@@ -40,25 +40,21 @@
 		"@opentelemetry/sdk-trace-base": "^1.25.1",
 		"@opentelemetry/sdk-trace-web": "^1.25.1",
 		"@opentelemetry/semantic-conventions": "^1.25.1",
+		"core-js": "3.41.0",
 		"shimmer": "^1.2.1",
 		"web-vitals": "^3.5.2"
 	},
 	"devDependencies": {
-		"@babel/plugin-transform-runtime": "^7.24.7",
-		"@babel/preset-env": "^7.24.7",
-		"@babel/runtime-corejs3": "^7.24.7",
-		"@rollup/plugin-babel": "^6.0.3",
-		"@rollup/plugin-commonjs": "^25.0.3",
-		"@rollup/plugin-json": "^6.0.0",
-		"@rollup/plugin-node-resolve": "^16.0.1",
-		"@rollup/plugin-terser": "^0.4.3",
-		"@rollup/plugin-typescript": "^11.1.2",
+		"@swc/core": "^1.11.22",
+		"@swc/helpers": "^0.5.17",
 		"@types/shimmer": "^1.2.0",
+		"fork-ts-checker-webpack-plugin": "^9.1.0",
 		"npm-run-all": "^4.1.5",
-		"rollup": "^4.18.0",
-		"rollup-plugin-istanbul": "^4.0.0",
-		"rollup-plugin-polyfill-node": "^0.12.0",
-		"socket.io-client": "^4.8.1"
+		"socket.io-client": "^4.8.1",
+		"swc-loader": "^0.2.6",
+		"webpack": "^5.98.0",
+		"webpack-cli": "^6.0.1",
+		"webpack-dev-server": "^5.2.0"
 	},
 	"bugs": {
 		"url": "https://github.com/signalfx/splunk-otel-js-web/issues"
@@ -66,8 +62,5 @@
 	"homepage": "https://github.com/signalfx/splunk-otel-js-web#readme",
 	"publishConfig": {
 		"access": "public"
-	},
-	"optionalDependencies": {
-		"@rollup/rollup-linux-x64-gnu": "^4.37.0"
 	}
 }

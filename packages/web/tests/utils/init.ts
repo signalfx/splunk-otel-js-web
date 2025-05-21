@@ -32,14 +32,13 @@ export const initWithDefaultConfig = (capturer: SpanCapturer, additionalOptions 
 		globalAttributes: { customerType: 'GOLD' },
 		bufferTimeout: 0,
 		rumAccessToken: '123-no-warn-spam-in-console',
+		spanProcessors: [capturer],
 		...additionalOptions,
 	})
 
 	if (!SplunkRum.inited) {
 		throw Error('SplunkRum not initialized')
 	}
-
-	SplunkRum.provider.addSpanProcessor(capturer)
 }
 
 export function initWithSyncPipeline(additionalOptions = {}): {

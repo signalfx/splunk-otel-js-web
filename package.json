@@ -1,7 +1,7 @@
 {
 	"name": "@splunk/otel-web-dev-root",
 	"private": true,
-	"version": "0.21.0",
+	"version": "0.22.0",
 	"--workspaces": "Hardcoded so npm runs workspaces commands in order",
 	"workspaces": [
 		"packages/web",
@@ -16,6 +16,7 @@
 	},
 	"scripts": {
 		"compile": "npm run --ws compile --",
+		"dev": "npm run --ws dev --",
 		"lint": "run-p lint:eslint lint:prettier lint:markdown",
 		"lint:fix": "run-p lint:eslint:fix lint:prettier:fix lint:markdown:fix",
 		"lint:eslint": "eslint .",
@@ -41,6 +42,8 @@
 		"@size-limit/file": "^11.2.0",
 		"@stylistic/eslint-plugin-js": "^4.2.0",
 		"@stylistic/eslint-plugin-ts": "^4.2.0",
+		"@swc/core": "^1.11.22",
+		"@swc/helpers": "^0.5.17",
 		"@types/ws": "^8.18.0",
 		"@typescript-eslint/eslint-plugin": "^8.30.1",
 		"@typescript-eslint/parser": "^8.30.1",
@@ -59,6 +62,7 @@
 		"prettier": "^3.5.3",
 		"size-limit": "^11.2.0",
 		"socket.io": "^4.8.1",
+		"swc-loader": "^0.2.6",
 		"typescript": "^5.8.2",
 		"typescript-eslint": "^8.30.1",
 		"vitest": "^3.0.7",

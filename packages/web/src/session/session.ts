@@ -16,10 +16,9 @@
  *
  */
 
-import { SpanProcessor, WebTracerProvider } from '@opentelemetry/sdk-trace-web'
 import { InternalEventTarget } from '../EventTarget'
 import { generateId } from '../utils'
-import { SessionState, SessionId } from './types'
+import { SessionState, SessionId, RecorderType } from './types'
 import { SESSION_INACTIVITY_TIMEOUT_MS, SESSION_STORAGE_KEY } from './constants'
 import { isSessionDurationExceeded, isSessionInactivityTimeoutReached, isSessionState } from './utils'
 import { PersistenceType } from '../types'
@@ -48,6 +47,7 @@ import { getGlobal } from '../global-utils'
 let recentActivity = false
 let cookieDomain: string | undefined
 let eventTarget: InternalEventTarget | undefined
+let isNewSessionId = false
 
 export function markActivity(): void {
 	recentActivity = true
@@ -118,28 +118,38 @@ export function getCurrentSessionState({ forceDiskRead = false }): SessionState 
 // 2) If activity has occurred since the last periodic invocation, renew the cookie timeout
 // (Only exported for testing purposes.)
 export function updateSessionStatus({
+	forceNewSession = false,
 	forceStore,
 	hadActivity,
 	inactive = undefined,
+	recorderType = undefined,
 }: {
+	forceNewSession?: boolean
 	forceStore: boolean
 	hadActivity?: boolean
 	inactive?: boolean
+	recorderType?: RecorderType
 }): SessionState {
 	let sessionState = getCurrentSessionState({ forceDiskRead: forceStore })
 	let shouldForceWrite = false
-	if (!sessionState) {
+	if (!sessionState || forceNewSession) {
 		// Check if another tab has created a new session
 		sessionState = getCurrentSessionState({ forceDiskRead: true })
-		if (!sessionState) {
+		if (!sessionState || forceNewSession) {
 			sessionState = createSessionState()
 			recentActivity = true // force write of new cookie
 			shouldForceWrite = true
+			isNewSessionId = true
 		}
 	}
 
 	if (sessionState.inactive !== inactive) {
 		sessionState.inactive = inactive
+		shouldForceWrite = true
+	}
+
+	if (recorderType && sessionState.rt !== recorderType) {
+		sessionState.rt = recorderType
 		shouldForceWrite = true
 	}
 
@@ -165,25 +175,6 @@ function hasNativeSessionId(): boolean {
 	return typeof window !== 'undefined' && window['SplunkRumNative'] && window['SplunkRumNative'].getNativeSessionId
 }
 
-class SessionSpanProcessor implements SpanProcessor {
-	forceFlush(): Promise<void> {
-		return Promise.resolve()
-	}
-
-	onEnd(): void {}
-
-	onStart(): void {
-		updateSessionStatus({
-			forceStore: false,
-			hadActivity: true,
-		})
-	}
-
-	shutdown(): Promise<void> {
-		return Promise.resolve()
-	}
-}
-
 const ACTIVITY_EVENTS = ['click', 'scroll', 'mousedown', 'keydown', 'touchend', 'visibilitychange']
 
 export type SessionTrackingHandle = {
@@ -194,10 +185,8 @@ export type SessionTrackingHandle = {
 
 export function initSessionTracking(
 	persistence: NonNullable<PersistenceType>,
-	provider: WebTracerProvider,
 	newEventTarget: InternalEventTarget,
 	domain?: string,
-	allSpansAreActivity = false,
 ): SessionTrackingHandle {
 	if (hasNativeSessionId()) {
 		// short-circuit and bail out - don't create cookie, watch for inactivity, or anything
@@ -237,10 +226,6 @@ export function initSessionTracking(
 
 	ACTIVITY_EVENTS.forEach((type) => document.addEventListener(type, markActivity, { capture: true, passive: true }))
 
-	if (allSpansAreActivity) {
-		provider.addSpanProcessor(new SessionSpanProcessor())
-	}
-
 	updateSessionStatus({ forceStore: true })
 
 	// TODO: For integration tests, find better solution
@@ -275,4 +260,16 @@ export function getRumSessionId(): SessionId | undefined {
 	}
 
 	return sessionState.id
+}
+
+export function getIsNewSession(): boolean {
+	return isNewSessionId
+}
+
+export function checkSessionRecorderType(recorderType: RecorderType): void {
+	const sessionState = getCurrentSessionState({ forceDiskRead: true })
+	if (sessionState && sessionState.rt !== recorderType) {
+		updateSessionStatus({ forceStore: true, forceNewSession: true, recorderType })
+		console.debug('Session recorder type changed, creating new session', { recorderType })
+	}
 }
