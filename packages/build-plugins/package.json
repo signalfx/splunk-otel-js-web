@@ -1,0 +1,49 @@
+{
+	"name": "@splunk/rum-build-plugins",
+	"version": "0.22.0",
+	"description": "Build plugins for users of @splunk/otel-web",
+	"repository": "github:signalfx/splunk-otel-js-browser",
+	"scripts": {
+		"compile": "npm-run-all -s compile:* && cd integration-test",
+		"compile:tsc": "tsc --build tsconfig.cjs.json tsconfig.esm.json",
+		"compile:integration": "cd integration-test/project && npm install && npm run compile",
+		"test:unit": "vitest --run --watch false"
+	},
+	"author": "Splunk Observability Instrumentals Team <ssg-observability-instrumentals-npm@splunk.com>",
+	"license": "Apache-2.0",
+	"main": "dist/cjs/index.js",
+	"module": "dist/esm/index.js",
+	"types": "dist/cjs/index.d.ts",
+	"exports": {
+		"types": "./dist/cjs/index.d.ts",
+		"import": "./dist/esm/index.js",
+		"require": "./dist/cjs/index.js"
+	},
+	"files": [
+		"dist/cjs/**/*.js",
+		"dist/cjs/**/*.js.map",
+		"dist/cjs/**/*.d.ts",
+		"dist/esm/**/*.js",
+		"dist/esm/**/*.js.map",
+		"dist/esm/**/*.d.ts"
+	],
+	"dependencies": {
+		"axios": "^1.7.7",
+		"form-data": "^4.0.1",
+		"unplugin": "^1.14.1"
+	},
+	"devDependencies": {
+		"ts-node": "^10.9.1",
+		"vitest": "^3.0.7"
+	},
+	"peerDependencies": {
+		"webpack": "^5"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"bugs": {
+		"url": "https://github.com/signalfx/splunk-otel-js-browser/issues"
+	},
+	"homepage": "https://github.com/signalfx/splunk-otel-js-browser#readme"
+}

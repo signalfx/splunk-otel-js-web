@@ -46,7 +46,7 @@ import { getGlobal } from '../global-utils'
 */
 
 let recentActivity = false
-let cookieDomain: string
+let cookieDomain: string | undefined
 let eventTarget: InternalEventTarget | undefined
 let isNewSessionId = false
 

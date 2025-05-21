@@ -205,6 +205,7 @@ export default [
 	{
 		files: [
 			'scripts/*.{js,mjs,cjs}',
+			'packages/build-plugins/integration-test/**/*.{js,mjs,cjs}',
 			'packages/web/utils/**/*.{js,mjs,cjs}',
 			'packages/web/test/plugins/**/*.{js,mjs,cjs}',
 			'packages/web/performance-tests/**/*.{js,mjs,cjs}',

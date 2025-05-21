@@ -1,11 +1,12 @@
 {
 	"name": "@splunk/otel-web-dev-root",
 	"private": true,
-	"version": "0.21.0",
+	"version": "0.22.0",
 	"--workspaces": "Hardcoded so npm runs workspaces commands in order",
 	"workspaces": [
 		"packages/web",
 		"packages/session-recorder",
+		"packages/build-plugins",
 		"packages/integration-tests"
 	],
 	"engines": {
@@ -24,6 +25,7 @@
 		"lint:prettier:fix": "npm run lint:prettier -- --write",
 		"lint:markdown": "markdownlint *.md docs/*.md --ignore CHANGELOG.md",
 		"lint:markdown:fix": "npm run lint:markdown -- --fix",
+		"test:plugin": "npm run --workspace=packages/build-plugins test:unit",
 		"test:unit": "vitest --run --watch false",
 		"test:unit:watch": "vitest --watch",
 		"postversion": "node ./scripts/version-update.mjs",
