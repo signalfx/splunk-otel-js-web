@@ -17,7 +17,6 @@
  */
 
 import { context, trace } from '@opentelemetry/api'
-import { SpanProcessor } from '@opentelemetry/sdk-trace-base'
 import SplunkOtelWeb, { INSTRUMENTATIONS_ALL_DISABLED } from '../src'
 import { deinit, SpanCapturer } from './utils'
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
@@ -26,6 +25,7 @@ describe('async context propagation', () => {
 	let capturer: SpanCapturer
 
 	beforeEach(() => {
+		capturer = new SpanCapturer()
 		SplunkOtelWeb.init({
 			applicationName: 'my-app',
 			beaconEndpoint: 'https://localhost:9411/api/traces',
@@ -34,10 +34,8 @@ describe('async context propagation', () => {
 				async: true,
 			},
 			instrumentations: INSTRUMENTATIONS_ALL_DISABLED,
+			spanProcessors: [capturer],
 		})
-
-		capturer = new SpanCapturer()
-		SplunkOtelWeb.provider?.addSpanProcessor(capturer as any as SpanProcessor)
 	})
 
 	afterEach(() => {

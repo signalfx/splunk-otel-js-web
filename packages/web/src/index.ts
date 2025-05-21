@@ -43,7 +43,14 @@ import { type SplunkExporterConfig } from './exporters/common'
 import { SplunkZipkinExporter } from './exporters/zipkin'
 import { ERROR_INSTRUMENTATION_NAME, SplunkErrorInstrumentation } from './SplunkErrorInstrumentation'
 import { generateId, getPluginConfig } from './utils'
-import { getRumSessionId, initSessionTracking, updateSessionStatus } from './session'
+import {
+	checkSessionRecorderType,
+	getIsNewSession,
+	getRumSessionId,
+	initSessionTracking,
+	RecorderType,
+	updateSessionStatus,
+} from './session'
 import { SplunkWebSocketInstrumentation } from './SplunkWebSocketInstrumentation'
 import { initWebVitals } from './webvitals'
 import { SplunkLongTaskInstrumentation } from './SplunkLongTaskInstrumentation'
@@ -184,6 +191,25 @@ function buildExporter(options: SplunkOtelWebConfigInternal) {
 	})
 }
 
+class SessionSpanProcessor implements SpanProcessor {
+	forceFlush(): Promise<void> {
+		return Promise.resolve()
+	}
+
+	onEnd(): void {}
+
+	onStart(): void {
+		updateSessionStatus({
+			forceStore: false,
+			hadActivity: true,
+		})
+	}
+
+	shutdown(): Promise<void> {
+		return Promise.resolve()
+	}
+}
+
 export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	AlwaysOffSampler: typeof AlwaysOffSampler
 	AlwaysOnSampler: typeof AlwaysOnSampler
@@ -203,6 +229,11 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	 * @deprecated Use {@link getSessionId()}
 	 */
 	_experimental_getSessionId: () => SessionId | undefined
+
+	/**
+	 * Used internally by the SplunkSessionRecorder - checks if the current session is assigned to a correct recorder type.
+	 */
+	_internalCheckSessionRecorderType: (recorderType: RecorderType) => void
 
 	/**
 	 * Allows experimental options to be passed. No versioning guarantees are given for this method.
@@ -245,6 +276,8 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	init: (options: SplunkOtelWebConfig) => void
 
 	readonly inited: boolean
+
+	isNewSessionId: () => boolean
 
 	provider?: SplunkWebTracerProvider
 
@@ -397,6 +430,43 @@ export const SplunkRum: SplunkOtelWebType = {
 
 		this.resource = new Resource(resourceAttrs)
 
+		this.attributesProcessor = new SplunkSpanAttributesProcessor(
+			{
+				...(deploymentEnvironment
+					? { 'environment': deploymentEnvironment, 'deployment.environment': deploymentEnvironment }
+					: {}),
+				...(version ? { 'app.version': version } : {}),
+				...(processedOptions.globalAttributes || {}),
+			},
+			this._processedOptions.persistence === 'localStorage',
+			() => userTrackingMode,
+			processedOptions.cookieDomain,
+		)
+
+		const spanProcessors = [this.attributesProcessor]
+
+		if (processedOptions.beaconEndpoint) {
+			const exporter = buildExporter(processedOptions)
+			const spanProcessor = processedOptions.spanProcessor.factory(exporter, {
+				scheduledDelayMillis: processedOptions.bufferTimeout,
+				maxExportBatchSize: processedOptions.bufferSize,
+			})
+			spanProcessors.push(spanProcessor)
+			this._processor = spanProcessor
+		}
+
+		if (processedOptions.debug) {
+			spanProcessors.push(new SimpleSpanProcessor(new ConsoleSpanExporter()))
+		}
+
+		if (options._experimental_allSpansExtendSession) {
+			spanProcessors.push(new SessionSpanProcessor())
+		}
+
+		if (options.spanProcessors) {
+			spanProcessors.push(...options.spanProcessors)
+		}
+
 		const provider = new SplunkWebTracerProvider({
 			...processedOptions.tracer,
 			resource: this.resource,
@@ -404,14 +474,13 @@ export const SplunkRum: SplunkOtelWebType = {
 				decider: processedOptions.tracer?.sampler ?? new AlwaysOnSampler(),
 				allSpansAreActivity: this._processedOptions._experimental_allSpansExtendSession,
 			}),
+			spanProcessors,
 		})
 
 		_deinitSessionTracking = initSessionTracking(
 			processedOptions.persistence,
-			provider,
 			eventTarget,
 			processedOptions.cookieDomain,
-			!!options._experimental_allSpansExtendSession,
 		).deinit
 
 		const instrumentations = INSTRUMENTATIONS.map(({ Instrument, confKey, disable }) => {
@@ -436,33 +505,6 @@ export const SplunkRum: SplunkOtelWebType = {
 
 			return null
 		}).filter((a): a is Exclude<typeof a, null> => Boolean(a))
-
-		this.attributesProcessor = new SplunkSpanAttributesProcessor(
-			{
-				...(deploymentEnvironment
-					? { 'environment': deploymentEnvironment, 'deployment.environment': deploymentEnvironment }
-					: {}),
-				...(version ? { 'app.version': version } : {}),
-				...(processedOptions.globalAttributes || {}),
-			},
-			this._processedOptions.persistence === 'localStorage',
-			() => userTrackingMode,
-		)
-		provider.addSpanProcessor(this.attributesProcessor)
-
-		if (processedOptions.beaconEndpoint) {
-			const exporter = buildExporter(processedOptions)
-			const spanProcessor = processedOptions.spanProcessor.factory(exporter, {
-				scheduledDelayMillis: processedOptions.bufferTimeout,
-				maxExportBatchSize: processedOptions.bufferSize,
-			})
-			provider.addSpanProcessor(spanProcessor)
-			this._processor = spanProcessor
-		}
-
-		if (processedOptions.debug) {
-			provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()))
-		}
 
 		window.addEventListener('visibilitychange', () => {
 			// this condition applies when the page is hidden or when it's closed
@@ -571,7 +613,10 @@ export const SplunkRum: SplunkOtelWebType = {
 
 	getAnonymousId() {
 		if (userTrackingMode === 'anonymousTracking') {
-			return getOrCreateAnonymousId({ useLocalStorage: this._processedOptions.persistence === 'localStorage' })
+			return getOrCreateAnonymousId({
+				useLocalStorage: this._processedOptions.persistence === 'localStorage',
+				domain: this._processedOptions.cookieDomain,
+			})
 		}
 	},
 
@@ -581,6 +626,9 @@ export const SplunkRum: SplunkOtelWebType = {
 		}
 
 		return getRumSessionId()
+	},
+	isNewSessionId() {
+		return getIsNewSession()
 	},
 	_experimental_getSessionId() {
 		return this.getSessionId()
@@ -595,6 +643,9 @@ export const SplunkRum: SplunkOtelWebType = {
 			forceStore: false,
 			hadActivity: this._processedOptions._experimental_allSpansExtendSession,
 		})
+	},
+	_internalCheckSessionRecorderType(recorderType: RecorderType) {
+		checkSessionRecorderType(recorderType)
 	},
 }
 

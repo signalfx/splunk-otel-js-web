@@ -29,6 +29,7 @@ export class SplunkSpanAttributesProcessor implements SpanProcessor {
 		globalAttributes: Attributes,
 		private useLocalStorageForSessionMetadata: boolean,
 		private getUserTracking: () => SplunkOtelWebConfig['user']['trackingMode'],
+		private domain?: string,
 	) {
 		this._globalAttributes = globalAttributes ?? {}
 	}
@@ -56,7 +57,10 @@ export class SplunkSpanAttributesProcessor implements SpanProcessor {
 		if (this.getUserTracking() === 'anonymousTracking') {
 			span.setAttribute(
 				'user.anonymousId',
-				getOrCreateAnonymousId({ useLocalStorage: this.useLocalStorageForSessionMetadata }),
+				getOrCreateAnonymousId({
+					useLocalStorage: this.useLocalStorageForSessionMetadata,
+					domain: this.domain,
+				}),
 			)
 		}
 

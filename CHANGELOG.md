@@ -2,6 +2,27 @@
 
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
+## 0.22.0
+* @splunk/rum-build-plugins
+	* feat: Add `@splunk/rum-build-plugins` and new `SplunkRumWebpackPlugin`. 
+    * This is part of the symbolication effort, and is one of the ways that browser customers can make 
+    * use of symbolication feature. [#1098](https://github.com/signalfx/splunk-otel-js-web/pull/1098)
+
+## 0.21.0
+* @splunk/otel-web
+	* feat: respect `ignoreUrls` option for `routeChange` span creation [#1112](https://github.com/signalfx/splunk-otel-js-web/pull/1112)
+      - **Route change spans will no longer be created for URLs that match the `ignoreUrls` pattern.**
+      - This is especially useful for single-page applications (SPAs) where you want to avoid tracking certain route changes.
+      - To take advantage of this, set the `ignoreUrls` option when configuring the SDK.
+* internal
+	* Updated dependencies
+
+## 0.20.4
+* @splunk/otel-web
+	* fix: compatibility with Internet Explorer [#1108](https://github.com/signalfx/splunk-otel-js-web/pull/1108) [#1099](https://github.com/signalfx/splunk-otel-js-web/pull/1099)
+* internal
+	* Updated dependencies 
+
 ## 0.20.3
 * @splunk/otel-web
     * fix: throw exception with a proper message when running in non-browser environment [#1083](https://github.com/signalfx/splunk-otel-js-web/pull/1083) [#1088](https://github.com/signalfx/splunk-otel-js-web/pull/1088)

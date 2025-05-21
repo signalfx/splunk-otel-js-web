@@ -2,14 +2,16 @@
 	"compilerOptions": {
 		"allowJs": true,
 		"checkJs": false,
+		"esModuleInterop": true,
 		"forceConsistentCasingInFileNames": true,
 		"moduleResolution": "node",
 		"noEmitOnError": true,
 		"pretty": true,
 		"resolveJsonModule": true,
 		"target": "ES2017",
-		"types": ["node"],
-		"skipLibCheck": true
+		"types": ["node", "./src/session-replay/cdn-module.d.ts"],
+		"skipLibCheck": true,
+		"strict": true
 	},
 	"include": ["src/**/*.ts", "src/**/*.js"],
 	"exclude": ["node_modules"]

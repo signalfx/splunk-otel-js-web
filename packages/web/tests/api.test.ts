@@ -28,15 +28,14 @@ describe('Transitive API', () => {
 	let spanCapturer = new SpanCapturer()
 
 	beforeEach(() => {
+		spanCapturer = new SpanCapturer()
 		SplunkOtelWeb.init({
 			applicationName: 'my-app',
 			beaconEndpoint: 'https://localhost:9411/api/traces',
 			rumAccessToken: 'xxx',
 			instrumentations: INSTRUMENTATIONS_ALL_DISABLED,
+			spanProcessors: [spanCapturer],
 		})
-
-		spanCapturer = new SpanCapturer()
-		SplunkOtelWeb.provider?.addSpanProcessor(spanCapturer)
 	})
 
 	afterEach(() => {

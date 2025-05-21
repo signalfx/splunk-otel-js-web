@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>History events test</title>
+    <%- renderAgent({}, true) %>
+    <script>
+		window.SplunkRumOptions.ignoreUrls = [/another/, window.location.href]
+		window.SplunkRum && window.SplunkRum.init(window.SplunkRumOptions)
+    </script>
+
+</head>
+<body>
+<h1>History events test</h1>
+
+<button type="button" id="btnGoToPage">Go to another page</button>
+<button type="button" id="btnGoToPage2">Go to another page 2</button>
+<button type="button" id="btnGoBack">Go back</button>
+<button type="button" id="btnGoForward">Go forward</button>
+<pre id="scenarioDisplay"></pre>
+<script id="scenario">
+	document.querySelector('#btnGoToPage').addEventListener('click', function () {
+		location.hash = 'another-page';
+	});
+	document.querySelector('#btnGoBack').addEventListener('click', function () {
+		history.back();
+	});
+	document.querySelector('#btnGoForward').addEventListener('click', function () {
+		history.forward();
+	});
+	document.querySelector('#btnGoToPage2').addEventListener('click', function () {
+        history.pushState(null, null, 'page-2');
+    })
+
+
+</script>
+<script>scenarioDisplay.innerHTML = scenario.innerHTML;</script>
+</body>
+</html>
