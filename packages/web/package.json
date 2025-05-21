@@ -40,7 +40,7 @@
 		"@opentelemetry/sdk-trace-base": "^1.25.1",
 		"@opentelemetry/sdk-trace-web": "^1.25.1",
 		"@opentelemetry/semantic-conventions": "^1.25.1",
-		"core-js": "3.41.0",
+		"core-js": "3.42.0",
 		"shimmer": "^1.2.1",
 		"web-vitals": "^3.5.2"
 	},
