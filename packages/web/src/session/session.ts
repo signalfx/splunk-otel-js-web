@@ -16,7 +16,6 @@
  *
  */
 
-import { SpanProcessor, WebTracerProvider } from '@opentelemetry/sdk-trace-web'
 import { InternalEventTarget } from '../EventTarget'
 import { generateId } from '../utils'
 import { SessionState, SessionId, RecorderType } from './types'
@@ -176,25 +175,6 @@ function hasNativeSessionId(): boolean {
 	return typeof window !== 'undefined' && window['SplunkRumNative'] && window['SplunkRumNative'].getNativeSessionId
 }
 
-class SessionSpanProcessor implements SpanProcessor {
-	forceFlush(): Promise<void> {
-		return Promise.resolve()
-	}
-
-	onEnd(): void {}
-
-	onStart(): void {
-		updateSessionStatus({
-			forceStore: false,
-			hadActivity: true,
-		})
-	}
-
-	shutdown(): Promise<void> {
-		return Promise.resolve()
-	}
-}
-
 const ACTIVITY_EVENTS = ['click', 'scroll', 'mousedown', 'keydown', 'touchend', 'visibilitychange']
 
 export type SessionTrackingHandle = {
@@ -205,10 +185,8 @@ export type SessionTrackingHandle = {
 
 export function initSessionTracking(
 	persistence: NonNullable<PersistenceType>,
-	provider: WebTracerProvider,
 	newEventTarget: InternalEventTarget,
 	domain?: string,
-	allSpansAreActivity = false,
 ): SessionTrackingHandle {
 	if (hasNativeSessionId()) {
 		// short-circuit and bail out - don't create cookie, watch for inactivity, or anything
@@ -247,10 +225,6 @@ export function initSessionTracking(
 	eventTarget = newEventTarget
 
 	ACTIVITY_EVENTS.forEach((type) => document.addEventListener(type, markActivity, { capture: true, passive: true }))
-
-	if (allSpansAreActivity) {
-		provider.addSpanProcessor(new SessionSpanProcessor())
-	}
 
 	updateSessionStatus({ forceStore: true })
 

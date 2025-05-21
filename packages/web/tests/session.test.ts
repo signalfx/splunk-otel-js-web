@@ -27,12 +27,31 @@ import {
 import { SESSION_STORAGE_KEY, SESSION_INACTIVITY_TIMEOUT_MS } from '../src/session/constants'
 import { expect, it, describe, afterEach, vi, MockInstance } from 'vitest'
 import { createWebTracerProvider, deinit } from './utils'
+import { SpanProcessor } from '@opentelemetry/sdk-trace-base'
+
+class SessionSpanProcessor implements SpanProcessor {
+	forceFlush(): Promise<void> {
+		return Promise.resolve()
+	}
+
+	onEnd(): void {}
+
+	onStart(): void {
+		updateSessionStatus({
+			forceStore: false,
+			hadActivity: true,
+		})
+	}
+
+	shutdown(): Promise<void> {
+		return Promise.resolve()
+	}
+}
 
 describe('Session tracking', () => {
 	it('should correctly handle expiry, garbage values, (in)activity, etc.', async () => {
 		// the init tests have possibly already started the setInterval for updateSessionStatus.  Try to accomodate this.
-		const provider = createWebTracerProvider()
-		const trackingHandle = initSessionTracking('cookie', provider, new InternalEventTarget())
+		const trackingHandle = initSessionTracking('cookie', new InternalEventTarget())
 		const firstSessionId = getRumSessionId()
 
 		expect(firstSessionId).toHaveLength(32)
@@ -88,16 +107,15 @@ describe('Activity tracking', () => {
 		storeSetSpy.mockRestore()
 	})
 
-	function subject(allSpansAreActivity = false) {
-		const provider = createWebTracerProvider()
+	function subject(allSpansAreActivity: boolean) {
+		const spanProcessors: SessionSpanProcessor[] = []
+		if (allSpansAreActivity) {
+			spanProcessors.push(new SessionSpanProcessor())
+		}
 
-		const handle = initSessionTracking(
-			'cookie',
-			provider,
-			new InternalEventTarget(),
-			undefined,
-			allSpansAreActivity,
-		)
+		const provider = createWebTracerProvider({ spanProcessors })
+
+		const handle = initSessionTracking('cookie', new InternalEventTarget(), undefined)
 		handle.flush()
 
 		storeSetSpy = vi.spyOn(getNullableStore(), 'set')
@@ -109,7 +127,7 @@ describe('Activity tracking', () => {
 	}
 
 	it('non-activity spans do not trigger a new session', () => {
-		subject()
+		subject(false)
 
 		expect(storeSetSpy).toHaveBeenCalledTimes(0)
 	})
@@ -123,8 +141,7 @@ describe('Activity tracking', () => {
 
 describe('Session tracking - localStorage', () => {
 	it('should save session state to local storage', () => {
-		const provider = createWebTracerProvider()
-		const trackingHandle = initSessionTracking('localStorage', provider, new InternalEventTarget())
+		const trackingHandle = initSessionTracking('localStorage', new InternalEventTarget())
 
 		const firstSessionId = getRumSessionId()
 		updateSessionStatus({ forceStore: true })

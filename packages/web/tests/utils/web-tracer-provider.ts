@@ -17,4 +17,5 @@
  */
 import { SplunkWebTracerProvider } from '../../src/SplunkWebTracerProvider'
 
-export const createWebTracerProvider = () => new SplunkWebTracerProvider()
+export const createWebTracerProvider = (params?: ConstructorParameters<typeof SplunkWebTracerProvider>[0]) =>
+	new SplunkWebTracerProvider(params)
