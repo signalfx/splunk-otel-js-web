@@ -42,7 +42,7 @@
 		"@opentelemetry/semantic-conventions": "^1.25.1",
 		"core-js": "3.41.0",
 		"shimmer": "^1.2.1",
-		"web-vitals": "^3.5.2"
+		"web-vitals": "^5.0.1"
 	},
 	"devDependencies": {
 		"@swc/core": "^1.11.22",
