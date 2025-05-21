@@ -17,17 +17,25 @@
  */
 
 import { gzipSync, strToU8 } from 'fflate'
+import { nanoid } from 'nanoid'
 import type { JsonArray, JsonObject, JsonValue } from 'type-fest'
 
 import { IAnyValue, Log } from './types'
-import { VERSION } from './version.js'
+import { VERSION } from './version'
+import { compressAsync } from './session-replay/utils'
+import { apiFetch, ApiParams } from './api/api-fetch'
+import { addLogToQueue, removeQueuedLog, QueuedLog, getQueuedLogs, removeQueuedLogs } from './export-log-queue'
 
 interface OTLPLogExporterConfig {
 	beaconUrl: string
 	debug?: boolean
 	getResourceAttributes: () => JsonObject
 	headers?: Record<string, string>
+	sessionId: string
+	usePersistentExportQueue: boolean
 }
+
+const KEEPALIVE_MAX_LENGTH = 65536
 
 const defaultHeaders = {
 	'Content-Type': 'application/json',
@@ -89,6 +97,7 @@ export default class OTLPLogExporter {
 
 	constructor(config: OTLPLogExporterConfig) {
 		this.config = config
+		this.exportQueuedLogs()
 	}
 
 	constructLogData(logs: Log[]): JsonObject {
@@ -97,15 +106,16 @@ export default class OTLPLogExporter {
 				{
 					resource: {
 						attributes: convertToAnyValue(this.config.getResourceAttributes() || {}).kvlistValue
-							.values as JsonArray,
+							?.values as JsonArray,
 					},
 					scopeLogs: [
 						{
 							scope: { name: 'splunk.rr-web', version: VERSION },
 							logRecords: logs.map((log) => ({
+								// @ts-expect-error FIXME: `body` is not defined
 								body: convertToAnyValue(log.body) as JsonObject,
 								timeUnixNano: log.timeUnixNano,
-								attributes: convertToAnyValue(log.attributes || {}).kvlistValue.values as JsonArray,
+								attributes: convertToAnyValue(log.attributes || {}).kvlistValue?.values as JsonArray,
 							})),
 						},
 					],
@@ -126,19 +136,112 @@ export default class OTLPLogExporter {
 			console.log('otlp request', logsData)
 		}
 
-		const compressed = gzipSync(strToU8(JSON.stringify(logsData)))
+		const endpoint = this.config.beaconUrl
+		const uint8ArrayData = strToU8(JSON.stringify(logsData))
 
-		// There is a limit for fetchAlive param of 64kB, use it only when under limit and page is 'hidden' - which could
-		// be when page is unloading
-		const sentDataUsingBeaconLikeRequest = compressed.byteLength < 65536 && document.visibilityState === 'hidden'
+		const requestId = nanoid()
+		const queuedLog: QueuedLog | null = this.config.usePersistentExportQueue
+			? {
+					data: uint8ArrayData,
+					timestamp: Date.now(),
+					url: endpoint,
+					sessionId: this.config.sessionId,
+					headers,
+					requestId,
+				}
+			: null
 
-		fetch(this.config.beaconUrl, {
+		if (queuedLog) {
+			console.log('Adding log to queue', { ...queuedLog, data: '[truncated]' })
+			addLogToQueue(queuedLog)
+		}
+
+		const onFetchSuccess = () => {
+			if (!queuedLog) {
+				return
+			}
+
+			console.log('Removing queued log', { ...queuedLog, data: '[truncated]' })
+			removeQueuedLog(queuedLog)
+		}
+
+		if (document.visibilityState === 'hidden') {
+			const compressedData = gzipSync(uint8ArrayData)
+			console.debug('🗜️ dbg: SYNC compress', { endpoint, headers, compressedData })
+
+			// Use fetch with keepalive option instead of beacon.
+			// Fetch with keepalive option has limit of 64kB.
+			const shouldUseKeepAliveOption = compressedData.byteLength < KEEPALIVE_MAX_LENGTH
+			void sendByFetch(
+				endpoint,
+				{ headers, body: compressedData, keepalive: shouldUseKeepAliveOption },
+				onFetchSuccess,
+			)
+		} else {
+			compressAsync(uint8ArrayData)
+				.then((compressedData) => {
+					console.debug('🗜️ dbg: ASYNC compress', { endpoint, headers, compressedData })
+					void sendByFetch(endpoint, { headers, body: compressedData }, onFetchSuccess)
+				})
+				.catch((error) => {
+					console.error('Could not compress data', error)
+				})
+		}
+	}
+
+	exportQueuedLogs(): void {
+		let logs: QueuedLog[] = []
+		try {
+			logs = getQueuedLogs() ?? []
+		} finally {
+			removeQueuedLogs()
+		}
+
+		for (const log of logs) {
+			console.log('Found queued log', { ...log, data: '[truncated]' })
+
+			// Only export logs that belong to the current session
+			if (log.sessionId !== this.config.sessionId) {
+				console.debug(
+					'exportQueuedLogs - session mismatch',
+					{ ...log, data: '[truncated]' },
+					{ sessionId: this.config.sessionId },
+				)
+				continue
+			}
+
+			compressAsync(log.data)
+				.then((compressedData) => {
+					void sendByFetch(log.url, { headers: log.headers, body: compressedData }, () => {
+						console.log('exportQueuedLogs - success', { ...log, data: '[truncated]' })
+					})
+				})
+				.catch((error) => {
+					console.error('Could not compress data', error)
+				})
+		}
+	}
+}
+
+const sendByFetch = async (
+	endpoint: string,
+	fetchParams: Pick<ApiParams, 'headers' | 'keepalive' | 'body'>,
+	onSuccess: () => void,
+) => {
+	try {
+		await apiFetch(endpoint, {
 			method: 'POST',
-			body: compressed,
-			headers: headers,
-			keepalive: sentDataUsingBeaconLikeRequest,
-		}).catch(() => {
-			// TODO remove this once we have ingest with correct cors headers
+			abortPreviousRequest: false,
+			doNotConvert: true,
+			doNotRetryOnDocumentHidden: true,
+			retryCount: 100,
+			retryOnHttpErrorStatusCodes: true,
+			...fetchParams,
 		})
+
+		console.debug('📦 dbg: sendByFetch', { keepalive: fetchParams.keepalive })
+		onSuccess()
+	} catch (error) {
+		console.error('Could not sent data to BE - fetch', error)
 	}
 }

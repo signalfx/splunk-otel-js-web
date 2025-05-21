@@ -18,7 +18,7 @@
 
 import { InternalEventTarget } from '../EventTarget'
 import { generateId } from '../utils'
-import { SessionState, SessionId } from './types'
+import { SessionState, SessionId, RecorderType } from './types'
 import { SESSION_INACTIVITY_TIMEOUT_MS, SESSION_STORAGE_KEY } from './constants'
 import { isSessionDurationExceeded, isSessionInactivityTimeoutReached, isSessionState } from './utils'
 import { PersistenceType } from '../types'
@@ -47,6 +47,7 @@ import { getGlobal } from '../global-utils'
 let recentActivity = false
 let cookieDomain: string | undefined
 let eventTarget: InternalEventTarget | undefined
+let isNewSessionId = false
 
 export function markActivity(): void {
 	recentActivity = true
@@ -117,28 +118,38 @@ export function getCurrentSessionState({ forceDiskRead = false }): SessionState 
 // 2) If activity has occurred since the last periodic invocation, renew the cookie timeout
 // (Only exported for testing purposes.)
 export function updateSessionStatus({
+	forceNewSession = false,
 	forceStore,
 	hadActivity,
 	inactive = undefined,
+	recorderType = undefined,
 }: {
+	forceNewSession?: boolean
 	forceStore: boolean
 	hadActivity?: boolean
 	inactive?: boolean
+	recorderType?: RecorderType
 }): SessionState {
 	let sessionState = getCurrentSessionState({ forceDiskRead: forceStore })
 	let shouldForceWrite = false
-	if (!sessionState) {
+	if (!sessionState || forceNewSession) {
 		// Check if another tab has created a new session
 		sessionState = getCurrentSessionState({ forceDiskRead: true })
-		if (!sessionState) {
+		if (!sessionState || forceNewSession) {
 			sessionState = createSessionState()
 			recentActivity = true // force write of new cookie
 			shouldForceWrite = true
+			isNewSessionId = true
 		}
 	}
 
 	if (sessionState.inactive !== inactive) {
 		sessionState.inactive = inactive
+		shouldForceWrite = true
+	}
+
+	if (recorderType && sessionState.rt !== recorderType) {
+		sessionState.rt = recorderType
 		shouldForceWrite = true
 	}
 
@@ -249,4 +260,16 @@ export function getRumSessionId(): SessionId | undefined {
 	}
 
 	return sessionState.id
+}
+
+export function getIsNewSession(): boolean {
+	return isNewSessionId
+}
+
+export function checkSessionRecorderType(recorderType: RecorderType): void {
+	const sessionState = getCurrentSessionState({ forceDiskRead: true })
+	if (sessionState && sessionState.rt !== recorderType) {
+		updateSessionStatus({ forceStore: true, forceNewSession: true, recorderType })
+		console.debug('Session recorder type changed, creating new session', { recorderType })
+	}
 }
