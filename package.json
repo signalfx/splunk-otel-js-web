@@ -38,7 +38,7 @@
 		"@aws-sdk/client-cloudfront": "^3.774.0",
 		"@aws-sdk/client-s3": "^3.758.0",
 		"@eslint/js": "^9.24.0",
-		"@octokit/request": "^9.2.2",
+		"@octokit/request": "^10.0.2",
 		"@size-limit/file": "^11.2.0",
 		"@stylistic/eslint-plugin-js": "^4.2.0",
 		"@stylistic/eslint-plugin-ts": "^4.2.0",
