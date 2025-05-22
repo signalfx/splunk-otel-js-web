@@ -18,7 +18,7 @@
 import { safelyGetLocalStorage } from '../storage/local-store'
 import { generateId } from '../utils'
 
-const KEY = 'splunk.anonymousId'
+const KEY = '_splunk_rum_user_anonymousId'
 let anonymousId: string | undefined
 
 // TODO use cookie/local store
