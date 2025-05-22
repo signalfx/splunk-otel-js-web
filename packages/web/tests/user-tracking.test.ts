@@ -27,12 +27,12 @@ const createSpan = (tracer: tracing.Tracer) => {
 	return span as tracing.Span
 }
 
-const getLocalStorage = () => localStorage.getItem('splunk.anonymousId')
+const getLocalStorage = () => localStorage.getItem('_splunk_rum_user_anonymousId')
 
 const getCookie = () =>
 	document.cookie
 		.split('; ')
-		.find((row) => row.startsWith('splunk.anonymousId='))
+		.find((row) => row.startsWith('_splunk_rum_user_anonymousId='))
 		?.split('=')[1]
 
 describe('userTracking is reflected', () => {
