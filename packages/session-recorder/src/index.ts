@@ -262,8 +262,6 @@ const SplunkRumRecorder = {
 			const body = encoder.encode(JSON.stringify(emitContext.data))
 			const totalC = Math.ceil(body.byteLength / MAX_CHUNK_SIZE)
 
-			console.log('TotalC:', totalC)
-
 			for (let i = 0; i < totalC; i++) {
 				const start = i * MAX_CHUNK_SIZE
 				const end = (i + 1) * MAX_CHUNK_SIZE
