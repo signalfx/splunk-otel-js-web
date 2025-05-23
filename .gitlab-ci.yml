@@ -91,7 +91,7 @@ release_npm:
             - artifacts/
     stage: release
     only:
-        - /^v\d+\.\d+\.\d+(-beta+\.\d)?$/
+        - /^v\d+\.\d+\.\d+(-(alpha|beta|rc)\.\d+)?$/
     script:
         - echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
         - |
