@@ -2,7 +2,7 @@
 	"compilerOptions": {
 		"declaration": true,
 		"module": "ES6",
-		"outDir": "./dist/esm",
+		"outDir": "./dist/lib",
 		"rootDir": "src",
 		"sourceMap": true
 	},

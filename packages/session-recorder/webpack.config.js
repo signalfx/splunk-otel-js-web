@@ -19,90 +19,132 @@ const path = require('path')
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin')
 const TerserPlugin = require('terser-webpack-plugin')
 
-module.exports = {
-	mode: 'production',
-	entry: path.resolve(__dirname, './src/index.ts'),
-	output: {
-		crossOriginLoading: 'anonymous',
-		filename: 'splunk-otel-web-session-recorder.js',
-		path: path.resolve(__dirname, './dist/artifacts'),
-		library: {
-			name: 'SplunkSessionRecorder',
-			type: 'window',
-			export: 'default',
+const getBaseConfig = (env, argv) => {
+	const isDevelopmentMode = argv.mode === 'development'
+
+	return {
+		entry: path.resolve(__dirname, './src/index.ts'),
+		resolve: {
+			extensions: ['.ts', '.js', '.json'],
 		},
-		iife: true,
-		clean: true,
-		environment: {
-			// without this line, webpack would wrap our code to an arrow function
-			arrowFunction: false,
-			bigIntLiteral: false,
-			const: false,
-			destructuring: false,
-			dynamicImport: false,
-			forOf: false,
-			module: false,
+		devtool: isDevelopmentMode ? 'inline-source-map' : 'source-map',
+		experiments: {
+			buildHttp: {
+				allowedUris: ['https://cdn.signalfx.com/'],
+				cacheLocation: false,
+			},
 		},
-	},
-	resolve: {
-		extensions: ['.ts', '.js', '.json'],
-	},
-	module: {
-		rules: [
-			{
-				test: /\.tsx?$/,
-				exclude: /node_modules/,
-				use: {
-					loader: 'swc-loader',
-					options: {
-						jsc: {
-							parser: {
-								syntax: 'typescript',
+	}
+}
+
+const browserConfig = (env, argv) => {
+	const baseConfig = getBaseConfig(env, argv)
+	return {
+		...baseConfig,
+		output: {
+			crossOriginLoading: 'anonymous',
+			filename: 'splunk-otel-web-session-recorder.js',
+			path: path.resolve(__dirname, './dist/artifacts'),
+			library: {
+				name: 'SplunkSessionRecorder',
+				type: 'window',
+				export: 'default',
+			},
+			iife: true,
+			clean: true,
+			environment: {
+				// without this line, webpack would wrap our code to an arrow function
+				arrowFunction: false,
+				bigIntLiteral: false,
+				const: false,
+				destructuring: false,
+				dynamicImport: false,
+				forOf: false,
+				module: false,
+			},
+		},
+		module: {
+			rules: [
+				{
+					test: /\.tsx?$/,
+					exclude: /node_modules/,
+					use: {
+						loader: 'swc-loader',
+						options: {
+							jsc: {
+								parser: {
+									syntax: 'typescript',
+								},
+								externalHelpers: true,
 							},
-							externalHelpers: true,
-						},
-						env: {
-							targets: 'defaults, chrome >= 71, safari >= 12.1, firefox >= 65',
-							mode: 'usage',
-							coreJs: '3.41',
+							env: {
+								targets: 'defaults, chrome >= 71, safari >= 12.1, firefox >= 65',
+								mode: 'usage',
+								coreJs: '3.41',
+							},
 						},
 					},
 				},
-			},
-			{
-				test: /\.js$/,
-				enforce: 'pre',
-				use: ['source-map-loader'],
-			},
-		],
-	},
-	plugins: [
-		new ForkTsCheckerWebpackPlugin({
-			typescript: {
-				configFile: 'tsconfig.base.json',
-				diagnosticOptions: { semantic: true, syntactic: true },
-			},
-		}),
-	],
-	devtool: 'source-map',
-	optimization: {
-		minimize: true,
-		minimizer: [
-			new TerserPlugin({
-				extractComments: false,
-				terserOptions: {
-					ecma: 6,
-					format: {
-						comments: false,
-					},
+				{
+					test: /\.js$/,
+					enforce: 'pre',
+					use: ['source-map-loader'],
+				},
+			],
+		},
+		plugins: [
+			new ForkTsCheckerWebpackPlugin({
+				typescript: {
+					configFile: 'tsconfig.base.json',
+					diagnosticOptions: { semantic: true, syntactic: true },
 				},
 			}),
 		],
-	},
-	experiments: {
-		buildHttp: {
-			allowedUris: ['https://cdn.signalfx.com/'],
-			cacheLocation: false,
+		optimization: {
+			minimize: true,
+			minimizer: [
+				new TerserPlugin({
+					extractComments: false,
+					terserOptions: {
+						ecma: 6,
+						format: {
+							comments: false,
+						},
+					},
+				}),
+			],
 		},
-	},
+	}
 }
+
+const libraryConfig = (env, argv) => {
+	const baseConfig = getBaseConfig(env, argv)
+	return {
+		...baseConfig,
+		output: {
+			filename: 'index.js',
+			path: path.resolve(__dirname, './dist/lib'),
+			library: {
+				type: 'commonjs-static',
+			},
+			clean: true,
+		},
+		module: {
+			rules: [
+				{
+					test: /\.ts$/,
+					loader: 'ts-loader',
+					exclude: /node_modules/,
+					options: { configFile: 'tsconfig.esm.json' },
+				},
+				{
+					test: /\.js$/,
+					enforce: 'pre',
+					use: ['source-map-loader'],
+				},
+			],
+		},
+	}
+}
+
+module.exports = [browserConfig, libraryConfig]
