@@ -23,3 +23,5 @@ tests_output/
 
 vitest-report
 __screenshots__
+
+packages/build-plugins/html
