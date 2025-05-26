@@ -16,8 +16,7 @@
  *
  */
 import js from '@eslint/js'
-import stylisticJs from '@stylistic/eslint-plugin-js'
-import stylisticTs from '@stylistic/eslint-plugin-ts'
+import stylistic from '@stylistic/eslint-plugin'
 import globals from 'globals'
 import tseslint from 'typescript-eslint'
 import headers from 'eslint-plugin-headers'
@@ -40,8 +39,7 @@ export default [
 			},
 		},
 		plugins: {
-			'@stylistic/js': stylisticJs,
-			'@stylistic/ts': stylisticTs,
+			'@stylistic': stylistic,
 			'@typescript-eslint': tseslint.plugin,
 			headers,
 		},
@@ -70,10 +68,10 @@ export default [
 				},
 			],
 			'prettier/prettier': 'error',
-			'@stylistic/js/lines-between-class-members': ['error', 'always'],
-			'@stylistic/js/space-before-blocks': 'error',
+			'@stylistic/lines-between-class-members': ['error', 'always'],
+			'@stylistic/space-before-blocks': 'error',
 
-			'@stylistic/ts/member-delimiter-style': [
+			'@stylistic/member-delimiter-style': [
 				'error',
 				{
 					multiline: { delimiter: 'none', requireLast: true },
