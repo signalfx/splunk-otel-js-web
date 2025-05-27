@@ -25,6 +25,8 @@ import { VERSION } from './version'
 import { compressAsync } from './session-replay/utils'
 import { apiFetch, ApiParams } from './api/api-fetch'
 import { addLogToQueue, removeQueuedLog, QueuedLog, getQueuedLogs, removeQueuedLogs } from './export-log-queue'
+import { context } from '@opentelemetry/api'
+import { suppressTracing } from '@opentelemetry/core'
 
 interface OTLPLogExporterConfig {
 	beaconUrl: string
@@ -223,7 +225,7 @@ export default class OTLPLogExporter {
 	}
 }
 
-const sendByFetch = async (
+const sendByFetchInternal = async (
 	endpoint: string,
 	fetchParams: Pick<ApiParams, 'headers' | 'keepalive' | 'body'>,
 	onSuccess: () => void,
@@ -245,3 +247,12 @@ const sendByFetch = async (
 		console.error('Could not sent data to BE - fetch', error)
 	}
 }
+
+const sendByFetch = (...args: Parameters<typeof sendByFetchInternal>) =>
+	new Promise((resolve, reject) => {
+		context.with(suppressTracing(context.active()), () => {
+			sendByFetchInternal(...args)
+				.then(resolve)
+				.catch(reject)
+		})
+	})
