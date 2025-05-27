@@ -16,8 +16,7 @@
  *
  */
 
-import { context } from '@opentelemetry/api'
-import { suppressTracing, BindOnceFuture, callWithTimeout, globalErrorHandler, unrefTimer } from '@opentelemetry/core'
+import { BindOnceFuture, callWithTimeout, globalErrorHandler, unrefTimer } from '@opentelemetry/core'
 import type { JsonValue, JsonObject } from 'type-fest'
 import type { Log, LogExporter } from './types'
 
@@ -114,14 +113,12 @@ export class BatchLogProcessor {
 		}
 
 		return new Promise((resolve, reject) => {
-			context.with(suppressTracing(context.active()), () => {
-				callWithTimeout(
-					this.exportLogs(this.finishedLogs.splice(0, this.finishedLogs.length)),
-					this.exportTimeoutMillis,
-				)
-					.then(resolve)
-					.catch(reject)
-			})
+			callWithTimeout(
+				this.exportLogs(this.finishedLogs.splice(0, this.finishedLogs.length)),
+				this.exportTimeoutMillis,
+			)
+				.then(resolve)
+				.catch(reject)
 		})
 	}
 
