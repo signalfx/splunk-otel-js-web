@@ -93,9 +93,9 @@ export function wrapNatively<Nodule extends object, FieldName extends keyof Nodu
 	wrapper: (original: Nodule[FieldName]) => Nodule[FieldName],
 ): void {
 	const orig = nodule[name]
-	wrap(nodule, name, wrapper) as unknown as CallableFunction
+	wrap(nodule, name, wrapper)
 	const wrapped = nodule[name]
-	wrapped.toString = orig.toString.bind(orig)
+	wrapped.toString = (orig as CallableFunction).toString.bind(orig)
 }
 
 /**
@@ -119,21 +119,23 @@ export function getOriginalFunction<T extends CallableFunction>(func: T): T {
  * @returns {function} cleanup to call in disable (in case not defined before instrumentation is disabled)
  */
 export function waitForGlobal(identifier: string, callback: (value: unknown) => void): () => void {
-	if (window[identifier]) {
-		callback(window[identifier])
+	const windowWithDynamicProps = window as unknown as Window & { [key: string]: unknown }
+
+	if (windowWithDynamicProps[identifier]) {
+		callback(windowWithDynamicProps[identifier])
 		return () => {}
 	}
 
-	const value = window[identifier] // most cases undefined
+	const value = windowWithDynamicProps[identifier]
 	let used = false
 	Object.defineProperty(window, identifier, {
 		get() {
 			return value
 		},
 		set(newVal) {
-			delete window[identifier]
+			delete windowWithDynamicProps[identifier]
 			used = true
-			window[identifier] = newVal
+			windowWithDynamicProps[identifier] = newVal
 			callback(newVal)
 		},
 		configurable: true,
@@ -142,13 +144,13 @@ export function waitForGlobal(identifier: string, callback: (value: unknown) => 
 
 	return () => {
 		// Don't touch if value is used or another defineProperty used it
-		if (used || window[identifier] !== value) {
+		if (used || windowWithDynamicProps[identifier] !== value) {
 			return
 		}
 
-		delete window[identifier]
+		delete (window as any)[identifier]
 		if (value !== undefined) {
-			window[identifier] = value
+			windowWithDynamicProps[identifier] = value
 		}
 	}
 }

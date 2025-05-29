@@ -24,7 +24,7 @@ import { VERSION } from './version'
 
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 
-function size(o) {
+function size(o: { byteLength?: number; length?: number; size?: number }): number | undefined {
 	return o.byteLength || o.size || o.length || undefined
 }
 
@@ -89,7 +89,7 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 								new Error(event.error || event.message || 'Could not connect.'),
 							)
 						} else {
-							// error occured after connect... report that
+							// error occurred after connect... report that
 							instrumentation.startSpan(this, 'error', SpanKind.CLIENT).end()
 						}
 					})
@@ -128,7 +128,7 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 			'error.object',
 			err.name ? err.name : err.constructor && err.constructor.name ? err.constructor.name : 'Error',
 		)
-		//TODO Should we do span.setStatus( someErroCode ) ? Currently all failed spans are CanonicalCode.OK
+		//TODO Should we do span.setStatus( someErrorCode ) ? Currently all failed spans are CanonicalCode.OK
 		span.end()
 	}
 
@@ -153,7 +153,7 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 			}
 
 			const once = typeof options === 'boolean' ? undefined : options?.once
-			const patchedCallback = function patchedAddEventListenerCallback(...args) {
+			const patchedCallback = function patchedAddEventListenerCallback(this: unknown, ...args) {
 				const capturedThis = this
 				const capturedArgs = args
 				if (once) {
@@ -184,7 +184,11 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 		}
 
 		const origREL = ws.removeEventListener
-		ws.removeEventListener = function (type, callback, options): void {
+		ws.removeEventListener = function (
+			type: string,
+			callback: EventListenerOrEventListenerObject,
+			options?: boolean | EventListenerOptions,
+		): void {
 			if (type !== 'message') {
 				return origREL.call(ws, type, callback, options)
 			}

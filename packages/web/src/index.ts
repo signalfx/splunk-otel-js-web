@@ -290,8 +290,8 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 
 let inited = false
 let userTrackingMode: SplunkOtelWebConfig['user']['trackingMode'] = 'noTracking'
-let _deregisterInstrumentations: () => void | undefined
-let _deinitSessionTracking: () => void | undefined
+let _deregisterInstrumentations: undefined | (() => void)
+let _deinitSessionTracking: undefined | (() => void)
 let _errorInstrumentation: SplunkErrorInstrumentation | undefined
 let _postDocLoadInstrumentation: SplunkPostDocLoadResourceInstrumentation | undefined
 let eventTarget: InternalEventTarget | undefined
@@ -373,7 +373,7 @@ export const SplunkRum: SplunkOtelWebType = {
 			},
 		)
 
-		if (!isPersistenceType(processedOptions.persistence)) {
+		if (processedOptions.persistence && !isPersistenceType(processedOptions.persistence)) {
 			diag.error(
 				`Invalid persistence flag: The value for "persistence" must be either "cookie", "localStorage", or omitted entirely, but was: ${processedOptions.persistence}`,
 			)
@@ -550,7 +550,7 @@ export const SplunkRum: SplunkOtelWebType = {
 		_deinitSessionTracking?.()
 		_deinitSessionTracking = undefined
 
-		this.provider?.shutdown()
+		void this.provider?.shutdown()
 		delete this.provider
 
 		eventTarget = undefined

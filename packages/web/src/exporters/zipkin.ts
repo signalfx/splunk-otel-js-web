@@ -98,7 +98,7 @@ export class SplunkZipkinExporter implements SpanExporter {
 		const zJson = JSON.stringify(zspans)
 		if (document.hidden && this._beaconSender && zJson.length <= 64000) {
 			this._beaconSender(this.beaconUrl, zJson)
-		} else {
+		} else if (this._xhrSender) {
 			this._xhrSender(this.beaconUrl, zJson, {
 				'Accept': '*/*',
 				'Content-Type': 'text/plain;charset=UTF-8',
