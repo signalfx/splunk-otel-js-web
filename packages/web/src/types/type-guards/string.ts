@@ -15,6 +15,5 @@
  * limitations under the License.
  *
  */
-export * from './config'
-export * from './window'
-export * from './type-guards'
+export const hasToString = (val: unknown): val is { toString: () => string } =>
+	!!val && typeof (val as { toString?: unknown }).toString === 'function'

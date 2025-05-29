@@ -15,6 +15,9 @@
  * limitations under the License.
  *
  */
-export * from './config'
-export * from './window'
-export * from './type-guards'
+export const isError = (maybeError: unknown): maybeError is Error =>
+	maybeError !== null &&
+	typeof maybeError === 'object' &&
+	(maybeError instanceof Error ||
+		maybeError.constructor.name?.endsWith('Error') ||
+		maybeError.constructor.name?.endsWith('Exception'))

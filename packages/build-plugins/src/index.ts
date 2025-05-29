@@ -46,6 +46,10 @@ const unpluginFactory: UnpluginFactory<SplunkRumPluginOptions | undefined> = (op
 	webpack(compiler) {
 		const logger = compiler.getInfrastructureLogger(PLUGIN_NAME)
 
+		if (!options) {
+			return
+		}
+
 		if (options.sourceMaps) {
 			applySourceMapsInject(compiler)
 

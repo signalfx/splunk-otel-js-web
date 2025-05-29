@@ -75,7 +75,7 @@ function createSessionState(id?: string): SessionState {
 
 let store: Store<SessionState> | null = null
 
-export function getNullableStore(): Store<SessionState> {
+export function getNullableStore() {
 	return store
 }
 
@@ -160,9 +160,9 @@ export function updateSessionStatus({
 
 		// TODO: review if this check makes sense
 		if (!isSessionDurationExceeded(sessionState)) {
-			store.set(sessionState, cookieDomain)
+			store?.set(sessionState, cookieDomain)
 			if (shouldForceWrite) {
-				store.flush()
+				store?.flush()
 			}
 		}
 	}
@@ -172,7 +172,7 @@ export function updateSessionStatus({
 }
 
 function hasNativeSessionId(): boolean {
-	return typeof window !== 'undefined' && window['SplunkRumNative'] && window['SplunkRumNative'].getNativeSessionId
+	return Boolean(typeof window !== 'undefined' && window.SplunkRumNative && window.SplunkRumNative.getNativeSessionId)
 }
 
 const ACTIVITY_EVENTS = ['click', 'scroll', 'mousedown', 'keydown', 'touchend', 'visibilitychange']
@@ -188,10 +188,10 @@ export function initSessionTracking(
 	newEventTarget: InternalEventTarget,
 	domain?: string,
 ): SessionTrackingHandle {
-	if (hasNativeSessionId()) {
+	if (hasNativeSessionId() && window.SplunkRumNative) {
 		// short-circuit and bail out - don't create cookie, watch for inactivity, or anything
 
-		const sessionId = window['SplunkRumNative'].getNativeSessionId()
+		const sessionId = window.SplunkRumNative.getNativeSessionId()
 		const sessionState = createSessionState(sessionId)
 
 		store = {
@@ -229,7 +229,7 @@ export function initSessionTracking(
 	updateSessionStatus({ forceStore: true })
 
 	// TODO: For integration tests, find better solution
-	const SplunkRum = getGlobal()
+	const SplunkRum = getGlobal() as Record<string, unknown>
 	if (SplunkRum) {
 		SplunkRum['store'] = store
 	}
@@ -240,18 +240,18 @@ export function initSessionTracking(
 			eventTarget = undefined
 		},
 		clearSession: () => {
-			store.remove()
-			store.flush()
+			store?.remove()
+			store?.flush()
 		},
 		flush: () => {
-			store.flush()
+			store?.flush()
 		},
 	}
 }
 
 export function getRumSessionId(): SessionId | undefined {
-	if (hasNativeSessionId()) {
-		return window['SplunkRumNative'].getNativeSessionId()
+	if (hasNativeSessionId() && window.SplunkRumNative) {
+		return window.SplunkRumNative.getNativeSessionId()
 	}
 
 	const sessionState = getCurrentSessionState({ forceDiskRead: true })

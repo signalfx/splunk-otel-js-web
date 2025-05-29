@@ -36,6 +36,8 @@ const MODULE_NAME = 'splunk-socket.io-client'
 interface SocketIOSocket {
 	(...args: unknown[]): unknown
 
+	nsp: string
+
 	prototype: {
 		addEventListener(ev: string, listener: (...args: unknown[]) => void): ThisParameterType<SocketIOSocket>
 		emit(ev: string, ...args: unknown[]): ThisParameterType<SocketIOSocket>
@@ -63,7 +65,7 @@ const SocketIoInstrumentationAttributes = {
 
 export interface SocketIoClientInstrumentationConfig extends InstrumentationConfig {
 	/**
-	 * Target object or the key it will be set on on window.
+	 * Target object or the key it will be set on window.
 	 *
 	 * Not explicitly typed to avoid dependency on socket-io client
 	 */
@@ -127,7 +129,7 @@ export class SplunkSocketIoClientInstrumentation extends InstrumentationBase {
 			io.Socket.prototype,
 			'emit',
 			(original) =>
-				function (eventName: string, ...args) {
+				function (this: SocketIOSocket, eventName: string, ...args) {
 					const span = inst.tracer.startSpan(`${eventName} send`, {
 						kind: SpanKind.PRODUCER,
 						attributes: {
@@ -144,7 +146,7 @@ export class SplunkSocketIoClientInstrumentation extends InstrumentationBase {
 							original.apply(this, [eventName, ...args]),
 						)
 					} catch (error) {
-						let message: string
+						let message: string | undefined
 						if (error instanceof Error) {
 							span.recordException(error)
 							message = error.message
@@ -162,17 +164,15 @@ export class SplunkSocketIoClientInstrumentation extends InstrumentationBase {
 			io.Socket.prototype,
 			'on',
 			(original) =>
-				function (eventName: string, listener) {
+				function (this: unknown, eventName: string, listener) {
 					if (RESERVED_EVENTS.includes(eventName) || typeof listener !== 'function') {
 						return original.call(this, eventName, listener)
 					}
 
-					let wrappedListener
+					let wrappedListener = inst.listeners.get(listener)
 
-					if (inst.listeners.has(listener)) {
-						wrappedListener = inst.listeners.get(listener)
-					} else {
-						wrappedListener = function (...args: unknown[]) {
+					if (!wrappedListener) {
+						wrappedListener = function (this: SocketIOSocket, ...args: unknown[]) {
 							const span = inst.tracer.startSpan(`${eventName} ${MessagingOperationValues.RECEIVE}`, {
 								kind: SpanKind.CONSUMER,
 								attributes: {
@@ -212,7 +212,7 @@ export class SplunkSocketIoClientInstrumentation extends InstrumentationBase {
 			(original) =>
 				// all of the remove are implemented as one function
 				// https://github.com/socketio/emitter/blob/cd703fe28e5bf85ecf137b0e6422e2608c0eefbf/index.js#L81
-				function (eventName?: string, listener?: (...args: unknown[]) => void) {
+				function (this: unknown, eventName?: string, listener?: (...args: unknown[]) => void) {
 					if (!eventName || RESERVED_EVENTS.includes(eventName) || typeof listener !== 'function') {
 						return original.call(this, eventName, listener)
 					}

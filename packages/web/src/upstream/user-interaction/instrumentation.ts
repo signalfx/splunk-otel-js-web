@@ -61,7 +61,7 @@ export class UserInteractionInstrumentation<
 
 	private _zonePatched?: boolean
 
-	constructor(config?: T) {
+	constructor(config: T) {
 		super('@opentelemetry/instrumentation-user-interaction', VERSION, config)
 		this._eventNames = new Set(config?.eventNames ?? DEFAULT_EVENT_NAMES)
 		this._shouldPreventSpanCreation =
@@ -269,7 +269,7 @@ export class UserInteractionInstrumentation<
 	}
 
 	// utility method to deal with the Function|EventListener nature of addEventListener
-	private _invokeListener(listener: EventListenerOrEventListenerObject, target: any, args: any[]): any {
+	private _invokeListener(listener: EventListenerOrEventListenerObject, target: any, args: [evt: Event]): any {
 		if (typeof listener === 'function') {
 			return listener.apply(target, args)
 		} else {
@@ -298,7 +298,7 @@ export class UserInteractionInstrumentation<
 
 				// filter out null (typeof null === 'object')
 				const once = useCapture && typeof useCapture === 'object' && useCapture.once
-				const patchedListener = function (this: Element, ...args: any[]) {
+				const patchedListener = function (this: Element, ...args: [evt: Event]) {
 					let parentSpan: api.Span | undefined
 					const event: Event | undefined = args[0]
 					const target = event?.target
@@ -339,9 +339,20 @@ export class UserInteractionInstrumentation<
 	 */
 	private _patchRemoveEventListener() {
 		const instrumentation = this
-		return (original: () => void) =>
-			function removeEventListenerPatched(this: Element, type: any, listener: any, useCapture: any) {
-				const wrappedListener = instrumentation.removePatchedListener(this, type, listener)
+		return (
+			original: (
+				type: string,
+				listener: EventListenerOrEventListenerObject | null,
+				options?: boolean | EventListenerOptions,
+			) => void,
+		) =>
+			function removeEventListenerPatched(
+				this: Element,
+				type: keyof (ElementEventMap & HTMLElementEventMap),
+				listener: EventListenerOrEventListenerObject | null,
+				useCapture?: boolean | EventListenerOptions,
+			) {
+				const wrappedListener = listener && instrumentation.removePatchedListener(this, type, listener)
 				if (wrappedListener) {
 					return original.call(this, type, wrappedListener, useCapture)
 				} else {
@@ -357,7 +368,7 @@ export class UserInteractionInstrumentation<
 		on: Element,
 		type: string,
 		listener: EventListenerOrEventListenerObject,
-		wrappedListener: (...args: unknown[]) => void,
+		wrappedListener: (...args: [evt: Event]) => void,
 	): boolean {
 		let listener2Type = this._wrappedListeners.get(listener)
 		if (!listener2Type) {

@@ -33,7 +33,7 @@ export class SplunkXhrPlugin extends XMLHttpRequestInstrumentation {
 		super(config)
 
 		// TODO: fix when upstream exposes this method
-		const _superCreateSpan = (this as any as ExposedSuper)._createSpan.bind(this) as ExposedSuper['_createSpan']
+		const _superCreateSpan = (this as any as ExposedSuper)._createSpan.bind(this)
 		;(this as any as ExposedSuper)._createSpan = (xhr, url, method) => {
 			const span = _superCreateSpan(xhr, url, method)
 
@@ -59,9 +59,7 @@ export class SplunkXhrPlugin extends XMLHttpRequestInstrumentation {
 			return span
 		}
 
-		const _superAddResourceObserver = (this as unknown as ExposedSuper)._addResourceObserver.bind(
-			this,
-		) as ExposedSuper['_addResourceObserver']
+		const _superAddResourceObserver = (this as unknown as ExposedSuper)._addResourceObserver.bind(this)
 		;(this as any as ExposedSuper)._addResourceObserver = (xhr: XMLHttpRequest, spanUrl: string) => {
 			// Fix: PerformanceObserver feature detection is broken and crashes in IE
 			// Is fixed in 0.29.0 but contrib isn't updated yet

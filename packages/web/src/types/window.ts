@@ -15,3 +15,13 @@
  * limitations under the License.
  *
  */
+declare global {
+	interface Window {
+		SplunkRumNative?: {
+			getNativeSessionId: () => string
+		}
+		__splunkRumIntegrationTestSessionId?: string
+	}
+}
+
+export {}

@@ -84,6 +84,10 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 	init(): void {}
 
 	public onBeforeContextChange(): void {
+		if (!this.headMutationObserver) {
+			return
+		}
+
 		this._processHeadMutationObserverRecords(this.headMutationObserver.takeRecords())
 	}
 
@@ -158,7 +162,7 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 			if (window.document.readyState === 'complete') {
 				list.getEntries().forEach((entry) => {
 					// TODO: check how we can amend TS base typing to fix this
-					if (this.config.allowedInitiatorTypes.includes((entry as any).initiatorType)) {
+					if (this.config.allowedInitiatorTypes?.includes((entry as any).initiatorType)) {
 						this._createSpan(entry)
 					}
 				})

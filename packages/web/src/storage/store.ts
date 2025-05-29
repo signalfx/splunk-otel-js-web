@@ -21,18 +21,18 @@ import { LocalStore } from './local-store'
 
 export interface Store<T> {
 	flush: () => void
-	get: ({ forceDiskRead }: { forceDiskRead?: boolean }) => T
+	get: ({ forceDiskRead }: { forceDiskRead?: boolean }) => T | null
 	remove: (domain?: string) => void
 	set: (value: T, domain?: string) => void
 }
 
 export function buildStore<T>(config: { key: string; type: PersistenceType }): Store<T> {
-	if (config.type == 'localStorage') {
-		return new LocalStore(config.key)
+	if (config.type === 'localStorage') {
+		return new LocalStore<T>(config.key)
 	}
 
-	if (config.type == 'cookie') {
-		return new CookieStore(config.key)
+	if (config.type === 'cookie') {
+		return new CookieStore<T>(config.key)
 	}
 
 	throw new Error('Unknown store type')

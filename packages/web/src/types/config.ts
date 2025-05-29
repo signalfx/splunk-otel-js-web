@@ -48,6 +48,8 @@ export interface ContextManagerConfig {
 	onBeforeContextStart?: () => void
 }
 
+export type UserTrackingMode = 'noTracking' | 'anonymousTracking'
+
 export interface SplunkOtelWebExporterOptions {
 	/**
 	 * Allows remapping Span's attributes right before they're serialized.
@@ -181,7 +183,7 @@ export interface SplunkOtelWebConfig {
 
 	user?: {
 		/** Sets tracking mode of user. Defaults to 'noTracking'. */
-		trackingMode?: 'noTracking' | 'anonymousTracking'
+		trackingMode?: UserTrackingMode
 	}
 
 	/**

@@ -19,6 +19,10 @@
 // https://github.com/omrilotan/isbot
 
 export function isBot(userAgent?: string | null): boolean {
+	if (!userAgent) {
+		return false
+	}
+
 	try {
 		// Removed synthetic from regex, pattern from v5.1.22
 		const pattern = new RegExp(

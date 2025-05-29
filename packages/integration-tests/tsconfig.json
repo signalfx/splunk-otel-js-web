@@ -4,6 +4,8 @@
 		"allowSyntheticDefaultImports": true,
 		"target": "esnext",
 		"moduleResolution": "nodenext",
-		"module": "NodeNext"
+		"module": "NodeNext",
+		"strict": true,
+		"noImplicitAny": true
 	}
 }

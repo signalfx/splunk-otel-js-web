@@ -23,7 +23,7 @@ import { Store } from './store'
 const isSafari = () => /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
 
 export class CookieStore<T> implements Store<T> {
-	private cachedValue: T | undefined
+	private cachedValue: T | undefined | null
 
 	private throttledSetRaw = throttle((value: string) => {
 		document.cookie = value
@@ -35,13 +35,15 @@ export class CookieStore<T> implements Store<T> {
 		this.throttledSetRaw.flush()
 	}
 
-	get({ forceDiskRead = false }: { forceDiskRead?: boolean } = {}): T | undefined {
+	get({ forceDiskRead = false }: { forceDiskRead?: boolean } = {}) {
 		if (this.cachedValue === null || forceDiskRead) {
-			this.cachedValue = this._deserialize(this._getRaw(this.key))
-			return this.cachedValue
+			const rawValue = this._getRaw(this.key)
+			if (rawValue !== undefined) {
+				this.cachedValue = this._deserialize(rawValue)
+			}
 		}
 
-		return this.cachedValue
+		return this.cachedValue ?? null
 	}
 
 	remove(domain?: string) {
