@@ -74,7 +74,7 @@ type ExposedSuper = {
 }
 
 export class SplunkUserInteractionInstrumentation extends UserInteractionInstrumentation<SplunkUserInteractionInstrumentationConfig> {
-	private __hashChangeHandler: (ev: Event) => void
+	private __hashChangeHandler: ((ev: Event) => void) | undefined
 
 	private _routingTracer: Tracer
 
@@ -93,7 +93,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 
 		this._routingTracer = trace.getTracer(ROUTING_INSTRUMENTATION_NAME, ROUTING_INSTRUMENTATION_VERSION)
 
-		const _superCreateSpan = (this as unknown as ExposedSuper)._createSpan.bind(this) as ExposedSuper['_createSpan']
+		const _superCreateSpan = (this as unknown as ExposedSuper)._createSpan.bind(this)
 		;(this as unknown as ExposedSuper)._createSpan = (
 			element: EventTarget | HTMLElement | Document | null | undefined,
 			eventName: EventName,
@@ -117,13 +117,13 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 			const patcher = _superPatchAddEventListener()
 
 			return (original) => {
-				const patchedListener = patcher(original) as EventTarget['addEventListener']
+				const patchedListener = patcher(original)
 				// Fix: Error when .addEventListener(type, listener, null)
 				return function (
 					this: EventTarget,
 					type: keyof HTMLElementEventMap,
 					listener: EventListenerOrEventListenerObject | null,
-					useCapture?: boolean | AddEventListenerOptions | null,
+					useCapture?: boolean | AddEventListenerOptions,
 				) {
 					// Only forward to otel if it can patch it
 					if (!isPatchableEventListner(listener)) {
@@ -158,8 +158,9 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 
 	disable(): void {
 		super.disable()
-
-		window.removeEventListener('hashchange', this.__hashChangeHandler)
+		if (this.__hashChangeHandler) {
+			window.removeEventListener('hashchange', this.__hashChangeHandler)
+		}
 	}
 
 	enable(): void {
@@ -183,7 +184,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 		this._routingTracer = tracerProvider.getTracer(ROUTING_INSTRUMENTATION_NAME, ROUTING_INSTRUMENTATION_VERSION)
 	}
 
-	private _emitRouteChangeSpan(oldHref) {
+	private _emitRouteChangeSpan(oldHref: string) {
 		const config = this.getConfig()
 		if (isUrlIgnored(location.href, config.ignoreUrls)) {
 			return

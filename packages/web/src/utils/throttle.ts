@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-export function throttle<T extends (...args: unknown[]) => any>(func: T, limit: number) {
+export function throttle<T extends (...args: any[]) => any>(func: T, limit: number) {
 	let lastExecutionTime = 0
 	let timeout: ReturnType<typeof setTimeout> | null = null
 	let visibilityListener: (() => void) | null = null

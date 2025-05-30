@@ -20,7 +20,7 @@ import { throttle } from '../utils/throttle'
 import { Store } from './store'
 
 export class LocalStore<T> implements Store<T> {
-	private cachedValue: T | undefined
+	private cachedValue: T | null | undefined
 
 	private throttledSetRaw = throttle((value: string) => {
 		safelySetLocalStorage(this.key, value)
@@ -32,12 +32,13 @@ export class LocalStore<T> implements Store<T> {
 		this.throttledSetRaw.flush()
 	}
 
-	get({ forceDiskRead = false }: { forceDiskRead?: boolean } = {}): T | undefined {
+	get({ forceDiskRead = false }: { forceDiskRead?: boolean } = {}) {
 		if (this.cachedValue === undefined || forceDiskRead) {
-			this.cachedValue = JSON.parse(safelyGetLocalStorage(this.key))
+			const value = safelyGetLocalStorage(this.key)
+			this.cachedValue = value && JSON.parse(value)
 		}
 
-		return this.cachedValue
+		return this.cachedValue ?? null
 	}
 
 	remove() {

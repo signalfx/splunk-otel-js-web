@@ -41,7 +41,7 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
 			return
 		}
 
-		this._longtaskObserver.disconnect()
+		this._longtaskObserver?.disconnect()
 	}
 
 	enable(): void {

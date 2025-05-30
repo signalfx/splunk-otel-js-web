@@ -29,13 +29,17 @@ const MESSAGE_LIMIT = 1024
 
 export const STACK_TRACE_URL_PATTER = /([\w]+:\/\/[^\s/]+\/[^\s?:#]+)/g
 
-function useful(s) {
+function useful(s: string) {
 	return s && s.trim() !== '' && !s.startsWith('[object') && s !== 'error'
 }
 
 function stringifyValue(value: unknown) {
 	if (value === undefined) {
 		return '(undefined)'
+	}
+
+	if (value === null) {
+		return '(null)'
 	}
 
 	// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object#null-prototype_objects
@@ -53,7 +57,7 @@ function stringifyValue(value: unknown) {
 
 function parseErrorStack(stack: string): string {
 	//get list of files in stack , find corresponding sourcemap id and add it to the source map id object
-	const sourceMapIds = {}
+	const sourceMapIds: Record<string, string> = {}
 	const urls = stack.match(STACK_TRACE_URL_PATTER)
 	if (urls) {
 		urls.forEach((url) => {
