@@ -15,8 +15,5 @@
  * limitations under the License.
  *
  */
-import 'core-js/modules/es.array.flat.js'
-import 'core-js/modules/es.object.entries.js'
-import 'core-js/modules/es.object.values.js'
-import 'core-js/modules/es.promise.js'
-import 'core-js/modules/es.promise.finally.js'
+import 'core-js/stable'
+import 'regenerator-runtime/runtime'
