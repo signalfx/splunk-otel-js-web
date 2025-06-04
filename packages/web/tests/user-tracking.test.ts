@@ -47,13 +47,13 @@ describe('userTracking is reflected', () => {
 
 		const tracer = SplunkRum.provider.getTracer('test')
 		const spanWithoutAnonymousId = createSpan(tracer)
-		expect(spanWithoutAnonymousId.attributes['user.anonymousId'], 'Checking user.anonymousId').toBeUndefined()
+		expect(spanWithoutAnonymousId.attributes['user.anonymous_id'], 'Checking user.anonymous_id').toBeUndefined()
 
 		SplunkRum.setUserTrackingMode('anonymousTracking')
 
 		const spanWithAnonymousId = createSpan(tracer)
-		const anonymousId = spanWithAnonymousId.attributes['user.anonymousId']
-		expect(anonymousId, 'Checking user.anonymousId').toBeDefined()
+		const anonymousId = spanWithAnonymousId.attributes['user.anonymous_id']
+		expect(anonymousId, 'Checking user.anonymous_id').toBeDefined()
 		expect(getCookie(), 'Checking cookie value').equal(anonymousId)
 	})
 
@@ -62,14 +62,14 @@ describe('userTracking is reflected', () => {
 
 		const tracer = SplunkRum.provider.getTracer('test')
 		const spanWithAnonymousId = createSpan(tracer)
-		const anonymousId = spanWithAnonymousId.attributes['user.anonymousId']
-		expect(anonymousId, 'Checking user.anonymousId').toBeDefined()
+		const anonymousId = spanWithAnonymousId.attributes['user.anonymous_id']
+		expect(anonymousId, 'Checking user.anonymous_id').toBeDefined()
 		expect(getCookie(), 'Checking cookie value').equal(anonymousId)
 
 		SplunkRum.setUserTrackingMode('noTracking')
 
 		const spanWithoutAnonymousId = createSpan(tracer)
-		expect(spanWithoutAnonymousId.attributes['user.anonymousId'], 'Checking user.anonymousId').toBeUndefined()
+		expect(spanWithoutAnonymousId.attributes['user.anonymous_id'], 'Checking user.anonymous_id').toBeUndefined()
 	})
 
 	it('localStorage/userTrackingMode is anonymousTracking, then noTracking', () => {
@@ -77,13 +77,13 @@ describe('userTracking is reflected', () => {
 
 		const tracer = SplunkRum.provider.getTracer('test')
 		const spanWithAnonymousId = createSpan(tracer)
-		const anonymousId = spanWithAnonymousId.attributes['user.anonymousId']
-		expect(anonymousId, 'Checking user.anonymousId').toBe(getLocalStorage())
+		const anonymousId = spanWithAnonymousId.attributes['user.anonymous_id']
+		expect(anonymousId, 'Checking user.anonymous_id').toBe(getLocalStorage())
 
 		SplunkRum.setUserTrackingMode('noTracking')
 
 		const spanWithoutAnonymousId = createSpan(tracer)
-		expect(spanWithoutAnonymousId.attributes['user.anonymousId'], 'Checking user.anonymousId').toBeUndefined()
+		expect(spanWithoutAnonymousId.attributes['user.anonymous_id'], 'Checking user.anonymous_id').toBeUndefined()
 	})
 
 	it('localStorage/userTrackingMode is default, then anonymousTracking', () => {
@@ -91,12 +91,12 @@ describe('userTracking is reflected', () => {
 
 		const tracer = SplunkRum.provider.getTracer('test')
 		const spanWithoutAnonymousId = createSpan(tracer)
-		expect(spanWithoutAnonymousId.attributes['user.anonymousId'], 'Checking user.anonymousId').toBeUndefined()
+		expect(spanWithoutAnonymousId.attributes['user.anonymous_id'], 'Checking user.anonymous_id').toBeUndefined()
 
 		SplunkRum.setUserTrackingMode('anonymousTracking')
 
 		const spanWithAnonymousId = createSpan(tracer)
-		const anonymousId = spanWithAnonymousId.attributes['user.anonymousId']
-		expect(anonymousId, 'Checking user.anonymousId').toBe(getLocalStorage())
+		const anonymousId = spanWithAnonymousId.attributes['user.anonymous_id']
+		expect(anonymousId, 'Checking user.anonymous_id').toBe(getLocalStorage())
 	})
 })
