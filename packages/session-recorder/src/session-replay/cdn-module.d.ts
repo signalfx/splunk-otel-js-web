@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v1.35.3/session-replay.module.legacy.min.js' {
+declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v1.35.4/session-replay.module.legacy.min.js' {
 	class SessionReplayBase {
 		static clear: () => void
 
