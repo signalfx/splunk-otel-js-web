@@ -23,4 +23,4 @@ export {
 	type SessionReplayPlainSegment,
 	type SensitivityRule,
 	type SensitivityRuleType,
-} from 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v1.35.0/session-replay.module.legacy.min.js'
+} from 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v1.35.3/session-replay.module.legacy.min.js'
