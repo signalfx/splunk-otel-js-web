@@ -20,7 +20,7 @@
 		"@playwright/test": "^1.52.0",
 		"@types/ejs": "^3.1.5",
 		"@types/express": "^5.0.0",
-		"@types/node": "^22.13.13",
+		"@types/node": "^22.15.29",
 		"cors": "^2.8.5",
 		"ejs": "^3.1.10",
 		"nodemon": "^3.1.9"
