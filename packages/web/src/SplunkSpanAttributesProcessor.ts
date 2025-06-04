@@ -56,7 +56,7 @@ export class SplunkSpanAttributesProcessor implements SpanProcessor {
 
 		if (this.getUserTracking() === 'anonymousTracking') {
 			span.setAttribute(
-				'user.anonymousId',
+				'user.anonymous_id',
 				getOrCreateAnonymousId({
 					useLocalStorage: this.useLocalStorageForSessionMetadata,
 					domain: this.domain,

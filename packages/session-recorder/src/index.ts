@@ -195,7 +195,7 @@ const SplunkRumRecorder = {
 				}
 				const anonymousId = SplunkRum.getAnonymousId()
 				if (anonymousId) {
-					newAttributes['user.anonymousId'] = anonymousId
+					newAttributes['user.anonymous_id'] = anonymousId
 				}
 
 				return newAttributes
