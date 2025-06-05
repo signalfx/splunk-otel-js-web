@@ -81,7 +81,7 @@ const browserConfig = (env, argv) => {
 							env: {
 								targets: 'defaults, chrome >= 71, safari >= 12.1, firefox >= 65',
 								mode: 'usage',
-								coreJs: '3.41',
+								coreJs: '3.42',
 							},
 						},
 					},

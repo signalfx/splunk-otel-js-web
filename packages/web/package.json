@@ -41,11 +41,12 @@
 		"@opentelemetry/sdk-trace-web": "^1.25.1",
 		"@opentelemetry/semantic-conventions": "^1.25.1",
 		"core-js": "3.42.0",
+		"regenerator-runtime": "^0.14.1",
 		"shimmer": "^1.2.1",
 		"web-vitals": "^3.5.2"
 	},
 	"devDependencies": {
-		"@swc/core": "^1.11.22",
+		"@swc/core": "^1.11.29",
 		"@swc/helpers": "^0.5.17",
 		"@types/shimmer": "^1.2.0",
 		"fork-ts-checker-webpack-plugin": "^9.1.0",
