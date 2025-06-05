@@ -61,10 +61,28 @@ const getBaseConfig = (env, argv, options = {}) => {
 								},
 								env: {
 									targets: isLegacyBuild
-										? 'defaults, chrome >= 50, safari >= 11, firefox >= 50'
+										? 'defaults, chrome >= 50, safari >= 11, firefox >= 50, ie >= 11'
 										: 'defaults, chrome >= 71, safari >= 12.1, firefox >= 65',
 									mode: isLegacyBuild ? 'usage' : undefined,
-									coreJs: isLegacyBuild ? '3.41' : undefined,
+									coreJs: isLegacyBuild ? '3.42' : undefined,
+								},
+							},
+						},
+					],
+				},
+				// For legacy builds, we need to transpile OpenTelemetry packages to ES5
+				{
+					test: /\.m?js$/,
+					include: isLegacyBuild ? /node_modules\/@opentelemetry\// : [],
+					use: [
+						{
+							loader: 'swc-loader',
+							options: {
+								jsc: {
+									parser: {
+										syntax: 'ecmascript',
+									},
+									target: 'es5',
 								},
 							},
 						},
