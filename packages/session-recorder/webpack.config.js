@@ -32,6 +32,7 @@ const getBaseConfig = (env, argv) => {
 			buildHttp: {
 				allowedUris: ['https://cdn.signalfx.com/'],
 				cacheLocation: false,
+				frozen: true,
 			},
 		},
 	}
