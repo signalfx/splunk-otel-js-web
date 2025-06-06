@@ -78,6 +78,7 @@ import {
 	SplunkOtelWebConfig,
 	SplunkOtelWebExporterOptions,
 	SplunkOtelWebOptionsInstrumentations,
+	UserTrackingMode,
 } from './types'
 import { isBot } from './utils/is-bot'
 import { SplunkSamplerWrapper } from './SplunkSamplerWrapper'
@@ -171,7 +172,7 @@ export const INSTRUMENTATIONS_ALL_DISABLED: SplunkOtelWebOptionsInstrumentations
 		acc[key] = false
 		return acc
 	},
-	{ webvitals: false },
+	{ webvitals: false } as Record<string, false>,
 )
 
 function getBeaconEndpointForRealm(config: SplunkOtelWebConfigInternal) {
@@ -245,6 +246,8 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 
 	_processedOptions: SplunkOtelWebConfigInternal | null
 
+	_processor?: SpanProcessor
+
 	attributesProcessor?: SplunkSpanAttributesProcessor
 
 	deinit: (force?: boolean) => void
@@ -281,20 +284,21 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 
 	provider?: SplunkWebTracerProvider
 
-	readonly resource?: Resource
+	resource?: Resource
 
 	setGlobalAttributes: (attributes: Attributes) => void
 
-	setUserTrackingMode: (mode: SplunkOtelWebConfig['user']['trackingMode']) => void
+	setUserTrackingMode: (mode: UserTrackingMode) => void
 }
 
 let inited = false
-let userTrackingMode: SplunkOtelWebConfig['user']['trackingMode'] = 'noTracking'
-let _deregisterInstrumentations: () => void | undefined
-let _deinitSessionTracking: () => void | undefined
+let userTrackingMode: UserTrackingMode = 'noTracking'
+let _deregisterInstrumentations: undefined | (() => void)
+let _deinitSessionTracking: undefined | (() => void)
 let _errorInstrumentation: SplunkErrorInstrumentation | undefined
 let _postDocLoadInstrumentation: SplunkPostDocLoadResourceInstrumentation | undefined
 let eventTarget: InternalEventTarget | undefined
+
 export const SplunkRum: SplunkOtelWebType = {
 	DEFAULT_AUTO_INSTRUMENTED_EVENTS,
 	DEFAULT_AUTO_INSTRUMENTED_EVENT_NAMES,
@@ -329,6 +333,7 @@ export const SplunkRum: SplunkOtelWebType = {
 
 		// "env" based config still a bad idea for web
 		if (!('OTEL_TRACES_EXPORTER' in _globalThis)) {
+			// @ts-expect-error OTEL_TRACES_EXPORTER is not defined in the global scope
 			_globalThis.OTEL_TRACES_EXPORTER = 'none'
 		}
 
@@ -373,7 +378,10 @@ export const SplunkRum: SplunkOtelWebType = {
 			},
 		)
 
-		if (!isPersistenceType(processedOptions.persistence)) {
+		if (
+			!processedOptions.persistence ||
+			(processedOptions.persistence && !isPersistenceType(processedOptions.persistence))
+		) {
 			diag.error(
 				`Invalid persistence flag: The value for "persistence" must be either "cookie", "localStorage", or omitted entirely, but was: ${processedOptions.persistence}`,
 			)
@@ -443,7 +451,7 @@ export const SplunkRum: SplunkOtelWebType = {
 			processedOptions.cookieDomain,
 		)
 
-		const spanProcessors = [this.attributesProcessor]
+		const spanProcessors: SpanProcessor[] = [this.attributesProcessor]
 
 		if (processedOptions.beaconEndpoint) {
 			const exporter = buildExporter(processedOptions)
@@ -472,7 +480,7 @@ export const SplunkRum: SplunkOtelWebType = {
 			resource: this.resource,
 			sampler: new SplunkSamplerWrapper({
 				decider: processedOptions.tracer?.sampler ?? new AlwaysOnSampler(),
-				allSpansAreActivity: this._processedOptions._experimental_allSpansExtendSession,
+				allSpansAreActivity: Boolean(this._processedOptions._experimental_allSpansExtendSession),
 			}),
 			spanProcessors,
 		})
@@ -510,7 +518,7 @@ export const SplunkRum: SplunkOtelWebType = {
 			// this condition applies when the page is hidden or when it's closed
 			// see for more details: https://developers.google.com/web/updates/2018/07/page-lifecycle-api#developer-recommendations-for-each-state
 			if (document.visibilityState === 'hidden') {
-				this._processor.forceFlush()
+				void this._processor?.forceFlush()
 			}
 		})
 
@@ -550,7 +558,7 @@ export const SplunkRum: SplunkOtelWebType = {
 		_deinitSessionTracking?.()
 		_deinitSessionTracking = undefined
 
-		this.provider?.shutdown()
+		void this.provider?.shutdown()
 		delete this.provider
 
 		eventTarget = undefined
@@ -607,11 +615,15 @@ export const SplunkRum: SplunkOtelWebType = {
 		return this.removeEventListener(name, callback)
 	},
 
-	setUserTrackingMode(mode: SplunkOtelWebConfig['user']['trackingMode']) {
+	setUserTrackingMode(mode: UserTrackingMode) {
 		userTrackingMode = mode
 	},
 
 	getAnonymousId() {
+		if (!this._processedOptions) {
+			return
+		}
+
 		if (userTrackingMode === 'anonymousTracking') {
 			return getOrCreateAnonymousId({
 				useLocalStorage: this._processedOptions.persistence === 'localStorage',

@@ -37,7 +37,9 @@ export function captureTraceParent(serverTimingValues: string, span: Span): void
 	for (let header of serverTimingValues.split(',')) {
 		header = header.trim()
 		const match = header.match(HeaderRegex)
-		addMatchToSpan(match, span)
+		if (match) {
+			addMatchToSpan(match, span)
+		}
 	}
 }
 

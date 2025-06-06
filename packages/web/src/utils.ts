@@ -92,10 +92,12 @@ export function wrapNatively<Nodule extends object, FieldName extends keyof Nodu
 	name: FieldName,
 	wrapper: (original: Nodule[FieldName]) => Nodule[FieldName],
 ): void {
-	const orig = nodule[name]
-	wrap(nodule, name, wrapper) as unknown as CallableFunction
-	const wrapped = nodule[name]
-	wrapped.toString = orig.toString.bind(orig)
+	const orig = nodule[name] as Nodule[FieldName] & { toString?: () => string }
+	wrap(nodule, name, wrapper)
+	const wrapped = nodule[name] as Nodule[FieldName] & { toString?: () => string }
+	if (orig.toString) {
+		wrapped.toString = orig.toString.bind(orig)
+	}
 }
 
 /**
@@ -118,22 +120,24 @@ export function getOriginalFunction<T extends CallableFunction>(func: T): T {
  * @param {function} callback Fired when such value is available
  * @returns {function} cleanup to call in disable (in case not defined before instrumentation is disabled)
  */
-export function waitForGlobal(identifier: string, callback: (value: unknown) => void): () => void {
-	if (window[identifier]) {
-		callback(window[identifier])
+export function waitForGlobal<T = unknown>(identifier: string, callback: (value: T) => void): () => void {
+	const windowWithDynamicProps = window as unknown as Window & { [key: string]: T }
+
+	if (windowWithDynamicProps[identifier]) {
+		callback(windowWithDynamicProps[identifier])
 		return () => {}
 	}
 
-	const value = window[identifier] // most cases undefined
+	const value = windowWithDynamicProps[identifier]
 	let used = false
 	Object.defineProperty(window, identifier, {
 		get() {
 			return value
 		},
 		set(newVal) {
-			delete window[identifier]
+			delete windowWithDynamicProps[identifier]
 			used = true
-			window[identifier] = newVal
+			windowWithDynamicProps[identifier] = newVal
 			callback(newVal)
 		},
 		configurable: true,
@@ -142,13 +146,13 @@ export function waitForGlobal(identifier: string, callback: (value: unknown) => 
 
 	return () => {
 		// Don't touch if value is used or another defineProperty used it
-		if (used || window[identifier] !== value) {
+		if (used || windowWithDynamicProps[identifier] !== value) {
 			return
 		}
 
-		delete window[identifier]
+		delete (window as any)[identifier]
 		if (value !== undefined) {
-			window[identifier] = value
+			windowWithDynamicProps[identifier] = value
 		}
 	}
 }

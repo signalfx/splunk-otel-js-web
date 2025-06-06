@@ -16,3 +16,5 @@
  *
  */
 export * from './config'
+export * from './window'
+export * from './type-guards'

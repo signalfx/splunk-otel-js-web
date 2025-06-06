@@ -30,6 +30,7 @@ import {
 	NATIVE_BEACON_SENDER,
 	type SplunkExporterConfig,
 } from './common'
+import { hasToString } from '../types'
 
 const MAX_VALUE_LIMIT = 4096
 const SERVICE_NAME = 'browser'
@@ -59,7 +60,7 @@ export interface ZipkinSpan {
 	duration: number
 	id: string
 	kind?: 'CLIENT' | 'SERVER' | 'CONSUMER' | 'PRODUCER'
-	localEndpoint: ZipkinEndpoint
+	localEndpoint?: ZipkinEndpoint
 	name: string
 	parentId?: string
 	shared?: boolean
@@ -98,7 +99,7 @@ export class SplunkZipkinExporter implements SpanExporter {
 		const zJson = JSON.stringify(zspans)
 		if (document.hidden && this._beaconSender && zJson.length <= 64000) {
 			this._beaconSender(this.beaconUrl, zJson)
-		} else {
+		} else if (this._xhrSender) {
 			this._xhrSender(this.beaconUrl, zJson, {
 				'Accept': '*/*',
 				'Content-Type': 'text/plain;charset=UTF-8',
@@ -122,7 +123,9 @@ export class SplunkZipkinExporter implements SpanExporter {
 		delete span.localEndpoint
 		span.name = limitLen(span.name, MAX_VALUE_LIMIT)
 		for (const [key, value] of Object.entries(span.tags)) {
-			span.tags[key] = limitLen(value.toString(), MAX_VALUE_LIMIT)
+			if (hasToString(value)) {
+				span.tags[key] = limitLen(value.toString(), MAX_VALUE_LIMIT)
+			}
 		}
 		// Remove inaccurate CORS timings
 		const zero = performance.timeOrigin * 1000

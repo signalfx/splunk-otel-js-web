@@ -23,10 +23,8 @@ import { isUrlIgnored } from '@opentelemetry/core'
 import { VERSION } from './version'
 
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
-
-function size(o) {
-	return o.byteLength || o.size || o.length || undefined
-}
+import { isError } from './types'
+import { hasSizeLikeProperty, getSize } from './utils/size'
 
 interface SplunkWebSocketInstrumentationConfig extends InstrumentationConfig {
 	ignoreUrls?: (string | RegExp)[]
@@ -48,8 +46,9 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 		const instrumentation = this
 		function webSocketWrapper(): typeof WebSocket {
 			class InstrumentedWebSocket extends WebSocket {
-				constructor(url: string, protocols?: string | string[]) {
-					if (isUrlIgnored(url, instrumentation._config.ignoreUrls)) {
+				constructor(url: string | URL, protocols?: string | string[]) {
+					const stringUrl = typeof url === 'string' ? url : url.toString()
+					if (isUrlIgnored(stringUrl, instrumentation._config.ignoreUrls)) {
 						super(url, protocols)
 						return
 					}
@@ -61,7 +60,7 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 						},
 					})
 					if (url) {
-						connectSpan.setAttribute('http.url', url)
+						connectSpan.setAttribute('http.url', stringUrl)
 					}
 
 					if (protocols) {
@@ -75,21 +74,28 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 					try {
 						super(url, protocols)
 					} catch (constructorException) {
-						instrumentation.endSpanExceptionally(connectSpan, constructorException)
+						if (isError(constructorException)) {
+							instrumentation.endSpanExceptionally(connectSpan, constructorException)
+						}
+
 						throw constructorException
 					}
 
 					this.addEventListener('open', function () {
 						connectSpan.end()
 					})
-					this.addEventListener('error', function (event: ErrorEvent) {
+					this.addEventListener('error', function (event: Event) {
 						if (connectSpan.isRecording()) {
-							instrumentation.endSpanExceptionally(
-								connectSpan,
-								new Error(event.error || event.message || 'Could not connect.'),
-							)
+							let message = 'Could not connect.'
+							if ('error' in event && typeof event.error === 'string' && event.error) {
+								message = event.error
+							} else if ('message' in event && typeof event.message === 'string' && event.message) {
+								message = event.message
+							}
+
+							instrumentation.endSpanExceptionally(connectSpan, new Error(message))
 						} else {
-							// error occured after connect... report that
+							// error occurred after connect... report that
 							instrumentation.startSpan(this, 'error', SpanKind.CLIENT).end()
 						}
 					})
@@ -106,7 +112,11 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 	init(): void {}
 
 	// Returns true iff we should use the patched callback; false if it's already been patched
-	private addPatchedListener(ws: WebSocket, origListener, patched) {
+	private addPatchedListener(
+		ws: WebSocket,
+		origListener: EventListenerOrEventListenerObject,
+		patched: EventListenerOrEventListenerObject,
+	) {
 		let ws2patched = this.listener2ws2patched.get(origListener)
 		if (!ws2patched) {
 			ws2patched = new Map()
@@ -128,7 +138,7 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 			'error.object',
 			err.name ? err.name : err.constructor && err.constructor.name ? err.constructor.name : 'Error',
 		)
-		//TODO Should we do span.setStatus( someErroCode ) ? Currently all failed spans are CanonicalCode.OK
+		//TODO Should we do span.setStatus( someErrorCode ) ? Currently all failed spans are CanonicalCode.OK
 		span.end()
 	}
 
@@ -137,9 +147,9 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 		const instrumentation = this
 		const origAEL: WebSocket['addEventListener'] = ws.addEventListener.bind(ws)
 
-		ws.addEventListener = function instrumentedAddEventListener<K extends keyof WebSocketEventMap>(
-			type: K,
-			callback: ((this: WebSocket, ev: WebSocketEventMap[K]) => any) | EventListenerObject,
+		ws.addEventListener = function instrumentedAddEventListener(
+			type: string,
+			callback: EventListenerOrEventListenerObject,
 			options?: boolean | AddEventListenerOptions,
 		): void {
 			if (type !== 'message') {
@@ -148,12 +158,12 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 				// currently there's 2 overloaded versions of WebSocket['addEventListener']
 				// this prevents function parameter inference,
 				// and in consequence makes TS unable to match the arguments in the call below, even though they are correct
-				origAEL(type, callback as any, options)
+				origAEL(type, callback, options)
 				return
 			}
 
 			const once = typeof options === 'boolean' ? undefined : options?.once
-			const patchedCallback = function patchedAddEventListenerCallback(...args) {
+			const patchedCallback = function patchedAddEventListenerCallback(this: WebSocket, ...args: [Event]) {
 				const capturedThis = this
 				const capturedArgs = args
 				if (once) {
@@ -161,8 +171,14 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 				}
 
 				const span = instrumentation.startSpan(ws, 'onmessage', SpanKind.CONSUMER)
-				if (capturedArgs && capturedArgs[0] && capturedArgs[0].data) {
-					span.setAttribute('http.response_content_length', size(capturedArgs[0].data))
+				if (capturedArgs && capturedArgs[0] && 'data' in capturedArgs[0]) {
+					const sizeObject = capturedArgs[0].data
+					if (hasSizeLikeProperty(sizeObject)) {
+						const size = getSize(sizeObject)
+						if (size !== undefined) {
+							span.setAttribute('http.response_content_length', size)
+						}
+					}
 				}
 
 				// FIXME fill out message details, size, etc.
@@ -184,7 +200,11 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 		}
 
 		const origREL = ws.removeEventListener
-		ws.removeEventListener = function (type, callback, options): void {
+		ws.removeEventListener = function (
+			type: string,
+			callback: EventListenerOrEventListenerObject,
+			options?: boolean | EventListenerOptions,
+		): void {
 			if (type !== 'message') {
 				return origREL.call(ws, type, callback, options)
 			}
@@ -203,17 +223,26 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 		const origSend = ws.send
 		ws.send = function instrumentedSend(...args) {
 			const span = instrumentation.startSpan(ws, 'send', SpanKind.PRODUCER)
-			const sendSize = args.length > 0 ? size(args[0]) : undefined
-			span.setAttribute('http.request_content_length', sendSize)
+			if (args.length > 0 && hasSizeLikeProperty(args[0])) {
+				const sendSize = getSize(args[0])
+				if (sendSize) {
+					span.setAttribute('http.request_content_length', sendSize)
+				}
+			}
+
 			let retVal = undefined
 
 			try {
 				retVal = origSend.apply(ws, args)
 			} catch (err) {
-				instrumentation.endSpanExceptionally(span, err)
+				if (isError(err)) {
+					instrumentation.endSpanExceptionally(span, err)
+				}
+
 				throw err
 			}
 
+			// @ts-expect-error Gecko 6.0
 			if (retVal === false) {
 				// Gecko 6.0
 				instrumentation.endSpanExceptionally(span, new Error('Failed to send frame.'))
@@ -225,7 +254,7 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 	}
 
 	// Returns patched listener or undefined
-	private removePatchedListener(ws, origListener) {
+	private removePatchedListener(ws: WebSocket, origListener: EventListenerOrEventListenerObject) {
 		const ws2patched = this.listener2ws2patched.get(origListener)
 		if (!ws2patched) {
 			return undefined

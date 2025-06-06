@@ -40,9 +40,9 @@ export interface SessionBasedSamplerConfig {
 }
 
 export class SessionBasedSampler implements Sampler {
-	protected currentSessionId: string
+	protected currentSessionId: string | undefined
 
-	protected currentSessionSampled: boolean
+	protected currentSessionSampled: boolean | undefined
 
 	protected notSampled: Sampler
 

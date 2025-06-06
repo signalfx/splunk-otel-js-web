@@ -56,7 +56,7 @@ export class SplunkContextManager implements ContextManager {
 	 */
 	protected _enabled = false
 
-	protected _hashChangeContext: Context = null
+	protected _hashChangeContext: Context | null = null
 
 	protected _messagePorts = new WeakMap<MessagePort, MessagePort>()
 
@@ -70,7 +70,7 @@ export class SplunkContextManager implements ContextManager {
 	}
 
 	/**
-	 * Binds a the certain context or the active one to the target function and then returns the target
+	 * Binds the certain context or the active one to the target function and then returns the target
 	 * @param context A context (span) to be bind to target
 	 * @param target a function or event emitter. When target or one of its callbacks is called,
 	 *  the provided context will be used as the active context for the duration of the call.
@@ -188,24 +188,24 @@ export class SplunkContextManager implements ContextManager {
 		return contextWrapper as unknown as T
 	}
 
-	protected _getListenersMap(target: EventTarget, type: string): WeakMap<EventListener, EventListener> {
+	protected _getListenersMap(target: EventTarget, type: string): WeakMap<EventListener, EventListener> | undefined {
 		if (!this._contextResumingListeners.has(target)) {
 			this._contextResumingListeners.set(target, new Map())
 		}
 
 		const listenersByType = this._contextResumingListeners.get(target)
-		if (!listenersByType.has(type)) {
-			listenersByType.set(type, new WeakMap())
+		if (!listenersByType?.has(type)) {
+			listenersByType?.set(type, new WeakMap())
 		}
 
-		return listenersByType.get(type)
+		return listenersByType?.get(type)
 	}
 
-	protected _getWrappedEventListener<E extends EventListener>(orig: E, contextGetter: () => Context | void): E {
+	protected _getWrappedEventListener<E extends EventListener>(orig: E, contextGetter: () => Context | null): E {
 		// eslint-disable-next-line @typescript-eslint/no-this-alias
 		const manager = this
 
-		return function (...innerArgs) {
+		return function (this: unknown, ...innerArgs) {
 			const context = contextGetter()
 			if (context && manager._enabled) {
 				// @ts-expect-error on orig: Type 'void' is not assignable to type 'ReturnType<E>'.
@@ -224,14 +224,14 @@ export class SplunkContextManager implements ContextManager {
 			XMLHttpRequest.prototype,
 			'addEventListener',
 			(original) =>
-				function (...args: Parameters<XMLHttpRequest['addEventListener']>) {
+				function (this: EventTarget, ...args: Parameters<XMLHttpRequest['addEventListener']>) {
 					if (isFunction(args[1])) {
 						const wrappedListeners = manager._getListenersMap(this, args[0])
-						let wrapped = wrappedListeners.get(args[1])
+						let wrapped = wrappedListeners?.get(args[1])
 
 						if (!wrapped) {
 							wrapped = manager.bind(manager.active(), args[1])
-							wrappedListeners.set(args[1], wrapped)
+							wrappedListeners?.set(args[1], wrapped)
 						}
 
 						args[1] = wrapped
@@ -245,10 +245,10 @@ export class SplunkContextManager implements ContextManager {
 			XMLHttpRequest.prototype,
 			'removeEventListener',
 			(original) =>
-				function (...args: Parameters<XMLHttpRequest['addEventListener']>) {
+				function (this: EventTarget, ...args: Parameters<XMLHttpRequest['addEventListener']>) {
 					if (isFunction(args[1])) {
 						const wrappedListeners = manager._getListenersMap(this, args[0])
-						const wrapped = wrappedListeners.get(args[1])
+						const wrapped = wrappedListeners?.get(args[1])
 
 						if (wrapped) {
 							args[1] = wrapped
@@ -268,8 +268,8 @@ export class SplunkContextManager implements ContextManager {
 				descriptor,
 				'get',
 				(original) =>
-					function () {
-						const val = original.call(this)
+					function (this: unknown) {
+						const val = original?.call(this)
 						// @ts-expect-error we set function._orig bellow
 						if (isFunction(val) && val._orig) {
 							// @ts-expect-error we set function._orig bellow
@@ -283,7 +283,7 @@ export class SplunkContextManager implements ContextManager {
 				descriptor,
 				'set',
 				(original) =>
-					function (value) {
+					function (this: unknown, value) {
 						if (isFunction(value)) {
 							const orig = value
 							const wrapped = manager.bind(manager.active(), value)
@@ -292,7 +292,7 @@ export class SplunkContextManager implements ContextManager {
 							value = wrapped
 						}
 
-						return original.call(this, value)
+						return original?.call(this, value)
 					},
 			)
 			Object.defineProperty(XMLHttpRequestEventTarget.prototype, prop, descriptor)
@@ -306,11 +306,11 @@ export class SplunkContextManager implements ContextManager {
 				function (this: Window, ...args: Parameters<Window['addEventListener']>) {
 					if (args[0] === 'hashchange' && isFunction(args[1])) {
 						const wrappedListeners = manager._getListenersMap(this, args[0])
-						let wrapped = wrappedListeners.get(args[1])
+						let wrapped = wrappedListeners?.get(args[1])
 
 						if (!wrapped) {
 							wrapped = manager._getWrappedEventListener(args[1], () => manager._hashChangeContext)
-							wrappedListeners.set(args[1], wrapped)
+							wrappedListeners?.set(args[1], wrapped)
 						}
 
 						args[1] = wrapped
@@ -321,39 +321,41 @@ export class SplunkContextManager implements ContextManager {
 		)
 
 		const desc = Object.getOwnPropertyDescriptor(window, 'onhashchange')
-		wrapNatively(
-			desc,
-			'get',
-			(original) =>
-				function () {
-					const val = original.call(this)
-					// @ts-expect-error we set function._orig bellow
-					if (isFunction(val) && val._orig) {
+		if (desc) {
+			wrapNatively(
+				desc,
+				'get',
+				(original) =>
+					function (this: unknown) {
+						const val = original?.call(this)
 						// @ts-expect-error we set function._orig bellow
-						return val._orig
-					}
+						if (isFunction(val) && val._orig) {
+							// @ts-expect-error we set function._orig bellow
+							return val._orig
+						}
 
-					return val
-				},
-		)
-		wrapNatively(
-			desc,
-			'set',
-			(original) =>
-				function (this: Window, value) {
-					if (isFunction(value)) {
-						const wrapped = manager._getWrappedEventListener<EventListenerWithOrig>(
-							value,
-							() => manager._hashChangeContext,
-						)
-						wrapped._orig = value
-						value = wrapped
-					}
+						return val
+					},
+			)
+			wrapNatively(
+				desc,
+				'set',
+				(original) =>
+					function (this: Window, value) {
+						if (isFunction(value)) {
+							const wrapped = manager._getWrappedEventListener<EventListenerWithOrig>(
+								value,
+								() => manager._hashChangeContext,
+							)
+							wrapped._orig = value
+							value = wrapped
+						}
 
-					return original.call(this, value)
-				},
-		)
-		Object.defineProperty(window, 'onhashchange', desc)
+						return original?.call(this, value)
+					},
+			)
+			Object.defineProperty(window, 'onhashchange', desc)
+		}
 	}
 
 	protected _patchMessageChannel(): void {
@@ -391,16 +393,22 @@ export class SplunkContextManager implements ContextManager {
 			MessagePort.prototype,
 			'postMessage',
 			(original) =>
-				function (this: MessagePort, ...args: unknown[]) {
+				function (this: MessagePort, ...args: any[]) {
 					const active = manager.active()
 
 					if (!manager._messagePorts.has(this) || !active) {
-						return original.apply(this, args)
+						return original.apply(
+							this,
+							args as [message: any, options?: StructuredSerializeOptions | undefined],
+						)
 					}
 
-					const target = manager._messagePorts.get(this)
+					const target = manager._messagePorts.get(this) as MessagePort & Record<string, Context | null>
 					target[ATTACHED_CONTEXT_KEY] = active
-					const res = original.apply(this, args)
+					const res = original.apply(
+						this,
+						args as [message: any, options?: StructuredSerializeOptions | undefined],
+					)
 
 					// Cleanup as macrotask (eg. in case port isn't used locally)
 					getOriginalFunction(setTimeout)(() => {
@@ -417,14 +425,17 @@ export class SplunkContextManager implements ContextManager {
 			MessagePort.prototype,
 			'addEventListener',
 			(original) =>
-				function (this: MessagePort, ...args: Parameters<MessagePort['addEventListener']>) {
+				function (
+					this: MessagePort & Record<string, Context | null>,
+					...args: Parameters<MessagePort['addEventListener']>
+				) {
 					if (args[0] === 'message' && isFunction(args[1])) {
 						const wrappedListeners = manager._getListenersMap(this, args[0])
-						let wrapped = wrappedListeners.get(args[1])
+						let wrapped = wrappedListeners?.get(args[1])
 
 						if (!wrapped) {
 							wrapped = manager._getWrappedEventListener(args[1], () => this[ATTACHED_CONTEXT_KEY])
-							wrappedListeners.set(args[1], wrapped)
+							wrappedListeners?.set(args[1], wrapped)
 						}
 
 						args[1] = wrapped
@@ -438,10 +449,10 @@ export class SplunkContextManager implements ContextManager {
 			MessagePort.prototype,
 			'removeEventListener',
 			(original) =>
-				function (...args: Parameters<MessagePort['addEventListener']>) {
+				function (this: EventTarget, ...args: Parameters<MessagePort['addEventListener']>) {
 					if (args[0] === 'message' && isFunction(args[1])) {
 						const wrappedListeners = manager._getListenersMap(this, args[0])
-						const wrapped = wrappedListeners.get(args[1])
+						const wrapped = wrappedListeners?.get(args[1])
 
 						if (wrapped) {
 							args[1] = wrapped
@@ -453,39 +464,41 @@ export class SplunkContextManager implements ContextManager {
 		)
 
 		const desc = Object.getOwnPropertyDescriptor(MessagePort.prototype, 'onmessage')
-		wrapNatively(
-			desc,
-			'get',
-			(original) =>
-				function () {
-					const val = original.call(this)
-					// @ts-expect-error we set function._orig bellow
-					if (isFunction(val) && val._orig) {
+		if (desc) {
+			wrapNatively(
+				desc,
+				'get',
+				(original) =>
+					function (this: unknown) {
+						const val = original?.call(this)
 						// @ts-expect-error we set function._orig bellow
-						return val._orig
-					}
+						if (isFunction(val) && val._orig) {
+							// @ts-expect-error we set function._orig bellow
+							return val._orig
+						}
 
-					return val
-				},
-		)
-		wrapNatively(
-			desc,
-			'set',
-			(original) =>
-				function (this: MessagePort, value) {
-					if (isFunction(value)) {
-						const wrapped = manager._getWrappedEventListener<EventListenerWithOrig>(
-							value,
-							() => this[ATTACHED_CONTEXT_KEY],
-						)
-						wrapped._orig = value
-						value = wrapped
-					}
+						return val
+					},
+			)
+			wrapNatively(
+				desc,
+				'set',
+				(original) =>
+					function (this: MessagePort & { [ATTACHED_CONTEXT_KEY]: Context | null }, value) {
+						if (isFunction(value)) {
+							const wrapped = manager._getWrappedEventListener<EventListenerWithOrig>(
+								value,
+								() => this[ATTACHED_CONTEXT_KEY],
+							)
+							wrapped._orig = value
+							value = wrapped
+						}
 
-					return original.call(this, value)
-				},
-		)
-		Object.defineProperty(MessagePort.prototype, 'onmessage', desc)
+						return original?.call(this, value)
+					},
+			)
+			Object.defineProperty(MessagePort.prototype, 'onmessage', desc)
+		}
 	}
 
 	protected _patchMutationObserver(): void {
@@ -503,7 +516,7 @@ export class SplunkContextManager implements ContextManager {
 					constructor(...args: [callback: MutationCallback]) {
 						if (isFunction(args[0])) {
 							const orig = args[0]
-							args[0] = function (...innerArgs) {
+							args[0] = function (this: { [ATTACHED_CONTEXT_KEY]: Context | null }, ...innerArgs) {
 								if (this[ATTACHED_CONTEXT_KEY] && manager._enabled) {
 									return manager.with(this[ATTACHED_CONTEXT_KEY], orig, this, ...innerArgs)
 								} else {
@@ -531,8 +544,8 @@ export class SplunkContextManager implements ContextManager {
 							args[1].characterData
 						) {
 							// Overwrite setting textNode.data to copy active context to mutation observer
-							// eslint-disable-next-line @typescript-eslint/no-this-alias
-							const observer = this
+
+							const observer = this as unknown as { [ATTACHED_CONTEXT_KEY]: Context | null }
 							const target = args[0]
 							const descriptor = Object.getOwnPropertyDescriptor(CharacterData.prototype, 'data')
 
@@ -545,7 +558,7 @@ export class SplunkContextManager implements ContextManager {
 										observer[ATTACHED_CONTEXT_KEY] = context
 									}
 
-									return descriptor.set.apply(this, args)
+									return descriptor?.set?.apply(this, args)
 								},
 							})
 						}
@@ -570,17 +583,17 @@ export class SplunkContextManager implements ContextManager {
 			Promise.prototype,
 			'then',
 			(original) =>
-				function <T, TResult1, TResult2>(
+				function <T = unknown, TResult1 = T, TResult2 = never>(
 					this: Promise<T>,
 					...args: [
 						onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
 						onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | undefined | null,
 					]
-				) {
+				): Promise<TResult1 | TResult2> {
 					manager.bindActiveToArgument(args, 0)
 					manager.bindActiveToArgument(args, 1)
 
-					return original.apply(this, args)
+					return original.apply(this, args) as Promise<TResult1 | TResult2>
 				},
 		)
 
@@ -622,7 +635,7 @@ export class SplunkContextManager implements ContextManager {
 			(original) =>
 				// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 				// @ts-ignore expects __promisify__ for some reason
-				function (...args: Parameters<typeof setTimeout>) {
+				function (this: unknown, ...args: Parameters<typeof setTimeout>) {
 					// Don't copy parent context if the timeout is long enough that it isn't really
 					// expected to happen within interaction (eg polling every second).
 					// The value for that is a pretty arbitary decision so here's 1 frame at 30fps (1000/30)
@@ -634,13 +647,13 @@ export class SplunkContextManager implements ContextManager {
 				},
 		)
 
-		if (window.setImmediate) {
+		if (window['setImmediate']) {
 			wrapNatively(
 				window,
 				'setImmediate',
 				(original) =>
 					// @ts-expect-error expects __promisify__
-					function (...args: Parameters<typeof setImmediate>) {
+					function (this: unknown, ...args: Parameters<typeof setImmediate>) {
 						manager.bindActiveToArgument(args, 0)
 
 						return original.apply(this, args)
@@ -648,12 +661,12 @@ export class SplunkContextManager implements ContextManager {
 			)
 		}
 
-		if (window.requestAnimationFrame) {
+		if (window['requestAnimationFrame']) {
 			wrapNatively(
 				window,
 				'requestAnimationFrame',
 				(original) =>
-					function (...args: Parameters<typeof requestAnimationFrame>) {
+					function (this: unknown, ...args: Parameters<typeof requestAnimationFrame>) {
 						manager.bindActiveToArgument(args, 0)
 
 						return original.apply(this, args)
@@ -673,6 +686,10 @@ export class SplunkContextManager implements ContextManager {
 		unwrap(MessagePort.prototype, 'addEventListener')
 		unwrap(MessagePort.prototype, 'removeEventListener')
 		const desc = Object.getOwnPropertyDescriptor(MessagePort.prototype, 'onmessage')
+		if (!desc) {
+			return
+		}
+
 		unwrap(desc, 'get')
 		unwrap(desc, 'set')
 		Object.defineProperty(MessagePort.prototype, 'onmessage', desc)
@@ -694,7 +711,7 @@ export class SplunkContextManager implements ContextManager {
 
 	protected _unpatchTimeouts(): void {
 		unwrap(window, 'setTimeout')
-		if (window.setImmediate) {
+		if (window['setImmediate']) {
 			unwrap(window, 'setImmediate')
 		}
 	}

@@ -66,12 +66,22 @@ export function applySourceMapsInject(compiler: Compiler) {
 							continue
 						}
 
-						const sourceMap = compilation.getAsset(file).info.related?.sourceMap
+						const fileAsset = compilation.getAsset(file)
+						if (!fileAsset) {
+							continue
+						}
+
+						const sourceMap = fileAsset.info.related?.sourceMap
 						if (typeof sourceMap !== 'string') {
 							continue
 						}
 
-						const sourceMapContent = compilation.getAsset(sourceMap).source.source()
+						const sourceMapAsset = compilation.getAsset(sourceMap)
+						if (!sourceMapAsset) {
+							continue
+						}
+
+						const sourceMapContent = sourceMapAsset.source.source()
 						const sourceMapId = computeSourceMapId(sourceMapContent)
 						const codeSnippet = getCodeSnippet(sourceMapId)
 
@@ -104,7 +114,7 @@ export function applySourceMapsUpload(compiler: Compiler, options: SplunkRumPlug
 		/*
 		 * find JS assets' related source map assets, and collect them to an array
 		 */
-		const sourceMaps = []
+		const sourceMaps: string[] = []
 		compilation.assetsInfo.forEach((assetInfo, asset) => {
 			if (asset.match(JS_FILE_REGEX) && typeof assetInfo?.related?.sourceMap === 'string') {
 				sourceMaps.push(assetInfo.related.sourceMap)
@@ -115,7 +125,7 @@ export function applySourceMapsUpload(compiler: Compiler, options: SplunkRumPlug
 			logger.info(
 				'Uploading %d source maps to %s',
 				sourceMaps.length,
-				getSourceMapUploadUrl(options.sourceMaps.realm, '{id}'),
+				options.sourceMaps && getSourceMapUploadUrl(options.sourceMaps.realm, '{id}'),
 			)
 		} else {
 			logger.warn('No source maps found.')
@@ -133,6 +143,10 @@ export function applySourceMapsUpload(compiler: Compiler, options: SplunkRumPlug
 				// eslint-disable-next-line @typescript-eslint/no-unused-vars
 			].filter(([_, value]) => typeof value !== 'undefined'),
 		)
+
+		if (!options.sourceMaps) {
+			return
+		}
 
 		/*
 		 * resolve the source map assets to a file system path, then upload the files

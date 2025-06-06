@@ -55,7 +55,7 @@ type ExposedSuper = {
 		span: Span,
 		resource: PerformanceResourceTiming,
 		applyCustomAttributesOnSpan: ResourceFetchCustomAttributeFunction | undefined,
-	)
+	): void
 	_collectPerformance(): void
 	_endSpan(span: api.Span | undefined, performanceName: string, entries: PerformanceEntries): void
 	_initResourceSpan(resource: PerformanceResourceTiming, parentSpan: api.Span): void

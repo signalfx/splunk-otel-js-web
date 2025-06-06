@@ -24,6 +24,14 @@ const GLOBAL_OPENTELEMETRY_API_KEY = Symbol.for('opentelemetry.js.api.1')
 const GLOBAL_SPLUNK_RUM_KEY = 'splunk.rum'
 
 const GLOBAL_SPLUNK_RUM_VERSION_KEY = `${GLOBAL_SPLUNK_RUM_KEY}.version`
+
+const globalThisTyped = globalThis as typeof globalThis & {
+	[GLOBAL_OPENTELEMETRY_API_KEY]?: {
+		[GLOBAL_SPLUNK_RUM_KEY]?: unknown
+		[GLOBAL_SPLUNK_RUM_VERSION_KEY]?: string
+	}
+}
+
 /**
  * otel-api's global function. This isn't exported by otel/api but would be
  * super useful to register global components for experimental purposes...
@@ -31,12 +39,12 @@ const GLOBAL_SPLUNK_RUM_VERSION_KEY = `${GLOBAL_SPLUNK_RUM_KEY}.version`
  * eg. sharing session id manager with session recorder
  */
 export function registerGlobal(instance: unknown, allowOverride = false): boolean {
-	if (!globalThis[GLOBAL_OPENTELEMETRY_API_KEY]) {
+	if (!globalThisTyped[GLOBAL_OPENTELEMETRY_API_KEY]) {
 		diag.error('SplunkRum: Tried to access global before otel setup')
 		return false
 	}
 
-	const api = globalThis[GLOBAL_OPENTELEMETRY_API_KEY]
+	const api = globalThisTyped[GLOBAL_OPENTELEMETRY_API_KEY]
 
 	if (!api[GLOBAL_SPLUNK_RUM_VERSION_KEY]) {
 		api[GLOBAL_SPLUNK_RUM_VERSION_KEY] = VERSION
@@ -57,7 +65,7 @@ export function registerGlobal(instance: unknown, allowOverride = false): boolea
 }
 
 export function unregisterGlobal(): boolean {
-	const api = globalThis[GLOBAL_OPENTELEMETRY_API_KEY]
+	const api = globalThisTyped[GLOBAL_OPENTELEMETRY_API_KEY]
 	if (!api) {
 		diag.warn(
 			`OTel API ref was missing while trying to unregister ${GLOBAL_SPLUNK_RUM_KEY} or ${GLOBAL_SPLUNK_RUM_VERSION_KEY}`,
@@ -76,6 +84,6 @@ export function unregisterGlobal(): boolean {
 	return true
 }
 
-export function getGlobal<Type>(): Type | undefined {
-	return globalThis[GLOBAL_OPENTELEMETRY_API_KEY]?.[GLOBAL_SPLUNK_RUM_KEY]
+export function getGlobal() {
+	return globalThisTyped[GLOBAL_OPENTELEMETRY_API_KEY]?.[GLOBAL_SPLUNK_RUM_KEY]
 }

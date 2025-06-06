@@ -46,7 +46,7 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
 
 		super(config)
 
-		const _superAddHeaders = (this as unknown as ExposedSuper)._addHeaders.bind(this) as ExposedSuper['_addHeaders']
+		const _superAddHeaders = (this as unknown as ExposedSuper)._addHeaders.bind(this)
 		;(this as unknown as ExposedSuper)._addHeaders = (options, spanUrl) => {
 			// Fix: Fetch instrumentation currently can't handle headers array
 			try {
