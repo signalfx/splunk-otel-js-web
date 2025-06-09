@@ -44,8 +44,8 @@
 		"@swc/core": "^1.11.22",
 		"@swc/helpers": "^0.5.17",
 		"@types/ws": "^8.18.0",
-		"@typescript-eslint/eslint-plugin": "^8.33.1",
-		"@typescript-eslint/parser": "^8.33.1",
+		"@typescript-eslint/eslint-plugin": "^8.34.0",
+		"@typescript-eslint/parser": "^8.34.0",
 		"@vitest/browser": "^3.2.1",
 		"@vitest/coverage-istanbul": "^3.2.1",
 		"@vitest/ui": "^3.0.7",
@@ -63,7 +63,7 @@
 		"swc-loader": "^0.2.6",
 		"tsx": "^4.19.4",
 		"typescript": "^5.8.2",
-		"typescript-eslint": "^8.33.1",
+		"typescript-eslint": "^8.34.0",
 		"vitest": "^3.0.7",
 		"ws": "^8.18.1"
 	}
