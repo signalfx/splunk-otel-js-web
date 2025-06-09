@@ -35,7 +35,7 @@ export class SplunkRecorder extends Recorder {
 					cacheAssets: this.config.features?.cacheAssets ?? false,
 					iframes: this.config.features?.iframes ?? false,
 					imageBitmap: this.config.features?.imageBitmap ?? false,
-					packAssets: this.config.features?.packAssets ?? false,
+					packAssets: this.config.features?.packAssets ?? true,
 				},
 				logLevel: this.config.logLevel ?? 'error',
 				maskAllInputs: this.config.maskAllInputs ?? true,
