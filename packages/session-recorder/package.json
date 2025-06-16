@@ -37,7 +37,7 @@
 		"type-fest": "^4.37.0"
 	},
 	"peerDependencies": {
-		"@splunk/otel-web": "^0.23.0-alpha.2"
+		"@splunk/otel-web": "workspace:*"
 	},
 	"devDependencies": {
 		"@swc/core": "^1.11.29",

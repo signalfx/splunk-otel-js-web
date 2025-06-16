@@ -23,7 +23,7 @@ import { computeSourceMapIdFromFile } from '../src/utils'
 describe('integration-test setup', function () {
 	it('sample project dist/ folder exists', function () {
 		expect(
-			existsSync('./integration-test/project/dist'),
+			existsSync(`${__dirname}/project/dist`),
 			'install and build the sample project before running this test suite',
 		).eq(true)
 	})
@@ -31,18 +31,16 @@ describe('integration-test setup', function () {
 
 describe('webpack sourceMaps plugin', function () {
 	it('injects the correct code snippet only when a source map file was emitted', async function () {
+		await verifySourceMapIdInjectionDidOccur(`${__dirname}/project/dist/webpack-config-devtool-source-map-js/`)
 		await verifySourceMapIdInjectionDidOccur(
-			'./integration-test/project/dist/webpack-config-devtool-source-map-js/',
+			`${__dirname}/project/dist/webpack-config-devtool-hidden-source-map-js/`,
 		)
-		await verifySourceMapIdInjectionDidOccur(
-			'./integration-test/project/dist/webpack-config-devtool-hidden-source-map-js/',
-		)
-		await verifySourceMapIdInjectionDidNotOccur('./integration-test/project/dist/webpack-config-no-source-maps-js/')
-		await verifySourceMapIdInjectionDidNotOccur('./integration-test/project/dist/webpack-config-devtool-eval-js/')
+		await verifySourceMapIdInjectionDidNotOccur(`${__dirname}/project/dist/webpack-config-no-source-maps-js/`)
+		await verifySourceMapIdInjectionDidNotOccur(`${__dirname}/project/dist/webpack-config-devtool-eval-js/`)
 		await verifySourceMapIdInjectionDidNotOccur(
-			'./integration-test/project/dist/webpack-config-without-source-maps-options-js/',
+			`${__dirname}/project/dist/webpack-config-without-source-maps-options-js/`,
 		)
-		await verifySourceMapIdInjectionDidNotOccur('./integration-test/project/dist/webpack-config-without-plugin-js/')
+		await verifySourceMapIdInjectionDidNotOccur(`${__dirname}/project/dist/webpack-config-without-plugin-js/`)
 	})
 })
 

@@ -14,19 +14,16 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v4.2.2
-            - uses: actions/setup-node@v4.4.0
-              with:
-                  node-version: '22'
-                  cache: 'npm'
-            - run: npm ci
-            - run: npm run compile
+
+            - name: Setup
+              uses: ./.github/actions/setup
 
             - name: Install playwright
               uses: ./.github/actions/install-playwright
 
             - name: Run Playwright tests
               run: |
-                  npx playwright test --project=${{ matrix.browser }}
+                  pnpm exec playwright test --project=${{ matrix.browser }}
               working-directory: ./packages/integration-tests
 
             - name: Upload blob report to GitHub Actions Artifacts
@@ -42,7 +39,7 @@ jobs:
               # Firefox tests are flaky.
               # Remove once this issue is resolved: https://github.com/vitest-dev/vitest/issues/7377
               continue-on-error: ${{ matrix.browser == 'firefox' }}
-              run: npm run test:unit -- --browser.name=${{ matrix.browser }}
+              run: pnpm run test:unit --browser.name=${{ matrix.browser }}
 
             - name: Upload test:unit report
               uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -51,9 +48,6 @@ jobs:
                   name: vitest-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
                   path: vitest-report/
                   retention-days: 14
-
-            - name: Run Unit Tests (Plugin)
-              run: npm run test:plugin
 
     tests-macos:
         timeout-minutes: 60
@@ -66,19 +60,16 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v4.2.2
-            - uses: actions/setup-node@v4.4.0
-              with:
-                  node-version: '22'
-                  cache: 'npm'
-            - run: npm ci
-            - run: npm run compile
+
+            - name: Setup
+              uses: ./.github/actions/setup
 
             - name: Install playwright
               uses: ./.github/actions/install-playwright
 
             - name: Run Playwright tests
               run: |
-                  npx playwright test --project=${{ matrix.browser }}
+                  pnpm exec playwright test --project=${{ matrix.browser }}
               working-directory: ./packages/integration-tests
 
             - name: Upload blob report to GitHub Actions Artifacts
@@ -90,7 +81,7 @@ jobs:
                   retention-days: 1
 
             - name: Run Unit Tests
-              run: npm run test:unit -- --browser.name=${{ matrix.browser }}
+              run: pnpm run test:unit --browser.name=${{ matrix.browser }}
 
             - name: Upload test:unit report
               uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -99,9 +90,6 @@ jobs:
                   name: vitest-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
                   path: vitest-report/
                   retention-days: 14
-
-            - name: Run Unit Tests (Plugin)
-              run: npm run test:plugin
 
     merge-reports:
         name: Merge playwright reports
@@ -112,12 +100,9 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v4.2.2
-            - uses: actions/setup-node@v4.4.0
-              with:
-                  node-version: '22'
-                  cache: 'npm'
-            - run: npm ci
-            - run: npm run compile
+
+            - name: Setup
+              uses: ./.github/actions/setup
 
             - name: Download blob reports from GitHub Actions Artifacts
               uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
@@ -127,7 +112,7 @@ jobs:
                   merge-multiple: true
 
             - name: Merge into HTML Report
-              run: npx playwright merge-reports --reporter html ./all-blob-reports -c playwright.config.ts
+              run: pnpm exec playwright merge-reports --reporter html ./all-blob-reports -c playwright.config.ts
               working-directory: ./packages/integration-tests
 
             - name: Upload HTML report

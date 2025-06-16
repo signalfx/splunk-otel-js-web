@@ -15,21 +15,21 @@
  * limitations under the License.
  *
  */
-import path from 'node:path'
+const { SplunkRumWebpackPlugin } = require('@splunk/rum-build-plugins')
+const { getBaseConfig } = require('./webpack-utils')
 
-import { defineConfig } from 'vitest/config'
-
-export default defineConfig({
-	test: {
-		clearMocks: true,
-		coverage: {
-			exclude: ['**/node_modules'],
-			provider: 'istanbul',
-		},
-		include: ['**/*.test.ts'],
-		exclude: ['**/node_modules'],
-		pool: 'forks',
-		root: path.resolve(__dirname),
-		reporters: ['default', 'html'],
-	},
-})
+module.exports = {
+	...getBaseConfig(__filename),
+	devtool: 'source-map',
+	plugins: [
+		new SplunkRumWebpackPlugin({
+			applicationName: 'sample-app',
+			version: '0.1.0',
+			sourceMaps: {
+				disableUpload: true,
+				realm: 'us0',
+				token: '<token>',
+			},
+		}),
+	],
+}

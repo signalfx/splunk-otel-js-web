@@ -84,8 +84,8 @@ any 'help wanted' issues is a great place to start.
 ## Building
 
 ```bash
-npm install
-npm run compile
+pnpm install
+pnpm run compile
 ```
 
 ## Functional tests
@@ -93,7 +93,7 @@ npm run compile
 We use vitest for unit tests. To run the tests, use the following command in the root:
 
 ```bash
-npm run test:unit
+pnpm run test:unit
 ```
 
 ### Executing integration tests from your own machine
@@ -102,7 +102,7 @@ We use playwright for integration tests. To run the tests, use the following com
 
 ```bash
 cd packages/integration-tests
-npm run test
+pnpm run test
 ```
 
 ### Debugging Vitest in Visual Studio Code
@@ -147,7 +147,7 @@ npm run test
 
 ## Licensing
 
-See the [LICENSE](LICENSE) file for our repository's licensing. We will ask you to
+See the [LICENSE](./LICENSE) file for our repository's licensing. We will ask you to
 confirm the licensing of your contribution.
 
 ### Contributor License Agreement

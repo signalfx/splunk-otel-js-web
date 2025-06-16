@@ -9,10 +9,14 @@ include:
 cache:
     key:
         files:
-            - package-lock.json
+            - pnpm-lock.yaml
     paths:
         - './node_modules'
         - './packages/*/node_modules'
+
+.default-setup: &pnpm-setup
+    before_script:
+        - sudo npm install -g pnpm@10.12.1
 
 stages:
     - setup
@@ -20,42 +24,47 @@ stages:
     - test
     - release
 
-npm_install:
+pnpm_install:
+    <<: *pnpm-setup
     stage: setup
     script:
-        - npm ci --include=dev
+        - pnpm install --frozen-lockfile
 
 check_version:
+    <<: *pnpm-setup
     stage: build
     script:
-        - npm run version:check
+        - pnpm run version:check
 
 check_tag:
+    <<: *pnpm-setup
     stage: build
     only:
         - /^v.*/
     script:
-        - npm run tag:check
+        - pnpm run tag:check
 
 lint:
+    <<: *pnpm-setup
     stage: build
     script:
-        - npm run lint
-        - npm run lint:markdown
+        - pnpm run lint
+        - pnpm run lint:markdown
 
 build:
+    <<: *pnpm-setup
     stage: build
     only:
         - /^[^v].*/
     artifacts:
         paths:
             - packages/*/dist/
-            - packages/build-plugins/integration-test/dist/
-            - packages/build-plugins/integration-test/project/dist/
+            - packages/build-plugins/tests/project/dist/
     script:
-        - npm run compile
+        - pnpm run compile
 
 build_artifacts:
+    <<: *pnpm-setup
     stage: build
     only:
         - /^(v\d+\.\d+\.\d+(-[a-zA-Z]+\.\d)?|main)$/
@@ -64,10 +73,8 @@ build_artifacts:
             - artifacts/
     script:
         - if [ ! -d "artifacts" ]; then mkdir artifacts; fi
-        - npm run compile
-        - npm pack --pack-destination artifacts --workspace packages/session-recorder --workspace packages/web --workspace packages/build-plugins
-
-        # complete artifacts from web and session recorder packages & checksums
+        - pnpm run compile
+        - pnpm pack --pack-destination artifacts --filter "./packages/session-recorder" --filter "./packages/web" --filter "./packages/build-plugins"
         - cp packages/web/dist/artifacts/* artifacts/
         - cp packages/session-recorder/dist/artifacts/* artifacts/
         - shasum -a 256 artifacts/* > artifacts/checksums.txt
@@ -75,17 +82,17 @@ build_artifacts:
 unit_test:
     stage: test
     script:
-        - npm ci --include=dev
-        - npx playwright install --with-deps
-        - npm run compile
-        - npm run test:unit -- --browser.name chromium
-        - npm run test:plugin
+        - pnpm install --frozen-lockfile
+        - pnpm exec playwright install --with-deps
+        - pnpm run compile
+        - pnpm run test:unit --browser.name chromium
 
 oss-scan:
     stage: test
     extends: .oss-scan
 
 release_npm:
+    <<: *pnpm-setup
     artifacts:
         paths:
             - artifacts/
@@ -105,7 +112,7 @@ release_npm:
             fi
 
             for f in artifacts/*.tgz; do
-              npm publish $tag_flag "./$f"
+              pnpm publish --no-git-checks $tag_flag "./$f"
             done
         - rm -f ~/.npmrc
 
@@ -134,6 +141,7 @@ release_github:
             gh release create v${CI_COMMIT_REF_NAME:1} ./artifacts/* --target $CI_COMMIT_SHA --repo $GITHUB_REPOSITORY $prerelease_flag
 
 release_cdn:
+    <<: *pnpm-setup
     artifacts:
         paths:
             - artifacts/
@@ -145,7 +153,7 @@ release_cdn:
         CI_JOB_JWT:
             aud: $CICD_VAULT_ADDR
     script:
-        - npm ci --include=dev
+        - pnpm install --frozen-lockfile
         # authenticate and release to CDN
         - creds-helper init && eval $(creds-helper aws --eval aws:v1/o11y-infra/role/o11y_gdi_otel_js_web_releaser_role)
-        - npx tsx scripts/release-cdn.mts ${CI_COMMIT_REF_NAME}
+        - pnpm exec tsx scripts/release-cdn.mts ${CI_COMMIT_REF_NAME}

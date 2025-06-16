@@ -22,7 +22,10 @@ import tseslint from 'typescript-eslint'
 import headers from 'eslint-plugin-headers'
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended'
 
-export default [
+/**
+ * @type {import('eslint').Linter.Config[]}
+ */
+const config = [
 	js.configs.recommended,
 	eslintPluginPrettierRecommended,
 	...tseslint.configs.recommendedTypeChecked,
@@ -203,7 +206,6 @@ export default [
 	{
 		files: [
 			'scripts/*.{js,mjs,cjs}',
-			'packages/build-plugins/integration-test/**/*.{js,mjs,cjs}',
 			'packages/web/utils/**/*.{js,mjs,cjs}',
 			'packages/web/test/plugins/**/*.{js,mjs,cjs}',
 			'packages/web/performance-tests/**/*.{js,mjs,cjs}',
@@ -212,6 +214,8 @@ export default [
 			'**/*.config.js',
 			'.size-limit.cjs',
 			'.prettierrc.cjs',
+			'packages/build-plugins/tests/project/webpack*.js',
+			'packages/build-plugins/tests/build-webpack.mjs',
 		],
 		languageOptions: {
 			globals: {
@@ -272,3 +276,5 @@ export default [
 		],
 	},
 ]
+
+export default config

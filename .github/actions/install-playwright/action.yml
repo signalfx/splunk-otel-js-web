@@ -13,7 +13,7 @@ runs:
           shell: bash
           working-directory: ./packages/integration-tests
           run: |
-              PLAYWRIGHT_VERSION=$(npm ls --json "@playwright/test" | jq --raw-output '.dependencies["@splunk/otel-js-web-integration-tests"].dependencies["@playwright/test"].version')
+              PLAYWRIGHT_VERSION=$(pnpm ls --json playwright | jq --raw-output '.[0].devDependencies.playwright.version')
               echo "PLAYWRIGHT_VERSION=$PLAYWRIGHT_VERSION" >> $GITHUB_ENV
 
         - name: Set up path for Playwright cache
@@ -31,12 +31,12 @@ runs:
           if: steps.playwright-cache.outputs.cache-hit != 'true'
           shell: bash
           run: |
-              npx playwright install --with-deps
-              npx playwright install chrome
-              npx playwright install msedge
-              npx playwright install webkit
+              pnpm exec playwright install --with-deps
+              pnpm exec playwright install chrome
+              pnpm exec playwright install msedge
+              pnpm exec playwright install webkit
 
         - name: Install Playwright OS dependencies
           if: steps.playwright-cache.outputs.cache-hit == 'true'
           shell: bash
-          run: npx playwright install-deps
+          run: pnpm exec playwright install-deps
