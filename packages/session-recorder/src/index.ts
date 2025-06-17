@@ -16,27 +16,28 @@
  *
  */
 
-import { ProxyTracerProvider, TracerProvider, trace, Tracer, context } from '@opentelemetry/api'
+import { context, ProxyTracerProvider, trace, Tracer, TracerProvider } from '@opentelemetry/api'
 import { suppressTracing } from '@opentelemetry/core'
 import OTLPLogExporter from './OTLPLogExporter'
 import { BatchLogProcessor, convert } from './BatchLogProcessor'
 import { VERSION } from './version'
-import { getSplunkRumVersion, getGlobal } from './utils'
+import { getGlobal, getSplunkRumVersion } from './utils'
 
 import type { Resource } from '@opentelemetry/resources'
 import type { SplunkOtelWebType } from '@splunk/otel-web'
 import { JsonObject } from 'type-fest'
 
 import {
-	Recorder,
-	SplunkRecorder,
-	RRWebRecorder,
-	RecorderEmitContext,
-	RRWebRecorderPublicConfig,
-	SplunkRecorderPublicConfig,
-	RecorderType,
 	getSplunkRecorderConfig,
+	Recorder,
+	RecorderEmitContext,
+	RecorderType,
+	RRWebRecorder,
+	RRWebRecorderPublicConfig,
+	SplunkRecorder,
+	SplunkRecorderPublicConfig,
 } from './recorder'
+import { log } from './log'
 
 interface BasicTracerProvider extends TracerProvider {
 	readonly resource: Resource
@@ -97,6 +98,8 @@ const SplunkRumRecorder = {
 			)
 		}
 
+		log.setLoggingLevel(config.debug ? 'debug' : 'warn')
+
 		let tracerProvider: BasicTracerProvider | ProxyTracerProvider = trace.getTracerProvider() as BasicTracerProvider
 		if (tracerProvider && 'getDelegate' in tracerProvider) {
 			tracerProvider = (tracerProvider as unknown as ProxyTracerProvider).getDelegate() as BasicTracerProvider
@@ -104,30 +107,30 @@ const SplunkRumRecorder = {
 
 		const SplunkRum = getGlobal<SplunkOtelWebType>()
 		if (!SplunkRum) {
-			console.error('SplunkRum must be initialized before session recorder.')
+			log.error('SplunkRum must be initialized before session recorder.')
 			return
 		}
 
 		if (SplunkRum.disabledByBotDetection) {
-			console.error('SplunkSessionRecorder will not be initialized, bots are not allowed.')
+			log.error('SplunkSessionRecorder will not be initialized, bots are not allowed.')
 			return
 		}
 
 		if (SplunkRum.disabledByAutomationFrameworkDetection) {
-			console.error('SplunkSessionRecorder will not be initialized, automation frameworks are not allowed.')
+			log.error('SplunkSessionRecorder will not be initialized, automation frameworks are not allowed.')
 			return
 		}
 
 		const splunkRumVersion = getSplunkRumVersion()
 		if (!splunkRumVersion || splunkRumVersion !== VERSION) {
-			console.error(
+			log.error(
 				`SplunkSessionRecorder will not be initialized. Version mismatch with SplunkRum (SplunkRum: ${splunkRumVersion ?? 'N/A'}, SplunkSessionRecorder: ${VERSION})`,
 			)
 			return
 		}
 
 		if (!SplunkRum.resource) {
-			console.error('Splunk OTEL Web must be initialized before session recorder.')
+			log.error('Splunk OTEL Web must be initialized before session recorder.')
 			return
 		}
 
@@ -135,7 +138,6 @@ const SplunkRumRecorder = {
 
 		const {
 			beaconEndpoint,
-			debug,
 			realm,
 			rumAccessToken,
 			recorder: recorderType = 'rrweb',
@@ -150,7 +152,7 @@ const SplunkRumRecorder = {
 		if (SplunkRum.provider) {
 			const sessionReplayAttribute = isSplunkRecorder ? 'splunk' : 'rrweb'
 			SplunkRum.provider.resource.attributes['splunk.sessionReplay'] = sessionReplayAttribute
-			console.debug(
+			log.debug(
 				`SplunkSessionRecorder: splunk.sessionReplay resource attribute set to '${sessionReplayAttribute}'.`,
 			)
 		}
@@ -170,12 +172,12 @@ const SplunkRumRecorder = {
 			if (!exportUrl) {
 				exportUrl = `https://rum-ingest.${realm}.signalfx.com/v1/rumreplay`
 			} else {
-				console.warn('SplunkSessionRecorder: Realm value ignored (beaconEndpoint has been specified)')
+				log.warn('SplunkSessionRecorder: Realm value ignored (beaconEndpoint has been specified)')
 			}
 		}
 
 		if (!exportUrl) {
-			console.error(
+			log.error(
 				'SplunkSessionRecorder could not determine `exportUrl`, please ensure that `realm` or `beaconEndpoint` is specified and try again',
 			)
 			return
@@ -187,7 +189,6 @@ const SplunkRumRecorder = {
 
 		const exporter = new OTLPLogExporter({
 			beaconUrl: exportUrl,
-			debug,
 			getResourceAttributes() {
 				const newAttributes: JsonObject = {
 					...resource.attributes,
@@ -208,7 +209,7 @@ const SplunkRumRecorder = {
 		lastKnownSession = SplunkRum.getSessionId()
 
 		if (isSplunkRecorder && SplunkRum.isNewSessionId()) {
-			console.log('SplunkRum.isNewSessionId()')
+			log.debug('SplunkRum.isNewSessionId()')
 			SplunkRecorder.clear()
 		}
 
@@ -265,7 +266,7 @@ const SplunkRumRecorder = {
 			for (let i = 0; i < totalC; i++) {
 				const start = i * MAX_CHUNK_SIZE
 				const end = (i + 1) * MAX_CHUNK_SIZE
-				const log = convert(decoder.decode(body.slice(start, end)), time, {
+				const logData = convert(decoder.decode(body.slice(start, end)), time, {
 					'rr-web.offset': logCounter,
 					'rr-web.event': eventI,
 					'rr-web.chunk': i + 1,
@@ -274,11 +275,9 @@ const SplunkRumRecorder = {
 
 				logCounter += 1
 
-				if (debug) {
-					console.log(log)
-				}
+				log.debug('Emitting log', logData)
 
-				processor.onEmit(log)
+				processor.onEmit(logData)
 			}
 		}
 
@@ -301,7 +300,7 @@ const SplunkRumRecorder = {
 			recorder.start()
 			inited = true
 		} catch (error) {
-			console.error('SplunkSessionRecorder: Failed to initialize recorder', error)
+			log.error('SplunkSessionRecorder: Failed to initialize recorder', error)
 		}
 	},
 

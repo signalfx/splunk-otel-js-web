@@ -17,6 +17,7 @@
  */
 import { ApiError } from './api-error'
 import { waitForOnline, createUrl, isTrustedEvent } from './utils'
+import { log } from '../log'
 
 type RequestInit = Parameters<typeof fetch>[1]
 
@@ -77,7 +78,7 @@ export const apiFetch = async <T>(
 	let abortController = abortControllersByUrl.get(finalUrl.href)
 
 	if (abortController && abortPreviousRequest) {
-		console.debug('Aborting previous request', finalUrl)
+		log.debug('Aborting previous request', finalUrl)
 		abortController.abort('Aborted previous request.')
 	}
 

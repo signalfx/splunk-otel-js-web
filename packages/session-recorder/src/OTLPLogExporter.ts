@@ -27,10 +27,10 @@ import { apiFetch, ApiParams } from './api/api-fetch'
 import { addLogToQueue, removeQueuedLog, QueuedLog, getQueuedLogs, removeQueuedLogs } from './export-log-queue'
 import { context } from '@opentelemetry/api'
 import { suppressTracing } from '@opentelemetry/core'
+import { log } from './log'
 
 interface OTLPLogExporterConfig {
 	beaconUrl: string
-	debug?: boolean
 	getResourceAttributes: () => JsonObject
 	headers?: Record<string, string>
 	sessionId: string
@@ -113,11 +113,12 @@ export default class OTLPLogExporter {
 					scopeLogs: [
 						{
 							scope: { name: 'splunk.rr-web', version: VERSION },
-							logRecords: logs.map((log) => ({
+							logRecords: logs.map((logItem) => ({
 								// @ts-expect-error FIXME: `body` is not defined
-								body: convertToAnyValue(log.body) as JsonObject,
-								timeUnixNano: log.timeUnixNano,
-								attributes: convertToAnyValue(log.attributes || {}).kvlistValue?.values as JsonArray,
+								body: convertToAnyValue(logItem.body) as JsonObject,
+								timeUnixNano: logItem.timeUnixNano,
+								attributes: convertToAnyValue(logItem.attributes || {}).kvlistValue
+									?.values as JsonArray,
 							})),
 						},
 					],
@@ -134,9 +135,7 @@ export default class OTLPLogExporter {
 		const headers = this.config.headers ? Object.assign({}, defaultHeaders, this.config.headers) : defaultHeaders
 
 		const logsData = this.constructLogData(logs)
-		if (this.config.debug) {
-			console.log('otlp request', logsData)
-		}
+		log.debug('OTLPLogExporter: export', logsData)
 
 		const endpoint = this.config.beaconUrl
 		const uint8ArrayData = strToU8(JSON.stringify(logsData))
@@ -154,7 +153,7 @@ export default class OTLPLogExporter {
 			: null
 
 		if (queuedLog) {
-			console.log('Adding log to queue', { ...queuedLog, data: '[truncated]' })
+			log.debug('Adding log to queue', { ...queuedLog, data: '[truncated]' })
 			addLogToQueue(queuedLog)
 		}
 
@@ -163,13 +162,12 @@ export default class OTLPLogExporter {
 				return
 			}
 
-			console.log('Removing queued log', { ...queuedLog, data: '[truncated]' })
+			log.debug('Removing queued log', { ...queuedLog, data: '[truncated]' })
 			removeQueuedLog(queuedLog)
 		}
 
 		if (document.visibilityState === 'hidden') {
 			const compressedData = gzipSync(uint8ArrayData)
-			console.debug('🗜️ dbg: SYNC compress', { endpoint, headers, compressedData })
 
 			// Use fetch with keepalive option instead of beacon.
 			// Fetch with keepalive option has limit of 64kB.
@@ -182,11 +180,10 @@ export default class OTLPLogExporter {
 		} else {
 			compressAsync(uint8ArrayData)
 				.then((compressedData) => {
-					console.debug('🗜️ dbg: ASYNC compress', { endpoint, headers, compressedData })
 					void sendByFetch(endpoint, { headers, body: compressedData }, onFetchSuccess)
 				})
 				.catch((error) => {
-					console.error('Could not compress data', error)
+					log.error('Could not compress data', error)
 				})
 		}
 	}
@@ -199,27 +196,27 @@ export default class OTLPLogExporter {
 			removeQueuedLogs()
 		}
 
-		for (const log of logs) {
-			console.log('Found queued log', { ...log, data: '[truncated]' })
+		for (const logItem of logs) {
+			log.debug('Found queued log', { ...logItem, data: '[truncated]' })
 
 			// Only export logs that belong to the current session
-			if (log.sessionId !== this.config.sessionId) {
-				console.debug(
+			if (logItem.sessionId !== this.config.sessionId) {
+				log.debug(
 					'exportQueuedLogs - session mismatch',
-					{ ...log, data: '[truncated]' },
+					{ ...logItem, data: '[truncated]' },
 					{ sessionId: this.config.sessionId },
 				)
 				continue
 			}
 
-			compressAsync(log.data)
+			compressAsync(logItem.data)
 				.then((compressedData) => {
-					void sendByFetch(log.url, { headers: log.headers, body: compressedData }, () => {
-						console.log('exportQueuedLogs - success', { ...log, data: '[truncated]' })
+					void sendByFetch(logItem.url, { headers: logItem.headers, body: compressedData }, () => {
+						log.debug('exportQueuedLogs - success', { ...logItem, data: '[truncated]' })
 					})
 				})
 				.catch((error) => {
-					console.error('Could not compress data', error)
+					log.error('Could not compress data', error)
 				})
 		}
 	}
@@ -241,10 +238,10 @@ const sendByFetchInternal = async (
 			...fetchParams,
 		})
 
-		console.debug('📦 dbg: sendByFetch', { keepalive: fetchParams.keepalive })
+		log.debug('Data sent by fetch', { keepalive: fetchParams.keepalive })
 		onSuccess()
 	} catch (error) {
-		console.error('Could not sent data to BE - fetch', error)
+		log.error('Could not sent data to BE - fetch', error)
 	}
 }
 

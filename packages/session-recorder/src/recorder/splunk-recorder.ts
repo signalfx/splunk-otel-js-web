@@ -17,6 +17,7 @@
  */
 import { Recorder, RecorderConfig, RecorderEmitContext } from './recorder'
 import { SessionReplayPlain, SessionReplayConfig, SessionReplayPlainSegment } from '../session-replay'
+import { log } from '../log'
 
 export type SplunkRecorderPublicConfig = Omit<SessionReplayConfig, 'onSegment'>
 
@@ -47,13 +48,13 @@ export class SplunkRecorder extends Recorder {
 				sensitivityRules: this.config.sensitivityRules ?? [],
 			})
 		} else {
-			console.warn('SessionReplayPlain is not available. Recording is disabled.')
+			log.warn('SessionReplayPlain is not available. Recording is disabled.')
 		}
 	}
 
 	static clear() {
 		if (SessionReplayPlain) {
-			console.log('SplunkRecorder: Clearing assets')
+			log.debug('SplunkRecorder: Clearing assets')
 			SessionReplayPlain.clear()
 		}
 	}
@@ -75,7 +76,7 @@ export class SplunkRecorder extends Recorder {
 	}
 
 	private onSegment = (segment: SessionReplayPlainSegment) => {
-		console.log('Session replay segment: ', segment)
+		log.debug('Session replay segment: ', segment)
 
 		const context: RecorderEmitContext = {
 			data: { data: segment.data, metadata: segment.metadata },
@@ -88,7 +89,7 @@ export class SplunkRecorder extends Recorder {
 	}
 
 	private onSessionChanged = () => {
-		console.log('SplunkRecorder: onSessionChanged')
+		log.debug('SplunkRecorder: onSessionChanged')
 		this.stop()
 		SplunkRecorder.clear()
 		this.start()

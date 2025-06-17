@@ -88,7 +88,6 @@ export class BatchLogProcessor {
 	}
 
 	private exportLogs(logs: Log[]): Promise<void> {
-		console.debug('🌊 dbg: batch log processor export', logs)
 		this.exporter.export(logs)
 		return Promise.resolve()
 	}
