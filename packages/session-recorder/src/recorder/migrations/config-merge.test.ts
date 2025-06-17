@@ -21,7 +21,7 @@ import { SplunkRecorderPublicConfig } from '../splunk-recorder'
 
 describe('mergeRecorderConfig', () => {
 	it('merges recorder configs', () => {
-		const config = {
+		const config: SplunkRecorderPublicConfig = {
 			maskAllInputs: true,
 			features: {
 				canvas: true,
@@ -30,9 +30,9 @@ describe('mergeRecorderConfig', () => {
 				},
 			},
 			sensitivityRules: [{ rule: 'mask', selector: '.mask' }],
-		} satisfies SplunkRecorderPublicConfig
+		}
 
-		const migratedConfig = {
+		const migratedConfig: SplunkRecorderPublicConfig = {
 			maskAllInputs: false,
 			features: {
 				packAssets: {
@@ -40,7 +40,7 @@ describe('mergeRecorderConfig', () => {
 				},
 			},
 			sensitivityRules: [{ rule: 'exclude', selector: '.exclude' }],
-		} satisfies SplunkRecorderPublicConfig
+		}
 
 		const actual = mergeRecorderConfig(config, migratedConfig)
 		const expected = {
