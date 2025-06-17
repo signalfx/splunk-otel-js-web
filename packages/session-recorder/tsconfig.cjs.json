@@ -2,6 +2,7 @@
 	"compilerOptions": {
 		"declaration": true,
 		"module": "CommonJS",
+		"moduleResolution": "node10",
 		"outDir": "./dist/cjs",
 		"rootDir": "src",
 		"sourceMap": true

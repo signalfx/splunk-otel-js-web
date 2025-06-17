@@ -118,17 +118,50 @@ const browserConfig = (env, argv) => {
 	}
 }
 
-const libraryConfig = (env, argv) => {
+const cjsConfig = (env, argv) => {
 	const baseConfig = getBaseConfig(env, argv)
 	return {
 		...baseConfig,
 		output: {
 			filename: 'index.js',
-			path: path.resolve(__dirname, './dist/lib'),
+			path: path.resolve(__dirname, './dist/cjs'),
 			library: {
-				type: 'commonjs-static',
+				type: 'commonjs2',
 			},
 			clean: true,
+		},
+		module: {
+			rules: [
+				{
+					test: /\.ts$/,
+					loader: 'ts-loader',
+					exclude: /node_modules/,
+					options: { configFile: 'tsconfig.cjs.json' },
+				},
+				{
+					test: /\.js$/,
+					enforce: 'pre',
+					use: ['source-map-loader'],
+				},
+			],
+		},
+	}
+}
+
+const esmConfig = (env, argv) => {
+	const baseConfig = getBaseConfig(env, argv)
+	return {
+		...baseConfig,
+		output: {
+			filename: 'index.js',
+			path: path.resolve(__dirname, './dist/esm'),
+			library: {
+				type: 'module',
+			},
+			clean: true,
+		},
+		experiments: {
+			outputModule: true,
 		},
 		module: {
 			rules: [
@@ -148,4 +181,4 @@ const libraryConfig = (env, argv) => {
 	}
 }
 
-module.exports = [browserConfig, libraryConfig]
+module.exports = [browserConfig, cjsConfig, esmConfig]

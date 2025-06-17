@@ -17,15 +17,48 @@
  */
 import { SplunkRecorderPublicConfig } from '../splunk-recorder'
 import { RRWebRecorderPublicConfig } from '../rrweb-recorder'
-import { SensitivityRule, SensitivityRuleType } from '../../session-replay'
+import { SensitivityRule, SensitivityRuleType, ConfigFeatures, PackAssetsConfig } from '../../session-replay'
 import { isString } from '../../type-guards'
 
 export const migrateRRWebConfigToSplunkConfig = (
 	config: NonNullable<RRWebRecorderPublicConfig>,
 ): SplunkRecorderPublicConfig => ({
+	features: migrateConfigToFeatures(config),
 	maskAllInputs: config.maskAllInputs,
 	sensitivityRules: migratePrivacyOptionsToSensitivityRules(config),
 })
+
+const migrateConfigToFeatures = ({
+	recordCanvas,
+	inlineStylesheet,
+	inlineImages,
+	collectFonts,
+}: NonNullable<RRWebRecorderPublicConfig>): ConfigFeatures | undefined => {
+	const features: ConfigFeatures = {}
+	const packAssets: PackAssetsConfig = {}
+
+	if (recordCanvas === true) {
+		features.canvas = true
+	}
+
+	if (inlineStylesheet === true) {
+		packAssets.styles = true
+	}
+
+	if (inlineImages === true) {
+		packAssets.images = true
+	}
+
+	if (collectFonts === true) {
+		packAssets.fonts = true
+	}
+
+	if (Object.keys(packAssets).length > 0) {
+		features.packAssets = packAssets
+	}
+
+	return Object.keys(features).length > 0 ? features : undefined
+}
 
 const migratePrivacyOptionsToSensitivityRules = ({
 	maskTextClass = 'rr-mask',
