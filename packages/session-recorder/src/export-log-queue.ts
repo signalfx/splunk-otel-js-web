@@ -38,7 +38,7 @@ export const getQueuedLogs = (): QueuedLog[] | null => {
 	try {
 		const parsedQueuedLogs = JSON.parse(storedLogs)
 		if (isQueuedLogs(parsedQueuedLogs)) {
-			return parsedQueuedLogs.map((log) => ({ ...log, data: new Uint8Array(log.data) }))
+			return parsedQueuedLogs.map((logItem) => ({ ...logItem, data: new Uint8Array(logItem.data) }))
 		} else {
 			log.warn('Invalid queued log data found in local storage', parsedQueuedLogs)
 			return null
@@ -49,9 +49,9 @@ export const getQueuedLogs = (): QueuedLog[] | null => {
 	}
 }
 
-export const addLogToQueue = (log: QueuedLog): boolean => {
+export const addLogToQueue = (logItem: QueuedLog): boolean => {
 	const queuedLogs = getQueuedLogs() ?? []
-	queuedLogs.push(log)
+	queuedLogs.push(logItem)
 	setQueuedLogs(queuedLogs)
 	return true
 }
@@ -64,13 +64,13 @@ const setQueuedLogs = (queuedLogs: QueuedLog[]): void => {
 
 	safelySetLocalStorage(
 		QUEUED_LOGS_STORAGE_KEY,
-		JSON.stringify(queuedLogs.map((log) => ({ ...log, data: Array.from(log.data) }))),
+		JSON.stringify(queuedLogs.map((logItem) => ({ ...logItem, data: Array.from(logItem.data) }))),
 	)
 }
 
 export const removeQueuedLog = (logToRemove: QueuedLog) => {
 	const queuedLogs = getQueuedLogs() ?? []
-	const updatedLogs = queuedLogs.filter((log) => log.requestId !== logToRemove.requestId)
+	const updatedLogs = queuedLogs.filter((logItem) => logItem.requestId !== logToRemove.requestId)
 	setQueuedLogs(updatedLogs)
 }
 
