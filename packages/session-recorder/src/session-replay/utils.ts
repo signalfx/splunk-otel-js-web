@@ -15,18 +15,19 @@
  * limitations under the License.
  *
  */
-import { SessionReplay } from './cdn-module'
 import { gzip } from 'fflate'
+import { SessionReplay } from './cdn-module'
+import { log } from '../log'
 
 export const compressAsync = async (data: Uint8Array): Promise<Uint8Array | Blob> => {
 	if (!SessionReplay) {
-		console.warn('SessionReplay module undefined, fallback to gzip.')
+		log.warn('SessionReplay module undefined, fallback to gzip.')
 		return compressGzipAsync(data)
 	}
 
 	const isCompressionSupported = await SessionReplay.isCompressionSupported()
 	if (!isCompressionSupported) {
-		console.warn('Compression is not supported, fallback to gzip.')
+		log.warn('Compression is not supported, fallback to gzip.')
 		return compressGzipAsync(data)
 	}
 

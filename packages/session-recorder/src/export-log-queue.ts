@@ -16,6 +16,7 @@
  *
  */
 import { safelyGetLocalStorage, safelySetLocalStorage, safelyRemoveFromLocalStorage } from './storage'
+import { log } from './log'
 
 export interface QueuedLog {
 	data: Uint8Array
@@ -39,11 +40,11 @@ export const getQueuedLogs = (): QueuedLog[] | null => {
 		if (isQueuedLogs(parsedQueuedLogs)) {
 			return parsedQueuedLogs.map((log) => ({ ...log, data: new Uint8Array(log.data) }))
 		} else {
-			console.warn('Invalid queued log data found in local storage', parsedQueuedLogs)
+			log.warn('Invalid queued log data found in local storage', parsedQueuedLogs)
 			return null
 		}
 	} catch {
-		console.warn('Malformed queued log data found in local storage', storedLogs)
+		log.warn('Malformed queued log data found in local storage', storedLogs)
 		return null
 	}
 }
