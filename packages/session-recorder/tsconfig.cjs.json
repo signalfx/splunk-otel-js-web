@@ -1,7 +1,8 @@
 {
 	"compilerOptions": {
 		"declaration": true,
-		"module": "CommonJS",
+		"module": "NodeNext",
+		"moduleResolution": "nodenext",
 		"outDir": "./dist/cjs",
 		"rootDir": "src",
 		"sourceMap": true

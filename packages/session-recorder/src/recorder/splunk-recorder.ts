@@ -33,9 +33,10 @@ export class SplunkRecorder extends Recorder {
 				features: {
 					backgroundServiceSrc: this.config.features?.backgroundServiceSrc,
 					cacheAssets: this.config.features?.cacheAssets ?? false,
+					canvas: this.config.features?.canvas ?? false,
 					iframes: this.config.features?.iframes ?? false,
-					imageBitmap: this.config.features?.imageBitmap ?? false,
-					packAssets: this.config.features?.packAssets ?? false,
+					packAssets: this.config.features?.packAssets ?? { styles: true },
+					video: this.config.features?.video ?? false,
 				},
 				logLevel: this.config.logLevel ?? 'error',
 				maskAllInputs: this.config.maskAllInputs ?? true,

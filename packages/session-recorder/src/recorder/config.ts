@@ -18,24 +18,11 @@
 import { migrateRRWebConfigToSplunkConfig } from './migrations/config-migration'
 import { SplunkRecorderPublicConfig } from './splunk-recorder'
 import { RRWebRecorderPublicConfig } from './rrweb-recorder'
+import { mergeRecorderConfig } from './migrations/config-merge'
 
 export const getSplunkRecorderConfig = (
 	config: SplunkRecorderPublicConfig & RRWebRecorderPublicConfig,
 ): SplunkRecorderPublicConfig => {
 	const migratedRRWebConfig = migrateRRWebConfigToSplunkConfig(config)
-
-	const splunkConfig = {
-		...config,
-		...migratedRRWebConfig,
-	}
-
-	// Merge sensitivity rules
-	if (config.sensitivityRules || migratedRRWebConfig.sensitivityRules) {
-		const mergedRules = [...(config.sensitivityRules ?? []), ...(migratedRRWebConfig.sensitivityRules ?? [])]
-		if (mergedRules.length > 0) {
-			splunkConfig.sensitivityRules = mergedRules
-		}
-	}
-
-	return splunkConfig
+	return mergeRecorderConfig(config, migratedRRWebConfig)
 }
