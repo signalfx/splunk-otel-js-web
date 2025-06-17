@@ -15,14 +15,16 @@
  * limitations under the License.
  *
  */
+export type LogSource = 'console' | 'internal'
 
-export {
-	SessionReplay,
-	SessionReplayPlain,
-	type ConfigFeatures,
-	type PackAssetsConfig,
-	type SessionReplayConfig,
-	type SessionReplayPlainSegment,
-	type SensitivityRule,
-	type SensitivityRuleType,
-} from 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v1.36.0/session-replay.module.legacy.min.js'
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'critical'
+
+export type MiddlewareFunction = (source: LogSource, level: LogLevel, message: string, ...data: unknown[]) => void
+
+export enum LogLevelNumber {
+	DEBUG = 0,
+	INFO = 1,
+	WARN = 2,
+	ERROR = 3,
+	CRITICAL = 4,
+}

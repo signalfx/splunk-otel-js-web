@@ -15,14 +15,7 @@
  * limitations under the License.
  *
  */
+export { log } from './logger'
+export type { LogLevel, LogSource } from './types'
 
-export {
-	SessionReplay,
-	SessionReplayPlain,
-	type ConfigFeatures,
-	type PackAssetsConfig,
-	type SessionReplayConfig,
-	type SessionReplayPlainSegment,
-	type SensitivityRule,
-	type SensitivityRuleType,
-} from 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v1.36.0/session-replay.module.legacy.min.js'
+export { createNamedLog, isLogLevel } from './utils'

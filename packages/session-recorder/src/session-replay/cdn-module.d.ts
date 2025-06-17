@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v1.35.4/session-replay.module.legacy.min.js' {
+declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v1.36.0/session-replay.module.legacy.min.js' {
 	class SessionReplayBase {
 		static clear: () => void
 
@@ -46,12 +46,19 @@ declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v1.35.4/ses
 		selector: string
 	}
 
-	interface ConfigFeatures {
+	export interface PackAssetsConfig {
+		fonts?: boolean
+		images?: boolean
+		styles?: boolean
+	}
+
+	export interface ConfigFeatures {
 		backgroundServiceSrc?: string
 		cacheAssets?: boolean
+		canvas?: boolean
 		iframes?: boolean
-		imageBitmap?: boolean
-		packAssets?: boolean
+		packAssets?: boolean | PackAssetsConfig
+		video?: boolean
 	}
 
 	export interface SessionReplayConfig {

@@ -27,6 +27,10 @@ const defaultSensitivityRules = [
 describe('migrateRRWebConfigToSplunkConfig', () => {
 	it('migrates rrweb config to splunk config', () => {
 		const actual = migrateRRWebConfigToSplunkConfig({
+			recordCanvas: true,
+			inlineImages: true,
+			inlineStylesheet: true,
+			collectFonts: true,
 			maskAllInputs: true,
 			maskTextClass: 'mask-class',
 			maskTextSelector: '.mask-selector',
@@ -35,6 +39,14 @@ describe('migrateRRWebConfigToSplunkConfig', () => {
 			ignoreClass: 'ignore-class',
 		})
 		const expected = {
+			features: {
+				canvas: true,
+				packAssets: {
+					styles: true,
+					images: true,
+					fonts: true,
+				},
+			},
 			maskAllInputs: true,
 			sensitivityRules: [
 				{ rule: 'mask', selector: '.mask-class' },
@@ -50,6 +62,7 @@ describe('migrateRRWebConfigToSplunkConfig', () => {
 	it('migrate default rrweb mask and block classes to sensitivity rules', () => {
 		const actual = migrateRRWebConfigToSplunkConfig({})
 		const expected = {
+			features: undefined,
 			maskAllInputs: undefined,
 			sensitivityRules: defaultSensitivityRules,
 		}
@@ -62,6 +75,7 @@ describe('migrateRRWebConfigToSplunkConfig', () => {
 			maskTextSelector: '',
 		})
 		const expectedEmptyString = {
+			features: undefined,
 			maskAllInputs: undefined,
 			sensitivityRules: defaultSensitivityRules,
 		}
@@ -73,6 +87,7 @@ describe('migrateRRWebConfigToSplunkConfig', () => {
 			maskTextSelector: false,
 		})
 		const expectedBool = {
+			features: undefined,
 			maskAllInputs: undefined,
 			sensitivityRules: defaultSensitivityRules,
 		}
