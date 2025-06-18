@@ -1,12 +1,12 @@
 {
-	"name": "todolist",
-	"version": "0.1.0",
+	"name": "@examples/todolist",
 	"private": true,
 	"type": "module",
 	"scripts": {
 		"backend": "node server/index.mjs",
 		"build": "rsbuild build",
-		"start": "rsbuild dev"
+		"start": "rsbuild dev",
+		"clean": "rm -rf dist .turbo"
 	},
 	"devDependencies": {
 		"@rsbuild/core": "^1.2.14",

@@ -4,8 +4,10 @@
 	"description": "Splunk distribution of rrweb for recording session",
 	"repository": "github:signalfx/splunk-otel-js-browser",
 	"scripts": {
-		"compile": "webpack --mode production --color",
-		"dev": "webpack --mode development --watch --color"
+		"build": "webpack --mode production --color",
+		"dev": "webpack --mode development --watch --color",
+		"clean": "rm -rf dist .turbo",
+		"wait": "wait-on dist/esm/index.js  dist/cjs/index.js"
 	},
 	"author": "Splunk Observability Instrumentals Team <ssg-observability-instrumentals-npm@splunk.com>",
 	"license": "Apache-2.0",
@@ -40,15 +42,17 @@
 		"@splunk/otel-web": "workspace:*"
 	},
 	"devDependencies": {
+		"@splunk/otel-web": "workspace:*",
 		"@swc/core": "^1.11.29",
 		"@swc/helpers": "^0.5.17",
 		"fork-ts-checker-webpack-plugin": "^9.1.0",
 		"npm-run-all": "^4.1.5",
 		"protobufjs-cli": "^1.1.3",
 		"source-map-loader": "^5.0.0",
+		"swc-loader": "^0.2.6",
 		"terser-webpack-plugin": "^5.3.11",
 		"ts-loader": "^9.5.2",
-		"swc-loader": "^0.2.6",
+		"wait-on": "^8.0.3",
 		"webpack": "^5.98.0",
 		"webpack-cli": "^6.0.1",
 		"webpack-dev-server": "^5.2.2"

@@ -273,6 +273,7 @@ const config = [
 			'**/html/',
 			'**/playwright-report/',
 			'**/artifacts/',
+			'examples/next-ssr-example/next-env.d.ts',
 		],
 	},
 ]

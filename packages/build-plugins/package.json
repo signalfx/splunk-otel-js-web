@@ -4,9 +4,11 @@
 	"description": "Build plugins for users of @splunk/otel-web",
 	"repository": "github:signalfx/splunk-otel-js-browser",
 	"scripts": {
-		"compile": "pnpm run compile:plugin && pnpm run compile:webpack",
-		"compile:plugin": "tsc --build tsconfig.cjs.json tsconfig.esm.json",
-		"compile:webpack": "node tests/build-webpack.mjs"
+		"build": "pnpm run build:plugin && pnpm run build:tests",
+		"build:plugin": "tsc --build tsconfig.cjs.json tsconfig.esm.json",
+		"build:tests": "node tests/build-webpack.mjs",
+		"clean": "rm -rf dist tests/project/dist",
+		"wait": "wait-on dist/esm/index.js dist/cjs/index.js tests/project/dist/webpack-config-without-source-maps-options-js/main.js"
 	},
 	"author": "Splunk Observability Instrumentals Team <ssg-observability-instrumentals-npm@splunk.com>",
 	"license": "Apache-2.0",
@@ -34,6 +36,7 @@
 	"devDependencies": {
 		"@types/node": "^24.0.3",
 		"ts-node": "^10.9.1",
+		"wait-on": "^8.0.3",
 		"webpack": "^5.76.0",
 		"webpack-cli": "^6.0.1"
 	},

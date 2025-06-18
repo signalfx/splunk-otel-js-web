@@ -11,8 +11,12 @@ cache:
         files:
             - pnpm-lock.yaml
     paths:
+        - './.turbo'
         - './node_modules'
         - './packages/*/node_modules'
+        - './packages/*/.turbo'
+        - './examples/*/node_modules'
+        - './examples/*/.turbo'
 
 .default-setup: &pnpm-setup
     before_script:
@@ -61,7 +65,7 @@ build:
             - packages/*/dist/
             - packages/build-plugins/tests/project/dist/
     script:
-        - pnpm run compile
+        - pnpm run build
 
 build_artifacts:
     <<: *pnpm-setup
@@ -73,18 +77,19 @@ build_artifacts:
             - artifacts/
     script:
         - if [ ! -d "artifacts" ]; then mkdir artifacts; fi
-        - pnpm run compile
+        - pnpm run build
         - pnpm pack --pack-destination artifacts --filter "./packages/session-recorder" --filter "./packages/web" --filter "./packages/build-plugins"
         - cp packages/web/dist/artifacts/* artifacts/
         - cp packages/session-recorder/dist/artifacts/* artifacts/
         - shasum -a 256 artifacts/* > artifacts/checksums.txt
 
 unit_test:
+    <<: *pnpm-setup
     stage: test
     script:
         - pnpm install --frozen-lockfile
         - pnpm exec playwright install --with-deps
-        - pnpm run compile
+        - pnpm run build
         - pnpm run test:unit --browser.name chromium
 
 oss-scan:

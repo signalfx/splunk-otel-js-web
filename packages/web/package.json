@@ -4,10 +4,11 @@
 	"description": "Splunk distribution of Open Telemetry for browser environment.",
 	"repository": "github:signalfx/splunk-otel-js-browser",
 	"scripts": {
-		"compile": "npm-run-all -s compile:*",
-		"compile:browser": "webpack --mode production --color",
-		"compile:tsc": "tsc --build tsconfig.cjs.json tsconfig.esm.json",
-		"dev": "webpack --mode development --watch --color"
+		"build": "npm-run-all -s build:*",
+		"build:browser": "webpack --mode production --color",
+		"build:tsc": "tsc --build tsconfig.cjs.json tsconfig.esm.json",
+		"dev": "webpack --mode development --watch --color",
+		"wait": "wait-on dist/esm/index.js  dist/cjs/index.js"
 	},
 	"author": "Splunk Observability Instrumentals Team <ssg-observability-instrumentals-npm@splunk.com>",
 	"license": "Apache-2.0",
@@ -54,6 +55,7 @@
 		"npm-run-all": "^4.1.5",
 		"socket.io-client": "^4.8.1",
 		"swc-loader": "^0.2.6",
+		"wait-on": "^8.0.3",
 		"webpack": "^5.98.0",
 		"webpack-cli": "^6.0.1",
 		"webpack-dev-server": "^5.2.2"
