@@ -1,17 +1,24 @@
 name: 'Setup'
-description: 'Setup node, install deps, compile'
+description: 'Checkout repository, setup node, install deps, build'
 runs:
     using: 'composite'
     steps:
-        - uses: actions/setup-node@v4.3.0
+        - name: Install pnpm
+          uses: pnpm/action-setup@v4.1.0
           with:
-              node-version: '22'
-              cache: 'npm'
+              version: 10.12.1
 
-        - name: Install dependencies
-          shell: bash
-          run: npm ci
+        - name: Setup
+          uses: actions/setup-node@v4.3.0
+          with:
+              node-version: 20.13.1
+              registry-url: 'https://registry.npmjs.org'
+              cache: 'pnpm'
 
-        - name: Build project
+        - name: Install deps
           shell: bash
-          run: npm run compile
+          run: pnpm install --frozen-lockfile
+
+        - name: Build
+          shell: bash
+          run: pnpm run compile

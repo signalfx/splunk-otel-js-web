@@ -7,10 +7,10 @@ This example todo application consists of React frontend app and express backend
 After downloading this folder:
 
 1. If you don't have one already [make a trial account to try out Splunk Observability Cloud](https://www.splunk.com/en_us/observability/o11y-cloud-free-trial.html)
-2. Run `npm install`
+2. Run `pnpm install`
 3. Copy `.env.example` to `.env`
 4. Fill out `PUBLIC_REACT_APP_RUM_*` with your ingest URL and RUM token
-5. Start backend with `npm run backend`
-6. Start frontend with `npm run start`
+5. Start backend with `pnpm run backend`
+6. Start frontend with `pnpm run start`
 
 Frontend instrumentation is done in `public/index.html` which is loaded at document load. It also demonstrates a few configuration options you can use.

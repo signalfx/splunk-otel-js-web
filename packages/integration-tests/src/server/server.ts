@@ -61,7 +61,7 @@ fastify.register(fastifyStatic, {
 })
 
 fastify.register(fastifyStatic, {
-	root: path.join(__dirname, '../../../build-plugins/integration-test/project/dist/'),
+	root: path.join(__dirname, '../../../build-plugins/tests/project/dist/'),
 	prefix: '/build-plugins-test-project-artifacts/',
 	decorateReply: false,
 })

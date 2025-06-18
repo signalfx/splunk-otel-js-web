@@ -8,7 +8,6 @@
 		"pretty": true,
 		"resolveJsonModule": true,
 		"target": "ESNext",
-		"types": ["node"],
 		"skipLibCheck": true,
 		"strict": true
 	},

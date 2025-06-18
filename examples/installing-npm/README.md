@@ -1,9 +1,9 @@
 # Installing via NPM
 
 ## Checking out this example
-Run `npm install` to install required dependencies.
+Run `pnpm install` to install required dependencies.
 
-Run `npm start` to start the example app (requires another shell tab/instance).
+Run `pnpm run start` to start the example app (requires another shell tab/instance).
 
 Open <http://localhost:9100/> to open the app and start producing telemetry data.
 
@@ -23,7 +23,7 @@ Navigate to <https://app.signalfx.com/o11y/> to see your data.
 ## Installing via NPM in your own app
 
 ```bash
-npm install @splunk/otel-web
+pnpm install @splunk/otel-web
 ```
 Note: in modern versions of NPM, installed packages are added to `package.json` by default.
 
