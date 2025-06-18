@@ -13,6 +13,7 @@ cache:
     paths:
         - './node_modules'
         - './packages/*/node_modules'
+        - './examples/*/node_modules'
 
 .default-setup: &pnpm-setup
     before_script:
