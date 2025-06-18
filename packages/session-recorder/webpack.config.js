@@ -161,6 +161,7 @@ const esmConfig = (env, argv) => {
 			clean: true,
 		},
 		experiments: {
+			...baseConfig.experiments,
 			outputModule: true,
 		},
 		module: {
