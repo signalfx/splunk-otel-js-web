@@ -81,6 +81,7 @@ build_artifacts:
         - shasum -a 256 artifacts/* > artifacts/checksums.txt
 
 unit_test:
+    <<: *pnpm-setup
     stage: test
     script:
         - pnpm install --frozen-lockfile
