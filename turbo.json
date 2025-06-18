@@ -1,0 +1,28 @@
+{
+	"$schema": "https://turbo.build/schema.json",
+	"globalDependencies": ["package.json", "pnpm-lock.yaml", "tsconfig.json", "eslint.config.js"],
+	"tasks": {
+		"build": {
+			"cache": true,
+			"dependsOn": ["clean", "^build"],
+			"outputs": ["dist/**", ".next/**", "tests/project/dist/**"]
+		},
+		"dev": {
+			"cache": false,
+			"persistent": true,
+			"dependsOn": ["^wait"]
+		},
+		"clean": {
+			"cache": false
+		},
+		"//#test:unit": {
+			"cache": false,
+			"dependsOn": ["@splunk/rum-build-plugins#build"]
+		},
+		"test:e2e": {
+			"cache": false,
+			"dependsOn": ["^build"]
+		}
+	},
+	"ui": "tui"
+}

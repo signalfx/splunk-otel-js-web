@@ -85,7 +85,7 @@ any 'help wanted' issues is a great place to start.
 
 ```bash
 pnpm install
-pnpm run compile
+pnpm run build
 ```
 
 ## Functional tests

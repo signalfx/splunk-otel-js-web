@@ -61,7 +61,7 @@ build:
             - packages/*/dist/
             - packages/build-plugins/tests/project/dist/
     script:
-        - pnpm run compile
+        - pnpm run build
 
 build_artifacts:
     <<: *pnpm-setup
@@ -73,7 +73,7 @@ build_artifacts:
             - artifacts/
     script:
         - if [ ! -d "artifacts" ]; then mkdir artifacts; fi
-        - pnpm run compile
+        - pnpm run build
         - pnpm pack --pack-destination artifacts --filter "./packages/session-recorder" --filter "./packages/web" --filter "./packages/build-plugins"
         - cp packages/web/dist/artifacts/* artifacts/
         - cp packages/session-recorder/dist/artifacts/* artifacts/
@@ -84,7 +84,7 @@ unit_test:
     script:
         - pnpm install --frozen-lockfile
         - pnpm exec playwright install --with-deps
-        - pnpm run compile
+        - pnpm run build
         - pnpm run test:unit --browser.name chromium
 
 oss-scan:

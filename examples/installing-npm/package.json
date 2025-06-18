@@ -1,7 +1,10 @@
 {
+	"name": "@examples/npm",
+	"private": true,
 	"scripts": {
 		"build": "rsbuild build",
-		"start": "rsbuild dev"
+		"start": "rsbuild dev",
+		"clean": "rm -rf dist .turbo"
 	},
 	"devDependencies": {
 		"@rsbuild/core": "^1.2.14",

@@ -2,21 +2,14 @@
 	"name": "@splunk/otel-web-dev-root",
 	"private": true,
 	"version": "0.23.0-alpha.5",
-	"--workspaces": "Hardcoded so npm runs workspaces commands in order",
-	"workspaces": [
-		"packages/web",
-		"packages/session-recorder",
-		"packages/build-plugins",
-		"packages/integration-tests"
-	],
 	"engines": {
-		"--": "Versions required for development only (recent enough to use npm workspaces)",
 		"node": ">=22",
-		"npm": ">=10"
+		"pnpm": ">=10"
 	},
 	"scripts": {
-		"compile": "pnpm -r run compile",
-		"dev": "pnpm -r run dev",
+		"build": "turbo run build --env-mode=loose --cache-dir=.turbo",
+		"dev": "FORCE_COLOR=1 turbo run dev --env-mode=loose",
+		"clean": "rm -rf .turbo && turbo run clean",
 		"lint": "run-p lint:eslint lint:prettier lint:markdown",
 		"lint:fix": "run-p lint:eslint:fix lint:prettier:fix lint:markdown:fix",
 		"lint:eslint": "eslint .",
@@ -25,8 +18,9 @@
 		"lint:prettier:fix": "pnpm run lint:prettier --write",
 		"lint:markdown": "markdownlint *.md docs/*.md --ignore CHANGELOG.md",
 		"lint:markdown:fix": "pnpm run lint:markdown --fix",
+		"test": "turbo run --env-mode=loose test:e2e test:unit",
 		"test:unit": "vitest --run",
-		"test:unit:watch": "vitest --watch",
+		"test:e2e": "turbo run --env-mode=loose --filter=@splunk/otel-js-web-integration-tests test:e2e",
 		"postversion": "tsx ./scripts/version-update.mts",
 		"version:bump": "pnpm version --workspaces --include-workspace-root",
 		"version:check": "tsx ./scripts/version-check.mts",
@@ -63,9 +57,12 @@
 		"socket.io": "^4.8.1",
 		"swc-loader": "^0.2.6",
 		"tsx": "^4.19.4",
+		"turbo": "^2.5.4",
 		"typescript": "^5.8.2",
 		"typescript-eslint": "^8.34.1",
 		"vitest": "^3.2.3",
 		"ws": "^8.18.1"
-	}
+	},
+	"dependencies": {},
+	"packageManager": "pnpm@10.12.1"
 }
