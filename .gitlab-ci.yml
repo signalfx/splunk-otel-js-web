@@ -11,9 +11,12 @@ cache:
         files:
             - pnpm-lock.yaml
     paths:
+        - './.turbo'
         - './node_modules'
         - './packages/*/node_modules'
+        - './packages/*/.turbo'
         - './examples/*/node_modules'
+        - './examples/*/.turbo'
 
 .default-setup: &pnpm-setup
     before_script:
