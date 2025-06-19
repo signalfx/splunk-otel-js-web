@@ -1,7 +1,7 @@
 {
 	"name": "@splunk/otel-js-web-integration-tests",
 	"private": true,
-	"version": "0.23.0-alpha.5",
+	"version": "0.23.0-alpha.6",
 	"repository": "github:signalfx/splunk-otel-js-browser",
 	"scripts": {
 		"server": "run-p server:*",
