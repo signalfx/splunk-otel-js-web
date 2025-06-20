@@ -68,6 +68,10 @@ export type SplunkRumRecorderConfig = {
 
 // Hard limit of 4 hours of maximum recording during one session
 const MAX_RECORDING_LENGTH = (4 * 60 + 1) * 60 * 1000
+
+// TODO: When backend is deployed, also remove data splitting
+// const MAX_CHUNK_SIZE = 4000 * 1024 // ~4000KB
+
 const MAX_CHUNK_SIZE = 950 * 1024 // ~950KB
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()
@@ -260,18 +264,31 @@ const SplunkRumRecorder = {
 
 			eventCounter += 1
 
+			// TODO: Use when UI is ready to handle only raw data in body
+			// const body = encoder.encode(
+			// 	JSON.stringify(emitContext.type === 'splunk' ? emitContext.data.data : emitContext.data),
+			// )
+
 			const body = encoder.encode(JSON.stringify(emitContext.data))
+
 			const totalC = Math.ceil(body.byteLength / MAX_CHUNK_SIZE)
 
 			for (let i = 0; i < totalC; i++) {
 				const start = i * MAX_CHUNK_SIZE
 				const end = (i + 1) * MAX_CHUNK_SIZE
-				const logData = convert(decoder.decode(body.slice(start, end)), time, {
+
+				const dataToConvert: Record<string, any> = {
 					'rr-web.offset': logCounter,
 					'rr-web.event': eventI,
 					'rr-web.chunk': i + 1,
 					'rr-web.total-chunks': totalC,
-				})
+				}
+
+				if (emitContext.type === 'splunk') {
+					dataToConvert['segmentMetadata'] = JSON.stringify(emitContext.data.metadata)
+				}
+
+				const logData = convert(decoder.decode(body.slice(start, end)), time, dataToConvert)
 
 				logCounter += 1
 
