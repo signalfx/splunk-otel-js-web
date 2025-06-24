@@ -82,6 +82,7 @@ import {
 } from './types'
 import { isBot } from './utils/is-bot'
 import { SplunkSamplerWrapper } from './SplunkSamplerWrapper'
+import { AdditionalSpanAttributes, getValidAttributes } from './utils/attributes'
 
 export { type SplunkExporterConfig } from './exporters/common'
 export { SplunkZipkinExporter } from './exporters/zipkin'
@@ -585,7 +586,7 @@ export const SplunkRum: SplunkOtelWebType = {
 		return this.getGlobalAttributes()
 	},
 
-	error(...args) {
+	error(arg: string | Event | Error | ErrorEvent | Array<any>, additionalAttributes: AdditionalSpanAttributes = {}) {
 		if (!inited) {
 			diag.debug('SplunkRum not inited')
 			return
@@ -596,7 +597,13 @@ export const SplunkRum: SplunkOtelWebType = {
 			return
 		}
 
-		_errorInstrumentation.report('SplunkRum.error', args)
+		if (!arg) {
+			diag.warn('SplunkRum.error called with no argument, ignoring.')
+			return
+		}
+
+		const parsedAdditionalAttributes = getValidAttributes(additionalAttributes)
+		_errorInstrumentation.report('SplunkRum.error', arg, parsedAdditionalAttributes)
 	},
 
 	addEventListener(name, callback): void {

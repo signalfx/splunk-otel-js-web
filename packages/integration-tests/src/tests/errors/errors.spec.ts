@@ -101,6 +101,9 @@ test.describe('errors', () => {
 		expect(errorSpans[0].tags['component']).toBe('error')
 		expect(errorSpans[0].tags['error']).toBe('true')
 		expect(errorSpans[0].tags['error.object']).toBe('TypeError')
+		expect(errorSpans[0].tags['splunkContext']).toBe(undefined)
+		expect(errorSpans[0].tags['errorValueString']).toBe('errorValue')
+		expect(errorSpans[0].tags['errorValueNumber']).toBe('123')
 
 		const errorMessageMap = {
 			chromium: "Cannot set properties of null (setting 'anyField')",
@@ -121,6 +124,10 @@ test.describe('errors', () => {
 		expect(errorSpans[0].tags['component']).toBe('error')
 		expect(errorSpans[0].tags['error']).toBe('true')
 		expect(errorSpans[0].tags['error.object']).toBe('TypeError')
+		expect(errorSpans[0].tags['splunkContext']).toBe(undefined)
+		expect(errorSpans[0].tags['errorValueString']).toBe('errorValueContext')
+		expect(errorSpans[0].tags['errorValueNumber']).toBe('321')
+		expect(errorSpans[0].tags['additionalAttributes']).toBe('a,b,c')
 
 		const errorMessages = {
 			chromium: "Cannot set properties of null (setting 'anyField')",
