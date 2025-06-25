@@ -33,5 +33,16 @@ io.on('connection', (socket) => {
 })
 
 const PORT = Number.parseInt(process.env.PORT || '3002')
+const HOST = 'localhost'
 
-httpServer.listen(PORT)
+httpServer.listen(PORT, HOST, () => {
+	console.log(`Server listening on http://${HOST}:${PORT}`)
+})
+
+process.on('SIGINT', () => {
+	console.log('Received SIGINT. Shutting down server...')
+	httpServer.close(() => {
+		console.log('Server closed.')
+		process.exit(0)
+	})
+})
