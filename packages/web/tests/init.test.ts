@@ -493,7 +493,7 @@ describe('test stack length', () => {
 			recurAndThrow(50)
 		} catch (e) {
 			try {
-				SplunkRum.error('something happened: ', e) // try out the API
+				SplunkRum.reportError(['something happened: ', e]) // try out the API
 			} catch {
 				// swallow
 			}
@@ -622,10 +622,10 @@ describe('test manual report', () => {
 
 	it('should not report useless items', () => {
 		capturer.clear()
-		SplunkRum.error('')
-		SplunkRum.error()
-		SplunkRum.error([])
-		SplunkRum.error({})
+		SplunkRum.reportError('')
+		SplunkRum.reportError()
+		SplunkRum.reportError([])
+		SplunkRum.reportError({})
 		expect(capturer.spans.length).toBe(0)
 	})
 })

@@ -109,7 +109,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 
 	init(): void {}
 
-	public report(
+	report(
 		source: string,
 		arg: string | Event | Error | ErrorEvent | Array<any>,
 		additionalAttributes: AdditionalSpanAttributes,
@@ -216,20 +216,20 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 
 	private attachAdditionalAttributes(
 		span: Span,
-		source: Error | string | Event,
+		value: Error | string | Event,
 		additionalAttributes: AdditionalSpanAttributes,
 	) {
-		const sourceWithPossibleContext = source as (Error | string | Event) & {
+		const valueWithPossibleContext = value as (Error | string | Event) & {
 			splunkContext?: unknown
 		}
-		const contextAttributes = getValidAttributes(sourceWithPossibleContext.splunkContext || {})
+		const contextAttributes = getValidAttributes(valueWithPossibleContext.splunkContext || {})
 		const entries = Object.entries({
 			...additionalAttributes,
 			...contextAttributes,
 		})
 
-		for (const [key, value] of entries) {
-			span.setAttribute(key, value)
+		for (const [k, v] of entries) {
+			span.setAttribute(k, v)
 		}
 	}
 

@@ -14,7 +14,7 @@
             errorValueNumber: 321,
         };
 
-        SplunkRum.error(e, {
+        SplunkRum.reportError(e, {
           splunkContext: {
               test: 'the whole object should be removed'
           },
