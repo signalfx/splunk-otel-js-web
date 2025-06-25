@@ -82,7 +82,7 @@ import {
 } from './types'
 import { isBot } from './utils/is-bot'
 import { SplunkSamplerWrapper } from './SplunkSamplerWrapper'
-import { AdditionalSpanAttributes, getValidAttributes } from './utils/attributes'
+import { SpanContext, getValidAttributes } from './utils/attributes'
 
 export { type SplunkExporterConfig } from './exporters/common'
 export { SplunkZipkinExporter } from './exporters/zipkin'
@@ -289,10 +289,7 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 
 	provider?: SplunkWebTracerProvider
 
-	reportError: (
-		arg: string | Event | Error | ErrorEvent | unknown[],
-		additionalAttributes?: AdditionalSpanAttributes,
-	) => void
+	reportError: (arg: string | Event | Error | ErrorEvent | unknown[], context?: SpanContext) => void
 
 	resource?: Resource
 
@@ -599,10 +596,7 @@ export const SplunkRum: SplunkOtelWebType = {
 		this.reportError(args)
 	},
 
-	reportError(
-		arg: string | Event | Error | ErrorEvent | unknown[],
-		additionalAttributes: AdditionalSpanAttributes = {},
-	) {
+	reportError(arg: string | Event | Error | ErrorEvent | unknown[], context: SpanContext = {}) {
 		if (!inited) {
 			diag.debug('SplunkRum not inited')
 			return
@@ -618,7 +612,7 @@ export const SplunkRum: SplunkOtelWebType = {
 			return
 		}
 
-		const parsedAdditionalAttributes = getValidAttributes(additionalAttributes)
+		const parsedAdditionalAttributes = getValidAttributes(context)
 		_errorInstrumentation.report('SplunkRum.error', arg, parsedAdditionalAttributes)
 	},
 

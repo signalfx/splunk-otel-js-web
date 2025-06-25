@@ -17,7 +17,7 @@
  */
 type AttributeValue = string | number | boolean | string[] | number[] | boolean[]
 
-export interface AdditionalSpanAttributes {
+export interface SpanContext {
 	[key: string]: AttributeValue
 }
 
@@ -30,7 +30,7 @@ export const isPlainObject = (object: unknown): object is Record<string, unknown
 	return prototype === null || prototype === Object.prototype
 }
 
-export const getValidAttributes = (data: unknown): AdditionalSpanAttributes => {
+export const getValidAttributes = (data: unknown): SpanContext => {
 	if (!isPlainObject(data)) {
 		return {}
 	}
@@ -38,7 +38,7 @@ export const getValidAttributes = (data: unknown): AdditionalSpanAttributes => {
 	return removePropertiesWithAdvancedTypes(removeEmptyProperties(data))
 }
 
-export const removePropertiesWithAdvancedTypes = (data: Record<string, unknown>): AdditionalSpanAttributes => {
+export const removePropertiesWithAdvancedTypes = (data: Record<string, unknown>): SpanContext => {
 	const newData: Record<string, AttributeValue> = {}
 
 	for (const [key, value] of Object.entries(data)) {
