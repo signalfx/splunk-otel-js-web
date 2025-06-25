@@ -21,7 +21,7 @@ import { getElementXPath } from '@opentelemetry/sdk-trace-web'
 import { limitLen } from './utils'
 import { Span } from '@opentelemetry/api'
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
-import { SpanContext } from './utils/attributes'
+import { getValidAttributes, SpanContext } from './utils/attributes'
 
 // FIXME take timestamps from events?
 
@@ -206,8 +206,14 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 	}
 
 	private attachSpanContext(span: Span, value: Error | string | Event, context: SpanContext) {
+		const valueWithPossibleContext = value as (Error | string | Event) & {
+			splunkContext?: unknown
+		}
+		const contextAttributes = getValidAttributes(valueWithPossibleContext.splunkContext || {})
+
 		const entries = Object.entries({
 			...context,
+			...contextAttributes,
 		})
 
 		for (const [k, v] of entries) {
