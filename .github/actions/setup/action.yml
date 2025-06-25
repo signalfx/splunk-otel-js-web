@@ -19,7 +19,7 @@ runs:
         - name: Setup
           uses: actions/setup-node@v4.3.0
           with:
-              node-version: 20.13.1
+              node-version: 22.17.0
               registry-url: 'https://registry.npmjs.org'
               cache: 'pnpm'
 
