@@ -289,7 +289,7 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 
 	provider?: SplunkWebTracerProvider
 
-	reportError: (arg: string | Event | Error | ErrorEvent | unknown[], context?: SpanContext) => void
+	reportError: (error: string | Event | Error | ErrorEvent | unknown[], context?: SpanContext) => void
 
 	resource?: Resource
 
@@ -596,7 +596,7 @@ export const SplunkRum: SplunkOtelWebType = {
 		this.reportError(args)
 	},
 
-	reportError(arg: string | Event | Error | ErrorEvent | unknown[], context: SpanContext = {}) {
+	reportError(error: string | Event | Error | ErrorEvent | unknown[], context: SpanContext = {}) {
 		if (!inited) {
 			diag.debug('SplunkRum not inited')
 			return
@@ -607,13 +607,13 @@ export const SplunkRum: SplunkOtelWebType = {
 			return
 		}
 
-		if (!arg) {
+		if (!error) {
 			diag.warn('SplunkRum.error called with no argument, ignoring.')
 			return
 		}
 
 		const parsedAdditionalAttributes = getValidAttributes(context)
-		_errorInstrumentation.report('SplunkRum.error', arg, parsedAdditionalAttributes)
+		_errorInstrumentation.report('SplunkRum.error', error, parsedAdditionalAttributes)
 	},
 
 	addEventListener(name, callback): void {
