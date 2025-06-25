@@ -263,7 +263,11 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	 */
 	disabledByBotDetection?: boolean
 
-	error: (...args: Array<any>) => void
+	/**
+	 * @deprecated This method is deprecated and will be removed in future versions.
+	 * Use {@link reportError} instead.
+	 */
+	error: (...args: unknown[]) => void
 
 	getAnonymousId: () => string | undefined
 
@@ -284,6 +288,11 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	isNewSessionId: () => boolean
 
 	provider?: SplunkWebTracerProvider
+
+	reportError: (
+		arg: string | Event | Error | ErrorEvent | unknown[],
+		additionalAttributes?: AdditionalSpanAttributes,
+	) => void
 
 	resource?: Resource
 
@@ -586,7 +595,14 @@ export const SplunkRum: SplunkOtelWebType = {
 		return this.getGlobalAttributes()
 	},
 
-	error(arg: string | Event | Error | ErrorEvent | Array<any>, additionalAttributes: AdditionalSpanAttributes = {}) {
+	error(...args: unknown[]) {
+		this.reportError(args)
+	},
+
+	reportError(
+		arg: string | Event | Error | ErrorEvent | unknown[],
+		additionalAttributes: AdditionalSpanAttributes = {},
+	) {
 		if (!inited) {
 			diag.debug('SplunkRum not inited')
 			return
