@@ -36,5 +36,5 @@ module.exports = {
 }
 ```
 
-The `token` must be an [org access token](https://docs.splunk.com/observability/en/admin/authentication/authentication-tokens/org-tokens.html)
+The `token` must be an [org access token](https://help.splunk.com/en/splunk-observability-cloud/administer/authentication-and-security/authentication-tokens/org-access-tokens)
 with an authorization scope of API token (not RUM token) and `power` role.
