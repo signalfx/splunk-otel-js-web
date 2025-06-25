@@ -9,11 +9,6 @@
     try {
       someNull.anyField = 'value';
     } catch(e) {
-        e.splunkContext = {
-            errorValueString: 'errorValueContext',
-            errorValueNumber: 321,
-        };
-
         SplunkRum.reportError(e, {
           splunkContext: {
               test: 'the whole object should be removed'

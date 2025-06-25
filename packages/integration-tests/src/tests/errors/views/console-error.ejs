@@ -9,13 +9,6 @@
     try {
       someNull.anyField = 'value';
     } catch(e) {
-		e.splunkContext = {
-			splunkContext: {
-				test: 'the whole object should be removed'
-            },
-            errorValueString: 'errorValue',
-            errorValueNumber: 123,
-        }
         console.error(e);
     }
   </script>
