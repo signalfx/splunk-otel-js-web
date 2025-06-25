@@ -291,7 +291,7 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 
 	reportError: (
 		arg: string | Event | Error | ErrorEvent | unknown[],
-		additionalAttributes?: Record<string, string | number | boolean | string[] | number[] | boolean[]>,
+		additionalAttributes?: AdditionalSpanAttributes,
 	) => void
 
 	resource?: Resource
