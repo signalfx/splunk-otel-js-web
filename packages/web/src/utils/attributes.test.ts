@@ -15,7 +15,12 @@
  * limitations under the License.
  *
  */
-import { isPlainObject, removeEmptyProperties, removePropertiesWithAdvancedTypes, isAttributeValue } from './attributes'
+import {
+	isPlainObject,
+	removeEmptyProperties,
+	removePropertiesWithAdvancedTypes,
+	isValidAttributeValue,
+} from './attributes'
 import { describe, it, expect } from 'vitest'
 
 describe('isPlainObject', () => {
@@ -35,19 +40,20 @@ describe('isPlainObject', () => {
 
 describe('isAttributeValue', () => {
 	it('should return true for valid primitives', () => {
-		expect(isAttributeValue('foo')).toBe(true)
-		expect(isAttributeValue(123)).toBe(true)
-		expect(isAttributeValue(true)).toBe(true)
+		expect(isValidAttributeValue('foo')).toBe(true)
+		expect(isValidAttributeValue(123)).toBe(true)
+		expect(isValidAttributeValue(true)).toBe(true)
 	})
 
-	it('should return false for objects, functions, symbols, and null/undefined', () => {
-		expect(isAttributeValue(['a', 1, true])).toBe(false)
-		expect(isAttributeValue(['a'])).toBe(false)
-		expect(isAttributeValue({})).toBe(false)
-		expect(isAttributeValue(() => {})).toBe(false)
-		expect(isAttributeValue(Symbol('s'))).toBe(false)
-		expect(isAttributeValue(null)).toBe(false)
-		expect(isAttributeValue(undefined)).toBe(false)
+	it('should return false for arrays, objects, functions, symbols, and null/undefined', () => {
+		expect(isValidAttributeValue(['a', 1, true])).toBe(false)
+		expect(isValidAttributeValue(['a', 'b'])).toBe(false)
+		expect(isValidAttributeValue([])).toBe(false)
+		expect(isValidAttributeValue({})).toBe(false)
+		expect(isValidAttributeValue(() => {})).toBe(false)
+		expect(isValidAttributeValue(Symbol('s'))).toBe(false)
+		expect(isValidAttributeValue(null)).toBe(false)
+		expect(isValidAttributeValue(undefined)).toBe(false)
 	})
 })
 
@@ -73,7 +79,7 @@ describe('removePropertiesWithAdvancedTypes', () => {
 		expect(removePropertiesWithAdvancedTypes({ symbol: Symbol('s') })).toEqual({})
 	})
 
-	it('should remove remove arrays', () => {
+	it('should remove arrays', () => {
 		const obj = {
 			validStringArr: ['a', 'b'],
 			validNumberArr: [1, 2],

@@ -613,24 +613,24 @@ export const SplunkRum: SplunkOtelWebType = {
 		}
 
 		if (!_errorInstrumentation) {
-			diag.error('Error was reported, but error instrumentation is disabled.')
+			diag.error('SplunkRum.reportError error was reported, but error instrumentation is disabled.')
 			return
 		}
 
 		if (!error) {
-			diag.warn('SplunkRum.reportError called with no argument, ignoring.')
+			diag.warn('SplunkRum.reportError called with no argument - ignoring.')
 			return
 		}
 
-		if (!_errorInstrumentation.isValidErrorArgument(error)) {
+		if (!_errorInstrumentation.isValidErrorArg(error)) {
 			diag.warn(
-				'SplunkRum.reportError called with invalid error argument, ignoring. Argument must be a string, Event, Error, or ErrorEvent.',
+				'SplunkRum.reportError called with invalid argument, ignoring. Expected string, Error, ErrorEvent or Event.',
 			)
 			return
 		}
 
 		const parsedAdditionalAttributes = getValidAttributes(context)
-		_errorInstrumentation.report('SplunkRum.error', error, parsedAdditionalAttributes)
+		_errorInstrumentation.report('SplunkRum.reportError', error, parsedAdditionalAttributes)
 	},
 
 	addEventListener(name, callback): void {

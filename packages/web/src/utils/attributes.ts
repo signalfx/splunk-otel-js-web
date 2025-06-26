@@ -42,7 +42,7 @@ export const removePropertiesWithAdvancedTypes = (data: Record<string, unknown>)
 	const newData: Record<string, AttributeValue> = {}
 
 	for (const [key, value] of Object.entries(data)) {
-		if (isAttributeValue(value)) {
+		if (isValidAttributeValue(value)) {
 			newData[key] = value
 		}
 	}
@@ -62,5 +62,5 @@ export const removeEmptyProperties = (data: Record<string, unknown>): Record<str
 	return newData
 }
 
-export const isAttributeValue = (value: unknown): value is AttributeValue =>
+export const isValidAttributeValue = (value: unknown): value is AttributeValue =>
 	typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean'
