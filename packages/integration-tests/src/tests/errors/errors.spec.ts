@@ -114,8 +114,8 @@ test.describe('errors', () => {
 		expect(errorSpans[0].tags['error.message']).toBe(errorMessageMap[browserName])
 	})
 
-	test('SplunkRum.error', async ({ recordPage, browserName }) => {
-		const url = 'http://localhost:3000/errors/views/splunkrum-error.ejs'
+	test('SplunkRum.reportError', async ({ recordPage, browserName }) => {
+		const url = 'http://localhost:3000/errors/views/splunkrum-report-error.ejs'
 		await recordPage.goTo(url)
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'SplunkRum.error').length === 1)
 		const errorSpans = recordPage.receivedSpans.filter((span) => span.name === 'SplunkRum.error')
@@ -127,7 +127,6 @@ test.describe('errors', () => {
 		expect(errorSpans[0].tags['splunkContext']).toBe(undefined)
 		expect(errorSpans[0].tags['errorValueString']).toBe('errorValueContext')
 		expect(errorSpans[0].tags['errorValueNumber']).toBe('321')
-		expect(errorSpans[0].tags['additionalAttributes']).toBe('a,b,c')
 
 		const errorMessages = {
 			chromium: "Cannot set properties of null (setting 'anyField')",

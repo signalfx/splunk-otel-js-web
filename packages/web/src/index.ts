@@ -267,7 +267,7 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	 * @deprecated This method is deprecated and will be removed in future versions.
 	 * Use {@link reportError} instead.
 	 */
-	error: (...args: unknown[]) => void
+	error: (...args: Array<any>) => void
 
 	getAnonymousId: () => string | undefined
 
@@ -289,7 +289,7 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 
 	provider?: SplunkWebTracerProvider
 
-	reportError: (error: string | Event | Error | ErrorEvent | unknown[], context?: SpanContext) => void
+	reportError: (error: string | Event | Error | ErrorEvent, context?: SpanContext) => void
 
 	resource?: Resource
 
@@ -592,11 +592,21 @@ export const SplunkRum: SplunkOtelWebType = {
 		return this.getGlobalAttributes()
 	},
 
-	error(...args: unknown[]) {
-		this.reportError(args)
+	error(...args) {
+		if (!inited) {
+			diag.debug('SplunkRum not inited')
+			return
+		}
+
+		if (!_errorInstrumentation) {
+			diag.error('Error was reported, but error instrumentation is disabled.')
+			return
+		}
+
+		_errorInstrumentation.report('SplunkRum.error', args, {})
 	},
 
-	reportError(error: string | Event | Error | ErrorEvent | unknown[], context: SpanContext = {}) {
+	reportError(error: string | Event | Error | ErrorEvent, context: SpanContext = {}) {
 		if (!inited) {
 			diag.debug('SplunkRum not inited')
 			return
@@ -608,7 +618,14 @@ export const SplunkRum: SplunkOtelWebType = {
 		}
 
 		if (!error) {
-			diag.warn('SplunkRum.error called with no argument, ignoring.')
+			diag.warn('SplunkRum.reportError called with no argument, ignoring.')
+			return
+		}
+
+		if (!_errorInstrumentation.isValidErrorArgument(error)) {
+			diag.warn(
+				'SplunkRum.reportError called with invalid error argument, ignoring. Argument must be a string, Event, Error, or ErrorEvent.',
+			)
 			return
 		}
 

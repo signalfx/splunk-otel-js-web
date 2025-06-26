@@ -40,21 +40,9 @@ describe('isAttributeValue', () => {
 		expect(isAttributeValue(true)).toBe(true)
 	})
 
-	it('should return true for valid arrays', () => {
-		expect(isAttributeValue(['a', 'b', 'c'])).toBe(true)
-		expect(isAttributeValue([1, 2, 3])).toBe(true)
-		expect(isAttributeValue([true, false])).toBe(true)
-		expect(isAttributeValue(['a', 'b', 'c'])).toBe(true)
-		expect(isAttributeValue([1, 3, 1])).toBe(true)
-	})
-
-	it('should return false for mixed arrays', () => {
-		expect(isAttributeValue(['a', 1, true])).toBe(false)
-		expect(isAttributeValue([1, 'a'])).toBe(false)
-		expect(isAttributeValue([true, 1])).toBe(false)
-	})
-
 	it('should return false for objects, functions, symbols, and null/undefined', () => {
+		expect(isAttributeValue(['a', 1, true])).toBe(false)
+		expect(isAttributeValue(['a'])).toBe(false)
 		expect(isAttributeValue({})).toBe(false)
 		expect(isAttributeValue(() => {})).toBe(false)
 		expect(isAttributeValue(Symbol('s'))).toBe(false)
@@ -85,19 +73,16 @@ describe('removePropertiesWithAdvancedTypes', () => {
 		expect(removePropertiesWithAdvancedTypes({ symbol: Symbol('s') })).toEqual({})
 	})
 
-	it('should keep valid arrays and remove invalid arrays', () => {
+	it('should remove remove arrays', () => {
 		const obj = {
 			validStringArr: ['a', 'b'],
 			validNumberArr: [1, 2],
 			validBoolArr: [true, false],
 			invalidMixedArr: ['a', 1, true],
 			invalidObjArr: [{}, null],
+			invalidEmptyArr: [],
 		}
-		expect(removePropertiesWithAdvancedTypes(obj)).toEqual({
-			validStringArr: ['a', 'b'],
-			validNumberArr: [1, 2],
-			validBoolArr: [true, false],
-		})
+		expect(removePropertiesWithAdvancedTypes(obj)).toEqual({})
 	})
 
 	it('should remove null and undefined as top-level values', () => {
