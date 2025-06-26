@@ -79,6 +79,7 @@ const decoder = new TextDecoder()
 let inited: true | false | undefined = false
 let tracer: Tracer
 let lastKnownSession: string | undefined
+let lastKnownUserTrackingMode: string | undefined
 let sessionStartTime = 0
 let paused = false
 let eventCounter = 1
@@ -149,6 +150,13 @@ const SplunkRumRecorder = {
 		} = config
 		const isSplunkRecorder = recorderType === 'splunk'
 
+		if (recorderType === 'rrweb' && SplunkRum.userTrackingMode === 'anonymousTracking') {
+			log.error(
+				'SplunkSessionRecorder: Using rrweb recorder with anonymous tracking mode is not supported. Please use splunk recorder instead. Session recording will not be initialized.',
+			)
+			return
+		}
+
 		// Handle recorder type change (splunk -> rrweb or rrweb -> splunk)
 		SplunkRum._internalCheckSessionRecorderType(recorderType)
 
@@ -210,6 +218,7 @@ const SplunkRumRecorder = {
 		})
 		const processor = new BatchLogProcessor(exporter)
 
+		lastKnownUserTrackingMode = SplunkRum.userTrackingMode
 		lastKnownSession = SplunkRum.getSessionId()
 
 		if (isSplunkRecorder && SplunkRum.isNewSessionId()) {
@@ -222,6 +231,16 @@ const SplunkRumRecorder = {
 		const onEmit = (emitContext: RecorderEmitContext) => {
 			if (paused) {
 				return
+			}
+
+			if (lastKnownUserTrackingMode !== SplunkRum.userTrackingMode) {
+				lastKnownUserTrackingMode = SplunkRum.userTrackingMode
+				if (recorderType === 'rrweb' && lastKnownUserTrackingMode === 'anonymousTracking') {
+					log.warn(
+						'SplunkSessionRecorder: Using rrweb recorder with anonymous tracking mode is not supported. Please use splunk recorder instead.',
+					)
+					return
+				}
 			}
 
 			let isExtended = false
