@@ -109,6 +109,12 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 
 	init(): void {}
 
+	isValidErrorArg = (errorArg: unknown): errorArg is string | Event | Error | ErrorEvent =>
+		errorArg instanceof Error ||
+		errorArg instanceof ErrorEvent ||
+		errorArg instanceof Event ||
+		typeof errorArg === 'string'
+
 	report(source: string, arg: string | Event | Error | ErrorEvent | Array<any>, context: SpanContext): void {
 		if (Array.isArray(arg) && arg.length === 0) {
 			return

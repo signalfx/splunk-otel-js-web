@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-type AttributeValue = string | number | boolean | string[] | number[] | boolean[]
+type AttributeValue = string | number | boolean
 
 export interface SpanContext {
 	[key: string]: AttributeValue
@@ -42,7 +42,7 @@ export const removePropertiesWithAdvancedTypes = (data: Record<string, unknown>)
 	const newData: Record<string, AttributeValue> = {}
 
 	for (const [key, value] of Object.entries(data)) {
-		if (isAttributeValue(value)) {
+		if (isValidAttributeValue(value)) {
 			newData[key] = value
 		}
 	}
@@ -62,21 +62,5 @@ export const removeEmptyProperties = (data: Record<string, unknown>): Record<str
 	return newData
 }
 
-const isSimpleValue = (value: unknown): value is string | number | boolean =>
+export const isValidAttributeValue = (value: unknown): value is AttributeValue =>
 	typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean'
-
-export const isAttributeValue = (value: unknown): value is AttributeValue => {
-	if (isSimpleValue(value)) {
-		return true
-	}
-
-	if (!Array.isArray(value)) {
-		return false
-	}
-
-	const isStringArray = value.every((item) => typeof item === 'string')
-	const isNumberArray = value.every((item) => typeof item === 'number')
-	const isBooleanArray = value.every((item) => typeof item === 'boolean')
-
-	return isStringArray || isNumberArray || isBooleanArray
-}
