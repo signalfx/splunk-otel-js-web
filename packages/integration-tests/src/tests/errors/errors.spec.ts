@@ -101,6 +101,9 @@ test.describe('errors', () => {
 		expect(errorSpans[0].tags['component']).toBe('error')
 		expect(errorSpans[0].tags['error']).toBe('true')
 		expect(errorSpans[0].tags['error.object']).toBe('TypeError')
+		expect(errorSpans[0].tags['splunkContext']).toBe(undefined)
+		expect(errorSpans[0].tags['errorValueString']).toBe('errorValue')
+		expect(errorSpans[0].tags['errorValueNumber']).toBe('123')
 
 		const errorMessageMap = {
 			chromium: "Cannot set properties of null (setting 'anyField')",
@@ -111,16 +114,21 @@ test.describe('errors', () => {
 		expect(errorSpans[0].tags['error.message']).toBe(errorMessageMap[browserName])
 	})
 
-	test('SplunkRum.error', async ({ recordPage, browserName }) => {
-		const url = 'http://localhost:3000/errors/views/splunkrum-error.ejs'
+	test('SplunkRum.reportError', async ({ recordPage, browserName }) => {
+		const url = 'http://localhost:3000/errors/views/splunkrum-reporterror.ejs'
 		await recordPage.goTo(url)
-		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'SplunkRum.error').length === 1)
-		const errorSpans = recordPage.receivedSpans.filter((span) => span.name === 'SplunkRum.error')
+		await recordPage.waitForSpans(
+			(spans) => spans.filter((span) => span.name === 'SplunkRum.reportError').length === 1,
+		)
+		const errorSpans = recordPage.receivedSpans.filter((span) => span.name === 'SplunkRum.reportError')
 
 		expect(errorSpans).toHaveLength(1)
 		expect(errorSpans[0].tags['component']).toBe('error')
 		expect(errorSpans[0].tags['error']).toBe('true')
 		expect(errorSpans[0].tags['error.object']).toBe('TypeError')
+		expect(errorSpans[0].tags['splunkContext']).toBe(undefined)
+		expect(errorSpans[0].tags['errorValueString']).toBe('errorValueContext')
+		expect(errorSpans[0].tags['errorValueNumber']).toBe('321')
 
 		const errorMessages = {
 			chromium: "Cannot set properties of null (setting 'anyField')",

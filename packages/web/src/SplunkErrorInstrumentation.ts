@@ -21,6 +21,8 @@ import { getElementXPath } from '@opentelemetry/sdk-trace-web'
 import { limitLen } from './utils'
 import { Span } from '@opentelemetry/api'
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
+import { SpanContext } from './utils/attributes'
+import { getValidAttributes } from './utils/attributes'
 
 // FIXME take timestamps from events?
 
@@ -94,21 +96,27 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 
 	disable(): void {
 		shimmer.unwrap(console, 'error')
-		window.removeEventListener('unhandledrejection', this._unhandledRejectionListener)
-		window.removeEventListener('error', this._errorListener)
-		document.documentElement.removeEventListener('error', this._documentErrorListener, { capture: true })
+		window.removeEventListener('unhandledrejection', this.unhandledRejectionListener)
+		window.removeEventListener('error', this.errorListener)
+		document.documentElement.removeEventListener('error', this.documentErrorListener, { capture: true })
 	}
 
 	enable(): void {
-		shimmer.wrap(console, 'error', this._consoleErrorHandler)
-		window.addEventListener('unhandledrejection', this._unhandledRejectionListener)
-		window.addEventListener('error', this._errorListener)
-		document.documentElement.addEventListener('error', this._documentErrorListener, { capture: true })
+		shimmer.wrap(console, 'error', this.consoleErrorHandler)
+		window.addEventListener('unhandledrejection', this.unhandledRejectionListener)
+		window.addEventListener('error', this.errorListener)
+		document.documentElement.addEventListener('error', this.documentErrorListener, { capture: true })
 	}
 
 	init(): void {}
 
-	public report(source: string, arg: string | Event | ErrorEvent | Array<any>): void {
+	isValidErrorArg = (errorArg: unknown): errorArg is string | Event | Error | ErrorEvent =>
+		errorArg instanceof Error ||
+		errorArg instanceof ErrorEvent ||
+		errorArg instanceof Event ||
+		typeof errorArg === 'string'
+
+	report(source: string, arg: string | Event | Error | ErrorEvent | Array<any>, context: SpanContext): void {
 		if (Array.isArray(arg) && arg.length === 0) {
 			return
 		}
@@ -118,23 +126,23 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		}
 
 		if (arg instanceof Error) {
-			this.reportError(source, arg)
+			this.reportError(source, arg, context)
 		} else if (arg instanceof ErrorEvent) {
-			this.reportErrorEvent(source, arg)
+			this.reportErrorEvent(source, arg, context)
 		} else if (arg instanceof Event) {
-			this.reportEvent(source, arg)
+			this.reportEvent(source, arg, context)
 		} else if (typeof arg === 'string') {
-			this.reportString(source, arg)
-		} else if (arg instanceof Array) {
+			this.reportString(source, arg, undefined, context)
+		} else if (Array.isArray(arg)) {
 			// if any arguments are Errors then add the stack trace even though the message is handled differently
 			const firstError = arg.find((x) => x instanceof Error)
-			this.reportString(source, arg.map((x) => stringifyValue(x)).join(' '), firstError)
+			this.reportString(source, arg.map((x) => stringifyValue(x)).join(' '), firstError, context)
 		} else {
-			this.reportString(source, stringifyValue(arg)) // FIXME or JSON.stringify?
+			this.reportString(source, stringifyValue(arg), undefined, context) // FIXME or JSON.stringify?
 		}
 	}
 
-	protected reportError(source: string, err: Error): void {
+	protected reportError(source: string, err: Error, context: SpanContext): void {
 		const msg = err.message || err.toString()
 		if (!useful(msg) && !err.stack) {
 			return
@@ -142,6 +150,9 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 
 		const now = Date.now()
 		const span = this.tracer.startSpan(source, { startTime: now })
+
+		this.attachSpanContext(span, err, context)
+
 		span.setAttribute('component', 'error')
 		span.setAttribute('error', true)
 		span.setAttribute(
@@ -153,15 +164,15 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		span.end(now)
 	}
 
-	protected reportErrorEvent(source: string, ev: ErrorEvent): void {
+	protected reportErrorEvent(source: string, ev: ErrorEvent, context: SpanContext): void {
 		if (ev.error) {
-			this.report(source, ev.error)
+			this.report(source, ev.error, context)
 		} else if (ev.message) {
-			this.report(source, ev.message)
+			this.report(source, ev.message, context)
 		}
 	}
 
-	protected reportEvent(source: string, ev: Event): void {
+	protected reportEvent(source: string, ev: Event, context: SpanContext): void {
 		// FIXME consider other sources of global 'error' DOM callback - what else can be captured here?
 		if (!ev.target && !useful(ev.type)) {
 			return
@@ -169,6 +180,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 
 		const now = Date.now()
 		const span = this.tracer.startSpan(source, { startTime: now })
+		this.attachSpanContext(span, ev, context)
 		span.setAttribute('component', 'error')
 		span.setAttribute('error.type', ev.type)
 		if (ev.target) {
@@ -181,13 +193,14 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		span.end(now)
 	}
 
-	protected reportString(source: string, message: string, firstError?: Error): void {
+	protected reportString(source: string, message: string, firstError: Error | undefined, context: SpanContext): void {
 		if (!useful(message)) {
 			return
 		}
 
 		const now = Date.now()
 		const span = this.tracer.startSpan(source, { startTime: now })
+		this.attachSpanContext(span, firstError ?? message, context)
 		span.setAttribute('component', 'error')
 		span.setAttribute('error', true)
 		span.setAttribute('error.object', 'String')
@@ -199,22 +212,38 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		span.end(now)
 	}
 
-	private readonly _consoleErrorHandler =
+	private attachSpanContext(span: Span, value: Error | string | Event, context: SpanContext) {
+		const valueWithPossibleContext = value as (Error | string | Event) & {
+			splunkContext?: unknown
+		}
+		const contextAttributes = getValidAttributes(valueWithPossibleContext.splunkContext || {})
+
+		const entries = Object.entries({
+			...context,
+			...contextAttributes,
+		})
+
+		for (const [k, v] of entries) {
+			span.setAttribute(k, v)
+		}
+	}
+
+	private consoleErrorHandler =
 		(original: Console['error']) =>
 		(...args: any[]) => {
-			this.report('console.error', args)
+			this.report('console.error', args, {})
 			return original.apply(this, args)
 		}
 
-	private readonly _documentErrorListener = (event: ErrorEvent) => {
-		this.report('eventListener.error', event)
+	private documentErrorListener = (event: ErrorEvent) => {
+		this.report('eventListener.error', event, {})
 	}
 
-	private readonly _errorListener = (event: ErrorEvent) => {
-		this.report('onerror', event)
+	private errorListener = (event: ErrorEvent) => {
+		this.report('onerror', event, {})
 	}
 
-	private readonly _unhandledRejectionListener = (event: PromiseRejectionEvent) => {
-		this.report('unhandledrejection', event.reason)
+	private unhandledRejectionListener = (event: PromiseRejectionEvent) => {
+		this.report('unhandledrejection', event.reason, {})
 	}
 }
