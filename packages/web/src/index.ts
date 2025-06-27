@@ -82,6 +82,7 @@ import {
 } from './types'
 import { isBot } from './utils/is-bot'
 import { SplunkSamplerWrapper } from './SplunkSamplerWrapper'
+import { SpanContext, getValidAttributes } from './utils/attributes'
 
 export { type SplunkExporterConfig } from './exporters/common'
 export { SplunkZipkinExporter } from './exporters/zipkin'
@@ -262,6 +263,10 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	 */
 	disabledByBotDetection?: boolean
 
+	/**
+	 * @deprecated This method is deprecated and will be removed in future versions.
+	 * Use {@link reportError} instead.
+	 */
 	error: (...args: Array<any>) => void
 
 	getAnonymousId: () => string | undefined
@@ -283,6 +288,8 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	isNewSessionId: () => boolean
 
 	provider?: SplunkWebTracerProvider
+
+	reportError: (error: string | Event | Error | ErrorEvent, context?: SpanContext) => void
 
 	resource?: Resource
 
@@ -596,7 +603,34 @@ export const SplunkRum: SplunkOtelWebType = {
 			return
 		}
 
-		_errorInstrumentation.report('SplunkRum.error', args)
+		_errorInstrumentation.report('SplunkRum.error', args, {})
+	},
+
+	reportError(error: string | Event | Error | ErrorEvent, context: SpanContext = {}) {
+		if (!inited) {
+			diag.debug('SplunkRum not inited')
+			return
+		}
+
+		if (!_errorInstrumentation) {
+			diag.error('SplunkRum.reportError error was reported, but error instrumentation is disabled.')
+			return
+		}
+
+		if (!error) {
+			diag.warn('SplunkRum.reportError called with no argument - ignoring.')
+			return
+		}
+
+		if (!_errorInstrumentation.isValidErrorArg(error)) {
+			diag.warn(
+				'SplunkRum.reportError called with invalid argument, ignoring. Expected string, Error, ErrorEvent or Event.',
+			)
+			return
+		}
+
+		const parsedAdditionalAttributes = getValidAttributes(context)
+		_errorInstrumentation.report('SplunkRum.reportError', error, parsedAdditionalAttributes)
 	},
 
 	addEventListener(name, callback): void {

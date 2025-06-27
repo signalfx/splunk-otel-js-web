@@ -10,7 +10,7 @@
 	<p>instrumentations.errors: false</p>
 </body>
 <script>
-		SplunkRum.error('fake error');
+		SplunkRum.reportError('fake error');
 		SplunkRum.provider.getTracer('default').startSpan('error-guard-span').end();
 </script>
 </html>

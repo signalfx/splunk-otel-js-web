@@ -493,7 +493,7 @@ describe('test stack length', () => {
 			recurAndThrow(50)
 		} catch (e) {
 			try {
-				SplunkRum.error('something happened: ', e) // try out the API
+				SplunkRum.reportError(e as Error)
 			} catch {
 				// swallow
 			}
@@ -509,7 +509,6 @@ describe('test stack length', () => {
 		expect(errorSpan).toBeTruthy()
 		expect((errorSpan.attributes['error.stack'] as string).includes('recurAndThrow')).toBeTruthy()
 		expect((errorSpan.attributes['error.stack'] as string).length <= 4096).toBeTruthy()
-		expect((errorSpan.attributes['error.message'] as string).includes('something')).toBeTruthy()
 		expect((errorSpan.attributes['error.message'] as string).includes('bad thing')).toBeTruthy()
 	})
 })
@@ -622,10 +621,10 @@ describe('test manual report', () => {
 
 	it('should not report useless items', () => {
 		capturer.clear()
-		SplunkRum.error('')
-		SplunkRum.error()
-		SplunkRum.error([])
-		SplunkRum.error({})
+		SplunkRum.reportError('')
+		SplunkRum.reportError()
+		SplunkRum.reportError([])
+		SplunkRum.reportError({})
 		expect(capturer.spans.length).toBe(0)
 	})
 })
