@@ -9,14 +9,19 @@
     try {
       someNull.anyField = 'value';
     } catch(e) {
-        SplunkRum.reportError(e, {
-          splunkContext: {
-              test: 'the whole object should be removed'
-          },
-          errorValueString: 'errorValue',
-          errorValueNumber: 123,
-          additionalInvalidAttributes: ['a', 'b', 'c']
-        });
+		e.splunkContext = {
+			errorValueString: 'errorValueContext',
+			errorValueNumber: 321,
+		};
+
+		SplunkRum.reportError(e, {
+			splunkContext: {
+				test: 'the whole object should be removed'
+			},
+			errorValueString: 'errorValue',
+			errorValueNumber: 123,
+			additionalInvalidAttributes: ['a', 'b', 'c']
+		});
     }
   </script>
 </head>
