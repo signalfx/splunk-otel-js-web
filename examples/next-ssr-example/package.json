@@ -16,7 +16,7 @@
 	"devDependencies": {
 		"@splunk/otel-web": "workspace:*",
 		"@splunk/otel-web-session-recorder": "workspace:*",
-		"@types/node": "^20",
+		"@types/node": "^24",
 		"@types/react": "^19",
 		"@types/react-dom": "^19",
 		"typescript": "^5"
