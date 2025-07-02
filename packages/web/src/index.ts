@@ -296,6 +296,12 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	setGlobalAttributes: (attributes: Attributes) => void
 
 	setUserTrackingMode: (mode: UserTrackingMode) => void
+
+	/**
+	 * `userTrackingMode` available values: `'noTracking'` (default) | `'anonymousTracking'`.
+	 *  If set to `'anonymousTracking'`, ensure you use the Splunk recorder if used together with the session recorder.
+	 */
+	userTrackingMode: UserTrackingMode
 }
 
 let inited = false
@@ -315,6 +321,10 @@ export const SplunkRum: SplunkOtelWebType = {
 	AlwaysOffSampler,
 	ParentBasedSampler,
 	SessionBasedSampler,
+
+	get userTrackingMode() {
+		return userTrackingMode
+	},
 
 	_processedOptions: null,
 
