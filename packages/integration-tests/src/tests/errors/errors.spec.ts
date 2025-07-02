@@ -17,6 +17,7 @@
  */
 import { expect } from '@playwright/test'
 import { test } from '../../utils/test'
+import { Span } from '@opentelemetry/exporter-zipkin/build/src/types'
 
 test.describe('errors', () => {
 	test('DOM resource 4xx', async ({ recordPage }) => {
@@ -207,5 +208,36 @@ test.describe('errors', () => {
 		expect(errorSpans).toHaveLength(0)
 		// As error message is generic [object Module], it is being dropped
 		// expect(errorSpans[0].tags['error.message']).toBe('[object Module]')
+	})
+
+	test('throttling error spans', async ({ recordPage }) => {
+		await recordPage.goTo('/errors/views/throttling.ejs')
+		await recordPage.waitForTimeoutAndFlushData(3000)
+		const errorSpans = recordPage.receivedSpans.filter((span) => span.tags['component'] === 'error')
+		const groupedSpans: Span[][] = Object.values(
+			errorSpans.reduce(
+				(acc, span) => {
+					const key = JSON.stringify(span.tags)
+					if (!acc[key]) {
+						acc[key] = []
+					}
+
+					acc[key].push(span)
+					return acc
+				},
+				{} as Record<string, typeof errorSpans>,
+			),
+		)
+
+		// There should be less than 15 spans, as throttling is set to 1s
+		// but to prevent flakiness, we allow up to 20 spans
+		// in case the test is run on a slow machine
+		expect(Object.keys(groupedSpans).length).toBeLessThan(20)
+		for (const group of groupedSpans) {
+			const timestamps = group.map((span) => span.timestamp).sort((a, b) => a - b)
+			for (let i = 1; i < timestamps.length; i++) {
+				expect(timestamps[i] - timestamps[i - 1]).toBeGreaterThanOrEqual(1000)
+			}
+		}
 	})
 })
