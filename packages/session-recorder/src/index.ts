@@ -239,7 +239,6 @@ const SplunkRumRecorder = {
 					log.warn(
 						'SplunkSessionRecorder: Using rrweb recorder with anonymous tracking mode is not supported. Please use splunk recorder instead.',
 					)
-					return
 				}
 			}
 
