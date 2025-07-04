@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Errors throttling test</title>
+    <%- renderAgent({}) %>
+    <script id="scenario">
+		const createAgentManualError = async () => {
+			SplunkRum.reportError('createAgentManualError', {
+				splunkContext: {
+					test: 'the whole object should be removed'
+				},
+				errorValueString: 'errorValue',
+				errorValueNumber: 123,
+				additionalInvalidAttributes: ['a', 'b', 'c']
+			});
+        }
+
+		const createUncaughtError = () => {
+            const scriptEl = document.createElement('script')
+            scriptEl.innerHTML = "throw new Error('Error happened uncaught :(')"
+            document.body.append(scriptEl)
+		}
+
+		const createUncaughtErrorWithNonStandardType = () => {
+            const scriptEl = document.createElement('script')
+            scriptEl.innerHTML = 'throw 42'
+            document.body.append(scriptEl)
+		}
+
+		const createRejectedPromiseErrorString = () => {
+            const scriptEl = document.createElement('script')
+            scriptEl.innerHTML = "Promise.reject('Error happened string :(')"
+            document.body.append(scriptEl)
+		}
+
+		const createRejectedPromiseError = () => {
+            const scriptEl = document.createElement('script')
+            scriptEl.innerHTML = "Promise.reject(new Error('Error happened promise :('))"
+            document.body.append(scriptEl)
+		}
+
+		setInterval(() => {
+			createAgentManualError()
+        }, 200);
+
+		setInterval(() => {
+			createUncaughtError()
+		}, 200);
+
+		setInterval(() => {
+			createUncaughtErrorWithNonStandardType()
+		}, 200);
+
+		setInterval(() => {
+			createRejectedPromiseErrorString()
+		}, 200);
+
+		setInterval(() => {
+			createRejectedPromiseError()
+		}, 200);
+    </script>
+</head>
+<body>
+<h1>Throttling</h1>
+<pre id="scenarioDisplay"></pre>
+<script>scenarioDisplay.innerHTML = scenario.innerHTML;</script>
+</body>
+</html>
