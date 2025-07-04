@@ -89,7 +89,7 @@ function addStackIfUseful(span: Span, err: Error) {
 
 export const ERROR_INSTRUMENTATION_NAME = 'errors'
 export const ERROR_INSTRUMENTATION_VERSION = '1'
-const THROTTLE_LIMIT = 1000
+const THROTTLE_LIMIT = 500
 
 export class SplunkErrorInstrumentation extends InstrumentationBase {
 	private throttleMap = new Map<string, number>()

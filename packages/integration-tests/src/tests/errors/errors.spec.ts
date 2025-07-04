@@ -212,7 +212,7 @@ test.describe('errors', () => {
 
 	test('throttling error spans', async ({ recordPage }) => {
 		await recordPage.goTo('/errors/views/throttling.ejs')
-		await recordPage.waitForTimeoutAndFlushData(3000)
+		await recordPage.waitForTimeoutAndFlushData(1500)
 		const errorSpans = recordPage.receivedSpans.filter((span) => span.tags['component'] === 'error')
 		const groupedSpans: Span[][] = Object.values(
 			errorSpans.reduce(
@@ -229,7 +229,7 @@ test.describe('errors', () => {
 			),
 		)
 
-		// There should be less than 15 spans, as throttling is set to 1s
+		// There should be less than 15 spans, as throttling is set to 500ms
 		// but to prevent flakiness, we allow up to 20 spans
 		// in case the test is run on a slow machine
 		expect(Object.keys(groupedSpans).length).toBeLessThan(20)
