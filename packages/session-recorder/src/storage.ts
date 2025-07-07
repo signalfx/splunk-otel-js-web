@@ -31,6 +31,7 @@ export const safelySetLocalStorage = (key: string, value: string): boolean => {
 		window.localStorage.setItem(key, value)
 		return true
 	} catch {
+		console.error('safelySetLocalStorage failed', value)
 		// localStorage not accessible probably user is in incognito-mode
 		// or set "Block third-party cookies" option in browser settings
 		return false

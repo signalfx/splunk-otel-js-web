@@ -213,6 +213,8 @@ export default class OTLPLogExporter {
 				.then((compressedData) => {
 					void sendByFetch(logItem.url, { headers: logItem.headers, body: compressedData }, () => {
 						log.debug('exportQueuedLogs - success', { ...logItem, data: '[truncated]' })
+					}).catch((error) => {
+						console.error('Could not send queued log', error)
 					})
 				})
 				.catch((error) => {
