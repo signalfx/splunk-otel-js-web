@@ -23,6 +23,7 @@ import { Span } from '@opentelemetry/api'
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 import { SpanContext } from './utils/attributes'
 import { getValidAttributes } from './utils/attributes'
+import { diag } from '@opentelemetry/api'
 
 // FIXME take timestamps from events?
 
@@ -88,8 +89,11 @@ function addStackIfUseful(span: Span, err: Error) {
 
 export const ERROR_INSTRUMENTATION_NAME = 'errors'
 export const ERROR_INSTRUMENTATION_VERSION = '1'
+const THROTTLE_LIMIT = 500
 
 export class SplunkErrorInstrumentation extends InstrumentationBase {
+	private throttleMap = new Map<string, number>()
+
 	constructor(config: InstrumentationConfig) {
 		super(ERROR_INSTRUMENTATION_NAME, ERROR_INSTRUMENTATION_VERSION, config)
 	}
@@ -161,7 +165,8 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		)
 		span.setAttribute('error.message', limitLen(msg, MESSAGE_LIMIT))
 		addStackIfUseful(span, err)
-		span.end(now)
+
+		this.endSpanWithThrottle(span, now)
 	}
 
 	protected reportErrorEvent(source: string, ev: ErrorEvent, context: SpanContext): void {
@@ -190,7 +195,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 			span.setAttribute('target_src', (ev.target as any).src)
 		}
 
-		span.end(now)
+		this.endSpanWithThrottle(span, now)
 	}
 
 	protected reportString(source: string, message: string, firstError: Error | undefined, context: SpanContext): void {
@@ -209,7 +214,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 			addStackIfUseful(span, firstError)
 		}
 
-		span.end(now)
+		this.endSpanWithThrottle(span, now)
 	}
 
 	private attachSpanContext(span: Span, value: Error | string | Event, context: SpanContext) {
@@ -237,6 +242,24 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 
 	private documentErrorListener = (event: ErrorEvent) => {
 		this.report('eventListener.error', event, {})
+	}
+
+	private endSpanWithThrottle(span: Span, endTime: number): void {
+		try {
+			// @ts-expect-error Attributes are defined but hidden
+			const spanKey = JSON.stringify([span.attributes, span.name])
+			if (
+				!this.throttleMap.has(spanKey) ||
+				performance.now() - (this.throttleMap.get(spanKey) || 0) > THROTTLE_LIMIT
+			) {
+				this.throttleMap.set(spanKey, performance.now())
+				span.end(endTime)
+			}
+		} catch (error) {
+			// If we fail to stringify attributes, just end the span without throttling
+			diag.debug('Error while ending span', error)
+			return
+		}
 	}
 
 	private errorListener = (event: ErrorEvent) => {
