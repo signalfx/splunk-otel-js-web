@@ -313,6 +313,9 @@ const SplunkRumRecorder = {
 				log.debug('Emitting log', logData)
 
 				processor.onEmit(logData)
+				if (recorderType === 'splunk') {
+					void processor.forceFlush()
+				}
 			}
 		}
 

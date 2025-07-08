@@ -17,9 +17,10 @@
  */
 import { safelyGetLocalStorage, safelySetLocalStorage, safelyRemoveFromLocalStorage } from './storage'
 import { log } from './log'
+import { JsonObject } from 'type-fest'
 
 export interface QueuedLog {
-	data: Uint8Array
+	data: JsonObject
 	headers: Record<string, string>
 	requestId: string
 	sessionId: string
@@ -38,7 +39,7 @@ export const getQueuedLogs = (): QueuedLog[] | null => {
 	try {
 		const parsedQueuedLogs = JSON.parse(storedLogs)
 		if (isQueuedLogs(parsedQueuedLogs)) {
-			return parsedQueuedLogs.map((logItem) => ({ ...logItem, data: new Uint8Array(logItem.data) }))
+			return parsedQueuedLogs
 		} else {
 			log.warn('Invalid queued log data found in local storage', parsedQueuedLogs)
 			return null
@@ -52,20 +53,16 @@ export const getQueuedLogs = (): QueuedLog[] | null => {
 export const addLogToQueue = (logItem: QueuedLog): boolean => {
 	const queuedLogs = getQueuedLogs() ?? []
 	queuedLogs.push(logItem)
-	setQueuedLogs(queuedLogs)
-	return true
+	return setQueuedLogs(queuedLogs)
 }
 
-const setQueuedLogs = (queuedLogs: QueuedLog[]): void => {
+const setQueuedLogs = (queuedLogs: QueuedLog[]): boolean => {
 	if (queuedLogs.length === 0) {
 		removeQueuedLogs()
-		return
+		return true
 	}
 
-	safelySetLocalStorage(
-		QUEUED_LOGS_STORAGE_KEY,
-		JSON.stringify(queuedLogs.map((logItem) => ({ ...logItem, data: Array.from(logItem.data) }))),
-	)
+	return safelySetLocalStorage(QUEUED_LOGS_STORAGE_KEY, JSON.stringify(queuedLogs))
 }
 
 export const removeQueuedLog = (logToRemove: QueuedLog) => {
@@ -74,7 +71,7 @@ export const removeQueuedLog = (logToRemove: QueuedLog) => {
 	setQueuedLogs(updatedLogs)
 }
 
-export const removeQueuedLogs = () => {
+const removeQueuedLogs = () => {
 	safelyRemoveFromLocalStorage(QUEUED_LOGS_STORAGE_KEY)
 }
 

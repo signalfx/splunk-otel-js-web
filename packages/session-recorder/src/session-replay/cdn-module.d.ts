@@ -15,7 +15,24 @@
  * limitations under the License.
  *
  */
-declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v1.36.0/session-replay.module.legacy.min.js' {
+declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.1.1/session-replay.module.legacy.min.js' {
+	type DeepPartial<T> = {
+		[P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P]
+	}
+
+	type Modifiers = {
+		omit: {
+			css: boolean
+			fonts: boolean
+			images: boolean
+		}
+	}
+
+	export interface Segment {
+		toBinary(params?: DeepPartial<Modifiers>): SessionReplayBinarySegment
+		toPlain(params?: DeepPartial<Modifiers>): SessionReplayPlainSegment
+	}
+
 	class SessionReplayBase {
 		static clear: () => void
 
@@ -25,15 +42,9 @@ declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v1.36.0/ses
 	}
 
 	export class SessionReplay extends SessionReplayBase {
-		constructor(config: SessionReplayConfig)
+		readonly isStarted: boolean
 
-		static compressData: (dataToCompress: ReadableStream<Uint8Array>, format: 'deflate' | 'gzip') => Promise<Blob>
-
-		static isCompressionSupported: () => Promise<boolean>
-	}
-
-	export class SessionReplayPlain extends SessionReplayBase {
-		constructor(config: SessionReplayConfig & { onSegment: (segment: SessionReplayPlainSegment) => void })
+		constructor(config: SessionReplayConfig & { onSegment: (segment: Segment) => void })
 	}
 
 	type LogLevel = 'debug' | 'info' | 'warn' | 'error'
@@ -48,7 +59,13 @@ declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v1.36.0/ses
 
 	export interface PackAssetsConfig {
 		fonts?: boolean
-		images?: boolean
+		images?:
+			| true
+			| {
+					readonly onlyViewportImages?: boolean
+					readonly pack?: boolean
+					readonly quality?: number
+			  }
 		styles?: boolean
 	}
 
@@ -67,12 +84,12 @@ declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v1.36.0/ses
 		maskAllInputs?: boolean
 		maskAllText?: boolean
 		maxExportIntervalMs?: number
-		onSegment: (segment: SessionReplayPlainSegment) => void
+		onSegment: (segment: Segment) => void
 		originalFetch?: typeof fetch
 		sensitivityRules?: SensitivityRule[]
 	}
 
-	export interface SessionReplayPlainSegment {
+	export interface SessionReplayPlainSegment extends Record<string, unknown> {
 		data: {
 			assets: ProcessedAsset[]
 			events: ReplayEvent[]
@@ -80,7 +97,7 @@ declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v1.36.0/ses
 		metadata: SessionReplayMetadata
 	}
 
-	export interface SessionReplayBinarySegment {
+	export interface SessionReplayBinarySegment extends Record<string, unknown> {
 		data: Blob
 		metadata: SessionReplayMetadata
 	}
