@@ -19,20 +19,61 @@ import { gzip } from 'fflate'
 import { SessionReplay } from './cdn-module'
 import { log } from '../log'
 
+let isCompressionSupportedCache: boolean | undefined
+
+export const isCompressionSupported = async () => {
+	if (isCompressionSupportedCache !== undefined) {
+		return isCompressionSupportedCache
+	}
+
+	// There is a library called response.js that overwrites Response object and use it for responsive design.
+	// If customer uses this library we disable the compression since we do not have access to original Response object.
+	// Fixes `Response is not a constructor` error.
+	// See more at:
+	// 	  https://github.com/ryanve/response.js
+	// 	  https://github.com/ryanve/response.js/issues/76
+	// Used for example on this page:
+	//	  https://www.stanzeorsini.it/le-stanze/
+	if (window.Response && 'dpr' in window.Response) {
+		return false
+	}
+
+	if (window.CompressionStream === undefined) {
+		return false
+	}
+
+	try {
+		const stream = new ReadableStream<Uint8Array>({
+			start(controller) {
+				const encoder = new TextEncoder()
+				controller.enqueue(encoder.encode('test'))
+				controller.close()
+			},
+		})
+		await compressData(stream, 'deflate')
+	} catch {
+		isCompressionSupportedCache = false
+		return false
+	}
+
+	isCompressionSupportedCache = true
+	return true
+}
+
 export const compressAsync = async (data: Uint8Array): Promise<Uint8Array | Blob> => {
 	if (!SessionReplay) {
 		log.warn('SessionReplay module undefined, fallback to gzip.')
 		return compressGzipAsync(data)
 	}
 
-	const isCompressionSupported = await SessionReplay.isCompressionSupported()
-	if (!isCompressionSupported) {
+	const canUseCompression = await isCompressionSupported()
+	if (!canUseCompression) {
 		log.warn('Compression is not supported, fallback to gzip.')
 		return compressGzipAsync(data)
 	}
 
 	const dataBlob = new Blob([data])
-	return SessionReplay.compressData(dataBlob.stream(), 'gzip')
+	return compressData(dataBlob.stream(), 'gzip')
 }
 
 const compressGzipAsync = async (data: Uint8Array): Promise<Uint8Array> =>
@@ -46,3 +87,30 @@ const compressGzipAsync = async (data: Uint8Array): Promise<Uint8Array> =>
 			resolve(compressedData)
 		})
 	})
+
+const compressData = async (dataStream: ReadableStream<Uint8Array>, format: 'deflate' | 'gzip') => {
+	const errorMessage = 'Compression'
+
+	const processStream = new CompressionStream(format)
+	const responsePipe = dataStream.pipeThrough(processStream)
+
+	let processedBlob: Blob | undefined
+	let numberOfRetries = 3
+	while (numberOfRetries > 0) {
+		try {
+			const processedStreamResponse = new Response(responsePipe)
+			processedBlob = await processedStreamResponse.blob()
+			break
+		} catch {
+			// ignore Failed to fetch error
+		} finally {
+			numberOfRetries -= 1
+		}
+	}
+
+	if (processedBlob === undefined) {
+		throw new Error(`${errorMessage} failed`)
+	}
+
+	return processedBlob
+}

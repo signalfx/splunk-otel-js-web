@@ -16,7 +16,7 @@
  *
  */
 import { Recorder, RecorderConfig, RecorderEmitContext } from './recorder'
-import { SessionReplayPlain, SessionReplayConfig, SessionReplayPlainSegment } from '../session-replay'
+import { SessionReplay, SessionReplayConfig, Segment } from '../session-replay'
 import { log } from '../log'
 
 export type SplunkRecorderPublicConfig = Omit<SessionReplayConfig, 'onSegment'>
@@ -24,13 +24,17 @@ export type SplunkRecorderPublicConfig = Omit<SessionReplayConfig, 'onSegment'>
 type SplunkRecorderConfig = SplunkRecorderPublicConfig & RecorderConfig
 
 export class SplunkRecorder extends Recorder {
-	private sessionReplay: SessionReplayPlain | undefined
+	private isStoppedManually: boolean = true
+
+	private isVisibilityListenerAttached: boolean = false
+
+	private sessionReplay: SessionReplay | undefined
 
 	constructor(private readonly config: SplunkRecorderConfig) {
 		super(config)
 
-		if (SessionReplayPlain) {
-			this.sessionReplay = new SessionReplayPlain({
+		if (SessionReplay) {
+			this.sessionReplay = new SessionReplay({
 				features: {
 					backgroundServiceSrc: this.config.features?.backgroundServiceSrc,
 					cacheAssets: this.config.features?.cacheAssets ?? false,
@@ -53,35 +57,45 @@ export class SplunkRecorder extends Recorder {
 	}
 
 	static clear() {
-		if (SessionReplayPlain) {
+		if (SessionReplay) {
 			log.debug('SplunkRecorder: Clearing assets')
-			SessionReplayPlain.clear()
+			SessionReplay.clear()
 		}
 	}
 
 	pause() {
-		this.sessionReplay?.stop()
+		this.stop()
 	}
 
 	resume() {
-		void this.sessionReplay?.start()
+		this.start()
 	}
 
 	start() {
 		void this.sessionReplay?.start()
+		if (!this.isVisibilityListenerAttached) {
+			document.addEventListener('visibilitychange', this.visibilityChangeHandler)
+		}
+
+		this.isStoppedManually = false
 	}
 
 	stop() {
 		this.sessionReplay?.stop()
+
+		document.removeEventListener('visibilitychange', this.visibilityChangeHandler)
+		this.isVisibilityListenerAttached = false
+		this.isStoppedManually = true
 	}
 
-	private onSegment = (segment: SessionReplayPlainSegment) => {
+	private onSegment = (segment: Segment) => {
 		log.debug('Session replay segment: ', segment)
 
+		const plainSegment = segment.toPlain()
 		const context: RecorderEmitContext = {
-			data: { data: segment.data, metadata: segment.metadata },
+			data: plainSegment,
 			onSessionChanged: this.onSessionChanged,
-			startTime: segment.metadata.startUnixMs,
+			startTime: plainSegment.metadata.startUnixMs,
 			type: 'splunk',
 		}
 
@@ -93,5 +107,25 @@ export class SplunkRecorder extends Recorder {
 		this.stop()
 		SplunkRecorder.clear()
 		this.start()
+	}
+
+	private startOnVisibilityChange = () => {
+		this.start()
+	}
+
+	private stopOnVisibilityChange = () => {
+		this.sessionReplay?.stop()
+	}
+
+	private visibilityChangeHandler = () => {
+		if (document.visibilityState === 'visible') {
+			if (!this.sessionReplay?.isStarted === false && !this.isStoppedManually) {
+				this.startOnVisibilityChange()
+			}
+		} else {
+			if (this.sessionReplay?.isStarted === true) {
+				this.stopOnVisibilityChange()
+			}
+		}
 	}
 }

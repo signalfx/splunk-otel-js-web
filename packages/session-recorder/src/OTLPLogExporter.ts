@@ -24,7 +24,7 @@ import { IAnyValue, Log } from './types'
 import { VERSION } from './version'
 import { compressAsync } from './session-replay/utils'
 import { apiFetch, ApiParams } from './api/api-fetch'
-import { addLogToQueue, removeQueuedLog, QueuedLog, getQueuedLogs, removeQueuedLogs } from './export-log-queue'
+import { addLogToQueue, removeQueuedLog, QueuedLog, getQueuedLogs } from './export-log-queue'
 import { context } from '@opentelemetry/api'
 import { suppressTracing } from '@opentelemetry/core'
 import { log } from './log'
@@ -143,7 +143,7 @@ export default class OTLPLogExporter {
 		const requestId = nanoid()
 		const queuedLog: QueuedLog | null = this.config.usePersistentExportQueue
 			? {
-					data: uint8ArrayData,
+					data: logsData,
 					timestamp: Date.now(),
 					url: endpoint,
 					sessionId: this.config.sessionId,
@@ -154,9 +154,44 @@ export default class OTLPLogExporter {
 
 		if (queuedLog) {
 			log.debug('Adding log to queue', { ...queuedLog, data: '[truncated]' })
-			addLogToQueue(queuedLog)
+			const isPersisted = addLogToQueue(queuedLog)
+			if (!isPersisted) {
+				log.error('Failed to add log to queue', { ...queuedLog, data: '[truncated]' })
+			}
 		}
 
+		OTLPLogExporter.sendDataToBackend(queuedLog, uint8ArrayData, endpoint, headers)
+	}
+
+	exportQueuedLogs(): void {
+		let logs: QueuedLog[] = []
+		logs = getQueuedLogs() ?? []
+
+		for (const logItem of logs) {
+			log.debug('Found queued log', { ...logItem, data: '[truncated]' })
+
+			// Only export logs that belong to the current session
+			if (logItem.sessionId !== this.config.sessionId) {
+				log.debug(
+					'exportQueuedLogs - session mismatch',
+					{ ...logItem, data: '[truncated]' },
+					{ sessionId: this.config.sessionId },
+				)
+				continue
+			}
+
+			const logData = strToU8(JSON.stringify(logItem.data))
+
+			OTLPLogExporter.sendDataToBackend(logItem, logData, logItem.url, logItem.headers)
+		}
+	}
+
+	private static sendDataToBackend(
+		queuedLog: QueuedLog | null,
+		uint8ArrayData: Uint8Array,
+		endpoint: string,
+		headers: Record<string, string>,
+	): void {
 		const onFetchSuccess = () => {
 			if (!queuedLog) {
 				return
@@ -181,39 +216,6 @@ export default class OTLPLogExporter {
 			compressAsync(uint8ArrayData)
 				.then((compressedData) => {
 					void sendByFetch(endpoint, { headers, body: compressedData }, onFetchSuccess)
-				})
-				.catch((error) => {
-					log.error('Could not compress data', error)
-				})
-		}
-	}
-
-	exportQueuedLogs(): void {
-		let logs: QueuedLog[] = []
-		try {
-			logs = getQueuedLogs() ?? []
-		} finally {
-			removeQueuedLogs()
-		}
-
-		for (const logItem of logs) {
-			log.debug('Found queued log', { ...logItem, data: '[truncated]' })
-
-			// Only export logs that belong to the current session
-			if (logItem.sessionId !== this.config.sessionId) {
-				log.debug(
-					'exportQueuedLogs - session mismatch',
-					{ ...logItem, data: '[truncated]' },
-					{ sessionId: this.config.sessionId },
-				)
-				continue
-			}
-
-			compressAsync(logItem.data)
-				.then((compressedData) => {
-					void sendByFetch(logItem.url, { headers: logItem.headers, body: compressedData }, () => {
-						log.debug('exportQueuedLogs - success', { ...logItem, data: '[truncated]' })
-					})
 				})
 				.catch((error) => {
 					log.error('Could not compress data', error)
