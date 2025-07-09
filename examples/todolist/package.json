@@ -9,7 +9,7 @@
 		"clean": "rm -rf dist .turbo"
 	},
 	"devDependencies": {
-		"@rsbuild/core": "^1.2.14",
+		"@rsbuild/core": "^1.4.5",
 		"@rsbuild/plugin-react": "^1.1.1",
 		"@splunk/otel": "3.1.2",
 		"@splunk/otel-web": "workspace:*",
