@@ -24,6 +24,10 @@ export type SplunkRecorderPublicConfig = Omit<SessionReplayConfig, 'onSegment'>
 type SplunkRecorderConfig = SplunkRecorderPublicConfig & RecorderConfig
 
 export class SplunkRecorder extends Recorder {
+	private isStoppedManually: boolean = true
+
+	private isVisibilityListenerAttached: boolean = false
+
 	private sessionReplay: SessionReplay | undefined
 
 	constructor(private readonly config: SplunkRecorderConfig) {
@@ -60,21 +64,28 @@ export class SplunkRecorder extends Recorder {
 	}
 
 	pause() {
-		this.sessionReplay?.stop()
+		this.stop()
 	}
 
 	resume() {
-		void this.sessionReplay?.start()
+		this.start()
 	}
 
 	start() {
 		void this.sessionReplay?.start()
-		document.addEventListener('visibilitychange', this.visibilityChangeHandler)
+		if (!this.isVisibilityListenerAttached) {
+			document.addEventListener('visibilitychange', this.visibilityChangeHandler)
+		}
+
+		this.isStoppedManually = false
 	}
 
 	stop() {
 		this.sessionReplay?.stop()
+
 		document.removeEventListener('visibilitychange', this.visibilityChangeHandler)
+		this.isVisibilityListenerAttached = false
+		this.isStoppedManually = true
 	}
 
 	private onSegment = (segment: Segment) => {
@@ -98,14 +109,22 @@ export class SplunkRecorder extends Recorder {
 		this.start()
 	}
 
+	private startOnVisibilityChange = () => {
+		this.start()
+	}
+
+	private stopOnVisibilityChange = () => {
+		this.sessionReplay?.stop()
+	}
+
 	private visibilityChangeHandler = () => {
 		if (document.visibilityState === 'visible') {
-			if (!this.sessionReplay?.isStarted === false) {
-				this.start()
+			if (!this.sessionReplay?.isStarted === false && !this.isStoppedManually) {
+				this.startOnVisibilityChange()
 			}
 		} else {
 			if (this.sessionReplay?.isStarted === true) {
-				this.stop()
+				this.stopOnVisibilityChange()
 			}
 		}
 	}
