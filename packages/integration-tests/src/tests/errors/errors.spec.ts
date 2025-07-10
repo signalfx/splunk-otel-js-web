@@ -72,7 +72,7 @@ test.describe('errors', () => {
 
 		const errorMessageMap = {
 			chromium: "Cannot set properties of null (setting 'prop1')",
-			firefox: 'test is null',
+			firefox: 'can\'t access property "prop1", test is null',
 			webkit: "null is not an object (evaluating 'test.prop1 = true')",
 		}
 
@@ -108,7 +108,7 @@ test.describe('errors', () => {
 
 		const errorMessageMap = {
 			chromium: "Cannot set properties of null (setting 'anyField')",
-			firefox: 'someNull is null',
+			firefox: 'can\'t access property "anyField", someNull is null',
 			webkit: "null is not an object (evaluating 'someNull.anyField = 'value'')",
 		}
 
@@ -133,7 +133,7 @@ test.describe('errors', () => {
 
 		const errorMessages = {
 			chromium: "Cannot set properties of null (setting 'anyField')",
-			firefox: 'someNull is null',
+			firefox: 'can\'t access property "anyField", someNull is null',
 			webkit: "null is not an object (evaluating 'someNull.anyField = 'value'')",
 		}
 
