@@ -28,32 +28,28 @@ export class SplunkRecorder extends Recorder {
 
 	private isVisibilityListenerAttached: boolean = false
 
-	private sessionReplay: SessionReplay | undefined
+	private sessionReplay: SessionReplay
 
 	constructor(private readonly config: SplunkRecorderConfig) {
 		super(config)
 
-		if (SessionReplay) {
-			this.sessionReplay = new SessionReplay({
-				features: {
-					backgroundServiceSrc: this.config.features?.backgroundServiceSrc,
-					cacheAssets: this.config.features?.cacheAssets ?? false,
-					canvas: this.config.features?.canvas ?? false,
-					iframes: this.config.features?.iframes ?? false,
-					packAssets: this.config.features?.packAssets ?? { styles: true },
-					video: this.config.features?.video ?? false,
-				},
-				logLevel: this.config.logLevel ?? 'error',
-				maskAllInputs: this.config.maskAllInputs ?? true,
-				maskAllText: this.config.maskAllText ?? true,
-				maxExportIntervalMs: this.config.maxExportIntervalMs ?? 5000,
-				onSegment: this.onSegment,
-				originalFetch: this.config.originalFetch,
-				sensitivityRules: this.config.sensitivityRules ?? [],
-			})
-		} else {
-			log.warn('SessionReplayPlain is not available. Recording is disabled.')
-		}
+		this.sessionReplay = new SessionReplay({
+			features: {
+				backgroundServiceSrc: this.config.features?.backgroundServiceSrc,
+				cacheAssets: this.config.features?.cacheAssets ?? false,
+				canvas: this.config.features?.canvas ?? false,
+				iframes: this.config.features?.iframes ?? false,
+				packAssets: this.config.features?.packAssets ?? { styles: true },
+				video: this.config.features?.video ?? false,
+			},
+			logLevel: this.config.logLevel ?? 'error',
+			maskAllInputs: this.config.maskAllInputs ?? true,
+			maskAllText: this.config.maskAllText ?? true,
+			maxExportIntervalMs: this.config.maxExportIntervalMs ?? 5000,
+			onSegment: this.onSegment,
+			originalFetch: this.config.originalFetch,
+			sensitivityRules: this.config.sensitivityRules ?? [],
+		})
 	}
 
 	static clear() {
@@ -72,7 +68,10 @@ export class SplunkRecorder extends Recorder {
 	}
 
 	start() {
-		void this.sessionReplay?.start()
+		if (document.visibilityState === 'visible') {
+			void this.sessionReplay.start()
+		}
+
 		if (!this.isVisibilityListenerAttached) {
 			document.addEventListener('visibilitychange', this.visibilityChangeHandler)
 		}
@@ -81,7 +80,7 @@ export class SplunkRecorder extends Recorder {
 	}
 
 	stop() {
-		this.sessionReplay?.stop()
+		this.sessionReplay.stop()
 
 		document.removeEventListener('visibilitychange', this.visibilityChangeHandler)
 		this.isVisibilityListenerAttached = false
@@ -114,16 +113,16 @@ export class SplunkRecorder extends Recorder {
 	}
 
 	private stopOnVisibilityChange = () => {
-		this.sessionReplay?.stop()
+		this.sessionReplay.stop()
 	}
 
 	private visibilityChangeHandler = () => {
 		if (document.visibilityState === 'visible') {
-			if (!this.sessionReplay?.isStarted === false && !this.isStoppedManually) {
+			if (!this.sessionReplay.isStarted && !this.isStoppedManually) {
 				this.startOnVisibilityChange()
 			}
 		} else {
-			if (this.sessionReplay?.isStarted === true) {
+			if (this.sessionReplay.isStarted) {
 				this.stopOnVisibilityChange()
 			}
 		}
