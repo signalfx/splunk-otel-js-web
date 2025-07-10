@@ -151,6 +151,9 @@ export function updateSessionStatus({
 	if (recorderType && sessionState.rt !== recorderType) {
 		sessionState.rt = recorderType
 		shouldForceWrite = true
+
+		store?.set(sessionState, cookieDomain)
+		store?.flush()
 	}
 
 	eventTarget?.emit('session-changed', { sessionId: sessionState.id })
@@ -268,8 +271,13 @@ export function getIsNewSession(): boolean {
 
 export function checkSessionRecorderType(recorderType: RecorderType): void {
 	const sessionState = getCurrentSessionState({ forceDiskRead: true })
-	if (sessionState && sessionState.rt !== recorderType) {
-		updateSessionStatus({ forceStore: true, forceNewSession: true, recorderType })
-		console.debug('Session recorder type changed, creating new session', { recorderType })
+	if (sessionState) {
+		if (sessionState.rt === undefined) {
+			updateSessionStatus({ forceStore: true, recorderType })
+			console.debug('Session recorder type initialized', { recorderType })
+		} else if (sessionState.rt !== recorderType) {
+			updateSessionStatus({ forceStore: true, forceNewSession: true, recorderType })
+			console.debug('Session recorder type changed, creating new session', { recorderType })
+		}
 	}
 }
