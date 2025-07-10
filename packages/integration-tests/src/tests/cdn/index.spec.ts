@@ -39,7 +39,7 @@ test.describe('cdn', () => {
 				expectedMessage = "Cannot set properties of null (setting 'prop1')"
 				break
 			case 'firefox':
-				expectedMessage = 'test is null'
+				expectedMessage = 'can\'t access property "prop1", test is null'
 				break
 			case 'webkit':
 				expectedMessage = "null is not an object (evaluating 'test.prop1 = true')"
