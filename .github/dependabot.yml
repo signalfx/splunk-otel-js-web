@@ -26,6 +26,16 @@ updates:
               patterns:
                   - '@vitest/*'
                   - 'vitest*'
+          react:
+              patterns:
+                  - 'react'
+                  - 'react-dom'
+          opentelemetry:
+              patterns:
+                  - '@opentelemetry/*'
+          rsbuild:
+              patterns:
+                  - '@rsbuild/*'
 
     - package-ecosystem: 'github-actions'
       directory: '/'
