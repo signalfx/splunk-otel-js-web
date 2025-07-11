@@ -25,7 +25,7 @@
 		"@splunk/rum-build-plugins": "workspace:*",
 		"@types/ejs": "^3.1.5",
 		"@types/express": "^5.0.0",
-		"@types/node": "^24.0.12",
+		"@types/node": "^24.0.13",
 		"cors": "^2.8.5",
 		"ejs": "^3.1.10",
 		"nodemon": "^3.1.9",
