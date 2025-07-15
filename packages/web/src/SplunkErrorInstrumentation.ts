@@ -30,7 +30,7 @@ import { diag } from '@opentelemetry/api'
 const STACK_LIMIT = 4096
 const MESSAGE_LIMIT = 1024
 
-export const STACK_TRACE_URL_PATTER = /([\w]+:\/\/[^\s/]+\/[^\s?:#]+)/g
+export const STACK_TRACE_URL_PATTER = /([\w]+:\/\/[^\s/]+\/[^\s?:#]+(\?\S[^)]*)?)/g
 
 function useful(s: string) {
 	return s && s.trim() !== '' && !s.startsWith('[object') && s !== 'error'
@@ -65,7 +65,7 @@ function parseErrorStack(stack: string): string {
 	if (urls) {
 		urls.forEach((url) => {
 			// Strip off any line/column numbers at the end after the last colon
-			const cleanedUrl = url.split(/:(?=\d+$)/)[0]
+			const cleanedUrl = url.replace(/(:\d+){1,2}/, '')
 			const globalSourceMapIds = (window as any).sourceMapIds
 			if (globalSourceMapIds && globalSourceMapIds[cleanedUrl] && !sourceMapIds[cleanedUrl]) {
 				sourceMapIds[cleanedUrl] = globalSourceMapIds[cleanedUrl]
