@@ -37,7 +37,7 @@ importers:
         version: 8.36.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3)
       '@vitest/browser':
         specifier: ^3.2.3
-        version: 3.2.4(playwright@1.54.0)(vite@7.0.0(@types/node@24.0.13)(jiti@2.4.2)(terser@5.43.1)(tsx@4.20.3))(vitest@3.2.4)
+        version: 3.2.4(playwright@1.54.1)(vite@7.0.0(@types/node@24.0.13)(jiti@2.4.2)(terser@5.43.1)(tsx@4.20.3))(vitest@3.2.4)
       '@vitest/coverage-istanbul':
         specifier: ^3.2.3
         version: 3.2.4(vitest@3.2.4)
@@ -72,8 +72,8 @@ importers:
         specifier: ^4.1.5
         version: 4.1.5
       playwright:
-        specifier: ^1.54.0
-        version: 1.54.0
+        specifier: ^1.54.1
+        version: 1.54.1
       prettier:
         specifier: ^3.6.2
         version: 3.6.2
@@ -115,7 +115,7 @@ importers:
     dependencies:
       next:
         specifier: 15.3.5
-        version: 15.3.5(@babel/core@7.27.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.54.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 15.3.5(@babel/core@7.27.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.54.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react:
         specifier: ^19.1.0
         version: 19.1.0
@@ -234,8 +234,8 @@ importers:
         specifier: ^8.1.1
         version: 8.2.0
       '@playwright/test':
-        specifier: ^1.54.0
-        version: 1.54.0
+        specifier: ^1.54.1
+        version: 1.54.1
       '@splunk/otel-web':
         specifier: workspace:*
         version: link:../web
@@ -264,8 +264,8 @@ importers:
         specifier: ^3.1.9
         version: 3.1.10
       playwright:
-        specifier: ^1.54.0
-        version: 1.54.0
+        specifier: ^1.54.1
+        version: 1.54.1
 
   packages/session-recorder:
     dependencies:
@@ -1717,8 +1717,8 @@ packages:
     resolution: {integrity: sha512-YLT9Zo3oNPJoBjBc4q8G2mjU4tqIbf5CEOORbUUr48dCD9q3umJ3IPlVqOqDakPfd2HuwccBaqlGhN4Gmr5OWg==}
     engines: {node: ^12.20.0 || ^14.18.0 || >=16.0.0}
 
-  '@playwright/test@1.54.0':
-    resolution: {integrity: sha512-6Mnd5daQmLivaLu5kxUg6FxPtXY4sXsS5SUwKjWNy4ISe4pKraNHoFxcsaTFiNUULbjy0Vlb5HT86QuM0Jy1pQ==}
+  '@playwright/test@1.54.1':
+    resolution: {integrity: sha512-FS8hQ12acieG2dYSksmLOF7BNxnVf2afRJdCuM1eMSxj6QTSE6G4InGF7oApGgDb65MX7AwMVlIkpru0yZA4Xw==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -4701,13 +4701,13 @@ packages:
     resolution: {integrity: sha512-HRDzbaKjC+AOWVXxAU/x54COGeIv9eb+6CkDSQoNTt4XyWoIJvuPsXizxu/Fr23EiekbtZwmh1IcIG/l/a10GQ==}
     engines: {node: '>=8'}
 
-  playwright-core@1.54.0:
-    resolution: {integrity: sha512-uiWpWaJh3R3etpJ0QrpligEMl62Dk1iSAB6NUXylvmQz+e3eipXHDHvOvydDAssb5Oqo0E818qdn0L9GcJSTyA==}
+  playwright-core@1.54.1:
+    resolution: {integrity: sha512-Nbjs2zjj0htNhzgiy5wu+3w09YetDx5pkrpI/kZotDlDUaYk0HVA5xrBVPdow4SAUIlhgKcJeJg4GRKW6xHusA==}
     engines: {node: '>=18'}
     hasBin: true
 
-  playwright@1.54.0:
-    resolution: {integrity: sha512-y9yzHmXRwEUOpghM7XGcA38GjWuTOUMaTIcm/5rHcYVjh5MSp9qQMRRMc/+p1cx+csoPnX4wkxAF61v5VKirxg==}
+  playwright@1.54.1:
+    resolution: {integrity: sha512-peWpSwIBmSLi6aW2auvrUtf2DqY16YYcCMO8rTVx486jKmDTJg7UAhyrraP98GB8BoPURZP8+nxO7TSd4cPr5g==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -7643,9 +7643,9 @@ snapshots:
 
   '@pkgr/core@0.2.7': {}
 
-  '@playwright/test@1.54.0':
+  '@playwright/test@1.54.1':
     dependencies:
-      playwright: 1.54.0
+      playwright: 1.54.1
 
   '@polka/url@1.0.0-next.29': {}
 
@@ -8595,7 +8595,7 @@ snapshots:
       '@typescript-eslint/types': 8.36.0
       eslint-visitor-keys: 4.2.1
 
-  '@vitest/browser@3.2.4(playwright@1.54.0)(vite@7.0.0(@types/node@24.0.13)(jiti@2.4.2)(terser@5.43.1)(tsx@4.20.3))(vitest@3.2.4)':
+  '@vitest/browser@3.2.4(playwright@1.54.1)(vite@7.0.0(@types/node@24.0.13)(jiti@2.4.2)(terser@5.43.1)(tsx@4.20.3))(vitest@3.2.4)':
     dependencies:
       '@testing-library/dom': 10.4.0
       '@testing-library/user-event': 14.6.1(@testing-library/dom@10.4.0)
@@ -8607,7 +8607,7 @@ snapshots:
       vitest: 3.2.4(@types/debug@4.1.12)(@types/node@24.0.13)(@vitest/browser@3.2.4)(@vitest/ui@3.2.4)(jiti@2.4.2)(terser@5.43.1)(tsx@4.20.3)
       ws: 8.18.3
     optionalDependencies:
-      playwright: 1.54.0
+      playwright: 1.54.1
     transitivePeerDependencies:
       - bufferutil
       - msw
@@ -10855,7 +10855,7 @@ snapshots:
 
   neo-async@2.6.2: {}
 
-  next@15.3.5(@babel/core@7.27.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.54.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
+  next@15.3.5(@babel/core@7.27.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.54.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
     dependencies:
       '@next/env': 15.3.5
       '@swc/counter': 0.1.3
@@ -10876,7 +10876,7 @@ snapshots:
       '@next/swc-win32-arm64-msvc': 15.3.5
       '@next/swc-win32-x64-msvc': 15.3.5
       '@opentelemetry/api': 1.9.0
-      '@playwright/test': 1.54.0
+      '@playwright/test': 1.54.1
       sharp: 0.34.2
     transitivePeerDependencies:
       - '@babel/core'
@@ -11134,11 +11134,11 @@ snapshots:
     dependencies:
       find-up: 4.1.0
 
-  playwright-core@1.54.0: {}
+  playwright-core@1.54.1: {}
 
-  playwright@1.54.0:
+  playwright@1.54.1:
     dependencies:
-      playwright-core: 1.54.0
+      playwright-core: 1.54.1
     optionalDependencies:
       fsevents: 2.3.2
 
@@ -12259,7 +12259,7 @@ snapshots:
     optionalDependencies:
       '@types/debug': 4.1.12
       '@types/node': 24.0.13
-      '@vitest/browser': 3.2.4(playwright@1.54.0)(vite@7.0.0(@types/node@24.0.13)(jiti@2.4.2)(terser@5.43.1)(tsx@4.20.3))(vitest@3.2.4)
+      '@vitest/browser': 3.2.4(playwright@1.54.1)(vite@7.0.0(@types/node@24.0.13)(jiti@2.4.2)(terser@5.43.1)(tsx@4.20.3))(vitest@3.2.4)
       '@vitest/ui': 3.2.4(vitest@3.2.4)
     transitivePeerDependencies:
       - jiti
