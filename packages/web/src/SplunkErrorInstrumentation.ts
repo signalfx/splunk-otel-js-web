@@ -65,7 +65,7 @@ function parseErrorStack(stack: string): string {
 	if (urls) {
 		urls.forEach((url) => {
 			// Strip off any line/column numbers at the end after the last colon
-			const cleanedUrl = url.replace(/(:\d+){1,2}/, '')
+			const cleanedUrl = url.replace(/(:\d+){1,2}\s*/, '')
 			const globalSourceMapIds = (window as any).sourceMapIds
 			if (globalSourceMapIds && globalSourceMapIds[cleanedUrl] && !sourceMapIds[cleanedUrl]) {
 				sourceMapIds[cleanedUrl] = globalSourceMapIds[cleanedUrl]
