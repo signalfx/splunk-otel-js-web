@@ -132,7 +132,7 @@ const stack6 = `Error
 const expected6 = [
 	'http://example.com:8080/path/js/main.js?name=testname',
 	'http://example.com:8080/path/js/main2.js#fragmentHere',
-	'http://example.com:8080/path/js/main3.js?name=testname#fragmentHere'
+	'http://example.com:8080/path/js/main3.js?name=testname#fragmentHere',
 ]
 
 // Test 7: Urls with different protocols and blobs
