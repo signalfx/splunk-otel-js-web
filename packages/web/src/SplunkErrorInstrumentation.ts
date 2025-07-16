@@ -224,16 +224,19 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 
 	private attachClearingInterval(): void {
 		this.clearingIntervalId = setInterval(() => {
-			requestIdleCallback(
-				() => {
-					this.throttleMap.forEach((relativeTime, throttleKey) => {
-						if (performance.now() - relativeTime > THROTTLE_LIMIT) {
-							this.throttleMap.delete(throttleKey)
-						}
-					})
-				},
-				{ timeout: 1000 },
-			)
+			const callback = () => {
+				this.throttleMap.forEach((relativeTime, throttleKey) => {
+					if (performance.now() - relativeTime > THROTTLE_LIMIT) {
+						this.throttleMap.delete(throttleKey)
+					}
+				})
+			}
+
+			if (typeof requestIdleCallback === 'function') {
+				requestIdleCallback(callback, { timeout: 1000 })
+			} else {
+				callback()
+			}
 		}, 5000)
 	}
 
