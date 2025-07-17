@@ -30,7 +30,7 @@ import { diag } from '@opentelemetry/api'
 const STACK_LIMIT = 4096
 const MESSAGE_LIMIT = 1024
 
-export const STACK_TRACE_URL_PATTER = /([\w]+:\/\/[^\s/]+\/[^\s?:#]+)/g
+export const STACK_TRACE_URL_PATTER = /[\w]+:\/\/[^\s]+?(?::\d+)?(?=:[\d]+:[\d]+)/g
 
 function useful(s: string) {
 	return s && s.trim() !== '' && !s.startsWith('[object') && s !== 'error'
