@@ -212,8 +212,8 @@ importers:
         specifier: ^11.0.0
         version: 11.1.0
       '@fastify/websocket':
-        specifier: ^11.0.2
-        version: 11.1.0
+        specifier: ^11.2.0
+        version: 11.2.0
       npm-run-all:
         specifier: ^4.1.5
         version: 4.1.5
@@ -899,8 +899,8 @@ packages:
   '@fastify/view@11.1.0':
     resolution: {integrity: sha512-ab8LG5V8srCdnknYlufaSusrjkYLYf5TUWm3DTdPFr5m1C9tI7KNl78UCcP0BJiaGaZj1udsyzAC67JCf5Ol/g==}
 
-  '@fastify/websocket@11.1.0':
-    resolution: {integrity: sha512-BH6yZjbA5+DjuC9lMgv3hHuaSsf3snph6df9l1zIW6lvZLnYVmxN7OgmGlMKftsTOFB7NePXVCJZPzagunQK5Q==}
+  '@fastify/websocket@11.2.0':
+    resolution: {integrity: sha512-3HrDPbAG1CzUCqnslgJxppvzaAZffieOVbLp1DAy1huCSynUWPifSvfdEDUR8HlJLp3sp1A36uOM2tJogADS8w==}
 
   '@grpc/grpc-js@1.13.4':
     resolution: {integrity: sha512-GsFaMXCkMqkKIvwCQjCrwH+GHbPKBjhwo/8ZuUkWHqbI73Kky9I+pQltrlT0+MWpedCoosda53lgjYfyEPgxBg==}
@@ -6714,11 +6714,11 @@ snapshots:
       fastify-plugin: 5.0.1
       toad-cache: 3.7.0
 
-  '@fastify/websocket@11.1.0':
+  '@fastify/websocket@11.2.0':
     dependencies:
       duplexify: 4.1.3
       fastify-plugin: 5.0.1
-      ws: 8.18.2
+      ws: 8.18.3
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
