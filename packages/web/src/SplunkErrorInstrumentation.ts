@@ -30,7 +30,7 @@ import { diag } from '@opentelemetry/api'
 const STACK_LIMIT = 4096
 const MESSAGE_LIMIT = 1024
 
-export const STACK_TRACE_URL_PATTER = /([\w]+:\/\/[^\s/]+\/[^\s?:#]+)/g
+export const STACK_TRACE_URL_PATTER = /[\w]+:\/\/[^\s]+?(?::\d+)?(?=:[\d]+:[\d]+)/g
 
 function useful(s: string) {
 	return s && s.trim() !== '' && !s.startsWith('[object') && s !== 'error'
@@ -92,6 +92,8 @@ export const ERROR_INSTRUMENTATION_VERSION = '1'
 const THROTTLE_LIMIT = 500
 
 export class SplunkErrorInstrumentation extends InstrumentationBase {
+	private clearingIntervalId?: ReturnType<typeof setInterval>
+
 	private throttleMap = new Map<string, number>()
 
 	constructor(config: InstrumentationConfig) {
@@ -103,6 +105,8 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		window.removeEventListener('unhandledrejection', this.unhandledRejectionListener)
 		window.removeEventListener('error', this.errorListener)
 		document.documentElement.removeEventListener('error', this.documentErrorListener, { capture: true })
+		clearInterval(this.clearingIntervalId)
+		this.throttleMap.clear()
 	}
 
 	enable(): void {
@@ -110,6 +114,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		window.addEventListener('unhandledrejection', this.unhandledRejectionListener)
 		window.addEventListener('error', this.errorListener)
 		document.documentElement.addEventListener('error', this.documentErrorListener, { capture: true })
+		this.attachClearingInterval()
 	}
 
 	init(): void {}
@@ -215,6 +220,24 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		}
 
 		this.endSpanWithThrottle(span, now)
+	}
+
+	private attachClearingInterval(): void {
+		this.clearingIntervalId = setInterval(() => {
+			const callback = () => {
+				this.throttleMap.forEach((relativeTime, throttleKey) => {
+					if (performance.now() - relativeTime > THROTTLE_LIMIT) {
+						this.throttleMap.delete(throttleKey)
+					}
+				})
+			}
+
+			if (typeof requestIdleCallback === 'function') {
+				requestIdleCallback(callback, { timeout: 1000 })
+			} else {
+				callback()
+			}
+		}, 5000)
 	}
 
 	private attachSpanContext(span: Span, value: Error | string | Event, context: SpanContext) {
