@@ -22,6 +22,9 @@
 		"test:e2e": {
 			"cache": false,
 			"dependsOn": ["^build"]
+		},
+		"wait": {
+			"cache": false
 		}
 	},
 	"ui": "tui"
