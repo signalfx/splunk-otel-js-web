@@ -18,9 +18,21 @@
 import { safelyGetLocalStorage, safelySetLocalStorage, safelyRemoveFromLocalStorage } from './storage'
 import { log } from './log'
 import { JsonObject } from 'type-fest'
+import { SessionReplay } from './session-replay'
 
 export interface QueuedLog {
-	data: JsonObject
+	data: {
+		resourceLogs: {
+			scopeLogs: {
+				logRecords: {
+					body: {
+						stringValue: string
+					}
+				}[]
+			}[]
+		}[]
+		spanLogs: JsonObject[]
+	}
 	headers: Record<string, string>
 	requestId: string
 	sessionId: string
@@ -91,4 +103,30 @@ const isQueuedLogs = (maybeQueuedLogs: unknown): maybeQueuedLogs is QueuedLog[] 
 	}
 
 	return maybeQueuedLogs.every(isQueuedLog)
+}
+
+export const removeAssetsFromQueuedLog = (
+	queuedLog: QueuedLog,
+	omit: { css: boolean; fonts: boolean; images: boolean },
+) => {
+	const clonedLog = JSON.parse(JSON.stringify(queuedLog)) as QueuedLog
+	for (const log_ of clonedLog.data.resourceLogs) {
+		const scopeLogs = log_.scopeLogs || []
+		for (const scopeLog of scopeLogs) {
+			for (const logRecord of scopeLog.logRecords) {
+				log.debug('Processing log record', omit, logRecord.body.stringValue)
+				try {
+					logRecord.body.stringValue = JSON.stringify(
+						SessionReplay.loadPlainSegment(JSON.parse(logRecord.body.stringValue)).toPlain({
+							omit,
+						}),
+					)
+				} catch {
+					log.error('Error happened during segment conversion')
+				}
+			}
+		}
+	}
+
+	return clonedLog
 }

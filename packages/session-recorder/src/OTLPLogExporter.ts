@@ -24,7 +24,7 @@ import { IAnyValue, Log } from './types'
 import { VERSION } from './version'
 import { compressAsync } from './session-replay/utils'
 import { apiFetch, ApiParams } from './api/api-fetch'
-import { addLogToQueue, removeQueuedLog, QueuedLog, getQueuedLogs } from './export-log-queue'
+import { addLogToQueue, removeQueuedLog, QueuedLog, getQueuedLogs, removeAssetsFromQueuedLog } from './export-log-queue'
 import { context } from '@opentelemetry/api'
 import { suppressTracing } from '@opentelemetry/core'
 import { log } from './log'
@@ -102,7 +102,7 @@ export default class OTLPLogExporter {
 		this.exportQueuedLogs()
 	}
 
-	constructLogData(logs: Log[]): JsonObject {
+	constructLogData(logs: Log[]) {
 		return {
 			resourceLogs: [
 				{
@@ -143,7 +143,7 @@ export default class OTLPLogExporter {
 		const requestId = nanoid()
 		const queuedLog: QueuedLog | null = this.config.usePersistentExportQueue
 			? {
-					data: logsData,
+					data: logsData as unknown as QueuedLog['data'],
 					timestamp: Date.now(),
 					url: endpoint,
 					sessionId: this.config.sessionId,
@@ -156,7 +156,26 @@ export default class OTLPLogExporter {
 			log.debug('Adding log to queue', { ...queuedLog, data: '[truncated]' })
 			const isPersisted = addLogToQueue(queuedLog)
 			if (!isPersisted) {
-				log.error('Failed to add log to queue', { ...queuedLog, data: '[truncated]' })
+				const queuedLogWithoutImage = removeAssetsFromQueuedLog(queuedLog, {
+					fonts: false,
+					images: true,
+					css: false,
+				})
+				const isPersistedWithoutImage = addLogToQueue(queuedLogWithoutImage)
+				if (!isPersistedWithoutImage) {
+					const queuedLogWithoutAllAssets = removeAssetsFromQueuedLog(queuedLogWithoutImage, {
+						fonts: true,
+						images: true,
+						css: true,
+					})
+					const isPersistedWithoutAllAssets = addLogToQueue(queuedLogWithoutAllAssets)
+					if (!isPersistedWithoutAllAssets) {
+						log.error('Failed to add log to queue after assets removed', {
+							...queuedLog,
+							data: '[truncated]',
+						})
+					}
+				}
 			}
 		}
 
