@@ -184,8 +184,8 @@ importers:
         specifier: ^1.7.7
         version: 1.10.0
       form-data:
-        specifier: ^4.0.1
-        version: 4.0.3
+        specifier: ^4.0.4
+        version: 4.0.4
       unplugin:
         specifier: ^2.3.5
         version: 2.3.5
@@ -3562,8 +3562,8 @@ packages:
       typescript: '>3.6.0'
       webpack: ^5.11.0
 
-  form-data@4.0.3:
-    resolution: {integrity: sha512-qsITQPfmvMOSAdeyZ+12I1c+CKSstAFAwu+97zrnWAbIr5u8wfsExUzCesVLC8NgHuRUqNN4Zy6UPWUTRGslcA==}
+  form-data@4.0.4:
+    resolution: {integrity: sha512-KrGhL9Q4zjj0kiUt5OO4Mr/A/jlI2jDYs5eHBpYHPcBEVSiipAvn2Ko2HnPe20rmcuuvMHNdZFp+4IlGTMF0Ow==}
     engines: {node: '>= 6'}
 
   forwarded-parse@2.1.2:
@@ -8930,7 +8930,7 @@ snapshots:
   axios@1.10.0:
     dependencies:
       follow-redirects: 1.15.9
-      form-data: 4.0.3
+      form-data: 4.0.4
       proxy-from-env: 1.1.0
     transitivePeerDependencies:
       - debug
@@ -9879,7 +9879,7 @@ snapshots:
       typescript: 5.8.3
       webpack: 5.100.2(@swc/core@1.13.0(@swc/helpers@0.5.17))(webpack-cli@6.0.1)
 
-  form-data@4.0.3:
+  form-data@4.0.4:
     dependencies:
       asynckit: 0.4.0
       combined-stream: 1.0.8
