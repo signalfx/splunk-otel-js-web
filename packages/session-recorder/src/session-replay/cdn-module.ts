@@ -17,6 +17,7 @@
  */
 
 export {
+	Stats,
 	SessionReplay,
 	type ConfigFeatures,
 	type PackAssetsConfig,
@@ -25,4 +26,4 @@ export {
 	type SessionReplayPlainSegment,
 	type SensitivityRule,
 	type SensitivityRuleType,
-} from 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.1.8/session-replay.module.legacy.min.js'
+} from 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.1.10/session-replay.module.legacy.min.js'

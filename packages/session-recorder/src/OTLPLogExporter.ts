@@ -156,24 +156,27 @@ export default class OTLPLogExporter {
 			log.debug('Adding log to queue', { ...queuedLog, data: '[truncated]' })
 			const isPersisted = addLogToQueue(queuedLog)
 			if (!isPersisted) {
-				const queuedLogWithoutImage = removeAssetsFromQueuedLog(queuedLog, {
+				const { log: queuedLogWithoutImage, stats } = removeAssetsFromQueuedLog(queuedLog, {
 					fonts: false,
 					images: true,
 					css: false,
 				})
 				const isPersistedWithoutImage = addLogToQueue(queuedLogWithoutImage)
 				if (!isPersistedWithoutImage) {
-					const queuedLogWithoutAllAssets = removeAssetsFromQueuedLog(queuedLogWithoutImage, {
+					const { log: queuedLogWithoutAllAssets } = removeAssetsFromQueuedLog(queuedLogWithoutImage, {
 						fonts: true,
 						images: true,
 						css: true,
 					})
 					const isPersistedWithoutAllAssets = addLogToQueue(queuedLogWithoutAllAssets)
 					if (!isPersistedWithoutAllAssets) {
-						log.error('Failed to add log to queue after assets removed', {
-							...queuedLog,
-							data: '[truncated]',
-						})
+						log.error(
+							`Failed to add log to queue after assets removed Total: ${stats?.assets.plain.total}}, CSS: ${stats?.assets.plain.css}, Images: ${stats?.assets.plain.images}, Fonts: ${stats?.assets.plain.fonts}, Other: ${stats?.assets.plain.other}`,
+							{
+								...queuedLog,
+								data: '[truncated]',
+							},
+						)
 					}
 				}
 			}

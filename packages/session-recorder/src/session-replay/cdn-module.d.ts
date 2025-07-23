@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.1.8/session-replay.module.legacy.min.js' {
+declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.1.10/session-replay.module.legacy.min.js' {
 	type DeepPartial<T> = {
 		[P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P]
 	}
@@ -28,7 +28,27 @@ declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.1.8/sess
 		}
 	}
 
+	export type Stats = {
+		assets: {
+			binary: {
+				css: number
+				fonts: number
+				images: number
+				other: number
+				total: number
+			}
+			plain: {
+				css: number
+				fonts: number
+				images: number
+				other: number
+				total: number
+			}
+		}
+	}
+
 	export interface Segment {
+		stats(): Stats
 		toBinary(params?: DeepPartial<Modifiers>): SessionReplayBinarySegment
 		toPlain(params?: DeepPartial<Modifiers>): SessionReplayPlainSegment
 	}
