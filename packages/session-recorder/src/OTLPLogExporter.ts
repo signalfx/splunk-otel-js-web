@@ -195,10 +195,12 @@ export default class OTLPLogExporter {
 			// Only export logs that belong to the current session
 			if (logItem.sessionId !== this.config.sessionId) {
 				log.debug(
-					'exportQueuedLogs - session mismatch',
+					'exportQueuedLogs - session mismatch, removing log',
 					{ ...logItem, data: '[truncated]' },
 					{ sessionId: this.config.sessionId },
 				)
+				// We have to remove session mismatched logs otherwise storage grows
+				removeQueuedLog(logItem)
 				continue
 			}
 
