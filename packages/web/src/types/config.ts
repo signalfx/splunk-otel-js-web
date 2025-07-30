@@ -25,6 +25,7 @@ import { SocketIoClientInstrumentationConfig } from '../SplunkSocketIoClientInst
 import { WebVitalsInstrumentationConfig } from '../webvitals'
 import { XMLHttpRequestInstrumentationConfig } from '@opentelemetry/instrumentation-xml-http-request'
 import { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-base'
+import { SpanContext } from '../utils/attributes'
 
 export interface SplunkOtelWebOptionsInstrumentations {
 	connectivity?: boolean | InstrumentationConfig
@@ -143,6 +144,8 @@ export interface SplunkOtelWebConfig {
 
 	/** Configuration for instrumentation modules. */
 	instrumentations?: SplunkOtelWebOptionsInstrumentations
+
+	onError?: (error: string | Event | Error | ErrorEvent, context: SpanContext) => { error: string | Event | Error | ErrorEvent, context: SpanContext }
 
 	/**
 	 * Specifies where session data should be stored.

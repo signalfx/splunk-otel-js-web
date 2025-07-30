@@ -29,7 +29,7 @@ import {
 	AlwaysOnSampler,
 	ParentBasedSampler,
 } from '@opentelemetry/sdk-trace-base'
-import { Attributes, diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api'
+import { Attributes, context, diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api'
 import { SplunkDocumentLoadInstrumentation } from './SplunkDocumentLoadInstrumentation'
 import { SplunkXhrPlugin } from './SplunkXhrPlugin'
 import { SplunkFetchInstrumentation } from './SplunkFetchInstrumentation'
@@ -639,8 +639,11 @@ export const SplunkRum: SplunkOtelWebType = {
 			return
 		}
 
-		const parsedAdditionalAttributes = getValidAttributes(context)
-		_errorInstrumentation.report('SplunkRum.reportError', error, parsedAdditionalAttributes)
+		const transformer: NonNullable<SplunkOtelWebConfig['onError']> = this._processedOptions?.onError ?? ((e, c) => ({ error: e, context: c }));
+		const transformed = transformer(error, context);
+
+		const parsedAdditionalAttributes = getValidAttributes(transformed.context)
+		_errorInstrumentation.report('SplunkRum.reportError', transformed.error, parsedAdditionalAttributes)
 	},
 
 	addEventListener(name, callback): void {
