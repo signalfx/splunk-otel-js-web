@@ -25,11 +25,12 @@ import { SocketIoClientInstrumentationConfig } from '../SplunkSocketIoClientInst
 import { WebVitalsInstrumentationConfig } from '../webvitals'
 import { XMLHttpRequestInstrumentationConfig } from '@opentelemetry/instrumentation-xml-http-request'
 import { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-base'
+import { SplunkErrorInstrumentationConfig } from '../SplunkErrorInstrumentation'
 
 export interface SplunkOtelWebOptionsInstrumentations {
 	connectivity?: boolean | InstrumentationConfig
 	document?: boolean | InstrumentationConfig
-	errors?: boolean
+	errors?: boolean | SplunkErrorInstrumentationConfig
 	fetch?: boolean | FetchInstrumentationConfig
 	interactions?: boolean | SplunkUserInteractionInstrumentationConfig
 	longtask?: boolean | InstrumentationConfig
