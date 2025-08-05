@@ -20,13 +20,13 @@ import type { JsonObject, JsonValue } from 'type-fest'
 
 export interface Log {
 	attributes?: JsonObject
-	body?: JsonValue
+	body?: Uint8Array
 	timeUnixNano: number
 }
 
 export interface LogExporter {
 	export(
-		spans: Log[],
+		logs: Log[],
 		// resultCallback: (result: ExportResult) => void
 	): void
 

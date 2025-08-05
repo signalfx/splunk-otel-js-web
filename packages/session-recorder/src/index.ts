@@ -18,7 +18,6 @@
 
 import { context, ProxyTracerProvider, trace, Tracer, TracerProvider } from '@opentelemetry/api'
 import { suppressTracing } from '@opentelemetry/core'
-import OTLPLogExporter from './OTLPLogExporter'
 import { BatchLogProcessor, convert } from './BatchLogProcessor'
 import { VERSION } from './version'
 import { getGlobal, getSplunkRumVersion } from './utils'
@@ -38,6 +37,7 @@ import {
 	SplunkRecorderPublicConfig,
 } from './recorder'
 import { log } from './log'
+import { OTLPProtoLogExporter } from './OTLPProtoLogExporter'
 
 interface BasicTracerProvider extends TracerProvider {
 	readonly resource: Resource
@@ -199,7 +199,7 @@ const SplunkRumRecorder = {
 			exportUrl += `?auth=${rumAccessToken}`
 		}
 
-		const exporter = new OTLPLogExporter({
+		const exporter = new OTLPProtoLogExporter({
 			beaconUrl: exportUrl,
 			getResourceAttributes() {
 				const newAttributes: JsonObject = {
@@ -228,7 +228,7 @@ const SplunkRumRecorder = {
 
 		sessionStartTime = Date.now()
 
-		const onEmit = (emitContext: RecorderEmitContext) => {
+		const onEmit = async (emitContext: RecorderEmitContext) => {
 			if (paused) {
 				return
 			}
@@ -287,36 +287,58 @@ const SplunkRumRecorder = {
 			// 	JSON.stringify(emitContext.type === 'splunk' ? emitContext.data.data : emitContext.data),
 			// )
 
-			const body = encoder.encode(JSON.stringify(emitContext.data))
+			//const body = encoder.encode(JSON.stringify(emitContext.data))
+			const arrayBuffer = await emitContext.data.arrayBuffer()
+			const dataText = await emitContext.data.text()
+			const body = new Uint8Array(arrayBuffer)
 
-			const totalC = Math.ceil(body.byteLength / MAX_CHUNK_SIZE)
+			console.log('🔥 dbg: onEmit body', body, emitContext.data)
+			console.log('🔥 dbg: onEmit dataText', dataText)
 
-			for (let i = 0; i < totalC; i++) {
-				const start = i * MAX_CHUNK_SIZE
-				const end = (i + 1) * MAX_CHUNK_SIZE
+			const logData = convert(body, time, {
+				'rr-web.offset': logCounter,
+				'rr-web.event': eventI,
+				'rr-web.chunk': 1,
+				'rr-web.total-chunks': 1,
+			})
 
-				const dataToConvert: Record<string, any> = {
-					'rr-web.offset': logCounter,
-					'rr-web.event': eventI,
-					'rr-web.chunk': i + 1,
-					'rr-web.total-chunks': totalC,
-				}
+			logCounter += 1
 
-				if (emitContext.type === 'splunk') {
-					dataToConvert['segmentMetadata'] = JSON.stringify(emitContext.data.metadata)
-				}
+			log.debug('Emitting log', logData)
 
-				const logData = convert(decoder.decode(body.slice(start, end)), time, dataToConvert)
-
-				logCounter += 1
-
-				log.debug('Emitting log', logData)
-
-				processor.onEmit(logData)
-				if (recorderType === 'splunk') {
-					void processor.forceFlush()
-				}
+			processor.onEmit(logData)
+			if (recorderType === 'splunk') {
+				void processor.forceFlush()
 			}
+
+			// const totalC = Math.ceil(body.byteLength / MAX_CHUNK_SIZE)
+			//
+			// for (let i = 0; i < totalC; i++) {
+			// 	const start = i * MAX_CHUNK_SIZE
+			// 	const end = (i + 1) * MAX_CHUNK_SIZE
+			//
+			// 	const dataToConvert: Record<string, any> = {
+			// 		'rr-web.offset': logCounter,
+			// 		'rr-web.event': eventI,
+			// 		'rr-web.chunk': i + 1,
+			// 		'rr-web.total-chunks': totalC,
+			// 	}
+			//
+			// 	if (emitContext.type === 'splunk') {
+			// 		dataToConvert['segmentMetadata'] = JSON.stringify(emitContext.data.metadata)
+			// 	}
+			//
+			// 	const logData = convert(decoder.decode(body.slice(start, end)), time, dataToConvert)
+			//
+			// 	logCounter += 1
+			//
+			// 	log.debug('Emitting log', logData)
+			//
+			// 	processor.onEmit(logData)
+			// 	if (recorderType === 'splunk') {
+			// 		void processor.forceFlush()
+			// 	}
+			// }
 		}
 
 		try {

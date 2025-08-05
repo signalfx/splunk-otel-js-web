@@ -17,7 +17,7 @@
  */
 
 import { BindOnceFuture, callWithTimeout, globalErrorHandler, unrefTimer } from '@opentelemetry/core'
-import type { JsonValue, JsonObject } from 'type-fest'
+import type { JsonObject } from 'type-fest'
 import type { Log, LogExporter } from './types'
 
 export interface BatchLogProcessorConfig {
@@ -161,7 +161,7 @@ export class BatchLogProcessor {
 	}
 }
 
-export function convert(body: JsonValue, timeUnixNano: number, attributes?: JsonObject): Log {
+export function convert(body: Uint8Array, timeUnixNano: number, attributes?: JsonObject): Log {
 	return {
 		body,
 		timeUnixNano,

@@ -60,7 +60,7 @@ export class RRWebRecorder extends Recorder {
 				const context: RecorderEmitContext = {
 					type: 'rrweb',
 					startTime: event.timestamp,
-					data: event,
+					data: event as any,
 					onSessionChanged: () => {
 						record.takeFullSnapshot()
 					},

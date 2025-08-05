@@ -16,7 +16,8 @@
  *
  */
 export interface RecorderEmitContext {
-	data: Record<string, unknown>
+	//data: Record<string, unknown>
+	data: Blob
 	onSessionChanged: () => void
 	startTime: number
 	type: 'splunk' | 'rrweb'

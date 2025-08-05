@@ -20,7 +20,7 @@ import { gzipSync, strToU8 } from 'fflate'
 import { nanoid } from 'nanoid'
 import type { JsonArray, JsonObject, JsonValue } from 'type-fest'
 
-import { IAnyValue, Log } from './types'
+import { IAnyValue, Log, LogExporter } from './types'
 import { VERSION } from './version'
 import { compressAsync } from './session-replay/utils'
 import { apiFetch, ApiParams } from './api/api-fetch'
@@ -90,11 +90,13 @@ function convertToAnyValue(value: JsonValue): IAnyValue {
 		}
 	}
 
+	console.log('🔴 dbg: convertToAnyValue - unknown value', value)
+
 	// never
 	return {}
 }
 
-export default class OTLPLogExporter {
+export default class OTLPLogExporter implements LogExporter {
 	config: OTLPLogExporterConfig
 
 	constructor(config: OTLPLogExporterConfig) {
