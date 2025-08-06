@@ -21,7 +21,7 @@ import { getElementXPath } from '@opentelemetry/sdk-trace-web'
 import { limitLen } from './utils'
 import { Span } from '@opentelemetry/api'
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
-import { SpanContext } from './utils/attributes'
+import { isPlainObject, removePropertiesWithAdvancedTypes, SpanContext } from './utils/attributes'
 import { getValidAttributes } from './utils/attributes'
 import { diag } from '@opentelemetry/api'
 
@@ -31,6 +31,11 @@ const STACK_LIMIT = 4096
 const MESSAGE_LIMIT = 1024
 
 export const STACK_TRACE_URL_PATTER = /[\w]+:\/\/[^\s]+?(?::\d+)?(?=:[\d]+:[\d]+)/g
+
+// Array<any> comes from handling console.error(...args) which could have any types
+// we are selective about handling any[], if there's something in there that is unexpected
+// then we can attempt to stringify or just drop it
+export type InternalErrorLike = string | Event | Error | ErrorEvent | Array<any>
 
 function useful(s: string) {
 	return s && s.trim() !== '' && !s.startsWith('[object') && s !== 'error'
@@ -91,13 +96,22 @@ export const ERROR_INSTRUMENTATION_NAME = 'errors'
 export const ERROR_INSTRUMENTATION_VERSION = '1'
 const THROTTLE_LIMIT = 500
 
+type BackwardsCompatErrorLike = InternalErrorLike | any[]
+type ErrorWithContext = { context: SpanContext; error: BackwardsCompatErrorLike }
+type ErrorTransformer = (arg: InternalErrorLike, context: SpanContext) => ErrorWithContext | null
+
+export type SplunkErrorInstrumentationConfig = InstrumentationConfig & {
+	onError?: ErrorTransformer
+}
+const DEFAULT_ON_ERROR: ErrorTransformer = (e, c) => ({ error: e, context: c })
+
 export class SplunkErrorInstrumentation extends InstrumentationBase {
 	private clearingIntervalId?: ReturnType<typeof setInterval>
 
 	private throttleMap = new Map<string, number>()
 
-	constructor(config: InstrumentationConfig) {
-		super(ERROR_INSTRUMENTATION_NAME, ERROR_INSTRUMENTATION_VERSION, config)
+	constructor(protected _splunkConfig: SplunkErrorInstrumentationConfig) {
+		super(ERROR_INSTRUMENTATION_NAME, ERROR_INSTRUMENTATION_VERSION, _splunkConfig)
 	}
 
 	disable(): void {
@@ -119,13 +133,15 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 
 	init(): void {}
 
-	isValidErrorArg = (errorArg: unknown): errorArg is string | Event | Error | ErrorEvent =>
+	isValidContext = (ctx: SpanContext) => isPlainObject(ctx)
+
+	isValidErrorArg = (errorArg: unknown): errorArg is BackwardsCompatErrorLike =>
 		errorArg instanceof Error ||
 		errorArg instanceof ErrorEvent ||
 		errorArg instanceof Event ||
 		typeof errorArg === 'string'
 
-	report(source: string, arg: string | Event | Error | ErrorEvent | Array<any>, context: SpanContext): void {
+	report(source: string, arg: InternalErrorLike, context: SpanContext): void {
 		if (Array.isArray(arg) && arg.length === 0) {
 			return
 		}
@@ -134,20 +150,32 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 			arg = arg[0]
 		}
 
-		if (arg instanceof Error) {
-			this.reportError(source, arg, context)
-		} else if (arg instanceof ErrorEvent) {
-			this.reportErrorEvent(source, arg, context)
-		} else if (arg instanceof Event) {
-			this.reportEvent(source, arg, context)
-		} else if (typeof arg === 'string') {
-			this.reportString(source, arg, undefined, context)
-		} else if (Array.isArray(arg)) {
+		const transformed = this.transform(arg, context)
+		if (transformed === null) {
+			// reporting was cancelled
+			return
+		}
+
+		const { error: transformedArg, context: transformedCtx } = transformed
+		if (transformedArg instanceof Error) {
+			this.reportError(source, transformedArg, transformedCtx)
+		} else if (transformedArg instanceof ErrorEvent) {
+			this.reportErrorEvent(source, transformedArg, transformedCtx)
+		} else if (transformedArg instanceof Event) {
+			this.reportEvent(source, transformedArg, transformedCtx)
+		} else if (typeof transformedArg === 'string') {
+			this.reportString(source, transformedArg, undefined, transformedCtx)
+		} else if (Array.isArray(transformedArg)) {
 			// if any arguments are Errors then add the stack trace even though the message is handled differently
-			const firstError = arg.find((x) => x instanceof Error)
-			this.reportString(source, arg.map((x) => stringifyValue(x)).join(' '), firstError, context)
+			const firstError = transformedArg.find((x) => x instanceof Error)
+			this.reportString(
+				source,
+				transformedArg.map((x) => stringifyValue(x)).join(' '),
+				firstError,
+				transformedCtx,
+			)
 		} else {
-			this.reportString(source, stringifyValue(arg), undefined, context) // FIXME or JSON.stringify?
+			this.reportString(source, stringifyValue(transformedArg), undefined, transformedCtx) // FIXME or JSON.stringify?
 		}
 	}
 
@@ -220,6 +248,46 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		}
 
 		this.endSpanWithThrottle(span, now)
+	}
+
+	protected transform(error: InternalErrorLike, context: SpanContext): ErrorWithContext | null {
+		let transformedError: InternalErrorLike
+		let transformedCtx: SpanContext
+
+		try {
+			const transformer: ErrorTransformer = this._splunkConfig.onError ?? DEFAULT_ON_ERROR
+			const transformed = transformer(error, context)
+			if (transformed === null) {
+				return null
+			}
+
+			if (transformed === undefined) {
+				diag.warn('onError can use null explicitly to cancel reporting, but cannot use undefined implicitly')
+				return { error, context }
+			}
+
+			;({ error: transformedError, context: transformedCtx } = transformed)
+		} catch (e) {
+			diag.warn('onError handler failed:', e)
+			return { error, context }
+		}
+
+		if (!this.isValidErrorArg(transformedError) && !Array.isArray(transformedError)) {
+			diag.warn(
+				`ignoring an error because onError handler was expected to produce a valid error, but instead returned: ${transformedError}`,
+			)
+			return { error, context }
+		}
+
+		if (!this.isValidContext(transformedCtx)) {
+			diag.warn(
+				`onError handler was expected to produce a valid context (POJO), but instead returned: ${transformedCtx}`,
+			)
+			return { error, context }
+		}
+
+		transformedCtx = removePropertiesWithAdvancedTypes(transformedCtx)
+		return { error: transformedError, context: transformedCtx }
 	}
 
 	private attachClearingInterval(): void {

@@ -16,8 +16,10 @@
  *
  */
 
-import { STACK_TRACE_URL_PATTER } from '../src/SplunkErrorInstrumentation'
-import { describe, it, expect, beforeEach } from 'vitest'
+import { STACK_TRACE_URL_PATTER, SplunkErrorInstrumentationConfig } from '../src/SplunkErrorInstrumentation'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import SplunkOtelWeb, { SplunkRum } from '../src'
+import { deinit, SpanCapturer } from './utils'
 
 export function generateFilePaths(domainCount: number, pathCount: number): string[] {
 	const paths: string[] = []
@@ -247,5 +249,93 @@ describe('SplunkErrorInstrumentation', () => {
 		}
 		const urlArr = [...urls]
 		expect(urlArr.sort()).toStrictEqual(randomPaths.sort())
+	})
+
+	describe('onError hook', () => {
+		let capturer: SpanCapturer
+		beforeEach(() => {
+			capturer = new SpanCapturer()
+		})
+
+		function initWithHook(hook: SplunkErrorInstrumentationConfig['onError']) {
+			SplunkOtelWeb.init({
+				applicationName: 'my-app',
+				beaconEndpoint: 'https://localhost:9411/api/traces',
+				rumAccessToken: 'xxx',
+				context: {
+					async: true,
+				},
+				instrumentations: {
+					errors: {
+						onError: hook,
+					},
+				},
+				spanProcessors: [capturer],
+			})
+		}
+
+		afterEach(() => {
+			deinit()
+			capturer.clear()
+		})
+
+		it('transforms spans', () => {
+			const errorsTransformed: Error[] = []
+			initWithHook((e, c) => {
+				if (e instanceof Error) {
+					errorsTransformed.push(e)
+					e.message = 'Modified message'
+				}
+
+				return { error: e, context: c }
+			})
+
+			const e1 = new Error('test error 1')
+			SplunkRum.reportError(e1)
+			expect(errorsTransformed[0]).toBe(e1)
+			expect(capturer.spans[0].attributes['error.message']).toEqual('Modified message')
+
+			const e2 = new Error('test error 2')
+			console.error(e2)
+			expect(errorsTransformed[1]).toBe(e2)
+			expect(capturer.spans[1].attributes['error.message']).toEqual('Modified message')
+		})
+
+		it('cancells error reporting', () => {
+			initWithHook((e, c) => {
+				if (e instanceof Error && e.message == 'test error 1') {
+					e.message = 'Modified message'
+				}
+
+				if (e instanceof Error && e.message == 'test error 2') {
+					return null
+				}
+
+				return { error: e, context: c }
+			})
+
+			const e1 = new Error('test error 1')
+			SplunkRum.reportError(e1)
+			expect(capturer.spans[0].attributes['error.message']).toEqual('Modified message')
+
+			const e2 = new Error('test error 2')
+			SplunkRum.reportError(e2)
+			expect(capturer.spans).toHaveLength(1)
+
+			const e3 = new Error('test error 3')
+			SplunkRum.reportError(e3)
+			expect(capturer.spans).toHaveLength(2)
+			expect(capturer.spans[1].attributes['error.message']).toEqual('test error 3')
+		})
+
+		it('reports original error if transformation failed', () => {
+			initWithHook(() => {
+				throw Error('bad implementation')
+			})
+
+			const e1 = new Error('test error')
+			SplunkRum.reportError(e1)
+			expect(capturer.spans[0].attributes['error.message']).toEqual('test error')
+		})
 	})
 })
