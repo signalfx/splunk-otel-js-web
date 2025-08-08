@@ -44,6 +44,15 @@ export class SplunkOTLPTraceExporter extends OTLPTraceExporter {
 			return
 		}
 
+		const itemsLength = items.length
+		items = items.filter((span) => Boolean(span.attributes['splunk.rumSessionId']))
+
+		if (items.length !== itemsLength) {
+			diag.debug(
+				'Some spans were dropped because they are missing the splunk.rumSessionId attribute. This usually means the session has reached its maximum allowed duration.',
+			)
+		}
+
 		items = items.map((span) => {
 			// @ts-expect-error Yep we're overwriting a readonly property here. Deal with it
 			span.attributes = this._onAttributesSerializing
@@ -51,6 +60,11 @@ export class SplunkOTLPTraceExporter extends OTLPTraceExporter {
 				: span.attributes
 			return span
 		})
+
+		if (items.length === 0) {
+			onSuccess()
+			return
+		}
 
 		// @ts-expect-error Say no to private
 		const body = this._serializer.serializeRequest(items) ?? new Uint8Array()

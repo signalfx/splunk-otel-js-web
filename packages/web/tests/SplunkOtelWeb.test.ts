@@ -18,7 +18,6 @@
 
 import { SpanAttributes } from '@opentelemetry/api'
 import SplunkRum from '../src'
-import { updateSessionStatus } from '../src/session'
 import { describe, expect, it, afterEach } from 'vitest'
 import { deinit } from './utils'
 
@@ -65,7 +64,7 @@ describe('SplunkOtelWeb', () => {
 			})
 		})
 
-		it('should notify about changes via setGlobalAttributes', async () => {
+		it('should notify about changes via setGlobalAttributes', () => {
 			SplunkRum.init({
 				applicationName: 'app-name',
 				beaconEndpoint: 'https://beacon',
@@ -85,9 +84,6 @@ describe('SplunkOtelWeb', () => {
 				key2: 'value2-changed',
 				key3: 'value3',
 			})
-
-			// Wait for promise chain to resolve
-			await Promise.resolve()
 
 			expect(receivedAttributes).toStrictEqual({
 				key1: 'value1',
@@ -111,42 +107,21 @@ describe('SplunkOtelWeb', () => {
 			SplunkRum.deinit()
 			expect(SplunkRum.getSessionId()).toBe(undefined)
 		})
-
-		it('should produce notifications when updated', async () => {
-			let sessionId: string | undefined
-
-			SplunkRum.init({
-				applicationName: 'app-name',
-				beaconEndpoint: 'https://beacon',
-				rumAccessToken: '<token>',
-			})
-			SplunkRum.addEventListener('session-changed', (ev) => {
-				sessionId = ev.payload.sessionId
-			})
-
-			document.body.click()
-			updateSessionStatus({ forceStore: false, useLocalStorage: false })
-
-			// Wait for promise chain to resolve
-			await Promise.resolve()
-
-			expect(sessionId).to.match(/[0-9a-f]{32}/)
-		})
 	})
 
 	describe('.inited', () => {
 		it('should follow lifecycle', () => {
-			expect(SplunkRum.inited).toBe(false, 'Should be false in the beginning.')
+			expect(SplunkRum.inited).toBe(false)
 
 			SplunkRum.init({
 				applicationName: 'app-name',
 				beaconEndpoint: 'https://beacon',
 				rumAccessToken: '<token>',
 			})
-			expect(SplunkRum.inited).toBe(true, 'Should be true after creating.')
+			expect(SplunkRum.inited).toBe(true)
 
 			SplunkRum.deinit()
-			expect(SplunkRum.inited).toBe(false, 'Should be false after destroying.')
+			expect(SplunkRum.inited).toBe(false)
 		})
 	})
 })

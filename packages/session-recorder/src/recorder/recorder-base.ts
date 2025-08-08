@@ -15,14 +15,30 @@
  * limitations under the License.
  *
  */
-export type SessionId = string
-
-export type RecorderType = 'rrweb' | 'splunk'
-
-export type SessionState = {
-	expiresAt?: number
-	id: SessionId
-	inactive?: boolean
-	rt?: RecorderType
+export interface RecorderEmitContext {
+	data: Record<string, unknown>
 	startTime: number
+	type: 'splunk' | 'rrweb'
+}
+
+export interface RecorderConfig {
+	onEmit: (context: RecorderEmitContext) => void
+}
+
+export abstract class RecorderBase {
+	protected onEmit: RecorderConfig['onEmit']
+
+	protected constructor(config: RecorderConfig) {
+		this.onEmit = config.onEmit
+	}
+
+	abstract onSessionChanged(): void
+
+	abstract pause(): void
+
+	abstract resume(): void
+
+	abstract start(): void
+
+	abstract stop(): void
 }

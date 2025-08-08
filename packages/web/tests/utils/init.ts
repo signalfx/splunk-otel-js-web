@@ -20,7 +20,7 @@ import { SpanCapturer } from './span-capturer'
 import { ZipkinSpan } from '../../src/exporters/zipkin'
 import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { buildInMemorySplunkExporter } from './memory-exporter'
-import { getNullableStore } from '../../src/session'
+import { SESSION_STORAGE_KEY } from '../../src/managers'
 
 export const initWithDefaultConfig = (capturer: SpanCapturer, additionalOptions = {}): void => {
 	SplunkRum._internalInit({
@@ -68,7 +68,10 @@ export function initWithSyncPipeline(additionalOptions = {}): {
 }
 
 export const deinit = (force?: boolean): void => {
-	getNullableStore()?.remove()
-	getNullableStore()?.flush()
 	SplunkRum.deinit(force)
+
+	localStorage.removeItem(SESSION_STORAGE_KEY)
+	document.cookie = `${SESSION_STORAGE_KEY}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`
+	// TODO: Migrate anonymous user ID to storage providers
+	document.cookie = `_splunk_rum_user_anonymousId=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`
 }

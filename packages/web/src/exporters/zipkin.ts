@@ -31,6 +31,7 @@ import {
 	type SplunkExporterConfig,
 } from './common'
 import { hasToString } from '../types'
+import { diag } from '@opentelemetry/api'
 
 const MAX_VALUE_LIMIT = 4096
 const SERVICE_NAME = 'browser'
@@ -95,6 +96,20 @@ export class SplunkZipkinExporter implements SpanExporter {
 	}
 
 	export(spans: ReadableSpan[], resultCallback: (result: ExportResult) => void): void {
+		const spansLength = spans.length
+		spans = spans.filter((span) => Boolean(span.attributes['splunk.rumSessionId']))
+
+		if (spans.length !== spansLength) {
+			diag.debug(
+				'Some spans were dropped because they are missing the splunk.rumSessionId attribute. This usually means the session has reached its maximum allowed duration.',
+			)
+		}
+
+		if (spans.length === 0) {
+			resultCallback({ code: ExportResultCode.SUCCESS })
+			return
+		}
+
 		const zspans = spans.map((span) => this._mapToZipkinSpan(span))
 		const zJson = JSON.stringify(zspans)
 		if (document.hidden && this._beaconSender && zJson.length <= 64000) {
