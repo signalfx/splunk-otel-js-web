@@ -19,7 +19,6 @@
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 
 import { VERSION } from './version'
-import { getCurrentSessionState } from './session'
 import { SplunkOtelWebConfig } from './types'
 
 const LONGTASK_PERFORMANCE_TYPE = 'longtask'
@@ -58,14 +57,6 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
 	init(): void {}
 
 	private _createSpanFromEntry(entry: PerformanceEntry) {
-		const sessionState = getCurrentSessionState({ forceDiskRead: false })
-		const sessionInactive = !sessionState || sessionState.inactive
-
-		if (!!this.initOptions._experimental_longtaskNoStartSession && sessionInactive) {
-			// session is inactive, we do not want to spawn new session from long tasks
-			return
-		}
-
 		const span = this.tracer.startSpan(LONGTASK_PERFORMANCE_TYPE, {
 			startTime: entry.startTime,
 		})
