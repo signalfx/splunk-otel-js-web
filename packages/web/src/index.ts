@@ -549,6 +549,7 @@ export const SplunkRum: SplunkOtelWebType = {
 
 		_deinitSessionTracking?.()
 		_deinitSessionTracking = undefined
+
 		_sessionStateUnsubscribe?.()
 		this.sessionManager?.stop()
 
