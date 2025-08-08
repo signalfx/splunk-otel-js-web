@@ -16,26 +16,35 @@
  *
  */
 
-import { InternalEventTarget } from '../src/EventTarget'
 import { SessionBasedSampler } from '../src/SessionBasedSampler'
-import { initSessionTracking, updateSessionStatus } from '../src/session'
 import { context, SamplingDecision } from '@opentelemetry/api'
-import { SESSION_INACTIVITY_TIMEOUT_MS, SESSION_STORAGE_KEY } from '../src/session/constants'
-import { describe, it, expect } from 'vitest'
+
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { deinit, initWithDefaultConfig, SpanCapturer } from './utils'
+import { getGlobal } from '../src/global-utils'
+import { SplunkOtelWebType } from '../src'
 
 describe('Session based sampler', () => {
+	let capturer: SpanCapturer
+
+	beforeEach(() => {
+		capturer = new SpanCapturer()
+		initWithDefaultConfig(capturer)
+	})
+
+	afterEach(() => {
+		deinit()
+	})
+
 	it('decide sampling based on session id and ratio', () => {
 		// Session id < target ratio
 		const lowSessionId = '0'.repeat(32)
-		const lowCookieValue = encodeURIComponent(
-			JSON.stringify({
-				id: lowSessionId,
-				startTime: new Date().getTime(),
-				expiresAt: new Date().getTime() + SESSION_INACTIVITY_TIMEOUT_MS,
-			}),
-		)
-		document.cookie = SESSION_STORAGE_KEY + '=' + lowCookieValue + '; path=/; max-age=' + 10
-		const trackingHandle = initSessionTracking('cookie', new InternalEventTarget())
+		const SplunkRum = getGlobal() as SplunkOtelWebType
+		if (!SplunkRum.sessionManager) {
+			throw new TypeError('Session Manager is not initialized')
+		}
+
+		SplunkRum.sessionManager.getSessionId = vi.fn().mockReturnValue(lowSessionId)
 
 		const sampler = new SessionBasedSampler({ ratio: 0.5 })
 		expect(
@@ -45,22 +54,11 @@ describe('Session based sampler', () => {
 
 		// Session id > target ratio
 		const highSessionId = '1234567890abcdeffedcba0987654321'
-		const highCookieValue = encodeURIComponent(
-			JSON.stringify({
-				id: highSessionId,
-				startTime: new Date().getTime(),
-				expiresAt: new Date().getTime() + SESSION_INACTIVITY_TIMEOUT_MS,
-			}),
-		)
-		document.cookie = SESSION_STORAGE_KEY + '=' + highCookieValue + '; path=/; max-age=' + 10
-		updateSessionStatus({ forceStore: true })
+		SplunkRum.sessionManager.getSessionId = vi.fn().mockReturnValue(highSessionId)
 
 		expect(
 			sampler.shouldSample(context.active(), '0000000000000000', 'test', 0, {}, []).decision,
 			'high session id should not be recorded',
 		).toBe(SamplingDecision.NOT_RECORD)
-
-		trackingHandle.deinit()
-		trackingHandle.clearSession()
 	})
 })

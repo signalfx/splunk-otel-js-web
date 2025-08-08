@@ -73,18 +73,17 @@ test.describe('cookies', () => {
 	test('setting cookieDomain via config sets it on subdomains also', async ({ recordPage }) => {
 		await recordPage.goTo(`http://127.0.0.1.nip.io:3000/cookies/cookies-domain.ejs`)
 		const cookie1 = await recordPage.getCookie('_splunk_rum_sid')
-		const cookie1Decoded = decodeURIComponent(cookie1.value)
+		const cookie1Decoded = decodeURIComponent(cookie1?.value ?? '')
 
 		expect(cookie1).toBeTruthy()
 
 		await recordPage.goTo(`http://test.127.0.0.1.nip.io:3000/cookies/cookies-domain.ejs`)
 		const cookie2 = await recordPage.getCookie('_splunk_rum_sid')
-		const cookie2Decoded = decodeURIComponent(cookie2.value)
+		const cookie2Decoded = decodeURIComponent(cookie2?.value ?? '')
 
 		expect(cookie2).toBeTruthy()
-
 		expect(cookie1Decoded['startTime']).toBe(cookie2Decoded['startTime'])
-		expect(cookie1Decoded['sessionId']).toBe(cookie2Decoded['sessionId'])
+		expect(cookie1Decoded['id']).toBe(cookie2Decoded['id'])
 		expect(cookie1.domain).toBe(cookie2.domain)
 
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)

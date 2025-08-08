@@ -31,14 +31,17 @@ const buildDummySpan = ({ name = '<name>', attributes = {} } = {}) =>
 		}),
 		parentSpanId: '0002' as string | undefined,
 		name,
-		attributes,
+		attributes: {
+			...attributes,
+			'splunk.rumSessionId': '000000000',
+		},
 		kind: api.SpanKind.CLIENT,
 		startTime: timeInputToHrTime(new Date()),
 		duration: timeInputToHrTime(1000),
 		status: { code: api.SpanStatusCode.UNSET },
 		resource: { attributes: {} },
 		events: [] as { name: string; time: api.HrTime }[],
-	}) as ReadableSpan
+	}) as unknown as ReadableSpan
 
 describe('SplunkZipkinExporter', () => {
 	let beaconSenderMock: Mock
@@ -194,9 +197,10 @@ describe('SplunkZipkinExporter', () => {
 		const sentSpan = JSON.parse(sendXhrArgs[1])[0]
 		expect(sentSpan.name).toBe('<name>')
 		expect(sentSpan.tags).toStrictEqual({
-			key1: 'new value 1',
-			key2: 'value 2',
-			key3: 'null',
+			'key1': 'new value 1',
+			'key2': 'value 2',
+			'key3': 'null',
+			'splunk.rumSessionId': '000000000',
 		})
 	})
 })
