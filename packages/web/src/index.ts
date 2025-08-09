@@ -17,6 +17,7 @@
  */
 
 import './polyfill-safari10'
+import { SessionManager } from './managers'
 import { registerInstrumentations } from '@opentelemetry/instrumentation'
 import {
 	ConsoleSpanExporter,
@@ -311,6 +312,7 @@ let _deinitSessionTracking: undefined | (() => void)
 let _errorInstrumentation: SplunkErrorInstrumentation | undefined
 let _postDocLoadInstrumentation: SplunkPostDocLoadResourceInstrumentation | undefined
 let eventTarget: InternalEventTarget | undefined
+const sessionManager = new SessionManager()
 
 export const SplunkRum: SplunkOtelWebType = {
 	DEFAULT_AUTO_INSTRUMENTED_EVENTS,
