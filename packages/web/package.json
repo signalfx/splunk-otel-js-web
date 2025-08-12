@@ -45,7 +45,7 @@
 		"regenerator-runtime": "^0.14.1",
 		"shimmer": "^1.2.1",
 		"source-map-loader": "^5.0.0",
-		"web-vitals": "^3.5.2"
+		"web-vitals": "^5.1.0"
 	},
 	"devDependencies": {
 		"@swc/core": "^1.13.0",
