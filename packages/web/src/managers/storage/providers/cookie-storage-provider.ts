@@ -63,13 +63,8 @@ export class CookieStorageProvider extends BaseStorageProvider {
 	}
 
 	setValue(key: string, value: string, options?: StorageOptions) {
-		if (!options?.domain) {
-			diag.warn('Domain is required for cookie storage')
-			return false
-		}
-
-		if (!options?.expires) {
-			diag.warn('Expires is required for cookie storage')
+		if (!options) {
+			diag.warn('StorageOptions is required for cookie storage')
 			return false
 		}
 
