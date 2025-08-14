@@ -343,6 +343,7 @@ export const SplunkRum: SplunkOtelWebType = {
 
 	init: function (options) {
 		userTrackingMode = options.user?.trackingMode ?? 'noTracking'
+		sessionManager.start()
 
 		if (typeof window !== 'object') {
 			throw Error(
