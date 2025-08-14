@@ -16,6 +16,6 @@
  *
  */
 
-export type Persistence = 'cookie' | 'localStorage'
-
-export const isPersistence = (value: string): value is Persistence => ['cookie', 'localStorage'].includes(value)
+export * from './cookie-storage-provider'
+export * from './local-storage-provider'
+export * from './base-storage-provider'

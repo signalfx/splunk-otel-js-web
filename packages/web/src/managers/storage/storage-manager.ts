@@ -16,50 +16,69 @@
  *
  */
 
-import { CookieManager } from './cookie-manager'
-import { LocalStorageManager } from './local-storage-manager'
-import { Persistence } from './persistence'
+import { CookieStorageProvider, LocalStorageProvider, StorageOptions } from './providers'
 import { SessionState } from '../session-manager'
-import { SESSION_STORAGE_KEY, SESSION_EXPIRATION_COOKIE_MS } from './constants'
+import { SESSION_STORAGE_KEY } from './constants'
 import { diag } from '@opentelemetry/api'
 
 export class StorageManager {
-	constructor(
-		private readonly persistence: Persistence,
-		private readonly domain: string,
-	) {}
+	private readonly cookieStorageProvider = new CookieStorageProvider()
 
-	getSessionState(): SessionState | undefined {
-		let sessionStateStringified
-		if (this.persistence === 'cookie') {
-			sessionStateStringified = CookieManager.getCookie(SESSION_STORAGE_KEY)
-		} else if (this.persistence === 'localStorage') {
-			sessionStateStringified = LocalStorageManager.getItem(SESSION_STORAGE_KEY)
-		} else {
-			throw new Error(`Unknown persistence type: ${this.persistence}`)
-		}
+	private readonly localStorageProvider = new LocalStorageProvider()
 
-		try {
-			return sessionStateStringified ? (JSON.parse(sessionStateStringified) as SessionState) : undefined
-		} catch {
-			diag.warn('Failed to parse session state', { sessionStateStringified, persistence: this.persistence })
-			return
+	private get sessionStorageProvider() {
+		switch (this.options.sessionPersistence) {
+			case 'cookie':
+				return this.cookieStorageProvider
+			case 'localStorage':
+				return this.localStorageProvider
+			default:
+				// This should never happen due to TypeScript typing, but provides runtime safety
+				throw new Error(`Unknown persistence type: ${this.options.sessionPersistence}`)
 		}
 	}
 
-	persistSessionState(sessionState: SessionState): void {
-		const sessionStateStringified = JSON.stringify(sessionState)
-		if (this.persistence === 'cookie') {
-			CookieManager.setCookie(
-				SESSION_STORAGE_KEY,
-				sessionStateStringified,
-				this.domain,
-				new Date(Date.now() + SESSION_EXPIRATION_COOKIE_MS).toUTCString(),
-			)
-		} else if (this.persistence === 'localStorage') {
-			LocalStorageManager.setItem(SESSION_STORAGE_KEY, sessionStateStringified)
-		} else {
-			throw new Error(`Unknown persistence type: ${this.persistence}`)
+	/**
+	 * Creates a new StorageManager instance.
+	 * The persistence type determines which storage mechanism to use ('cookie' or 'localStorage').
+	 * Domain is required for cookie storage.
+	 */
+	constructor(private readonly options: StorageOptions) {}
+
+	clearSessionState() {
+		try {
+			return this.sessionStorageProvider.removeValue(SESSION_STORAGE_KEY, this.options)
+		} catch (error) {
+			diag.warn('Failed to clear session state', {
+				options: this.options,
+				error: error instanceof Error ? error.message : 'Unknown error',
+			})
+			return false
+		}
+	}
+
+	getSessionState() {
+		try {
+			return this.sessionStorageProvider.safelyParseJson<SessionState>(SESSION_STORAGE_KEY)
+		} catch (error) {
+			diag.warn('Failed to retrieve session state', {
+				options: this.options,
+				error: error instanceof Error ? error.message : 'Unknown error',
+			})
+			return undefined
+		}
+	}
+
+	persistSessionState(sessionState: SessionState) {
+		try {
+			return this.sessionStorageProvider.safelyStoreJson(SESSION_STORAGE_KEY, sessionState, this.options)
+		} catch (error) {
+			diag.warn('Failed to persist session state', {
+				options: this.options,
+				sessionState,
+				error: error instanceof Error ? error.message : 'Unknown error',
+			})
+			return false
 		}
 	}
 }

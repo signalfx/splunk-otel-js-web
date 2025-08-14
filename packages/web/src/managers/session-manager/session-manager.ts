@@ -25,20 +25,11 @@ const USER_ACTIVITY_EVENTS = ['click', 'touchstart', 'keydown', 'scroll']
 export class SessionManager {
 	private isStarted = false
 
-	private session: SessionState
+	private session: SessionState | null = null
 
 	private stopCallbacks: Array<() => void> = []
 
-	constructor() {
-		// TODO: check storage if there is a session id
-		// generate new session
-
-		this.session = {
-			sessionId: '',
-			startTime: 0,
-			state: 'not-started',
-		}
-	}
+	constructor() {}
 
 	static getNativeSessionId() {
 		if (!(typeof window !== 'undefined' && window.SplunkRumNative && window.SplunkRumNative.getNativeSessionId)) {
