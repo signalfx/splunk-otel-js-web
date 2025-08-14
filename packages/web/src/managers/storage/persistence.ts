@@ -16,4 +16,6 @@
  *
  */
 
-export class LocalStorageManager {}
+export type Persistence = 'cookie' | 'localStorage'
+
+export const isPersistence = (value: string): value is Persistence => ['cookie', 'localStorage'].includes(value)

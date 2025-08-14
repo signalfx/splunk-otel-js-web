@@ -25,14 +25,8 @@ export type SessionState = {
 	state: 'active' | 'not-started' | 'expired'
 }
 
-export function isActiveSession(session: SessionState): session is SessionState {
-	return session.state === 'active'
-}
+export const isActiveSession = (session: SessionState): session is SessionState => session.state === 'active'
 
-export function isNotStartedSession(session: SessionState): session is SessionState {
-	return session.state === 'not-started'
-}
+export const isNotStartedSession = (session: SessionState): session is SessionState => session.state === 'not-started'
 
-export function isExpiredSession(session: SessionState): session is SessionState {
-	return session.state === 'expired'
-}
+export const isExpiredSession = (session: SessionState): session is SessionState => session.state === 'expired'

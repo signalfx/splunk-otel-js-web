@@ -16,4 +16,4 @@
  *
  */
 
-export * from './session-manager'
+export * from './storage-manager'
