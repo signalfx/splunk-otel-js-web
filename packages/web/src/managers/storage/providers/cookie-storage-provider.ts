@@ -42,12 +42,7 @@ export class CookieStorageProvider extends BaseStorageProvider {
 		return null
 	}
 
-	removeValue(key: string, options?: StorageOptions) {
-		if (!options?.domain) {
-			diag.warn('Domain is required for cookie removal')
-			return false
-		}
-
+	removeValue(key: string, options: StorageOptions) {
 		try {
 			const expiredDate = 'Thu, 01 Jan 1970 00:00:01 GMT'
 			document.cookie = `${key}=;expires=${expiredDate};domain=${options.domain};path=/`
@@ -62,15 +57,12 @@ export class CookieStorageProvider extends BaseStorageProvider {
 		}
 	}
 
-	setValue(key: string, value: string, options?: StorageOptions) {
-		if (!options) {
-			diag.warn('StorageOptions is required for cookie storage')
-			return false
-		}
-
+	setValue(key: string, value: string, options: StorageOptions) {
 		try {
+			const domainPart = options.domain ? `;domain=${options.domain}` : ''
 			const encodedValue = encodeURIComponent(value)
-			document.cookie = `${key}=${encodedValue};expires=${options.expires};domain=${options.domain};path=/;sameSite=strict;secure`
+
+			document.cookie = `${key}=${encodedValue};expires=${options.expires}${domainPart};path=/;sameSite=strict;secure`
 
 			return true
 		} catch (error) {

@@ -30,7 +30,7 @@ export interface StorageOptions {
 	/** Domain for cookie storage (only applicable for cookie providers) */
 	domain?: string
 	/** Expiration date for cookie storage (only applicable for cookie providers) */
-	expires?: string
+	expires: string
 	/** Session persistence type (cookie or localStorage) */
 	sessionPersistence: SessionPersistence
 }
@@ -74,7 +74,7 @@ export abstract class BaseStorageProvider {
 	 * Safely stores an object as JSON in storage with error handling.
 	 * Returns true if the operation was successful, false otherwise.
 	 */
-	safelyStoreJson<T>(key: string, data: T, options?: StorageOptions): boolean {
+	safelyStoreJson<T>(key: string, data: T, options: StorageOptions): boolean {
 		try {
 			const serialized = JSON.stringify(data)
 			return this.setValue(key, serialized, options)
@@ -99,12 +99,12 @@ export abstract class BaseStorageProvider {
 	 * Additional storage options can be provided (e.g., domain for cookies).
 	 * Returns true if the operation was successful, false otherwise.
 	 */
-	abstract removeValue(key: string, options?: StorageOptions): boolean
+	abstract removeValue(key: string, options: StorageOptions): boolean
 
 	/**
 	 * Stores a value in storage with the given key.
 	 * Additional storage options can be provided (e.g., domain, expires for cookies).
 	 * Returns true if the operation was successful, false otherwise.
 	 */
-	abstract setValue(key: string, value: string, options?: StorageOptions): boolean
+	abstract setValue(key: string, value: string, options: StorageOptions): boolean
 }

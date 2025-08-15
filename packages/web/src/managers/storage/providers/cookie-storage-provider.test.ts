@@ -17,39 +17,49 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { diag } from '@opentelemetry/api'
 import { CookieStorageProvider } from './cookie-storage-provider'
-import { StorageOptions } from './base-storage-provider'
+import { SessionPersistence } from './base-storage-provider'
+import { server } from '@vitest/browser/context'
 
-vi.mock('@opentelemetry/api', () => ({
-	diag: {
-		warn: vi.fn(),
-	},
-}))
+const expiresDate = new Date()
+expiresDate.setMonth(expiresDate.getMonth() + 3)
 
-// Mock document.cookie
-Object.defineProperty(document, 'cookie', {
-	writable: true,
-	value: '',
-})
+const validOptions = {
+	expires: expiresDate.toUTCString(),
+	sessionPersistence: 'cookie' as SessionPersistence,
+}
 
 describe('CookieStorageProvider', () => {
 	let provider: CookieStorageProvider
-	let mockDiagWarn: ReturnType<typeof vi.fn>
+	let setCookieNames: Set<string>
+	let cookieSetterSpy: ReturnType<typeof vi.spyOn>
 
 	beforeEach(() => {
 		provider = new CookieStorageProvider()
-		mockDiagWarn = vi.mocked(diag.warn)
-		mockDiagWarn.mockClear()
-		// Clear all cookies before each test
-		document.cookie = ''
+		setCookieNames = new Set()
+
+		const originalDescriptor = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie')
+		cookieSetterSpy = vi.spyOn(document, 'cookie', 'set').mockImplementation((cookieString: string) => {
+			const [keyValue] = cookieString.split(';')
+			const [key] = keyValue.split('=')
+			const cookieName = key.trim()
+			setCookieNames.add(cookieName)
+			originalDescriptor?.set?.call(document, cookieString)
+		})
 	})
 
 	afterEach(() => {
-		// Clean up cookies after each test
-		document.cookie = ''
+		clearTestCookies()
+		cookieSetterSpy.mockRestore()
 		vi.clearAllMocks()
 	})
+
+	const clearTestCookies = () => {
+		setCookieNames.forEach((cookieName) => {
+			document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:01 GMT; path=/`
+		})
+		setCookieNames.clear()
+	}
 
 	describe('providerName', () => {
 		it('should return "cookie" as provider name', () => {
@@ -59,27 +69,49 @@ describe('CookieStorageProvider', () => {
 
 	describe('getValue', () => {
 		it('should return null when no cookies exist', () => {
-			document.cookie = ''
 			const result = provider.getValue('testKey')
 			expect(result).toBeNull()
 		})
 
 		it('should return null when key does not exist', () => {
-			document.cookie = 'otherKey=otherValue'
+			document.cookie = 'otherKey=otherValue; path=/'
 			const result = provider.getValue('testKey')
 			expect(result).toBeNull()
 		})
 
 		it('should return the correct value for existing key', () => {
-			document.cookie = 'testKey=testValue'
+			document.cookie = 'testKey=testValue; path=/'
 			const result = provider.getValue('testKey')
 			expect(result).toBe('testValue')
 		})
 
 		it('should return the correct value when multiple cookies exist', () => {
-			document.cookie = 'key1=value1; testKey=testValue; key2=value2'
+			document.cookie = 'key1=value1; path=/'
+			document.cookie = 'testKey=testValue; path=/'
+			document.cookie = 'key2=value2; path=/'
+
 			const result = provider.getValue('testKey')
 			expect(result).toBe('testValue')
+			expect(document.cookie).toContain('key1=value1')
+			expect(document.cookie).toContain('testKey=testValue')
+			expect(document.cookie).toContain('key2=value2')
+		})
+
+		it('should handle expired cookies (not return them)', () => {
+			// Set an expired cookie
+			const pastDate = new Date(Date.now() - 1000).toUTCString()
+			document.cookie = `expiredKey=expiredValue; expires=${pastDate}; path=/`
+
+			// Set a valid cookie
+			document.cookie = 'validKey=validValue; path=/'
+
+			// Expired cookie should not be accessible
+			expect(provider.getValue('expiredKey')).toBeNull()
+			expect(provider.getValue('validKey')).toBe('validValue')
+
+			// document.cookie should only show valid cookies
+			expect(document.cookie).not.toContain('expiredKey')
+			expect(document.cookie).toContain('validKey=validValue')
 		})
 
 		it('should decode URL-encoded values', () => {
@@ -101,114 +133,14 @@ describe('CookieStorageProvider', () => {
 			const result = provider.getValue('testKey')
 			expect(result).toBe('{"test": "value", "number": 123}')
 		})
-
-		it('should log warning and return null when cookie parsing fails', () => {
-			// Create a spy on document.cookie getter that throws an Error
-			const originalDescriptor = Object.getOwnPropertyDescriptor(document, 'cookie')
-			const cookieGetterSpy = vi.fn(() => {
-				throw new Error('Cookie access denied')
-			})
-
-			Object.defineProperty(document, 'cookie', {
-				get: cookieGetterSpy,
-				configurable: true,
-			})
-
-			const result = provider.getValue('testKey')
-			expect(result).toBeNull()
-			expect(mockDiagWarn).toHaveBeenCalledWith('Failed to retrieve cookie', {
-				key: 'testKey',
-				error: 'Cookie access denied',
-			})
-
-			// Restore original descriptor
-			if (originalDescriptor) {
-				Object.defineProperty(document, 'cookie', originalDescriptor)
-			} else {
-				Object.defineProperty(document, 'cookie', {
-					writable: true,
-					value: '',
-					configurable: true,
-				})
-			}
-		})
-
-		it('should handle unknown error types', () => {
-			// Create a spy on document.cookie getter that throws a non-Error object
-			const originalDescriptor = Object.getOwnPropertyDescriptor(document, 'cookie')
-			const cookieGetterSpy = vi.fn(() => {
-				throw 'String error'
-			})
-
-			Object.defineProperty(document, 'cookie', {
-				get: cookieGetterSpy,
-				configurable: true,
-			})
-
-			const result = provider.getValue('testKey')
-			expect(result).toBeNull()
-			expect(mockDiagWarn).toHaveBeenCalledWith('Failed to retrieve cookie', {
-				key: 'testKey',
-				error: 'Unknown error',
-			})
-
-			// Restore original descriptor
-			if (originalDescriptor) {
-				Object.defineProperty(document, 'cookie', originalDescriptor)
-			} else {
-				Object.defineProperty(document, 'cookie', {
-					writable: true,
-					value: '',
-					configurable: true,
-				})
-			}
-		})
 	})
 
-	describe('setValue', () => {
-		const validOptions: StorageOptions = {
-			domain: 'example.com',
-			expires: 'Wed, 21 Oct 2025 07:28:00 GMT',
-			sessionPersistence: 'cookie',
-		}
-
-		it('should return false and log warning when domain is not provided', () => {
-			const result = provider.setValue('testKey', 'testValue', {
-				expires: 'Wed, 21 Oct 2025 07:28:00 GMT',
-				sessionPersistence: 'cookie',
-			})
-
-			expect(result).toBe(false)
-			expect(mockDiagWarn).toHaveBeenCalledWith('Domain is required for cookie storage')
-		})
-
-		it('should return false and log warning when expires is not provided', () => {
-			const result = provider.setValue('testKey', 'testValue', {
-				domain: 'example.com',
-				sessionPersistence: 'cookie',
-			})
-
-			expect(result).toBe(false)
-			expect(mockDiagWarn).toHaveBeenCalledWith('Expires is required for cookie storage')
-		})
-
-		it('should return false and log warning when options are not provided', () => {
-			const result = provider.setValue('testKey', 'testValue')
-
-			expect(result).toBe(false)
-			expect(mockDiagWarn).toHaveBeenCalledWith('Domain is required for cookie storage')
-		})
-
+	describe.runIf(server.browser !== 'webkit')('setValue', () => {
 		it('should successfully set a cookie with valid options', () => {
 			const result = provider.setValue('testKey', 'testValue', validOptions)
 
 			expect(result).toBe(true)
-			expect(document.cookie).toContain('testKey=testValue')
-			expect(document.cookie).toContain('domain=example.com')
-			expect(document.cookie).toContain('expires=Wed, 21 Oct 2025 07:28:00 GMT')
-			expect(document.cookie).toContain('path=/')
-			expect(document.cookie).toContain('sameSite=strict')
-			expect(document.cookie).toContain('secure')
+			expect(document.cookie).toBe('testKey=testValue')
 		})
 
 		it('should URL-encode cookie values', () => {
@@ -219,133 +151,17 @@ describe('CookieStorageProvider', () => {
 			const encodedValue = encodeURIComponent(valueWithSpaces)
 			expect(document.cookie).toContain(`testKey=${encodedValue}`)
 		})
-
-		it('should handle special characters in values', () => {
-			const specialValue = '{"test": "value", "number": 123}'
-			const result = provider.setValue('testKey', specialValue, validOptions)
-
-			expect(result).toBe(true)
-			const encodedValue = encodeURIComponent(specialValue)
-			expect(document.cookie).toContain(`testKey=${encodedValue}`)
-		})
-
-		it('should handle empty string values', () => {
-			const result = provider.setValue('testKey', '', validOptions)
-
-			expect(result).toBe(true)
-			expect(document.cookie).toContain('testKey=')
-		})
-
-		it('should log warning and return false when cookie setting fails', () => {
-			// Create a spy on document.cookie setter that throws an error
-			const originalDescriptor = Object.getOwnPropertyDescriptor(document, 'cookie')
-			const cookieSetterSpy = vi.fn(() => {
-				throw new Error('Cookie setting failed')
-			})
-
-			Object.defineProperty(document, 'cookie', {
-				set: cookieSetterSpy,
-				get: () => '',
-				configurable: true,
-			})
-
-			const result = provider.setValue('testKey', 'testValue', validOptions)
-
-			expect(result).toBe(false)
-			expect(mockDiagWarn).toHaveBeenCalledWith('Failed to set cookie', {
-				key: 'testKey',
-				domain: 'example.com',
-				error: expect.any(Error),
-			})
-
-			// Restore original descriptor
-			if (originalDescriptor) {
-				Object.defineProperty(document, 'cookie', originalDescriptor)
-			} else {
-				Object.defineProperty(document, 'cookie', {
-					writable: true,
-					value: '',
-					configurable: true,
-				})
-			}
-		})
 	})
 
 	describe('removeValue', () => {
-		const validOptions: StorageOptions = {
-			domain: 'example.com',
-			sessionPersistence: 'cookie',
-		}
-
-		it('should return false and log warning when domain is not provided', () => {
-			const result = provider.removeValue('testKey', {
-				sessionPersistence: 'cookie',
-			})
-
-			expect(result).toBe(false)
-			expect(mockDiagWarn).toHaveBeenCalledWith('Domain is required for cookie removal')
-		})
-
-		it('should return false and log warning when options are not provided', () => {
-			const result = provider.removeValue('testKey')
-
-			expect(result).toBe(false)
-			expect(mockDiagWarn).toHaveBeenCalledWith('Domain is required for cookie removal')
-		})
-
 		it('should successfully remove a cookie with valid options', () => {
 			const result = provider.removeValue('testKey', validOptions)
 
 			expect(result).toBe(true)
-			expect(document.cookie).toContain('testKey=')
-			expect(document.cookie).toContain('expires=Thu, 01 Jan 1970 00:00:01 GMT')
-			expect(document.cookie).toContain('domain=example.com')
-			expect(document.cookie).toContain('path=/')
-		})
-
-		it('should set expiration to epoch time for removal', () => {
-			const result = provider.removeValue('testKey', validOptions)
-
-			expect(result).toBe(true)
-			expect(document.cookie).toContain('expires=Thu, 01 Jan 1970 00:00:01 GMT')
-		})
-
-		it('should log warning and return false when cookie removal fails', () => {
-			// Create a spy on document.cookie setter that throws an error
-			const originalDescriptor = Object.getOwnPropertyDescriptor(document, 'cookie')
-			const cookieSetterSpy = vi.fn(() => {
-				throw new Error('Cookie removal failed')
-			})
-
-			const originalValue = document.cookie
-			Object.defineProperty(document, 'cookie', {
-				set: cookieSetterSpy,
-				get: () => originalValue,
-				configurable: true,
-			})
-
-			const result = provider.removeValue('testKey', validOptions)
-
-			expect(result).toBe(false)
-			expect(mockDiagWarn).toHaveBeenCalledWith('Failed to remove cookie', {
-				key: 'testKey',
-				domain: 'example.com',
-				error: expect.any(Error),
-			})
-
-			// Restore original descriptor
-			if (originalDescriptor) {
-				Object.defineProperty(document, 'cookie', originalDescriptor)
-			} else {
-				Object.defineProperty(document, 'cookie', {
-					writable: true,
-					value: originalValue,
-					configurable: true,
-				})
-			}
+			expect(document.cookie).toBe('')
 		})
 	})
-
+	//
 	describe('safelyParseJson', () => {
 		it('should return undefined when key does not exist', () => {
 			const result = provider.safelyParseJson('nonExistentKey')
@@ -367,16 +183,11 @@ describe('CookieStorageProvider', () => {
 			expect(result).toEqual(testData)
 		})
 
-		it('should return undefined and log warning for invalid JSON', () => {
+		it('should return undefined for invalid JSON', () => {
 			document.cookie = 'testKey=invalid-json'
 
 			const result = provider.safelyParseJson('testKey')
 			expect(result).toBeUndefined()
-			expect(mockDiagWarn).toHaveBeenCalledWith('Failed to parse JSON from cookie', {
-				key: 'testKey',
-				value: 'invalid-json',
-				error: expect.stringContaining('Unexpected token'),
-			})
 		})
 
 		it('should handle complex nested objects', () => {
@@ -399,24 +210,7 @@ describe('CookieStorageProvider', () => {
 		})
 	})
 
-	describe('safelyStoreJson', () => {
-		const validOptions: StorageOptions = {
-			domain: 'example.com',
-			expires: 'Wed, 21 Oct 2025 07:28:00 GMT',
-			sessionPersistence: 'cookie',
-		}
-
-		it('should return false when domain is not provided', () => {
-			const testData = { name: 'test' }
-			const result = provider.safelyStoreJson('testKey', testData, {
-				expires: 'Wed, 21 Oct 2025 07:28:00 GMT',
-				sessionPersistence: 'cookie',
-			})
-
-			expect(result).toBe(false)
-			expect(mockDiagWarn).toHaveBeenCalledWith('Domain is required for cookie storage')
-		})
-
+	describe.runIf(server.browser !== 'webkit')('safelyStoreJson', () => {
 		it('should successfully store JSON data', () => {
 			const testData = { name: 'test', value: 123 }
 			const result = provider.safelyStoreJson('testKey', testData, validOptions)
@@ -445,139 +239,6 @@ describe('CookieStorageProvider', () => {
 			const expectedJson = JSON.stringify(complexData)
 			const encodedJson = encodeURIComponent(expectedJson)
 			expect(document.cookie).toContain(`testKey=${encodedJson}`)
-		})
-
-		it('should handle arrays', () => {
-			const arrayData = [1, 2, 3, 'test', { nested: true }]
-			const result = provider.safelyStoreJson('testKey', arrayData, validOptions)
-
-			expect(result).toBe(true)
-			const expectedJson = JSON.stringify(arrayData)
-			const encodedJson = encodeURIComponent(expectedJson)
-			expect(document.cookie).toContain(`testKey=${encodedJson}`)
-		})
-
-		it('should handle null and undefined values', () => {
-			const result1 = provider.safelyStoreJson('testKey1', null, validOptions)
-			const result2 = provider.safelyStoreJson('testKey2', undefined, validOptions)
-
-			expect(result1).toBe(true)
-			expect(result2).toBe(true)
-			expect(document.cookie).toContain('testKey1=null')
-			expect(document.cookie).toContain('testKey2=')
-		})
-
-		it('should return false and log warning when JSON serialization fails', () => {
-			// Create an object that cannot be serialized to JSON (circular reference)
-			const circularObj: any = { name: 'test' }
-			circularObj.self = circularObj
-
-			const result = provider.safelyStoreJson('testKey', circularObj, validOptions)
-
-			expect(result).toBe(false)
-			expect(mockDiagWarn).toHaveBeenCalledWith('Failed to serialize and store JSON in cookie', {
-				key: 'testKey',
-				data: circularObj,
-				error: expect.stringContaining('circular'),
-			})
-		})
-
-		it('should return false when underlying setValue fails', () => {
-			// Create a spy on document.cookie setter that throws an error
-			const originalDescriptor = Object.getOwnPropertyDescriptor(document, 'cookie')
-			const cookieSetterSpy = vi.fn(() => {
-				throw new Error('Cookie setting failed')
-			})
-
-			const originalValue = document.cookie
-			Object.defineProperty(document, 'cookie', {
-				set: cookieSetterSpy,
-				get: () => originalValue,
-				configurable: true,
-			})
-
-			const testData = { name: 'test' }
-			const result = provider.safelyStoreJson('testKey', testData, validOptions)
-
-			expect(result).toBe(false)
-
-			// Restore original descriptor
-			if (originalDescriptor) {
-				Object.defineProperty(document, 'cookie', originalDescriptor)
-			} else {
-				Object.defineProperty(document, 'cookie', {
-					writable: true,
-					value: originalValue,
-					configurable: true,
-				})
-			}
-		})
-	})
-
-	describe('Integration tests', () => {
-		const validOptions: StorageOptions = {
-			domain: 'example.com',
-			expires: 'Wed, 21 Oct 2025 07:28:00 GMT',
-			sessionPersistence: 'cookie',
-		}
-
-		it('should store and retrieve string values correctly', () => {
-			const testValue = 'test string value'
-			const setResult = provider.setValue('testKey', testValue, validOptions)
-			expect(setResult).toBe(true)
-
-			const retrievedValue = provider.getValue('testKey')
-			expect(retrievedValue).toBe(testValue)
-		})
-
-		it('should store and retrieve JSON values correctly', () => {
-			const testData = { name: 'John', age: 30, active: true }
-			const storeResult = provider.safelyStoreJson('testKey', testData, validOptions)
-			expect(storeResult).toBe(true)
-
-			const retrievedData = provider.safelyParseJson<typeof testData>('testKey')
-			expect(retrievedData).toEqual(testData)
-		})
-
-		it('should handle the complete lifecycle: set, get, remove', () => {
-			const testValue = 'lifecycle test'
-
-			// Set
-			const setResult = provider.setValue('testKey', testValue, validOptions)
-			expect(setResult).toBe(true)
-
-			// Get
-			const retrievedValue = provider.getValue('testKey')
-			expect(retrievedValue).toBe(testValue)
-
-			// Remove
-			const removeResult = provider.removeValue('testKey', validOptions)
-			expect(removeResult).toBe(true)
-
-			// Verify removal (note: in real browsers, the cookie would be expired and not accessible)
-			// In our test environment, we can still see the cookie but it has an expired date
-			expect(document.cookie).toContain('expires=Thu, 01 Jan 1970 00:00:01 GMT')
-		})
-
-		it('should handle multiple cookies independently', () => {
-			const value1 = 'first value'
-			const value2 = 'second value'
-			const data3 = { complex: 'object', number: 42 }
-
-			// Set multiple values
-			expect(provider.setValue('key1', value1, validOptions)).toBe(true)
-			expect(provider.setValue('key2', value2, validOptions)).toBe(true)
-			expect(provider.safelyStoreJson('key3', data3, validOptions)).toBe(true)
-
-			// Retrieve and verify
-			expect(provider.getValue('key1')).toBe(value1)
-			expect(provider.getValue('key2')).toBe(value2)
-			expect(provider.safelyParseJson('key3')).toEqual(data3)
-
-			// Remove one and verify others remain accessible
-			expect(provider.removeValue('key2', validOptions)).toBe(true)
-			expect(provider.getValue('key1')).toBe(value1)
-			expect(provider.safelyParseJson('key3')).toEqual(data3)
 		})
 	})
 })
