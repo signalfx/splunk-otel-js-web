@@ -18,7 +18,6 @@
 
 import { Context, Link, Attributes, SpanKind } from '@opentelemetry/api'
 import { Sampler, SamplingResult, AlwaysOffSampler, AlwaysOnSampler } from '@opentelemetry/sdk-trace-web'
-import { getOrInitInactiveSession } from './session/session'
 
 export interface SessionBasedSamplerConfig {
 	/**

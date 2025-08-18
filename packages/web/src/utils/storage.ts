@@ -15,45 +15,6 @@
  * limitations under the License.
  *
  */
-
-import { throttle } from '../utils/throttle'
-import { Store } from './store'
-
-export class LocalStore<T> implements Store<T> {
-	private cachedValue: T | null | undefined
-
-	private throttledSetRaw = throttle((value: string) => {
-		safelySetLocalStorage(this.key, value)
-	}, 1000)
-
-	constructor(private key: string) {}
-
-	flush() {
-		this.throttledSetRaw.flush()
-	}
-
-	get({ forceDiskRead = false }: { forceDiskRead?: boolean } = {}) {
-		if (this.cachedValue === undefined || forceDiskRead) {
-			const value = safelyGetLocalStorage(this.key)
-			this.cachedValue = value && JSON.parse(value)
-		}
-
-		return this.cachedValue ?? null
-	}
-
-	remove() {
-		safelyRemoveFromLocalStorage(this.key)
-		this.cachedValue = undefined
-
-		this.flush()
-	}
-
-	set(value: T) {
-		this.cachedValue = value
-		this.throttledSetRaw(JSON.stringify(value))
-	}
-}
-
 export const safelyGetLocalStorage = (key: string): string | null => {
 	let value = null
 	try {
@@ -82,26 +43,5 @@ export const safelyRemoveFromLocalStorage = (key: string): void => {
 	} catch {
 		// localStorage not accessible probably user is in incognito-mode
 		// or set "Block third-party cookies" option in browser settings
-	}
-}
-
-export const safelyGetSessionStorage = (key: string): string | null | undefined => {
-	try {
-		return window.sessionStorage.getItem(key)
-	} catch {
-		return undefined
-		// sessionStorage not accessible probably user is in incognito-mode
-		// or set "Block third-party cookies" option in browser settings
-	}
-}
-
-export const safelySetSessionStorage = (key: string, value: string): boolean => {
-	try {
-		window.sessionStorage.setItem(key, value)
-		return true
-	} catch {
-		// sessionStorage not accessible probably user is in incognito-mode
-		// or set "Block third-party cookies" option in browser settings
-		return false
 	}
 }

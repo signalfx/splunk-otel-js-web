@@ -44,14 +44,6 @@ import { type SplunkExporterConfig } from './exporters/common'
 import { SplunkZipkinExporter } from './exporters/zipkin'
 import { ERROR_INSTRUMENTATION_NAME, SplunkErrorInstrumentation } from './SplunkErrorInstrumentation'
 import { generateId, getPluginConfig } from './utils'
-import {
-	checkSessionRecorderType,
-	getIsNewSession,
-	getRumSessionId,
-	initSessionTracking,
-	RecorderType,
-	updateSessionStatus,
-} from './session'
 import { SplunkWebSocketInstrumentation } from './SplunkWebSocketInstrumentation'
 import { initWebVitals } from './webvitals'
 import { SplunkLongTaskInstrumentation } from './SplunkLongTaskInstrumentation'
@@ -72,7 +64,6 @@ import { SplunkSocketIoClientInstrumentation } from './SplunkSocketIoClientInstr
 import { SplunkOTLPTraceExporter } from './exporters/otlp'
 import { registerGlobal, unregisterGlobal } from './global-utils'
 import { BrowserInstanceService } from './services/BrowserInstanceService'
-import { SessionId } from './session'
 import { forgetAnonymousId, getOrCreateAnonymousId } from './user-tracking'
 import {
 	isPersistenceType,
@@ -222,16 +213,7 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 
 	ParentBasedSampler: typeof ParentBasedSampler
 	SessionBasedSampler: typeof SessionBasedSampler
-
-	/**
-	 * @deprecated Use {@link getGlobalAttributes()}
-	 */
-	_experimental_getGlobalAttributes: () => Attributes
-
-	/**
-	 * @deprecated Use {@link getSessionId()}
-	 */
-	_experimental_getSessionId: () => SessionId | undefined
+	SessionManager: typeof SessionManager
 
 	/**
 	 * Used internally by the SplunkSessionRecorder - checks if the current session is assigned to a correct recorder type.
@@ -242,9 +224,6 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	 * Allows experimental options to be passed. No versioning guarantees are given for this method.
 	 */
 	_internalInit: (options: Partial<SplunkOtelWebConfigInternal>) => void
-
-	/* Used internally by the SplunkSessionRecorder - span from session can extend the session */
-	_internalOnExternalSpanCreated: () => void
 
 	_processedOptions: SplunkOtelWebConfigInternal | null
 
@@ -280,7 +259,7 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	/**
 	 * This method returns current session ID
 	 */
-	getSessionId: () => SessionId | undefined
+	getSessionId: () => string | undefined
 
 	init: (options: SplunkOtelWebConfig) => void
 
@@ -312,6 +291,7 @@ let _deinitSessionTracking: undefined | (() => void)
 let _errorInstrumentation: SplunkErrorInstrumentation | undefined
 let _postDocLoadInstrumentation: SplunkPostDocLoadResourceInstrumentation | undefined
 let eventTarget: InternalEventTarget | undefined
+
 const sessionManager = new SessionManager()
 
 export const SplunkRum: SplunkOtelWebType = {
@@ -487,10 +467,6 @@ export const SplunkRum: SplunkOtelWebType = {
 			spanProcessors.push(new SimpleSpanProcessor(new ConsoleSpanExporter()))
 		}
 
-		if (options._experimental_allSpansExtendSession) {
-			spanProcessors.push(new SessionSpanProcessor())
-		}
-
 		if (options.spanProcessors) {
 			spanProcessors.push(...options.spanProcessors)
 		}
@@ -500,7 +476,6 @@ export const SplunkRum: SplunkOtelWebType = {
 			resource: this.resource,
 			sampler: new SplunkSamplerWrapper({
 				decider: processedOptions.tracer?.sampler ?? new AlwaysOnSampler(),
-				allSpansAreActivity: Boolean(this._processedOptions._experimental_allSpansExtendSession),
 			}),
 			spanProcessors,
 		})
@@ -693,16 +668,6 @@ export const SplunkRum: SplunkOtelWebType = {
 		return this.getSessionId()
 	},
 
-	_internalOnExternalSpanCreated() {
-		if (!this._processedOptions) {
-			return
-		}
-
-		updateSessionStatus({
-			forceStore: false,
-			hadActivity: this._processedOptions._experimental_allSpansExtendSession,
-		})
-	},
 	_internalCheckSessionRecorderType(recorderType: RecorderType) {
 		checkSessionRecorderType(recorderType)
 	},

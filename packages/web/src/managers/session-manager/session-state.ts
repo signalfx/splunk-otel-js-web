@@ -19,6 +19,7 @@
 export type RecorderType = 'rrweb' | 'splunk'
 
 export type SessionState = {
+	expiresAt: number
 	rt?: RecorderType
 	sessionId: string
 	startTime: number

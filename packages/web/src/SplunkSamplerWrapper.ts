@@ -23,7 +23,6 @@ import { getOrInitInactiveSession } from './session/session'
 export class SplunkSamplerWrapper implements Sampler {
 	constructor(
 		private readonly options: {
-			allSpansAreActivity: boolean
 			decider: Sampler
 		},
 	) {}

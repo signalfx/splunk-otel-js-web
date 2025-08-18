@@ -18,6 +18,9 @@
 
 import { SessionState } from './session-state'
 import { diag } from '@opentelemetry/api'
+import { StorageManager } from '../storage'
+import { SESSION_INACTIVITY_TIMEOUT_MS, SESSION_DURATION_MS } from './constants'
+import { generateId } from '../../utils'
 
 // Events that extend the session or create a new one
 const USER_ACTIVITY_EVENTS = ['click', 'touchstart', 'keydown', 'scroll']
@@ -29,7 +32,7 @@ export class SessionManager {
 
 	private stopCallbacks: Array<() => void> = []
 
-	constructor() {}
+	constructor(private readonly storageManager: StorageManager) {}
 
 	static getNativeSessionId() {
 		if (!(typeof window !== 'undefined' && window.SplunkRumNative && window.SplunkRumNative.getNativeSessionId)) {
@@ -39,8 +42,12 @@ export class SessionManager {
 		return window.SplunkRumNative.getNativeSessionId()
 	}
 
+	static hasNativeSessionId() {
+		return typeof window !== 'undefined' && window.SplunkRumNative && window.SplunkRumNative.getNativeSessionId
+	}
+
 	getSessionId() {
-		return SessionManager.getNativeSessionId() ?? this.session.sessionId
+		return SessionManager.getNativeSessionId() ?? this.session?.sessionId
 	}
 
 	start() {
@@ -52,6 +59,7 @@ export class SessionManager {
 		}
 
 		this.attachUserActivityListeners()
+		this.attachSessionStorageWatch()
 	}
 
 	stop() {
@@ -63,6 +71,27 @@ export class SessionManager {
 		this.isStarted = false
 		this.stopCallbacks.forEach((callback) => callback())
 		this.stopCallbacks = []
+	}
+
+	private static generateNewSession(): SessionState {
+		return {
+			expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
+			startTime: Date.now(),
+			state: 'active',
+			sessionId: generateId(128),
+		}
+	}
+
+	private static isSessionExpired(session: SessionState) {
+		return Date.now() > session.expiresAt
+	}
+
+	private static isSessionMaxDurationReached(session: SessionState) {
+		return Date.now() > session.startTime + SESSION_DURATION_MS
+	}
+
+	private static isSessionRenewable(session: SessionState) {
+		return !SessionManager.isSessionExpired(session) && !SessionManager.isSessionMaxDurationReached(session)
 	}
 
 	private addEventListeners(
@@ -77,6 +106,13 @@ export class SessionManager {
 			removeListenersCallback: () =>
 				events.forEach((event) => target.removeEventListener(event, handler, options)),
 		}
+	}
+
+	private attachSessionStorageWatch() {
+		const storageChangeCallback = () => {}
+		const intervalId = setInterval(storageChangeCallback, 10000)
+
+		this.stopCallbacks.push(() => clearInterval(intervalId))
 	}
 
 	private attachUserActivityListeners() {
@@ -97,6 +133,32 @@ export class SessionManager {
 	}
 
 	private extendOrCreateNewSession = () => {
-		// Implementation for extending or creating new session
+		if (SessionManager.hasNativeSessionId()) {
+			return
+		}
+
+		// TODO: What should happen if the session is not present
+		if (!this.session) {
+			return
+		}
+
+		if (!SessionManager.isSessionRenewable(this.session)) {
+			const sessionStateInStorage = this.storageManager.getSessionState()
+			if (sessionStateInStorage) {
+				if (SessionManager.isSessionRenewable(sessionStateInStorage)) {
+					this.session = sessionStateInStorage
+				} else {
+					// TODO: Notify about new session generated
+					this.session = SessionManager.generateNewSession()
+				}
+			} else {
+				// TODO: Notify about new session generated
+				this.session = SessionManager.generateNewSession()
+			}
+		} else {
+			this.session.expiresAt = Date.now() + SESSION_INACTIVITY_TIMEOUT_MS
+		}
+
+		this.storageManager.persistSessionState(this.session)
 	}
 }

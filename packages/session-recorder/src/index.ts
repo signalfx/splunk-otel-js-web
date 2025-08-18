@@ -242,21 +242,12 @@ const SplunkRumRecorder = {
 				}
 			}
 
-			let isExtended = false
-
 			// Safeguards from our ingest getting DDOSed:
 			// 1. A session can send up to 4 hours of data
 			// 2. Recording resumes on session change if it isn't a background tab (session regenerated in an another tab)
 			if (SplunkRum.getSessionId() !== lastKnownSession) {
 				if (document.hidden) {
 					return
-				}
-
-				// We need to call it here before another getSessionID call. This will create a new session
-				// if the previous one was expired
-				if (SplunkRum._internalOnExternalSpanCreated) {
-					SplunkRum._internalOnExternalSpanCreated()
-					isExtended = true
 				}
 
 				lastKnownSession = SplunkRum.getSessionId()
@@ -269,12 +260,6 @@ const SplunkRumRecorder = {
 
 			if (emitContext.startTime > sessionStartTime + MAX_RECORDING_LENGTH) {
 				return
-			}
-
-			if (!isExtended) {
-				if (SplunkRum._internalOnExternalSpanCreated) {
-					SplunkRum._internalOnExternalSpanCreated()
-				}
 			}
 
 			const time = emitContext.type === 'splunk' ? Math.floor(emitContext.startTime) : emitContext.startTime
