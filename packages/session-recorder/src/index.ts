@@ -282,12 +282,9 @@ const SplunkRumRecorder = {
 
 			eventCounter += 1
 
-			// TODO: Use when UI is ready to handle only raw data in body
-			// const body = encoder.encode(
-			// 	JSON.stringify(emitContext.type === 'splunk' ? emitContext.data.data : emitContext.data),
-			// )
-
-			const body = encoder.encode(JSON.stringify(emitContext.data))
+			const body = encoder.encode(
+				JSON.stringify(emitContext.type === 'splunk' ? emitContext.data.data : emitContext.data),
+			)
 
 			const totalC = Math.ceil(body.byteLength / MAX_CHUNK_SIZE)
 
