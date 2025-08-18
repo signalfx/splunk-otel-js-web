@@ -2,6 +2,61 @@
 
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
+## 0.23.1
+
+* `@splunk/otel-web`
+  - Added a new `SplunkRum.reportError(error, context)` API for error reporting. This replaces the deprecated `SplunkRum.error()` method and allows optional context to be attached to errors [#1197](https://github.com/signalfx/splunk-otel-js-web/pull/1197)
+    - API signature:
+      ```typescript
+      reportError: (
+        error: string | Event | Error | ErrorEvent,
+        context?: Record<string, string | number | boolean>,
+      ) => void
+      ```
+    - The `SplunkRum.error()` method will be removed in the next major release. Please update your code to use `reportError`.
+  - Errors can now include a `splunkContext` property (`Record<string, string | number | boolean>`) [#1200](https://github.com/signalfx/splunk-otel-js-web/pull/1200)
+    - This context will be automatically extracted and added as attributes to the corresponding error span.
+    - Example:
+      ```typescript
+       try {
+          throw new Error('Just an error');
+       } catch (e) {
+          e.splunkContext = {
+            errorValueString: 'errorValue',
+            errorValueNumber: 123,
+          };
+          console.error(e);
+       }
+      ```
+  - Throttle error spans [#1208](https://github.com/signalfx/splunk-otel-js-web/pull/1208)
+    -  Error reporting is throttled to reduce noise and avoid duplicate spans. Each unique error span is identified by its attributes. We only report the same error (based on its attributes) once per second.
+  - Allow transforming errors before they're sent to the backend [#1275](https://github.com/signalfx/splunk-otel-js-web/pull/1275)
+    - Example:
+      ```typescript
+      SplunkOtelWeb.init({
+          ...,
+          intrumentations: {
+             errors: {
+                onError: (error, context) => {
+                  if (error instanceof Error) {
+                      error.message = 'Modified message'
+                  }
+    
+                  return { error, context }
+              },
+            },
+          },
+          ...
+      })
+      ```
+* `@splunk/otel-web-session-recorder`
+  - Added a new `recorderType` option to the session recorder. You can now choose between the default `rrweb` recorder and the new, more efficient `splunk` recorder.
+
+* Internal
+  - Updated dependencies
+  - Improved release scripts [#1123](https://github.com/signalfx/splunk-otel-js-web/pull/1123)
+  - switch to using `pnpm` [#1182](https://github.com/signalfx/splunk-otel-js-web/pull/1182) and use `turborepo` [#1188](https://github.com/signalfx/splunk-otel-js-web/pull/1188)
+
 ## 0.22.0
 * @splunk/rum-build-plugins
 	* feat: Add `@splunk/rum-build-plugins` and new `SplunkRumWebpackPlugin`. 
