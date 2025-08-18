@@ -77,13 +77,13 @@ const setQueuedLogs = (queuedLogs: QueuedLog[]): boolean => {
 	return safelySetLocalStorage(QUEUED_LOGS_STORAGE_KEY, JSON.stringify(queuedLogs))
 }
 
-export const removeQueuedLog = (logToRemove: QueuedLog) => {
+export const removeQueuedLog = (logToRemove: QueuedLog): boolean => {
 	const queuedLogs = getQueuedLogs() ?? []
 	const updatedLogs = queuedLogs.filter((logItem) => logItem.requestId !== logToRemove.requestId)
-	setQueuedLogs(updatedLogs)
+	return setQueuedLogs(updatedLogs)
 }
 
-const removeQueuedLogs = () => {
+export const removeQueuedLogs = () => {
 	safelyRemoveFromLocalStorage(QUEUED_LOGS_STORAGE_KEY)
 }
 

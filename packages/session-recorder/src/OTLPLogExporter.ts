@@ -24,7 +24,14 @@ import { IAnyValue, Log } from './types'
 import { VERSION } from './version'
 import { compressAsync } from './session-replay/utils'
 import { apiFetch, ApiParams } from './api/api-fetch'
-import { addLogToQueue, removeQueuedLog, QueuedLog, getQueuedLogs, removeAssetsFromQueuedLog } from './export-log-queue'
+import {
+	addLogToQueue,
+	removeQueuedLog,
+	QueuedLog,
+	getQueuedLogs,
+	removeAssetsFromQueuedLog,
+	removeQueuedLogs,
+} from './export-log-queue'
 import { context } from '@opentelemetry/api'
 import { suppressTracing } from '@opentelemetry/core'
 import { log } from './log'
@@ -189,23 +196,26 @@ export default class OTLPLogExporter {
 		let logs: QueuedLog[] = []
 		logs = getQueuedLogs() ?? []
 
+		// Remove all logs and add only ones that are relevant before sending
+		removeQueuedLogs()
+
 		for (const logItem of logs) {
 			log.debug('Found queued log', { ...logItem, data: '[truncated]' })
 
 			// Only export logs that belong to the current session
 			if (logItem.sessionId !== this.config.sessionId) {
 				log.debug(
-					'exportQueuedLogs - session mismatch, removing log',
+					'exportQueuedLogs - session mismatch',
 					{ ...logItem, data: '[truncated]' },
 					{ sessionId: this.config.sessionId },
 				)
-				// We have to remove session mismatched logs otherwise storage grows
-				removeQueuedLog(logItem)
 				continue
 			}
 
-			const logData = strToU8(JSON.stringify(logItem.data))
+			// Add log to queue and remove after it has been successfully sent
+			addLogToQueue(logItem)
 
+			const logData = strToU8(JSON.stringify(logItem.data))
 			OTLPLogExporter.sendDataToBackend(logItem, logData, logItem.url, logItem.headers)
 		}
 	}
