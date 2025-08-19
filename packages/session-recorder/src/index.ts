@@ -157,8 +157,8 @@ const SplunkRumRecorder = {
 			return
 		}
 
-		// Handle recorder type change (splunk -> rrweb or rrweb -> splunk)
-		SplunkRum._internalCheckSessionRecorderType(recorderType)
+		// TODO: Handle recorder type change (splunk -> rrweb or rrweb -> splunk)
+		// SplunkRum._internalCheckSessionRecorderType(recorderType)
 
 		// Mark recorded session as splunk
 		if (SplunkRum.provider) {
@@ -221,10 +221,7 @@ const SplunkRumRecorder = {
 		lastKnownUserTrackingMode = SplunkRum.userTrackingMode
 		lastKnownSession = SplunkRum.getSessionId()
 
-		if (isSplunkRecorder && SplunkRum.isNewSessionId()) {
-			log.debug('SplunkRum.isNewSessionId()')
-			SplunkRecorder.clear()
-		}
+		// TODO: When new session starts we need to call SplunkRecorder.clear()
 
 		sessionStartTime = Date.now()
 

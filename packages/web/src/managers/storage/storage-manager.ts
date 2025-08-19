@@ -18,7 +18,7 @@
 
 import { CookieStorageProvider, LocalStorageProvider, StorageOptions } from './providers'
 import { SessionState } from '../session-manager'
-import { SESSION_STORAGE_KEY } from './constants'
+import { SESSION_STORAGE_KEY, SESSION_EXPIRATION_COOKIE_MS } from './constants'
 import { diag } from '@opentelemetry/api'
 
 export class StorageManager {
@@ -43,11 +43,14 @@ export class StorageManager {
 	 * The persistence type determines which storage mechanism to use ('cookie' or 'localStorage').
 	 * Domain is required for cookie storage.
 	 */
-	constructor(private readonly options: StorageOptions) {}
+	constructor(private readonly options: Omit<StorageOptions, 'expires'>) {}
 
 	clearSessionState() {
 		try {
-			return this.sessionStorageProvider.removeValue(SESSION_STORAGE_KEY, this.options)
+			return this.sessionStorageProvider.removeValue(SESSION_STORAGE_KEY, {
+				...this.options,
+				expires: new Date(Date.now() + SESSION_EXPIRATION_COOKIE_MS).toUTCString(),
+			})
 		} catch (error) {
 			diag.warn('Failed to clear session state', {
 				options: this.options,
@@ -71,7 +74,10 @@ export class StorageManager {
 
 	persistSessionState(sessionState: SessionState) {
 		try {
-			return this.sessionStorageProvider.safelyStoreJson(SESSION_STORAGE_KEY, sessionState, this.options)
+			return this.sessionStorageProvider.safelyStoreJson(SESSION_STORAGE_KEY, sessionState, {
+				...this.options,
+				expires: new Date(Date.now() + SESSION_EXPIRATION_COOKIE_MS).toUTCString(),
+			})
 		} catch (error) {
 			diag.warn('Failed to persist session state', {
 				options: this.options,

@@ -45,3 +45,24 @@ export const safelyRemoveFromLocalStorage = (key: string): void => {
 		// or set "Block third-party cookies" option in browser settings
 	}
 }
+
+export const safelyGetSessionStorage = (key: string): string | null | undefined => {
+	try {
+		return window.sessionStorage.getItem(key)
+	} catch {
+		return undefined
+		// sessionStorage not accessible probably user is in incognito-mode
+		// or set "Block third-party cookies" option in browser settings
+	}
+}
+
+export const safelySetSessionStorage = (key: string, value: string): boolean => {
+	try {
+		window.sessionStorage.setItem(key, value)
+		return true
+	} catch {
+		// sessionStorage not accessible probably user is in incognito-mode
+		// or set "Block third-party cookies" option in browser settings
+		return false
+	}
+}
