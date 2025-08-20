@@ -16,7 +16,7 @@
 		"lint:eslint:fix": "pnpm run lint:eslint --fix",
 		"lint:prettier": "prettier --ignore-path .gitignore --check '**/*.{json,yml,html,css}'",
 		"lint:prettier:fix": "pnpm run lint:prettier --write",
-		"lint:markdown": "markdownlint *.md docs/*.md --ignore CHANGELOG.md --ignore HACKATHON_TASKS.md --ignore HACKATHON_PROGRESS.md",
+		"lint:markdown": "markdownlint *.md docs/*.md --ignore CHANGELOG.md --ignore HACKATHON_TASKS.md --ignore HACKATHON_PROGRESS.md --ignore HACKATHON_PROGRESS_JINDRA.md --ignore HACKATHON_PROGRESS_JOZEF.md",
 		"lint:markdown:fix": "pnpm run lint:markdown --fix",
 		"test": "turbo run --env-mode=loose test:e2e test:unit",
 		"test:unit": "vitest --run",
