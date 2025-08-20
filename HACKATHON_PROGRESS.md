@@ -293,3 +293,24 @@ The hackathon tasks are now well-defined and ready for implementation with compr
 - Upstream dependencies create some limitations on what can be improved
 
 This hackathon has successfully established a clear roadmap for improving the Splunk OpenTelemetry JS web package codebase with well-defined, actionable tasks ready for implementation.
+
+## 📅 **August 20, 2025 10:00-10:20** - SplunkContextManager.ts Private Member Migration
+
+### **User Input & Course Corrections**
+- **User feedback**: "i can still see _bindFunction and others, is it necessary?" - caught that I only migrated 5 members instead of ALL 18 underscore-prefixed methods
+- **User request**: "update eslint and prettier to ignore these hackathon md files" - to stop markdown lint failures
+
+### **What We Struggled With**
+- **ESLint member-ordering errors**: Multiple iterations trying to get `bindActiveToArgument` in correct alphabetical position
+  - Error: "should be declared before member unpatchTimeouts" 
+  - Error: "should be declared before member unpatchPromise"
+  - Error: "should be declared before member unpatchMutationObserver"
+  - Error: "should be declared before member bindFunction"
+  - **Final fix**: Placed before `bindFunction` since "bindA" < "bindF"
+
+- **Scope creep**: Initially only migrated 5 specific members from task list, user correctly identified need to migrate ALL 18 underscore-prefixed members for consistency
+
+### **Final Result**
+- ✅ Migrated 18 members total (5 fields + 13 methods) from `_name` → `private/protected name`
+- ✅ Updated `package.json` markdownlint to ignore hackathon files
+- ✅ Clean `pnpm run lint` and `pnpm run build` passes

@@ -27,20 +27,15 @@ const ATTACHED_CONTEXT_KEY = '__splunk_context'
 
 /**
  * Extends otel-web stack context manager.
- * Due to privates being unaccessible in subclasses (_enabled) need to copy-paste everything
+ * Due to privates being unaccessible in subclasses (enabled) need to copy-paste everything
  */
 export class SplunkContextManager implements ContextManager {
 	/**
-	 * Keeps the reference to current context
-	 */
-	public _currentContext = ROOT_CONTEXT
-
-	/**
 	 * Event listeners wrapped to resume context from event registration
 	 *
-	 * _contextResumingListeners.get(Target).get(EventType).get(origListener)
+	 * contextResumingListeners.get(Target).get(EventType).get(origListener)
 	 */
-	protected _contextResumingListeners = new WeakMap<
+	private contextResumingListeners = new WeakMap<
 		EventTarget,
 		Map<
 			string,
@@ -52,13 +47,18 @@ export class SplunkContextManager implements ContextManager {
 	>()
 
 	/**
+	 * Keeps the reference to current context
+	 */
+	private currentContext = ROOT_CONTEXT
+
+	/**
 	 * whether the context manager is enabled or not
 	 */
-	protected _enabled = false
+	private enabled = false
 
-	protected _hashChangeContext: Context | null = null
+	private hashChangeContext: Context | null = null
 
-	protected _messagePorts = new WeakMap<MessagePort, MessagePort>()
+	private messagePorts = new WeakMap<MessagePort, MessagePort>()
 
 	constructor(protected _config: ContextManagerConfig = {}) {}
 
@@ -66,7 +66,7 @@ export class SplunkContextManager implements ContextManager {
 	 * Returns the active context
 	 */
 	active(): Context {
-		return this._currentContext
+		return this.currentContext
 	}
 
 	/**
@@ -78,7 +78,7 @@ export class SplunkContextManager implements ContextManager {
 	bind<T>(context: Context, target: T): T {
 		// if no specific context to propagate is given, we use the current one
 		if (isFunction(target)) {
-			return this._bindFunction(target, context) as unknown as T
+			return this.bindFunction(target, context) as unknown as T
 		}
 
 		return target
@@ -88,20 +88,20 @@ export class SplunkContextManager implements ContextManager {
 	 * Disable the context manager (clears the current context)
 	 */
 	disable(): this {
-		if (!this._enabled) {
+		if (!this.enabled) {
 			return this
 		}
 
 		if (this._config.async) {
-			this._unpatchTimeouts()
-			this._unpatchPromise()
-			this._unpatchMutationObserver()
-			this._unpatchEvents()
-			this._unpatchMessageChannel()
+			this.unpatchTimeouts()
+			this.unpatchPromise()
+			this.unpatchMutationObserver()
+			this.unpatchEvents()
+			this.unpatchMessageChannel()
 		}
 
-		this._currentContext = ROOT_CONTEXT
-		this._enabled = false
+		this.currentContext = ROOT_CONTEXT
+		this.enabled = false
 		return this
 	}
 
@@ -109,20 +109,20 @@ export class SplunkContextManager implements ContextManager {
 	 * Enables the context manager and creates a default(root) context
 	 */
 	enable(): this {
-		if (this._enabled) {
+		if (this.enabled) {
 			return this
 		}
 
 		if (this._config.async) {
-			this._patchTimeouts()
-			this._patchPromise()
-			this._patchMutationObserver()
-			this._patchEvents()
-			this._patchMessageChannel()
+			this.patchTimeouts()
+			this.patchPromise()
+			this.patchMutationObserver()
+			this.patchEvents()
+			this.patchMessageChannel()
 		}
 
-		this._enabled = true
-		this._currentContext = ROOT_CONTEXT
+		this.enabled = true
+		this.currentContext = ROOT_CONTEXT
 		return this
 	}
 
@@ -145,8 +145,8 @@ export class SplunkContextManager implements ContextManager {
 		} catch {
 			// ignore any exceptions thrown by context hooks
 		}
-		const previousContext = this._currentContext
-		this._currentContext = context || ROOT_CONTEXT
+		const previousContext = this.currentContext
+		this.currentContext = context || ROOT_CONTEXT
 
 		// Observe for location.hash changes (as it isn't a (re)configurable property))
 		const preLocationHash = location.hash
@@ -155,16 +155,29 @@ export class SplunkContextManager implements ContextManager {
 			this._config.onBeforeContextEnd?.()
 			return result
 		} finally {
-			this._currentContext = previousContext
+			this.currentContext = previousContext
 			if (preLocationHash !== location.hash) {
-				this._hashChangeContext = context
+				this.hashChangeContext = context
 				// Cleanup as macrotask (as hash change can also be done by user)
 				getOriginalFunction(setTimeout)(() => {
-					if (this._hashChangeContext === context) {
-						this._hashChangeContext = null
+					if (this.hashChangeContext === context) {
+						this.hashChangeContext = null
 					}
 				}, 33)
 			}
+		}
+	}
+
+	/**
+	 * Bind current zone to function given in arguments
+	 *
+	 * @param args Arguments array
+	 * @param index Argument index to patch
+	 */
+	protected bindActiveToArgument(args: unknown[], index: number): void {
+		if (isFunction(args[index])) {
+			// Bind callback to current context
+			args[index] = this.bind(this.active(), args[index])
 		}
 	}
 
@@ -173,7 +186,7 @@ export class SplunkContextManager implements ContextManager {
 	 * @param target Function to be executed within the context
 	 * @param context
 	 */
-	protected _bindFunction<T extends (...args: unknown[]) => unknown>(target: T, context = ROOT_CONTEXT): T {
+	protected bindFunction<T extends (...args: unknown[]) => unknown>(target: T, context = ROOT_CONTEXT): T {
 		// eslint-disable-next-line @typescript-eslint/no-this-alias
 		const manager = this
 		const contextWrapper = function (this: unknown, ...args: unknown[]) {
@@ -188,12 +201,12 @@ export class SplunkContextManager implements ContextManager {
 		return contextWrapper as unknown as T
 	}
 
-	protected _getListenersMap(target: EventTarget, type: string): WeakMap<EventListener, EventListener> | undefined {
-		if (!this._contextResumingListeners.has(target)) {
-			this._contextResumingListeners.set(target, new Map())
+	protected getListenersMap(target: EventTarget, type: string): WeakMap<EventListener, EventListener> | undefined {
+		if (!this.contextResumingListeners.has(target)) {
+			this.contextResumingListeners.set(target, new Map())
 		}
 
-		const listenersByType = this._contextResumingListeners.get(target)
+		const listenersByType = this.contextResumingListeners.get(target)
 		if (!listenersByType?.has(type)) {
 			listenersByType?.set(type, new WeakMap())
 		}
@@ -201,13 +214,13 @@ export class SplunkContextManager implements ContextManager {
 		return listenersByType?.get(type)
 	}
 
-	protected _getWrappedEventListener<E extends EventListener>(orig: E, contextGetter: () => Context | null): E {
+	protected getWrappedEventListener<E extends EventListener>(orig: E, contextGetter: () => Context | null): E {
 		// eslint-disable-next-line @typescript-eslint/no-this-alias
 		const manager = this
 
 		return function (this: unknown, ...innerArgs) {
 			const context = contextGetter()
-			if (context && manager._enabled) {
+			if (context && manager.enabled) {
 				// @ts-expect-error on orig: Type 'void' is not assignable to type 'ReturnType<E>'.
 				return manager.with(context, orig, this, ...innerArgs)
 			} else {
@@ -216,7 +229,7 @@ export class SplunkContextManager implements ContextManager {
 		} as E
 	}
 
-	protected _patchEvents(): void {
+	protected patchEvents(): void {
 		// eslint-disable-next-line @typescript-eslint/no-this-alias
 		const manager = this
 
@@ -226,7 +239,7 @@ export class SplunkContextManager implements ContextManager {
 			(original) =>
 				function (this: EventTarget, ...args: Parameters<XMLHttpRequest['addEventListener']>) {
 					if (isFunction(args[1])) {
-						const wrappedListeners = manager._getListenersMap(this, args[0])
+						const wrappedListeners = manager.getListenersMap(this, args[0])
 						let wrapped = wrappedListeners?.get(args[1])
 
 						if (!wrapped) {
@@ -247,7 +260,7 @@ export class SplunkContextManager implements ContextManager {
 			(original) =>
 				function (this: EventTarget, ...args: Parameters<XMLHttpRequest['addEventListener']>) {
 					if (isFunction(args[1])) {
-						const wrappedListeners = manager._getListenersMap(this, args[0])
+						const wrappedListeners = manager.getListenersMap(this, args[0])
 						const wrapped = wrappedListeners?.get(args[1])
 
 						if (wrapped) {
@@ -305,11 +318,11 @@ export class SplunkContextManager implements ContextManager {
 			(original) =>
 				function (this: Window, ...args: Parameters<Window['addEventListener']>) {
 					if (args[0] === 'hashchange' && isFunction(args[1])) {
-						const wrappedListeners = manager._getListenersMap(this, args[0])
+						const wrappedListeners = manager.getListenersMap(this, args[0])
 						let wrapped = wrappedListeners?.get(args[1])
 
 						if (!wrapped) {
-							wrapped = manager._getWrappedEventListener(args[1], () => manager._hashChangeContext)
+							wrapped = manager.getWrappedEventListener(args[1], () => manager.hashChangeContext)
 							wrappedListeners?.set(args[1], wrapped)
 						}
 
@@ -343,9 +356,9 @@ export class SplunkContextManager implements ContextManager {
 				(original) =>
 					function (this: Window, value) {
 						if (isFunction(value)) {
-							const wrapped = manager._getWrappedEventListener<EventListenerWithOrig>(
+							const wrapped = manager.getWrappedEventListener<EventListenerWithOrig>(
 								value,
-								() => manager._hashChangeContext,
+								() => manager.hashChangeContext,
 							)
 							wrapped._orig = value
 							value = wrapped
@@ -358,7 +371,7 @@ export class SplunkContextManager implements ContextManager {
 		}
 	}
 
-	protected _patchMessageChannel(): void {
+	protected patchMessageChannel(): void {
 		// eslint-disable-next-line @typescript-eslint/no-this-alias
 		const manager = this
 
@@ -371,8 +384,8 @@ export class SplunkContextManager implements ContextManager {
 						super(...args)
 
 						// Copy ports onto known mapping
-						manager._messagePorts.set(this.port1, this.port2)
-						manager._messagePorts.set(this.port2, this.port1)
+						manager.messagePorts.set(this.port1, this.port2)
+						manager.messagePorts.set(this.port2, this.port1)
 
 						// Give each port a field to attach context to
 						Object.defineProperty(this.port1, ATTACHED_CONTEXT_KEY, {
@@ -396,14 +409,14 @@ export class SplunkContextManager implements ContextManager {
 				function (this: MessagePort, ...args: any[]) {
 					const active = manager.active()
 
-					if (!manager._messagePorts.has(this) || !active) {
+					if (!manager.messagePorts.has(this) || !active) {
 						return original.apply(
 							this,
 							args as [message: any, options?: StructuredSerializeOptions | undefined],
 						)
 					}
 
-					const target = manager._messagePorts.get(this) as MessagePort & Record<string, Context | null>
+					const target = manager.messagePorts.get(this) as MessagePort & Record<string, Context | null>
 					target[ATTACHED_CONTEXT_KEY] = active
 					const res = original.apply(
 						this,
@@ -430,11 +443,11 @@ export class SplunkContextManager implements ContextManager {
 					...args: Parameters<MessagePort['addEventListener']>
 				) {
 					if (args[0] === 'message' && isFunction(args[1])) {
-						const wrappedListeners = manager._getListenersMap(this, args[0])
+						const wrappedListeners = manager.getListenersMap(this, args[0])
 						let wrapped = wrappedListeners?.get(args[1])
 
 						if (!wrapped) {
-							wrapped = manager._getWrappedEventListener(args[1], () => this[ATTACHED_CONTEXT_KEY])
+							wrapped = manager.getWrappedEventListener(args[1], () => this[ATTACHED_CONTEXT_KEY])
 							wrappedListeners?.set(args[1], wrapped)
 						}
 
@@ -451,7 +464,7 @@ export class SplunkContextManager implements ContextManager {
 			(original) =>
 				function (this: EventTarget, ...args: Parameters<MessagePort['addEventListener']>) {
 					if (args[0] === 'message' && isFunction(args[1])) {
-						const wrappedListeners = manager._getListenersMap(this, args[0])
+						const wrappedListeners = manager.getListenersMap(this, args[0])
 						const wrapped = wrappedListeners?.get(args[1])
 
 						if (wrapped) {
@@ -486,7 +499,7 @@ export class SplunkContextManager implements ContextManager {
 				(original) =>
 					function (this: MessagePort & { [ATTACHED_CONTEXT_KEY]: Context | null }, value) {
 						if (isFunction(value)) {
-							const wrapped = manager._getWrappedEventListener<EventListenerWithOrig>(
+							const wrapped = manager.getWrappedEventListener<EventListenerWithOrig>(
 								value,
 								() => this[ATTACHED_CONTEXT_KEY],
 							)
@@ -501,7 +514,7 @@ export class SplunkContextManager implements ContextManager {
 		}
 	}
 
-	protected _patchMutationObserver(): void {
+	protected patchMutationObserver(): void {
 		// 1. Patch mutation observer in general to check if a context is offered to it
 		// 2. on observe call check for known use cases and patch those to forward the context
 
@@ -517,7 +530,7 @@ export class SplunkContextManager implements ContextManager {
 						if (isFunction(args[0])) {
 							const orig = args[0]
 							args[0] = function (this: { [ATTACHED_CONTEXT_KEY]: Context | null }, ...innerArgs) {
-								if (this[ATTACHED_CONTEXT_KEY] && manager._enabled) {
+								if (this[ATTACHED_CONTEXT_KEY] && manager.enabled) {
 									return manager.with(this[ATTACHED_CONTEXT_KEY], orig, this, ...innerArgs)
 								} else {
 									return orig.apply(this, innerArgs)
@@ -569,7 +582,7 @@ export class SplunkContextManager implements ContextManager {
 		)
 	}
 
-	protected _patchPromise(): void {
+	protected patchPromise(): void {
 		if (!window.Promise) {
 			return
 		}
@@ -623,7 +636,7 @@ export class SplunkContextManager implements ContextManager {
 		)
 	}
 
-	protected _patchTimeouts(): void {
+	protected patchTimeouts(): void {
 		// eslint-disable-next-line @typescript-eslint/no-this-alias
 		const manager = this
 
@@ -675,12 +688,12 @@ export class SplunkContextManager implements ContextManager {
 		}
 	}
 
-	protected _unpatchEvents(): void {
+	protected unpatchEvents(): void {
 		unwrap(XMLHttpRequest.prototype, 'addEventListener')
 		unwrap(XMLHttpRequest.prototype, 'removeEventListener')
 	}
 
-	protected _unpatchMessageChannel(): void {
+	protected unpatchMessageChannel(): void {
 		unwrap(window, 'MessageChannel')
 		unwrap(MessagePort.prototype, 'postMessage')
 		unwrap(MessagePort.prototype, 'addEventListener')
@@ -695,11 +708,11 @@ export class SplunkContextManager implements ContextManager {
 		Object.defineProperty(MessagePort.prototype, 'onmessage', desc)
 	}
 
-	protected _unpatchMutationObserver(): void {
+	protected unpatchMutationObserver(): void {
 		unwrap(window, 'MutationObserver')
 	}
 
-	protected _unpatchPromise(): void {
+	protected unpatchPromise(): void {
 		if (!window.Promise) {
 			return
 		}
@@ -709,23 +722,10 @@ export class SplunkContextManager implements ContextManager {
 		unwrap(Promise.prototype, 'finally')
 	}
 
-	protected _unpatchTimeouts(): void {
+	protected unpatchTimeouts(): void {
 		unwrap(window, 'setTimeout')
 		if (window['setImmediate']) {
 			unwrap(window, 'setImmediate')
-		}
-	}
-
-	/**
-	 * Bind current zone to function given in arguments
-	 *
-	 * @param args Arguments array
-	 * @param index Argument index to patch
-	 */
-	protected bindActiveToArgument(args: unknown[], index: number): void {
-		if (isFunction(args[index])) {
-			// Bind callback to current context
-			args[index] = this.bind(this.active(), args[index])
 		}
 	}
 }
