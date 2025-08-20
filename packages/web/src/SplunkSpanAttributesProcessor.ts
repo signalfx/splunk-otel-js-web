@@ -23,7 +23,7 @@ import { UserTrackingMode } from './types/config'
 import { updateSessionStatus } from './session'
 
 export class SplunkSpanAttributesProcessor implements SpanProcessor {
-	private readonly _globalAttributes: Attributes
+	private readonly globalAttributes: Attributes
 
 	constructor(
 		globalAttributes: Attributes,
@@ -31,7 +31,7 @@ export class SplunkSpanAttributesProcessor implements SpanProcessor {
 		private getUserTracking: () => UserTrackingMode,
 		private domain?: string,
 	) {
-		this._globalAttributes = globalAttributes ?? {}
+		this.globalAttributes = globalAttributes ?? {}
 	}
 
 	forceFlush(): Promise<void> {
@@ -39,7 +39,7 @@ export class SplunkSpanAttributesProcessor implements SpanProcessor {
 	}
 
 	getGlobalAttributes(): Attributes {
-		return this._globalAttributes
+		return this.globalAttributes
 	}
 
 	onEnd(): void {
@@ -51,7 +51,7 @@ export class SplunkSpanAttributesProcessor implements SpanProcessor {
 		const sessionState = updateSessionStatus({ forceStore: false, inactive: false })
 
 		span.setAttribute('location.href', location.href)
-		span.setAttributes(this._globalAttributes)
+		span.setAttributes(this.globalAttributes)
 		span.setAttribute('splunk.rumSessionId', sessionState.id)
 
 		if (this.getUserTracking() === 'anonymousTracking') {
@@ -69,10 +69,10 @@ export class SplunkSpanAttributesProcessor implements SpanProcessor {
 
 	setGlobalAttributes(attributes?: Attributes): void {
 		if (attributes) {
-			Object.assign(this._globalAttributes, attributes)
+			Object.assign(this.globalAttributes, attributes)
 		} else {
-			for (const key of Object.keys(this._globalAttributes)) {
-				delete this._globalAttributes[key]
+			for (const key of Object.keys(this.globalAttributes)) {
+				delete this.globalAttributes[key]
 			}
 		}
 	}
