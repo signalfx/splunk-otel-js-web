@@ -111,8 +111,8 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 
 	private throttleMap = new Map<string, number>()
 
-	constructor(protected _splunkConfig: SplunkErrorInstrumentationConfig) {
-		super(ERROR_INSTRUMENTATION_NAME, ERROR_INSTRUMENTATION_VERSION, _splunkConfig)
+	constructor(protected splunkConfig: SplunkErrorInstrumentationConfig) {
+		super(ERROR_INSTRUMENTATION_NAME, ERROR_INSTRUMENTATION_VERSION, splunkConfig)
 	}
 
 	disable(): void {
@@ -263,7 +263,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		try {
 			let transformed: ReturnType<ErrorTransformer> = null
 			context.with(suppressTracing(context.active()), () => {
-				const transformer: ErrorTransformer = this._splunkConfig.onError ?? DEFAULT_ON_ERROR
+				const transformer: ErrorTransformer = this.splunkConfig.onError ?? DEFAULT_ON_ERROR
 				transformed = transformer(error, spanContext)
 			})
 

@@ -40,7 +40,7 @@ export class SplunkPageVisibilityInstrumentation extends InstrumentationBase {
 
 	enable(): void {
 		if (document.hidden) {
-			this._createSpan(document.hidden)
+			this.createSpan(document.hidden)
 		}
 
 		this.unloadListener = () => {
@@ -50,7 +50,7 @@ export class SplunkPageVisibilityInstrumentation extends InstrumentationBase {
 		this.visibilityListener = () => {
 			//ignore when page is unloading as it is expected then
 			if (!this.unloading) {
-				this._createSpan(document.hidden)
+				this.createSpan(document.hidden)
 			}
 		}
 
@@ -60,7 +60,7 @@ export class SplunkPageVisibilityInstrumentation extends InstrumentationBase {
 
 	init(): void {}
 
-	private _createSpan(hidden: boolean) {
+	private createSpan(hidden: boolean) {
 		const now = Date.now()
 		const span = this.tracer.startSpan('visibility', { startTime: now })
 		span.setAttribute('hidden', hidden)

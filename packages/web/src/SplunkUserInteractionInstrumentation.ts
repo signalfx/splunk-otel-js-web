@@ -76,7 +76,7 @@ type ExposedSuper = {
 export class SplunkUserInteractionInstrumentation extends UserInteractionInstrumentation<SplunkUserInteractionInstrumentationConfig> {
 	private __hashChangeHandler: ((ev: Event) => void) | undefined
 
-	private _routingTracer: Tracer
+	private routingTracer: Tracer
 
 	constructor(config: SplunkUserInteractionInstrumentationConfig = {}) {
 		// Prefer otel's eventNames property
@@ -91,7 +91,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 
 		super(config)
 
-		this._routingTracer = trace.getTracer(ROUTING_INSTRUMENTATION_NAME, ROUTING_INSTRUMENTATION_VERSION)
+		this.routingTracer = trace.getTracer(ROUTING_INSTRUMENTATION_NAME, ROUTING_INSTRUMENTATION_VERSION)
 
 		const _superCreateSpan = (this as unknown as ExposedSuper)._createSpan.bind(this)
 		;(this as unknown as ExposedSuper)._createSpan = (
@@ -149,7 +149,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 				const result = original.apply(this, args)
 				const newHref = location.href
 				if (oldHref !== newHref) {
-					that._emitRouteChangeSpan(oldHref)
+					that.emitRouteChangeSpan(oldHref)
 				}
 
 				return result
@@ -165,7 +165,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 
 	enable(): void {
 		this.__hashChangeHandler = (event: Event) => {
-			this._emitRouteChangeSpan((event as HashChangeEvent).oldURL)
+			this.emitRouteChangeSpan((event as HashChangeEvent).oldURL)
 		}
 
 		// Hash can be changed with location.hash = '#newThing', no way to hook that directly...
@@ -181,17 +181,17 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 
 	setTracerProvider(tracerProvider: TracerProvider): void {
 		super.setTracerProvider(tracerProvider)
-		this._routingTracer = tracerProvider.getTracer(ROUTING_INSTRUMENTATION_NAME, ROUTING_INSTRUMENTATION_VERSION)
+		this.routingTracer = tracerProvider.getTracer(ROUTING_INSTRUMENTATION_NAME, ROUTING_INSTRUMENTATION_VERSION)
 	}
 
-	private _emitRouteChangeSpan(oldHref: string) {
+	private emitRouteChangeSpan(oldHref: string) {
 		const config = this.getConfig()
 		if (isUrlIgnored(location.href, config.ignoreUrls)) {
 			return
 		}
 
 		const now = Date.now()
-		const span = this._routingTracer.startSpan('routeChange', { startTime: now })
+		const span = this.routingTracer.startSpan('routeChange', { startTime: now })
 		span.setAttribute('component', this.moduleName)
 		span.setAttribute('prev.href', oldHref)
 		// location.href set with new value by default

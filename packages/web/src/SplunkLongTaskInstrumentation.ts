@@ -26,9 +26,9 @@ const LONGTASK_PERFORMANCE_TYPE = 'longtask'
 const MODULE_NAME = 'splunk-longtask'
 
 export class SplunkLongTaskInstrumentation extends InstrumentationBase {
-	private _longtaskObserver: PerformanceObserver | undefined
-
 	private initOptions: SplunkOtelWebConfig
+
+	private longtaskObserver: PerformanceObserver | undefined
 
 	constructor(config: InstrumentationConfig = {}, initOptions: SplunkOtelWebConfig) {
 		super(MODULE_NAME, VERSION, Object.assign({}, config))
@@ -41,7 +41,7 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
 			return
 		}
 
-		this._longtaskObserver?.disconnect()
+		this.longtaskObserver?.disconnect()
 	}
 
 	enable(): void {
@@ -49,15 +49,15 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
 			return
 		}
 
-		this._longtaskObserver = new PerformanceObserver((list) => {
-			list.getEntries().forEach((entry) => this._createSpanFromEntry(entry))
+		this.longtaskObserver = new PerformanceObserver((list) => {
+			list.getEntries().forEach((entry) => this.createSpanFromEntry(entry))
 		})
-		this._longtaskObserver.observe({ type: LONGTASK_PERFORMANCE_TYPE, buffered: true })
+		this.longtaskObserver.observe({ type: LONGTASK_PERFORMANCE_TYPE, buffered: true })
 	}
 
 	init(): void {}
 
-	private _createSpanFromEntry(entry: PerformanceEntry) {
+	private createSpanFromEntry(entry: PerformanceEntry) {
 		const sessionState = getCurrentSessionState({ forceDiskRead: false })
 		const sessionInactive = !sessionState || sessionState.inactive
 
