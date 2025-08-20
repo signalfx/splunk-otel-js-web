@@ -47,8 +47,8 @@ export class SplunkConnectivityInstrumentation extends InstrumentationBase {
 		this.onlineListener = () => {
 			if (this.offlineStart) {
 				// this could be a span but let's keep it as an "event" for now.
-				this._createSpan(false, this.offlineStart)
-				this._createSpan(true, Date.now())
+				this.createSpan(false, this.offlineStart)
+				this.createSpan(true, Date.now())
 			}
 		}
 
@@ -58,7 +58,7 @@ export class SplunkConnectivityInstrumentation extends InstrumentationBase {
 
 	init(): void {}
 
-	private _createSpan(online: boolean, startTime: number) {
+	private createSpan(online: boolean, startTime: number) {
 		const span = this.tracer.startSpan('connectivity', { startTime })
 		span.setAttribute('online', online)
 		span.end(startTime)

@@ -51,7 +51,7 @@ This document outlines the tasks needed to improve the `packages/web` codebase d
 - [x] **SplunkSpanAttributesProcessor.ts** - ✅ **COMPLETED** - Migrated `_globalAttributes` to `private globalAttributes` with clean lint/build passes
 - [x] **SplunkWebSocketInstrumentation.ts** - ✅ **COMPLETED** - Migrated `_config` to `private config` with clean lint/build passes
 - [x] **SplunkPostDocLoadResourceInstrumentation.ts** - ✅ **COMPLETED** - Migrated ALL 4 methods (`_createSpan`, `_processHeadMutationObserverRecords`, `_startHeadMutationObserver`, `_startPerformanceObserver`) to `private` keywords with clean lint/build passes
-- [ ] **SplunkConnectivityInstrumentation.ts** - Migrate `_createSpan` to `private` keyword
+- [x] **SplunkConnectivityInstrumentation.ts** - ✅ **COMPLETED** - Migrated `_createSpan` to `private createSpan` with clean lint/build passes
 - [ ] **SplunkPageVisibilityInstrumentation.ts** - Migrate `_createSpan` to `private` keyword
 - [ ] **upstream/user-interaction/instrumentation.ts** - Migrate `_eventNames`, `_eventsSpanMap`, `_shouldPreventSpanCreation`, `_spansData`, `_wrappedListeners`, `_zonePatched` and methods `_allowEventName`, `_createSpan`, `_getPatchableEventTargets`, `_invokeListener`, `_patchAddEventListener`, `_patchRemoveEventListener` to `private` keyword
 - [ ] **SessionBasedSampler.ts** - Migrate `_accumulate`, `_normalize` to `private` keyword
