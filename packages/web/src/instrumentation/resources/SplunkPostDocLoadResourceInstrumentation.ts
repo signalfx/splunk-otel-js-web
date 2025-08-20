@@ -18,7 +18,7 @@
 
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 
-import { VERSION } from './version'
+import { VERSION } from '../../version'
 import { isUrlIgnored } from '@opentelemetry/core'
 import { addSpanNetworkEvents } from '@opentelemetry/sdk-trace-web'
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions'

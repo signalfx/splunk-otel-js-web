@@ -20,11 +20,11 @@
 import * as shimmer from 'shimmer'
 import { SpanKind, trace, context, Span } from '@opentelemetry/api'
 import { isUrlIgnored } from '@opentelemetry/core'
-import { VERSION } from './version'
+import { VERSION } from '../../version'
 
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
-import { isError } from './types'
-import { hasSizeLikeProperty, getSize } from './utils/size'
+import { isError } from '../../types'
+import { hasSizeLikeProperty, getSize } from '../../utils/size'
 
 interface SplunkWebSocketInstrumentationConfig extends InstrumentationConfig {
 	ignoreUrls?: (string | RegExp)[]

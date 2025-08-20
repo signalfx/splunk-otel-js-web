@@ -115,15 +115,20 @@ import { Attributes, diag } from '@opentelemetry/api'
 ### 7. Improve Code Structure and Organization
 **Reorganize codebase for better maintainability and discoverability:**
 
-#### **7.1 Create Instrumentation Directory Structure**
-- [ ] **Create `src/instrumentation/` directory** - Move all instrumentation classes from root
-- [ ] **Group by category:**
-  - `src/instrumentation/network/` - SplunkFetchInstrumentation, SplunkXhrPlugin, SplunkWebSocketInstrumentation
-  - `src/instrumentation/user/` - SplunkUserInteractionInstrumentation, SplunkLongTaskInstrumentation
-  - `src/instrumentation/browser/` - SplunkDocumentLoadInstrumentation, SplunkPageVisibilityInstrumentation, SplunkConnectivityInstrumentation
-  - `src/instrumentation/errors/` - SplunkErrorInstrumentation
-  - `src/instrumentation/resources/` - SplunkPostDocLoadResourceInstrumentation
-  - `src/instrumentation/messaging/` - SplunkSocketIoClientInstrumentation
+#### **7.1 Create Instrumentation Directory Structure** ✅ **COMPLETED**
+- [x] **Create `src/instrumentation/` directory** - ✅ **COMPLETED** (Aug 20, 2025 14:04-14:42)
+- [x] **Group by category:** ✅ **ALL COMPLETED**
+  - ✅ `src/instrumentation/network/` - SplunkFetchInstrumentation, SplunkXhrPlugin, SplunkWebSocketInstrumentation
+  - ✅ `src/instrumentation/user/` - SplunkUserInteractionInstrumentation, SplunkLongTaskInstrumentation  
+  - ✅ `src/instrumentation/browser/` - SplunkDocumentLoadInstrumentation, SplunkPageVisibilityInstrumentation, SplunkConnectivityInstrumentation
+  - ✅ `src/instrumentation/errors/` - SplunkErrorInstrumentation
+  - ✅ `src/instrumentation/resources/` - SplunkPostDocLoadResourceInstrumentation
+  - ✅ `src/instrumentation/messaging/` - SplunkSocketIoClientInstrumentation
+- [x] **Barrel export pattern implemented** - Created `src/instrumentation/index.ts` for clean imports
+- [x] **All relative imports fixed** - Updated 15+ broken import paths (`./ → ../../`)
+- [x] **QA validated** - `pnpm run build` ✅ and `pnpm run lint` ✅ both pass
+
+**Impact**: Clean directory structure, better code organization, proper encapsulation by category
 
 #### **7.2 Consolidate Core Components**
 - [ ] **Create `src/core/` directory** for core functionality:

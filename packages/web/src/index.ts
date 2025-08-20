@@ -30,18 +30,25 @@ import {
 	ParentBasedSampler,
 } from '@opentelemetry/sdk-trace-base'
 import { Attributes, diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api'
-import { SplunkDocumentLoadInstrumentation } from './SplunkDocumentLoadInstrumentation'
-import { SplunkXhrPlugin } from './SplunkXhrPlugin'
-import { SplunkFetchInstrumentation } from './SplunkFetchInstrumentation'
 import {
+	SplunkDocumentLoadInstrumentation,
+	SplunkXhrPlugin,
+	SplunkFetchInstrumentation,
 	SplunkUserInteractionInstrumentation,
 	DEFAULT_AUTO_INSTRUMENTED_EVENTS,
 	DEFAULT_AUTO_INSTRUMENTED_EVENT_NAMES,
 	UserInteractionEventsConfig,
-} from './SplunkUserInteractionInstrumentation'
+	SplunkWebSocketInstrumentation,
+	SplunkLongTaskInstrumentation,
+	SplunkPageVisibilityInstrumentation,
+	SplunkConnectivityInstrumentation,
+	SplunkPostDocLoadResourceInstrumentation,
+	SplunkSocketIoClientInstrumentation,
+	ERROR_INSTRUMENTATION_NAME,
+	SplunkErrorInstrumentation,
+} from './instrumentation'
 import { type SplunkExporterConfig } from './exporters/common'
 import { SplunkZipkinExporter } from './exporters/zipkin'
-import { ERROR_INSTRUMENTATION_NAME, SplunkErrorInstrumentation } from './SplunkErrorInstrumentation'
 import { generateId, getPluginConfig } from './utils'
 import {
 	checkSessionRecorderType,
@@ -52,12 +59,7 @@ import {
 	updateSessionStatus,
 	SessionId,
 } from './session'
-import { SplunkWebSocketInstrumentation } from './SplunkWebSocketInstrumentation'
 import { initWebVitals } from './webvitals'
-import { SplunkLongTaskInstrumentation } from './SplunkLongTaskInstrumentation'
-import { SplunkPageVisibilityInstrumentation } from './SplunkPageVisibilityInstrumentation'
-import { SplunkConnectivityInstrumentation } from './SplunkConnectivityInstrumentation'
-import { SplunkPostDocLoadResourceInstrumentation } from './SplunkPostDocLoadResourceInstrumentation'
 import { SplunkWebTracerProvider } from './SplunkWebTracerProvider'
 import { InternalEventTarget, SplunkOtelWebEventTarget } from './EventTarget'
 import { SplunkContextManager } from './SplunkContextManager'
@@ -68,7 +70,6 @@ import { VERSION } from './version'
 import { getSyntheticsRunId, SYNTHETICS_RUN_ID_ATTRIBUTE } from './synthetics'
 import { SplunkSpanAttributesProcessor } from './SplunkSpanAttributesProcessor'
 import { SessionBasedSampler } from './SessionBasedSampler'
-import { SplunkSocketIoClientInstrumentation } from './SplunkSocketIoClientInstrumentation'
 import { SplunkOTLPTraceExporter } from './exporters/otlp'
 import { registerGlobal, unregisterGlobal } from './global-utils'
 import { BrowserInstanceService } from './services/BrowserInstanceService'

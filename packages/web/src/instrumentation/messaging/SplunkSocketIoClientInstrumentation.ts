@@ -23,8 +23,8 @@ import {
 	MessagingOperationValues,
 	SemanticAttributes,
 } from '@opentelemetry/semantic-conventions'
-import { waitForGlobal } from './utils'
-import { VERSION } from './version'
+import { waitForGlobal } from '../../utils'
+import { VERSION } from '../../version'
 
 const MODULE_NAME = 'splunk-socket.io-client'
 

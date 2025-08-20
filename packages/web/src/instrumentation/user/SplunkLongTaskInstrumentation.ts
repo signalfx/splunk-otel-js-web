@@ -18,9 +18,9 @@
 
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 
-import { VERSION } from './version'
-import { getCurrentSessionState } from './session'
-import { SplunkOtelWebConfig } from './types'
+import { VERSION } from '../../version'
+import { getCurrentSessionState } from '../../session'
+import { SplunkOtelWebConfig } from '../../types'
 
 const LONGTASK_PERFORMANCE_TYPE = 'longtask'
 const MODULE_NAME = 'splunk-longtask'

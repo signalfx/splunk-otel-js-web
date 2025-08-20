@@ -19,13 +19,15 @@ import { Attributes } from '@opentelemetry/api'
 import { WebTracerConfig } from '@opentelemetry/sdk-trace-web'
 import { InstrumentationConfig } from '@opentelemetry/instrumentation'
 import { FetchInstrumentationConfig } from '@opentelemetry/instrumentation-fetch'
-import { SplunkUserInteractionInstrumentationConfig } from '../SplunkUserInteractionInstrumentation'
-import { SplunkPostDocLoadResourceInstrumentationConfig } from '../SplunkPostDocLoadResourceInstrumentation'
-import { SocketIoClientInstrumentationConfig } from '../SplunkSocketIoClientInstrumentation'
+import {
+	SplunkUserInteractionInstrumentationConfig,
+	SplunkPostDocLoadResourceInstrumentationConfig,
+	SocketIoClientInstrumentationConfig,
+	SplunkErrorInstrumentationConfig,
+} from '../instrumentation'
 import { WebVitalsInstrumentationConfig } from '../webvitals'
 import { XMLHttpRequestInstrumentationConfig } from '@opentelemetry/instrumentation-xml-http-request'
 import { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-base'
-import { SplunkErrorInstrumentationConfig } from '../SplunkErrorInstrumentation'
 
 export interface SplunkOtelWebOptionsInstrumentations {
 	connectivity?: boolean | InstrumentationConfig

@@ -20,7 +20,7 @@ import {
 	XMLHttpRequestInstrumentation,
 	XMLHttpRequestInstrumentationConfig,
 } from '@opentelemetry/instrumentation-xml-http-request'
-import { captureTraceParent } from './servertiming'
+import { captureTraceParent } from '../../servertiming'
 import * as api from '@opentelemetry/api'
 
 type ExposedSuper = {

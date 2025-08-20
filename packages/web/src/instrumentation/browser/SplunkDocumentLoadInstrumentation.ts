@@ -24,7 +24,7 @@ import {
 	ResourceFetchCustomAttributeFunction,
 } from '@opentelemetry/instrumentation-document-load'
 import * as api from '@opentelemetry/api'
-import { captureTraceParentFromPerformanceEntries } from './servertiming'
+import { captureTraceParentFromPerformanceEntries } from '../../servertiming'
 import { addSpanNetworkEvents, PerformanceEntries, PerformanceTimingNames as PTN } from '@opentelemetry/sdk-trace-web'
 import { Span } from '@opentelemetry/sdk-trace-base'
 import { isUrlIgnored } from '@opentelemetry/core'

@@ -17,9 +17,9 @@
  */
 
 import { Span, trace, Tracer, TracerProvider } from '@opentelemetry/api'
-import { UserInteractionInstrumentation } from './upstream/user-interaction/instrumentation'
+import { UserInteractionInstrumentation } from '../../upstream/user-interaction/instrumentation'
 // import { UserInteractionInstrumentation } from '@opentelemetry/instrumentation-user-interaction';
-import { UserInteractionInstrumentationConfig } from './upstream/user-interaction/types'
+import { UserInteractionInstrumentationConfig } from '../../upstream/user-interaction/types'
 // import { UserInteractionInstrumentationConfig } from '@opentelemetry/instrumentation-user-interaction/build/src/types';
 import { isUrlIgnored } from '@opentelemetry/core'
 

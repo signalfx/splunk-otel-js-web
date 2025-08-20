@@ -17,7 +17,7 @@
  */
 
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
-import { VERSION } from './version'
+import { VERSION } from '../../version'
 
 const MODULE_NAME = 'splunk-connectivity'
 
