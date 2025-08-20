@@ -328,3 +328,18 @@ This hackathon has successfully established a clear roadmap for improving the Sp
 - ✅ Migrated 1 member: `_globalAttributes` → `private globalAttributes` (6 references updated)
 - ✅ Clean `pnpm run lint` and `pnpm run build` passes on first try
 - ✅ Much faster completion compared to previous file
+
+## 📅 **August 20, 2025 10:43-10:44** - SplunkWebSocketInstrumentation.ts Private Member Migration
+
+### **User Input & Course Corrections**
+- **User request**: "lets continue with SplunkWebSocketInstrumentation.ts" - systematic progression through task list
+
+### **What We Struggled With**
+- **Minor ESLint styling issue**: `@stylistic/lines-between-class-members` error requiring blank line between class members
+- **Quick fix**: Added blank line between `listener2ws2patched` and `private config` declarations
+
+### **Final Result**
+- ✅ Migrated 1 member: `_config` → `private config` (2 references updated)
+- ✅ Fixed ESLint styling issue with proper class member spacing
+- ✅ Clean `pnpm run lint` and `pnpm run build` passes
+- ✅ Another quick completion like SplunkSpanAttributesProcessor.ts

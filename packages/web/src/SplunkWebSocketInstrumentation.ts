@@ -33,9 +33,11 @@ interface SplunkWebSocketInstrumentationConfig extends InstrumentationConfig {
 export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWebSocketInstrumentationConfig> {
 	listener2ws2patched = new WeakMap()
 
+	private config: SplunkWebSocketInstrumentationConfig
+
 	constructor(config: SplunkWebSocketInstrumentationConfig) {
 		super('splunk-websocket', VERSION, config)
-		this._config = config
+		this.config = config
 	}
 
 	disable(): void {
@@ -48,7 +50,7 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 			class InstrumentedWebSocket extends WebSocket {
 				constructor(url: string | URL, protocols?: string | string[]) {
 					const stringUrl = typeof url === 'string' ? url : url.toString()
-					if (isUrlIgnored(stringUrl, instrumentation._config.ignoreUrls)) {
+					if (isUrlIgnored(stringUrl, instrumentation.config.ignoreUrls)) {
 						super(url, protocols)
 						return
 					}

@@ -49,7 +49,7 @@ This document outlines the tasks needed to improve the `packages/web` codebase d
 **Replace underscore prefix convention with proper TypeScript private keyword:**
 - [x] **SplunkContextManager.ts** - ✅ **COMPLETED** - Migrated ALL 18 underscore-prefixed private members (5 fields + 13 methods) to `private`/`protected` keywords with proper ESLint compliance
 - [x] **SplunkSpanAttributesProcessor.ts** - ✅ **COMPLETED** - Migrated `_globalAttributes` to `private globalAttributes` with clean lint/build passes
-- [ ] **SplunkWebSocketInstrumentation.ts** - Migrate `_config` to `private` keyword
+- [x] **SplunkWebSocketInstrumentation.ts** - ✅ **COMPLETED** - Migrated `_config` to `private config` with clean lint/build passes
 - [ ] **SplunkPostDocLoadResourceInstrumentation.ts** - Migrate `_createSpan`, `_processHeadMutationObserverRecords`, `_startHeadMutationObserver`, `_startPerformanceObserver` to `private` keyword
 - [ ] **SplunkConnectivityInstrumentation.ts** - Migrate `_createSpan` to `private` keyword
 - [ ] **SplunkPageVisibilityInstrumentation.ts** - Migrate `_createSpan` to `private` keyword
