@@ -62,16 +62,7 @@ This document outlines the tasks needed to improve the `packages/web` codebase d
 - [ ] **storage/cookie-store.ts** - Migrate `_deserialize`, `_getRaw`, `_serialize` to `private` keyword
 - [ ] **SplunkLongTaskInstrumentation.ts** - Migrate `_longtaskObserver`, `_createSpanFromEntry` to `private` keyword
 
-### 5. Create Common Storage Package
-**Based on memory about duplicate storage utilities:**
-- [ ] Create `packages/storage-common` package
-- [ ] Move duplicate storage utilities from:
-  - `packages/web/src/storage/local-store.ts` (safelyGetLocalStorage, safelySetLocalStorage, etc.)
-  - `packages/session-recorder/src/storage.ts` (same functions)
-- [ ] Update imports across both packages
-- [ ] Consolidate Store interface and buildStore factory
-
-### 6. Add ESLint Rule for Import Merging
+### 5. Add ESLint Rule for Import Merging
 **Consolidate multiple imports from the same module:**
 - [ ] **Add ESLint rule** - Configure `import/no-duplicates` or similar rule to merge imports from the same file
 - [ ] **index.ts** - Merge multiple imports from `@opentelemetry/api`, `@opentelemetry/semantic-conventions`, `@opentelemetry/core`, and local modules
@@ -88,6 +79,35 @@ import { diag } from '@opentelemetry/api'
 // After:
 import { Attributes, diag } from '@opentelemetry/api'
 ```
+
+### 6. Remove Deprecated Code and APIs
+**Modernize deprecated patterns and replace with current standards:**
+
+#### **6.1 Deprecated Experimental APIs**
+- [ ] **EventTarget.ts** - Remove deprecated experimental methods:
+  - `_experimental_addEventListener` → `addEventListener`
+  - `_experimental_removeEventListener` → `removeEventListener`
+- [ ] **index.ts** - Remove deprecated experimental methods:
+  - `_experimental_getGlobalAttributes()` → `getGlobalAttributes()`
+  - `_experimental_getSessionId()` → `getSessionId()`
+  - `error()` method (deprecated, use `reportError()` instead)
+
+#### **6.2 Deprecated Semantic Attributes**
+- [ ] **Replace deprecated SemanticAttributes usage:**
+  - **SplunkDocumentLoadInstrumentation.ts** - Update `SEMATTRS_HTTP_URL` to current semantic conventions
+  - **SplunkSocketIoClientInstrumentation.ts** - Update messaging attributes to current standards
+  - **SplunkPostDocLoadResourceInstrumentation.ts** - Update HTTP attributes
+
+#### **6.3 Deprecated Component Attribute**
+- [ ] **SplunkXhrPlugin.ts** - Remove deprecated `component` attribute usage (line 54 FIXME comment)
+- [ ] **exporters/rate-limit.ts** - Replace `component` attribute with proper semantic attributes
+- [ ] **SplunkPostDocLoadResourceInstrumentation.ts** - Update component attribution
+
+**Migration Strategy:**
+- Add deprecation warnings with clear migration paths
+- Provide backward compatibility during transition period
+- Update documentation with migration guide
+- Consider feature flags for gradual rollout
 
 ### 7. Improve Code Structure and Organization
 **Reorganize codebase for better maintainability and discoverability:**
