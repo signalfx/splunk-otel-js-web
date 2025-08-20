@@ -68,16 +68,16 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 	enable(): void {
 		if (window.PerformanceObserver) {
 			if (window.document.readyState === 'complete') {
-				this._startPerformanceObserver()
+				this.startPerformanceObserver()
 			} else {
 				window.addEventListener('load', (e) => {
-					this._startPerformanceObserver(e)
+					this.startPerformanceObserver(e)
 				})
 			}
 		}
 
 		if (window.MutationObserver) {
-			this._startHeadMutationObserver()
+			this.startHeadMutationObserver()
 		}
 	}
 
@@ -88,11 +88,11 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 			return
 		}
 
-		this._processHeadMutationObserverRecords(this.headMutationObserver.takeRecords())
+		this.processHeadMutationObserverRecords(this.headMutationObserver.takeRecords())
 	}
 
 	// TODO: discuss TS built-in types
-	private _createSpan(entry: any) {
+	private createSpan(entry: any) {
 		if (isUrlIgnored(entry.name, this.config.ignoreUrls)) {
 			return
 		}
@@ -123,7 +123,7 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 
 	// for each added node that corresponds to a resource load, create an entry in `this.urlToContextMap`
 	// that associates its fully-qualified URL to the tracing context at the time that it was added
-	private _processHeadMutationObserverRecords(mutations: MutationRecord[]) {
+	private processHeadMutationObserverRecords(mutations: MutationRecord[]) {
 		if (context.active() === ROOT_CONTEXT) {
 			return
 		}
@@ -142,12 +142,12 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 			})
 	}
 
-	private _startHeadMutationObserver() {
-		this.headMutationObserver = new MutationObserver(this._processHeadMutationObserverRecords.bind(this))
+	private startHeadMutationObserver() {
+		this.headMutationObserver = new MutationObserver(this.processHeadMutationObserverRecords.bind(this))
 		this.headMutationObserver.observe(document.head, { childList: true })
 	}
 
-	private _startPerformanceObserver(event?: Event) {
+	private startPerformanceObserver(event?: Event) {
 		if (event && !event.isTrusted) {
 			// React only to browser triggered load event
 			return
@@ -163,7 +163,7 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 				list.getEntries().forEach((entry) => {
 					// TODO: check how we can amend TS base typing to fix this
 					if (this.config.allowedInitiatorTypes?.includes((entry as any).initiatorType)) {
-						this._createSpan(entry)
+						this.createSpan(entry)
 					}
 				})
 			}
