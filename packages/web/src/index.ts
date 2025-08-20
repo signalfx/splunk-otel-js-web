@@ -63,7 +63,7 @@ import { InternalEventTarget, SplunkOtelWebEventTarget } from './EventTarget'
 import { SplunkContextManager } from './SplunkContextManager'
 import { Resource, ResourceAttributes } from '@opentelemetry/resources'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
-import { SDK_INFO, _globalThis } from '@opentelemetry/core'
+import { SDK_INFO } from '@opentelemetry/core'
 import { VERSION } from './version'
 import { getSyntheticsRunId, SYNTHETICS_RUN_ID_ATTRIBUTE } from './synthetics'
 import { SplunkSpanAttributesProcessor } from './SplunkSpanAttributesProcessor'
@@ -128,28 +128,6 @@ const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
 		factory: (exporter, config) => new BatchSpanProcessor(exporter, config),
 	},
 	rumAccessToken: undefined,
-}
-
-function migrateConfigOption(
-	config: SplunkOtelWebConfig,
-	from: keyof SplunkOtelWebConfig,
-	to: keyof SplunkOtelWebConfig,
-) {
-	if (from in config && !(to in config && config[to] !== OPTIONS_DEFAULTS[to])) {
-		// @ts-expect-error There's no way to type this right
-		config[to] = config[from]
-	}
-}
-
-/**
- * Update configuration based on configuration option renames
- */
-function migrateConfig(config: SplunkOtelWebConfig) {
-	migrateConfigOption(config, 'app', 'applicationName')
-	migrateConfigOption(config, 'beaconUrl', 'beaconEndpoint')
-	migrateConfigOption(config, 'environment', 'deploymentEnvironment')
-	migrateConfigOption(config, 'rumAuth', 'rumAccessToken')
-	return config
 }
 
 const INSTRUMENTATIONS = [
@@ -348,12 +326,6 @@ export const SplunkRum: SplunkOtelWebType = {
 			)
 		}
 
-		// "env" based config still a bad idea for web
-		if (!('OTEL_TRACES_EXPORTER' in _globalThis)) {
-			// @ts-expect-error OTEL_TRACES_EXPORTER is not defined in the global scope
-			_globalThis.OTEL_TRACES_EXPORTER = 'none'
-		}
-
 		if (inited) {
 			console.warn('SplunkRum already initialized.')
 			return
@@ -386,14 +358,9 @@ export const SplunkRum: SplunkOtelWebType = {
 
 		eventTarget = new InternalEventTarget()
 
-		const processedOptions: SplunkOtelWebConfigInternal = Object.assign(
-			{},
-			OPTIONS_DEFAULTS,
-			migrateConfig(options),
-			{
-				exporter: Object.assign({}, OPTIONS_DEFAULTS.exporter, options.exporter),
-			},
-		)
+		const processedOptions: SplunkOtelWebConfigInternal = Object.assign({}, OPTIONS_DEFAULTS, options, {
+			exporter: Object.assign({}, OPTIONS_DEFAULTS.exporter, options.exporter),
+		})
 
 		if (
 			!processedOptions.persistence ||
@@ -514,8 +481,7 @@ export const SplunkRum: SplunkOtelWebType = {
 				const instrumentation =
 					Instrument === SplunkLongTaskInstrumentation
 						? new Instrument(pluginConf, options)
-						: // @ts-expect-error Can't mark in any way that processedOptions.instrumentations[confKey] is of specifc config type
-							new Instrument(pluginConf)
+						: new Instrument(pluginConf)
 
 				if (confKey === ERROR_INSTRUMENTATION_NAME && instrumentation instanceof SplunkErrorInstrumentation) {
 					_errorInstrumentation = instrumentation

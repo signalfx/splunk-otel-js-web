@@ -83,22 +83,11 @@ export interface SplunkOtelWebConfig {
 	/** Allows http beacon urls */
 	allowInsecureBeacon?: boolean
 
-	/** Application name
-	 * @deprecated Renamed to `applicationName`
-	 */
-	app?: string
-
 	/** Application name */
 	applicationName?: string
 
 	/** Destination for the captured data */
 	beaconEndpoint?: string
-
-	/**
-	 * Destination for the captured data
-	 * @deprecated Renamed to `beaconEndpoint`, or use realm
-	 */
-	beaconUrl?: string
 
 	/** Options for context manager */
 	context?: ContextManagerConfig
@@ -123,12 +112,6 @@ export interface SplunkOtelWebConfig {
 	 * If true, bots like google bot, bing bot, and others will be blocked. Defaults to false.
 	 */
 	disableBots?: boolean
-
-	/**
-	 * Sets a value for the `environment` attribute (persists through calls to `setGlobalAttributes()`)
-	 * @deprecated Renamed to `deploymentEnvironment`
-	 */
-	environment?: string
 
 	/** Allows configuring how telemetry data is sent to the backend */
 	exporter?: SplunkOtelWebExporterOptions
@@ -167,13 +150,6 @@ export interface SplunkOtelWebConfig {
 	 * will be visible to every user of your app
 	 */
 	rumAccessToken?: string
-
-	/**
-	 * Publicly-visible `rumAuth` value.  Please do not paste any other access token or auth value into here, as this
-	 * will be visible to every user of your app
-	 * @deprecated Renamed to rumAccessToken
-	 */
-	rumAuth?: string
 
 	spanProcessors?: Array<SpanProcessor>
 
