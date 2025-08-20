@@ -23,6 +23,7 @@ tests_output/
 
 vitest-report
 __screenshots__
+coverage/
 
 packages/build-plugins/html
 

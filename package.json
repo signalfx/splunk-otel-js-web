@@ -20,6 +20,7 @@
 		"lint:markdown:fix": "pnpm run lint:markdown --fix",
 		"test": "turbo run --env-mode=loose test:e2e test:unit",
 		"test:unit": "vitest --run",
+		"test:coverage": "vitest --run --coverage",
 		"test:e2e": "turbo run --env-mode=loose --filter=@splunk/otel-js-web-integration-tests test:e2e",
 		"postversion": "tsx ./scripts/version-update.mts",
 		"version:bump": "pnpm version --workspaces --include-workspace-root",
