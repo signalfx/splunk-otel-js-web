@@ -11,7 +11,7 @@ This document outlines the tasks needed to improve the `packages/web` codebase d
 - [ ] **SplunkSocketIoClientInstrumentation.ts** - Remove `eslint-disable-next-line @typescript-eslint/no-this-alias`
 - [ ] **index.ts** - Remove 2 `@ts-expect-error` directives 
 - [ ] **SplunkWebSocketInstrumentation.ts** - Remove `@ts-expect-error Gecko 6.0`
-- [ ] **webvitals.ts** - Remove `eslint-disable-next-line @typescript-eslint/ban-ts-comment` and `@ts-ignore TS1479`
+- [x] **webvitals.ts** - ✅ **COMPLETED** - Remove `eslint-disable-next-line @typescript-eslint/ban-ts-comment` and `@ts-ignore TS1479`
 - [ ] **SplunkErrorInstrumentation.ts** - Remove `@ts-expect-error Attributes are defined but hidden`
 - [ ] **utils.ts** - Remove 2 `@ts-expect-error __original isn't mentioned in types`
 - [ ] **exporters/otlp.ts** - Remove 2 `@ts-expect-error` directives for private property access
@@ -71,6 +71,7 @@ This document outlines the tasks needed to improve the `packages/web` codebase d
 - [ ] **Apply across all files** - Use ESLint auto-fix to consolidate duplicate imports
 
 **Example transformation:**
+
 ```typescript
 // Before:
 import { Attributes } from '@opentelemetry/api'
@@ -163,7 +164,8 @@ import { Attributes, diag } from '@opentelemetry/api'
   - Consolidate all polyfills in `src/polyfills/` directory
 
 #### **7.7 Proposed New Structure**
-```
+
+```text
 src/
 ├── core/
 │   ├── context/
