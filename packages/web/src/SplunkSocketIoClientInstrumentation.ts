@@ -122,15 +122,14 @@ export class SplunkSocketIoClientInstrumentation extends InstrumentationBase {
 			return
 		}
 
-		// eslint-disable-next-line @typescript-eslint/no-this-alias
-		const inst = this
+		const instrumentation = this
 
 		this._wrap(
 			io.Socket.prototype,
 			'emit',
 			(original) =>
 				function (this: SocketIOSocket, eventName: string, ...args) {
-					const span = inst.tracer.startSpan(`${eventName} send`, {
+					const span = instrumentation.tracer.startSpan(`${eventName} send`, {
 						kind: SpanKind.PRODUCER,
 						attributes: {
 							[SemanticAttributes.MESSAGING_SYSTEM]: 'socket.io',
@@ -169,22 +168,25 @@ export class SplunkSocketIoClientInstrumentation extends InstrumentationBase {
 						return original.call(this, eventName, listener)
 					}
 
-					let wrappedListener = inst.listeners.get(listener)
+					let wrappedListener = instrumentation.listeners.get(listener)
 
 					if (!wrappedListener) {
 						wrappedListener = function (this: SocketIOSocket, ...args: unknown[]) {
-							const span = inst.tracer.startSpan(`${eventName} ${MessagingOperationValues.RECEIVE}`, {
-								kind: SpanKind.CONSUMER,
-								attributes: {
-									[SemanticAttributes.MESSAGING_SYSTEM]: 'socket.io',
-									[SemanticAttributes.MESSAGING_DESTINATION]: this.nsp,
-									[SemanticAttributes.MESSAGING_DESTINATION_KIND]:
-										MessagingDestinationKindValues.TOPIC,
-									[SemanticAttributes.MESSAGING_OPERATION]: MessagingOperationValues.RECEIVE,
-									[SocketIoInstrumentationAttributes.SOCKET_IO_NAMESPACE]: this.nsp,
-									[SocketIoInstrumentationAttributes.SOCKET_IO_EVENT_NAME]: eventName,
+							const span = instrumentation.tracer.startSpan(
+								`${eventName} ${MessagingOperationValues.RECEIVE}`,
+								{
+									kind: SpanKind.CONSUMER,
+									attributes: {
+										[SemanticAttributes.MESSAGING_SYSTEM]: 'socket.io',
+										[SemanticAttributes.MESSAGING_DESTINATION]: this.nsp,
+										[SemanticAttributes.MESSAGING_DESTINATION_KIND]:
+											MessagingDestinationKindValues.TOPIC,
+										[SemanticAttributes.MESSAGING_OPERATION]: MessagingOperationValues.RECEIVE,
+										[SocketIoInstrumentationAttributes.SOCKET_IO_NAMESPACE]: this.nsp,
+										[SocketIoInstrumentationAttributes.SOCKET_IO_EVENT_NAME]: eventName,
+									},
 								},
-							})
+							)
 
 							try {
 								listener.apply(this, args)
@@ -198,7 +200,7 @@ export class SplunkSocketIoClientInstrumentation extends InstrumentationBase {
 								span.end()
 							}
 						}
-						inst.listeners.set(listener, wrappedListener)
+						instrumentation.listeners.set(listener, wrappedListener)
 					}
 
 					return original.call(this, eventName, wrappedListener)
@@ -217,8 +219,8 @@ export class SplunkSocketIoClientInstrumentation extends InstrumentationBase {
 						return original.call(this, eventName, listener)
 					}
 
-					if (inst.listeners.has(listener)) {
-						return original.call(this, eventName, inst.listeners.get(listener))
+					if (instrumentation.listeners.has(listener)) {
+						return original.call(this, eventName, instrumentation.listeners.get(listener))
 					} else {
 						return original.call(this, eventName, listener)
 					}

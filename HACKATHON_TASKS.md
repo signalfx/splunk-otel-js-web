@@ -8,7 +8,7 @@ This document outlines the tasks needed to improve the `packages/web` codebase d
 ### 1. Remove ESLint Disable Directives and TypeScript Ignores
 **Files affected:** Multiple files with 25+ instances
 - [ ] **SplunkContextManager.ts** - Remove 8 `eslint-disable-next-line @typescript-eslint/no-this-alias` and 6 `@ts-expect-error` directives
-- [ ] **SplunkSocketIoClientInstrumentation.ts** - Remove `eslint-disable-next-line @typescript-eslint/no-this-alias`
+- [x] **SplunkSocketIoClientInstrumentation.ts** - ✅ **COMPLETED** - Remove `eslint-disable-next-line @typescript-eslint/no-this-alias`
 - [ ] **index.ts** - Remove 2 `@ts-expect-error` directives 
 - [ ] **SplunkWebSocketInstrumentation.ts** - Remove `@ts-expect-error Gecko 6.0`
 - [x] **webvitals.ts** - ✅ **COMPLETED** - Remove `eslint-disable-next-line @typescript-eslint/ban-ts-comment` and `@ts-ignore TS1479`
