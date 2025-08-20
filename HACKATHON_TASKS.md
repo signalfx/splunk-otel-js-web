@@ -87,10 +87,10 @@ import { Attributes, diag } from '@opentelemetry/api'
 **Modernize deprecated patterns and replace with current standards:**
 
 #### **6.1 Deprecated Experimental APIs**
-- [ ] **EventTarget.ts** - Remove deprecated experimental methods:
+- [x] **EventTarget.ts** - Remove deprecated experimental methods:
   - `_experimental_addEventListener` → `addEventListener`
   - `_experimental_removeEventListener` → `removeEventListener`
-- [ ] **index.ts** - Remove deprecated experimental methods:
+- [x] **index.ts** - Remove deprecated experimental methods:
   - `_experimental_getGlobalAttributes()` → `getGlobalAttributes()`
   - `_experimental_getSessionId()` → `getSessionId()`
   - `error()` method (deprecated, use `reportError()` instead)

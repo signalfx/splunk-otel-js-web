@@ -63,3 +63,73 @@
     return func
   }
   ```
+
+### **Progress Update**
+- ✅ **4/8 ESLint directive removal tasks completed** (webvitals.ts + SplunkContextManager.ts partial + utils.ts + TypeScript error fixes)
+
+## 📅 **August 20, 2025 13:28** - 6.1 Deprecated Experimental APIs Removal
+
+### **Tasks Completed**
+- ✅ **EventTarget.ts** - Removed deprecated experimental methods
+- ✅ **index.ts** - Removed deprecated experimental methods and error() method
+- ✅ **Integration tests** - Updated references to use stable APIs
+- ✅ **Build verification** - Ensured all changes compile successfully
+
+### **What Was Done**
+
+#### **1. EventTarget.ts Interface Cleanup**
+- Removed deprecated `_experimental_addEventListener` method
+- Removed deprecated `_experimental_removeEventListener` method
+- Kept only the standard `addEventListener` and `removeEventListener` methods
+- **Before:**
+  ```typescript
+  export interface SplunkOtelWebEventTarget {
+    _experimental_addEventListener: InternalEventTarget['addEventListener']
+    _experimental_removeEventListener: InternalEventTarget['removeEventListener']
+    addEventListener: InternalEventTarget['addEventListener']
+    removeEventListener: InternalEventTarget['removeEventListener']
+  }
+  ```
+- **After:**
+  ```typescript
+  export interface SplunkOtelWebEventTarget {
+    addEventListener: InternalEventTarget['addEventListener']
+    removeEventListener: InternalEventTarget['removeEventListener']
+  }
+  ```
+
+#### **2. index.ts API Cleanup**
+- Removed deprecated `_experimental_getGlobalAttributes()` method from interface and implementation
+- Removed deprecated `_experimental_getSessionId()` method from interface and implementation
+- Removed deprecated `error()` method from interface and implementation
+- Removed deprecated `_experimental_addEventListener()` and `_experimental_removeEventListener()` implementations
+- Kept modern replacements: `getGlobalAttributes()`, `getSessionId()`, and `reportError()`
+
+#### **3. Integration Tests Update**
+- Updated `packages/integration-tests/src/tests/init/attributes.ejs`
+- Changed `SplunkRum._experimental_addEventListener` to `SplunkRum.addEventListener`
+- Ensures tests use stable, non-experimental APIs
+
+#### **4. Build Verification**
+- Fixed TypeScript compilation errors with proper type assertions
+- Verified successful build with `npm run build`
+- All packages compile without errors
+
+### **Migration Impact**
+The deprecated experimental APIs have been completely removed, encouraging developers to use stable APIs:
+- `_experimental_addEventListener` → `addEventListener`
+- `_experimental_removeEventListener` → `removeEventListener`  
+- `_experimental_getGlobalAttributes()` → `getGlobalAttributes()`
+- `_experimental_getSessionId()` → `getSessionId()`
+- `error()` → `reportError()`
+
+### **Benefits**
+- **Cleaner API Surface**: Removed confusing deprecated methods
+- **Better Type Safety**: Eliminated methods marked for removal
+- **Future-Proof**: Code uses only stable, supported APIs
+- **Reduced Bundle Size**: Fewer methods in final bundle
+- **Improved Developer Experience**: Clear migration path to stable APIs
+
+### **Progress Update**
+- ✅ **6.1 Deprecated Experimental APIs - 100% Complete**
+- Ready for **6.2 Deprecated Semantic Attributes** task

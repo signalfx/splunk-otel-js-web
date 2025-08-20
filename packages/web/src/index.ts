@@ -201,16 +201,6 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	SessionBasedSampler: typeof SessionBasedSampler
 
 	/**
-	 * @deprecated Use {@link getGlobalAttributes()}
-	 */
-	_experimental_getGlobalAttributes: () => Attributes
-
-	/**
-	 * @deprecated Use {@link getSessionId()}
-	 */
-	_experimental_getSessionId: () => SessionId | undefined
-
-	/**
 	 * Used internally by the SplunkSessionRecorder - checks if the current session is assigned to a correct recorder type.
 	 */
 	_internalCheckSessionRecorderType: (recorderType: RecorderType) => void
@@ -240,12 +230,6 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	 * True if library detected a bot and was disabled based on 'disableBots' setting.
 	 */
 	disabledByBotDetection?: boolean
-
-	/**
-	 * @deprecated This method is deprecated and will be removed in future versions.
-	 * Use {@link reportError} instead.
-	 */
-	error: (...args: Array<any>) => void
 
 	getAnonymousId: () => string | undefined
 
@@ -481,7 +465,8 @@ export const SplunkRum: SplunkOtelWebType = {
 				const instrumentation =
 					Instrument === SplunkLongTaskInstrumentation
 						? new Instrument(pluginConf, options)
-						: new Instrument(pluginConf)
+						: // @ts-expect-error - Find a better way to type it
+							new Instrument(pluginConf)
 
 				if (confKey === ERROR_INSTRUMENTATION_NAME && instrumentation instanceof SplunkErrorInstrumentation) {
 					_errorInstrumentation = instrumentation
@@ -564,24 +549,6 @@ export const SplunkRum: SplunkOtelWebType = {
 		return this.attributesProcessor?.getGlobalAttributes() || {}
 	},
 
-	_experimental_getGlobalAttributes() {
-		return this.getGlobalAttributes()
-	},
-
-	error(...args) {
-		if (!inited) {
-			diag.debug('SplunkRum not inited')
-			return
-		}
-
-		if (!_errorInstrumentation) {
-			diag.error('Error was reported, but error instrumentation is disabled.')
-			return
-		}
-
-		_errorInstrumentation.report('SplunkRum.error', args, {})
-	},
-
 	reportError(error: string | Event | Error | ErrorEvent, context: SpanContext = {}) {
 		if (!inited) {
 			diag.debug('SplunkRum not inited')
@@ -617,14 +584,6 @@ export const SplunkRum: SplunkOtelWebType = {
 		eventTarget?.removeEventListener(name, callback)
 	},
 
-	_experimental_addEventListener(name, callback): void {
-		return this.addEventListener(name, callback)
-	},
-
-	_experimental_removeEventListener(name, callback): void {
-		return this.removeEventListener(name, callback)
-	},
-
 	setUserTrackingMode(mode: UserTrackingMode) {
 		userTrackingMode = mode
 	},
@@ -651,9 +610,6 @@ export const SplunkRum: SplunkOtelWebType = {
 	},
 	isNewSessionId() {
 		return getIsNewSession()
-	},
-	_experimental_getSessionId() {
-		return this.getSessionId()
 	},
 
 	_internalOnExternalSpanCreated() {
