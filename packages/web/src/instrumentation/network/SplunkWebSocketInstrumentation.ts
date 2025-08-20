@@ -20,11 +20,11 @@
 import * as shimmer from 'shimmer'
 import { SpanKind, trace, context, Span } from '@opentelemetry/api'
 import { isUrlIgnored } from '@opentelemetry/core'
-import { VERSION } from './version'
+import { VERSION } from '../../version'
 
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
-import { isError } from './types'
-import { hasSizeLikeProperty, getSize } from './utils/size'
+import { isError } from '../../types'
+import { hasSizeLikeProperty, getSize } from '../../utils/size'
 
 interface SplunkWebSocketInstrumentationConfig extends InstrumentationConfig {
 	ignoreUrls?: (string | RegExp)[]
@@ -33,9 +33,11 @@ interface SplunkWebSocketInstrumentationConfig extends InstrumentationConfig {
 export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWebSocketInstrumentationConfig> {
 	listener2ws2patched = new WeakMap()
 
+	private config: SplunkWebSocketInstrumentationConfig
+
 	constructor(config: SplunkWebSocketInstrumentationConfig) {
 		super('splunk-websocket', VERSION, config)
-		this._config = config
+		this.config = config
 	}
 
 	disable(): void {
@@ -48,7 +50,7 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 			class InstrumentedWebSocket extends WebSocket {
 				constructor(url: string | URL, protocols?: string | string[]) {
 					const stringUrl = typeof url === 'string' ? url : url.toString()
-					if (isUrlIgnored(stringUrl, instrumentation._config.ignoreUrls)) {
+					if (isUrlIgnored(stringUrl, instrumentation.config.ignoreUrls)) {
 						super(url, protocols)
 						return
 					}

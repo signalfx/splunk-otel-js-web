@@ -101,13 +101,11 @@ export function wrapNatively<Nodule extends object, FieldName extends keyof Nodu
 }
 
 /**
- * Get the original version of function (without all of the shimmer wrappings)
+ * Get the original function (without all the shimmer wrappings)
  */
-export function getOriginalFunction<T extends CallableFunction>(func: T): T {
-	// @ts-expect-error __original isn't mentioned in types
+export function getOriginalFunction<T extends CallableFunction>(func: T & { __original?: T }): T {
 	while (func.__original && func.__original !== func) {
-		// @ts-expect-error same
-		func = func.__original as T
+		func = func.__original
 	}
 
 	return func

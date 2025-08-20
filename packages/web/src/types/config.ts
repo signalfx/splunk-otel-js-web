@@ -19,13 +19,15 @@ import { Attributes } from '@opentelemetry/api'
 import { WebTracerConfig } from '@opentelemetry/sdk-trace-web'
 import { InstrumentationConfig } from '@opentelemetry/instrumentation'
 import { FetchInstrumentationConfig } from '@opentelemetry/instrumentation-fetch'
-import { SplunkUserInteractionInstrumentationConfig } from '../SplunkUserInteractionInstrumentation'
-import { SplunkPostDocLoadResourceInstrumentationConfig } from '../SplunkPostDocLoadResourceInstrumentation'
-import { SocketIoClientInstrumentationConfig } from '../SplunkSocketIoClientInstrumentation'
+import {
+	SplunkUserInteractionInstrumentationConfig,
+	SplunkPostDocLoadResourceInstrumentationConfig,
+	SocketIoClientInstrumentationConfig,
+	SplunkErrorInstrumentationConfig,
+} from '../instrumentation'
 import { WebVitalsInstrumentationConfig } from '../webvitals'
 import { XMLHttpRequestInstrumentationConfig } from '@opentelemetry/instrumentation-xml-http-request'
 import { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-base'
-import { SplunkErrorInstrumentationConfig } from '../SplunkErrorInstrumentation'
 
 export interface SplunkOtelWebOptionsInstrumentations {
 	connectivity?: boolean | InstrumentationConfig
@@ -83,22 +85,11 @@ export interface SplunkOtelWebConfig {
 	/** Allows http beacon urls */
 	allowInsecureBeacon?: boolean
 
-	/** Application name
-	 * @deprecated Renamed to `applicationName`
-	 */
-	app?: string
-
 	/** Application name */
 	applicationName?: string
 
 	/** Destination for the captured data */
 	beaconEndpoint?: string
-
-	/**
-	 * Destination for the captured data
-	 * @deprecated Renamed to `beaconEndpoint`, or use realm
-	 */
-	beaconUrl?: string
 
 	/** Options for context manager */
 	context?: ContextManagerConfig
@@ -123,12 +114,6 @@ export interface SplunkOtelWebConfig {
 	 * If true, bots like google bot, bing bot, and others will be blocked. Defaults to false.
 	 */
 	disableBots?: boolean
-
-	/**
-	 * Sets a value for the `environment` attribute (persists through calls to `setGlobalAttributes()`)
-	 * @deprecated Renamed to `deploymentEnvironment`
-	 */
-	environment?: string
 
 	/** Allows configuring how telemetry data is sent to the backend */
 	exporter?: SplunkOtelWebExporterOptions
@@ -167,13 +152,6 @@ export interface SplunkOtelWebConfig {
 	 * will be visible to every user of your app
 	 */
 	rumAccessToken?: string
-
-	/**
-	 * Publicly-visible `rumAuth` value.  Please do not paste any other access token or auth value into here, as this
-	 * will be visible to every user of your app
-	 * @deprecated Renamed to rumAccessToken
-	 */
-	rumAuth?: string
 
 	spanProcessors?: Array<SpanProcessor>
 

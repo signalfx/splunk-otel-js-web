@@ -37,9 +37,9 @@ export class CookieStore<T> implements Store<T> {
 
 	get({ forceDiskRead = false }: { forceDiskRead?: boolean } = {}) {
 		if (this.cachedValue === null || forceDiskRead) {
-			const rawValue = this._getRaw(this.key)
+			const rawValue = this.getRaw(this.key)
 			if (rawValue !== undefined) {
-				this.cachedValue = this._deserialize(rawValue)
+				this.cachedValue = this.deserialize(rawValue)
 			}
 		}
 
@@ -56,10 +56,10 @@ export class CookieStore<T> implements Store<T> {
 
 	set(value: T, domain?: string) {
 		this.cachedValue = value
-		this.throttledSetRaw(this._serialize(value, domain))
+		this.throttledSetRaw(this.serialize(value, domain))
 	}
 
-	protected _deserialize(rawValue: string): T | undefined {
+	private deserialize(rawValue: string): T | undefined {
 		if (!rawValue) {
 			return undefined
 		}
@@ -74,7 +74,7 @@ export class CookieStore<T> implements Store<T> {
 		return value
 	}
 
-	protected _getRaw(cookieName: string): string | undefined {
+	private getRaw(cookieName: string): string | undefined {
 		const cookies = document.cookie.split(';')
 		for (let i = 0; i < cookies.length; i++) {
 			const c = cookies[i].trim()
@@ -85,7 +85,7 @@ export class CookieStore<T> implements Store<T> {
 		return undefined
 	}
 
-	protected _serialize(value: T, domain?: string): string {
+	private serialize(value: T, domain?: string): string {
 		const cookieValue = encodeURIComponent(JSON.stringify(value))
 		const domainPart = domain ? `domain=${domain};` : ''
 

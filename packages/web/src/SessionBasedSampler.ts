@@ -57,7 +57,7 @@ export class SessionBasedSampler implements Sampler {
 		sampled = new AlwaysOnSampler(),
 		notSampled = new AlwaysOffSampler(),
 	}: SessionBasedSamplerConfig = {}) {
-		this.ratio = this._normalize(ratio)
+		this.ratio = this.normalize(ratio)
 		this.upperBound = Math.floor(this.ratio * 0xffffffff)
 
 		this.sampled = sampled
@@ -80,7 +80,7 @@ export class SessionBasedSampler implements Sampler {
 
 		const currentSessionId = getOrInitInactiveSession().id
 		if (this.currentSessionId !== currentSessionId) {
-			this.currentSessionSampled = this._accumulate(currentSessionId) < this.upperBound
+			this.currentSessionSampled = this.accumulate(currentSessionId) < this.upperBound
 			this.currentSessionId = currentSessionId
 		}
 
@@ -92,7 +92,7 @@ export class SessionBasedSampler implements Sampler {
 		return `SessionBased{ratio=${this.ratio}, sampled=${this.sampled.toString()}, notSampled=${this.notSampled.toString()}}`
 	}
 
-	private _accumulate(sessionId: string): number {
+	private accumulate(sessionId: string): number {
 		let accumulation = 0
 		for (let i = 0; i < sessionId.length / 8; i++) {
 			const pos = i * 8
@@ -102,7 +102,7 @@ export class SessionBasedSampler implements Sampler {
 		return accumulation
 	}
 
-	private _normalize(ratio: number): number {
+	private normalize(ratio: number): number {
 		if (typeof ratio !== 'number' || isNaN(ratio)) {
 			return 0
 		}

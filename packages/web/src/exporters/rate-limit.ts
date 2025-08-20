@@ -30,32 +30,32 @@ export class RateLimitProcessor implements SpanProcessor {
 
 	protected readonly _spanCounts = new Map<string, number>()
 
-	constructor(protected _processor: SpanProcessor) {
+	constructor(private processor: SpanProcessor) {
 		this._limiterHandle = window.setInterval(() => {
 			this._spanCounts.clear()
 		}, SPAN_RATE_LIMIT_PERIOD)
 	}
 
 	forceFlush(): Promise<void> {
-		return this._processor.forceFlush()
+		return this.processor.forceFlush()
 	}
 
 	onEnd(span: ReadableSpan): void {
-		if (this._filter(span)) {
-			this._processor.onEnd(span)
+		if (this.filter(span)) {
+			this.processor.onEnd(span)
 		}
 	}
 
 	onStart(span: Span, parentContext: Context): void {
-		return this._processor.onStart(span, parentContext)
+		return this.processor.onStart(span, parentContext)
 	}
 
 	shutdown(): Promise<void> {
 		clearInterval(this._limiterHandle)
-		return this._processor.shutdown()
+		return this.processor.shutdown()
 	}
 
-	protected _filter(span: ReadableSpan): boolean {
+	private filter(span: ReadableSpan): boolean {
 		if (span.parentSpanId) {
 			this._parents.set(span.parentSpanId, true)
 		}

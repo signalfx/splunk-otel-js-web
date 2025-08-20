@@ -30,18 +30,25 @@ import {
 	ParentBasedSampler,
 } from '@opentelemetry/sdk-trace-base'
 import { Attributes, diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api'
-import { SplunkDocumentLoadInstrumentation } from './SplunkDocumentLoadInstrumentation'
-import { SplunkXhrPlugin } from './SplunkXhrPlugin'
-import { SplunkFetchInstrumentation } from './SplunkFetchInstrumentation'
 import {
+	SplunkDocumentLoadInstrumentation,
+	SplunkXhrPlugin,
+	SplunkFetchInstrumentation,
 	SplunkUserInteractionInstrumentation,
 	DEFAULT_AUTO_INSTRUMENTED_EVENTS,
 	DEFAULT_AUTO_INSTRUMENTED_EVENT_NAMES,
 	UserInteractionEventsConfig,
-} from './SplunkUserInteractionInstrumentation'
+	SplunkWebSocketInstrumentation,
+	SplunkLongTaskInstrumentation,
+	SplunkPageVisibilityInstrumentation,
+	SplunkConnectivityInstrumentation,
+	SplunkPostDocLoadResourceInstrumentation,
+	SplunkSocketIoClientInstrumentation,
+	ERROR_INSTRUMENTATION_NAME,
+	SplunkErrorInstrumentation,
+} from './instrumentation'
 import { type SplunkExporterConfig } from './exporters/common'
 import { SplunkZipkinExporter } from './exporters/zipkin'
-import { ERROR_INSTRUMENTATION_NAME, SplunkErrorInstrumentation } from './SplunkErrorInstrumentation'
 import { generateId, getPluginConfig } from './utils'
 import {
 	checkSessionRecorderType,
@@ -50,28 +57,22 @@ import {
 	initSessionTracking,
 	RecorderType,
 	updateSessionStatus,
+	SessionId,
 } from './session'
-import { SplunkWebSocketInstrumentation } from './SplunkWebSocketInstrumentation'
 import { initWebVitals } from './webvitals'
-import { SplunkLongTaskInstrumentation } from './SplunkLongTaskInstrumentation'
-import { SplunkPageVisibilityInstrumentation } from './SplunkPageVisibilityInstrumentation'
-import { SplunkConnectivityInstrumentation } from './SplunkConnectivityInstrumentation'
-import { SplunkPostDocLoadResourceInstrumentation } from './SplunkPostDocLoadResourceInstrumentation'
 import { SplunkWebTracerProvider } from './SplunkWebTracerProvider'
 import { InternalEventTarget, SplunkOtelWebEventTarget } from './EventTarget'
 import { SplunkContextManager } from './SplunkContextManager'
 import { Resource, ResourceAttributes } from '@opentelemetry/resources'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
-import { SDK_INFO, _globalThis } from '@opentelemetry/core'
+import { SDK_INFO } from '@opentelemetry/core'
 import { VERSION } from './version'
 import { getSyntheticsRunId, SYNTHETICS_RUN_ID_ATTRIBUTE } from './synthetics'
 import { SplunkSpanAttributesProcessor } from './SplunkSpanAttributesProcessor'
 import { SessionBasedSampler } from './SessionBasedSampler'
-import { SplunkSocketIoClientInstrumentation } from './SplunkSocketIoClientInstrumentation'
 import { SplunkOTLPTraceExporter } from './exporters/otlp'
 import { registerGlobal, unregisterGlobal } from './global-utils'
 import { BrowserInstanceService } from './services/BrowserInstanceService'
-import { SessionId } from './session'
 import { forgetAnonymousId, getOrCreateAnonymousId } from './user-tracking'
 import {
 	isPersistenceType,
@@ -128,28 +129,6 @@ const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
 		factory: (exporter, config) => new BatchSpanProcessor(exporter, config),
 	},
 	rumAccessToken: undefined,
-}
-
-function migrateConfigOption(
-	config: SplunkOtelWebConfig,
-	from: keyof SplunkOtelWebConfig,
-	to: keyof SplunkOtelWebConfig,
-) {
-	if (from in config && !(to in config && config[to] !== OPTIONS_DEFAULTS[to])) {
-		// @ts-expect-error There's no way to type this right
-		config[to] = config[from]
-	}
-}
-
-/**
- * Update configuration based on configuration option renames
- */
-function migrateConfig(config: SplunkOtelWebConfig) {
-	migrateConfigOption(config, 'app', 'applicationName')
-	migrateConfigOption(config, 'beaconUrl', 'beaconEndpoint')
-	migrateConfigOption(config, 'environment', 'deploymentEnvironment')
-	migrateConfigOption(config, 'rumAuth', 'rumAccessToken')
-	return config
 }
 
 const INSTRUMENTATIONS = [
@@ -223,16 +202,6 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	SessionBasedSampler: typeof SessionBasedSampler
 
 	/**
-	 * @deprecated Use {@link getGlobalAttributes()}
-	 */
-	_experimental_getGlobalAttributes: () => Attributes
-
-	/**
-	 * @deprecated Use {@link getSessionId()}
-	 */
-	_experimental_getSessionId: () => SessionId | undefined
-
-	/**
 	 * Used internally by the SplunkSessionRecorder - checks if the current session is assigned to a correct recorder type.
 	 */
 	_internalCheckSessionRecorderType: (recorderType: RecorderType) => void
@@ -262,12 +231,6 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	 * True if library detected a bot and was disabled based on 'disableBots' setting.
 	 */
 	disabledByBotDetection?: boolean
-
-	/**
-	 * @deprecated This method is deprecated and will be removed in future versions.
-	 * Use {@link reportError} instead.
-	 */
-	error: (...args: Array<any>) => void
 
 	getAnonymousId: () => string | undefined
 
@@ -348,12 +311,6 @@ export const SplunkRum: SplunkOtelWebType = {
 			)
 		}
 
-		// "env" based config still a bad idea for web
-		if (!('OTEL_TRACES_EXPORTER' in _globalThis)) {
-			// @ts-expect-error OTEL_TRACES_EXPORTER is not defined in the global scope
-			_globalThis.OTEL_TRACES_EXPORTER = 'none'
-		}
-
 		if (inited) {
 			console.warn('SplunkRum already initialized.')
 			return
@@ -386,14 +343,9 @@ export const SplunkRum: SplunkOtelWebType = {
 
 		eventTarget = new InternalEventTarget()
 
-		const processedOptions: SplunkOtelWebConfigInternal = Object.assign(
-			{},
-			OPTIONS_DEFAULTS,
-			migrateConfig(options),
-			{
-				exporter: Object.assign({}, OPTIONS_DEFAULTS.exporter, options.exporter),
-			},
-		)
+		const processedOptions: SplunkOtelWebConfigInternal = Object.assign({}, OPTIONS_DEFAULTS, options, {
+			exporter: Object.assign({}, OPTIONS_DEFAULTS.exporter, options.exporter),
+		})
 
 		if (
 			!processedOptions.persistence ||
@@ -514,7 +466,7 @@ export const SplunkRum: SplunkOtelWebType = {
 				const instrumentation =
 					Instrument === SplunkLongTaskInstrumentation
 						? new Instrument(pluginConf, options)
-						: // @ts-expect-error Can't mark in any way that processedOptions.instrumentations[confKey] is of specifc config type
+						: // @ts-expect-error - Find a better way to type it
 							new Instrument(pluginConf)
 
 				if (confKey === ERROR_INSTRUMENTATION_NAME && instrumentation instanceof SplunkErrorInstrumentation) {
@@ -598,24 +550,6 @@ export const SplunkRum: SplunkOtelWebType = {
 		return this.attributesProcessor?.getGlobalAttributes() || {}
 	},
 
-	_experimental_getGlobalAttributes() {
-		return this.getGlobalAttributes()
-	},
-
-	error(...args) {
-		if (!inited) {
-			diag.debug('SplunkRum not inited')
-			return
-		}
-
-		if (!_errorInstrumentation) {
-			diag.error('Error was reported, but error instrumentation is disabled.')
-			return
-		}
-
-		_errorInstrumentation.report('SplunkRum.error', args, {})
-	},
-
 	reportError(error: string | Event | Error | ErrorEvent, context: SpanContext = {}) {
 		if (!inited) {
 			diag.debug('SplunkRum not inited')
@@ -651,14 +585,6 @@ export const SplunkRum: SplunkOtelWebType = {
 		eventTarget?.removeEventListener(name, callback)
 	},
 
-	_experimental_addEventListener(name, callback): void {
-		return this.addEventListener(name, callback)
-	},
-
-	_experimental_removeEventListener(name, callback): void {
-		return this.removeEventListener(name, callback)
-	},
-
 	setUserTrackingMode(mode: UserTrackingMode) {
 		userTrackingMode = mode
 	},
@@ -685,9 +611,6 @@ export const SplunkRum: SplunkOtelWebType = {
 	},
 	isNewSessionId() {
 		return getIsNewSession()
-	},
-	_experimental_getSessionId() {
-		return this.getSessionId()
 	},
 
 	_internalOnExternalSpanCreated() {

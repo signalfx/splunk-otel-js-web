@@ -95,7 +95,7 @@ export class SplunkZipkinExporter implements SpanExporter {
 	}
 
 	export(spans: ReadableSpan[], resultCallback: (result: ExportResult) => void): void {
-		const zspans = spans.map((span) => this._mapToZipkinSpan(span))
+		const zspans = spans.map((span) => this.mapToZipkinSpan(span))
 		const zJson = JSON.stringify(zspans)
 		if (document.hidden && this._beaconSender && zJson.length <= 64000) {
 			this._beaconSender(this.beaconUrl, zJson)
@@ -113,13 +113,13 @@ export class SplunkZipkinExporter implements SpanExporter {
 		return Promise.resolve()
 	}
 
-	private _mapToZipkinSpan(span: ReadableSpan): ZipkinSpan {
-		const preparedSpan = this._preTranslateSpan(span)
+	private mapToZipkinSpan(span: ReadableSpan): ZipkinSpan {
+		const preparedSpan = this.preTranslateSpan(span)
 		const zspan = toZipkinSpan(preparedSpan, SERVICE_NAME, defaultStatusCodeTagName, defaultStatusErrorTagName)
-		return this._postTranslateSpan(zspan)
+		return this.postTranslateSpan(zspan)
 	}
 
-	private _postTranslateSpan(span: ZipkinSpan) {
+	private postTranslateSpan(span: ZipkinSpan) {
 		delete span.localEndpoint
 		span.name = limitLen(span.name, MAX_VALUE_LIMIT)
 		for (const [key, value] of Object.entries(span.tags)) {
@@ -146,7 +146,7 @@ export class SplunkZipkinExporter implements SpanExporter {
 		return span
 	}
 
-	private _preTranslateSpan(span: ReadableSpan): ReadableSpan {
+	private preTranslateSpan(span: ReadableSpan): ReadableSpan {
 		return {
 			// todo: once typescript is implemented, conform to ReadableSpan
 			// note: some properties in Span are not enumerable, and as a result cannot be spread or Object.assign'ed

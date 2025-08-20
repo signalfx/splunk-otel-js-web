@@ -18,12 +18,15 @@
 
 import * as shimmer from 'shimmer'
 import { getElementXPath } from '@opentelemetry/sdk-trace-web'
-import { limitLen } from './utils'
-import { context, Span } from '@opentelemetry/api'
+import { limitLen } from '../../utils'
+import { context, Span, diag } from '@opentelemetry/api'
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
-import { isPlainObject, removePropertiesWithAdvancedTypes, SpanContext } from './utils/attributes'
-import { getValidAttributes } from './utils/attributes'
-import { diag } from '@opentelemetry/api'
+import {
+	isPlainObject,
+	removePropertiesWithAdvancedTypes,
+	SpanContext,
+	getValidAttributes,
+} from '../../utils/attributes'
 import { suppressTracing } from '@opentelemetry/core'
 
 // FIXME take timestamps from events?
@@ -111,8 +114,8 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 
 	private throttleMap = new Map<string, number>()
 
-	constructor(protected _splunkConfig: SplunkErrorInstrumentationConfig) {
-		super(ERROR_INSTRUMENTATION_NAME, ERROR_INSTRUMENTATION_VERSION, _splunkConfig)
+	constructor(protected splunkConfig: SplunkErrorInstrumentationConfig) {
+		super(ERROR_INSTRUMENTATION_NAME, ERROR_INSTRUMENTATION_VERSION, splunkConfig)
 	}
 
 	disable(): void {
@@ -263,7 +266,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		try {
 			let transformed: ReturnType<ErrorTransformer> = null
 			context.with(suppressTracing(context.active()), () => {
-				const transformer: ErrorTransformer = this._splunkConfig.onError ?? DEFAULT_ON_ERROR
+				const transformer: ErrorTransformer = this.splunkConfig.onError ?? DEFAULT_ON_ERROR
 				transformed = transformer(error, spanContext)
 			})
 

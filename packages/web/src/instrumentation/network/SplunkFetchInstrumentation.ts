@@ -17,7 +17,7 @@
  */
 
 import { FetchInstrumentation, FetchInstrumentationConfig } from '@opentelemetry/instrumentation-fetch'
-import { captureTraceParent } from './servertiming'
+import { captureTraceParent } from '../../servertiming'
 import { diag } from '@opentelemetry/api'
 
 type ExposedSuper = {
