@@ -66,11 +66,11 @@ This document outlines the tasks needed to improve the `packages/web` codebase d
 
 ### 5. Add ESLint Rule for Import Merging
 **Consolidate multiple imports from the same module:**
-- [ ] **Add ESLint rule** - Configure `import/no-duplicates` or similar rule to merge imports from the same file
-- [ ] **index.ts** - Merge multiple imports from `@opentelemetry/api`, `@opentelemetry/semantic-conventions`, `@opentelemetry/core`, and local modules
-- [ ] **SplunkDocumentLoadInstrumentation.ts** - Merge imports from `@opentelemetry/api`, `@opentelemetry/semantic-conventions`
-- [ ] **SplunkPostDocLoadResourceInstrumentation.ts** - Merge imports from `@opentelemetry/instrumentation`
-- [ ] **Apply across all files** - Use ESLint auto-fix to consolidate duplicate imports
+- [x] **Add ESLint rule** - ✅ **COMPLETED** - Configure `import/no-duplicates` or similar rule to merge imports from the same file
+- [x] **index.ts** - ✅ **COMPLETED** - Merge multiple imports from `@opentelemetry/api`, `@opentelemetry/semantic-conventions`, `@opentelemetry/core`, and local modules
+- [x] **SplunkDocumentLoadInstrumentation.ts** - ✅ **COMPLETED** - Merge imports from `@opentelemetry/api`, `@opentelemetry/semantic-conventions`
+- [x] **SplunkPostDocLoadResourceInstrumentation.ts** - ✅ **COMPLETED** - Merge imports from `@opentelemetry/instrumentation`
+- [x] **Apply across all files** - ✅ **COMPLETED** - Use ESLint auto-fix to consolidate duplicate imports
 
 **Example transformation:**
 

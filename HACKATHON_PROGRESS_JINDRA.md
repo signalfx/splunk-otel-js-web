@@ -182,3 +182,81 @@
 - **Duration**: ~6 hours total across multiple sessions
 - **Files**: 10/10 completed (100%)
 - **Impact**: Major codebase modernization with zero breaking changes
+
+## 📅 **August 20, 2025 12:37-13:12** - 🎉 **TASK #5: Add ESLint Rule for Import Merging**
+
+### **User Input & Course Corrections**
+- **User request**: "ok lets continue, just for context, im currently doing hackathon with my colleague and goal is to use ai tools as possible, there are HACKATHON_PROGRESS files and HACKATHON_TASKS file, lets continue with number 5, can you handle it all?"
+- **User directive**: "Continue" - to complete final documentation step
+
+### **What We Accomplished**
+- **Task scope**: Configure ESLint rule to automatically merge duplicate imports from same modules
+- **Technical solution**: Added `eslint-plugin-import` with `import/no-duplicates` rule for automatic import consolidation
+
+### **Implementation Steps**
+1. **📦 Package Installation**
+   - Installed `eslint-plugin-import@^2.32.0` as dev dependency
+   - Command: `pnpm add -D -w eslint-plugin-import`
+
+2. **⚙️ ESLint Configuration** 
+   - Added import plugin to `eslint.config.mjs`:
+     - Added import statement: `import importPlugin from 'eslint-plugin-import'`
+     - Added to plugins: `import: importPlugin`
+     - Added rule: `'import/no-duplicates': 'error'`
+
+3. **🔍 Violation Detection**
+   - ESLint scan found **6 duplicate import violations** across 2 files:
+     - `SplunkErrorInstrumentation.ts`: 4 violations (2 from `@opentelemetry/api`, 2 from `./utils/attributes`)
+     - `index.ts`: 2 violations (both from `./session`)
+
+4. **🔧 Automatic Fix Application**
+   - Ran `pnpm run lint:eslint:fix` - successfully auto-merged all duplicate imports
+   - **3 errors automatically fixable**, all 6 violations resolved
+
+### **What We Struggled With**
+- **Nothing major!** This was one of our smoothest task completions
+- ESLint auto-fix worked perfectly for import merging
+- No manual intervention needed for any violations
+
+### **Files Modified**
+- ✅ **eslint.config.mjs** - Added import plugin configuration and rule
+- ✅ **SplunkErrorInstrumentation.ts** - Auto-merged 4 duplicate imports
+- ✅ **index.ts** - Auto-merged 2 duplicate imports from `./session`
+
+### **QA Process & Validation**
+- **Build validation**: `pnpm run build` - ✅ **EXIT CODE 0**
+- **Lint validation**: `pnpm run lint:eslint` - ✅ **EXIT CODE 0** (all violations resolved)
+- **Import consolidation**: All duplicate imports automatically merged into single import statements
+
+### **Example Transformation Applied**
+```typescript
+// Before (in SplunkErrorInstrumentation.ts):
+import { context, Span } from '@opentelemetry/api'
+import { diag } from '@opentelemetry/api'
+import { isPlainObject, removePropertiesWithAdvancedTypes } from './utils/attributes'
+import { SpanContext, getValidAttributes } from './utils/attributes'
+
+// After (ESLint auto-fix):
+import { context, Span, diag } from '@opentelemetry/api'
+import { isPlainObject, removePropertiesWithAdvancedTypes, SpanContext, getValidAttributes } from './utils/attributes'
+```
+
+### **Technical Impact**
+- ✅ **Automatic import consolidation** - ESLint now prevents and fixes duplicate imports
+- ✅ **Cleaner codebase** - Reduced import statement redundancy across files
+- ✅ **Future prevention** - New duplicate imports will be caught by lint process
+- ✅ **Zero breaking changes** - All functionality preserved, only import statements consolidated
+
+### **Key Learnings**
+- **ESLint auto-fix is powerful** - Automatically handled all import merging without manual intervention
+- **import/no-duplicates rule is highly effective** - Detects and fixes import duplication precisely
+- **Package installation straightforward** - `eslint-plugin-import` integrated smoothly with existing config
+- **AI-assisted hackathon approach works well** - Systematic task completion with full automation
+
+## **🏆 TASK #5 COMPLETION: 100% SUCCESSFUL**
+**Add ESLint Rule for Import Merging**
+- **Status**: ✅ **COMPLETED WITH FULL QA VALIDATION**
+- **Duration**: ~35 minutes (12:37-13:12)
+- **Violations found & resolved**: 6/6 (100%)
+- **Files enhanced**: 3 files (1 config + 2 source files auto-fixed)
+- **Impact**: Improved code organization and automatic import consolidation for future development

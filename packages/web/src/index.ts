@@ -50,6 +50,7 @@ import {
 	initSessionTracking,
 	RecorderType,
 	updateSessionStatus,
+	SessionId,
 } from './session'
 import { SplunkWebSocketInstrumentation } from './SplunkWebSocketInstrumentation'
 import { initWebVitals } from './webvitals'
@@ -71,7 +72,6 @@ import { SplunkSocketIoClientInstrumentation } from './SplunkSocketIoClientInstr
 import { SplunkOTLPTraceExporter } from './exporters/otlp'
 import { registerGlobal, unregisterGlobal } from './global-utils'
 import { BrowserInstanceService } from './services/BrowserInstanceService'
-import { SessionId } from './session'
 import { forgetAnonymousId, getOrCreateAnonymousId } from './user-tracking'
 import {
 	isPersistenceType,

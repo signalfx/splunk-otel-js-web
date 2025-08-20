@@ -21,6 +21,7 @@ import globals from 'globals'
 import tseslint from 'typescript-eslint'
 import headers from 'eslint-plugin-headers'
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended'
+import importPlugin from 'eslint-plugin-import'
 
 /**
  * @type {import('eslint').Linter.Config[]}
@@ -45,6 +46,7 @@ const config = [
 			'@stylistic': stylistic,
 			'@typescript-eslint': tseslint.plugin,
 			headers,
+			'import': importPlugin,
 		},
 		rules: {
 			'headers/header-format': [
@@ -190,6 +192,7 @@ const config = [
 
 			'arrow-body-style': ['error', 'as-needed'],
 			'curly': 'error',
+			'import/no-duplicates': 'error',
 			'no-console': 'off',
 			'no-plusplus': ['error', { allowForLoopAfterthoughts: true }],
 			'padding-line-between-statements': ['error', { blankLine: 'always', next: '*', prev: 'if' }],
