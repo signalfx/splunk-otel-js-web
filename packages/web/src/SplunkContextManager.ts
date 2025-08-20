@@ -62,9 +62,6 @@ export class SplunkContextManager implements ContextManager {
 
 	constructor(protected _config: ContextManagerConfig = {}) {}
 
-	/**
-	 * Returns the active context
-	 */
 	active(): Context {
 		return this.currentContext
 	}
@@ -84,9 +81,6 @@ export class SplunkContextManager implements ContextManager {
 		return target
 	}
 
-	/**
-	 * Disable the context manager (clears the current context)
-	 */
 	disable(): this {
 		if (!this.enabled) {
 			return this
@@ -105,9 +99,6 @@ export class SplunkContextManager implements ContextManager {
 		return this
 	}
 
-	/**
-	 * Enables the context manager and creates a default(root) context
-	 */
 	enable(): this {
 		if (this.enabled) {
 			return this
