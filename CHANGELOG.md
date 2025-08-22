@@ -51,7 +51,84 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
       ```
 * `@splunk/otel-web-session-recorder`
   - Added a new `recorderType` option to the session recorder. You can now choose between the default `rrweb` recorder and the new, more efficient `splunk` recorder.
-
+  - Example of how to enable new `splunk` session replay capabilities
+    ```typescript
+	SplunkSessionRecorder.init({
+		app: "<appName>",
+		realm: "<realm>",
+		rumAccessToken: "<token>",
+		recorder: "splunk",
+	});
+    ```
+  - Session replay do not have text and inputs recorded by default. It can be enabled using `maskAllText` and `maskAllInputs` set to `false`.
+    - Example 
+	  ```typescript
+		SplunkSessionRecorder.init({
+  			app: "<appName>",
+  			realm: "<realm>",
+  			rumAccessToken: "<token>",
+  			recorder: "splunk",
+  			maskAllInputs: false,
+  			maskAllText: false,
+		});
+      ```
+  - Session replay do not have some texts or inputs captured. It can be solved by using mask/unmask/exclude on specific elements using `sensitivityRules`.
+   They are in the format of `sensitivityRules: [{ type: 'mask' | 'unmask' | 'exclude', selector: '<css selector>' }]`
+     - Example
+		```typescript
+    	SplunkSessionRecorder.init({
+			app: "<appName>",
+  			realm: "<realm>",
+  			rumAccessToken: "<token>",
+  			recorder: "splunk",
+  			sensitivityRules: [
+    			{ type: 'unmask', selector: 'p' }, 
+    			{ type: 'exclude', selector: 'img' },
+    			{ type: 'mask', selector: '.user-class' },
+    			{ type: 'exclude', selector: '#user-detail' },
+  			]
+		});
+		```
+   - Session replay is missing assets like fonts or images. It can be solved by packing assets into the recordings. It might increase data throughput. Utilize `features.packAssets` and `features.cacheAssets`.
+		- Example
+		  ```typescript
+    	  SplunkSessionRecorder.init({
+  				app: "<appName>",
+  				realm: "<realm>",
+  				rumAccessToken: "<token>",
+  				recorder: "splunk",
+  				features: {
+    				packAssets: true,
+    				cacheAssets: true,
+  				}
+		  });
+		  ```
+    - Canvas element capturing must be enabled using `features.canvas`.
+        - Example
+		  ```typescript
+          SplunkSessionRecorder.init({
+  				app: "<appName>",
+  				realm: "<realm>",
+  				rumAccessToken: "<token>",
+  				recorder: "splunk",
+  				features: {
+    				canvas: true,
+  				}
+		  });
+		  ```
+	- Video element capturing must be enabled using `features.video`.
+        - Example
+		  ```typescript
+          SplunkSessionRecorder.init({
+  				app: "<appName>",
+  				realm: "<realm>",
+  				rumAccessToken: "<token>",
+  				recorder: "splunk",
+  				features: {
+    				video: true,
+  				}
+		  });
+		  ```
 * Internal
   - Updated dependencies
   - Improved release scripts [#1123](https://github.com/signalfx/splunk-otel-js-web/pull/1123)
