@@ -25,6 +25,7 @@ import { isPlainObject, removePropertiesWithAdvancedTypes, SpanContext } from '.
 import { getValidAttributes } from './utils/attributes'
 import { diag } from '@opentelemetry/api'
 import { suppressTracing } from '@opentelemetry/core'
+import { isElement } from './types'
 
 // FIXME take timestamps from events?
 
@@ -84,7 +85,7 @@ function parseErrorStack(stack: string): string {
 
 function addStackIfUseful(span: Span, err: Error) {
 	if (err && err.stack && useful(err.stack)) {
-		//get sourcemap ids and add to span as error.soruce_map_ids
+		//g et sourcemap ids and add to span as error.source_map_ids
 		span.setAttribute('error.stack', limitLen(err.stack.toString(), STACK_LIMIT))
 		const sourcemapIds = parseErrorStack(err.stack)
 		if (sourcemapIds) {
@@ -223,10 +224,30 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		span.setAttribute('component', 'error')
 		span.setAttribute('error.type', ev.type)
 		if (ev.target) {
-			// TODO: find types to match this
-			span.setAttribute('target_element', (ev.target as any).tagName)
 			span.setAttribute('target_xpath', getElementXPath(ev.target, true))
-			span.setAttribute('target_src', (ev.target as any).src)
+
+			if (isElement(ev.target)) {
+				span.setAttribute('target_element', ev.target.tagName)
+
+				let srcToDisplay = ev.target.getAttribute('src') ?? ''
+				if (srcToDisplay.startsWith('blob://')) {
+					srcToDisplay = 'blob://'
+				} else if (srcToDisplay.startsWith('data:')) {
+					srcToDisplay = `${srcToDisplay.slice(0, 47)}...`
+				} else {
+					srcToDisplay = srcToDisplay.slice(0, 800)
+				}
+
+				if (srcToDisplay) {
+					span.setAttribute('target_src', srcToDisplay)
+					srcToDisplay = ` src="${srcToDisplay}"`
+				}
+
+				span.setAttribute(
+					'error.message',
+					`Failed to load <${ev.target.tagName.toLowerCase()}${srcToDisplay} />`,
+				)
+			}
 		}
 
 		this.endSpanWithThrottle(span, now)

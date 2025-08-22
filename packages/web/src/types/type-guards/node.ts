@@ -15,6 +15,6 @@
  * limitations under the License.
  *
  */
-export * from './error'
-export * from './string'
-export * from './node'
+
+export const isElement = (maybeElement: EventTarget | Node): maybeElement is Element =>
+	(<Node>maybeElement)?.nodeType === Node.ELEMENT_NODE
