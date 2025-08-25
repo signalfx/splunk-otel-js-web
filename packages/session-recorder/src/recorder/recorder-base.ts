@@ -15,9 +15,30 @@
  * limitations under the License.
  *
  */
-export * from './recorder-base'
-export * from './rrweb-recorder'
-export * from './splunk-recorder'
-export * from './config'
-export * from './types'
-export * from './recorder'
+export interface RecorderEmitContext {
+	data: Record<string, unknown>
+	startTime: number
+	type: 'splunk' | 'rrweb'
+}
+
+export interface RecorderConfig {
+	onEmit: (context: RecorderEmitContext) => void
+}
+
+export abstract class RecorderBase {
+	protected onEmit: RecorderConfig['onEmit']
+
+	protected constructor(config: RecorderConfig) {
+		this.onEmit = config.onEmit
+	}
+
+	abstract onSessionChanged(): void
+
+	abstract pause(): void
+
+	abstract resume(): void
+
+	abstract start(): void
+
+	abstract stop(): void
+}

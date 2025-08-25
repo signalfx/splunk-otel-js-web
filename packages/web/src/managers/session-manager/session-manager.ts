@@ -19,16 +19,21 @@
 import { SessionState } from './session-state'
 import { diag } from '@opentelemetry/api'
 import { StorageManager } from '../storage'
-import { SESSION_INACTIVITY_TIMEOUT_MS, SESSION_DURATION_MS } from './constants'
+import { SESSION_INACTIVITY_TIMEOUT_MS, SESSION_DURATION_MS, SESSION_ID_LENGTH } from './constants'
 import { generateId } from '../../utils'
+import { Observable } from '../../utils/observable'
 
 // Events that extend the session or create a new one
 const USER_ACTIVITY_EVENTS = ['click', 'touchstart', 'keydown', 'scroll']
+
+type SessionStateChange = { currentState: SessionState; previousState: SessionState }
 
 export class SessionManager {
 	private isStarted = false
 
 	private session: SessionState | null = null
+
+	private readonly sessionStateChange = new Observable<SessionStateChange>()
 
 	private stopCallbacks: Array<() => void> = []
 
@@ -73,12 +78,16 @@ export class SessionManager {
 		this.stopCallbacks = []
 	}
 
+	subscribe(f: (sessionChangeState: SessionStateChange) => void) {
+		this.sessionStateChange.subscribe(f)
+	}
+
 	private static generateNewSession(): SessionState {
 		return {
 			expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
 			startTime: Date.now(),
 			state: 'active',
-			sessionId: generateId(128),
+			sessionId: generateId(SESSION_ID_LENGTH * 4),
 		}
 	}
 
@@ -134,31 +143,38 @@ export class SessionManager {
 
 	private extendOrCreateNewSession = () => {
 		if (SessionManager.hasNativeSessionId()) {
+			diag.debug(
+				'SessionManager: Native session ID detected. Session extension or creation is managed natively and will not proceed here.',
+			)
 			return
 		}
 
 		// TODO: What should happen if the session is not present
 		if (!this.session) {
+			diag.warn('SessionManager: Attempted to extend or create a session, but no active session exists.')
 			return
 		}
 
+		const previousState = this.session
 		if (!SessionManager.isSessionRenewable(this.session)) {
 			const sessionStateInStorage = this.storageManager.getSessionState()
 			if (sessionStateInStorage) {
 				if (SessionManager.isSessionRenewable(sessionStateInStorage)) {
 					this.session = sessionStateInStorage
 				} else {
-					// TODO: Notify about new session generated
 					this.session = SessionManager.generateNewSession()
 				}
 			} else {
-				// TODO: Notify about new session generated
 				this.session = SessionManager.generateNewSession()
 			}
 		} else {
-			this.session.expiresAt = Date.now() + SESSION_INACTIVITY_TIMEOUT_MS
+			this.session = {
+				...previousState,
+				expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
+			}
 		}
 
+		this.sessionStateChange.notify({ currentState: this.session, previousState })
 		this.storageManager.persistSessionState(this.session)
 	}
 }

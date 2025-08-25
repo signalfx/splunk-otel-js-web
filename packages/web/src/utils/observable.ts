@@ -15,9 +15,19 @@
  * limitations under the License.
  *
  */
-export * from './recorder-base'
-export * from './rrweb-recorder'
-export * from './splunk-recorder'
-export * from './config'
-export * from './types'
-export * from './recorder'
+
+export class Observable<T> {
+	private observers: Array<(data: T) => void> = []
+
+	notify(data: T) {
+		this.observers.forEach((observer) => observer(data))
+	}
+
+	subscribe(f: (data: T) => void) {
+		this.observers.push(f)
+
+		return () => {
+			this.observers = this.observers.filter((other) => f !== other)
+		}
+	}
+}

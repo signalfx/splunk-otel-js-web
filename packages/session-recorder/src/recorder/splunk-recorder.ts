@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-import { Recorder, RecorderConfig, RecorderEmitContext } from './recorder'
+import { RecorderBase, RecorderConfig, RecorderEmitContext } from './recorder-base'
 import { SessionReplay, SessionReplayConfig, Segment } from '../session-replay'
 import { log } from '../log'
 
@@ -23,7 +23,7 @@ export type SplunkRecorderPublicConfig = Omit<SessionReplayConfig, 'onSegment'>
 
 type SplunkRecorderConfig = SplunkRecorderPublicConfig & RecorderConfig
 
-export class SplunkRecorder extends Recorder {
+export class SplunkRecorder extends RecorderBase {
 	private isStoppedManually: boolean = true
 
 	private isVisibilityListenerAttached: boolean = false
@@ -57,6 +57,13 @@ export class SplunkRecorder extends Recorder {
 			log.debug('SplunkRecorder: Clearing assets')
 			SessionReplay.clear()
 		}
+	}
+
+	onSessionChanged() {
+		log.debug('SplunkRecorder: onSessionChanged')
+		this.stop()
+		SplunkRecorder.clear()
+		this.start()
 	}
 
 	pause() {
@@ -93,19 +100,11 @@ export class SplunkRecorder extends Recorder {
 		const plainSegment = segment.toPlain()
 		const context: RecorderEmitContext = {
 			data: plainSegment,
-			onSessionChanged: this.onSessionChanged,
 			startTime: plainSegment.metadata.startUnixMs,
 			type: 'splunk',
 		}
 
 		this.onEmit(context)
-	}
-
-	private onSessionChanged = () => {
-		log.debug('SplunkRecorder: onSessionChanged')
-		this.stop()
-		SplunkRecorder.clear()
-		this.start()
 	}
 
 	private startOnVisibilityChange = () => {
