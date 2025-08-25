@@ -15,19 +15,29 @@
  * limitations under the License.
  *
  */
+import { diag } from '@opentelemetry/api'
 
 export class Observable<T> {
 	private observers: Array<(data: T) => void> = []
 
 	notify(data: T) {
-		this.observers.forEach((observer) => observer(data))
+		this.observers.forEach((observer) => {
+			try {
+				observer(data)
+			} catch (error) {
+				diag.error('Observable: Error happened in subscriber', error)
+			}
+		})
 	}
 
 	subscribe(f: (data: T) => void) {
 		this.observers.push(f)
 
 		return () => {
-			this.observers = this.observers.filter((other) => f !== other)
+			const index = this.observers.indexOf(f)
+			if (index !== -1) {
+				this.observers.splice(index, 1)
+			}
 		}
 	}
 }
