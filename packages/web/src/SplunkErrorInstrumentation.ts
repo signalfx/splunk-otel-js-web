@@ -19,11 +19,13 @@
 import * as shimmer from 'shimmer'
 import { getElementXPath } from '@opentelemetry/sdk-trace-web'
 import { limitLen } from './utils'
-import { Span } from '@opentelemetry/api'
+import { context, Span } from '@opentelemetry/api'
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 import { isPlainObject, removePropertiesWithAdvancedTypes, SpanContext } from './utils/attributes'
 import { getValidAttributes } from './utils/attributes'
 import { diag } from '@opentelemetry/api'
+import { suppressTracing } from '@opentelemetry/core'
+import { isElement } from './types'
 
 // FIXME take timestamps from events?
 
@@ -83,7 +85,7 @@ function parseErrorStack(stack: string): string {
 
 function addStackIfUseful(span: Span, err: Error) {
 	if (err && err.stack && useful(err.stack)) {
-		//get sourcemap ids and add to span as error.soruce_map_ids
+		// get sourcemap ids and add to span as error.source_map_ids
 		span.setAttribute('error.stack', limitLen(err.stack.toString(), STACK_LIMIT))
 		const sourcemapIds = parseErrorStack(err.stack)
 		if (sourcemapIds) {
@@ -141,7 +143,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		errorArg instanceof Event ||
 		typeof errorArg === 'string'
 
-	report(source: string, arg: InternalErrorLike, context: SpanContext): void {
+	report(source: string, arg: InternalErrorLike, spanContext: SpanContext): void {
 		if (Array.isArray(arg) && arg.length === 0) {
 			return
 		}
@@ -150,7 +152,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 			arg = arg[0]
 		}
 
-		const transformed = this.transform(arg, context)
+		const transformed = this.transform(arg, spanContext)
 		if (transformed === null) {
 			// reporting was cancelled
 			return
@@ -179,7 +181,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		}
 	}
 
-	protected reportError(source: string, err: Error, context: SpanContext): void {
+	protected reportError(source: string, err: Error, spanContext: SpanContext): void {
 		const msg = err.message || err.toString()
 		if (!useful(msg) && !err.stack) {
 			return
@@ -188,7 +190,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		const now = Date.now()
 		const span = this.tracer.startSpan(source, { startTime: now })
 
-		this.attachSpanContext(span, err, context)
+		this.attachSpanContext(span, err, spanContext)
 
 		span.setAttribute('component', 'error')
 		span.setAttribute('error', true)
@@ -202,15 +204,15 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		this.endSpanWithThrottle(span, now)
 	}
 
-	protected reportErrorEvent(source: string, ev: ErrorEvent, context: SpanContext): void {
+	protected reportErrorEvent(source: string, ev: ErrorEvent, spanContext: SpanContext): void {
 		if (ev.error) {
-			this.report(source, ev.error, context)
+			this.report(source, ev.error, spanContext)
 		} else if (ev.message) {
-			this.report(source, ev.message, context)
+			this.report(source, ev.message, spanContext)
 		}
 	}
 
-	protected reportEvent(source: string, ev: Event, context: SpanContext): void {
+	protected reportEvent(source: string, ev: Event, spanContext: SpanContext): void {
 		// FIXME consider other sources of global 'error' DOM callback - what else can be captured here?
 		if (!ev.target && !useful(ev.type)) {
 			return
@@ -218,27 +220,52 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 
 		const now = Date.now()
 		const span = this.tracer.startSpan(source, { startTime: now })
-		this.attachSpanContext(span, ev, context)
+		this.attachSpanContext(span, ev, spanContext)
 		span.setAttribute('component', 'error')
 		span.setAttribute('error.type', ev.type)
 		if (ev.target) {
-			// TODO: find types to match this
-			span.setAttribute('target_element', (ev.target as any).tagName)
 			span.setAttribute('target_xpath', getElementXPath(ev.target, true))
-			span.setAttribute('target_src', (ev.target as any).src)
+
+			if (isElement(ev.target)) {
+				span.setAttribute('target_element', ev.target.tagName)
+
+				let srcToDisplay = ev.target.getAttribute('src') ?? ''
+				if (srcToDisplay.startsWith('blob://')) {
+					srcToDisplay = 'blob://'
+				} else if (srcToDisplay.startsWith('data:')) {
+					srcToDisplay = `${srcToDisplay.slice(0, 47)}...`
+				} else {
+					srcToDisplay = srcToDisplay.slice(0, 800)
+				}
+
+				if (srcToDisplay) {
+					span.setAttribute('target_src', srcToDisplay)
+					srcToDisplay = ` src="${srcToDisplay}"`
+				}
+
+				span.setAttribute(
+					'error.message',
+					`Failed to load <${ev.target.tagName.toLowerCase()}${srcToDisplay} />`,
+				)
+			}
 		}
 
 		this.endSpanWithThrottle(span, now)
 	}
 
-	protected reportString(source: string, message: string, firstError: Error | undefined, context: SpanContext): void {
+	protected reportString(
+		source: string,
+		message: string,
+		firstError: Error | undefined,
+		spanContext: SpanContext,
+	): void {
 		if (!useful(message)) {
 			return
 		}
 
 		const now = Date.now()
 		const span = this.tracer.startSpan(source, { startTime: now })
-		this.attachSpanContext(span, firstError ?? message, context)
+		this.attachSpanContext(span, firstError ?? message, spanContext)
 		span.setAttribute('component', 'error')
 		span.setAttribute('error', true)
 		span.setAttribute('error.object', 'String')
@@ -250,40 +277,44 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		this.endSpanWithThrottle(span, now)
 	}
 
-	protected transform(error: InternalErrorLike, context: SpanContext): ErrorWithContext | null {
+	protected transform(error: InternalErrorLike, spanContext: SpanContext): ErrorWithContext | null {
 		let transformedError: InternalErrorLike
 		let transformedCtx: SpanContext
 
 		try {
-			const transformer: ErrorTransformer = this._splunkConfig.onError ?? DEFAULT_ON_ERROR
-			const transformed = transformer(error, context)
+			let transformed: ReturnType<ErrorTransformer> = null
+			context.with(suppressTracing(context.active()), () => {
+				const transformer: ErrorTransformer = this._splunkConfig.onError ?? DEFAULT_ON_ERROR
+				transformed = transformer(error, spanContext)
+			})
+
 			if (transformed === null) {
 				return null
 			}
 
 			if (transformed === undefined) {
 				diag.warn('onError can use null explicitly to cancel reporting, but cannot use undefined implicitly')
-				return { error, context }
+				return { error, context: spanContext }
 			}
 
 			;({ error: transformedError, context: transformedCtx } = transformed)
 		} catch (e) {
 			diag.warn('onError handler failed:', e)
-			return { error, context }
+			return { error, context: spanContext }
 		}
 
 		if (!this.isValidErrorArg(transformedError) && !Array.isArray(transformedError)) {
 			diag.warn(
 				`ignoring an error because onError handler was expected to produce a valid error, but instead returned: ${transformedError}`,
 			)
-			return { error, context }
+			return { error, context: spanContext }
 		}
 
 		if (!this.isValidContext(transformedCtx)) {
 			diag.warn(
 				`onError handler was expected to produce a valid context (POJO), but instead returned: ${transformedCtx}`,
 			)
-			return { error, context }
+			return { error, context: spanContext }
 		}
 
 		transformedCtx = removePropertiesWithAdvancedTypes(transformedCtx)
@@ -308,14 +339,14 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		}, 5000)
 	}
 
-	private attachSpanContext(span: Span, value: Error | string | Event, context: SpanContext) {
+	private attachSpanContext(span: Span, value: Error | string | Event, spanContext: SpanContext) {
 		const valueWithPossibleContext = value as (Error | string | Event) & {
 			splunkContext?: unknown
 		}
 		const contextAttributes = getValidAttributes(valueWithPossibleContext.splunkContext || {})
 
 		const entries = Object.entries({
-			...context,
+			...spanContext,
 			...contextAttributes,
 		})
 
