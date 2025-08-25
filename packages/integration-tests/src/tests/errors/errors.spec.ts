@@ -37,6 +37,8 @@ test.describe('errors', () => {
 			(errorSpans[0].tags['target_src'] as string).endsWith('/nonexistent.png'),
 			`Checking target_src: ${errorSpans[0]['target_src']}`,
 		).toBeTruthy()
+
+		expect(errorSpans[0].tags['error.message']).toBe('Failed to load <img src="/nonexistent.png" />')
 	})
 
 	test('JS syntax error', async ({ recordPage, browserName }) => {

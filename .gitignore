@@ -32,3 +32,5 @@ blob-report/
 playwright/.cache/
 
 .turbo
+
+coverage
