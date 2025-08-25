@@ -194,6 +194,10 @@ const SplunkRumRecorder = {
 		const processor = new BatchLogProcessor(exporter)
 
 		SplunkRum.sessionManager.subscribe(({ previousState, currentState }) => {
+			if (!previousState) {
+				return
+			}
+
 			if (previousState.sessionId !== currentState.sessionId) {
 				recorder?.stop()
 				recorder = new Recorder({

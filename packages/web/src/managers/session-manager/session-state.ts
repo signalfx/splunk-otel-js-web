@@ -23,11 +23,11 @@ export type SessionState = {
 	rt?: RecorderType
 	sessionId: string
 	startTime: number
-	state: 'active' | 'not-started' | 'expired'
+	state: 'active' | 'expired' | 'sampled'
 }
 
-export const isActiveSession = (session: SessionState): session is SessionState => session.state === 'active'
+export type PersistedSessionState = Pick<SessionState, 'expiresAt' | 'rt' | 'sessionId' | 'startTime'>
 
-export const isNotStartedSession = (session: SessionState): session is SessionState => session.state === 'not-started'
+export const isActiveSession = (session: SessionState): session is SessionState => session.state === 'active'
 
 export const isExpiredSession = (session: SessionState): session is SessionState => session.state === 'expired'

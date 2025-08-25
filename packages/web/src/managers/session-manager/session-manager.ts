@@ -26,18 +26,36 @@ import { Observable } from '../../utils/observable'
 // Events that extend the session or create a new one
 const USER_ACTIVITY_EVENTS = ['click', 'touchstart', 'keydown', 'scroll']
 
-type SessionStateChange = { currentState: SessionState; previousState: SessionState }
+type SessionStateChange = { currentState: SessionState; previousState: SessionState | null }
 
 export class SessionManager {
+	private _session: SessionState
+
 	private isStarted = false
 
-	private session: SessionState | null = null
+	private get session() {
+		return this._session
+	}
+
+	private set session(state: SessionState) {
+		const previousState = this._session
+		this._session = state
+		this.storageManager.persistSessionState(this._session)
+		this.sessionStateChange.notify({ previousState, currentState: state })
+	}
 
 	private readonly sessionStateChange = new Observable<SessionStateChange>()
 
 	private stopCallbacks: Array<() => void> = []
 
-	constructor(private readonly storageManager: StorageManager) {}
+	constructor(private readonly storageManager: StorageManager) {
+		const sessionState = this.getSessionStateFromStorageAndValidate()
+		if (!sessionState) {
+			this._session = SessionManager.generateNewSession('active')
+		} else {
+			this._session = sessionState
+		}
+	}
 
 	static getNativeSessionId() {
 		if (!(typeof window !== 'undefined' && window.SplunkRumNative && window.SplunkRumNative.getNativeSessionId)) {
@@ -52,7 +70,15 @@ export class SessionManager {
 	}
 
 	getSessionId() {
-		return SessionManager.getNativeSessionId() ?? this.session?.sessionId
+		return SessionManager.getNativeSessionId() ?? this.session.sessionId
+	}
+
+	markSessionSampled() {
+		const previousState = this.session
+		this.session = {
+			...previousState,
+			state: 'sampled',
+		}
 	}
 
 	start() {
@@ -82,11 +108,11 @@ export class SessionManager {
 		this.sessionStateChange.subscribe(f)
 	}
 
-	private static generateNewSession(): SessionState {
+	private static generateNewSession(state: SessionState['state']): SessionState {
 		return {
 			expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
 			startTime: Date.now(),
-			state: 'active',
+			state,
 			sessionId: generateId(SESSION_ID_LENGTH * 4),
 		}
 	}
@@ -118,7 +144,9 @@ export class SessionManager {
 	}
 
 	private attachSessionStorageWatch() {
-		const storageChangeCallback = () => {}
+		const storageChangeCallback = () => {
+			// TODO: Do something
+		}
 		const intervalId = setInterval(storageChangeCallback, 10000)
 
 		this.stopCallbacks.push(() => clearInterval(intervalId))
@@ -157,15 +185,17 @@ export class SessionManager {
 
 		const previousState = this.session
 		if (!SessionManager.isSessionRenewable(this.session)) {
-			const sessionStateInStorage = this.storageManager.getSessionState()
-			if (sessionStateInStorage) {
-				if (SessionManager.isSessionRenewable(sessionStateInStorage)) {
-					this.session = sessionStateInStorage
+			const persistedSessionState = this.storageManager.getSessionState()
+
+			if (persistedSessionState) {
+				const sessionState = { ...persistedSessionState, state: 'active' as const }
+				if (SessionManager.isSessionRenewable(sessionState)) {
+					this.session = sessionState
 				} else {
-					this.session = SessionManager.generateNewSession()
+					this.session = SessionManager.generateNewSession('active')
 				}
 			} else {
-				this.session = SessionManager.generateNewSession()
+				this.session = SessionManager.generateNewSession('active')
 			}
 		} else {
 			this.session = {
@@ -173,8 +203,19 @@ export class SessionManager {
 				expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
 			}
 		}
+	}
 
-		this.sessionStateChange.notify({ currentState: this.session, previousState })
-		this.storageManager.persistSessionState(this.session)
+	private getSessionStateFromStorageAndValidate() {
+		const persistedSessionState = this.storageManager.getSessionState()
+		if (!persistedSessionState) {
+			return null
+		}
+
+		const sessionState = { ...persistedSessionState, state: 'active' as const }
+		if (SessionManager.isSessionRenewable(sessionState)) {
+			return sessionState
+		} else {
+			return null
+		}
 	}
 }

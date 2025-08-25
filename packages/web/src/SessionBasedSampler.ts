@@ -78,11 +78,11 @@ export class SessionBasedSampler implements Sampler {
 		// (not extended from due to private methods)
 
 		const SplunkRum = getGlobal() as SplunkOtelWebType
-		const currentSessionId = SplunkRum.getSessionId()
-		if (!currentSessionId) {
-			// TODO: Session id needs to be defined here
-			throw new Error('No session id found')
+		if (!SplunkRum.sessionManager) {
+			throw new Error('SplunkRum is not initialized')
 		}
+
+		const currentSessionId = SplunkRum.sessionManager.getSessionId()
 
 		if (this.currentSessionId !== currentSessionId) {
 			this.currentSessionSampled = this._accumulate(currentSessionId) < this.upperBound

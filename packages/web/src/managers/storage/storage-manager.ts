@@ -17,7 +17,7 @@
  */
 
 import { CookieStorageProvider, LocalStorageProvider, StorageOptions } from './providers'
-import { SessionState } from '../session-manager'
+import { PersistedSessionState, SessionState } from '../session-manager'
 import { SESSION_STORAGE_KEY, SESSION_EXPIRATION_COOKIE_MS } from './constants'
 import { diag } from '@opentelemetry/api'
 
@@ -62,7 +62,7 @@ export class StorageManager {
 
 	getSessionState() {
 		try {
-			return this.sessionStorageProvider.safelyParseJson<SessionState>(SESSION_STORAGE_KEY)
+			return this.sessionStorageProvider.safelyParseJson<PersistedSessionState>(SESSION_STORAGE_KEY)
 		} catch (error) {
 			diag.warn('Failed to retrieve session state', {
 				options: this.options,
@@ -73,11 +73,16 @@ export class StorageManager {
 	}
 
 	persistSessionState(sessionState: SessionState) {
+		const { expiresAt, sessionId, rt, startTime } = sessionState
 		try {
-			return this.sessionStorageProvider.safelyStoreJson(SESSION_STORAGE_KEY, sessionState, {
-				...this.options,
-				expires: new Date(Date.now() + SESSION_EXPIRATION_COOKIE_MS).toUTCString(),
-			})
+			return this.sessionStorageProvider.safelyStoreJson<PersistedSessionState>(
+				SESSION_STORAGE_KEY,
+				{ expiresAt, sessionId, rt, startTime },
+				{
+					...this.options,
+					expires: new Date(Date.now() + SESSION_EXPIRATION_COOKIE_MS).toUTCString(),
+				},
+			)
 		} catch (error) {
 			diag.warn('Failed to persist session state', {
 				options: this.options,
