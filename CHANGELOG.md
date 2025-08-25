@@ -49,6 +49,7 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
           ...
       })
       ```
+  - Improved error messages for resources that fail to load, making troubleshooting easier [#1317](https://github.com/signalfx/splunk-otel-js-web/pull/1317)
 * `@splunk/otel-web-session-recorder`
   - Added a new `recorderType` option to the session recorder. You can now choose between the default `rrweb` recorder and the new, more efficient `splunk` recorder.
   - Example of how to enable new `splunk` session replay capabilities
