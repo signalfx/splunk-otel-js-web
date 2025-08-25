@@ -15,14 +15,5 @@
  * limitations under the License.
  *
  */
-export type SessionId = string
 
-export type RecorderType = 'rrweb' | 'splunk'
-
-export type SessionState = {
-	expiresAt?: number
-	id: SessionId
-	inactive?: boolean
-	rt?: RecorderType
-	startTime: number
-}
+export * from './storage-manager'

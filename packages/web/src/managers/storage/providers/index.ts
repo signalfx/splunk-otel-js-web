@@ -15,9 +15,7 @@
  * limitations under the License.
  *
  */
-export * from './recorder-base'
-export * from './rrweb-recorder'
-export * from './splunk-recorder'
-export * from './config'
-export * from './types'
-export * from './recorder'
+
+export * from './cookie-storage-provider'
+export * from './local-storage-provider'
+export * from './base-storage-provider'

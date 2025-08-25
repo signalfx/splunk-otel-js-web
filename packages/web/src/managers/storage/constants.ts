@@ -15,9 +15,9 @@
  * limitations under the License.
  *
  */
-export * from './recorder-base'
-export * from './rrweb-recorder'
-export * from './splunk-recorder'
-export * from './config'
-export * from './types'
-export * from './recorder'
+
+import { SESSION_INACTIVITY_TIMEOUT_SECONDS } from '../session-manager'
+
+export const SESSION_STORAGE_KEY = '_splunk_rum_sid'
+export const SESSION_EXPIRATION_COOKIE = SESSION_INACTIVITY_TIMEOUT_SECONDS * 60
+export const SESSION_EXPIRATION_COOKIE_MS = SESSION_EXPIRATION_COOKIE * 1000

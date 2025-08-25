@@ -70,16 +70,6 @@ export function isPersistenceType(value: string): value is PersistenceType {
 }
 
 export interface SplunkOtelWebConfig {
-	/**
-	 * If enabled, all spans are treated as activity and extend the duration of the session. Defaults to false.
-	 */
-	_experimental_allSpansExtendSession?: boolean
-
-	/*
-	 * If enabled, longtask will not start the new session. Defaults to false.
-	 */
-	_experimental_longtaskNoStartSession?: boolean
-
 	/** Allows http beacon urls */
 	allowInsecureBeacon?: boolean
 

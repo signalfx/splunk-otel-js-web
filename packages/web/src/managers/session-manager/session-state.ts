@@ -15,9 +15,19 @@
  * limitations under the License.
  *
  */
-export * from './recorder-base'
-export * from './rrweb-recorder'
-export * from './splunk-recorder'
-export * from './config'
-export * from './types'
-export * from './recorder'
+
+export type RecorderType = 'rrweb' | 'splunk'
+
+export type SessionState = {
+	expiresAt: number
+	rt?: RecorderType
+	sessionId: string
+	startTime: number
+	state: 'active' | 'expired' | 'sampled'
+}
+
+export type PersistedSessionState = Pick<SessionState, 'expiresAt' | 'rt' | 'sessionId' | 'startTime'>
+
+export const isActiveSession = (session: SessionState): session is SessionState => session.state === 'active'
+
+export const isExpiredSession = (session: SessionState): session is SessionState => session.state === 'expired'
