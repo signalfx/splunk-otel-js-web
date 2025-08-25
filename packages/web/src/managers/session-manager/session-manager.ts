@@ -40,7 +40,11 @@ export class SessionManager {
 	private set session(state: SessionState) {
 		const previousState = this._session
 		this._session = state
-		this.storageManager.persistSessionState(this._session)
+
+		if (state.state === 'active' || state.state === 'sampled') {
+			this.storageManager.persistSessionState(this._session)
+		}
+
 		this.sessionStateChange.notify({ previousState, currentState: state })
 	}
 
