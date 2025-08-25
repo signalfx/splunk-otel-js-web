@@ -85,7 +85,7 @@ function parseErrorStack(stack: string): string {
 
 function addStackIfUseful(span: Span, err: Error) {
 	if (err && err.stack && useful(err.stack)) {
-		//g et sourcemap ids and add to span as error.source_map_ids
+		// get sourcemap ids and add to span as error.source_map_ids
 		span.setAttribute('error.stack', limitLen(err.stack.toString(), STACK_LIMIT))
 		const sourcemapIds = parseErrorStack(err.stack)
 		if (sourcemapIds) {
