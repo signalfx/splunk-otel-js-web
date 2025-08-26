@@ -2,6 +2,141 @@
 
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
+## 0.23.1
+
+- `@splunk/otel-web`
+    - Added a new `SplunkRum.reportError(error, context)` API for error reporting. This replaces the deprecated `SplunkRum.error()` method and allows optional context to be attached to errors [#1197](https://github.com/signalfx/splunk-otel-js-web/pull/1197)
+        - API signature:
+            ```typescript
+            reportError: (
+              error: string | Event | Error | ErrorEvent,
+              context?: Record<string, string | number | boolean>,
+            ) => void
+            ```
+        - The `SplunkRum.error()` method will be removed in the next major release. Please update your code to use `reportError`.
+    - Errors can now include a `splunkContext` property (`Record<string, string | number | boolean>`) [#1200](https://github.com/signalfx/splunk-otel-js-web/pull/1200)
+        - This context will be automatically extracted and added as attributes to the corresponding error span.
+        - Example:
+            ```typescript
+            try {
+            	throw new Error('Just an error')
+            } catch (e) {
+            	e.splunkContext = {
+            		errorValueString: 'errorValue',
+            		errorValueNumber: 123,
+            	}
+            	console.error(e)
+            }
+            ```
+    - Throttle error spans [#1208](https://github.com/signalfx/splunk-otel-js-web/pull/1208)
+        - Error reporting is throttled to reduce noise and avoid duplicate spans. Each unique error span is identified by its attributes. We only report the same error (based on its attributes) once per second.
+    - Allow transforming errors before they're sent to the backend [#1275](https://github.com/signalfx/splunk-otel-js-web/pull/1275)
+        - Example:
+
+            ```typescript
+            SplunkOtelWeb.init({
+                ...,
+                intrumentations: {
+                   errors: {
+                      onError: (error, context) => {
+                        if (error instanceof Error) {
+                            error.message = 'Modified message'
+                        }
+
+                        return { error, context }
+                    },
+                  },
+                },
+                ...
+            })
+            ```
+
+    - Improved error messages for resources that fail to load, making troubleshooting easier [#1317](https://github.com/signalfx/splunk-otel-js-web/pull/1317)
+
+- `@splunk/otel-web-session-recorder`
+    - Added a new `recorderType` option to the session recorder. You can now choose between the default `rrweb` recorder and the new, more efficient `splunk` recorder.
+    - Example of how to enable new `splunk` session replay capabilities
+        ```typescript
+        SplunkSessionRecorder.init({
+        	app: '<appName>',
+        	realm: '<realm>',
+        	rumAccessToken: '<token>',
+        	recorder: 'splunk',
+        })
+        ```
+    - Session replay do not have text and inputs recorded by default. It can be enabled using `maskAllText` and `maskAllInputs` set to `false`.
+        - Example
+        ```typescript
+        SplunkSessionRecorder.init({
+        	app: '<appName>',
+        	realm: '<realm>',
+        	rumAccessToken: '<token>',
+        	recorder: 'splunk',
+        	maskAllInputs: false,
+        	maskAllText: false,
+        })
+        ```
+    - Session replay do not have some texts or inputs captured. It can be solved by using mask/unmask/exclude on specific elements using `sensitivityRules`.
+      They are in the format of `sensitivityRules: [{ type: 'mask' | 'unmask' | 'exclude', selector: '<css selector>' }]`
+        - Example
+        ```typescript
+        SplunkSessionRecorder.init({
+        	app: '<appName>',
+        	realm: '<realm>',
+        	rumAccessToken: '<token>',
+        	recorder: 'splunk',
+        	sensitivityRules: [
+        		{ type: 'unmask', selector: 'p' },
+        		{ type: 'exclude', selector: 'img' },
+        		{ type: 'mask', selector: '.user-class' },
+        		{ type: 'exclude', selector: '#user-detail' },
+        	],
+        })
+        ```
+    - Session replay is missing assets like fonts or images. It can be solved by packing assets into the recordings. It might increase data throughput. Utilize `features.packAssets` and `features.cacheAssets`.
+        - Example
+            ```typescript
+            SplunkSessionRecorder.init({
+            	app: '<appName>',
+            	realm: '<realm>',
+            	rumAccessToken: '<token>',
+            	recorder: 'splunk',
+            	features: {
+            		packAssets: true,
+            		cacheAssets: true,
+            	},
+            })
+            ```
+    - Canvas element capturing must be enabled using `features.canvas`.
+        - Example
+        ```typescript
+        SplunkSessionRecorder.init({
+        	app: '<appName>',
+        	realm: '<realm>',
+        	rumAccessToken: '<token>',
+        	recorder: 'splunk',
+        	features: {
+        		canvas: true,
+        	},
+        })
+        ```
+    - Video element capturing must be enabled using `features.video`. - Example
+        ```typescript
+        SplunkSessionRecorder.init({
+        	app: '<appName>',
+        	realm: '<realm>',
+        	rumAccessToken: '<token>',
+        	recorder: 'splunk',
+        	features: {
+        		video: true,
+        	},
+        })
+        ```
+- Internal
+    - Updated dependencies
+    - Improved release scripts [#1123](https://github.com/signalfx/splunk-otel-js-web/pull/1123)
+    - switch to using `pnpm` [#1182](https://github.com/signalfx/splunk-otel-js-web/pull/1182) and use `turborepo` [#1188](https://github.com/signalfx/splunk-otel-js-web/pull/1188)
+
 ## 0.22.0
 
 - @splunk/rum-build-plugins
