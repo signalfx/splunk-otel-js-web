@@ -1,15 +1,16 @@
 # Next.js client instrumentation
 
-This package provides an example of how to instrument a Next.js application with Splunk. 
+This package provides an example of how to instrument a Next.js application with Splunk.
 It focuses on the client-side instrumentation of the application.
 The package contains simple application bootstrapped using [`npx create-next-app@latest` command](https://nextjs.org/docs/app/getting-started/installation).
 
 There are two ways to instrument a Next.js application:
+
 - [Using the Splunk CDN (**recommended**)](#using-the-splunk-cdn-recommended)
 - [Using the NPM package](#using-the-npm-package)
 
-
 ### Prerequisites
+
 Set up an [environment variables](./.env.example). Create `.env` file in the root with the following content:
 
 ```env
@@ -23,8 +24,9 @@ NEXT_PUBLIC_SPLUNK_CDN_VERSION=
 ```
 
 ## Using the Splunk CDN (Recommended)
-The process of instrumenting a Next.js application with the Splunk CDN is straightforward. 
-You just need to add the Splunk CDN script to your application. 
+
+The process of instrumenting a Next.js application with the Splunk CDN is straightforward.
+You just need to add the Splunk CDN script to your application.
 You can do that by adjusting the [`_layout.tsx` file in your Next.js application](./app/layout.tsx). See the example below:
 
 ```tsx
@@ -78,7 +80,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 ## Using the NPM package
 
 To instrument a Next.js application with the Splunk NPM package,
-you need to adjust the next.config.js file in your Next.js application. 
+you need to adjust the next.config.js file in your Next.js application.
 You need to insert the Splunk instrumentation script to all client side code.
 
 Override the webpack configuration in your [`next.config.js` file with the following content](./next.config.ts):
