@@ -122,28 +122,6 @@ const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
 	rumAccessToken: undefined,
 }
 
-function migrateConfigOption(
-	config: SplunkOtelWebConfig,
-	from: keyof SplunkOtelWebConfig,
-	to: keyof SplunkOtelWebConfig,
-) {
-	if (from in config && !(to in config && config[to] !== OPTIONS_DEFAULTS[to])) {
-		// @ts-expect-error There's no way to type this right
-		config[to] = config[from]
-	}
-}
-
-/**
- * Update configuration based on configuration option renames
- */
-function migrateConfig(config: SplunkOtelWebConfig) {
-	migrateConfigOption(config, 'app', 'applicationName')
-	migrateConfigOption(config, 'beaconUrl', 'beaconEndpoint')
-	migrateConfigOption(config, 'environment', 'deploymentEnvironment')
-	migrateConfigOption(config, 'rumAuth', 'rumAccessToken')
-	return config
-}
-
 const INSTRUMENTATIONS = [
 	{ Instrument: SplunkDocumentLoadInstrumentation, confKey: 'document', disable: false },
 	{ Instrument: SplunkXhrPlugin, confKey: 'xhr', disable: false },
@@ -343,14 +321,9 @@ export const SplunkRum: SplunkOtelWebType = {
 
 		eventTarget = new InternalEventTarget()
 
-		const processedOptions: SplunkOtelWebConfigInternal = Object.assign(
-			{},
-			OPTIONS_DEFAULTS,
-			migrateConfig(options),
-			{
-				exporter: Object.assign({}, OPTIONS_DEFAULTS.exporter, options.exporter),
-			},
-		)
+		const processedOptions: SplunkOtelWebConfigInternal = Object.assign({}, OPTIONS_DEFAULTS, options, {
+			exporter: Object.assign({}, OPTIONS_DEFAULTS.exporter, options.exporter),
+		})
 
 		if (
 			!processedOptions.persistence ||
@@ -601,14 +574,6 @@ export const SplunkRum: SplunkOtelWebType = {
 
 	removeEventListener(name, callback): void {
 		eventTarget?.removeEventListener(name, callback)
-	},
-
-	_experimental_addEventListener(name, callback): void {
-		return this.addEventListener(name, callback)
-	},
-
-	_experimental_removeEventListener(name, callback): void {
-		return this.removeEventListener(name, callback)
 	},
 
 	setUserTrackingMode(mode: UserTrackingMode) {

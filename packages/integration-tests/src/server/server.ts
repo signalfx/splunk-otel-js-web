@@ -106,7 +106,6 @@ fastify.get('/', (request, reply) => {
 
 fastify.get<{
 	Querystring: {
-		_experimental_longtaskNoStartSession?: string
 		beaconEndpoint?: string
 		disableInstrumentation?: string
 		forceSessionId?: string
