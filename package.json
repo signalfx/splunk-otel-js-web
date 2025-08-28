@@ -1,7 +1,7 @@
 {
 	"name": "@splunk/otel-web-dev-root",
 	"private": true,
-	"version": "0.23.1-alpha.2",
+	"version": "0.23.1",
 	"engines": {
 		"node": ">=22",
 		"pnpm": ">=10"
@@ -14,7 +14,7 @@
 		"lint:fix": "run-p lint:eslint:fix lint:prettier:fix lint:markdown:fix",
 		"lint:eslint": "eslint .",
 		"lint:eslint:fix": "pnpm run lint:eslint --fix",
-		"lint:prettier": "prettier --ignore-path .gitignore --check '**/*.{json,yml,html,css}'",
+		"lint:prettier": "prettier --ignore-path .gitignore --check '**/*.{json,yml,html,css,md}'",
 		"lint:prettier:fix": "pnpm run lint:prettier --write",
 		"lint:markdown": "markdownlint *.md docs/*.md --ignore CHANGELOG.md",
 		"lint:markdown:fix": "pnpm run lint:markdown --fix",
