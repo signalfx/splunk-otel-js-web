@@ -91,16 +91,6 @@ export class InternalEventTarget {
 }
 
 export interface SplunkOtelWebEventTarget {
-	/**
-	 * @deprecated Use {@link addEventListener}
-	 */
-	_experimental_addEventListener: InternalEventTarget['addEventListener']
-
-	/**
-	 * @deprecated Use {@link removeEventListener}
-	 */
-	_experimental_removeEventListener: InternalEventTarget['removeEventListener']
-
 	addEventListener: InternalEventTarget['addEventListener']
 
 	removeEventListener: InternalEventTarget['removeEventListener']
