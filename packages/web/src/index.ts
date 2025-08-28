@@ -498,7 +498,7 @@ export const SplunkRum: SplunkOtelWebType = {
 					Instrument === SplunkLongTaskInstrumentation
 						? new Instrument(pluginConf, options)
 						: // @ts-expect-error Can't mark in any way that processedOptions.instrumentations[confKey] is of specifc config type
-							new Instrument(pluginConf)
+							new Instrument(pluginConf, options)
 
 				if (confKey === ERROR_INSTRUMENTATION_NAME && instrumentation instanceof SplunkErrorInstrumentation) {
 					_errorInstrumentation = instrumentation

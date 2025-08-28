@@ -15,22 +15,14 @@
  * limitations under the License.
  *
  */
-module.exports = [
-	{
-		limit: '3 kB',
-		name: 'artifacts/otel-api-globals.js',
-		path: './packages/web/dist/artifacts/otel-api-globals.js',
-	},
 
-	{
-		limit: '48 kB',
-		name: 'artifacts/splunk-otel-web.js',
-		path: './packages/web/dist/artifacts/splunk-otel-web.js',
-	},
+export const safelyAccessFrameElementFromDocument = (documentNode: Document) => {
+	let frameElement = null
+	try {
+		frameElement = documentNode.defaultView?.frameElement ?? null
+	} catch {
+		// Accessing frameElement from cross-origin iframe might throw Access Denied error in some browsers
+	}
 
-	{
-		limit: '109 kB',
-		name: 'artifacts/splunk-otel-web-session-recorder.js',
-		path: './packages/session-recorder/dist/artifacts/splunk-otel-web-session-recorder.js',
-	},
-]
+	return frameElement
+}
