@@ -17,12 +17,9 @@
  */
 import { migrateRRWebConfigToSplunkConfig } from './migrations/config-migration'
 import { SplunkRecorderPublicConfig } from './splunk-recorder'
-import { RRWebRecorderPublicConfig } from './rrweb-recorder'
 import { mergeRecorderConfig } from './migrations/config-merge'
 
-export const getSplunkRecorderConfig = (
-	config: SplunkRecorderPublicConfig & RRWebRecorderPublicConfig,
-): SplunkRecorderPublicConfig => {
+export const getSplunkRecorderConfig = (config: SplunkRecorderPublicConfig): SplunkRecorderPublicConfig => {
 	const migratedRRWebConfig = migrateRRWebConfigToSplunkConfig(config)
 	return mergeRecorderConfig(config, migratedRRWebConfig)
 }

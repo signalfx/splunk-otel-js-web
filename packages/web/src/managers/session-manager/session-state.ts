@@ -16,14 +16,11 @@
  *
  */
 
-export type RecorderType = 'rrweb' | 'splunk'
-
 export type SessionState = {
 	expiresAt: number
 	id: string
-	rt?: RecorderType
 	startTime: number
 	state: 'active' | 'native' | 'expired-inactivity' | 'expired-duration'
 }
 
-export type PersistedSessionState = Pick<SessionState, 'expiresAt' | 'rt' | 'id' | 'startTime'>
+export type PersistedSessionState = Pick<SessionState, 'expiresAt' | 'id' | 'startTime'>

@@ -101,7 +101,6 @@ export class SplunkRecorder extends RecorderBase {
 		const context: RecorderEmitContext = {
 			data: plainSegment,
 			startTime: plainSegment.metadata.startUnixMs,
-			type: 'splunk',
 		}
 
 		this.onEmit(context)

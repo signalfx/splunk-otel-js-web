@@ -16,15 +16,14 @@
  *
  */
 import { SplunkRecorderPublicConfig } from '../splunk-recorder'
-import { RRWebRecorderPublicConfig } from '../rrweb-recorder'
 import { SensitivityRule, SensitivityRuleType, ConfigFeatures, PackAssetsConfig } from '../../session-replay'
 import { isString } from '../../type-guards'
 
 export const migrateRRWebConfigToSplunkConfig = (
-	config: NonNullable<RRWebRecorderPublicConfig>,
+	config: NonNullable<Record<string, unknown>>,
 ): SplunkRecorderPublicConfig => ({
 	features: migrateConfigToFeatures(config),
-	maskAllInputs: config.maskAllInputs,
+	maskAllInputs: config.maskAllInput === undefined ? true : Boolean(config.maskAllInput),
 	sensitivityRules: migratePrivacyOptionsToSensitivityRules(config),
 })
 
@@ -33,7 +32,7 @@ const migrateConfigToFeatures = ({
 	inlineStylesheet,
 	inlineImages,
 	collectFonts,
-}: NonNullable<RRWebRecorderPublicConfig>): ConfigFeatures | undefined => {
+}: NonNullable<Record<string, unknown>>): ConfigFeatures | undefined => {
 	const features: ConfigFeatures = {}
 	const packAssets: PackAssetsConfig = {}
 
@@ -69,7 +68,7 @@ const migratePrivacyOptionsToSensitivityRules = ({
 	maskInputFn,
 	maskTextFn,
 	maskInputOptions,
-}: NonNullable<RRWebRecorderPublicConfig>): SensitivityRule[] | undefined => {
+}: NonNullable<Record<string, unknown>>): SensitivityRule[] | undefined => {
 	if (maskInputFn) {
 		throwOnUnsupportedOption('Config option "maskInputFn" cannot be migrated automatically.')
 	}
@@ -98,7 +97,7 @@ const migratePrivacyOptionsToSensitivityRules = ({
 	return rules.length > 0 ? rules : undefined
 }
 
-const migratePrivacyClass = (privacyClass: string | RegExp, rule: SensitivityRuleType): SensitivityRule[] => {
+const migratePrivacyClass = (privacyClass: unknown, rule: SensitivityRuleType): SensitivityRule[] => {
 	const rules: SensitivityRule[] = []
 
 	if (isString(privacyClass)) {
@@ -111,7 +110,7 @@ const migratePrivacyClass = (privacyClass: string | RegExp, rule: SensitivityRul
 	return rules
 }
 
-const migratePrivacySelector = (privacySelector: string | undefined, rule: SensitivityRuleType): SensitivityRule[] => {
+const migratePrivacySelector = (privacySelector: unknown, rule: SensitivityRuleType): SensitivityRule[] => {
 	if (isString(privacySelector) && privacySelector.length > 0) {
 		return [{ rule, selector: privacySelector }]
 	}

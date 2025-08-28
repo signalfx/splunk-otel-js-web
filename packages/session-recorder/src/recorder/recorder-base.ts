@@ -18,7 +18,6 @@
 export interface RecorderEmitContext {
 	data: Record<string, unknown>
 	startTime: number
-	type: 'splunk' | 'rrweb'
 }
 
 export interface RecorderConfig {
