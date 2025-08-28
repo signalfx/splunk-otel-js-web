@@ -72,6 +72,11 @@ export function isPersistenceType(value: string): value is PersistenceType {
 	return ['cookie', 'localStorage'].includes(value)
 }
 
+type SensitivityRule = {
+	rule: 'mask' | 'unmask' | 'exclude'
+	selector: string
+}
+
 export interface SplunkOtelWebConfig {
 	/** Allows http beacon urls */
 	allowInsecureBeacon?: boolean
@@ -132,6 +137,17 @@ export interface SplunkOtelWebConfig {
 	 * If not specified, `'cookie'` will be used as the default storage method.
 	 */
 	persistence?: PersistenceType
+
+	/**
+	 * Configuration for privacy regarding collecting text from clicks.
+	 * - `'maskAllText'` (default: true): Masks all text from text nodes, unless unmask rule applies.
+	 * - `'sensitivityRules'`: Array of rules for determining sensitivity of text in the document. Rules are applied
+	 *   based on CSS selectors. The later rules override the earlier ones.
+	 */
+	privacy?: {
+		maskAllText: boolean
+		sensitivityRules: SensitivityRule[]
+	}
 
 	/**
 	 * The name of your organization’s realm. Automatically configures beaconUrl with correct URL
