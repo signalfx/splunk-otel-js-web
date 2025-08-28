@@ -106,6 +106,7 @@ export class SplunkZipkinExporter implements SpanExporter {
 		}
 
 		if (spans.length === 0) {
+			resultCallback({ code: ExportResultCode.SUCCESS })
 			return
 		}
 

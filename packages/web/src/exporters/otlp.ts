@@ -62,6 +62,7 @@ export class SplunkOTLPTraceExporter extends OTLPTraceExporter {
 		})
 
 		if (items.length === 0) {
+			onSuccess()
 			return
 		}
 
