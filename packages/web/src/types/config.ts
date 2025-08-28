@@ -26,6 +26,7 @@ import { WebVitalsInstrumentationConfig } from '../webvitals'
 import { XMLHttpRequestInstrumentationConfig } from '@opentelemetry/instrumentation-xml-http-request'
 import { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { SplunkErrorInstrumentationConfig } from '../SplunkErrorInstrumentation'
+import { PrivacyManagerConfig } from '../upstream/user-interaction/privacy/privacy-manager'
 
 export interface SplunkOtelWebOptionsInstrumentations {
 	connectivity?: boolean | InstrumentationConfig
@@ -156,6 +157,8 @@ export interface SplunkOtelWebConfig {
 	 * If not specified, `'cookie'` will be used as the default storage method.
 	 */
 	persistence?: PersistenceType
+
+	privacy?: PrivacyManagerConfig
 
 	/**
 	 * The name of your organization’s realm. Automatically configures beaconUrl with correct URL
