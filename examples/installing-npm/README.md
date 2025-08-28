@@ -1,6 +1,7 @@
 # Installing via NPM
 
 ## Checking out this example
+
 Run `pnpm install` to install required dependencies.
 
 Run `pnpm run start` to start the example app (requires another shell tab/instance).
@@ -8,7 +9,9 @@ Run `pnpm run start` to start the example app (requires another shell tab/instan
 Open <http://localhost:9100/> to open the app and start producing telemetry data.
 
 ## Sending the data to Splunk Real User Monitoring <a name="backend-config"></a>
+
 Add `rumAccessToken` and change `beaconEndpoint` in the instrumentation initialisation object:
+
 ```js
 SplunkOtelWeb.init({
   ...
@@ -25,23 +28,26 @@ Navigate to <https://app.signalfx.com/o11y/> to see your data.
 ```bash
 pnpm install @splunk/otel-web
 ```
+
 Note: in modern versions of NPM, installed packages are added to `package.json` by default.
 
 Add a file, which will initialise instrumentation (in our case `./src/instrumentation.ts`):
+
 ```js
-import SplunkOtelWeb from '@splunk/otel-web';
+import SplunkOtelWeb from '@splunk/otel-web'
 
 SplunkOtelWeb.init({
-  // we will provision a temporary local backend for testing in a few steps
-  beaconEndpoint: 'http://localhost:9411/api/v2/spans',
-  allowInsecureBeacon: true,
-  applicationName: 'splunk-otel-web-example-npm',
-});
+	// we will provision a temporary local backend for testing in a few steps
+	beaconEndpoint: 'http://localhost:9411/api/v2/spans',
+	allowInsecureBeacon: true,
+	applicationName: 'splunk-otel-web-example-npm',
+})
 ```
 
 Import the newly created file in your root `.ts` file (in our case it's `./src/index.ts`) **above other imports**:
+
 ```js
-import './instrumentation.ts';
+import './instrumentation.ts'
 /* other imports */
 ```
 

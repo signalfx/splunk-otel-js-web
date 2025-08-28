@@ -1,6 +1,6 @@
 {
 	"name": "@splunk/otel-web-session-recorder",
-	"version": "0.23.1-alpha.2",
+	"version": "0.23.1",
 	"description": "Splunk distribution of rrweb for recording session",
 	"repository": "github:signalfx/splunk-otel-js-browser",
 	"scripts": {
@@ -43,7 +43,7 @@
 	},
 	"devDependencies": {
 		"@splunk/otel-web": "workspace:*",
-		"@swc/core": "^1.13.3",
+		"@swc/core": "^1.13.5",
 		"@swc/helpers": "^0.5.17",
 		"fork-ts-checker-webpack-plugin": "^9.1.0",
 		"npm-run-all": "^4.1.5",
@@ -51,7 +51,7 @@
 		"source-map-loader": "^5.0.0",
 		"swc-loader": "^0.2.6",
 		"terser-webpack-plugin": "^5.3.11",
-		"ts-loader": "^9.5.2",
+		"ts-loader": "^9.5.4",
 		"wait-on": "^8.0.4",
 		"webpack": "^5.101.3",
 		"webpack-cli": "^6.0.1",
