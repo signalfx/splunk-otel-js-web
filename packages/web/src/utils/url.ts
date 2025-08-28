@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-export * from './error'
-export * from './node'
-export * from './object'
-export * from './string'
+export const isExtensionUrl = (url: string): boolean =>
+	['chrome-extension://', 'moz-extension://'].some((extensionPrefix) => url.startsWith(extensionPrefix))
+
+export const isBlobUrl = (url: string) => url.startsWith('blob:')

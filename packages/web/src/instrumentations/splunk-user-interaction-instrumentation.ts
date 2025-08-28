@@ -19,6 +19,7 @@
 import { Span, trace, Tracer, TracerProvider } from '@opentelemetry/api'
 import { isUrlIgnored } from '@opentelemetry/core'
 
+import { SplunkOtelWebConfig } from '../types'
 import { UserInteractionInstrumentation } from '../upstream/user-interaction/instrumentation'
 import { UserInteractionInstrumentationConfig } from '../upstream/user-interaction/types'
 
@@ -47,9 +48,18 @@ export const DEFAULT_AUTO_INSTRUMENTED_EVENT_NAMES = Object.keys(
 const ROUTING_INSTRUMENTATION_NAME = 'route'
 const ROUTING_INSTRUMENTATION_VERSION = '1'
 
+type SensitivityRule = {
+	rule: 'mask' | 'unmask' | 'exclude'
+	selector: string
+}
+
 export interface SplunkUserInteractionInstrumentationConfig extends UserInteractionInstrumentationConfig {
 	events?: UserInteractionEventsConfig
 	ignoreUrls?: (string | RegExp)[]
+	privacy?: {
+		maskAllText: boolean
+		sensitivityRules: SensitivityRule[]
+	}
 }
 
 function isPatchableEventListner(listener: Parameters<EventTarget['addEventListener']>[1]) {
@@ -70,7 +80,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 
 	private _routingTracer: Tracer
 
-	constructor(config: SplunkUserInteractionInstrumentationConfig = {}) {
+	constructor(config: SplunkUserInteractionInstrumentationConfig = {}, otelConfig: SplunkOtelWebConfig) {
 		// Prefer otel's eventNames property
 		if (!config.eventNames) {
 			const eventMap = Object.assign({}, DEFAULT_AUTO_INSTRUMENTED_EVENTS, config.events)
@@ -81,7 +91,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 			config.eventNames = eventNames
 		}
 
-		super(config)
+		super(config, otelConfig)
 
 		this._routingTracer = trace.getTracer(ROUTING_INSTRUMENTATION_NAME, ROUTING_INSTRUMENTATION_VERSION)
 
