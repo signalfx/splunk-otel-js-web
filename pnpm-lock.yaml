@@ -37,7 +37,7 @@ importers:
         version: 8.41.0(eslint@9.34.0(jiti@2.5.1))(typescript@5.8.3)
       '@vitest/browser':
         specifier: ^3.2.3
-        version: 3.2.4(playwright@1.55.0)(vite@7.0.0(@types/node@24.3.0)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.4))(vitest@3.2.4)
+        version: 3.2.4(playwright@1.55.0)(vite@7.0.0(@types/node@24.3.0)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.5))(vitest@3.2.4)
       '@vitest/coverage-istanbul':
         specifier: ^3.2.3
         version: 3.2.4(vitest@3.2.4)
@@ -84,8 +84,8 @@ importers:
         specifier: ^4.8.1
         version: 4.8.1
       tsx:
-        specifier: ^4.20.4
-        version: 4.20.4
+        specifier: ^4.20.5
+        version: 4.20.5
       turbo:
         specifier: ^2.5.6
         version: 2.5.6
@@ -97,7 +97,7 @@ importers:
         version: 8.41.0(eslint@9.34.0(jiti@2.5.1))(typescript@5.8.3)
       vitest:
         specifier: ^3.2.3
-        version: 3.2.4(@types/debug@4.1.12)(@types/node@24.3.0)(@vitest/browser@3.2.4)(@vitest/ui@3.2.4)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.4)
+        version: 3.2.4(@types/debug@4.1.12)(@types/node@24.3.0)(@vitest/browser@3.2.4)(@vitest/ui@3.2.4)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.5)
       ws:
         specifier: ^8.18.3
         version: 8.18.3
@@ -224,8 +224,8 @@ importers:
         specifier: ^4.8.1
         version: 4.8.1
       tsx:
-        specifier: ^4.20.4
-        version: 4.20.4
+        specifier: ^4.20.5
+        version: 4.20.5
     devDependencies:
       '@fastify/cors':
         specifier: ^11.1.0
@@ -5571,8 +5571,8 @@ packages:
   tslib@2.8.1:
     resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
 
-  tsx@4.20.4:
-    resolution: {integrity: sha512-yyxBKfORQ7LuRt/BQKBXrpcq59ZvSW0XxwfjAt3w2/8PmdxaFzijtMhTawprSHhpzeM5BgU2hXHG3lklIERZXg==}
+  tsx@4.20.5:
+    resolution: {integrity: sha512-+wKjMNU9w/EaQayHXb7WA7ZaHY6hN8WgfvHNQ3t1PnU91/7O8TcTnIhCDYTZwnt8JsO9IBqZ30Ln1r7pPF52Aw==}
     engines: {node: '>=18.0.0'}
     hasBin: true
 
@@ -8995,16 +8995,16 @@ snapshots:
       '@typescript-eslint/types': 8.41.0
       eslint-visitor-keys: 4.2.1
 
-  '@vitest/browser@3.2.4(playwright@1.55.0)(vite@7.0.0(@types/node@24.3.0)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.4))(vitest@3.2.4)':
+  '@vitest/browser@3.2.4(playwright@1.55.0)(vite@7.0.0(@types/node@24.3.0)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.5))(vitest@3.2.4)':
     dependencies:
       '@testing-library/dom': 10.4.0
       '@testing-library/user-event': 14.6.1(@testing-library/dom@10.4.0)
-      '@vitest/mocker': 3.2.4(vite@7.0.0(@types/node@24.3.0)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.4))
+      '@vitest/mocker': 3.2.4(vite@7.0.0(@types/node@24.3.0)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.5))
       '@vitest/utils': 3.2.4
       magic-string: 0.30.17
       sirv: 3.0.1
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@24.3.0)(@vitest/browser@3.2.4)(@vitest/ui@3.2.4)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.4)
+      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@24.3.0)(@vitest/browser@3.2.4)(@vitest/ui@3.2.4)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.5)
       ws: 8.18.3
     optionalDependencies:
       playwright: 1.55.0
@@ -9026,7 +9026,7 @@ snapshots:
       magicast: 0.3.5
       test-exclude: 7.0.1
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@24.3.0)(@vitest/browser@3.2.4)(@vitest/ui@3.2.4)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.4)
+      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@24.3.0)(@vitest/browser@3.2.4)(@vitest/ui@3.2.4)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.5)
     transitivePeerDependencies:
       - supports-color
 
@@ -9038,13 +9038,13 @@ snapshots:
       chai: 5.2.0
       tinyrainbow: 2.0.0
 
-  '@vitest/mocker@3.2.4(vite@7.0.0(@types/node@24.3.0)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.4))':
+  '@vitest/mocker@3.2.4(vite@7.0.0(@types/node@24.3.0)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.5))':
     dependencies:
       '@vitest/spy': 3.2.4
       estree-walker: 3.0.3
       magic-string: 0.30.17
     optionalDependencies:
-      vite: 7.0.0(@types/node@24.3.0)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.4)
+      vite: 7.0.0(@types/node@24.3.0)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.5)
 
   '@vitest/pretty-format@3.2.4':
     dependencies:
@@ -9075,7 +9075,7 @@ snapshots:
       sirv: 3.0.1
       tinyglobby: 0.2.14
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@24.3.0)(@vitest/browser@3.2.4)(@vitest/ui@3.2.4)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.4)
+      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@24.3.0)(@vitest/browser@3.2.4)(@vitest/ui@3.2.4)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.5)
 
   '@vitest/utils@3.2.4':
     dependencies:
@@ -12441,7 +12441,7 @@ snapshots:
 
   tslib@2.8.1: {}
 
-  tsx@4.20.4:
+  tsx@4.20.5:
     dependencies:
       esbuild: 0.25.9
       get-tsconfig: 4.10.1
@@ -12599,13 +12599,13 @@ snapshots:
 
   vary@1.1.2: {}
 
-  vite-node@3.2.4(@types/node@24.3.0)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.4):
+  vite-node@3.2.4(@types/node@24.3.0)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.5):
     dependencies:
       cac: 6.7.14
       debug: 4.4.1(supports-color@5.5.0)
       es-module-lexer: 1.7.0
       pathe: 2.0.3
-      vite: 7.0.0(@types/node@24.3.0)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.4)
+      vite: 7.0.0(@types/node@24.3.0)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.5)
     transitivePeerDependencies:
       - '@types/node'
       - jiti
@@ -12620,7 +12620,7 @@ snapshots:
       - tsx
       - yaml
 
-  vite@7.0.0(@types/node@24.3.0)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.4):
+  vite@7.0.0(@types/node@24.3.0)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.5):
     dependencies:
       esbuild: 0.25.9
       fdir: 6.4.6(picomatch@4.0.3)
@@ -12633,13 +12633,13 @@ snapshots:
       fsevents: 2.3.3
       jiti: 2.5.1
       terser: 5.43.1
-      tsx: 4.20.4
+      tsx: 4.20.5
 
-  vitest@3.2.4(@types/debug@4.1.12)(@types/node@24.3.0)(@vitest/browser@3.2.4)(@vitest/ui@3.2.4)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.4):
+  vitest@3.2.4(@types/debug@4.1.12)(@types/node@24.3.0)(@vitest/browser@3.2.4)(@vitest/ui@3.2.4)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.5):
     dependencies:
       '@types/chai': 5.2.2
       '@vitest/expect': 3.2.4
-      '@vitest/mocker': 3.2.4(vite@7.0.0(@types/node@24.3.0)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.4))
+      '@vitest/mocker': 3.2.4(vite@7.0.0(@types/node@24.3.0)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.5))
       '@vitest/pretty-format': 3.2.4
       '@vitest/runner': 3.2.4
       '@vitest/snapshot': 3.2.4
@@ -12657,13 +12657,13 @@ snapshots:
       tinyglobby: 0.2.14
       tinypool: 1.1.1
       tinyrainbow: 2.0.0
-      vite: 7.0.0(@types/node@24.3.0)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.4)
-      vite-node: 3.2.4(@types/node@24.3.0)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.4)
+      vite: 7.0.0(@types/node@24.3.0)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.5)
+      vite-node: 3.2.4(@types/node@24.3.0)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.5)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/debug': 4.1.12
       '@types/node': 24.3.0
-      '@vitest/browser': 3.2.4(playwright@1.55.0)(vite@7.0.0(@types/node@24.3.0)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.4))(vitest@3.2.4)
+      '@vitest/browser': 3.2.4(playwright@1.55.0)(vite@7.0.0(@types/node@24.3.0)(jiti@2.5.1)(terser@5.43.1)(tsx@4.20.5))(vitest@3.2.4)
       '@vitest/ui': 3.2.4(vitest@3.2.4)
     transitivePeerDependencies:
       - jiti
