@@ -83,7 +83,6 @@ describe('migrateRRWebConfigToSplunkConfig', () => {
 
 		// Boolean
 		const actualBool = migrateRRWebConfigToSplunkConfig({
-			// @ts-expect-error Boolean value
 			maskTextSelector: false,
 		})
 		const expectedBool = {
