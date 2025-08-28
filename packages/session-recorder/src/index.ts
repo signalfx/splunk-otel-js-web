@@ -26,7 +26,7 @@ import type { Resource } from '@opentelemetry/resources'
 import type { SplunkOtelWebType } from '@splunk/otel-web'
 import { JsonObject } from 'type-fest'
 
-import { Recorder, RecorderType, RRWebRecorderPublicConfig, SplunkRecorderPublicConfig } from './recorder'
+import { Recorder, RecorderType, SplunkRecorderPublicConfig } from './recorder'
 import { log } from './log'
 
 interface BasicTracerProvider extends TracerProvider {
@@ -53,8 +53,7 @@ export type SplunkRumRecorderConfig = {
 	 * with only RUM scope as it's visible to every user of your app
 	 **/
 	rumAccessToken?: string
-} & RRWebRecorderPublicConfig &
-	SplunkRecorderPublicConfig
+} & SplunkRecorderPublicConfig
 
 let inited: true | false | undefined = false
 let tracer: Tracer
@@ -116,32 +115,11 @@ const SplunkRumRecorder = {
 
 		const resource = SplunkRum.resource
 
-		const {
-			beaconEndpoint,
-			realm,
-			rumAccessToken,
-			recorder: recorderType = 'rrweb',
-			...initRecorderConfig
-		} = config
-		const isSplunkRecorder = recorderType === 'splunk'
-
-		if (recorderType === 'rrweb' && SplunkRum.userTrackingMode === 'anonymousTracking') {
-			log.error(
-				'SplunkSessionRecorder: Using rrweb recorder with anonymous tracking mode is not supported. Please use splunk recorder instead. Session recording will not be initialized.',
-			)
-			return
-		}
-
-		// TODO: Handle recorder type change (splunk -> rrweb or rrweb -> splunk)
-		// SplunkRum._internalCheckSessionRecorderType(recorderType)
+		const { beaconEndpoint, realm, rumAccessToken, ...initRecorderConfig } = config
 
 		// Mark recorded session as splunk
 		if (SplunkRum.provider) {
-			const sessionReplayAttribute = isSplunkRecorder ? 'splunk' : 'rrweb'
-			SplunkRum.provider.resource.attributes['splunk.sessionReplay'] = sessionReplayAttribute
-			log.debug(
-				`SplunkSessionRecorder: splunk.sessionReplay resource attribute set to '${sessionReplayAttribute}'.`,
-			)
+			SplunkRum.provider.resource.attributes['splunk.sessionReplay'] = 'splunk'
 		}
 
 		tracer = trace.getTracer('splunk.rr-web', VERSION)
@@ -189,7 +167,7 @@ const SplunkRumRecorder = {
 				return newAttributes
 			},
 			sessionId: SplunkRum.getSessionId() ?? '',
-			usePersistentExportQueue: isSplunkRecorder,
+			usePersistentExportQueue: true,
 		})
 		const processor = new BatchLogProcessor(exporter)
 
@@ -202,7 +180,6 @@ const SplunkRumRecorder = {
 				recorder?.stop()
 				recorder = new Recorder({
 					initRecorderConfig,
-					isSplunkRecorder,
 					processor,
 				})
 				recorder.start()
@@ -212,7 +189,6 @@ const SplunkRumRecorder = {
 		try {
 			recorder = new Recorder({
 				initRecorderConfig,
-				isSplunkRecorder,
 				processor,
 			})
 			recorder.start()
