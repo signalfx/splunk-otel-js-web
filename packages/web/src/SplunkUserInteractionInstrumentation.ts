@@ -22,6 +22,7 @@ import { UserInteractionInstrumentation } from './upstream/user-interaction/inst
 import { UserInteractionInstrumentationConfig } from './upstream/user-interaction/types'
 // import { UserInteractionInstrumentationConfig } from '@opentelemetry/instrumentation-user-interaction/build/src/types';
 import { isUrlIgnored } from '@opentelemetry/core'
+import { SplunkOtelWebConfig } from './types'
 
 export type UserInteractionEventsConfig = {
 	[type: string]: boolean
@@ -78,7 +79,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 
 	private _routingTracer: Tracer
 
-	constructor(config: SplunkUserInteractionInstrumentationConfig = {}) {
+	constructor(config: SplunkUserInteractionInstrumentationConfig = {}, otelConfig: SplunkOtelWebConfig) {
 		// Prefer otel's eventNames property
 		if (!config.eventNames) {
 			const eventMap = Object.assign({}, DEFAULT_AUTO_INSTRUMENTED_EVENTS, config.events)
@@ -89,7 +90,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 			config.eventNames = eventNames
 		}
 
-		super(config)
+		super(config, otelConfig)
 
 		this._routingTracer = trace.getTracer(ROUTING_INSTRUMENTATION_NAME, ROUTING_INSTRUMENTATION_VERSION)
 

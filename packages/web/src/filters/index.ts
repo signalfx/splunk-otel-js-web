@@ -15,7 +15,4 @@
  * limitations under the License.
  *
  */
-export * from './error'
-export * from './string'
 export * from './node'
-export * from './object'
