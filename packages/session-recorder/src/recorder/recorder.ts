@@ -19,7 +19,6 @@ import { SplunkRecorder } from './splunk-recorder'
 import { context } from '@opentelemetry/api'
 import { suppressTracing } from '@opentelemetry/core'
 import { getSplunkRecorderConfig } from './config'
-import { RRWebRecorder } from './rrweb-recorder'
 import { RecorderBase, RecorderEmitContext } from './recorder-base'
 import { SplunkRumRecorderConfig } from '../index'
 import { log } from '../log'
@@ -35,8 +34,6 @@ const decoder = new TextDecoder()
 export class Recorder {
 	private eventCounter = 1
 
-	private readonly isSplunkRecorder: boolean
-
 	private logCounter = 1
 
 	private readonly processor: BatchLogProcessor
@@ -45,30 +42,25 @@ export class Recorder {
 
 	constructor({
 		initRecorderConfig,
-		isSplunkRecorder,
 		processor,
 	}: {
 		initRecorderConfig: Omit<SplunkRumRecorderConfig, 'realm' | 'recorder' | 'rumAccessToken' | 'beaconEndpoint'>
-		isSplunkRecorder: boolean
 		processor: BatchLogProcessor
 	}) {
-		this.isSplunkRecorder = isSplunkRecorder
 		this.processor = processor
-		this.recorder = isSplunkRecorder
-			? new SplunkRecorder({
-					originalFetch: (...args) =>
-						new Promise((resolve, reject) => {
-							context.with(suppressTracing(context.active()), () => {
-								window
-									.fetch(...args)
-									.then(resolve)
-									.catch(reject)
-							})
-						}),
-					...getSplunkRecorderConfig(initRecorderConfig),
-					onEmit: this.onEmit,
-				})
-			: new RRWebRecorder({ ...initRecorderConfig, onEmit: this.onEmit })
+		this.recorder = new SplunkRecorder({
+			originalFetch: (...args) =>
+				new Promise((resolve, reject) => {
+					context.with(suppressTracing(context.active()), () => {
+						window
+							.fetch(...args)
+							.then(resolve)
+							.catch(reject)
+					})
+				}),
+			...getSplunkRecorderConfig(initRecorderConfig),
+			onEmit: this.onEmit,
+		})
 	}
 
 	resume() {
@@ -84,14 +76,12 @@ export class Recorder {
 	}
 
 	private onEmit = (emitContext: RecorderEmitContext) => {
-		const time = emitContext.type === 'splunk' ? Math.floor(emitContext.startTime) : emitContext.startTime
+		const time = Math.floor(emitContext.startTime)
 		const eventI = this.eventCounter
 
 		this.eventCounter += 1
 
-		const body = encoder.encode(
-			JSON.stringify(emitContext.type === 'splunk' ? emitContext.data.data : emitContext.data),
-		)
+		const body = encoder.encode(JSON.stringify(emitContext.data.data))
 
 		const totalC = Math.ceil(body.byteLength / MAX_CHUNK_SIZE)
 
@@ -106,9 +96,7 @@ export class Recorder {
 				'rr-web.total-chunks': totalC,
 			}
 
-			if (emitContext.type === 'splunk') {
-				dataToConvert['segmentMetadata'] = JSON.stringify(emitContext.data.metadata)
-			}
+			dataToConvert['segmentMetadata'] = JSON.stringify(emitContext.data.metadata)
 
 			const logData = convert(decoder.decode(body.slice(start, end)), time, dataToConvert)
 
@@ -117,9 +105,7 @@ export class Recorder {
 			log.debug('Emitting log', logData)
 
 			this.processor.onEmit(logData)
-			if (this.isSplunkRecorder) {
-				void this.processor.forceFlush()
-			}
+			void this.processor.forceFlush()
 		}
 	}
 }
