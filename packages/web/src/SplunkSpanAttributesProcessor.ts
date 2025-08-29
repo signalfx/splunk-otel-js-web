@@ -20,12 +20,13 @@ import { Attributes } from '@opentelemetry/api'
 import { Span, SpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { forgetAnonymousId, getOrCreateAnonymousId } from './user-tracking'
 import { UserTrackingMode } from './types/config'
-import { updateSessionStatus } from './session'
+import { SessionManager } from './managers'
 
 export class SplunkSpanAttributesProcessor implements SpanProcessor {
 	private readonly _globalAttributes: Attributes
 
 	constructor(
+		private sessionManager: SessionManager,
 		globalAttributes: Attributes,
 		private useLocalStorageForSessionMetadata: boolean,
 		private getUserTracking: () => UserTrackingMode,
@@ -47,12 +48,14 @@ export class SplunkSpanAttributesProcessor implements SpanProcessor {
 	}
 
 	onStart(span: Span): void {
-		// now that we have started the span, the session is not inactive anymore
-		const sessionState = updateSessionStatus({ forceStore: false, inactive: false })
-
 		span.setAttribute('location.href', location.href)
 		span.setAttributes(this._globalAttributes)
-		span.setAttribute('splunk.rumSessionId', sessionState.id)
+
+		const sessionState = this.sessionManager.getSessionState()
+
+		if (sessionState.state !== 'expired-duration') {
+			span.setAttribute('splunk.rumSessionId', sessionState.id)
+		}
 
 		if (this.getUserTracking() === 'anonymousTracking') {
 			span.setAttribute(

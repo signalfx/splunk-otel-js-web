@@ -15,28 +15,14 @@
  * limitations under the License.
  *
  */
-module.exports = [
-	{
-		name: 'artifacts/otel-api-globals.js',
-		limit: '3 kB',
-		path: './packages/web/dist/artifacts/otel-api-globals.js',
-	},
 
-	{
-		name: 'artifacts/splunk-otel-web.js',
-		limit: '47 kB',
-		path: './packages/web/dist/artifacts/splunk-otel-web.js',
-	},
+export const isTrustedEvent = (eventToCheck: Event): boolean => {
+	// Some old browsers do not have this property
+	// See more at:
+	// 	https://caniuse.com/?search=isTrusted
+	if (eventToCheck.isTrusted === undefined) {
+		return true
+	}
 
-	{
-		name: 'artifacts/splunk-otel-web-legacy.js',
-		limit: '111 kB',
-		path: './packages/web/dist/artifacts/splunk-otel-web-legacy.js',
-	},
-
-	{
-		name: 'artifacts/splunk-otel-web-session-recorder.js',
-		limit: '109 kB',
-		path: './packages/session-recorder/dist/artifacts/splunk-otel-web-session-recorder.js',
-	},
-]
+	return eventToCheck.isTrusted
+}

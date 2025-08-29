@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-import { safelyGetLocalStorage } from '../storage/local-store'
+import { safelyGetLocalStorage } from '../utils/storage'
 import { generateId } from '../utils'
 
 const KEY = '_splunk_rum_user_anonymousId'

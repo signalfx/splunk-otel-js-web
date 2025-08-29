@@ -18,16 +18,23 @@
 
 import { expect, describe, it } from 'vitest'
 import { SplunkSpanAttributesProcessor } from '../src/SplunkSpanAttributesProcessor'
+import { SessionManager, StorageManager } from '../src/managers'
 
 describe('SplunkSpanAttributesProcessor', () => {
+	const storageManager = new StorageManager({
+		sessionPersistence: 'cookie',
+	})
+	const sessionManager = new SessionManager(storageManager)
+
 	describe('setting global attribute', () => {
 		it('should set attributes via constructor', () => {
 			const processor = new SplunkSpanAttributesProcessor(
+				sessionManager,
 				{
 					key1: 'value1',
 				},
 				false,
-				() => false,
+				() => 'anonymousTracking',
 			)
 
 			expect(processor.getGlobalAttributes()).toStrictEqual({
@@ -37,12 +44,13 @@ describe('SplunkSpanAttributesProcessor', () => {
 
 		it('should patch attributes via .setGlobalAttributes()', () => {
 			const processor = new SplunkSpanAttributesProcessor(
+				sessionManager,
 				{
 					key1: 'value1',
 					key2: 'value2',
 				},
 				false,
-				() => false,
+				() => 'anonymousTracking',
 			)
 
 			processor.setGlobalAttributes({
