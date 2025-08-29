@@ -25,6 +25,12 @@ export interface QueuedLog {
 		resourceLogs: {
 			scopeLogs: {
 				logRecords: {
+					attributes: {
+						key: string
+						value: {
+							stringValue: string
+						}
+					}[]
 					body: {
 						stringValue: string
 					}
@@ -115,17 +121,26 @@ export const removeAssetsFromQueuedLog = (
 		const scopeLogs = log_.scopeLogs || []
 		for (const scopeLog of scopeLogs) {
 			for (const logRecord of scopeLog.logRecords) {
-				log.debug('Processing log record', omit, logRecord.body.stringValue)
+				log.debug('Processing log record', omit, logRecord)
+				const metadata = logRecord.attributes.find((a) => a.key === 'segmentMetadata')
+				if (!metadata) {
+					continue
+				}
+
 				try {
-					const segment = SessionReplay.loadPlainSegment(JSON.parse(logRecord.body.stringValue))
-					logRecord.body.stringValue = JSON.stringify(
-						segment.toPlain({
-							omit,
-						}),
-					)
+					const segment = SessionReplay.loadPlainSegment({
+						...JSON.parse(logRecord.body.stringValue),
+						metadata: JSON.parse(metadata.value.stringValue),
+					})
+					const { metadata: convertedMetadata, ...plainSegment } = segment.toPlain({
+						omit,
+					})
+
+					logRecord.body.stringValue = JSON.stringify(plainSegment)
+					metadata.value.stringValue = JSON.stringify(convertedMetadata)
 					stats = segment.stats()
-				} catch {
-					log.error('Error happened during segment conversion')
+				} catch (error) {
+					log.error('Error happened during segment conversion', error)
 				}
 			}
 		}
