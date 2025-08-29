@@ -279,8 +279,8 @@ importers:
         specifier: ^1.25.1
         version: 1.30.1(@opentelemetry/api@1.9.0)
       core-js:
-        specifier: 3.45.0
-        version: 3.45.0
+        specifier: 3.45.1
+        version: 3.45.1
       fflate:
         specifier: ^0.8.0
         version: 0.8.2
@@ -376,8 +376,8 @@ importers:
         specifier: ^1.25.1
         version: 1.34.0
       core-js:
-        specifier: 3.45.0
-        version: 3.45.0
+        specifier: 3.45.1
+        version: 3.45.1
       regenerator-runtime:
         specifier: ^0.14.1
         version: 0.14.1
@@ -3117,9 +3117,6 @@ packages:
   cookie@1.0.2:
     resolution: {integrity: sha512-9Kr/j4O16ISv8zBBhJoi4bXOYNTkFLOqSL3UDB0njXxCXNezjeyVrJyGOWtgfs/q2km1gwBcfH8q1yEGoMYunA==}
     engines: {node: '>=18'}
-
-  core-js@3.45.0:
-    resolution: {integrity: sha512-c2KZL9lP4DjkN3hk/an4pWn5b5ZefhRJnAc42n6LJ19kSnbeRbdQZE5dSeE2LBol1OwJD3X1BQvFTAsa8ReeDA==}
 
   core-js@3.45.1:
     resolution: {integrity: sha512-L4NPsJlCfZsPeXukyzHFlg/i7IIVwHSItR0wg0FLNqYClJ4MQYTYLbC7EkjKYRLZF2iof2MUgN0EGy7MdQFChg==}
@@ -9572,8 +9569,6 @@ snapshots:
   cookie@0.7.2: {}
 
   cookie@1.0.2: {}
-
-  core-js@3.45.0: {}
 
   core-js@3.45.1: {}
 
