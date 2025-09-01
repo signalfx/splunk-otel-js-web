@@ -37,7 +37,7 @@ test.describe('sampling', () => {
 		)
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'guard-span').length === 1)
 
-		const sessionCookieEncoded = await recordPage.getCookie('_splunk_rum_sid')
+		const sessionCookieEncoded = await recordPage.getCookie('_splunk_rum_sid_test')
 		expect(sessionCookieEncoded).toBeTruthy()
 
 		const sessionCookieRaw = decodeURIComponent(sessionCookieEncoded?.value ?? '')
@@ -52,7 +52,7 @@ test.describe('sampling', () => {
 
 		expect(recordPage.receivedSpans).toHaveLength(0)
 
-		const sessionCookieEncoded = await recordPage.getCookie('_splunk_rum_sid')
+		const sessionCookieEncoded = await recordPage.getCookie('_splunk_rum_sid_test')
 		expect(sessionCookieEncoded).toBeTruthy()
 
 		const sessionCookieRaw = decodeURIComponent(sessionCookieEncoded?.value ?? '')

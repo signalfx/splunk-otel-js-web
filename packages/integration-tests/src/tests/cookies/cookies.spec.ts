@@ -44,7 +44,7 @@ test.describe('cookies', () => {
 			documentFetchSpans[1].tags['splunk.scriptInstance'],
 		)
 
-		const cookie = await recordPage.getCookie('_splunk_rum_sid')
+		const cookie = await recordPage.getCookie('_splunk_rum_sid_test')
 		expect(cookie).toBeTruthy()
 
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
@@ -64,7 +64,7 @@ test.describe('cookies', () => {
 		expect(documentFetchSpans).toHaveLength(1)
 		expect(documentFetchSpans[0].tags['splunk.rumSessionId']).toBeTruthy()
 
-		const cookie = await recordPage.getCookie('_splunk_rum_sid')
+		const cookie = await recordPage.getCookie('_splunk_rum_sid_test')
 		expect(cookie).toBeTruthy()
 		expect(cookie.secure).toBe(true)
 		expect(cookie.sameSite).toBe('None')
@@ -72,13 +72,13 @@ test.describe('cookies', () => {
 
 	test('setting cookieDomain via config sets it on subdomains also', async ({ recordPage }) => {
 		await recordPage.goTo(`http://127.0.0.1.nip.io:3000/cookies/cookies-domain.ejs`)
-		const cookie1 = await recordPage.getCookie('_splunk_rum_sid')
+		const cookie1 = await recordPage.getCookie('_splunk_rum_sid_test')
 		const cookie1Decoded = decodeURIComponent(cookie1?.value ?? '')
 
 		expect(cookie1).toBeTruthy()
 
 		await recordPage.goTo(`http://test.127.0.0.1.nip.io:3000/cookies/cookies-domain.ejs`)
-		const cookie2 = await recordPage.getCookie('_splunk_rum_sid')
+		const cookie2 = await recordPage.getCookie('_splunk_rum_sid_test')
 		const cookie2Decoded = decodeURIComponent(cookie2?.value ?? '')
 
 		expect(cookie2).toBeTruthy()
