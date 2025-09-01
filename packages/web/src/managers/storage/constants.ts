@@ -18,5 +18,5 @@
 
 import { SESSION_INACTIVITY_TIMEOUT_MS } from '../session-manager'
 
-export const SESSION_STORAGE_KEY = '_splunk_rum_sid'
+export const SESSION_STORAGE_KEY = '_splunk_rum_sid_test'
 export const SESSION_EXPIRATION_COOKIE_SEC = SESSION_INACTIVITY_TIMEOUT_MS / 1000
