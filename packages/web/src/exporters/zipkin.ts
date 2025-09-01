@@ -174,14 +174,14 @@ export class SplunkZipkinExporter implements SpanExporter {
 			ended: span.ended,
 			endTime: span.endTime,
 			events: span.events,
-			instrumentationLibrary: span.instrumentationLibrary,
+			instrumentationScope: span.instrumentationScope,
 			kind: span.kind,
 			links: span.links,
 			// todo: once typescript is implemented, conform to ReadableSpan
 			// note: some properties in Span are not enumerable, and as a result cannot be spread or Object.assign'ed
 			name: span.name,
 
-			parentSpanId: span.parentSpanId,
+			parentSpanContext: span.parentSpanContext,
 			resource: span.resource,
 
 			spanContext: span.spanContext.bind(span),
