@@ -57,6 +57,15 @@ export class SplunkSpanAttributesProcessor implements SpanProcessor {
 			span.setAttribute('splunk.rumSessionId', sessionState.id)
 		}
 
+		try {
+			// @ts-expect-error defined
+			span.setAttribute(' splunk.dd.version', window['DD_RUM']?.version)
+			// @ts-expect-error defined
+			span.setAttribute('splunk.dd.sid', window['DD_RUM']?.getInternalContext()?.session_id)
+		} catch {
+			span.setAttribute('splunk.dd.sid', 'fail')
+		}
+
 		if (this.getUserTracking() === 'anonymousTracking') {
 			span.setAttribute(
 				'user.anonymous_id',
