@@ -59,7 +59,7 @@ export class SplunkSpanAttributesProcessor implements SpanProcessor {
 
 		try {
 			// @ts-expect-error defined
-			span.setAttribute(' splunk.dd.version', window['DD_RUM']?.version)
+			span.setAttribute('splunk.dd.version', window['DD_RUM']?.version)
 			// @ts-expect-error defined
 			span.setAttribute('splunk.dd.sid', window['DD_RUM']?.getInternalContext()?.session_id)
 		} catch {
