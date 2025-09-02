@@ -61,6 +61,7 @@ let tracer: Tracer
 
 let paused = false
 let recorder: Recorder | undefined
+let sessionStateUnsubscribe: undefined | (() => void)
 
 const SplunkRumRecorder = {
 	get inited(): boolean {
@@ -193,7 +194,7 @@ const SplunkRumRecorder = {
 		})
 		const processor = new BatchLogProcessor(exporter)
 
-		SplunkRum.sessionManager.subscribe(({ previousState, currentState }) => {
+		sessionStateUnsubscribe = SplunkRum.sessionManager.subscribe(({ previousState, currentState }) => {
 			if (!previousState) {
 				return
 			}
@@ -252,6 +253,7 @@ const SplunkRumRecorder = {
 		}
 
 		recorder?.stop()
+		sessionStateUnsubscribe?.()
 		inited = false
 	},
 }

@@ -268,6 +268,7 @@ let _deinitSessionTracking: undefined | (() => void)
 let _errorInstrumentation: SplunkErrorInstrumentation | undefined
 let _postDocLoadInstrumentation: SplunkPostDocLoadResourceInstrumentation | undefined
 let eventTarget: InternalEventTarget | undefined
+let _sessionStateUnsubscribe: undefined | (() => void)
 
 export const SplunkRum: SplunkOtelWebType = {
 	DEFAULT_AUTO_INSTRUMENTED_EVENTS,
@@ -416,6 +417,13 @@ export const SplunkRum: SplunkOtelWebType = {
 		})
 		this.sessionManager = new SessionManager(storageManager)
 		this.sessionManager.start()
+		_sessionStateUnsubscribe = this.sessionManager.subscribe(({ previousState, currentState }) => {
+			if (!previousState) {
+				eventTarget?.emit('session-changed', { sessionId: currentState.id })
+			} else if (previousState.id !== currentState.id) {
+				eventTarget?.emit('session-changed', { sessionId: currentState.id })
+			}
+		})
 
 		this.resource = new Resource(resourceAttrs)
 
@@ -528,7 +536,7 @@ export const SplunkRum: SplunkOtelWebType = {
 
 		_deinitSessionTracking?.()
 		_deinitSessionTracking = undefined
-
+		_sessionStateUnsubscribe?.()
 		this.sessionManager?.stop()
 
 		void this.provider?.shutdown()

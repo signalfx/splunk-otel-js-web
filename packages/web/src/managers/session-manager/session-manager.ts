@@ -130,7 +130,7 @@ export class SessionManager {
 	}
 
 	subscribe(f: (sessionChangeState: SessionStateChange) => void) {
-		this.sessionStateChange.subscribe(f)
+		return this.sessionStateChange.subscribe(f)
 	}
 
 	private static canContinueUsingSession(session: SessionState) {
