@@ -16,8 +16,9 @@
  *
  */
 import { gzip } from 'fflate'
-import { SessionReplay } from './cdn-module'
+
 import { log } from '../log'
+import { SessionReplay } from './cdn-module'
 
 let isCompressionSupportedCache: boolean | undefined
 

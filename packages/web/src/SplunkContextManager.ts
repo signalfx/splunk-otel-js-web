@@ -18,8 +18,9 @@
 
 import { Context, ContextManager, ROOT_CONTEXT } from '@opentelemetry/api'
 import { unwrap } from 'shimmer'
-import { getOriginalFunction, isFunction, wrapNatively } from './utils'
+
 import { ContextManagerConfig } from './types'
+import { getOriginalFunction, isFunction, wrapNatively } from './utils'
 
 type EventListenerWithOrig = EventListener & { _orig?: EventListener }
 
@@ -180,10 +181,10 @@ export class SplunkContextManager implements ContextManager {
 			return manager.with(context, () => target.apply(this, args))
 		}
 		Object.defineProperty(contextWrapper, 'length', {
-			enumerable: false,
 			configurable: true,
-			writable: false,
+			enumerable: false,
 			value: target.length,
+			writable: false,
 		})
 		return contextWrapper as unknown as T
 	}
@@ -376,14 +377,14 @@ export class SplunkContextManager implements ContextManager {
 
 						// Give each port a field to attach context to
 						Object.defineProperty(this.port1, ATTACHED_CONTEXT_KEY, {
+							enumerable: false,
 							value: null,
 							writable: true,
-							enumerable: false,
 						})
 						Object.defineProperty(this.port2, ATTACHED_CONTEXT_KEY, {
+							enumerable: false,
 							value: null,
 							writable: true,
-							enumerable: false,
 						})
 					}
 				},
@@ -528,9 +529,9 @@ export class SplunkContextManager implements ContextManager {
 						super(...args)
 
 						Object.defineProperty(this, ATTACHED_CONTEXT_KEY, {
+							enumerable: false,
 							value: null,
 							writable: true,
-							enumerable: false,
 						})
 					}
 

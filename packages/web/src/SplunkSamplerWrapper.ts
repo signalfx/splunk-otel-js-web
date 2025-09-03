@@ -16,7 +16,7 @@
  *
  */
 
-import { Context, Link, Attributes, SpanKind } from '@opentelemetry/api'
+import { Attributes, Context, Link, SpanKind } from '@opentelemetry/api'
 import { Sampler, SamplingResult } from '@opentelemetry/sdk-trace-web'
 
 export class SplunkSamplerWrapper implements Sampler {

@@ -16,10 +16,11 @@
  *
  */
 import { expect } from '@playwright/test'
+
 import { test } from '../../utils/test'
 
 test.describe('long task', () => {
-	test('reports a long task', async ({ recordPage, browserName }) => {
+	test('reports a long task', async ({ browserName, recordPage }) => {
 		if (browserName === 'webkit' || browserName === 'firefox') {
 			test.skip()
 		}
@@ -59,7 +60,7 @@ test.describe('long task', () => {
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})
 
-	test('reports buffered longtask', async ({ recordPage, browserName }) => {
+	test('reports buffered longtask', async ({ browserName, recordPage }) => {
 		if (browserName === 'webkit' || browserName === 'firefox') {
 			test.skip()
 		}
@@ -73,7 +74,7 @@ test.describe('long task', () => {
 		expect(longTaskSpans[0].duration, 'Span duration matches longtask duration').toBe(longTaskSpanDuration * 1000)
 	})
 
-	test('can be disabled', async ({ recordPage, browserName }) => {
+	test('can be disabled', async ({ browserName, recordPage }) => {
 		if (browserName === 'webkit' || browserName === 'firefox') {
 			test.skip()
 		}

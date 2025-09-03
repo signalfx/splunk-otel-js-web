@@ -16,7 +16,7 @@
  *
  */
 
-import { propagation, context, trace } from '@opentelemetry/api'
+import { context, propagation, trace } from '@opentelemetry/api'
 import { WebTracerProvider as BaseWebTracerProvider } from '@opentelemetry/sdk-trace-web'
 
 export class SplunkWebTracerProvider extends BaseWebTracerProvider {

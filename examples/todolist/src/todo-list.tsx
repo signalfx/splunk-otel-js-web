@@ -17,6 +17,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react'
+
 import { TodoAdd } from './todo-add'
 import { TodoRow } from './todo-row'
 
@@ -84,13 +85,13 @@ export function TodoList() {
 			})
 
 			const res = await fetch(ENDPOINT + (token ? '?token=' + token : ''), {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
 				body: JSON.stringify({
 					text,
 				}),
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				method: 'POST',
 			})
 
 			if (!res.ok) {
@@ -113,11 +114,11 @@ export function TodoList() {
 	const editItem = useCallback(
 		async (id: string, props: Partial<{ completed: boolean; text: string }>) => {
 			const res = await fetch(ENDPOINT + '/' + id + (token ? '?token=' + token : ''), {
-				method: 'PATCH',
+				body: JSON.stringify(props),
 				headers: {
 					'Content-Type': 'application/json',
 				},
-				body: JSON.stringify(props),
+				method: 'PATCH',
 			})
 
 			if (!res.ok) {

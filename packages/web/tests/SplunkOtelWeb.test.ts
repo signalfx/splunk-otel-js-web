@@ -17,8 +17,9 @@
  */
 
 import { SpanAttributes } from '@opentelemetry/api'
+import { afterEach, describe, expect, it } from 'vitest'
+
 import SplunkRum from '../src'
-import { describe, expect, it, afterEach } from 'vitest'
 import { deinit } from './utils'
 
 describe('SplunkOtelWeb', () => {
@@ -31,10 +32,10 @@ describe('SplunkOtelWeb', () => {
 			SplunkRum.init({
 				applicationName: 'app-name',
 				beaconEndpoint: 'https://beacon',
-				rumAccessToken: '<token>',
 				globalAttributes: {
 					key1: 'value1',
 				},
+				rumAccessToken: '<token>',
 			})
 			expect(SplunkRum.getGlobalAttributes()).toStrictEqual({
 				key1: 'value1',
@@ -45,11 +46,11 @@ describe('SplunkOtelWeb', () => {
 			SplunkRum.init({
 				applicationName: 'app-name',
 				beaconEndpoint: 'https://beacon',
-				rumAccessToken: '<token>',
 				globalAttributes: {
 					key1: 'value1',
 					key2: 'value2',
 				},
+				rumAccessToken: '<token>',
 			})
 
 			SplunkRum.setGlobalAttributes({
@@ -68,11 +69,11 @@ describe('SplunkOtelWeb', () => {
 			SplunkRum.init({
 				applicationName: 'app-name',
 				beaconEndpoint: 'https://beacon',
-				rumAccessToken: '<token>',
 				globalAttributes: {
 					key1: 'value1',
 					key2: 'value2',
 				},
+				rumAccessToken: '<token>',
 			})
 
 			let receivedAttributes: SpanAttributes | undefined

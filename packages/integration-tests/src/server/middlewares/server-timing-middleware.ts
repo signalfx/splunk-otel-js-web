@@ -15,7 +15,8 @@
  * limitations under the License.
  *
  */
-import { FastifyRequest, FastifyReply } from 'fastify'
+import { FastifyReply, FastifyRequest } from 'fastify'
+
 import { setServerTimingHeader } from '../server-timing'
 
 export const serverTimingMiddleware = (

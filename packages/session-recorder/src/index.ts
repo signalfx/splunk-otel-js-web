@@ -17,17 +17,16 @@
  */
 
 import { ProxyTracerProvider, trace, Tracer, TracerProvider } from '@opentelemetry/api'
-import OTLPLogExporter from './OTLPLogExporter'
-import { BatchLogProcessor } from './BatchLogProcessor'
-import { VERSION } from './version'
-import { getGlobal, getSplunkRumVersion } from './utils'
-
 import type { Resource } from '@opentelemetry/resources'
 import type { SplunkOtelWebType } from '@splunk/otel-web'
 import { JsonObject } from 'type-fest'
 
-import { Recorder, RecorderPublicConfig } from './session-replay'
+import { BatchLogProcessor } from './BatchLogProcessor'
 import { log } from './log'
+import OTLPLogExporter from './OTLPLogExporter'
+import { Recorder, RecorderPublicConfig } from './session-replay'
+import { getGlobal, getSplunkRumVersion } from './utils'
+import { VERSION } from './version'
 
 interface BasicTracerProvider extends TracerProvider {
 	readonly resource: Resource
@@ -60,8 +59,14 @@ let recorder: Recorder | undefined
 let sessionStateUnsubscribe: undefined | (() => void)
 
 const SplunkRumRecorder = {
-	get inited(): boolean {
-		return Boolean(inited)
+	deinit(): void {
+		if (!inited) {
+			return
+		}
+
+		recorder?.stop()
+		sessionStateUnsubscribe?.()
+		inited = false
 	},
 
 	init(config: SplunkRumRecorderConfig): void {
@@ -169,7 +174,7 @@ const SplunkRumRecorder = {
 		})
 		const processor = new BatchLogProcessor(exporter)
 
-		sessionStateUnsubscribe = SplunkRum.sessionManager.subscribe(({ previousState, currentState }) => {
+		sessionStateUnsubscribe = SplunkRum.sessionManager.subscribe(({ currentState, previousState }) => {
 			if (!previousState) {
 				return
 			}
@@ -196,6 +201,9 @@ const SplunkRumRecorder = {
 		}
 	},
 
+	get inited(): boolean {
+		return Boolean(inited)
+	},
 	resume(): void {
 		if (!inited) {
 			return
@@ -219,15 +227,6 @@ const SplunkRumRecorder = {
 		}
 
 		paused = true
-	},
-	deinit(): void {
-		if (!inited) {
-			return
-		}
-
-		recorder?.stop()
-		sessionStateUnsubscribe?.()
-		inited = false
 	},
 }
 

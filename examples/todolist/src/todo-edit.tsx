@@ -16,11 +16,11 @@
  *
  */
 
-import { FormEvent, useCallback, useState, KeyboardEvent } from 'react'
+import { FormEvent, KeyboardEvent, useCallback, useState } from 'react'
 
 export function TodoEdit({
-	editText,
 	cancelEditing,
+	editText,
 	item,
 }: {
 	cancelEditing: () => void

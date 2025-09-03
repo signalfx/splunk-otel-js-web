@@ -16,6 +16,7 @@
  *
  */
 import { expect } from '@playwright/test'
+
 import { test } from '../../utils/test'
 
 test.describe('resource observer', () => {
@@ -80,7 +81,7 @@ test.describe('resource observer', () => {
 		expect(imageBlackSpans[0].tags['component']).toBe('document-load')
 	})
 
-	test('should create two spans for non cached resource', async ({ recordPage, browserName }) => {
+	test('should create two spans for non cached resource', async ({ browserName, recordPage }) => {
 		if (['firefox', 'webkit', 'chrome', 'chromium'].includes(browserName)) {
 			// TODO: Investigate why this test is failing on Firefox and Webkit
 			test.skip()

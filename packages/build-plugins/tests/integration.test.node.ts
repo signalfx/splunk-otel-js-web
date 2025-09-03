@@ -15,9 +15,11 @@
  * limitations under the License.
  *
  */
-import { describe, expect, it } from 'vitest'
-import { readFileSync, existsSync } from 'fs'
+import { existsSync, readFileSync } from 'fs'
 import * as path from 'path'
+
+import { describe, expect, it } from 'vitest'
+
 import { computeSourceMapIdFromFile } from '../src/utils'
 
 describe('integration-test setup', function () {

@@ -20,8 +20,8 @@ import { SplunkZipkinExporter, ZipkinSpan } from '../../src/exporters/zipkin'
 export const buildInMemorySplunkExporter = () => {
 	const spans: ZipkinSpan[] = []
 	const exporter = new SplunkZipkinExporter({
-		url: '',
 		beaconSender: null,
+		url: '',
 		xhrSender: (_, data) => {
 			if (typeof data === 'string') {
 				const newSpans = JSON.parse(data) as ZipkinSpan[]

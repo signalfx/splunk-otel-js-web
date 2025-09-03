@@ -15,24 +15,25 @@
  * limitations under the License.
  *
  */
-import SplunkRum from '../../src'
-import { SpanCapturer } from './span-capturer'
-import { ZipkinSpan } from '../../src/exporters/zipkin'
 import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base'
-import { buildInMemorySplunkExporter } from './memory-exporter'
+
+import SplunkRum from '../../src'
+import { ZipkinSpan } from '../../src/exporters/zipkin'
 import { SESSION_STORAGE_KEY } from '../../src/managers'
+import { buildInMemorySplunkExporter } from './memory-exporter'
+import { SpanCapturer } from './span-capturer'
 
 export const initWithDefaultConfig = (capturer: SpanCapturer, additionalOptions = {}): void => {
 	SplunkRum._internalInit({
-		beaconEndpoint: 'http://127.0.0.1:8888/v1/trace',
 		allowInsecureBeacon: true,
 		applicationName: 'my-app',
-		deploymentEnvironment: 'my-env',
-		version: '1.2-test.3',
-		globalAttributes: { customerType: 'GOLD' },
+		beaconEndpoint: 'http://127.0.0.1:8888/v1/trace',
 		bufferTimeout: 0,
+		deploymentEnvironment: 'my-env',
+		globalAttributes: { customerType: 'GOLD' },
 		rumAccessToken: '123-no-warn-spam-in-console',
 		spanProcessors: [capturer],
+		version: '1.2-test.3',
 		...additionalOptions,
 	})
 
@@ -49,15 +50,15 @@ export function initWithSyncPipeline(additionalOptions = {}): {
 	const processor = new SimpleSpanProcessor(exporter)
 
 	SplunkRum._internalInit({
-		beaconEndpoint: 'http://127.0.0.1:8888/v1/trace',
 		allowInsecureBeacon: true,
 		applicationName: 'my-app',
-		deploymentEnvironment: 'my-env',
-		version: '1.2-test.3',
+		beaconEndpoint: 'http://127.0.0.1:8888/v1/trace',
 		bufferTimeout: 0,
-		rumAccessToken: '123-no-warn-spam-in-console',
+		deploymentEnvironment: 'my-env',
 		exporter: { factory: () => exporter },
+		rumAccessToken: '123-no-warn-spam-in-console',
 		spanProcessor: { factory: () => processor },
+		version: '1.2-test.3',
 		...additionalOptions,
 	})
 

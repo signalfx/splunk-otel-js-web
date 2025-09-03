@@ -15,10 +15,11 @@
  * limitations under the License.
  *
  */
-import { safelyGetLocalStorage, safelySetLocalStorage, safelyRemoveFromLocalStorage } from './storage'
-import { log } from './log'
 import { JsonObject } from 'type-fest'
+
+import { log } from './log'
 import { SessionReplay, Stats } from './session-replay'
+import { safelyGetLocalStorage, safelyRemoveFromLocalStorage, safelySetLocalStorage } from './storage'
 
 export interface QueuedLog {
 	data: {

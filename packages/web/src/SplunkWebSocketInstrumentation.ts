@@ -16,15 +16,15 @@
  *
  */
 
+import { context, Span, SpanKind, trace } from '@opentelemetry/api'
+import { isUrlIgnored } from '@opentelemetry/core'
+import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 // FIXME convert into otel-js-contrib Plugin and upstream
 import * as shimmer from 'shimmer'
-import { SpanKind, trace, context, Span } from '@opentelemetry/api'
-import { isUrlIgnored } from '@opentelemetry/core'
-import { VERSION } from './version'
 
-import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 import { isError } from './types'
-import { hasSizeLikeProperty, getSize } from './utils/size'
+import { getSize, hasSizeLikeProperty } from './utils/size'
+import { VERSION } from './version'
 
 interface SplunkWebSocketInstrumentationConfig extends InstrumentationConfig {
 	ignoreUrls?: (string | RegExp)[]
@@ -54,10 +54,10 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 					}
 
 					const connectSpan = instrumentation.tracer.startSpan('connect', {
-						kind: SpanKind.CLIENT,
 						attributes: {
 							component: 'websocket',
 						},
+						kind: SpanKind.CLIENT,
 					})
 					if (url) {
 						connectSpan.setAttribute('http.url', stringUrl)

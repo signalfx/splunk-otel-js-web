@@ -30,11 +30,11 @@ type ResponseDebugData = {
 }
 
 const getResponseDebugData = (response: Response): ResponseDebugData => ({
-	type: response.type,
 	bodyUsed: response.bodyUsed,
 	headers: response.headers ? Array.from(response.headers as unknown as []) : undefined,
 	ok: response.ok,
 	redirected: response.redirected,
+	type: response.type,
 	url: response.url,
 })
 

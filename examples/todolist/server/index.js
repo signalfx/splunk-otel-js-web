@@ -15,11 +15,11 @@
  * limitations under the License.
  *
  */
-import './instrumentation.mjs'
-
-import express from 'express'
 import bodyParser from 'body-parser'
 import cors from 'cors'
+import express from 'express'
+
+import './instrumentation.mjs'
 
 const app = express()
 const port = 3001
@@ -28,26 +28,26 @@ const port = 3001
 let nextId = 3
 const items = [
 	{
+		completed: false,
 		id: 1,
 		text: 'Example todo',
-		completed: false,
 	},
 	{
+		completed: true,
 		id: 2,
 		text: 'Completed example',
-		completed: true,
 	},
 ]
 const secretItems = [
 	{
+		completed: false,
 		id: 1,
 		text: 'A secret todo for logged in user',
-		completed: false,
 	},
 	{
+		completed: true,
 		id: 2,
 		text: 'See the secret todos',
-		completed: true,
 	},
 ]
 const secretToken = 'top-secret-do-not-share-me'
@@ -78,9 +78,9 @@ app.get('/items', (req, res) => {
 app.post('/items', (req, res) => {
 	nextId += 1
 	const item = {
+		completed: req.body.completed || false,
 		id: nextId,
 		text: req.body.text || '',
-		completed: req.body.completed || false,
 	}
 	getItems(req).push(item)
 

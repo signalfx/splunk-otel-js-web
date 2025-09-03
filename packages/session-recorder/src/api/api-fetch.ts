@@ -15,9 +15,9 @@
  * limitations under the License.
  *
  */
-import { ApiError } from './api-error'
-import { waitForOnline, createUrl, isTrustedEvent } from './utils'
 import { log } from '../log'
+import { ApiError } from './api-error'
+import { createUrl, isTrustedEvent, waitForOnline } from './utils'
 
 type RequestInit = Parameters<typeof fetch>[1]
 

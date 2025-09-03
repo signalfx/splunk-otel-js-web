@@ -16,22 +16,23 @@
  *
  */
 
+import { diag } from '@opentelemetry/api'
+import { ExportResult, ExportResultCode } from '@opentelemetry/core'
 import {
-	toZipkinSpan,
 	defaultStatusCodeTagName,
 	defaultStatusErrorTagName,
+	toZipkinSpan,
 } from '@opentelemetry/exporter-zipkin/build/src/transform.js'
-import { ExportResult, ExportResultCode } from '@opentelemetry/core'
 import { ReadableSpan, SpanExporter } from '@opentelemetry/sdk-trace-base'
+
+import { hasToString } from '../types'
 import { limitLen } from '../utils'
 import {
-	NOOP_ATTRIBUTES_TRANSFORMER,
-	NATIVE_XHR_SENDER,
 	NATIVE_BEACON_SENDER,
+	NATIVE_XHR_SENDER,
+	NOOP_ATTRIBUTES_TRANSFORMER,
 	type SplunkExporterConfig,
 } from './common'
-import { hasToString } from '../types'
-import { diag } from '@opentelemetry/api'
 
 const MAX_VALUE_LIMIT = 4096
 const SERVICE_NAME = 'browser'
@@ -84,10 +85,10 @@ export class SplunkZipkinExporter implements SpanExporter {
 	private readonly _xhrSender: SplunkExporterConfig['xhrSender']
 
 	constructor({
-		url,
-		onAttributesSerializing = NOOP_ATTRIBUTES_TRANSFORMER,
-		xhrSender = NATIVE_XHR_SENDER,
 		beaconSender = NATIVE_BEACON_SENDER,
+		onAttributesSerializing = NOOP_ATTRIBUTES_TRANSFORMER,
+		url,
+		xhrSender = NATIVE_XHR_SENDER,
 	}: SplunkExporterConfig) {
 		this.beaconUrl = url
 		this._onAttributesSerializing = onAttributesSerializing
@@ -163,29 +164,29 @@ export class SplunkZipkinExporter implements SpanExporter {
 
 	private _preTranslateSpan(span: ReadableSpan): ReadableSpan {
 		return {
-			// todo: once typescript is implemented, conform to ReadableSpan
-			// note: some properties in Span are not enumerable, and as a result cannot be spread or Object.assign'ed
-			name: span.name,
-			kind: span.kind,
-			spanContext: span.spanContext.bind(span),
-			parentSpanId: span.parentSpanId,
-			startTime: span.startTime,
-			endTime: span.endTime,
-			status: span.status,
-			links: span.links,
-			events: span.events,
-			duration: span.duration,
-			ended: span.ended,
-			instrumentationLibrary: span.instrumentationLibrary,
-
-			resource: span.resource,
 			attributes: this._onAttributesSerializing
 				? this._onAttributesSerializing(span.attributes, span)
 				: span.attributes,
-
 			droppedAttributesCount: span.droppedAttributesCount,
 			droppedEventsCount: span.droppedEventsCount,
 			droppedLinksCount: span.droppedLinksCount,
+			duration: span.duration,
+			ended: span.ended,
+			endTime: span.endTime,
+			events: span.events,
+			instrumentationLibrary: span.instrumentationLibrary,
+			kind: span.kind,
+			links: span.links,
+			// todo: once typescript is implemented, conform to ReadableSpan
+			// note: some properties in Span are not enumerable, and as a result cannot be spread or Object.assign'ed
+			name: span.name,
+
+			parentSpanId: span.parentSpanId,
+			resource: span.resource,
+
+			spanContext: span.spanContext.bind(span),
+			startTime: span.startTime,
+			status: span.status,
 		}
 	}
 }

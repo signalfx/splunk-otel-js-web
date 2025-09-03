@@ -17,9 +17,9 @@
  */
 
 const mimetypes: Record<string, string> = {
-	'.tgz': 'application/x-gtar',
 	'.js': 'application/javascript',
 	'.js.map': 'application/octet-stream',
+	'.tgz': 'application/x-gtar',
 	'.txt': 'text/plain',
 }
 

@@ -16,6 +16,7 @@
  *
  */
 const path = require('path')
+
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin')
 const TerserPlugin = require('terser-webpack-plugin')
 
@@ -26,45 +27,28 @@ const getBaseConfig = (env, argv, options = {}) => {
 	const isLegacyBuild = options.isLegacyBuild === true
 
 	return {
-		output: {
-			crossOriginLoading: 'anonymous',
-			path: artifactsPath,
-			iife: true,
-			environment: {
-				// without this line, webpack would wrap our code to an arrow function
-				arrowFunction: false,
-				bigIntLiteral: false,
-				const: false,
-				destructuring: false,
-				dynamicImport: false,
-				forOf: false,
-				module: false,
-			},
-		},
-		resolve: {
-			extensions: ['.ts', '.js', '.json'],
-		},
+		devtool: isDevelopmentMode ? 'inline-source-map' : 'source-map',
 		module: {
 			rules: [
 				{
-					test: /\.tsx?$/,
 					exclude: /node_modules/,
+					test: /\.tsx?$/,
 					use: [
 						{
 							loader: 'swc-loader',
 							options: {
-								jsc: {
-									parser: {
-										syntax: 'typescript',
-									},
-									externalHelpers: true,
-								},
 								env: {
+									coreJs: isLegacyBuild ? '3.42' : undefined,
+									mode: isLegacyBuild ? 'usage' : undefined,
 									targets: isLegacyBuild
 										? 'defaults, chrome >= 50, safari >= 11, firefox >= 50, ie >= 11'
 										: 'defaults, chrome >= 71, safari >= 12.1, firefox >= 65',
-									mode: isLegacyBuild ? 'usage' : undefined,
-									coreJs: isLegacyBuild ? '3.42' : undefined,
+								},
+								jsc: {
+									externalHelpers: true,
+									parser: {
+										syntax: 'typescript',
+									},
 								},
 							},
 						},
@@ -72,8 +56,8 @@ const getBaseConfig = (env, argv, options = {}) => {
 				},
 				// For legacy builds, we need to transpile OpenTelemetry packages to ES5
 				{
-					test: /\.m?js$/,
 					include: isLegacyBuild ? /node_modules\/@opentelemetry\// : [],
+					test: /\.m?js$/,
 					use: [
 						{
 							loader: 'swc-loader',
@@ -89,21 +73,12 @@ const getBaseConfig = (env, argv, options = {}) => {
 					],
 				},
 				{
-					test: /\.js$/,
 					enforce: 'pre',
+					test: /\.js$/,
 					use: ['source-map-loader'],
 				},
 			],
 		},
-		plugins: [
-			new ForkTsCheckerWebpackPlugin({
-				typescript: {
-					configFile: 'tsconfig.base.json',
-					diagnosticOptions: { semantic: true, syntactic: true },
-				},
-			}),
-		],
-		devtool: isDevelopmentMode ? 'inline-source-map' : 'source-map',
 		optimization: {
 			minimize: true,
 			minimizer: [
@@ -118,6 +93,32 @@ const getBaseConfig = (env, argv, options = {}) => {
 				}),
 			],
 		},
+		output: {
+			crossOriginLoading: 'anonymous',
+			environment: {
+				// without this line, webpack would wrap our code to an arrow function
+				arrowFunction: false,
+				bigIntLiteral: false,
+				const: false,
+				destructuring: false,
+				dynamicImport: false,
+				forOf: false,
+				module: false,
+			},
+			iife: true,
+			path: artifactsPath,
+		},
+		plugins: [
+			new ForkTsCheckerWebpackPlugin({
+				typescript: {
+					configFile: 'tsconfig.base.json',
+					diagnosticOptions: { semantic: true, syntactic: true },
+				},
+			}),
+		],
+		resolve: {
+			extensions: ['.ts', '.js', '.json'],
+		},
 	}
 }
 
@@ -130,9 +131,9 @@ const browserConfig = (env, argv) => {
 			...baseConfig.output,
 			filename: 'splunk-otel-web.js',
 			library: {
+				export: 'default',
 				name: 'SplunkRum',
 				type: 'window',
-				export: 'default',
 			},
 		},
 	}
@@ -147,9 +148,9 @@ const browserLegacyConfig = (env, argv) => {
 			...baseConfig.output,
 			filename: 'splunk-otel-web-legacy.js',
 			library: {
+				export: 'default',
 				name: 'SplunkRum',
 				type: 'window',
-				export: 'default',
 			},
 		},
 	}

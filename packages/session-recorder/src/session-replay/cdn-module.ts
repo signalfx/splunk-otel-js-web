@@ -17,13 +17,13 @@
  */
 
 export {
-	Stats,
-	SessionReplay,
 	type ConfigFeatures,
 	type PackAssetsConfig,
-	type SessionReplayConfig,
 	type Segment,
-	type SessionReplayPlainSegment,
 	type SensitivityRule,
 	type SensitivityRuleType,
+	SessionReplay,
+	type SessionReplayConfig,
+	type SessionReplayPlainSegment,
+	Stats,
 } from 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.3.1/session-replay.module.legacy.min.js'

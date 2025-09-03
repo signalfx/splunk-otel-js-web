@@ -16,12 +16,11 @@
  *
  */
 
-import { context, trace, SpanStatusCode } from '@opentelemetry/api'
+import { context, SpanStatusCode, trace } from '@opentelemetry/api'
+import { afterEach, assert, beforeEach, describe, expect, it } from 'vitest'
 
 import SplunkOtelWeb, { INSTRUMENTATIONS_ALL_DISABLED } from '../src'
 import { deinit, SpanCapturer } from './utils'
-
-import { describe, it, expect, beforeEach, afterEach, assert } from 'vitest'
 
 // note: we've added these tests mainly to keep track of substantial changes in the Open Telemetry API
 describe('Transitive API', () => {
@@ -32,8 +31,8 @@ describe('Transitive API', () => {
 		SplunkOtelWeb.init({
 			applicationName: 'my-app',
 			beaconEndpoint: 'https://localhost:9411/api/traces',
-			rumAccessToken: 'xxx',
 			instrumentations: INSTRUMENTATIONS_ALL_DISABLED,
+			rumAccessToken: 'xxx',
 			spanProcessors: [spanCapturer],
 		})
 	})

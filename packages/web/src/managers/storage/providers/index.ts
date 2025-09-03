@@ -16,6 +16,6 @@
  *
  */
 
+export * from './base-storage-provider'
 export * from './cookie-storage-provider'
 export * from './local-storage-provider'
-export * from './base-storage-provider'

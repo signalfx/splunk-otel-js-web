@@ -18,9 +18,10 @@
 
 import { Attributes } from '@opentelemetry/api'
 import { Span, SpanProcessor } from '@opentelemetry/sdk-trace-base'
-import { forgetAnonymousId, getOrCreateAnonymousId } from './user-tracking'
-import { UserTrackingMode } from './types/config'
+
 import { SessionManager } from './managers'
+import { UserTrackingMode } from './types/config'
+import { forgetAnonymousId, getOrCreateAnonymousId } from './user-tracking'
 
 export class SplunkSpanAttributesProcessor implements SpanProcessor {
 	private readonly _globalAttributes: Attributes
@@ -61,8 +62,8 @@ export class SplunkSpanAttributesProcessor implements SpanProcessor {
 			span.setAttribute(
 				'user.anonymous_id',
 				getOrCreateAnonymousId({
-					useLocalStorage: this.useLocalStorageForSessionMetadata,
 					domain: this.domain,
+					useLocalStorage: this.useLocalStorageForSessionMetadata,
 				}),
 			)
 		}

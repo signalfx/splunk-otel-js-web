@@ -16,6 +16,7 @@
  *
  */
 const path = require('path')
+
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin')
 const TerserPlugin = require('terser-webpack-plugin')
 
@@ -23,17 +24,17 @@ const getBaseConfig = (env, argv) => {
 	const isDevelopmentMode = argv.mode === 'development'
 
 	return {
-		entry: path.resolve(__dirname, './src/index.ts'),
-		resolve: {
-			extensions: ['.ts', '.js', '.json'],
-		},
 		devtool: isDevelopmentMode ? 'inline-source-map' : 'source-map',
+		entry: path.resolve(__dirname, './src/index.ts'),
 		experiments: {
 			buildHttp: {
 				allowedUris: ['https://cdn.signalfx.com/'],
 				cacheLocation: false,
 				frozen: true,
 			},
+		},
+		resolve: {
+			extensions: ['.ts', '.js', '.json'],
 		},
 	}
 }
@@ -42,65 +43,35 @@ const browserConfig = (env, argv) => {
 	const baseConfig = getBaseConfig(env, argv)
 	return {
 		...baseConfig,
-		output: {
-			crossOriginLoading: 'anonymous',
-			filename: 'splunk-otel-web-session-recorder.js',
-			path: path.resolve(__dirname, './dist/artifacts'),
-			library: {
-				name: 'SplunkSessionRecorder',
-				type: 'window',
-				export: 'default',
-			},
-			iife: true,
-			clean: true,
-			environment: {
-				// without this line, webpack would wrap our code to an arrow function
-				arrowFunction: false,
-				bigIntLiteral: false,
-				const: false,
-				destructuring: false,
-				dynamicImport: false,
-				forOf: false,
-				module: false,
-			},
-		},
 		module: {
 			rules: [
 				{
-					test: /\.tsx?$/,
 					exclude: /node_modules/,
+					test: /\.tsx?$/,
 					use: {
 						loader: 'swc-loader',
 						options: {
+							env: {
+								coreJs: '3.42',
+								mode: 'usage',
+								targets: 'defaults, chrome >= 71, safari >= 12.1, firefox >= 65',
+							},
 							jsc: {
+								externalHelpers: true,
 								parser: {
 									syntax: 'typescript',
 								},
-								externalHelpers: true,
-							},
-							env: {
-								targets: 'defaults, chrome >= 71, safari >= 12.1, firefox >= 65',
-								mode: 'usage',
-								coreJs: '3.42',
 							},
 						},
 					},
 				},
 				{
-					test: /\.js$/,
 					enforce: 'pre',
+					test: /\.js$/,
 					use: ['source-map-loader'],
 				},
 			],
 		},
-		plugins: [
-			new ForkTsCheckerWebpackPlugin({
-				typescript: {
-					configFile: 'tsconfig.base.json',
-					diagnosticOptions: { semantic: true, syntactic: true },
-				},
-			}),
-		],
 		optimization: {
 			minimize: true,
 			minimizer: [
@@ -115,6 +86,36 @@ const browserConfig = (env, argv) => {
 				}),
 			],
 		},
+		output: {
+			clean: true,
+			crossOriginLoading: 'anonymous',
+			environment: {
+				// without this line, webpack would wrap our code to an arrow function
+				arrowFunction: false,
+				bigIntLiteral: false,
+				const: false,
+				destructuring: false,
+				dynamicImport: false,
+				forOf: false,
+				module: false,
+			},
+			filename: 'splunk-otel-web-session-recorder.js',
+			iife: true,
+			library: {
+				export: 'default',
+				name: 'SplunkSessionRecorder',
+				type: 'window',
+			},
+			path: path.resolve(__dirname, './dist/artifacts'),
+		},
+		plugins: [
+			new ForkTsCheckerWebpackPlugin({
+				typescript: {
+					configFile: 'tsconfig.base.json',
+					diagnosticOptions: { semantic: true, syntactic: true },
+				},
+			}),
+		],
 	}
 }
 
@@ -122,28 +123,28 @@ const cjsConfig = (env, argv) => {
 	const baseConfig = getBaseConfig(env, argv)
 	return {
 		...baseConfig,
-		output: {
-			filename: 'index.js',
-			path: path.resolve(__dirname, './dist/cjs'),
-			library: {
-				type: 'commonjs2',
-			},
-			clean: true,
-		},
 		module: {
 			rules: [
 				{
-					test: /\.ts$/,
-					loader: 'ts-loader',
 					exclude: /node_modules/,
+					loader: 'ts-loader',
 					options: { configFile: 'tsconfig.cjs.json' },
+					test: /\.ts$/,
 				},
 				{
-					test: /\.js$/,
 					enforce: 'pre',
+					test: /\.js$/,
 					use: ['source-map-loader'],
 				},
 			],
+		},
+		output: {
+			clean: true,
+			filename: 'index.js',
+			library: {
+				type: 'commonjs2',
+			},
+			path: path.resolve(__dirname, './dist/cjs'),
 		},
 	}
 }
@@ -152,14 +153,6 @@ const esmConfig = (env, argv) => {
 	const baseConfig = getBaseConfig(env, argv)
 	return {
 		...baseConfig,
-		output: {
-			filename: 'index.js',
-			path: path.resolve(__dirname, './dist/esm'),
-			library: {
-				type: 'module',
-			},
-			clean: true,
-		},
 		experiments: {
 			...baseConfig.experiments,
 			outputModule: true,
@@ -167,17 +160,25 @@ const esmConfig = (env, argv) => {
 		module: {
 			rules: [
 				{
-					test: /\.ts$/,
-					loader: 'ts-loader',
 					exclude: /node_modules/,
+					loader: 'ts-loader',
 					options: { configFile: 'tsconfig.esm.json' },
+					test: /\.ts$/,
 				},
 				{
-					test: /\.js$/,
 					enforce: 'pre',
+					test: /\.js$/,
 					use: ['source-map-loader'],
 				},
 			],
+		},
+		output: {
+			clean: true,
+			filename: 'index.js',
+			library: {
+				type: 'module',
+			},
+			path: path.resolve(__dirname, './dist/esm'),
 		},
 	}
 }

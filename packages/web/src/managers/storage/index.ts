@@ -16,5 +16,5 @@
  *
  */
 
-export * from './storage-manager'
 export * from './constants'
+export * from './storage-manager'

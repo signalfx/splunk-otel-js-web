@@ -15,8 +15,9 @@
  * limitations under the License.
  *
  */
-import { test } from '../../utils/test'
 import { expect } from '@playwright/test'
+
+import { test } from '../../utils/test'
 
 test.describe('mouse', () => {
 	test('handles mouse down/click/up', async ({ recordPage }) => {
@@ -30,9 +31,9 @@ test.describe('mouse', () => {
 		const mouseUpSpans = recordPage.receivedSpans.filter((span) => span.name === 'mouseup')
 
 		for (const spanData of [
-			{ span: clickSpans[0], name: 'click' },
-			{ span: mouseDownSpans[0], name: 'mousedown' },
-			{ span: mouseUpSpans[0], name: 'mouseup' },
+			{ name: 'click', span: clickSpans[0] },
+			{ name: 'mousedown', span: mouseDownSpans[0] },
+			{ name: 'mouseup', span: mouseUpSpans[0] },
 		]) {
 			expect(spanData.span.tags['component']).toBe('user-interaction')
 			expect(spanData.span.tags['event_type']).toBe(spanData.name)
@@ -93,9 +94,9 @@ test.describe('mouse', () => {
 		const mouseUpSpans = recordPage.receivedSpans.filter((span) => span.name === 'mouseup')
 
 		for (const spanData of [
-			{ span: clickSpans[0], name: 'click' },
-			{ span: mouseDownSpans[0], name: 'mousedown' },
-			{ span: mouseUpSpans[0], name: 'mouseup' },
+			{ name: 'click', span: clickSpans[0] },
+			{ name: 'mousedown', span: mouseDownSpans[0] },
+			{ name: 'mouseup', span: mouseUpSpans[0] },
 		]) {
 			expect(spanData.span.tags['component']).toBe('user-interaction')
 			expect(spanData.span.tags['event_type']).toBe(spanData.name)

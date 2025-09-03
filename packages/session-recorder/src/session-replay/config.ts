@@ -15,9 +15,9 @@
  * limitations under the License.
  *
  */
+import { mergeRecorderConfig } from './migrations/config-merge'
 import { migrateRRWebConfigToSplunkConfig } from './migrations/config-migration'
 import { RecorderPublicConfig } from './recorder'
-import { mergeRecorderConfig } from './migrations/config-merge'
 
 export const getSplunkRecorderConfig = (config: RecorderPublicConfig): RecorderPublicConfig => {
 	const migratedRRWebConfig = migrateRRWebConfigToSplunkConfig(config)

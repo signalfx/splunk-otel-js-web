@@ -18,29 +18,30 @@
 
 import * as api from '@opentelemetry/api'
 import { timeInputToHrTime } from '@opentelemetry/core'
-import { SplunkZipkinExporter } from '../src/exporters/zipkin'
-import { RateLimitProcessor } from '../src/exporters/rate-limit'
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base'
-import { describe, vi, expect, it, Mock, assert, beforeEach, afterEach } from 'vitest'
+import { afterEach, assert, beforeEach, describe, expect, it, Mock, vi } from 'vitest'
 
-const buildDummySpan = ({ name = '<name>', attributes = {} } = {}) =>
+import { RateLimitProcessor } from '../src/exporters/rate-limit'
+import { SplunkZipkinExporter } from '../src/exporters/zipkin'
+
+const buildDummySpan = ({ attributes = {}, name = '<name>' } = {}) =>
 	({
-		spanContext: () => ({
-			traceId: '0000',
-			spanId: '0001',
-		}),
-		parentSpanId: '0002' as string | undefined,
-		name,
 		attributes: {
 			...attributes,
 			'splunk.rumSessionId': '000000000',
 		},
-		kind: api.SpanKind.CLIENT,
-		startTime: timeInputToHrTime(new Date()),
 		duration: timeInputToHrTime(1000),
-		status: { code: api.SpanStatusCode.UNSET },
-		resource: { attributes: {} },
 		events: [] as { name: string; time: api.HrTime }[],
+		kind: api.SpanKind.CLIENT,
+		name,
+		parentSpanId: '0002' as string | undefined,
+		resource: { attributes: {} },
+		spanContext: () => ({
+			spanId: '0001',
+			traceId: '0000',
+		}),
+		startTime: timeInputToHrTime(new Date()),
+		status: { code: api.SpanStatusCode.UNSET },
 	}) as unknown as ReadableSpan
 
 describe('SplunkZipkinExporter', () => {
@@ -70,11 +71,11 @@ describe('SplunkZipkinExporter', () => {
 		const targetDocProto = Object.getPrototypeOf(Object.getPrototypeOf(document))
 		const oldDef = Object.getOwnPropertyDescriptor(targetDocProto, 'hidden')
 		Object.defineProperty(targetDocProto, 'hidden', {
+			configurable: true,
+			enumerable: true,
 			get() {
 				return true
 			},
-			configurable: true,
-			enumerable: true,
 		})
 
 		const dummySpan = buildDummySpan()
@@ -97,8 +98,8 @@ describe('SplunkZipkinExporter', () => {
 
 	it('uses XHR if Beacon API is unavailable', () => {
 		exporter = new SplunkZipkinExporter({
-			url: 'https://domain2',
 			beaconSender: undefined,
+			url: 'https://domain2',
 			xhrSender: xhrSenderMock,
 		})
 
@@ -122,11 +123,11 @@ describe('SplunkZipkinExporter', () => {
 		})
 
 		const dummySpan = buildDummySpan({
-			name: 'a'.repeat(5000),
 			attributes: {
 				longValue: 'b'.repeat(5001),
 				shortValue: 'c'.repeat(4000),
 			},
+			name: 'a'.repeat(5000),
 		})
 		exporter.export([dummySpan], () => {})
 		expect(xhrSenderMock).toHaveBeenCalledTimes(1)
@@ -144,26 +145,26 @@ describe('SplunkZipkinExporter', () => {
 		})
 
 		const dummySpan = buildDummySpan({
-			name: 'asd',
 			attributes: {
 				'http.url': 'https://example.com/resource.png',
 			},
+			name: 'asd',
 		})
 		dummySpan.events.push({
-			time: dummySpan.startTime,
 			name: 'fetchStart',
-		})
-		dummySpan.events.push({
-			time: timeInputToHrTime(0),
-			name: 'connectStart',
-		})
-		dummySpan.events.push({
-			time: timeInputToHrTime(0),
-			name: 'connectEnd',
-		})
-		dummySpan.events.push({
 			time: dummySpan.startTime,
+		})
+		dummySpan.events.push({
+			name: 'connectStart',
+			time: timeInputToHrTime(0),
+		})
+		dummySpan.events.push({
+			name: 'connectEnd',
+			time: timeInputToHrTime(0),
+		})
+		dummySpan.events.push({
 			name: 'responseEnd',
+			time: dummySpan.startTime,
 		})
 		exporter.export([dummySpan], () => {})
 		expect(xhrSenderMock).toHaveBeenCalledTimes(1)
@@ -174,13 +175,13 @@ describe('SplunkZipkinExporter', () => {
 
 	it('allows hooking into serialization', () => {
 		exporter = new SplunkZipkinExporter({
-			url: 'https://localhost',
-			xhrSender: xhrSenderMock,
 			onAttributesSerializing: (attributes) => ({
 				...attributes,
 				key1: 'new value 1',
 				key3: null,
 			}),
+			url: 'https://localhost',
+			xhrSender: xhrSenderMock,
 		})
 
 		const dummySpan = buildDummySpan({
@@ -209,13 +210,13 @@ describe('Rate Limiter', () => {
 	it('limits spans sent', () => {
 		const allowedSpans: ReadableSpan[] = []
 		const rateLimiter = new RateLimitProcessor({
-			onStart() {},
-			onEnd(span) {
-				allowedSpans.push(span)
-			},
 			forceFlush() {
 				return Promise.resolve()
 			},
+			onEnd(span) {
+				allowedSpans.push(span)
+			},
+			onStart() {},
 			shutdown() {
 				return Promise.resolve()
 			},
@@ -232,13 +233,13 @@ describe('Rate Limiter', () => {
 	it('still exports parent spans', () => {
 		const allowedSpans: ReadableSpan[] = []
 		const rateLimiter = new RateLimitProcessor({
-			onStart() {},
-			onEnd(span) {
-				allowedSpans.push(span)
-			},
 			forceFlush() {
 				return Promise.resolve()
 			},
+			onEnd(span) {
+				allowedSpans.push(span)
+			},
+			onStart() {},
 			shutdown() {
 				return Promise.resolve()
 			},
@@ -251,8 +252,8 @@ describe('Rate Limiter', () => {
 		const parentSpan = buildDummySpan()
 		// @ts-expect-error read-only
 		parentSpan.spanContext = () => ({
-			traceId: '0000',
 			spanId: '0002',
+			traceId: '0000',
 		})
 		// @ts-expect-error read-only
 		parentSpan.parentSpanId = undefined

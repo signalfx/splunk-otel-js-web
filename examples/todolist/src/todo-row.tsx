@@ -16,13 +16,14 @@
  *
  */
 
-import { useCallback, useState, ChangeEvent } from 'react'
+import { ChangeEvent, useCallback, useState } from 'react'
+
 import { TodoEdit } from './todo-edit'
 
 export function TodoRow({
-	item,
-	editItem,
 	deleteItem,
+	editItem,
+	item,
 }: {
 	deleteItem: (id: string) => void
 	editItem: (id: string, data: Partial<{ completed: boolean; text: string }>) => Promise<void>

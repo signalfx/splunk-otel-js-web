@@ -16,10 +16,11 @@
  *
  */
 import { expect } from '@playwright/test'
+
 import { test } from '../../utils/test'
 
 test.describe('web vitals', () => {
-	test('web vitals spans', async ({ recordPage, browserName }) => {
+	test('web vitals spans', async ({ browserName, recordPage }) => {
 		// TODO: Investigate why this test is disabled on webkit and firefox
 		if (browserName === 'webkit' || browserName === 'firefox') {
 			test.skip()
@@ -55,7 +56,7 @@ test.describe('web vitals', () => {
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})
 
-	test('webvitals - specific metrics disabled', async ({ recordPage, browserName }) => {
+	test('webvitals - specific metrics disabled', async ({ browserName, recordPage }) => {
 		if (browserName === 'webkit' || browserName === 'firefox') {
 			test.skip()
 		}

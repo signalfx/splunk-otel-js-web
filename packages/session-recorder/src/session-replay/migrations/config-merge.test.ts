@@ -15,36 +15,36 @@
  * limitations under the License.
  *
  */
-import { describe, it, expect } from 'vitest'
-import { mergeRecorderConfig } from './config-merge'
+import { describe, expect, it } from 'vitest'
+
 import { RecorderPublicConfig } from '../recorder'
+import { mergeRecorderConfig } from './config-merge'
 
 describe('mergeRecorderConfig', () => {
 	it('merges recorder configs', () => {
 		const config: RecorderPublicConfig = {
-			maskAllInputs: true,
 			features: {
 				canvas: true,
 				packAssets: {
 					images: true,
 				},
 			},
+			maskAllInputs: true,
 			sensitivityRules: [{ rule: 'mask', selector: '.mask' }],
 		}
 
 		const migratedConfig: RecorderPublicConfig = {
-			maskAllInputs: false,
 			features: {
 				packAssets: {
 					styles: true,
 				},
 			},
+			maskAllInputs: false,
 			sensitivityRules: [{ rule: 'exclude', selector: '.exclude' }],
 		}
 
 		const actual = mergeRecorderConfig(config, migratedConfig)
 		const expected = {
-			maskAllInputs: true,
 			features: {
 				canvas: true,
 				packAssets: {
@@ -52,6 +52,7 @@ describe('mergeRecorderConfig', () => {
 					styles: true,
 				},
 			},
+			maskAllInputs: true,
 			sensitivityRules: [
 				{ rule: 'mask', selector: '.mask' },
 				{ rule: 'exclude', selector: '.exclude' },

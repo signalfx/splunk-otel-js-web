@@ -16,10 +16,10 @@
  *
  */
 
-import { TracerProvider, Tracer } from '@opentelemetry/api'
+import { Tracer, TracerProvider } from '@opentelemetry/api'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore TS1479 in commonjs
-import { onCLS, onLCP, onFID, onINP, Metric, ReportOpts } from 'web-vitals'
+import { Metric, onCLS, onFID, onINP, onLCP, ReportOpts } from 'web-vitals'
 const reported: Record<string, boolean> = {}
 
 export interface WebVitalsInstrumentationConfig {

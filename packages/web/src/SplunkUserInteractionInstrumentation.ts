@@ -17,36 +17,30 @@
  */
 
 import { Span, trace, Tracer, TracerProvider } from '@opentelemetry/api'
+// import { UserInteractionInstrumentationConfig } from '@opentelemetry/instrumentation-user-interaction/build/src/types';
+import { isUrlIgnored } from '@opentelemetry/core'
+
 import { UserInteractionInstrumentation } from './upstream/user-interaction/instrumentation'
 // import { UserInteractionInstrumentation } from '@opentelemetry/instrumentation-user-interaction';
 import { UserInteractionInstrumentationConfig } from './upstream/user-interaction/types'
-// import { UserInteractionInstrumentationConfig } from '@opentelemetry/instrumentation-user-interaction/build/src/types';
-import { isUrlIgnored } from '@opentelemetry/core'
 
 export type UserInteractionEventsConfig = {
 	[type: string]: boolean
 }
 
 export const DEFAULT_AUTO_INSTRUMENTED_EVENTS: UserInteractionEventsConfig = {
-	// pointer
+	change: true,
 	click: true,
 	dblclick: true,
-	mousedown: true,
-	mouseup: true,
-
-	// form
-	submit: true,
-	reset: true,
-	change: true,
-
-	// drap & drop
 	dragend: true,
 	drop: true,
-
-	// media
 	ended: true,
+	mousedown: true,
+	mouseup: true,
 	pause: true,
 	play: true,
+	reset: true,
+	submit: true,
 }
 export const DEFAULT_AUTO_INSTRUMENTED_EVENT_NAMES = Object.keys(
 	DEFAULT_AUTO_INSTRUMENTED_EVENTS,

@@ -16,10 +16,11 @@
  *
  */
 
-import { BaseStorageProvider, StorageOptions } from './base-storage-provider'
 import { diag } from '@opentelemetry/api'
+
 import { isIframe } from '../../../utils'
 import { isSafari } from '../../../utils/is-safari'
+import { BaseStorageProvider, StorageOptions } from './base-storage-provider'
 
 export class CookieStorageProvider extends BaseStorageProvider {
 	providerName = 'cookie'
@@ -36,8 +37,8 @@ export class CookieStorageProvider extends BaseStorageProvider {
 			}
 		} catch (error) {
 			diag.warn('Failed to retrieve cookie', {
-				key,
 				error: error instanceof Error ? error.message : 'Unknown error',
+				key,
 			})
 		}
 
@@ -51,9 +52,9 @@ export class CookieStorageProvider extends BaseStorageProvider {
 			return true
 		} catch (error) {
 			diag.warn('Failed to remove cookie', {
-				key,
 				domain: options.domain,
 				error,
+				key,
 			})
 			return false
 		}
@@ -82,9 +83,9 @@ export class CookieStorageProvider extends BaseStorageProvider {
 			return true
 		} catch (error) {
 			diag.warn('Failed to set cookie', {
-				key,
 				domain: options.domain,
 				error,
+				key,
 			})
 			return false
 		}

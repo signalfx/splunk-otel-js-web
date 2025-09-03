@@ -16,11 +16,12 @@
  *
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { CookieStorageProvider } from './cookie-storage-provider'
-import { SessionPersistence } from './base-storage-provider'
 import { server } from '@vitest/browser/context'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
 import { SESSION_EXPIRATION_COOKIE_SEC } from '../constants'
+import { SessionPersistence } from './base-storage-provider'
+import { CookieStorageProvider } from './cookie-storage-provider'
 
 const validOptions = {
 	expires: SESSION_EXPIRATION_COOKIE_SEC,
@@ -190,15 +191,15 @@ describe('CookieStorageProvider', () => {
 
 		it('should handle complex nested objects', () => {
 			const complexData = {
+				sessions: ['session1', 'session2'],
 				user: {
 					id: 123,
 					name: 'John Doe',
 					preferences: {
-						theme: 'dark',
 						notifications: true,
+						theme: 'dark',
 					},
 				},
-				sessions: ['session1', 'session2'],
 			}
 			const jsonString = JSON.stringify(complexData)
 			document.cookie = `testKey=${encodeURIComponent(jsonString)}`
@@ -221,15 +222,15 @@ describe('CookieStorageProvider', () => {
 
 		it('should handle complex nested objects', () => {
 			const complexData = {
+				sessions: ['session1', 'session2'],
 				user: {
 					id: 123,
 					name: 'John Doe',
 					preferences: {
-						theme: 'dark',
 						notifications: true,
+						theme: 'dark',
 					},
 				},
-				sessions: ['session1', 'session2'],
 			}
 			const result = provider.safelyStoreJson('testKey', complexData, validOptions)
 

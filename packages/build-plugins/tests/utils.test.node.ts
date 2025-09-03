@@ -16,6 +16,7 @@
  *
  */
 import { describe, expect, it } from 'vitest'
+
 import {
 	computeSourceMapId,
 	computeSourceMapIdFromFile,

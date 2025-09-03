@@ -16,6 +16,7 @@
  *
  */
 import { expect } from '@playwright/test'
+
 import { test } from '../../utils/test'
 import { timesMakeSense } from '../../utils/time-make-sense'
 
@@ -50,7 +51,7 @@ test.describe('docload', () => {
 		}
 	})
 
-	test('documentFetch, resourceFetch, and documentLoad spans', async ({ recordPage, browserName }) => {
+	test('documentFetch, resourceFetch, and documentLoad spans', async ({ browserName, recordPage }) => {
 		await recordPage.goTo('/docload/docload.ejs')
 
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'documentLoad').length === 1)

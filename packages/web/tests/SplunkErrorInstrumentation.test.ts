@@ -16,9 +16,10 @@
  *
  */
 
-import { STACK_TRACE_URL_PATTER, SplunkErrorInstrumentationConfig } from '../src/SplunkErrorInstrumentation'
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+
 import SplunkOtelWeb, { SplunkRum } from '../src'
+import { SplunkErrorInstrumentationConfig, STACK_TRACE_URL_PATTER } from '../src/SplunkErrorInstrumentation'
 import { deinit, SpanCapturer } from './utils'
 
 export function generateFilePaths(domainCount: number, pathCount: number): string[] {
@@ -261,7 +262,6 @@ describe('SplunkErrorInstrumentation', () => {
 			SplunkOtelWeb.init({
 				applicationName: 'my-app',
 				beaconEndpoint: 'https://localhost:9411/api/traces',
-				rumAccessToken: 'xxx',
 				context: {
 					async: true,
 				},
@@ -270,6 +270,7 @@ describe('SplunkErrorInstrumentation', () => {
 						onError: hook,
 					},
 				},
+				rumAccessToken: 'xxx',
 				spanProcessors: [capturer],
 			})
 		}
@@ -287,7 +288,7 @@ describe('SplunkErrorInstrumentation', () => {
 					e.message = 'Modified message'
 				}
 
-				return { error: e, context: c }
+				return { context: c, error: e }
 			})
 
 			const e1 = new Error('test error 1')
@@ -311,7 +312,7 @@ describe('SplunkErrorInstrumentation', () => {
 					return null
 				}
 
-				return { error: e, context: c }
+				return { context: c, error: e }
 			})
 
 			const e1 = new Error('test error 1')

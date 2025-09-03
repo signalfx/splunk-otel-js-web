@@ -22,7 +22,7 @@ export interface Version {
 
 function* generateAllVersions(version: string): Generator<Version, void, unknown> {
 	if (version === 'main') {
-		yield { name: 'next', isVersionImmutable: false }
+		yield { isVersionImmutable: false, name: 'next' }
 		return
 	}
 
@@ -31,7 +31,7 @@ function* generateAllVersions(version: string): Generator<Version, void, unknown
 	let isVersionImmutable = true
 	let isPreRelease = false
 	while (versionParts.length) {
-		yield { name: `${versionParts.join('.')}`, isVersionImmutable }
+		yield { isVersionImmutable, name: `${versionParts.join('.')}` }
 		const lastSegment = versionParts.pop()
 
 		if (lastSegment === undefined) {
@@ -48,7 +48,7 @@ function* generateAllVersions(version: string): Generator<Version, void, unknown
 	}
 
 	if (!isPreRelease) {
-		yield { name: 'latest', isVersionImmutable: false }
+		yield { isVersionImmutable: false, name: 'latest' }
 	}
 }
 

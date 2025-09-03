@@ -19,7 +19,6 @@ import { defineConfig } from '@rsbuild/core'
 import { pluginReact } from '@rsbuild/plugin-react'
 
 export default defineConfig({
-	plugins: [pluginReact()],
 	html: {
 		template: './public/index.html',
 		templateParameters: {
@@ -27,4 +26,5 @@ export default defineConfig({
 			PUBLIC_REACT_APP_RUM_TOKEN: process.env.PUBLIC_REACT_APP_RUM_TOKEN,
 		},
 	},
+	plugins: [pluginReact()],
 })

@@ -16,11 +16,12 @@
  *
  */
 
-import { deinit, initWithDefaultConfig, SpanCapturer } from './utils'
-import { io } from 'socket.io-client'
-import { SplunkOtelWebConfig } from '../src/types'
 import { SpanKind } from '@opentelemetry/api'
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { io } from 'socket.io-client'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+
+import { SplunkOtelWebConfig } from '../src/types'
+import { deinit, initWithDefaultConfig, SpanCapturer } from './utils'
 
 describe('can produce websocket events', () => {
 	let capturer: SpanCapturer

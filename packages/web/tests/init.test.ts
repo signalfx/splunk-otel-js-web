@@ -16,12 +16,13 @@
  *
  */
 
-import SplunkRum from '../src'
-import * as tracing from '@opentelemetry/sdk-trace-base'
-import { deinit, initWithDefaultConfig, SpanCapturer } from './utils'
-import { VERSION } from '../src/version'
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { context, trace } from '@opentelemetry/api'
+import * as tracing from '@opentelemetry/sdk-trace-base'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import SplunkRum from '../src'
+import { VERSION } from '../src/version'
+import { deinit, initWithDefaultConfig, SpanCapturer } from './utils'
 
 const doesBeaconUrlEndWith = (suffix: string) => {
 	const sps = (SplunkRum.provider.getActiveSpanProcessor() as any)._spanProcessors
@@ -56,8 +57,8 @@ describe('test init', () => {
 		it('should not be inited', () => {
 			try {
 				SplunkRum.init({
-					beaconEndpoint: undefined,
 					applicationName: 'app',
+					beaconEndpoint: undefined,
 					rumAccessToken: undefined,
 				})
 				expect(false, 'Initializer finished.').toBeTruthy()
@@ -71,8 +72,8 @@ describe('test init', () => {
 		it('should not be inited with http', () => {
 			try {
 				SplunkRum.init({
-					beaconEndpoint: 'http://127.0.0.1:8888/insecure',
 					applicationName: 'app',
+					beaconEndpoint: 'http://127.0.0.1:8888/insecure',
 					rumAccessToken: undefined,
 				})
 				expect(false, 'Initializer finished.').toBeTruthy()
@@ -84,8 +85,8 @@ describe('test init', () => {
 		it('should init with https', () => {
 			const path = '/secure'
 			SplunkRum.init({
-				beaconEndpoint: `https://127.0.0.1:8888/${path}`,
 				applicationName: 'app',
+				beaconEndpoint: `https://127.0.0.1:8888/${path}`,
 				rumAccessToken: undefined,
 			})
 			expect(SplunkRum.inited).toBeTruthy()
@@ -95,9 +96,9 @@ describe('test init', () => {
 		it('can be forced via allowInsecureBeacon option', () => {
 			const path = '/insecure'
 			SplunkRum.init({
-				beaconEndpoint: `http://127.0.0.1:8888/${path}`,
 				allowInsecureBeacon: true,
 				applicationName: 'app',
+				beaconEndpoint: `http://127.0.0.1:8888/${path}`,
 				rumAccessToken: undefined,
 			})
 
@@ -106,7 +107,7 @@ describe('test init', () => {
 		})
 
 		it('can use realm config option', () => {
-			SplunkRum.init({ realm: 'test', applicationName: 'app', rumAccessToken: undefined })
+			SplunkRum.init({ applicationName: 'app', realm: 'test', rumAccessToken: undefined })
 
 			expect(SplunkRum.inited).toBeTruthy()
 			doesBeaconUrlEndWith('https://rum-ingest.test.signalfx.com/v1/rum')
@@ -114,12 +115,12 @@ describe('test init', () => {
 
 		it('can use realm + otlp config option', () => {
 			SplunkRum.init({
-				realm: 'test',
 				applicationName: 'app',
-				rumAccessToken: undefined,
 				exporter: {
 					otlp: true,
 				},
+				realm: 'test',
+				rumAccessToken: undefined,
 			})
 			expect(SplunkRum.inited).toBeTruthy()
 			doesBeaconUrlEndWith('https://rum-ingest.test.signalfx.com/v1/rumotlp')
@@ -129,8 +130,8 @@ describe('test init', () => {
 	describe('successful', () => {
 		it('should have been inited properly with doc load spans', async () => {
 			SplunkRum.init({
-				beaconEndpoint: 'https://127.0.0.1:9999/foo',
 				applicationName: 'my-app',
+				beaconEndpoint: 'https://127.0.0.1:9999/foo',
 				deploymentEnvironment: 'my-env',
 				globalAttributes: { customerType: 'GOLD' },
 				instrumentations: {
@@ -175,8 +176,8 @@ describe('test init', () => {
 
 		it('is backwards compatible with 0.15.3 and earlier config options', () => {
 			SplunkRum.init({
-				beaconUrl: 'https://127.0.0.1:9999/foo',
 				app: 'my-app',
+				beaconUrl: 'https://127.0.0.1:9999/foo',
 				environment: 'my-env',
 				rumAuth: 'test123',
 			})
@@ -189,13 +190,13 @@ describe('test init', () => {
 	describe('double-init has no effect', () => {
 		it('should have been inited only once', () => {
 			SplunkRum.init({
-				beaconEndpoint: 'https://127.0.0.1:8888/foo',
 				applicationName: 'app',
+				beaconEndpoint: 'https://127.0.0.1:8888/foo',
 				rumAccessToken: undefined,
 			})
 			SplunkRum.init({
-				beaconEndpoint: 'https://127.0.0.1:8888/bar',
 				applicationName: 'app',
+				beaconEndpoint: 'https://127.0.0.1:8888/bar',
 				rumAccessToken: undefined,
 			})
 			doesBeaconUrlEndWith('/foo')
@@ -208,14 +209,12 @@ describe('test init', () => {
 			const onAttributesSerializingMock = vi.fn().mockReturnValue(undefined)
 
 			SplunkRum._internalInit({
-				beaconEndpoint: 'https://domain1',
 				allowInsecureBeacon: true,
 				applicationName: 'my-app',
-				deploymentEnvironment: 'my-env',
-				globalAttributes: { customerType: 'GOLD' },
+				beaconEndpoint: 'https://domain1',
 				bufferTimeout: 0,
+				deploymentEnvironment: 'my-env',
 				exporter: {
-					onAttributesSerializing: onAttributesSerializingMock,
 					factory: (options) => {
 						expect(options.onAttributesSerializing).toBe(onAttributesSerializingMock)
 						return {
@@ -223,7 +222,9 @@ describe('test init', () => {
 							shutdown: () => Promise.resolve(),
 						}
 					},
+					onAttributesSerializing: onAttributesSerializingMock,
 				},
+				globalAttributes: { customerType: 'GOLD' },
 				rumAccessToken: '123-no-warn-spam-in-console',
 			})
 			SplunkRum.provider.getTracer('test').startSpan('testSpan').end()
@@ -235,8 +236,8 @@ describe('test init', () => {
 	describe('multiple instance protection', () => {
 		function init() {
 			SplunkRum.init({
-				beaconEndpoint: 'https://127.0.0.1:9999/foo',
 				applicationName: 'my-app',
+				beaconEndpoint: 'https://127.0.0.1:9999/foo',
 				deploymentEnvironment: 'my-env',
 				globalAttributes: { customerType: 'GOLD' },
 				instrumentations: {

@@ -16,8 +16,9 @@
  *
  */
 import { expect } from '@playwright/test'
-import { test } from '../../utils/test'
+
 import { generateServerTiming } from '../../server/server-timing'
+import { test } from '../../utils/test'
 
 test.describe('server-timing', () => {
 	test('traceId should be attached to documentFetch span if Server-Timing was sent', async ({ recordPage }) => {

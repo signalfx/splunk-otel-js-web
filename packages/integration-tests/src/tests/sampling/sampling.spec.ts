@@ -16,6 +16,7 @@
  *
  */
 import { expect } from '@playwright/test'
+
 import { test } from '../../utils/test'
 
 test.describe('sampling', () => {

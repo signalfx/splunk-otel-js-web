@@ -16,6 +16,7 @@
  *
  */
 import { expect } from '@playwright/test'
+
 import { test } from '../../utils/test'
 
 test.describe('cookies', () => {
@@ -50,7 +51,7 @@ test.describe('cookies', () => {
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})
 
-	test('setting session cookie in iframe should work', async ({ recordPage, browserName }) => {
+	test('setting session cookie in iframe should work', async ({ browserName, recordPage }) => {
 		await recordPage.goTo('/cookies/cookies.iframe.ejs')
 		if (browserName === 'webkit') {
 			// TODO: Does not work in webkit. Investigate

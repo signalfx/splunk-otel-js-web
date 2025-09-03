@@ -18,6 +18,7 @@
 
 import { readFileSync, writeFileSync } from 'fs'
 import { resolve } from 'path'
+
 import { getPackageRoots } from './utils/index.mjs'
 
 // This script is ran when the root package is updated (which happens before child packages)

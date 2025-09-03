@@ -16,54 +16,51 @@
  *
  */
 
-import './polyfill-safari10'
+import { Attributes, diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api'
+import { _globalThis, SDK_INFO } from '@opentelemetry/core'
 import { registerInstrumentations } from '@opentelemetry/instrumentation'
+import { Resource, ResourceAttributes } from '@opentelemetry/resources'
 import {
-	ConsoleSpanExporter,
-	SimpleSpanProcessor,
-	BatchSpanProcessor,
-	SpanExporter,
-	SpanProcessor,
-	BufferConfig,
 	AlwaysOffSampler,
 	AlwaysOnSampler,
+	BatchSpanProcessor,
+	BufferConfig,
+	ConsoleSpanExporter,
 	ParentBasedSampler,
+	SimpleSpanProcessor,
+	SpanExporter,
+	SpanProcessor,
 } from '@opentelemetry/sdk-trace-base'
-import { Attributes, diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api'
-import { SplunkDocumentLoadInstrumentation } from './SplunkDocumentLoadInstrumentation'
-import { SplunkXhrPlugin } from './SplunkXhrPlugin'
-import { SplunkFetchInstrumentation } from './SplunkFetchInstrumentation'
-import {
-	SplunkUserInteractionInstrumentation,
-	DEFAULT_AUTO_INSTRUMENTED_EVENTS,
-	DEFAULT_AUTO_INSTRUMENTED_EVENT_NAMES,
-	UserInteractionEventsConfig,
-} from './SplunkUserInteractionInstrumentation'
-import { type SplunkExporterConfig } from './exporters/common'
-import { SplunkZipkinExporter } from './exporters/zipkin'
-import { ERROR_INSTRUMENTATION_NAME, SplunkErrorInstrumentation } from './SplunkErrorInstrumentation'
-import { generateId, getPluginConfig } from './utils'
-import { SplunkWebSocketInstrumentation } from './SplunkWebSocketInstrumentation'
-import { initWebVitals } from './webvitals'
-import { SplunkLongTaskInstrumentation } from './SplunkLongTaskInstrumentation'
-import { SplunkPageVisibilityInstrumentation } from './SplunkPageVisibilityInstrumentation'
-import { SplunkConnectivityInstrumentation } from './SplunkConnectivityInstrumentation'
-import { SplunkPostDocLoadResourceInstrumentation } from './SplunkPostDocLoadResourceInstrumentation'
-import { SplunkWebTracerProvider } from './SplunkWebTracerProvider'
-import { InternalEventTarget, SplunkOtelWebEventTarget } from './EventTarget'
-import { SplunkContextManager } from './SplunkContextManager'
-import { Resource, ResourceAttributes } from '@opentelemetry/resources'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
-import { SDK_INFO, _globalThis } from '@opentelemetry/core'
-import { VERSION } from './version'
-import { getSyntheticsRunId, SYNTHETICS_RUN_ID_ATTRIBUTE } from './synthetics'
-import { SplunkSpanAttributesProcessor } from './SplunkSpanAttributesProcessor'
-import { SessionBasedSampler } from './SessionBasedSampler'
-import { SplunkSocketIoClientInstrumentation } from './SplunkSocketIoClientInstrumentation'
+
+import { InternalEventTarget, SplunkOtelWebEventTarget } from './EventTarget'
+import { type SplunkExporterConfig } from './exporters/common'
 import { SplunkOTLPTraceExporter } from './exporters/otlp'
+import { SplunkZipkinExporter } from './exporters/zipkin'
 import { registerGlobal, unregisterGlobal } from './global-utils'
 import { BrowserInstanceService } from './services/browser-instance-service'
-import { forgetAnonymousId, getOrCreateAnonymousId } from './user-tracking'
+import { SessionBasedSampler } from './SessionBasedSampler'
+import { SplunkConnectivityInstrumentation } from './SplunkConnectivityInstrumentation'
+import { SplunkContextManager } from './SplunkContextManager'
+import { SplunkDocumentLoadInstrumentation } from './SplunkDocumentLoadInstrumentation'
+import { ERROR_INSTRUMENTATION_NAME, SplunkErrorInstrumentation } from './SplunkErrorInstrumentation'
+import { SplunkFetchInstrumentation } from './SplunkFetchInstrumentation'
+import { SplunkLongTaskInstrumentation } from './SplunkLongTaskInstrumentation'
+import { SplunkPageVisibilityInstrumentation } from './SplunkPageVisibilityInstrumentation'
+import { SplunkPostDocLoadResourceInstrumentation } from './SplunkPostDocLoadResourceInstrumentation'
+import { SplunkSamplerWrapper } from './SplunkSamplerWrapper'
+import { SplunkSocketIoClientInstrumentation } from './SplunkSocketIoClientInstrumentation'
+import { SplunkSpanAttributesProcessor } from './SplunkSpanAttributesProcessor'
+import {
+	DEFAULT_AUTO_INSTRUMENTED_EVENT_NAMES,
+	DEFAULT_AUTO_INSTRUMENTED_EVENTS,
+	SplunkUserInteractionInstrumentation,
+	UserInteractionEventsConfig,
+} from './SplunkUserInteractionInstrumentation'
+import { SplunkWebSocketInstrumentation } from './SplunkWebSocketInstrumentation'
+import { SplunkWebTracerProvider } from './SplunkWebTracerProvider'
+import { SplunkXhrPlugin } from './SplunkXhrPlugin'
+import { getSyntheticsRunId, SYNTHETICS_RUN_ID_ATTRIBUTE } from './synthetics'
 import {
 	isPersistenceType,
 	SplunkOtelWebConfig,
@@ -71,14 +68,19 @@ import {
 	SplunkOtelWebOptionsInstrumentations,
 	UserTrackingMode,
 } from './types'
+import { forgetAnonymousId, getOrCreateAnonymousId } from './user-tracking'
+import { generateId, getPluginConfig } from './utils'
+import { getValidAttributes, SpanContext } from './utils/attributes'
 import { isBot } from './utils/is-bot'
-import { SplunkSamplerWrapper } from './SplunkSamplerWrapper'
-import { SpanContext, getValidAttributes } from './utils/attributes'
+import { VERSION } from './version'
+import { initWebVitals } from './webvitals'
+
+import './polyfill-safari10'
 
 export { type SplunkExporterConfig } from './exporters/common'
 export { SplunkZipkinExporter } from './exporters/zipkin'
-export * from './SplunkWebTracerProvider'
 export * from './SessionBasedSampler'
+export * from './SplunkWebTracerProvider'
 import { SessionManager, SessionState, StorageManager } from './managers'
 
 export type { SplunkOtelWebConfig, SplunkOtelWebExporterOptions }
@@ -99,13 +101,12 @@ interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
 }
 
 const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
-	disableBots: false,
-	disableAutomationFrameworks: false,
 	applicationName: 'unknown-browser-app',
 	beaconEndpoint: undefined,
-	bufferTimeout: 4000, //millis, tradeoff between batching and loss of spans by not sending before page close
 	bufferSize: 50, // spans, tradeoff between batching and hitting sendBeacon invididual limits
-	instrumentations: {},
+	bufferTimeout: 4000, //millis, tradeoff between batching and loss of spans by not sending before page close
+	disableAutomationFrameworks: false,
+	disableBots: false,
 	exporter: {
 		factory: (options) => {
 			if (options.otlp) {
@@ -115,11 +116,12 @@ const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
 			return new SplunkZipkinExporter(options)
 		},
 	},
+	instrumentations: {},
 	persistence: 'cookie',
+	rumAccessToken: undefined,
 	spanProcessor: {
 		factory: (exporter, config) => new BatchSpanProcessor(exporter, config),
 	},
-	rumAccessToken: undefined,
 }
 
 function migrateConfigOption(
@@ -148,17 +150,17 @@ function migrateConfig(config: SplunkOtelWebConfig) {
 }
 
 const INSTRUMENTATIONS = [
-	{ Instrument: SplunkDocumentLoadInstrumentation, confKey: 'document', disable: false },
-	{ Instrument: SplunkXhrPlugin, confKey: 'xhr', disable: false },
-	{ Instrument: SplunkUserInteractionInstrumentation, confKey: 'interactions', disable: false },
-	{ Instrument: SplunkPostDocLoadResourceInstrumentation, confKey: 'postload', disable: false },
-	{ Instrument: SplunkFetchInstrumentation, confKey: 'fetch', disable: false },
-	{ Instrument: SplunkWebSocketInstrumentation, confKey: 'websocket', disable: true },
-	{ Instrument: SplunkLongTaskInstrumentation, confKey: 'longtask', disable: false },
-	{ Instrument: SplunkErrorInstrumentation, confKey: ERROR_INSTRUMENTATION_NAME, disable: false },
-	{ Instrument: SplunkPageVisibilityInstrumentation, confKey: 'visibility', disable: true },
-	{ Instrument: SplunkConnectivityInstrumentation, confKey: 'connectivity', disable: true },
-	{ Instrument: SplunkSocketIoClientInstrumentation, confKey: 'socketio', disable: true },
+	{ confKey: 'document', disable: false, Instrument: SplunkDocumentLoadInstrumentation },
+	{ confKey: 'xhr', disable: false, Instrument: SplunkXhrPlugin },
+	{ confKey: 'interactions', disable: false, Instrument: SplunkUserInteractionInstrumentation },
+	{ confKey: 'postload', disable: false, Instrument: SplunkPostDocLoadResourceInstrumentation },
+	{ confKey: 'fetch', disable: false, Instrument: SplunkFetchInstrumentation },
+	{ confKey: 'websocket', disable: true, Instrument: SplunkWebSocketInstrumentation },
+	{ confKey: 'longtask', disable: false, Instrument: SplunkLongTaskInstrumentation },
+	{ confKey: ERROR_INSTRUMENTATION_NAME, disable: false, Instrument: SplunkErrorInstrumentation },
+	{ confKey: 'visibility', disable: true, Instrument: SplunkPageVisibilityInstrumentation },
+	{ confKey: 'connectivity', disable: true, Instrument: SplunkConnectivityInstrumentation },
+	{ confKey: 'socketio', disable: true, Instrument: SplunkSocketIoClientInstrumentation },
 ] as const
 
 export const INSTRUMENTATIONS_ALL_DISABLED: SplunkOtelWebOptionsInstrumentations = INSTRUMENTATIONS.map(
@@ -182,9 +184,9 @@ function getBeaconEndpointForRealm(config: SplunkOtelWebConfigInternal) {
 function buildExporter(options: SplunkOtelWebConfigInternal) {
 	const url = options.beaconEndpoint + (options.rumAccessToken ? '?auth=' + options.rumAccessToken : '')
 	return options.exporter.factory({
-		url,
-		otlp: options.exporter.otlp,
 		onAttributesSerializing: options.exporter.onAttributesSerializing,
+		otlp: options.exporter.otlp,
+		url,
 	})
 }
 
@@ -284,30 +286,127 @@ let eventTarget: InternalEventTarget | undefined
 let _sessionStateUnsubscribe: undefined | (() => void)
 
 export const SplunkRum: SplunkOtelWebType = {
-	DEFAULT_AUTO_INSTRUMENTED_EVENTS,
-	DEFAULT_AUTO_INSTRUMENTED_EVENT_NAMES,
-
-	// Re-export samplers as properties for easier use in CDN build
-	AlwaysOnSampler,
-	AlwaysOffSampler,
-	ParentBasedSampler,
-	SessionBasedSampler,
-
-	get userTrackingMode() {
-		return userTrackingMode
+	_experimental_addEventListener(name, callback): void {
+		console.warn(
+			'[SPLUNK OTEL WEB] DEPRECATION WARNING: The "SplunkRum._experimental_addEventListener(name, callback)" method is deprecated and will be removed in a future major version. Please use "SplunkRum.addEventListener(name, callback)" instead.',
+		)
+		return this.addEventListener(name, callback)
+	},
+	_experimental_getGlobalAttributes() {
+		console.warn(
+			'[SPLUNK OTEL WEB] DEPRECATION WARNING: The "SplunkRum._experimental_getGlobalAttributes()" method is deprecated and will be removed in a future major version. Please use "SplunkRum.getGlobalAttributes()" instead.',
+		)
+		return this.getGlobalAttributes()
 	},
 
-	_processedOptions: null,
-
-	get inited(): boolean {
-		return inited
+	_experimental_getSessionId() {
+		console.warn(
+			'[SPLUNK OTEL WEB] DEPRECATION WARNING: The "SplunkRum._experimental_getSessionId()" method is deprecated and will be removed in a future major version. Please use "SplunkRum.getSessionId()" instead.',
+		)
+		return this.getSessionId()
 	},
-
+	_experimental_removeEventListener(name, callback): void {
+		console.warn(
+			'[SPLUNK OTEL WEB] DEPRECATION WARNING: The "SplunkRum._experimental_removeEventListener(name, callback)" method is deprecated and will be removed in a future major version. Please use "SplunkRum.removeEventListener(name, callback)" instead.',
+		)
+		return this.removeEventListener(name, callback)
+	},
 	_internalInit: function (options: Partial<SplunkOtelWebConfigInternal>) {
 		SplunkRum.init({
 			...OPTIONS_DEFAULTS,
 			...options,
 		})
+	},
+	_processedOptions: null,
+
+	addEventListener(name, callback): void {
+		eventTarget?.addEventListener(name, callback)
+	},
+
+	AlwaysOffSampler,
+
+	// Re-export samplers as properties for easier use in CDN build
+	AlwaysOnSampler,
+
+	DEFAULT_AUTO_INSTRUMENTED_EVENT_NAMES,
+
+	DEFAULT_AUTO_INSTRUMENTED_EVENTS,
+
+	deinit(force = false) {
+		if (!inited && !force) {
+			return
+		}
+
+		_deregisterInstrumentations?.()
+		_deregisterInstrumentations = undefined
+
+		_deinitSessionTracking?.()
+		_deinitSessionTracking = undefined
+
+		_sessionStateUnsubscribe?.()
+		this.sessionManager?.stop()
+
+		void this.provider?.shutdown()
+		delete this.provider
+
+		eventTarget = undefined
+
+		diag.disable()
+		unregisterGlobal()
+
+		forgetAnonymousId()
+		inited = false
+	},
+
+	error(...args) {
+		console.warn(
+			'[SPLUNK OTEL WEB] DEPRECATION WARNING: The "SplunkRum.error(...args)" method is deprecated and will be removed in a future major version. Please use "SplunkRum.reportError(error, context)" instead.',
+		)
+
+		if (!inited) {
+			diag.debug('SplunkRum not inited')
+			return
+		}
+
+		if (!_errorInstrumentation) {
+			diag.error('Error was reported, but error instrumentation is disabled.')
+			return
+		}
+
+		_errorInstrumentation.report('SplunkRum.error', args, {})
+	},
+
+	getAnonymousId() {
+		if (!this._processedOptions) {
+			return
+		}
+
+		if (userTrackingMode === 'anonymousTracking') {
+			return getOrCreateAnonymousId({
+				domain: this._processedOptions.cookieDomain,
+				useLocalStorage: this._processedOptions.persistence === 'localStorage',
+			})
+		}
+	},
+
+	getGlobalAttributes(this: SplunkOtelWebType) {
+		return this.attributesProcessor?.getGlobalAttributes() || {}
+	},
+
+	getSessionId() {
+		if (!inited) {
+			return undefined
+		}
+
+		return this.sessionManager?.getSessionId()
+	},
+
+	getSessionState() {
+		if (!inited) {
+			return undefined
+		}
+
+		return this.sessionManager?.getSessionState()
 	},
 
 	init: function (options) {
@@ -400,19 +499,19 @@ export const SplunkRum: SplunkOtelWebType = {
 
 		const instanceId = generateId(64)
 
-		const { ignoreUrls, applicationName, deploymentEnvironment, version } = processedOptions
+		const { applicationName, deploymentEnvironment, ignoreUrls, version } = processedOptions
 		// enabled: false prevents registerInstrumentations from enabling instrumentations in constructor
 		// they will be enabled in registerInstrumentations
-		const pluginDefaults = { ignoreUrls, enabled: false }
+		const pluginDefaults = { enabled: false, ignoreUrls }
 
 		const resourceAttrs: ResourceAttributes = {
 			...SDK_INFO,
+			'app': applicationName,
 			[SemanticResourceAttributes.TELEMETRY_SDK_NAME]: '@splunk/otel-web',
 			[SemanticResourceAttributes.TELEMETRY_SDK_VERSION]: VERSION,
 			// Splunk specific attributes
 			'splunk.rumVersion': VERSION,
 			'splunk.scriptInstance': instanceId,
-			'app': applicationName,
 		}
 
 		if (BrowserInstanceService.id) {
@@ -430,7 +529,7 @@ export const SplunkRum: SplunkOtelWebType = {
 		})
 		this.sessionManager = new SessionManager(storageManager)
 		this.sessionManager.start()
-		_sessionStateUnsubscribe = this.sessionManager.subscribe(({ previousState, currentState }) => {
+		_sessionStateUnsubscribe = this.sessionManager.subscribe(({ currentState, previousState }) => {
 			if (!previousState) {
 				eventTarget?.emit('session-changed', { sessionId: currentState.id })
 			} else if (previousState.id !== currentState.id) {
@@ -444,7 +543,7 @@ export const SplunkRum: SplunkOtelWebType = {
 			this.sessionManager,
 			{
 				...(deploymentEnvironment
-					? { 'environment': deploymentEnvironment, 'deployment.environment': deploymentEnvironment }
+					? { 'deployment.environment': deploymentEnvironment, 'environment': deploymentEnvironment }
 					: {}),
 				...(version ? { 'app.version': version } : {}),
 				...(processedOptions.globalAttributes || {}),
@@ -459,8 +558,8 @@ export const SplunkRum: SplunkOtelWebType = {
 		if (processedOptions.beaconEndpoint) {
 			const exporter = buildExporter(processedOptions)
 			const spanProcessor = processedOptions.spanProcessor.factory(exporter, {
-				scheduledDelayMillis: processedOptions.bufferTimeout,
 				maxExportBatchSize: processedOptions.bufferSize,
+				scheduledDelayMillis: processedOptions.bufferTimeout,
 			})
 			spanProcessors.push(spanProcessor)
 			this._processor = spanProcessor
@@ -483,7 +582,7 @@ export const SplunkRum: SplunkOtelWebType = {
 			spanProcessors,
 		})
 
-		const instrumentations = INSTRUMENTATIONS.map(({ Instrument, confKey, disable }) => {
+		const instrumentations = INSTRUMENTATIONS.map(({ confKey, disable, Instrument }) => {
 			const pluginConf = getPluginConfig(processedOptions.instrumentations[confKey], pluginDefaults, disable)
 			if (pluginConf) {
 				const instrumentation =
@@ -517,15 +616,15 @@ export const SplunkRum: SplunkOtelWebType = {
 		provider.register({
 			contextManager: new SplunkContextManager({
 				...processedOptions.context,
-				onBeforeContextStart: () => _postDocLoadInstrumentation?.onBeforeContextChange(),
 				onBeforeContextEnd: () => _postDocLoadInstrumentation?.onBeforeContextChange(),
+				onBeforeContextStart: () => _postDocLoadInstrumentation?.onBeforeContextChange(),
 			}),
 		})
 
 		// After context manager registration so instrumentation event listeners are affected accordingly
 		_deregisterInstrumentations = registerInstrumentations({
-			tracerProvider: provider,
 			instrumentations,
+			tracerProvider: provider,
 		})
 
 		this.provider = provider
@@ -539,66 +638,14 @@ export const SplunkRum: SplunkOtelWebType = {
 		diag.info('SplunkRum.init() complete')
 	},
 
-	deinit(force = false) {
-		if (!inited && !force) {
-			return
-		}
-
-		_deregisterInstrumentations?.()
-		_deregisterInstrumentations = undefined
-
-		_deinitSessionTracking?.()
-		_deinitSessionTracking = undefined
-
-		_sessionStateUnsubscribe?.()
-		this.sessionManager?.stop()
-
-		void this.provider?.shutdown()
-		delete this.provider
-
-		eventTarget = undefined
-
-		diag.disable()
-		unregisterGlobal()
-
-		forgetAnonymousId()
-		inited = false
+	get inited(): boolean {
+		return inited
 	},
 
-	setGlobalAttributes(this: SplunkOtelWebType, attributes?: Attributes) {
-		this.attributesProcessor?.setGlobalAttributes(attributes)
-		eventTarget?.emit('global-attributes-changed', {
-			attributes: this.attributesProcessor?.getGlobalAttributes() || {},
-		})
-	},
+	ParentBasedSampler,
 
-	getGlobalAttributes(this: SplunkOtelWebType) {
-		return this.attributesProcessor?.getGlobalAttributes() || {}
-	},
-
-	_experimental_getGlobalAttributes() {
-		console.warn(
-			'[SPLUNK OTEL WEB] DEPRECATION WARNING: The "SplunkRum._experimental_getGlobalAttributes()" method is deprecated and will be removed in a future major version. Please use "SplunkRum.getGlobalAttributes()" instead.',
-		)
-		return this.getGlobalAttributes()
-	},
-
-	error(...args) {
-		console.warn(
-			'[SPLUNK OTEL WEB] DEPRECATION WARNING: The "SplunkRum.error(...args)" method is deprecated and will be removed in a future major version. Please use "SplunkRum.reportError(error, context)" instead.',
-		)
-
-		if (!inited) {
-			diag.debug('SplunkRum not inited')
-			return
-		}
-
-		if (!_errorInstrumentation) {
-			diag.error('Error was reported, but error instrumentation is disabled.')
-			return
-		}
-
-		_errorInstrumentation.report('SplunkRum.error', args, {})
+	removeEventListener(name, callback): void {
+		eventTarget?.removeEventListener(name, callback)
 	},
 
 	reportError(error: string | Event | Error | ErrorEvent, context: SpanContext = {}) {
@@ -628,66 +675,21 @@ export const SplunkRum: SplunkOtelWebType = {
 		_errorInstrumentation.report('SplunkRum.reportError', error, parsedAdditionalAttributes)
 	},
 
-	addEventListener(name, callback): void {
-		eventTarget?.addEventListener(name, callback)
-	},
+	SessionBasedSampler,
 
-	removeEventListener(name, callback): void {
-		eventTarget?.removeEventListener(name, callback)
-	},
-
-	_experimental_addEventListener(name, callback): void {
-		console.warn(
-			'[SPLUNK OTEL WEB] DEPRECATION WARNING: The "SplunkRum._experimental_addEventListener(name, callback)" method is deprecated and will be removed in a future major version. Please use "SplunkRum.addEventListener(name, callback)" instead.',
-		)
-		return this.addEventListener(name, callback)
-	},
-
-	_experimental_removeEventListener(name, callback): void {
-		console.warn(
-			'[SPLUNK OTEL WEB] DEPRECATION WARNING: The "SplunkRum._experimental_removeEventListener(name, callback)" method is deprecated and will be removed in a future major version. Please use "SplunkRum.removeEventListener(name, callback)" instead.',
-		)
-		return this.removeEventListener(name, callback)
+	setGlobalAttributes(this: SplunkOtelWebType, attributes?: Attributes) {
+		this.attributesProcessor?.setGlobalAttributes(attributes)
+		eventTarget?.emit('global-attributes-changed', {
+			attributes: this.attributesProcessor?.getGlobalAttributes() || {},
+		})
 	},
 
 	setUserTrackingMode(mode: UserTrackingMode) {
 		userTrackingMode = mode
 	},
 
-	getAnonymousId() {
-		if (!this._processedOptions) {
-			return
-		}
-
-		if (userTrackingMode === 'anonymousTracking') {
-			return getOrCreateAnonymousId({
-				useLocalStorage: this._processedOptions.persistence === 'localStorage',
-				domain: this._processedOptions.cookieDomain,
-			})
-		}
-	},
-
-	getSessionId() {
-		if (!inited) {
-			return undefined
-		}
-
-		return this.sessionManager?.getSessionId()
-	},
-
-	_experimental_getSessionId() {
-		console.warn(
-			'[SPLUNK OTEL WEB] DEPRECATION WARNING: The "SplunkRum._experimental_getSessionId()" method is deprecated and will be removed in a future major version. Please use "SplunkRum.getSessionId()" instead.',
-		)
-		return this.getSessionId()
-	},
-
-	getSessionState() {
-		if (!inited) {
-			return undefined
-		}
-
-		return this.sessionManager?.getSessionState()
+	get userTrackingMode() {
+		return userTrackingMode
 	},
 }
 

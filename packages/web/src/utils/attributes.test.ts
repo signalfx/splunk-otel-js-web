@@ -15,13 +15,14 @@
  * limitations under the License.
  *
  */
+import { describe, expect, it } from 'vitest'
+
 import {
 	isPlainObject,
+	isValidAttributeValue,
 	removeEmptyProperties,
 	removePropertiesWithAdvancedTypes,
-	isValidAttributeValue,
 } from './attributes'
-import { describe, it, expect } from 'vitest'
 
 describe('isPlainObject', () => {
 	it('should be true for plain object', () => {
@@ -81,12 +82,12 @@ describe('removePropertiesWithAdvancedTypes', () => {
 
 	it('should remove arrays', () => {
 		const obj = {
-			validStringArr: ['a', 'b'],
-			validNumberArr: [1, 2],
-			validBoolArr: [true, false],
+			invalidEmptyArr: [],
 			invalidMixedArr: ['a', 1, true],
 			invalidObjArr: [{}, null],
-			invalidEmptyArr: [],
+			validBoolArr: [true, false],
+			validNumberArr: [1, 2],
+			validStringArr: ['a', 'b'],
 		}
 		expect(removePropertiesWithAdvancedTypes(obj)).toEqual({})
 	})

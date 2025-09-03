@@ -17,6 +17,7 @@
  */
 
 import { diag } from '@opentelemetry/api'
+
 import { VERSION } from './version'
 
 const GLOBAL_OPENTELEMETRY_API_KEY = Symbol.for('opentelemetry.js.api.1')
