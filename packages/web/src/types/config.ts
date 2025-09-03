@@ -22,10 +22,12 @@ import { XMLHttpRequestInstrumentationConfig } from '@opentelemetry/instrumentat
 import { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { WebTracerConfig } from '@opentelemetry/sdk-trace-web'
 
-import { SplunkErrorInstrumentationConfig } from '../SplunkErrorInstrumentation'
-import { SplunkPostDocLoadResourceInstrumentationConfig } from '../SplunkPostDocLoadResourceInstrumentation'
-import { SocketIoClientInstrumentationConfig } from '../SplunkSocketIoClientInstrumentation'
-import { SplunkUserInteractionInstrumentationConfig } from '../SplunkUserInteractionInstrumentation'
+import {
+	SocketIoClientInstrumentationConfig,
+	SplunkErrorInstrumentationConfig,
+	SplunkPostDocLoadResourceInstrumentationConfig,
+	SplunkUserInteractionInstrumentationConfig,
+} from '../instrumentations'
 import { WebVitalsInstrumentationConfig } from '../webvitals'
 
 export interface SplunkOtelWebOptionsInstrumentations {

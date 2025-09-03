@@ -18,8 +18,8 @@
 
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 
-import { SplunkOtelWebConfig } from './types'
-import { VERSION } from './version'
+import { SplunkOtelWebConfig } from '../types'
+import { VERSION } from '../version'
 
 const LONGTASK_PERFORMANCE_TYPE = 'longtask'
 const MODULE_NAME = 'splunk-longtask'

@@ -38,26 +38,27 @@ import { type SplunkExporterConfig } from './exporters/common'
 import { SplunkOTLPTraceExporter } from './exporters/otlp'
 import { SplunkZipkinExporter } from './exporters/zipkin'
 import { registerGlobal, unregisterGlobal } from './global-utils'
-import { BrowserInstanceService } from './services/browser-instance-service'
-import { SessionBasedSampler } from './SessionBasedSampler'
-import { SplunkConnectivityInstrumentation } from './SplunkConnectivityInstrumentation'
-import { SplunkContextManager } from './SplunkContextManager'
-import { SplunkDocumentLoadInstrumentation } from './SplunkDocumentLoadInstrumentation'
-import { ERROR_INSTRUMENTATION_NAME, SplunkErrorInstrumentation } from './SplunkErrorInstrumentation'
-import { SplunkFetchInstrumentation } from './SplunkFetchInstrumentation'
-import { SplunkLongTaskInstrumentation } from './SplunkLongTaskInstrumentation'
-import { SplunkPageVisibilityInstrumentation } from './SplunkPageVisibilityInstrumentation'
-import { SplunkPostDocLoadResourceInstrumentation } from './SplunkPostDocLoadResourceInstrumentation'
-import { SplunkSamplerWrapper } from './SplunkSamplerWrapper'
-import { SplunkSocketIoClientInstrumentation } from './SplunkSocketIoClientInstrumentation'
-import { SplunkSpanAttributesProcessor } from './SplunkSpanAttributesProcessor'
 import {
 	DEFAULT_AUTO_INSTRUMENTED_EVENT_NAMES,
 	DEFAULT_AUTO_INSTRUMENTED_EVENTS,
+	ERROR_INSTRUMENTATION_NAME,
+	SplunkConnectivityInstrumentation,
+	SplunkDocumentLoadInstrumentation,
+	SplunkErrorInstrumentation,
+	SplunkFetchInstrumentation,
+	SplunkLongTaskInstrumentation,
+	SplunkPageVisibilityInstrumentation,
+	SplunkPostDocLoadResourceInstrumentation,
+	SplunkSocketIoClientInstrumentation,
 	SplunkUserInteractionInstrumentation,
+	SplunkWebSocketInstrumentation,
 	UserInteractionEventsConfig,
-} from './SplunkUserInteractionInstrumentation'
-import { SplunkWebSocketInstrumentation } from './SplunkWebSocketInstrumentation'
+} from './instrumentations'
+import { BrowserInstanceService } from './services/browser-instance-service'
+import { SessionBasedSampler } from './SessionBasedSampler'
+import { SplunkContextManager } from './SplunkContextManager'
+import { SplunkSamplerWrapper } from './SplunkSamplerWrapper'
+import { SplunkSpanAttributesProcessor } from './SplunkSpanAttributesProcessor'
 import { SplunkWebTracerProvider } from './SplunkWebTracerProvider'
 import { SplunkXhrPlugin } from './SplunkXhrPlugin'
 import { getSyntheticsRunId, SYNTHETICS_RUN_ID_ATTRIBUTE } from './synthetics'

@@ -22,9 +22,9 @@ import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instr
 import { getElementXPath } from '@opentelemetry/sdk-trace-web'
 import * as shimmer from 'shimmer'
 
-import { isElement } from './types'
-import { limitLen } from './utils'
-import { getValidAttributes, isPlainObject, removePropertiesWithAdvancedTypes, SpanContext } from './utils/attributes'
+import { isElement } from '../types'
+import { limitLen } from '../utils'
+import { getValidAttributes, isPlainObject, removePropertiesWithAdvancedTypes, SpanContext } from '../utils/attributes'
 
 // FIXME take timestamps from events?
 

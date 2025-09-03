@@ -22,7 +22,7 @@ import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instr
 import { addSpanNetworkEvents } from '@opentelemetry/sdk-trace-web'
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions'
 
-import { VERSION } from './version'
+import { VERSION } from '../version'
 
 export interface SplunkPostDocLoadResourceInstrumentationConfig extends InstrumentationConfig {
 	allowedInitiatorTypes?: string[]
