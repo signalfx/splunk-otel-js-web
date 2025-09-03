@@ -16,7 +16,7 @@
  *
  */
 
-import { createReadStream } from 'fs'
+import { createReadStream } from 'node:fs'
 
 import axios from 'axios'
 import * as FormData from 'form-data'

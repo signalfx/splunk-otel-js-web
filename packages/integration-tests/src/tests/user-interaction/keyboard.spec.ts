@@ -25,12 +25,12 @@ test.describe('keyboard', () => {
 		await recordPage.locator('body').type('a')
 
 		// TODO: Two keydown spans are being created. Investigate why.
-		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'keydown').length >= 1)
-		const keydownSpans = recordPage.receivedSpans.filter((span) => span.name === 'keydown')
+		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'keydown'))
+		const keydownSpan = recordPage.receivedSpans.find((span) => span.name === 'keydown')
 
-		expect(keydownSpans[0].tags['component']).toBe('user-interaction')
-		expect(keydownSpans[0].tags['event_type']).toBe('keydown')
-		expect(keydownSpans[0].tags['target_element']).toBe('BODY')
-		expect(keydownSpans[0].tags['target_xpath']).toBe('//html/body')
+		expect(keydownSpan.tags['component']).toBe('user-interaction')
+		expect(keydownSpan.tags['event_type']).toBe('keydown')
+		expect(keydownSpan.tags['target_element']).toBe('BODY')
+		expect(keydownSpan.tags['target_xpath']).toBe('//html/body')
 	})
 })

@@ -16,17 +16,17 @@
  *
  */
 
-import { readFileSync } from 'fs'
-import { resolve } from 'path'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 
 import { getPackageRoots } from './utils/index.mjs'
 
 getPackageRoots().forEach((packagePath) => {
-	const packageJsonPath = resolve(packagePath, 'package.json')
-	const { name, version } = JSON.parse(readFileSync(packageJsonPath, 'utf-8'))
+	const packageJsonPath = path.resolve(packagePath, 'package.json')
+	const { name, version } = JSON.parse(readFileSync(packageJsonPath, 'utf8'))
 
-	const versionFilePath = resolve(packagePath, 'src', 'version.ts')
-	const versionFileContent = readFileSync(versionFilePath, 'utf-8')
+	const versionFilePath = path.resolve(packagePath, 'src', 'version.ts')
+	const versionFileContent = readFileSync(versionFilePath, 'utf8')
 
 	const hasMatchingInternalVersion = versionFileContent.includes(`export const VERSION = '${version}'`)
 	if (!hasMatchingInternalVersion) {

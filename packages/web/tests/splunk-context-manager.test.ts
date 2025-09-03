@@ -90,7 +90,7 @@ describe('async context propagation', () => {
 
 		await new Promise<void>((resolve) => {
 			context.with(trace.setSpan(context.active(), span), () => {
-				Promise.reject(new Error()).then(
+				Promise.reject(new Error('error')).then(
 					() => null,
 					() => {
 						tracer.startSpan('child-span').end()
@@ -114,7 +114,7 @@ describe('async context propagation', () => {
 
 		await new Promise<void>((resolve) => {
 			context.with(trace.setSpan(context.active(), span), () => {
-				Promise.reject(new Error()).catch(() => {
+				Promise.reject(new Error('error')).catch(() => {
 					tracer.startSpan('child-span').end()
 					span.end()
 
@@ -194,12 +194,12 @@ describe('async context propagation', () => {
 				req.open('GET', location.href)
 				req.send()
 
-				req.onload = () => {
+				req.addEventListener('load', () => {
 					tracer.startSpan('child-span').end()
 					span.end()
 
 					resolve()
-				}
+				})
 			})
 		})
 
@@ -215,6 +215,7 @@ describe('async context propagation', () => {
 
 		const channel = new MessageChannel()
 		await new Promise<void>((resolve) => {
+			// eslint-disable-next-line unicorn/prefer-add-event-listener
 			channel.port1.onmessage = function () {
 				tracer.startSpan('child-span').end()
 				span.end()

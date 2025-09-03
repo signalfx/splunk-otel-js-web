@@ -20,7 +20,7 @@ import { initSocketIo, initWebSocketServer } from './servers'
 let teardown = false
 let isRunning = false
 
-export default function () {
+export default function globalSetup() {
 	if (isRunning) {
 		return
 	}

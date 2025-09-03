@@ -27,7 +27,7 @@ function assertSessionIsEmpty() {
 			throw new Error('Session is expected to be empty, but is set in localStorage.')
 		}
 
-		if (document.cookie.indexOf('_splunk_rum_sid') >= 0) {
+		if (document.cookie.includes('_splunk_rum_sid')) {
 			throw new Error(`Session is expected to be empty, but is set in cookies: ${document.cookie}`)
 		}
 	} finally {

@@ -38,7 +38,7 @@ export const initWithDefaultConfig = (capturer: SpanCapturer, additionalOptions 
 	})
 
 	if (!SplunkRum.inited) {
-		throw Error('SplunkRum not initialized')
+		throw new Error('SplunkRum not initialized')
 	}
 }
 

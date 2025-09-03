@@ -69,11 +69,10 @@ export class CookieStorageProvider extends BaseStorageProvider {
 			if (isIframe()) {
 				// Safari does not set cookie when the SameSite attribute is set to None and Secure is set to true in an iframe
 				// It fails also in our unit tests since they are running in iframe and on localhost.
-				if (['localhost', '127.0.0.1'].includes(window.location.hostname) && isSafari()) {
-					rawCookie += ';SameSite=None'
-				} else {
-					rawCookie += ';SameSite=None;Secure'
-				}
+				rawCookie +=
+					['localhost', '127.0.0.1'].includes(window.location.hostname) && isSafari()
+						? ';SameSite=None'
+						: ';SameSite=None;Secure'
 			} else {
 				rawCookie += ';SameSite=Strict'
 			}

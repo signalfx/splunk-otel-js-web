@@ -20,17 +20,14 @@ import { wrap } from 'shimmer'
 
 export function generateId(bits: number): string {
 	const xes = 'x'.repeat(bits / 4)
-	return xes.replace(/x/g, function () {
+	return xes.replaceAll('x', function () {
+		// eslint-disable-next-line unicorn/prefer-math-trunc
 		return ((Math.random() * 16) | 0).toString(16)
 	})
 }
 
 export function limitLen(s: string, cap: number): string {
-	if (s.length > cap) {
-		return s.substring(0, cap)
-	} else {
-		return s
-	}
+	return s.length > cap ? s.slice(0, Math.max(0, cap)) : s
 }
 
 /**

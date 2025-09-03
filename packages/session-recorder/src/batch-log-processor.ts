@@ -26,7 +26,7 @@ export interface BatchLogProcessorConfig {
 }
 
 export class BatchLogProcessor {
-	private readonly exportTimeoutMillis = 30000
+	private readonly exportTimeoutMillis = 30_000
 
 	private finishedLogs: Log[] = []
 
@@ -113,10 +113,7 @@ export class BatchLogProcessor {
 		}
 
 		return new Promise((resolve, reject) => {
-			callWithTimeout(
-				this.exportLogs(this.finishedLogs.splice(0, this.finishedLogs.length)),
-				this.exportTimeoutMillis,
-			)
+			callWithTimeout(this.exportLogs(this.finishedLogs.splice(0)), this.exportTimeoutMillis)
 				.then(resolve)
 				.catch(reject)
 		})
@@ -135,8 +132,8 @@ export class BatchLogProcessor {
 						this.maybeStartTimer()
 					}
 				})
-				.catch((e) => {
-					globalErrorHandler(e)
+				.catch((error) => {
+					globalErrorHandler(error)
 				})
 		}, this.scheduledDelayMillis)
 		unrefTimer(this.timer)

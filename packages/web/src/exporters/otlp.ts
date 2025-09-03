@@ -71,7 +71,7 @@ export class SplunkOTLPTraceExporter extends OTLPTraceExporter {
 		const body = this._serializer.serializeRequest(items) ?? new Uint8Array()
 
 		// Changed: Determine which exporter to use at the time of export
-		if (document.hidden && this._beaconSender && body.length <= 64000) {
+		if (document.hidden && this._beaconSender && body.length <= 64_000) {
 			this._beaconSender(this.url, body, { type: 'application/json' })
 		} else if (this._xhrSender) {
 			this._xhrSender(this.url, body, {

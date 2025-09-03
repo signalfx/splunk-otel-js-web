@@ -15,8 +15,8 @@
  * limitations under the License.
  *
  */
-import { createHash } from 'crypto'
-import { createReadStream } from 'fs'
+import { createHash } from 'node:crypto'
+import { createReadStream } from 'node:fs'
 
 export const PLUGIN_NAME = 'SplunkRumPlugin'
 
@@ -59,12 +59,13 @@ export function getInsertIndexForCodeSnippet(content: string | Buffer<ArrayBuffe
 	const contentString = typeof content === 'string' ? content : content.toString()
 	const sourceMappingUrlIndex = contentString.search(new RegExp('\n' + SOURCE_MAPPING_URL_COMMENT_START + '.*\n?$'))
 
-	if (sourceMappingUrlIndex !== -1) {
-		// insert the code snippet above the //# sourceMappingURL comment
-		return sourceMappingUrlIndex
-	} else {
+	// eslint-disable-next-line unicorn/prefer-ternary
+	if (sourceMappingUrlIndex === -1) {
 		// concat the code snippet to the end
 		return content.length
+	} else {
+		// insert the code snippet above the //# sourceMappingURL comment
+		return sourceMappingUrlIndex
 	}
 }
 

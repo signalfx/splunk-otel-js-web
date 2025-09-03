@@ -59,6 +59,7 @@ describe('SessionManager', () => {
 			storageManager = new StorageManager({
 				sessionPersistence: 'cookie',
 			})
+			// eslint-disable-next-line unicorn/no-useless-undefined
 			storageManager.getSessionState = vi.fn().mockReturnValue(undefined)
 			storageManager.persistSessionState = vi.fn().mockReturnValue(true)
 			sessionManager = new SessionManager(storageManager)

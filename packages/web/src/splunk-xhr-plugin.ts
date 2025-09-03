@@ -43,7 +43,7 @@ export class SplunkXhrPlugin extends XMLHttpRequestInstrumentation {
 				xhr.addEventListener('readystatechange', function () {
 					if (xhr.readyState === xhr.HEADERS_RECEIVED) {
 						const headers = xhr.getAllResponseHeaders().toLowerCase()
-						if (headers.indexOf('server-timing') !== -1) {
+						if (headers.includes('server-timing')) {
 							const st = xhr.getResponseHeader('server-timing')
 							if (st !== null) {
 								captureTraceParent(st, span)

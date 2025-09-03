@@ -18,7 +18,7 @@
 import { context } from '@opentelemetry/api'
 import { suppressTracing } from '@opentelemetry/core'
 
-import { BatchLogProcessor, convert } from '../BatchLogProcessor'
+import { BatchLogProcessor, convert } from '../batch-log-processor'
 import { SplunkRumRecorderConfig } from '../index'
 import { log } from '../log'
 import { Segment, SessionReplay, SessionReplayConfig } from './cdn-module'

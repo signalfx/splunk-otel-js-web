@@ -17,7 +17,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 
-import { InternalEventTarget } from '../src/EventTarget'
+import { InternalEventTarget } from '../src/event-target'
 
 describe('InternalEventTarget', () => {
 	it('should be able to create a new InternalEventTarget', () => {

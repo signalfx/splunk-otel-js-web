@@ -161,7 +161,7 @@ test.describe('resource observer', () => {
 		await recordPage.goTo('/resource-observer/resources-custom-context.ejs')
 		await recordPage.locator('#btn1').click()
 		await recordPage.waitForTimeoutAndFlushData(1000)
-		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'click').length >= 1)
+		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'click'))
 
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})

@@ -96,6 +96,7 @@ describe('can produce websocket events', () => {
 		const socket = io('http://127.0.0.1:8980')
 
 		await new Promise<void>((resolve) => {
+			// eslint-disable-next-line unicorn/consistent-function-scoping
 			function tempListener() {
 				throw new Error('Called removed listener')
 			}

@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-const path = require('path')
+const path = require('node:path')
 module.exports = {
 	getBaseConfig: (configFilename) => ({
 		entry: {

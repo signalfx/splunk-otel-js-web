@@ -88,7 +88,7 @@ app.post('/items', (req, res) => {
 })
 
 app.get('/items/:id', (req, res) => {
-	const reqId = parseInt(req.params.id)
+	const reqId = Number.parseInt(req.params.id)
 	const item = getItems(req).find(({ id }) => id === reqId)
 
 	if (!item) {
@@ -99,7 +99,7 @@ app.get('/items/:id', (req, res) => {
 })
 
 app.patch('/items/:id', (req, res) => {
-	const reqId = parseInt(req.params.id)
+	const reqId = Number.parseInt(req.params.id)
 	const item = getItems(req).find(({ id }) => id === reqId)
 
 	if (!item) {
@@ -118,7 +118,7 @@ app.patch('/items/:id', (req, res) => {
 })
 
 app.delete('/items/:id', (req, res) => {
-	const reqId = parseInt(req.params.id)
+	const reqId = Number.parseInt(req.params.id)
 	const item = getItems(req).find(({ id }) => id === reqId)
 
 	if (!item) {

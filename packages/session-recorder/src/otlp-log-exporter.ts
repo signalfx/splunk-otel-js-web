@@ -44,7 +44,7 @@ interface OTLPLogExporterConfig {
 	usePersistentExportQueue: boolean
 }
 
-const KEEPALIVE_MAX_LENGTH = 65536
+const KEEPALIVE_MAX_LENGTH = 65_536
 
 const defaultHeaders = {
 	'Content-Encoding': 'gzip',

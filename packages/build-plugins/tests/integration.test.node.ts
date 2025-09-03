@@ -15,8 +15,8 @@
  * limitations under the License.
  *
  */
-import { existsSync, readFileSync } from 'fs'
-import * as path from 'path'
+import { existsSync, readFileSync } from 'node:fs'
+import path from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
@@ -64,7 +64,7 @@ async function verifySourceMapIdInjectionDidOccur(distDirectory: string) {
 	// A real browser and real server are needed to perform further validation on the keys & values
 	// that will end up in window.sourceMapIds because of how the code snippet's regex works.
 	// There are playwright tests to handle this case.
-	expect((window as any).sourceMapIds).not.eq(undefined)
+	expect((window as any).sourceMapIds).not.eq()
 
 	// Assert:
 	// check that the correct sourceMapId is included in the code snippet
@@ -81,7 +81,7 @@ async function verifySourceMapIdInjectionDidNotOccur(distDirectory: string) {
 	const mainJs = path.resolve(distDirectory + 'main.js')
 	await import(mainJs)
 
-	expect((window as any).sourceMapIds).eq(undefined)
+	expect((window as any).sourceMapIds).eq()
 	expect(readFileSync(mainJs).toString()).not.contains('window.sourceMapIds')
 	;(global.window as any) = oldWindow
 }

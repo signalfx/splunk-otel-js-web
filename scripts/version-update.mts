@@ -16,14 +16,14 @@
  *
  */
 
-import { readFileSync, writeFileSync } from 'fs'
-import { resolve } from 'path'
+import { readFileSync, writeFileSync } from 'node:fs'
+import path from 'node:path'
 
 import { getPackageRoots } from './utils/index.mjs'
 
 // This script is ran when the root package is updated (which happens before child packages)
-const packageJsonRootPath = resolve(process.cwd(), 'package.json')
-const packageJsonRootValue = JSON.parse(readFileSync(packageJsonRootPath, 'utf-8'))
+const packageJsonRootPath = path.resolve(process.cwd(), 'package.json')
+const packageJsonRootValue = JSON.parse(readFileSync(packageJsonRootPath, 'utf8'))
 
 getPackageRoots().forEach((packagePath) => {
 	const content = `/**
@@ -48,6 +48,6 @@ getPackageRoots().forEach((packagePath) => {
 export const VERSION = '${packageJsonRootValue.version}'
 `
 
-	const fileUrl = resolve(packagePath, 'src', 'version.ts')
+	const fileUrl = path.resolve(packagePath, 'src', 'version.ts')
 	writeFileSync(fileUrl, content)
 })

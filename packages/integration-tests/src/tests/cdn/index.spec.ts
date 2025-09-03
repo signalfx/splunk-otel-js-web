@@ -36,15 +36,18 @@ test.describe('cdn', () => {
 		let expectedMessage = ''
 
 		switch (browserName) {
-			case 'chromium':
+			case 'chromium': {
 				expectedMessage = "Cannot set properties of null (setting 'prop1')"
 				break
-			case 'firefox':
+			}
+			case 'firefox': {
 				expectedMessage = 'can\'t access property "prop1", test is null'
 				break
-			case 'webkit':
+			}
+			case 'webkit': {
 				expectedMessage = "null is not an object (evaluating 'test.prop1 = true')"
 				break
+			}
 		}
 
 		expect(errorSpan.tags['error.message']).toBe(expectedMessage)

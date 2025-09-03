@@ -19,7 +19,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { SessionManager, StorageManager } from '../src/managers'
-import { SplunkSpanAttributesProcessor } from '../src/SplunkSpanAttributesProcessor'
+import { SplunkSpanAttributesProcessor } from '../src/splunk-span-attributes-processor'
 
 describe('SplunkSpanAttributesProcessor', () => {
 	const storageManager = new StorageManager({

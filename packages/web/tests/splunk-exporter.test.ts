@@ -54,7 +54,7 @@ describe('SplunkZipkinExporter', () => {
 		beaconSenderMock = vi.fn().mockReturnValue(true)
 		window.navigator.sendBeacon = beaconSenderMock
 
-		xhrSenderMock = vi.fn().mockReturnValue(undefined)
+		xhrSenderMock = vi.fn().mockReturnValue()
 	})
 
 	afterEach(async () => {
@@ -150,22 +150,24 @@ describe('SplunkZipkinExporter', () => {
 			},
 			name: 'asd',
 		})
-		dummySpan.events.push({
-			name: 'fetchStart',
-			time: dummySpan.startTime,
-		})
-		dummySpan.events.push({
-			name: 'connectStart',
-			time: timeInputToHrTime(0),
-		})
-		dummySpan.events.push({
-			name: 'connectEnd',
-			time: timeInputToHrTime(0),
-		})
-		dummySpan.events.push({
-			name: 'responseEnd',
-			time: dummySpan.startTime,
-		})
+		dummySpan.events.push(
+			{
+				name: 'fetchStart',
+				time: dummySpan.startTime,
+			},
+			{
+				name: 'connectStart',
+				time: timeInputToHrTime(0),
+			},
+			{
+				name: 'connectEnd',
+				time: timeInputToHrTime(0),
+			},
+			{
+				name: 'responseEnd',
+				time: dummySpan.startTime,
+			},
+		)
 		exporter.export([dummySpan], () => {})
 		expect(xhrSenderMock).toHaveBeenCalledTimes(1)
 		const sendXhrArgs = xhrSenderMock.mock.calls[0]

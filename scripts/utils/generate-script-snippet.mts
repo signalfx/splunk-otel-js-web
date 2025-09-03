@@ -29,10 +29,10 @@ export const generateScriptSnippet = ({
 	const lines = []
 
 	lines.push(`${filename}:`)
-	if (!isVersionImmutable) {
-		lines.push(`<script src="${publicUrl}" crossorigin="anonymous"></script>`)
-	} else {
+	if (isVersionImmutable) {
 		lines.push(`<script src="${publicUrl}" integrity="${integrityValue}" crossorigin="anonymous"></script>`)
+	} else {
+		lines.push(`<script src="${publicUrl}" crossorigin="anonymous"></script>`)
 	}
 
 	return lines.join('\n')

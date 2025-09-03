@@ -243,7 +243,7 @@ describe('SplunkErrorInstrumentation', () => {
 
 	it('should test long stack traces', () => {
 		const randomPaths = generateFilePaths(20, 20)
-		const randomStack = generateRandomStackTrace(randomPaths, 10000)
+		const randomStack = generateRandomStackTrace(randomPaths, 10_000)
 
 		while ((match = STACK_TRACE_URL_PATTER.exec(randomStack)) !== null) {
 			urls.add(match[0])
@@ -331,7 +331,7 @@ describe('SplunkErrorInstrumentation', () => {
 
 		it('reports original error if transformation failed', () => {
 			initWithHook(() => {
-				throw Error('bad implementation')
+				throw new Error('bad implementation')
 			})
 
 			const e1 = new Error('test error')

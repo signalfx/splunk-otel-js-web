@@ -16,7 +16,7 @@
  *
  */
 import * as fs from 'node:fs'
-import path from 'path'
+import path from 'node:path'
 
 import cors from '@fastify/cors'
 import fastifyStatic from '@fastify/static'
@@ -122,56 +122,54 @@ fastify.get<{
 	const filePath = path.join(__dirname, '../tests', parsedUrl.pathname)
 
 	if (fs.existsSync(filePath)) {
-		if (parsedUrl.pathname.endsWith('.ejs')) {
-			return reply.viewAsync(parsedUrl.pathname, {
-				renderAgent(userOpts = {}, noInit = false, file = defaultFile, cdnVersion = null) {
-					const options: Record<string, unknown> = {
-						applicationName: 'splunk-otel-js-dummy-app',
-						beaconEndpoint: beaconUrl.toString(),
-						bufferTimeout: GLOBAL_TEST_BUFFER_TIMEOUT,
-						debug: true,
-						...userOpts,
-					}
-
-					const customOptions: Record<string, unknown> = {}
-					if (typeof request.query.samplingRatio === 'string') {
-						customOptions['samplingRatio'] = parseFloat(request.query.samplingRatio)
-					}
-
-					if (typeof request.query.forceSessionId === 'string') {
-						customOptions['forceSessionId'] = request.query.forceSessionId
-					}
-
-					if (typeof request.query.disableInstrumentation === 'string') {
-						if (!options.instrumentations) {
-							options.instrumentations = {}
+		return parsedUrl.pathname.endsWith('.ejs')
+			? reply.viewAsync(parsedUrl.pathname, {
+					renderAgent(userOpts = {}, noInit = false, file = defaultFile, cdnVersion = null) {
+						const options: Record<string, unknown> = {
+							applicationName: 'splunk-otel-js-dummy-app',
+							beaconEndpoint: beaconUrl.toString(),
+							bufferTimeout: GLOBAL_TEST_BUFFER_TIMEOUT,
+							debug: true,
+							...userOpts,
 						}
 
-						request.query.disableInstrumentation.split(',').forEach((instrumentation) => {
-							options.instrumentations[instrumentation] = false
+						const customOptions: Record<string, unknown> = {}
+						if (typeof request.query.samplingRatio === 'string') {
+							customOptions['samplingRatio'] = Number.parseFloat(request.query.samplingRatio)
+						}
+
+						if (typeof request.query.forceSessionId === 'string') {
+							customOptions['forceSessionId'] = request.query.forceSessionId
+						}
+
+						if (typeof request.query.disableInstrumentation === 'string') {
+							if (!options.instrumentations) {
+								options.instrumentations = {}
+							}
+
+							request.query.disableInstrumentation.split(',').forEach((instrumentation) => {
+								options.instrumentations[instrumentation] = false
+							})
+						}
+
+						if (typeof request.query.beaconEndpoint === 'string') {
+							options.beaconEndpoint = request.query.beaconEndpoint
+						}
+
+						if (cdnVersion) {
+							file = `https://cdn.signalfx.com/o11y-gdi-rum/${cdnVersion}/splunk-otel-web.js`
+						}
+
+						return ejs.render(RENDER_AGENT_TEMPLATE, {
+							customOptions: JSON.stringify(customOptions),
+							file,
+							noInit,
+							options: JSON.stringify(options),
+							otelApiGlobalsFile: '/artifacts/otel-api-globals.js',
 						})
-					}
-
-					if (typeof request.query.beaconEndpoint === 'string') {
-						options.beaconEndpoint = request.query.beaconEndpoint
-					}
-
-					if (cdnVersion) {
-						file = `https://cdn.signalfx.com/o11y-gdi-rum/${cdnVersion}/splunk-otel-web.js`
-					}
-
-					return ejs.render(RENDER_AGENT_TEMPLATE, {
-						customOptions: JSON.stringify(customOptions),
-						file,
-						noInit,
-						options: JSON.stringify(options),
-						otelApiGlobalsFile: '/artifacts/otel-api-globals.js',
-					})
-				},
-			})
-		} else {
-			return reply.sendFile(`${parsedUrl.pathname}`)
-		}
+					},
+				})
+			: reply.sendFile(`${parsedUrl.pathname}`)
 	} else {
 		reply.status(404).send('Error: Invalid URL')
 	}
@@ -183,8 +181,8 @@ const start = async () => {
 	try {
 		await fastify.listen({ port: PORT })
 		console.log('Server is running...')
-	} catch (err) {
-		fastify.log.error(err)
+	} catch (error) {
+		fastify.log.error(error)
 		process.exit(1)
 	}
 }

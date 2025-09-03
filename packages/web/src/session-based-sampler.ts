@@ -60,7 +60,8 @@ export class SessionBasedSampler implements Sampler {
 		sampled = new AlwaysOnSampler(),
 	}: SessionBasedSamplerConfig = {}) {
 		this.ratio = this._normalize(ratio)
-		this.upperBound = Math.floor(this.ratio * 0xffffffff)
+		// eslint-disable-next-line unicorn/number-literal-case
+		this.upperBound = Math.floor(this.ratio * 0xff_ff_ff_ff)
 
 		this.sampled = sampled
 		this.notSampled = notSampled
@@ -102,17 +103,17 @@ export class SessionBasedSampler implements Sampler {
 		let accumulation = 0
 		for (let i = 0; i < sessionId.length / 8; i++) {
 			const pos = i * 8
-			const part = parseInt(sessionId.slice(pos, pos + 8), 16)
+			const part = Number.parseInt(sessionId.slice(pos, pos + 8), 16)
 			accumulation = (accumulation ^ part) >>> 0
 		}
 		return accumulation
 	}
 
 	private _normalize(ratio: number): number {
-		if (typeof ratio !== 'number' || isNaN(ratio)) {
+		if (typeof ratio !== 'number' || Number.isNaN(ratio)) {
 			return 0
 		}
 
-		return ratio >= 1 ? 1 : ratio <= 0 ? 0 : ratio
+		return ratio >= 1 ? 1 : Math.max(ratio, 0)
 	}
 }

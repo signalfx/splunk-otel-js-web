@@ -29,7 +29,7 @@ test.describe('long task', () => {
 
 		await recordPage.locator('#btnLongtask').click()
 
-		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'longtask').length >= 1)
+		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'longtask'))
 		const longTaskSpans = recordPage.receivedSpans.filter((span) => span.name === 'longtask')
 
 		expect(longTaskSpans).toHaveLength(1)
@@ -45,7 +45,7 @@ test.describe('long task', () => {
 		expect(longTaskSpans[0].tags['longtask.attribution.container_id']).toBe('')
 		expect(longTaskSpans[0].tags['longtask.attribution.container_name']).toBe('')
 
-		const longTaskSpanDuration = parseFloat(longTaskSpans[0].tags['longtask.duration'] as string)
+		const longTaskSpanDuration = Number.parseFloat(longTaskSpans[0].tags['longtask.duration'] as string)
 		expect(
 			longTaskSpanDuration,
 			`Duration (${longTaskSpanDuration}) must be over 50ms by definition.`,
@@ -66,11 +66,11 @@ test.describe('long task', () => {
 		}
 
 		await recordPage.goTo('/long-task/buffered.ejs')
-		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'longtask').length >= 1)
+		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'longtask'))
 		const longTaskSpans = recordPage.receivedSpans.filter((span) => span.name === 'longtask')
 
 		expect(longTaskSpans).toHaveLength(1)
-		const longTaskSpanDuration = parseFloat(longTaskSpans[0].tags['longtask.duration'] as string)
+		const longTaskSpanDuration = Number.parseFloat(longTaskSpans[0].tags['longtask.duration'] as string)
 		expect(longTaskSpans[0].duration, 'Span duration matches longtask duration').toBe(longTaskSpanDuration * 1000)
 	})
 

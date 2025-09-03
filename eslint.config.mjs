@@ -20,6 +20,7 @@ import stylistic from '@stylistic/eslint-plugin'
 import headers from 'eslint-plugin-headers'
 import perfectionist from 'eslint-plugin-perfectionist'
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended'
+import unicorn from 'eslint-plugin-unicorn'
 import globals from 'globals'
 import tseslint from 'typescript-eslint'
 
@@ -47,6 +48,7 @@ const config = [
 			'@typescript-eslint': tseslint.plugin,
 			headers,
 			perfectionist,
+			unicorn,
 		},
 		rules: {
 			'@stylistic/lines-between-class-members': ['error', 'always'],
@@ -229,6 +231,30 @@ const config = [
 			],
 			'prettier/prettier': 'error',
 			'space-before-blocks': 'off',
+
+			...unicorn.configs.recommended.rules,
+			'unicorn/custom-error-definition': 'off',
+			'unicorn/no-abusive-eslint-disable': 'off',
+			'unicorn/no-array-callback-reference': 'off',
+			'unicorn/no-array-for-each': 'off',
+			'unicorn/no-array-reduce': 'off',
+			'unicorn/no-await-expression-member': 'off',
+			'unicorn/no-document-cookie': 'off',
+			'unicorn/no-keyword-prefix': 'off',
+			'unicorn/no-lonely-if': 'off',
+			'unicorn/no-nested-ternary': 'off',
+			'unicorn/no-null': 'off',
+			'unicorn/no-process-exit': 'off',
+			'unicorn/no-static-only-class': 'off',
+			'unicorn/no-this-assignment': 'off',
+			'unicorn/no-unnecessary-polyfills': 'off',
+			'unicorn/prefer-dom-node-remove': 'off',
+			'unicorn/prefer-dom-node-text-content': 'off',
+			'unicorn/prefer-global-this': 'off',
+			'unicorn/prefer-module': 'off',
+			'unicorn/prefer-spread': 'off',
+			'unicorn/prefer-structured-clone': 'off',
+			'unicorn/prevent-abbreviations': 'off',
 		},
 	},
 

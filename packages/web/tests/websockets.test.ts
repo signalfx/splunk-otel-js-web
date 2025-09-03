@@ -51,9 +51,11 @@ describe('can produce websocket events', () => {
 		socket.addEventListener('message', msgListener)
 		// Handful of misc listener calls to exercise some code while we have a test fixture handy
 		socket.addEventListener('message', msgListener) // has no effect
-		socket.removeEventListener('message', function () {
+		// eslint-disable-next-line unicorn/consistent-function-scoping
+		const listenerReferenceTest = () => {
 			/* never actually added */
-		})
+		}
+		socket.removeEventListener('message', listenerReferenceTest)
 
 		await new Promise((resolve) => setTimeout(resolve, 1000))
 

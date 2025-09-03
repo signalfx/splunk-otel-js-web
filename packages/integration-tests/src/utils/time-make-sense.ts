@@ -39,7 +39,7 @@ export const timesMakeSense = (
 	expect(diff).toBeLessThanOrEqual(fiveMinutes)
 
 	// Also looking for rough synchronization with reality (at least from our CI systems/laptops...)
-	const nowMicros = new Date().getTime() * 1000
+	const nowMicros = Date.now() * 1000
 	let clockSkew = annotationsObject[startName] - nowMicros
 	if (clockSkew < 0) {
 		clockSkew = -clockSkew

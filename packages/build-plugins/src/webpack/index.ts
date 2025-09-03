@@ -16,12 +16,12 @@
  *
  */
 
-import { join } from 'path'
+import path from 'node:path'
 
 import { AxiosError } from 'axios'
 import type { Compiler } from 'webpack'
 
-import { uploadFile } from '../httpUtils'
+import { uploadFile } from '../http-utils'
 import { SplunkRumPluginOptions } from '../index'
 import {
 	computeSourceMapId,
@@ -64,7 +64,7 @@ export function applySourceMapsInject(compiler: Compiler) {
 			() => {
 				for (const chunk of compilation.chunks) {
 					for (const file of chunk.files) {
-						if (!file.match(JS_FILE_REGEX)) {
+						if (!JS_FILE_REGEX.test(file)) {
 							continue
 						}
 
@@ -118,7 +118,7 @@ export function applySourceMapsUpload(compiler: Compiler, options: SplunkRumPlug
 		 */
 		const sourceMaps: string[] = []
 		compilation.assetsInfo.forEach((assetInfo, asset) => {
-			if (asset.match(JS_FILE_REGEX) && typeof assetInfo?.related?.sourceMap === 'string') {
+			if (JS_FILE_REGEX.test(asset) && typeof assetInfo?.related?.sourceMap === 'string') {
 				sourceMaps.push(assetInfo.related.sourceMap)
 			}
 		})
@@ -143,7 +143,7 @@ export function applySourceMapsUpload(compiler: Compiler, options: SplunkRumPlug
 				['appName', options.applicationName],
 				['appVersion', options.version],
 				// eslint-disable-next-line @typescript-eslint/no-unused-vars
-			].filter(([_, value]) => typeof value !== 'undefined'),
+			].filter(([_, value]) => value !== undefined),
 		)
 
 		if (!options.sourceMaps) {
@@ -154,14 +154,14 @@ export function applySourceMapsUpload(compiler: Compiler, options: SplunkRumPlug
 		 * resolve the source map assets to a file system path, then upload the files
 		 */
 		for (const sourceMap of sourceMaps) {
-			const sourceMapPath = join(compiler.outputPath, sourceMap)
+			const sourceMapPath = path.join(compiler.outputPath, sourceMap)
 			const sourceMapId = await computeSourceMapIdFromFile(sourceMapPath)
 			const url = getSourceMapUploadUrl(options.sourceMaps.realm, sourceMapId)
 
 			logger.log('Uploading %s', sourceMap)
 			logger.debug('PUT', url)
 			try {
-				logger.status(new Array(uploadResults.success).fill('.').join(''))
+				logger.status(Array.from({ length: uploadResults.success }).fill('.').join(''))
 				await uploadFile({
 					file: {
 						fieldName: 'file',
@@ -172,9 +172,9 @@ export function applySourceMapsUpload(compiler: Compiler, options: SplunkRumPlug
 					url,
 				})
 				uploadResults.success += 1
-			} catch (e) {
+			} catch (error) {
 				uploadResults.failed += 1
-				const ae = e as AxiosError
+				const ae = error as AxiosError
 
 				const unableToUploadMessage = `Unable to upload ${sourceMapPath}`
 				if (ae.response && ae.response.status === 413) {
@@ -190,7 +190,7 @@ export function applySourceMapsUpload(compiler: Compiler, options: SplunkRumPlug
 					logger.error(unableToUploadMessage)
 				} else {
 					logger.error(`Request to ${url} could not be sent`)
-					logger.error(e)
+					logger.error(error)
 					logger.error(unableToUploadMessage)
 				}
 			}

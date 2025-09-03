@@ -29,8 +29,8 @@ export const delayMiddleware = async (
 	const delayParam = request.query?.delay
 
 	if (delayParam) {
-		const delay = parseInt(delayParam, 10)
-		if (!isNaN(delay) && delay > 0) {
+		const delay = Number.parseInt(delayParam, 10)
+		if (!Number.isNaN(delay) && delay > 0) {
 			request.log.info(`Delaying request for ${delay}ms`)
 			await sleep(delay)
 		}

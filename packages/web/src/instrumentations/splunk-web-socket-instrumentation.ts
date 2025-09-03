@@ -73,12 +73,12 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 
 					try {
 						super(url, protocols)
-					} catch (constructorException) {
-						if (isError(constructorException)) {
-							instrumentation.endSpanExceptionally(connectSpan, constructorException)
+					} catch (error) {
+						if (isError(error)) {
+							instrumentation.endSpanExceptionally(connectSpan, error)
 						}
 
-						throw constructorException
+						throw error
 					}
 
 					this.addEventListener('open', function () {
@@ -134,10 +134,7 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 	private endSpanExceptionally(span: Span, err: Error) {
 		span.setAttribute('error', true)
 		span.setAttribute('error.message', err.message)
-		span.setAttribute(
-			'error.object',
-			err.name ? err.name : err.constructor && err.constructor.name ? err.constructor.name : 'Error',
-		)
+		span.setAttribute('error.object', err.name || err.constructor?.name || 'Error')
 		//TODO Should we do span.setStatus( someErrorCode ) ? Currently all failed spans are CanonicalCode.OK
 		span.end()
 	}
@@ -183,12 +180,10 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 
 				// FIXME fill out message details, size, etc.
 				context.with(trace.setSpan(context.active(), span), () => {
-					let result = undefined
-					if (typeof callback === 'function') {
-						result = callback.apply(capturedThis, capturedArgs)
-					} else {
-						result = callback.handleEvent(args[0])
-					}
+					const result =
+						typeof callback === 'function'
+							? callback.apply(capturedThis, capturedArgs)
+							: callback.handleEvent(args[0])
 
 					span.end()
 					return result
@@ -210,11 +205,9 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 			}
 
 			const patchedCallback = instrumentation.removePatchedListener(ws, callback)
-			if (patchedCallback) {
-				return origREL.call(ws, type, patchedCallback, options)
-			} else {
-				return origREL.call(ws, type, callback, options)
-			}
+			return patchedCallback
+				? origREL.call(ws, type, patchedCallback, options)
+				: origREL.call(ws, type, callback, options)
 		}
 	}
 
@@ -230,16 +223,16 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 				}
 			}
 
-			let retVal = undefined
+			let retVal
 
 			try {
 				retVal = origSend.apply(ws, args)
-			} catch (err) {
-				if (isError(err)) {
-					instrumentation.endSpanExceptionally(span, err)
+			} catch (error) {
+				if (isError(error)) {
+					instrumentation.endSpanExceptionally(span, error)
 				}
 
-				throw err
+				throw error
 			}
 
 			// @ts-expect-error Gecko 6.0
@@ -257,7 +250,7 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 	private removePatchedListener(ws: WebSocket, origListener: EventListenerOrEventListenerObject) {
 		const ws2patched = this.listener2ws2patched.get(origListener)
 		if (!ws2patched) {
-			return undefined
+			return
 		}
 
 		const patched = ws2patched.get(ws)

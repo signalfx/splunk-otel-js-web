@@ -16,7 +16,7 @@
  *
  */
 
-import SplunkRum, { SplunkOtelWebType } from './index'
+import { SplunkOtelWebType } from './index'
 
 declare global {
 	interface Window {
@@ -24,4 +24,4 @@ declare global {
 	}
 }
 
-export default SplunkRum
+export { default } from './index'

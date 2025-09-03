@@ -17,14 +17,14 @@
  */
 import { execSync } from 'node:child_process'
 import { readdirSync, statSync } from 'node:fs'
-import { basename, dirname, join } from 'node:path'
+import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const currentDirectory = dirname(fileURLToPath(import.meta.url))
+const currentDirectory = path.dirname(fileURLToPath(import.meta.url))
 
 function findWebpackConfigs(dir, result = []) {
 	for (const entry of readdirSync(dir)) {
-		const fullPath = join(dir, entry)
+		const fullPath = path.join(dir, entry)
 		if (statSync(fullPath).isDirectory()) {
 			findWebpackConfigs(fullPath, result)
 		} else if (/^webpack\.config\./.test(entry)) {
@@ -38,11 +38,12 @@ const configs = findWebpackConfigs(`${currentDirectory}/project`)
 
 if (configs.length === 0) {
 	console.log('No webpack config files found.')
+
 	process.exit(0)
 }
 
 for (const configPath of configs) {
-	const configFile = basename(configPath)
+	const configFile = path.basename(configPath)
 	console.log(`Running webpack for ${configPath}`)
 	execSync(`webpack --config ${configFile}`, {
 		cwd: `${currentDirectory}/project`,

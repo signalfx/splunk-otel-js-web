@@ -24,4 +24,5 @@ declare global {
 	}
 }
 
+// eslint-disable-next-line
 export {}

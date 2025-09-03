@@ -16,13 +16,13 @@
  *
  */
 
-export * from './SplunkConnectivityInstrumentation'
-export * from './SplunkDocumentLoadInstrumentation'
-export * from './SplunkErrorInstrumentation'
-export * from './SplunkFetchInstrumentation'
-export * from './SplunkLongTaskInstrumentation'
-export * from './SplunkPageVisibilityInstrumentation'
-export * from './SplunkPostDocLoadResourceInstrumentation'
-export * from './SplunkSocketIoClientInstrumentation'
-export * from './SplunkUserInteractionInstrumentation'
-export * from './SplunkWebSocketInstrumentation'
+export * from './splunk-connectivity-instrumentation'
+export * from './splunk-document-load-instrumentation'
+export * from './splunk-error-instrumentation'
+export * from './splunk-fetch-instrumentation'
+export * from './splunk-long-task-instrumentation'
+export * from './splunk-page-visibility-instrumentation'
+export * from './splunk-post-doc-load-resource-instrumentation'
+export * from './splunk-socket-io-client-instrumentation'
+export * from './splunk-user-interaction-instrumentation'
+export * from './splunk-web-socket-instrumentation'

@@ -30,12 +30,12 @@ function* generateAllVersions(version: string): Generator<Version, void, unknown
 
 	let isVersionImmutable = true
 	let isPreRelease = false
-	while (versionParts.length) {
+	while (versionParts.length > 0) {
 		yield { isVersionImmutable, name: `${versionParts.join('.')}` }
 		const lastSegment = versionParts.pop()
 
 		if (lastSegment === undefined) {
-			throw TypeError('lastSegment is undefined')
+			throw new TypeError('lastSegment is undefined')
 		}
 
 		if (lastSegment.search(/[\D-]/) > -1 && versionParts.length > 0) {
