@@ -40,7 +40,7 @@ test.describe('sampling', () => {
 		const sessionCookieEncoded = await recordPage.getCookie('_splunk_rum_sid')
 		expect(sessionCookieEncoded).toBeTruthy()
 
-		const sessionCookieRaw = decodeURIComponent(sessionCookieEncoded.value)
+		const sessionCookieRaw = decodeURIComponent(sessionCookieEncoded?.value ?? '')
 		expect(JSON.parse(sessionCookieRaw).id).toBe('a0000000000000000000000000000000')
 	})
 
@@ -55,7 +55,7 @@ test.describe('sampling', () => {
 		const sessionCookieEncoded = await recordPage.getCookie('_splunk_rum_sid')
 		expect(sessionCookieEncoded).toBeTruthy()
 
-		const sessionCookieRaw = decodeURIComponent(sessionCookieEncoded.value)
+		const sessionCookieRaw = decodeURIComponent(sessionCookieEncoded?.value ?? '')
 		expect(JSON.parse(sessionCookieRaw).id).toBe('a0000000000000000000000000000000')
 	})
 })

@@ -15,25 +15,29 @@
  * limitations under the License.
  *
  */
-import { PersistenceType } from '../types'
-import { CookieStore } from './cookie-store'
-import { LocalStore } from './local-store'
+import { diag } from '@opentelemetry/api'
 
-export interface Store<T> {
-	flush: () => void
-	get: ({ forceDiskRead }: { forceDiskRead?: boolean }) => T | null
-	remove: (domain?: string) => void
-	set: (value: T, domain?: string) => void
-}
+export class Observable<T> {
+	private observers: Array<(data: T) => void> = []
 
-export function buildStore<T>(config: { key: string; type: PersistenceType }): Store<T> {
-	if (config.type === 'localStorage') {
-		return new LocalStore<T>(config.key)
+	notify(data: T) {
+		this.observers.forEach((observer) => {
+			try {
+				observer(data)
+			} catch (error) {
+				diag.error('Observable: Error happened in subscriber', error)
+			}
+		})
 	}
 
-	if (config.type === 'cookie') {
-		return new CookieStore<T>(config.key)
-	}
+	subscribe(f: (data: T) => void) {
+		this.observers.push(f)
 
-	throw new Error('Unknown store type')
+		return () => {
+			const index = this.observers.indexOf(f)
+			if (index !== -1) {
+				this.observers.splice(index, 1)
+			}
+		}
+	}
 }

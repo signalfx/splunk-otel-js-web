@@ -16,9 +16,10 @@
  *
  */
 
+import { getGlobal } from './global-utils'
 import { Context, Link, Attributes, SpanKind } from '@opentelemetry/api'
 import { Sampler, SamplingResult, AlwaysOffSampler, AlwaysOnSampler } from '@opentelemetry/sdk-trace-web'
-import { getOrInitInactiveSession } from './session/session'
+import { SplunkOtelWebType } from './index'
 
 export interface SessionBasedSamplerConfig {
 	/**
@@ -76,9 +77,13 @@ export class SessionBasedSampler implements Sampler {
 		// but replacing deciding based on traceId with sessionId
 		// (not extended from due to private methods)
 
-		// TODO: we are guaranteed to have a session here, so maybe error explicitly if that's not the case?
+		const SplunkRum = getGlobal() as SplunkOtelWebType
+		if (!SplunkRum.sessionManager) {
+			throw new Error('SplunkRum is not initialized')
+		}
 
-		const currentSessionId = getOrInitInactiveSession().id
+		const currentSessionId = SplunkRum.sessionManager.getSessionId()
+
 		if (this.currentSessionId !== currentSessionId) {
 			this.currentSessionSampled = this._accumulate(currentSessionId) < this.upperBound
 			this.currentSessionId = currentSessionId

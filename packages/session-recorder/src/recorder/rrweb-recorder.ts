@@ -17,17 +17,21 @@
  */
 import { record } from 'rrweb'
 
-import { Recorder, RecorderEmitContext, RecorderConfig } from './recorder'
+import { RecorderBase, RecorderEmitContext, RecorderConfig } from './recorder-base'
 
 export type RRWebRecorderPublicConfig = Parameters<typeof record>[0]
 
 type RRWebRecorderConfig = RRWebRecorderPublicConfig & RecorderConfig
 
-export class RRWebRecorder extends Recorder {
+export class RRWebRecorder extends RecorderBase {
 	private stopRecording: ReturnType<typeof record>
 
 	constructor(private readonly config: RRWebRecorderConfig) {
 		super(config)
+	}
+
+	onSessionChanged() {
+		record.takeFullSnapshot()
 	}
 
 	pause() {}
@@ -61,9 +65,6 @@ export class RRWebRecorder extends Recorder {
 					type: 'rrweb',
 					startTime: event.timestamp,
 					data: event,
-					onSessionChanged: () => {
-						record.takeFullSnapshot()
-					},
 				}
 
 				this.onEmit(context)

@@ -15,28 +15,15 @@
  * limitations under the License.
  *
  */
-module.exports = [
-	{
-		name: 'artifacts/otel-api-globals.js',
-		limit: '3 kB',
-		path: './packages/web/dist/artifacts/otel-api-globals.js',
-	},
 
-	{
-		name: 'artifacts/splunk-otel-web.js',
-		limit: '47 kB',
-		path: './packages/web/dist/artifacts/splunk-otel-web.js',
-	},
+export type RecorderType = 'rrweb' | 'splunk'
 
-	{
-		name: 'artifacts/splunk-otel-web-legacy.js',
-		limit: '111 kB',
-		path: './packages/web/dist/artifacts/splunk-otel-web-legacy.js',
-	},
+export type SessionState = {
+	expiresAt: number
+	id: string
+	rt?: RecorderType
+	startTime: number
+	state: 'active' | 'native' | 'expired-inactivity' | 'expired-duration'
+}
 
-	{
-		name: 'artifacts/splunk-otel-web-session-recorder.js',
-		limit: '109 kB',
-		path: './packages/session-recorder/dist/artifacts/splunk-otel-web-session-recorder.js',
-	},
-]
+export type PersistedSessionState = Pick<SessionState, 'expiresAt' | 'rt' | 'id' | 'startTime'>
