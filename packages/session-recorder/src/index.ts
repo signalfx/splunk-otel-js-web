@@ -26,7 +26,7 @@ import type { Resource } from '@opentelemetry/resources'
 import type { SplunkOtelWebType } from '@splunk/otel-web'
 import { JsonObject } from 'type-fest'
 
-import { Recorder, RecorderType, SplunkRecorderPublicConfig } from './recorder'
+import { Recorder, SplunkRecorderPublicConfig } from './recorder'
 import { log } from './log'
 
 interface BasicTracerProvider extends TracerProvider {
@@ -44,9 +44,6 @@ export type SplunkRumRecorderConfig = {
 	 * The name of your organization’s realm. Automatically configures beaconUrl with correct URL
 	 */
 	realm?: string
-
-	/** Type of the recorder */
-	recorder?: RecorderType
 
 	/**
 	 * RUM authorization token for data sending. Please make sure this is a token

@@ -18,5 +18,4 @@
 export * from './recorder-base'
 export * from './splunk-recorder'
 export * from './config'
-export * from './types'
 export * from './recorder'
