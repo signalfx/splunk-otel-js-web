@@ -19,7 +19,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import SplunkOtelWeb, { SplunkRum } from '../src'
-import { SplunkErrorInstrumentationConfig, STACK_TRACE_URL_PATTER } from '../src/SplunkErrorInstrumentation'
+import { SplunkErrorInstrumentationConfig, STACK_TRACE_URL_PATTER } from '../src/instrumentations'
 import { deinit, SpanCapturer } from './utils'
 
 export function generateFilePaths(domainCount: number, pathCount: number): string[] {

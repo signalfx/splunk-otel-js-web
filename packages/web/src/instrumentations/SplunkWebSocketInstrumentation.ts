@@ -22,9 +22,9 @@ import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instr
 // FIXME convert into otel-js-contrib Plugin and upstream
 import * as shimmer from 'shimmer'
 
-import { isError } from './types'
-import { getSize, hasSizeLikeProperty } from './utils/size'
-import { VERSION } from './version'
+import { isError } from '../types'
+import { getSize, hasSizeLikeProperty } from '../utils/size'
+import { VERSION } from '../version'
 
 interface SplunkWebSocketInstrumentationConfig extends InstrumentationConfig {
 	ignoreUrls?: (string | RegExp)[]

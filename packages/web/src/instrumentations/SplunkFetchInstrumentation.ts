@@ -19,7 +19,7 @@
 import { diag } from '@opentelemetry/api'
 import { FetchInstrumentation, FetchInstrumentationConfig } from '@opentelemetry/instrumentation-fetch'
 
-import { captureTraceParent } from './servertiming'
+import { captureTraceParent } from '../servertiming'
 
 type ExposedSuper = {
 	_addHeaders: (options: Request | RequestInit, spanUrl: string) => void
