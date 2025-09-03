@@ -15,13 +15,13 @@
  * limitations under the License.
  *
  */
-import { SplunkRecorderPublicConfig } from '../splunk-recorder'
+import { RecorderPublicConfig } from '../recorder'
 import { SensitivityRule, SensitivityRuleType, ConfigFeatures, PackAssetsConfig } from '../../session-replay'
 import { isString } from '../../type-guards'
 
 export const migrateRRWebConfigToSplunkConfig = (
 	config: NonNullable<Record<string, unknown>>,
-): SplunkRecorderPublicConfig => ({
+): RecorderPublicConfig => ({
 	features: migrateConfigToFeatures(config),
 	maskAllInputs: config.maskAllInput === undefined ? true : Boolean(config.maskAllInput),
 	sensitivityRules: migratePrivacyOptionsToSensitivityRules(config),

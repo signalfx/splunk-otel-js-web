@@ -15,14 +15,13 @@
  * limitations under the License.
  *
  */
-import { SplunkRecorder } from './splunk-recorder'
 import { context } from '@opentelemetry/api'
 import { suppressTracing } from '@opentelemetry/core'
 import { getSplunkRecorderConfig } from './config'
-import { RecorderBase, RecorderEmitContext } from './recorder-base'
 import { SplunkRumRecorderConfig } from '../index'
 import { log } from '../log'
 import { BatchLogProcessor, convert } from '../BatchLogProcessor'
+import { SessionReplay, SessionReplayConfig, Segment } from '../session-replay'
 
 // TODO: When backend is deployed, also remove data splitting
 // const MAX_CHUNK_SIZE = 4000 * 1024 // ~4000 KB
@@ -31,14 +30,29 @@ const MAX_CHUNK_SIZE = 950 * 1024 // ~950 KB
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()
 
+export interface RecorderEmitContext {
+	data: Record<string, unknown>
+	startTime: number
+}
+
+export type RecorderPublicConfig = Omit<SessionReplayConfig, 'onSegment'>
+
 export class Recorder {
+	private readonly config: RecorderPublicConfig & {
+		originalFetch: (...args: Parameters<typeof fetch>) => Promise<Response>
+	}
+
 	private eventCounter = 1
+
+	private isStoppedManually: boolean = true
+
+	private isVisibilityListenerAttached: boolean = false
 
 	private logCounter = 1
 
 	private readonly processor: BatchLogProcessor
 
-	private readonly recorder: RecorderBase
+	private sessionReplay: SessionReplay
 
 	constructor({
 		initRecorderConfig,
@@ -48,7 +62,7 @@ export class Recorder {
 		processor: BatchLogProcessor
 	}) {
 		this.processor = processor
-		this.recorder = new SplunkRecorder({
+		this.config = {
 			originalFetch: (...args) =>
 				new Promise((resolve, reject) => {
 					context.with(suppressTracing(context.active()), () => {
@@ -59,20 +73,71 @@ export class Recorder {
 					})
 				}),
 			...getSplunkRecorderConfig(initRecorderConfig),
-			onEmit: this.onEmit,
+		}
+
+		this.sessionReplay = new SessionReplay({
+			features: {
+				backgroundServiceSrc: this.config.features?.backgroundServiceSrc,
+				cacheAssets: this.config.features?.cacheAssets ?? false,
+				canvas: this.config.features?.canvas ?? false,
+				iframes: this.config.features?.iframes ?? false,
+				packAssets: this.config.features?.packAssets ?? { styles: true },
+				video: this.config.features?.video ?? false,
+			},
+			logLevel: this.config.logLevel ?? 'error',
+			maskAllInputs: this.config.maskAllInputs ?? true,
+			maskAllText: this.config.maskAllText ?? true,
+			maxExportIntervalMs: this.config.maxExportIntervalMs ?? 5000,
+			onSegment: this.onSegment,
+			originalFetch: this.config.originalFetch,
+			sensitivityRules: this.config.sensitivityRules ?? [],
 		})
 	}
 
+	static clear() {
+		if (SessionReplay) {
+			log.debug('Recorder: Clearing assets')
+			SessionReplay.clear()
+		}
+	}
+
+	onSessionChanged() {
+		log.debug('Recorder: onSessionChanged')
+		this.stop()
+		Recorder.clear()
+		this.start()
+	}
+
+	pause() {
+		this.stop()
+	}
+
 	resume() {
-		this.recorder.resume()
+		this.start()
 	}
 
 	start() {
-		this.recorder.start()
+		if (document.visibilityState === 'visible') {
+			void this.sessionReplay.start()
+		}
+
+		if (!this.isVisibilityListenerAttached) {
+			document.addEventListener('visibilitychange', this.visibilityChangeHandler)
+			this.isVisibilityListenerAttached = true
+		}
+
+		this.isStoppedManually = false
 	}
 
 	stop() {
-		this.recorder.start()
+		this.sessionReplay.stop()
+
+		if (this.isVisibilityListenerAttached) {
+			document.removeEventListener('visibilitychange', this.visibilityChangeHandler)
+			this.isVisibilityListenerAttached = false
+		}
+
+		this.isStoppedManually = true
 	}
 
 	private onEmit = (emitContext: RecorderEmitContext) => {
@@ -106,6 +171,37 @@ export class Recorder {
 
 			this.processor.onEmit(logData)
 			void this.processor.forceFlush()
+		}
+	}
+
+	private onSegment = (segment: Segment) => {
+		log.debug('Session replay segment: ', segment)
+
+		const plainSegment = segment.toPlain()
+
+		this.onEmit({
+			data: plainSegment,
+			startTime: plainSegment.metadata.startUnixMs,
+		})
+	}
+
+	private startOnVisibilityChange = () => {
+		this.start()
+	}
+
+	private stopOnVisibilityChange = () => {
+		this.sessionReplay.stop()
+	}
+
+	private visibilityChangeHandler = () => {
+		if (document.visibilityState === 'visible') {
+			if (!this.sessionReplay.isStarted && !this.isStoppedManually) {
+				this.startOnVisibilityChange()
+			}
+		} else {
+			if (this.sessionReplay.isStarted) {
+				this.stopOnVisibilityChange()
+			}
 		}
 	}
 }

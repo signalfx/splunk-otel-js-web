@@ -26,7 +26,7 @@ import type { Resource } from '@opentelemetry/resources'
 import type { SplunkOtelWebType } from '@splunk/otel-web'
 import { JsonObject } from 'type-fest'
 
-import { Recorder, SplunkRecorderPublicConfig } from './recorder'
+import { Recorder, RecorderPublicConfig } from './recorder'
 import { log } from './log'
 
 interface BasicTracerProvider extends TracerProvider {
@@ -50,7 +50,7 @@ export type SplunkRumRecorderConfig = {
 	 * with only RUM scope as it's visible to every user of your app
 	 **/
 	rumAccessToken?: string
-} & SplunkRecorderPublicConfig
+} & RecorderPublicConfig
 
 let inited: true | false | undefined = false
 let tracer: Tracer

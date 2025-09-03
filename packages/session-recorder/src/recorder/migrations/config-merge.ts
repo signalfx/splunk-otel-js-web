@@ -16,13 +16,13 @@
  *
  */
 import { isObject } from '../../type-guards'
-import { SplunkRecorderPublicConfig } from '../splunk-recorder'
+import { RecorderPublicConfig } from '../recorder'
 
 export const mergeRecorderConfig = (
-	config: SplunkRecorderPublicConfig,
-	migratedConfig: SplunkRecorderPublicConfig,
-): SplunkRecorderPublicConfig => {
-	const mergedConfig: SplunkRecorderPublicConfig = { ...migratedConfig, ...config }
+	config: RecorderPublicConfig,
+	migratedConfig: RecorderPublicConfig,
+): RecorderPublicConfig => {
+	const mergedConfig: RecorderPublicConfig = { ...migratedConfig, ...config }
 
 	// Merge features
 	if (config.features || migratedConfig.features) {

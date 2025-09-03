@@ -15,7 +15,5 @@
  * limitations under the License.
  *
  */
-export * from './recorder-base'
-export * from './splunk-recorder'
 export * from './config'
 export * from './recorder'
