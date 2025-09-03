@@ -136,6 +136,9 @@ function migrateConfigOption(
 	to: keyof SplunkOtelWebConfig,
 ) {
 	if (from in config && !(to in config && config[to] !== OPTIONS_DEFAULTS[to])) {
+		console.warn(
+			`[SPLUNK OTEL WEB] DEPRECATION WARNING: Configuration option "${String(from)}" is deprecated and will be removed in a future major version. Please use "${String(to)}" instead.`,
+		)
 		// @ts-expect-error There's no way to type this right
 		config[to] = config[from]
 	}
@@ -599,10 +602,17 @@ export const SplunkRum: SplunkOtelWebType = {
 	},
 
 	_experimental_getGlobalAttributes() {
+		console.warn(
+			'[SPLUNK OTEL WEB] DEPRECATION WARNING: The "SplunkRum._experimental_getGlobalAttributes()" method is deprecated and will be removed in a future major version. Please use "SplunkRum.getGlobalAttributes()" instead.',
+		)
 		return this.getGlobalAttributes()
 	},
 
 	error(...args) {
+		console.warn(
+			'[SPLUNK OTEL WEB] DEPRECATION WARNING: The "SplunkRum.error(...args)" method is deprecated and will be removed in a future major version. Please use "SplunkRum.reportError(error, context)" instead.',
+		)
+
 		if (!inited) {
 			diag.debug('SplunkRum not inited')
 			return
@@ -652,10 +662,16 @@ export const SplunkRum: SplunkOtelWebType = {
 	},
 
 	_experimental_addEventListener(name, callback): void {
+		console.warn(
+			'[SPLUNK OTEL WEB] DEPRECATION WARNING: The "SplunkRum._experimental_addEventListener(name, callback)" method is deprecated and will be removed in a future major version. Please use "SplunkRum.addEventListener(name, callback)" instead.',
+		)
 		return this.addEventListener(name, callback)
 	},
 
 	_experimental_removeEventListener(name, callback): void {
+		console.warn(
+			'[SPLUNK OTEL WEB] DEPRECATION WARNING: The "SplunkRum._experimental_removeEventListener(name, callback)" method is deprecated and will be removed in a future major version. Please use "SplunkRum.removeEventListener(name, callback)" instead.',
+		)
 		return this.removeEventListener(name, callback)
 	},
 
@@ -687,6 +703,9 @@ export const SplunkRum: SplunkOtelWebType = {
 		return getIsNewSession()
 	},
 	_experimental_getSessionId() {
+		console.warn(
+			'[SPLUNK OTEL WEB] DEPRECATION WARNING: The "SplunkRum._experimental_getSessionId()" method is deprecated and will be removed in a future major version. Please use "SplunkRum.getSessionId()" instead.',
+		)
 		return this.getSessionId()
 	},
 
