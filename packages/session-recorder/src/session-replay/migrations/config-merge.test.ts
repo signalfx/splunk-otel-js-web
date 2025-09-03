@@ -17,11 +17,11 @@
  */
 import { describe, it, expect } from 'vitest'
 import { mergeRecorderConfig } from './config-merge'
-import { SplunkRecorderPublicConfig } from '../splunk-recorder'
+import { RecorderPublicConfig } from '../recorder'
 
 describe('mergeRecorderConfig', () => {
 	it('merges recorder configs', () => {
-		const config: SplunkRecorderPublicConfig = {
+		const config: RecorderPublicConfig = {
 			maskAllInputs: true,
 			features: {
 				canvas: true,
@@ -32,7 +32,7 @@ describe('mergeRecorderConfig', () => {
 			sensitivityRules: [{ rule: 'mask', selector: '.mask' }],
 		}
 
-		const migratedConfig: SplunkRecorderPublicConfig = {
+		const migratedConfig: RecorderPublicConfig = {
 			maskAllInputs: false,
 			features: {
 				packAssets: {

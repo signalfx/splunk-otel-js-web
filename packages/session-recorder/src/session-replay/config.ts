@@ -15,30 +15,11 @@
  * limitations under the License.
  *
  */
-export interface RecorderEmitContext {
-	data: Record<string, unknown>
-	startTime: number
-	type: 'splunk' | 'rrweb'
-}
+import { migrateRRWebConfigToSplunkConfig } from './migrations/config-migration'
+import { RecorderPublicConfig } from './recorder'
+import { mergeRecorderConfig } from './migrations/config-merge'
 
-export interface RecorderConfig {
-	onEmit: (context: RecorderEmitContext) => void
-}
-
-export abstract class RecorderBase {
-	protected onEmit: RecorderConfig['onEmit']
-
-	protected constructor(config: RecorderConfig) {
-		this.onEmit = config.onEmit
-	}
-
-	abstract onSessionChanged(): void
-
-	abstract pause(): void
-
-	abstract resume(): void
-
-	abstract start(): void
-
-	abstract stop(): void
+export const getSplunkRecorderConfig = (config: RecorderPublicConfig): RecorderPublicConfig => {
+	const migratedRRWebConfig = migrateRRWebConfigToSplunkConfig(config)
+	return mergeRecorderConfig(config, migratedRRWebConfig)
 }
