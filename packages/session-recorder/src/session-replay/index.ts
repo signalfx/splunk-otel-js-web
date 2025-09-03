@@ -15,4 +15,6 @@
  * limitations under the License.
  *
  */
+export * from './config'
+export * from './recorder'
 export * from './cdn-module'

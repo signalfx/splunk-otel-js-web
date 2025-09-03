@@ -16,7 +16,7 @@
  *
  */
 import { RecorderPublicConfig } from '../recorder'
-import { SensitivityRule, SensitivityRuleType, ConfigFeatures, PackAssetsConfig } from '../../session-replay'
+import { SensitivityRule, SensitivityRuleType, ConfigFeatures, PackAssetsConfig } from '../cdn-module'
 import { isString } from '../../type-guards'
 
 export const migrateRRWebConfigToSplunkConfig = (

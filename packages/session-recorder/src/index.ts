@@ -26,7 +26,7 @@ import type { Resource } from '@opentelemetry/resources'
 import type { SplunkOtelWebType } from '@splunk/otel-web'
 import { JsonObject } from 'type-fest'
 
-import { Recorder, RecorderPublicConfig } from './recorder'
+import { Recorder, RecorderPublicConfig } from './session-replay'
 import { log } from './log'
 
 interface BasicTracerProvider extends TracerProvider {

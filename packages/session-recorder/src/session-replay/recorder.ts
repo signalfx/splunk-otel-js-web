@@ -21,7 +21,7 @@ import { getSplunkRecorderConfig } from './config'
 import { SplunkRumRecorderConfig } from '../index'
 import { log } from '../log'
 import { BatchLogProcessor, convert } from '../BatchLogProcessor'
-import { SessionReplay, SessionReplayConfig, Segment } from '../session-replay'
+import { SessionReplay, SessionReplayConfig, Segment } from './cdn-module'
 
 // TODO: When backend is deployed, also remove data splitting
 // const MAX_CHUNK_SIZE = 4000 * 1024 // ~4000 KB
