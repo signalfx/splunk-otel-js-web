@@ -2,6 +2,23 @@
 
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
+## 0.24.0
+
+- `@splunk/otel-web`
+    - **Deprecation Warnings**: Added console warning messages for better visibility of previously deprecated APIs and configuration options. [#1345](https://github.com/signalfx/splunk-otel-js-web/pull/1345)
+    - These items were deprecated in earlier versions but now show explicit deprecation warnings to help users migrate before they are removed in a future major version:
+        - **Configuration Options**: The following configuration options have been renamed and the old names will show deprecation warnings:
+            - `app` → Use `applicationName` instead
+            - `beaconUrl` → Use `beaconEndpoint` instead
+            - `environment` → Use `deploymentEnvironment` instead
+            - `rumAuth` → Use `rumAccessToken` instead
+        - **API Methods**: The following methods are deprecated:
+            - `SplunkRum._experimental_getGlobalAttributes()` → Use `SplunkRum.getGlobalAttributes()` instead
+            - `SplunkRum.error(...args)` → Use `SplunkRum.reportError(error, context)` instead
+            - `SplunkRum._experimental_addEventListener(name, callback)` → Use `SplunkRum.addEventListener(name, callback)` instead
+            - `SplunkRum._experimental_removeEventListener(name, callback)` → Use `SplunkRum.removeEventListener(name, callback)` instead
+            - `SplunkRum._experimental_getSessionId()` → Use `SplunkRum.getSessionId()` instead
+
 ## 0.23.1
 
 - `@splunk/otel-web`
