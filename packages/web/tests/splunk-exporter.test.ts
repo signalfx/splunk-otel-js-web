@@ -54,7 +54,8 @@ describe('SplunkZipkinExporter', () => {
 		beaconSenderMock = vi.fn().mockReturnValue(true)
 		window.navigator.sendBeacon = beaconSenderMock
 
-		xhrSenderMock = vi.fn().mockReturnValue()
+		// eslint-disable-next-line unicorn/no-useless-undefined
+		xhrSenderMock = vi.fn().mockReturnValue(undefined)
 	})
 
 	afterEach(async () => {
