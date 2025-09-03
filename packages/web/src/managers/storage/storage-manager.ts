@@ -16,10 +16,11 @@
  *
  */
 
-import { CookieStorageProvider, LocalStorageProvider, StorageOptions } from './providers'
-import { PersistedSessionState, SessionState } from '../session-manager'
-import { SESSION_STORAGE_KEY, SESSION_EXPIRATION_COOKIE_SEC } from './constants'
 import { diag } from '@opentelemetry/api'
+
+import { PersistedSessionState, SessionState } from '../session-manager'
+import { SESSION_EXPIRATION_COOKIE_SEC, SESSION_STORAGE_KEY } from './constants'
+import { CookieStorageProvider, LocalStorageProvider, StorageOptions } from './providers'
 
 export class StorageManager {
 	private readonly cookieStorageProvider = new CookieStorageProvider()
@@ -53,8 +54,8 @@ export class StorageManager {
 			})
 		} catch (error) {
 			diag.warn('Failed to clear session state', {
-				options: this.options,
 				error: error instanceof Error ? error.message : 'Unknown error',
+				options: this.options,
 			})
 			return false
 		}
@@ -65,8 +66,8 @@ export class StorageManager {
 			return this.sessionStorageProvider.safelyParseJson<PersistedSessionState>(SESSION_STORAGE_KEY)
 		} catch (error) {
 			diag.warn('Failed to retrieve session state', {
-				options: this.options,
 				error: error instanceof Error ? error.message : 'Unknown error',
+				options: this.options,
 			})
 			return undefined
 		}
@@ -88,9 +89,9 @@ export class StorageManager {
 			)
 		} catch (error) {
 			diag.warn('Failed to persist session state', {
+				error: error instanceof Error ? error.message : 'Unknown error',
 				options: this.options,
 				sessionState,
-				error: error instanceof Error ? error.message : 'Unknown error',
 			})
 			return false
 		}

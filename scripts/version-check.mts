@@ -18,6 +18,7 @@
 
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
+
 import { getPackageRoots } from './utils/index.mjs'
 
 getPackageRoots().forEach((packagePath) => {

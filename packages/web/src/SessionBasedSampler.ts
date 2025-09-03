@@ -16,9 +16,10 @@
  *
  */
 
+import { Attributes, Context, Link, SpanKind } from '@opentelemetry/api'
+import { AlwaysOffSampler, AlwaysOnSampler, Sampler, SamplingResult } from '@opentelemetry/sdk-trace-web'
+
 import { getGlobal } from './global-utils'
-import { Context, Link, Attributes, SpanKind } from '@opentelemetry/api'
-import { Sampler, SamplingResult, AlwaysOffSampler, AlwaysOnSampler } from '@opentelemetry/sdk-trace-web'
 import { SplunkOtelWebType } from './index'
 
 export interface SessionBasedSamplerConfig {
@@ -54,9 +55,9 @@ export class SessionBasedSampler implements Sampler {
 	protected upperBound: number
 
 	constructor({
+		notSampled = new AlwaysOffSampler(),
 		ratio = 1,
 		sampled = new AlwaysOnSampler(),
-		notSampled = new AlwaysOffSampler(),
 	}: SessionBasedSamplerConfig = {}) {
 		this.ratio = this._normalize(ratio)
 		this.upperBound = Math.floor(this.ratio * 0xffffffff)

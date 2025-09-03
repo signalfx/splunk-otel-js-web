@@ -62,9 +62,9 @@ export abstract class BaseStorageProvider {
 			return JSON.parse(value) as T
 		} catch (error) {
 			diag.warn(`Failed to parse JSON from ${this.providerName}`, {
+				error: error instanceof Error ? error.message : 'Unknown error',
 				key,
 				value,
-				error: error instanceof Error ? error.message : 'Unknown error',
 			})
 			return undefined
 		}
@@ -80,9 +80,9 @@ export abstract class BaseStorageProvider {
 			return this.setValue(key, serialized, options)
 		} catch (error) {
 			diag.warn(`Failed to serialize and store JSON in ${this.providerName}`, {
-				key,
 				data,
 				error: error instanceof Error ? error.message : 'Unknown error',
+				key,
 			})
 			return false
 		}

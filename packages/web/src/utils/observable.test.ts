@@ -16,8 +16,9 @@
  *
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { diag } from '@opentelemetry/api'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
 import { Observable } from './observable'
 
 describe('Observable', () => {

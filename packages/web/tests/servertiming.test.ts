@@ -16,9 +16,10 @@
  *
  */
 
-import { describe, it, expect } from 'vitest'
-import { captureTraceParent, captureTraceParentFromPerformanceEntries } from '../src/servertiming'
 import { PerformanceEntries } from '@opentelemetry/sdk-trace-web'
+import { describe, expect, it } from 'vitest'
+
+import { captureTraceParent, captureTraceParentFromPerformanceEntries } from '../src/servertiming'
 import { createSpan } from './utils'
 
 describe('server timing', () => {
@@ -62,7 +63,7 @@ describe('server timing', () => {
 		const entries = {
 			serverTiming: [
 				{ name: 'nomatch' },
-				{ name: 'traceparent', description: '00-000000000000000078499d3266d75d5f-7e1c10b3c482edbe-01' },
+				{ description: '00-000000000000000078499d3266d75d5f-7e1c10b3c482edbe-01', name: 'traceparent' },
 			],
 		}
 		const span = createSpan('test')

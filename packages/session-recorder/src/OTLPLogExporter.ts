@@ -16,25 +16,25 @@
  *
  */
 
+import { context } from '@opentelemetry/api'
+import { suppressTracing } from '@opentelemetry/core'
 import { gzipSync, strToU8 } from 'fflate'
 import { nanoid } from 'nanoid'
 import type { JsonArray, JsonObject, JsonValue } from 'type-fest'
 
-import { IAnyValue, Log } from './types'
-import { VERSION } from './version'
-import { compressAsync } from './session-replay/utils'
 import { apiFetch, ApiParams } from './api/api-fetch'
 import {
 	addLogToQueue,
-	removeQueuedLog,
-	QueuedLog,
 	getQueuedLogs,
+	QueuedLog,
 	removeAssetsFromQueuedLog,
+	removeQueuedLog,
 	removeQueuedLogs,
 } from './export-log-queue'
-import { context } from '@opentelemetry/api'
-import { suppressTracing } from '@opentelemetry/core'
 import { log } from './log'
+import { compressAsync } from './session-replay/utils'
+import { IAnyValue, Log } from './types'
+import { VERSION } from './version'
 
 interface OTLPLogExporterConfig {
 	beaconUrl: string
@@ -47,8 +47,8 @@ interface OTLPLogExporterConfig {
 const KEEPALIVE_MAX_LENGTH = 65536
 
 const defaultHeaders = {
-	'Content-Type': 'application/json',
 	'Content-Encoding': 'gzip',
+	'Content-Type': 'application/json',
 }
 
 function isArray(value: JsonValue): value is JsonArray {
@@ -119,14 +119,14 @@ export default class OTLPLogExporter {
 					},
 					scopeLogs: [
 						{
-							scope: { name: 'splunk.rr-web', version: VERSION },
 							logRecords: logs.map((logItem) => ({
+								attributes: convertToAnyValue(logItem.attributes || {}).kvlistValue
+									?.values as JsonArray,
 								// @ts-expect-error FIXME: `body` is not defined
 								body: convertToAnyValue(logItem.body) as JsonObject,
 								timeUnixNano: logItem.timeUnixNano,
-								attributes: convertToAnyValue(logItem.attributes || {}).kvlistValue
-									?.values as JsonArray,
 							})),
+							scope: { name: 'splunk.rr-web', version: VERSION },
 						},
 					],
 				},
@@ -151,11 +151,11 @@ export default class OTLPLogExporter {
 		const queuedLog: QueuedLog | null = this.config.usePersistentExportQueue
 			? {
 					data: logsData as unknown as QueuedLog['data'],
-					timestamp: Date.now(),
-					url: endpoint,
-					sessionId: this.config.sessionId,
 					headers,
 					requestId,
+					sessionId: this.config.sessionId,
+					timestamp: Date.now(),
+					url: endpoint,
 				}
 			: null
 
@@ -164,16 +164,16 @@ export default class OTLPLogExporter {
 			const isPersisted = addLogToQueue(queuedLog)
 			if (!isPersisted) {
 				const { log: queuedLogWithoutImage, stats } = removeAssetsFromQueuedLog(queuedLog, {
+					css: false,
 					fonts: false,
 					images: true,
-					css: false,
 				})
 				const isPersistedWithoutImage = addLogToQueue(queuedLogWithoutImage)
 				if (!isPersistedWithoutImage) {
 					const { log: queuedLogWithoutAllAssets } = removeAssetsFromQueuedLog(queuedLogWithoutImage, {
+						css: true,
 						fonts: true,
 						images: true,
-						css: true,
 					})
 					const isPersistedWithoutAllAssets = addLogToQueue(queuedLogWithoutAllAssets)
 					if (!isPersistedWithoutAllAssets) {
@@ -243,13 +243,13 @@ export default class OTLPLogExporter {
 			const shouldUseKeepAliveOption = compressedData.byteLength < KEEPALIVE_MAX_LENGTH
 			void sendByFetch(
 				endpoint,
-				{ headers, body: compressedData, keepalive: shouldUseKeepAliveOption },
+				{ body: compressedData, headers, keepalive: shouldUseKeepAliveOption },
 				onFetchSuccess,
 			)
 		} else {
 			compressAsync(uint8ArrayData)
 				.then((compressedData) => {
-					void sendByFetch(endpoint, { headers, body: compressedData }, onFetchSuccess)
+					void sendByFetch(endpoint, { body: compressedData, headers }, onFetchSuccess)
 				})
 				.catch((error) => {
 					log.error('Could not compress data', error)
@@ -265,10 +265,10 @@ const sendByFetchInternal = async (
 ) => {
 	try {
 		await apiFetch(endpoint, {
-			method: 'POST',
 			abortPreviousRequest: false,
 			doNotConvert: true,
 			doNotRetryOnDocumentHidden: true,
+			method: 'POST',
 			retryCount: 100,
 			retryOnHttpErrorStatusCodes: true,
 			...fetchParams,

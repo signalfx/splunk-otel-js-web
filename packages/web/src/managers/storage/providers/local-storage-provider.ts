@@ -16,8 +16,9 @@
  *
  */
 
-import { BaseStorageProvider } from './base-storage-provider'
 import { diag } from '@opentelemetry/api'
+
+import { BaseStorageProvider } from './base-storage-provider'
 
 export class LocalStorageProvider extends BaseStorageProvider {
 	providerName = 'localStorage'
@@ -27,8 +28,8 @@ export class LocalStorageProvider extends BaseStorageProvider {
 			return window.localStorage.getItem(key)
 		} catch (error) {
 			diag.warn('Failed to retrieve item from localStorage', {
-				key,
 				error,
+				key,
 			})
 			return null
 		}
@@ -41,8 +42,8 @@ export class LocalStorageProvider extends BaseStorageProvider {
 			return true
 		} catch (error) {
 			diag.warn('Failed to remove item from localStorage', {
-				key,
 				error: error instanceof Error ? error.message : 'Unknown error',
+				key,
 			})
 			return false
 		}
@@ -54,8 +55,8 @@ export class LocalStorageProvider extends BaseStorageProvider {
 			return true
 		} catch (error) {
 			diag.warn('Failed to store item in localStorage', {
-				key,
 				error,
+				key,
 			})
 			return false
 		}

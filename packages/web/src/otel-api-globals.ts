@@ -15,6 +15,6 @@
  * limitations under the License.
  *
  */
-import { trace, context } from '@opentelemetry/api'
+import { context, trace } from '@opentelemetry/api'
 
-export { trace, context }
+export { context, trace }

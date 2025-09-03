@@ -15,28 +15,30 @@
  * limitations under the License.
  *
  */
-import Fastify from 'fastify'
-import path from 'path'
-import { RENDER_AGENT_TEMPLATE } from './render-agent'
-import ejs from 'ejs'
 import * as fs from 'node:fs'
+import path from 'path'
+
 import cors from '@fastify/cors'
-import { serverTimingMiddleware, delayMiddleware, noCacheMiddleware } from './middlewares'
 import fastifyStatic from '@fastify/static'
 import fastifyView from '@fastify/view'
 import fastifyWebsockets from '@fastify/websocket'
+import ejs from 'ejs'
+import Fastify from 'fastify'
+
+import { delayMiddleware, noCacheMiddleware, serverTimingMiddleware } from './middlewares'
+import { RENDER_AGENT_TEMPLATE } from './render-agent'
 
 const GLOBAL_TEST_BUFFER_TIMEOUT = 20
 
 const fastify = Fastify({
 	logger: {
 		transport: {
-			target: 'pino-pretty',
 			options: {
 				colorize: true,
-				translateTime: 'SYS:standard',
 				ignore: 'pid,hostname',
+				translateTime: 'SYS:standard',
 			},
+			target: 'pino-pretty',
 		},
 	},
 })
@@ -49,21 +51,21 @@ fastify.register(fastifyView, {
 	root: path.join(__dirname, '../tests'),
 })
 fastify.register(fastifyStatic, {
-	root: path.join(__dirname, '../tests'),
-	prefix: '/public/',
 	list: true,
+	prefix: '/public/',
+	root: path.join(__dirname, '../tests'),
 })
 
 fastify.register(fastifyStatic, {
-	root: path.join(__dirname, '../../../web/dist/artifacts'),
+	decorateReply: false,
 	prefix: '/artifacts/',
-	decorateReply: false,
+	root: path.join(__dirname, '../../../web/dist/artifacts'),
 })
 
 fastify.register(fastifyStatic, {
-	root: path.join(__dirname, '../../../build-plugins/tests/project/dist/'),
-	prefix: '/build-plugins-test-project-artifacts/',
 	decorateReply: false,
+	prefix: '/build-plugins-test-project-artifacts/',
+	root: path.join(__dirname, '../../../build-plugins/tests/project/dist/'),
 })
 
 fastify.addHook('preHandler', delayMiddleware)
@@ -124,10 +126,10 @@ fastify.get<{
 			return reply.viewAsync(parsedUrl.pathname, {
 				renderAgent(userOpts = {}, noInit = false, file = defaultFile, cdnVersion = null) {
 					const options: Record<string, unknown> = {
-						beaconEndpoint: beaconUrl.toString(),
 						applicationName: 'splunk-otel-js-dummy-app',
-						debug: true,
+						beaconEndpoint: beaconUrl.toString(),
 						bufferTimeout: GLOBAL_TEST_BUFFER_TIMEOUT,
+						debug: true,
 						...userOpts,
 					}
 
@@ -159,10 +161,10 @@ fastify.get<{
 					}
 
 					return ejs.render(RENDER_AGENT_TEMPLATE, {
+						customOptions: JSON.stringify(customOptions),
 						file,
 						noInit,
 						options: JSON.stringify(options),
-						customOptions: JSON.stringify(customOptions),
 						otelApiGlobalsFile: '/artifacts/otel-api-globals.js',
 					})
 				},

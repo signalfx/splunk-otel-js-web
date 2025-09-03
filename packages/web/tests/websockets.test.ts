@@ -16,9 +16,10 @@
  *
  */
 
-import { deinit, initWithDefaultConfig, SpanCapturer } from './utils'
 import { SpanKind } from '@opentelemetry/api'
-import { expect, it, describe, beforeEach, afterEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+
+import { deinit, initWithDefaultConfig, SpanCapturer } from './utils'
 
 describe('can produce websocket events', () => {
 	let capturer: SpanCapturer

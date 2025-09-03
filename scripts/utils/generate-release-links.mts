@@ -20,7 +20,7 @@ import { Version } from './versions.mjs'
 
 export const generateCDNLinks = (versions: Version[], cdnLinksByVersion: Record<string, string[]>) => [
 	'\n## CDN',
-	...versions.map(({ name, isVersionImmutable }) => {
+	...versions.map(({ isVersionImmutable, name }) => {
 		if (cdnLinksByVersion[name].length === 0) {
 			return ''
 		}

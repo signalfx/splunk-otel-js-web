@@ -25,9 +25,9 @@ export const generateServerTiming = () => {
 	const spanId = generateHex(16)
 	const formatted = `traceparent;desc="00-${traceId}-${spanId}-01"`
 	return {
-		traceId,
-		spanId,
 		header: formatted,
+		spanId,
+		traceId,
 	}
 }
 

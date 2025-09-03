@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-import { sharedHelperFunction, otherHelperFunction } from './common/helpers'
+import { otherHelperFunction, sharedHelperFunction } from './common/helpers'
 
 const result = sharedHelperFunction(1, 2)
 otherHelperFunction(result)

@@ -16,6 +16,8 @@
  *
  */
 
+import * as api from '@opentelemetry/api'
+import { isUrlIgnored } from '@opentelemetry/core'
 import { InstrumentationConfig } from '@opentelemetry/instrumentation'
 import {
 	AttributeNames,
@@ -23,12 +25,11 @@ import {
 	DocumentLoadInstrumentationConfig,
 	ResourceFetchCustomAttributeFunction,
 } from '@opentelemetry/instrumentation-document-load'
-import * as api from '@opentelemetry/api'
-import { captureTraceParentFromPerformanceEntries } from './servertiming'
-import { addSpanNetworkEvents, PerformanceEntries, PerformanceTimingNames as PTN } from '@opentelemetry/sdk-trace-web'
 import { Span } from '@opentelemetry/sdk-trace-base'
-import { isUrlIgnored } from '@opentelemetry/core'
+import { addSpanNetworkEvents, PerformanceEntries, PerformanceTimingNames as PTN } from '@opentelemetry/sdk-trace-web'
 import { SemanticAttributes, SEMATTRS_HTTP_URL } from '@opentelemetry/semantic-conventions'
+
+import { captureTraceParentFromPerformanceEntries } from './servertiming'
 
 export interface SplunkDocLoadInstrumentationConfig extends InstrumentationConfig {
 	ignoreUrls?: (string | RegExp)[]

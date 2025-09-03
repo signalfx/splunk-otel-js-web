@@ -15,14 +15,14 @@
  * limitations under the License.
  *
  */
-import { safelyGetLocalStorage } from '../utils/storage'
 import { generateId } from '../utils'
+import { safelyGetLocalStorage } from '../utils/storage'
 
 const KEY = '_splunk_rum_user_anonymousId'
 let anonymousId: string | undefined
 
 // TODO use cookie/local store
-export const getOrCreateAnonymousId = ({ useLocalStorage, domain }: { domain?: string; useLocalStorage: boolean }) => {
+export const getOrCreateAnonymousId = ({ domain, useLocalStorage }: { domain?: string; useLocalStorage: boolean }) => {
 	if (anonymousId) {
 		return anonymousId
 	}

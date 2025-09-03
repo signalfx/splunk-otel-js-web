@@ -16,13 +16,13 @@
  *
  */
 
-import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
-
-import { VERSION } from './version'
+import { context, Context, ROOT_CONTEXT } from '@opentelemetry/api'
 import { isUrlIgnored } from '@opentelemetry/core'
+import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 import { addSpanNetworkEvents } from '@opentelemetry/sdk-trace-web'
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions'
-import { context, Context, ROOT_CONTEXT } from '@opentelemetry/api'
+
+import { VERSION } from './version'
 
 export interface SplunkPostDocLoadResourceInstrumentationConfig extends InstrumentationConfig {
 	allowedInitiatorTypes?: string[]

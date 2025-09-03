@@ -16,10 +16,10 @@
  *
  */
 export const generateScriptSnippet = ({
-	isVersionImmutable,
 	filename,
-	publicUrl,
 	integrityValue,
+	isVersionImmutable,
+	publicUrl,
 }: {
 	filename: string
 	integrityValue: string

@@ -15,9 +15,10 @@
  * limitations under the License.
  *
  */
-import { test } from '../../utils/test'
 import { expect } from '@playwright/test'
+
 import { RecordPage } from '../../pages/record-page'
+import { test } from '../../utils/test'
 
 const runTest = async (recordPage: RecordPage, urlPath: string) => {
 	await recordPage.goTo(urlPath)

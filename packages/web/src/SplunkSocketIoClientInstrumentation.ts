@@ -16,13 +16,14 @@
  *
  */
 
-import { context, trace, SpanKind, SpanStatusCode } from '@opentelemetry/api'
+import { context, SpanKind, SpanStatusCode, trace } from '@opentelemetry/api'
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 import {
 	MessagingDestinationKindValues,
 	MessagingOperationValues,
 	SemanticAttributes,
 } from '@opentelemetry/semantic-conventions'
+
 import { waitForGlobal } from './utils'
 import { VERSION } from './version'
 
@@ -58,9 +59,9 @@ interface SocketIOClient {
 // Aligned with aspecto's server side socket.io instrumentations
 // https://github.com/aspecto-io/opentelemetry-ext-js/blob/d98dabe288b1d95ce7e3d8b9b2ccc3ed02854392/packages/instrumentation-socket.io/src/types.ts#L8
 const SocketIoInstrumentationAttributes = {
-	SOCKET_IO_ROOMS: 'messaging.socket.io.rooms',
-	SOCKET_IO_NAMESPACE: 'messaging.socket.io.namespace',
 	SOCKET_IO_EVENT_NAME: 'messaging.socket.io.event_name',
+	SOCKET_IO_NAMESPACE: 'messaging.socket.io.namespace',
+	SOCKET_IO_ROOMS: 'messaging.socket.io.rooms',
 }
 
 export interface SocketIoClientInstrumentationConfig extends InstrumentationConfig {
@@ -131,14 +132,14 @@ export class SplunkSocketIoClientInstrumentation extends InstrumentationBase {
 			(original) =>
 				function (this: SocketIOSocket, eventName: string, ...args) {
 					const span = inst.tracer.startSpan(`${eventName} send`, {
-						kind: SpanKind.PRODUCER,
 						attributes: {
-							[SemanticAttributes.MESSAGING_SYSTEM]: 'socket.io',
 							[SemanticAttributes.MESSAGING_DESTINATION]: this.nsp,
 							[SemanticAttributes.MESSAGING_DESTINATION_KIND]: MessagingDestinationKindValues.TOPIC,
-							[SocketIoInstrumentationAttributes.SOCKET_IO_NAMESPACE]: this.nsp,
+							[SemanticAttributes.MESSAGING_SYSTEM]: 'socket.io',
 							[SocketIoInstrumentationAttributes.SOCKET_IO_EVENT_NAME]: eventName,
+							[SocketIoInstrumentationAttributes.SOCKET_IO_NAMESPACE]: this.nsp,
 						},
+						kind: SpanKind.PRODUCER,
 					})
 
 					try {
@@ -174,16 +175,16 @@ export class SplunkSocketIoClientInstrumentation extends InstrumentationBase {
 					if (!wrappedListener) {
 						wrappedListener = function (this: SocketIOSocket, ...args: unknown[]) {
 							const span = inst.tracer.startSpan(`${eventName} ${MessagingOperationValues.RECEIVE}`, {
-								kind: SpanKind.CONSUMER,
 								attributes: {
-									[SemanticAttributes.MESSAGING_SYSTEM]: 'socket.io',
 									[SemanticAttributes.MESSAGING_DESTINATION]: this.nsp,
 									[SemanticAttributes.MESSAGING_DESTINATION_KIND]:
 										MessagingDestinationKindValues.TOPIC,
 									[SemanticAttributes.MESSAGING_OPERATION]: MessagingOperationValues.RECEIVE,
-									[SocketIoInstrumentationAttributes.SOCKET_IO_NAMESPACE]: this.nsp,
+									[SemanticAttributes.MESSAGING_SYSTEM]: 'socket.io',
 									[SocketIoInstrumentationAttributes.SOCKET_IO_EVENT_NAME]: eventName,
+									[SocketIoInstrumentationAttributes.SOCKET_IO_NAMESPACE]: this.nsp,
 								},
+								kind: SpanKind.CONSUMER,
 							})
 
 							try {

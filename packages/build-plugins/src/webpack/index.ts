@@ -16,6 +16,13 @@
  *
  */
 
+import { join } from 'path'
+
+import { AxiosError } from 'axios'
+import type { Compiler } from 'webpack'
+
+import { uploadFile } from '../httpUtils'
+import { SplunkRumPluginOptions } from '../index'
 import {
 	computeSourceMapId,
 	computeSourceMapIdFromFile,
@@ -25,11 +32,6 @@ import {
 	JS_FILE_REGEX,
 	PLUGIN_NAME,
 } from '../utils'
-import { join } from 'path'
-import { uploadFile } from '../httpUtils'
-import { AxiosError } from 'axios'
-import type { Compiler } from 'webpack'
-import { SplunkRumPluginOptions } from '../index'
 
 /**
  * The part of the webpack plugin responsible for injecting the sourceMapId code snippet into the JS bundles.
@@ -91,7 +93,7 @@ export function applySourceMapsInject(compiler: Compiler) {
 								const index = getInsertIndexForCodeSnippet(old.source())
 								const source = new ReplaceSource(old)
 								source.insert(index, '\n' + codeSnippet)
-								cache.set(old, { source, codeSnippet })
+								cache.set(old, { codeSnippet, source })
 								return source
 							}
 
@@ -133,8 +135,8 @@ export function applySourceMapsUpload(compiler: Compiler, options: SplunkRumPlug
 		}
 
 		const uploadResults = {
-			success: 0,
 			failed: 0,
+			success: 0,
 		}
 		const parameters = Object.fromEntries(
 			[
@@ -162,12 +164,12 @@ export function applySourceMapsUpload(compiler: Compiler, options: SplunkRumPlug
 				logger.status(new Array(uploadResults.success).fill('.').join(''))
 				await uploadFile({
 					file: {
-						filePath: sourceMapPath,
 						fieldName: 'file',
+						filePath: sourceMapPath,
 					},
-					url,
 					parameters,
 					token: options.sourceMaps.token,
+					url,
 				})
 				uploadResults.success += 1
 			} catch (e) {

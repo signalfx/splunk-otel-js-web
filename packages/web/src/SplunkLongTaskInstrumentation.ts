@@ -18,8 +18,8 @@
 
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 
-import { VERSION } from './version'
 import { SplunkOtelWebConfig } from './types'
+import { VERSION } from './version'
 
 const LONGTASK_PERFORMANCE_TYPE = 'longtask'
 const MODULE_NAME = 'splunk-longtask'
@@ -51,7 +51,7 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
 		this._longtaskObserver = new PerformanceObserver((list) => {
 			list.getEntries().forEach((entry) => this._createSpanFromEntry(entry))
 		})
-		this._longtaskObserver.observe({ type: LONGTASK_PERFORMANCE_TYPE, buffered: true })
+		this._longtaskObserver.observe({ buffered: true, type: LONGTASK_PERFORMANCE_TYPE })
 	}
 
 	init(): void {}

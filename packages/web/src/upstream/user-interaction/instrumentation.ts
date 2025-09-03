@@ -16,13 +16,13 @@
  *
  */
 
-import { isWrapped, InstrumentationBase } from '@opentelemetry/instrumentation'
-
 import * as api from '@opentelemetry/api'
+import { InstrumentationBase, isWrapped } from '@opentelemetry/instrumentation'
 import { getElementXPath } from '@opentelemetry/sdk-trace-web'
+
 import { AttributeNames } from './enums/AttributeNames'
-import { EventName, ShouldPreventSpanCreation, UserInteractionInstrumentationConfig } from './types'
 import { SpanData } from './internal-types'
+import { EventName, ShouldPreventSpanCreation, UserInteractionInstrumentationConfig } from './types'
 import { VERSION } from './version'
 
 const EVENT_NAVIGATION_NAME = 'Navigation:'
@@ -229,9 +229,9 @@ export class UserInteractionInstrumentation<
 				{
 					attributes: {
 						[AttributeNames.EVENT_TYPE]: eventName,
+						[AttributeNames.HTTP_URL]: window.location.href,
 						[AttributeNames.TARGET_ELEMENT]: element.tagName,
 						[AttributeNames.TARGET_XPATH]: xpath,
-						[AttributeNames.HTTP_URL]: window.location.href,
 					},
 				},
 				parentSpan ? api.trace.setSpan(api.context.active(), parentSpan) : undefined,

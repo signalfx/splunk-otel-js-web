@@ -19,18 +19,19 @@
 import crypto from 'crypto'
 import * as fs from 'fs/promises'
 import * as path from 'path'
+
 import dotenv from 'dotenv'
 
 import {
 	generateCDNLinks,
 	generateScriptSnippet,
+	getAllVersions,
+	getMimeType,
 	getPositionalArguments,
+	getReleaseForTag,
 	invalidateCloudFrontFiles,
 	patchGithubReleaseBody,
 	uploadToS3,
-	getReleaseForTag,
-	getAllVersions,
-	getMimeType,
 } from './utils/index.mjs'
 
 const CDN_LISTED_FILES = ['splunk-otel-web.js', 'splunk-otel-web-session-recorder.js']
@@ -103,11 +104,11 @@ for (const asset of assets) {
 
 		if (!isDryRun) {
 			await uploadToS3({
-				key,
 				bucketName: CDN_BUCKET_NAME,
 				buffer: assetBuffer,
 				contentType,
 				isImmutable: version.isVersionImmutable,
+				key,
 			})
 			console.log(`\t\t\t\t- uploaded as ${publicUrl}`)
 		} else {
@@ -119,9 +120,9 @@ for (const asset of assets) {
 
 			cdnLinksByVersion[version.name].push(
 				generateScriptSnippet({
-					isVersionImmutable: version.isVersionImmutable,
 					filename: asset,
 					integrityValue,
+					isVersionImmutable: version.isVersionImmutable,
 					publicUrl,
 				}),
 			)

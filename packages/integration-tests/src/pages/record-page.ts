@@ -15,8 +15,8 @@
  * limitations under the License.
  *
  */
-import { BrowserContext, Page } from 'playwright'
 import { Span } from '@opentelemetry/exporter-zipkin/build/src/types'
+import { BrowserContext, Page } from 'playwright'
 
 export class RecordPage {
 	receivedSpans: Span[] = []
@@ -79,9 +79,9 @@ export class RecordPage {
 			this.receivedSpans.push(...spans)
 
 			await route.fulfill({
-				status: 200,
-				contentType: 'application/json',
 				body: '',
+				contentType: 'application/json',
+				status: 200,
 			})
 		})
 	}

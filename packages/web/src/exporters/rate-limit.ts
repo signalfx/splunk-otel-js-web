@@ -17,7 +17,6 @@
  */
 
 import { Context } from '@opentelemetry/api'
-
 import { ReadableSpan, Span, SpanProcessor } from '@opentelemetry/sdk-trace-base'
 
 const SPAN_RATE_LIMIT_PERIOD = 30000 // millis, sweep to clear out span counts

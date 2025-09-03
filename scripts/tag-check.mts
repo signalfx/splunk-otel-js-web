@@ -17,8 +17,8 @@
  */
 
 import { exec } from 'child_process'
-import * as path from 'path'
 import { readFileSync } from 'fs'
+import * as path from 'path'
 
 const appRoot = process.cwd()
 const packageJsonPath = path.join(appRoot, 'package.json')

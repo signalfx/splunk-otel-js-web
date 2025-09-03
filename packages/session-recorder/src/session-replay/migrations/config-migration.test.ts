@@ -15,7 +15,8 @@
  * limitations under the License.
  *
  */
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
+
 import { migrateRRWebConfigToSplunkConfig } from './config-migration'
 
 const defaultSensitivityRules = [
@@ -27,24 +28,24 @@ const defaultSensitivityRules = [
 describe('migrateRRWebConfigToSplunkConfig', () => {
 	it('migrates rrweb config to splunk config', () => {
 		const actual = migrateRRWebConfigToSplunkConfig({
-			recordCanvas: true,
+			blockClass: 'block-class',
+			blockSelector: '.block-selector',
+			collectFonts: true,
+			ignoreClass: 'ignore-class',
 			inlineImages: true,
 			inlineStylesheet: true,
-			collectFonts: true,
 			maskAllInputs: true,
 			maskTextClass: 'mask-class',
 			maskTextSelector: '.mask-selector',
-			blockClass: 'block-class',
-			blockSelector: '.block-selector',
-			ignoreClass: 'ignore-class',
+			recordCanvas: true,
 		})
 		const expected = {
 			features: {
 				canvas: true,
 				packAssets: {
-					styles: true,
-					images: true,
 					fonts: true,
+					images: true,
+					styles: true,
 				},
 			},
 			maskAllInputs: true,

@@ -17,10 +17,11 @@
  */
 import js from '@eslint/js'
 import stylistic from '@stylistic/eslint-plugin'
+import headers from 'eslint-plugin-headers'
+import perfectionist from 'eslint-plugin-perfectionist'
+import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended'
 import globals from 'globals'
 import tseslint from 'typescript-eslint'
-import headers from 'eslint-plugin-headers'
-import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended'
 
 /**
  * @type {import('eslint').Linter.Config[]}
@@ -45,35 +46,10 @@ const config = [
 			'@stylistic': stylistic,
 			'@typescript-eslint': tseslint.plugin,
 			headers,
+			perfectionist,
 		},
 		rules: {
-			'headers/header-format': [
-				'error',
-				{
-					source: 'string',
-					content: [
-						'',
-						`Copyright 2020-${new Date().getFullYear()} Splunk Inc.`,
-						'',
-						'Licensed under the Apache License, Version 2.0 (the "License");',
-						'you may not use this file except in compliance with the License.',
-						'You may obtain a copy of the License at',
-						'',
-						'https://www.apache.org/licenses/LICENSE-2.0',
-						'',
-						'Unless required by applicable law or agreed to in writing, software',
-						'distributed under the License is distributed on an "AS IS" BASIS,',
-						'WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.',
-						'See the License for the specific language governing permissions and',
-						'limitations under the License.',
-						'',
-					].join('\n'),
-				},
-			],
-			'prettier/prettier': 'error',
 			'@stylistic/lines-between-class-members': ['error', 'always'],
-			'@stylistic/space-before-blocks': 'error',
-
 			'@stylistic/member-delimiter-style': [
 				'error',
 				{
@@ -81,7 +57,9 @@ const config = [
 					singleline: { delimiter: 'semi', requireLast: false },
 				},
 			],
+			'@stylistic/space-before-blocks': 'error',
 			'@typescript-eslint/explicit-function-return-type': 'off',
+
 			'@typescript-eslint/interface-name-prefix': 'off',
 			'@typescript-eslint/member-ordering': [
 				'error',
@@ -159,6 +137,7 @@ const config = [
 			'@typescript-eslint/naming-convention': ['error', { format: ['UPPER_CASE'], selector: ['enumMember'] }],
 			'@typescript-eslint/no-base-to-string': 'off',
 			'@typescript-eslint/no-empty-interface': 'off',
+			'@typescript-eslint/no-explicit-any': 'off', // TODO: temporarily disabled
 			'@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: false }],
 			'@typescript-eslint/no-shadow': [
 				'error',
@@ -176,7 +155,6 @@ const config = [
 					allowedNames: ['instrumentation', 'that', 'capturedThis'],
 				},
 			],
-			'@typescript-eslint/no-explicit-any': 'off', // TODO: temporarily disabled
 			'@typescript-eslint/no-unsafe-argument': 'off', // TODO: temporarily disabled
 			'@typescript-eslint/no-unsafe-assignment': 'off',
 			'@typescript-eslint/no-unsafe-call': 'off',
@@ -187,13 +165,69 @@ const config = [
 			'@typescript-eslint/restrict-plus-operands': 'warn',
 			'@typescript-eslint/restrict-template-expressions': 'off',
 			'@typescript-eslint/unbound-method': 'off',
-
 			'arrow-body-style': ['error', 'as-needed'],
 			'curly': 'error',
+
+			'headers/header-format': [
+				'error',
+				{
+					content: [
+						'',
+						`Copyright 2020-${new Date().getFullYear()} Splunk Inc.`,
+						'',
+						'Licensed under the Apache License, Version 2.0 (the "License");',
+						'you may not use this file except in compliance with the License.',
+						'You may obtain a copy of the License at',
+						'',
+						'https://www.apache.org/licenses/LICENSE-2.0',
+						'',
+						'Unless required by applicable law or agreed to in writing, software',
+						'distributed under the License is distributed on an "AS IS" BASIS,',
+						'WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.',
+						'See the License for the specific language governing permissions and',
+						'limitations under the License.',
+						'',
+					].join('\n'),
+					source: 'string',
+				},
+			],
 			'no-console': 'off',
+			'no-duplicate-imports': 'error',
 			'no-plusplus': ['error', { allowForLoopAfterthoughts: true }],
 			'padding-line-between-statements': ['error', { blankLine: 'always', next: '*', prev: 'if' }],
 
+			'perfectionist/sort-exports': ['error', { order: 'asc', type: 'natural' }],
+			'perfectionist/sort-imports': [
+				'error',
+				{
+					groups: [
+						'builtin',
+						['type', 'external'],
+						'internal-type',
+						'internal',
+						['parent-type', 'sibling-type', 'index-type'],
+						['parent', 'sibling', 'index'],
+						'side-effect',
+						'style',
+						'object',
+						'unknown',
+					],
+					newlinesBetween: 'always',
+					order: 'asc',
+					type: 'alphabetical',
+				},
+			],
+
+			'perfectionist/sort-named-exports': ['error', { order: 'asc', type: 'alphabetical' }],
+			'perfectionist/sort-named-imports': ['error', { order: 'asc', type: 'alphabetical' }],
+			'perfectionist/sort-objects': [
+				'error',
+				{
+					order: 'asc',
+					type: 'alphabetical',
+				},
+			],
+			'prettier/prettier': 'error',
 			'space-before-blocks': 'off',
 		},
 	},

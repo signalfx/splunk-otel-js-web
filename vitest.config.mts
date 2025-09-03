@@ -21,28 +21,24 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
 	test: {
-		retry: 3,
 		clearMocks: true,
 		coverage: {
 			exclude: ['**/node_modules'],
 			provider: 'istanbul',
 		},
-		pool: 'forks',
-		root: path.resolve(__dirname),
-		reporters: ['default', 'html'],
-		include: ['**/*.test.ts'],
 		exclude: ['**/node_modules/**/*.test.ts', '**/node_modules/**/*.test.node.ts'],
+		include: ['**/*.test.ts'],
+		pool: 'forks',
 		projects: [
 			{
 				extends: true,
 				test: {
-					globalSetup: ['./tests/global-setup.ts'],
-					setupFiles: ['./tests/setup.ts'],
-					include: ['**/*.test.ts'],
-					name: { label: 'browser', color: 'blue' },
 					browser: {
+						api: {
+							host: '127.0.0.1',
+							port: 1234,
+						},
 						enabled: true,
-						provider: 'playwright',
 						headless: true,
 						instances: [
 							{
@@ -55,23 +51,27 @@ export default defineConfig({
 								browser: 'webkit',
 							},
 						],
-						api: {
-							host: '127.0.0.1',
-							port: 1234,
-						},
+						provider: 'playwright',
 					},
+					globalSetup: ['./tests/global-setup.ts'],
+					include: ['**/*.test.ts'],
+					name: { color: 'blue', label: 'browser' },
+					setupFiles: ['./tests/setup.ts'],
 				},
 			},
 			{
 				extends: true,
 				root: path.resolve(__dirname),
 				test: {
-					include: ['**/*.test.node.ts'],
-					exclude: ['**/*.test.ts'],
-					name: { label: 'node', color: 'green' },
 					environment: 'node',
+					exclude: ['**/*.test.ts'],
+					include: ['**/*.test.node.ts'],
+					name: { color: 'green', label: 'node' },
 				},
 			},
 		],
+		reporters: ['default', 'html'],
+		retry: 3,
+		root: path.resolve(__dirname),
 	},
 })

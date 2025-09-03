@@ -16,7 +16,7 @@
  *
  */
 
-import { FastifyRequest, FastifyReply } from 'fastify'
+import { FastifyReply, FastifyRequest } from 'fastify'
 
 export const noCacheMiddleware = (
 	req: FastifyRequest<{ Querystring: { noCache?: string } }>,

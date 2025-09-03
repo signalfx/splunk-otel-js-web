@@ -16,6 +16,7 @@
  *
  */
 const { SplunkRumWebpackPlugin } = require('@splunk/rum-build-plugins')
+
 const { getBaseConfig } = require('./webpack-utils')
 
 module.exports = {

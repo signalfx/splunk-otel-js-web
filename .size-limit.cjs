@@ -17,26 +17,26 @@
  */
 module.exports = [
 	{
-		name: 'artifacts/otel-api-globals.js',
 		limit: '3 kB',
+		name: 'artifacts/otel-api-globals.js',
 		path: './packages/web/dist/artifacts/otel-api-globals.js',
 	},
 
 	{
-		name: 'artifacts/splunk-otel-web.js',
 		limit: '47 kB',
+		name: 'artifacts/splunk-otel-web.js',
 		path: './packages/web/dist/artifacts/splunk-otel-web.js',
 	},
 
 	{
-		name: 'artifacts/splunk-otel-web-legacy.js',
 		limit: '111 kB',
+		name: 'artifacts/splunk-otel-web-legacy.js',
 		path: './packages/web/dist/artifacts/splunk-otel-web-legacy.js',
 	},
 
 	{
-		name: 'artifacts/splunk-otel-web-session-recorder.js',
 		limit: '109 kB',
+		name: 'artifacts/splunk-otel-web-session-recorder.js',
 		path: './packages/session-recorder/dist/artifacts/splunk-otel-web-session-recorder.js',
 	},
 ]

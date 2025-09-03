@@ -16,5 +16,5 @@
  *
  */
 export * from './delay-middleware'
-export * from './server-timing-middleware'
 export * from './no-cache-middleware'
+export * from './server-timing-middleware'

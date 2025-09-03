@@ -15,8 +15,9 @@
  * limitations under the License.
  *
  */
-import { test } from '../../utils/test'
 import { expect } from '@playwright/test'
+
+import { test } from '../../utils/test'
 
 test.describe('history', () => {
 	test('handles hash navigation', async ({ recordPage }) => {

@@ -17,7 +17,7 @@
  */
 
 import { generateId } from '../utils'
-import { safelySetSessionStorage, safelyGetSessionStorage } from '../utils/storage'
+import { safelyGetSessionStorage, safelySetSessionStorage } from '../utils/storage'
 
 const BROWSER_INSTANCE_ID_KEY = 'browser_instance_id'
 

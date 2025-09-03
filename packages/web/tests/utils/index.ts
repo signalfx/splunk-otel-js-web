@@ -15,8 +15,8 @@
  * limitations under the License.
  *
  */
-export * from './span-capturer'
 export * from './init'
-export * from './web-tracer-provider'
-export * from './span'
 export * from './memory-exporter'
+export * from './span'
+export * from './span-capturer'
+export * from './web-tracer-provider'

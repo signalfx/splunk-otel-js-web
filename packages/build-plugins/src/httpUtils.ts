@@ -16,8 +16,9 @@
  *
  */
 
-import axios from 'axios'
 import { createReadStream } from 'fs'
+
+import axios from 'axios'
 import * as FormData from 'form-data'
 
 interface FileUpload {
@@ -34,7 +35,7 @@ interface UploadOptions {
 
 const TOKEN_HEADER = 'X-SF-Token'
 
-export const uploadFile = async ({ url, file, parameters, token }: UploadOptions): Promise<void> => {
+export const uploadFile = async ({ file, parameters, token, url }: UploadOptions): Promise<void> => {
 	const formData = new FormData()
 
 	formData.append(file.fieldName, createReadStream(file.filePath))

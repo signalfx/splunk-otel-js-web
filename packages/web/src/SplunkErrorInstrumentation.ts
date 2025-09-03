@@ -16,16 +16,15 @@
  *
  */
 
-import * as shimmer from 'shimmer'
-import { getElementXPath } from '@opentelemetry/sdk-trace-web'
-import { limitLen } from './utils'
-import { context, Span } from '@opentelemetry/api'
-import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
-import { isPlainObject, removePropertiesWithAdvancedTypes, SpanContext } from './utils/attributes'
-import { getValidAttributes } from './utils/attributes'
-import { diag } from '@opentelemetry/api'
+import { context, diag, Span } from '@opentelemetry/api'
 import { suppressTracing } from '@opentelemetry/core'
+import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
+import { getElementXPath } from '@opentelemetry/sdk-trace-web'
+import * as shimmer from 'shimmer'
+
 import { isElement } from './types'
+import { limitLen } from './utils'
+import { getValidAttributes, isPlainObject, removePropertiesWithAdvancedTypes, SpanContext } from './utils/attributes'
 
 // FIXME take timestamps from events?
 
@@ -105,7 +104,7 @@ type ErrorTransformer = (arg: InternalErrorLike, context: SpanContext) => ErrorW
 export type SplunkErrorInstrumentationConfig = InstrumentationConfig & {
 	onError?: ErrorTransformer
 }
-const DEFAULT_ON_ERROR: ErrorTransformer = (e, c) => ({ error: e, context: c })
+const DEFAULT_ON_ERROR: ErrorTransformer = (e, c) => ({ context: c, error: e })
 
 export class SplunkErrorInstrumentation extends InstrumentationBase {
 	private clearingIntervalId?: ReturnType<typeof setInterval>
@@ -158,7 +157,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 			return
 		}
 
-		const { error: transformedArg, context: transformedCtx } = transformed
+		const { context: transformedCtx, error: transformedArg } = transformed
 		if (transformedArg instanceof Error) {
 			this.reportError(source, transformedArg, transformedCtx)
 		} else if (transformedArg instanceof ErrorEvent) {
@@ -294,31 +293,31 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 
 			if (transformed === undefined) {
 				diag.warn('onError can use null explicitly to cancel reporting, but cannot use undefined implicitly')
-				return { error, context: spanContext }
+				return { context: spanContext, error }
 			}
 
-			;({ error: transformedError, context: transformedCtx } = transformed)
+			;({ context: transformedCtx, error: transformedError } = transformed)
 		} catch (e) {
 			diag.warn('onError handler failed:', e)
-			return { error, context: spanContext }
+			return { context: spanContext, error }
 		}
 
 		if (!this.isValidErrorArg(transformedError) && !Array.isArray(transformedError)) {
 			diag.warn(
 				`ignoring an error because onError handler was expected to produce a valid error, but instead returned: ${transformedError}`,
 			)
-			return { error, context: spanContext }
+			return { context: spanContext, error }
 		}
 
 		if (!this.isValidContext(transformedCtx)) {
 			diag.warn(
 				`onError handler was expected to produce a valid context (POJO), but instead returned: ${transformedCtx}`,
 			)
-			return { error, context: spanContext }
+			return { context: spanContext, error }
 		}
 
 		transformedCtx = removePropertiesWithAdvancedTypes(transformedCtx)
-		return { error: transformedError, context: transformedCtx }
+		return { context: transformedCtx, error: transformedError }
 	}
 
 	private attachClearingInterval(): void {

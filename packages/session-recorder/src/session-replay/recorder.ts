@@ -17,11 +17,12 @@
  */
 import { context } from '@opentelemetry/api'
 import { suppressTracing } from '@opentelemetry/core'
-import { getSplunkRecorderConfig } from './config'
+
+import { BatchLogProcessor, convert } from '../BatchLogProcessor'
 import { SplunkRumRecorderConfig } from '../index'
 import { log } from '../log'
-import { BatchLogProcessor, convert } from '../BatchLogProcessor'
-import { SessionReplay, SessionReplayConfig, Segment } from './cdn-module'
+import { Segment, SessionReplay, SessionReplayConfig } from './cdn-module'
+import { getSplunkRecorderConfig } from './config'
 
 // TODO: When backend is deployed, also remove data splitting
 // const MAX_CHUNK_SIZE = 4000 * 1024 // ~4000 KB
@@ -155,9 +156,9 @@ export class Recorder {
 			const end = (i + 1) * MAX_CHUNK_SIZE
 
 			const dataToConvert: Record<string, any> = {
-				'rr-web.offset': this.logCounter,
-				'rr-web.event': eventI,
 				'rr-web.chunk': i + 1,
+				'rr-web.event': eventI,
+				'rr-web.offset': this.logCounter,
 				'rr-web.total-chunks': totalC,
 			}
 

@@ -16,8 +16,8 @@
  *
  */
 import { createUnplugin, UnpluginFactory } from 'unplugin'
-
 import type { Compiler, WebpackPluginInstance } from 'webpack'
+
 import { PLUGIN_NAME } from './utils'
 import { applySourceMapsInject, applySourceMapsUpload } from './webpack'
 

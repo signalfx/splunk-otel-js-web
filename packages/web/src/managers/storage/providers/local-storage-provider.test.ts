@@ -16,10 +16,11 @@
  *
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { SESSION_EXPIRATION_COOKIE_SEC } from '../constants'
 import { SessionPersistence } from './base-storage-provider'
 import { LocalStorageProvider } from './local-storage-provider'
-import { SESSION_EXPIRATION_COOKIE_SEC } from '../constants'
 
 const validOptions = {
 	expires: SESSION_EXPIRATION_COOKIE_SEC, // 3 months
@@ -194,15 +195,15 @@ describe('LocalStorageProvider', () => {
 
 		it('should handle complex nested objects', () => {
 			const complexData = {
+				sessions: ['session1', 'session2'],
 				user: {
 					id: 123,
 					name: 'John Doe',
 					preferences: {
-						theme: 'dark',
 						notifications: true,
+						theme: 'dark',
 					},
 				},
-				sessions: ['session1', 'session2'],
 			}
 			const jsonString = JSON.stringify(complexData)
 			localStorage.setItem('testKey', jsonString)
@@ -240,15 +241,15 @@ describe('LocalStorageProvider', () => {
 
 		it('should handle complex nested objects', () => {
 			const complexData = {
+				sessions: ['session1', 'session2'],
 				user: {
 					id: 123,
 					name: 'John Doe',
 					preferences: {
-						theme: 'dark',
 						notifications: true,
+						theme: 'dark',
 					},
 				},
-				sessions: ['session1', 'session2'],
 			}
 			const result = provider.safelyStoreJson('testKey', complexData, validOptions)
 

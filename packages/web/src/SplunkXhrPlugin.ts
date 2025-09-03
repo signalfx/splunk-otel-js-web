@@ -16,12 +16,13 @@
  *
  */
 
+import * as api from '@opentelemetry/api'
 import {
 	XMLHttpRequestInstrumentation,
 	XMLHttpRequestInstrumentationConfig,
 } from '@opentelemetry/instrumentation-xml-http-request'
+
 import { captureTraceParent } from './servertiming'
-import * as api from '@opentelemetry/api'
 
 type ExposedSuper = {
 	_addResourceObserver: (xhr: XMLHttpRequest, spanUrl: string) => void

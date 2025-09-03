@@ -16,11 +16,12 @@
  *
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { diag } from '@opentelemetry/api'
-import { SessionManager } from './session-manager'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
 import { StorageManager } from '../storage'
 import { SESSION_ID_LENGTH, SESSION_INACTIVITY_TIMEOUT_MS } from './constants'
+import { SessionManager } from './session-manager'
 
 vi.mock('../../utils/is-trusted-event', () => ({
 	isTrustedEvent: vi.fn(() => true),
@@ -67,9 +68,9 @@ describe('SessionManager', () => {
 
 		it('should use persisted session when valid session exists in storage', () => {
 			const persistedSession = {
+				expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
 				id: 'persisted-session-id',
 				startTime: Date.now(),
-				expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
 			}
 			storageManager = new StorageManager({
 				sessionPersistence: 'cookie',
@@ -84,9 +85,9 @@ describe('SessionManager', () => {
 
 		it('should create new session when persisted session is expired', () => {
 			const expiredSession = {
+				expiresAt: Date.now() - 1000,
 				id: 'expired-session-id',
 				startTime: Date.now() - SESSION_INACTIVITY_TIMEOUT_MS - 1000,
-				expiresAt: Date.now() - 1000,
 			}
 
 			storageManager = new StorageManager({
@@ -107,9 +108,9 @@ describe('SessionManager', () => {
 			}
 
 			const persistedSession = {
+				expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
 				id: 'persisted-session-id',
 				startTime: Date.now(),
-				expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
 			}
 
 			storageManager = new StorageManager({
@@ -206,10 +207,10 @@ describe('SessionManager', () => {
 			sessionManager.start()
 
 			const keydownEvent = new KeyboardEvent('keydown', {
-				key: 'Enter',
-				code: 'Enter',
 				bubbles: true,
 				cancelable: true,
+				code: 'Enter',
+				key: 'Enter',
 			})
 
 			window.dispatchEvent(keydownEvent)
@@ -253,9 +254,9 @@ describe('SessionManager', () => {
 	describe('User Activity Handling', () => {
 		beforeEach(() => {
 			const persistedSession = {
+				expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
 				id: 'persisted-session-id',
 				startTime: Date.now(),
-				expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
 			}
 			storageManager = new StorageManager({
 				sessionPersistence: 'cookie',
@@ -274,10 +275,10 @@ describe('SessionManager', () => {
 			vi.advanceTimersByTime(SESSION_INACTIVITY_TIMEOUT_MS + 1000)
 
 			const keydownEvent = new KeyboardEvent('keydown', {
-				key: 'Enter',
-				code: 'Enter',
 				bubbles: true,
 				cancelable: true,
+				code: 'Enter',
+				key: 'Enter',
 			})
 
 			window.dispatchEvent(keydownEvent)
@@ -295,10 +296,10 @@ describe('SessionManager', () => {
 			}
 
 			const keydownEvent = new KeyboardEvent('keydown', {
-				key: 'Enter',
-				code: 'Enter',
 				bubbles: true,
 				cancelable: true,
+				code: 'Enter',
+				key: 'Enter',
 			})
 
 			window.dispatchEvent(keydownEvent)
@@ -316,9 +317,9 @@ describe('SessionManager', () => {
 			sessionManager.subscribe(mockSubscriber)
 
 			const newSessionFromStorage = {
+				expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
 				id: 'session-from-another-tab',
 				startTime: Date.now(),
-				expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
 			}
 
 			sessionManager.start()

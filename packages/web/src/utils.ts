@@ -131,6 +131,8 @@ export function waitForGlobal<T = unknown>(identifier: string, callback: (value:
 	const value = windowWithDynamicProps[identifier]
 	let used = false
 	Object.defineProperty(window, identifier, {
+		configurable: true,
+		enumerable: false,
 		get() {
 			return value
 		},
@@ -140,8 +142,6 @@ export function waitForGlobal<T = unknown>(identifier: string, callback: (value:
 			windowWithDynamicProps[identifier] = newVal
 			callback(newVal)
 		},
-		configurable: true,
-		enumerable: false,
 	})
 
 	return () => {

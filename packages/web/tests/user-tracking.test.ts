@@ -16,9 +16,10 @@
  *
  */
 
-import SplunkRum from '../src/index'
 import * as tracing from '@opentelemetry/sdk-trace-base'
-import { describe, it, expect, afterEach } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
+
+import SplunkRum from '../src/index'
 import { deinit, initWithDefaultConfig, SpanCapturer } from './utils'
 
 const createSpan = (tracer: tracing.Tracer) => {
@@ -73,7 +74,7 @@ describe('userTracking is reflected', () => {
 	})
 
 	it('localStorage/userTrackingMode is anonymousTracking, then noTracking', () => {
-		initWithDefaultConfig(capturer, { user: { trackingMode: 'anonymousTracking' }, persistence: 'localStorage' })
+		initWithDefaultConfig(capturer, { persistence: 'localStorage', user: { trackingMode: 'anonymousTracking' } })
 
 		const tracer = SplunkRum.provider.getTracer('test')
 		const spanWithAnonymousId = createSpan(tracer)

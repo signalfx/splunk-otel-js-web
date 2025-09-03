@@ -16,13 +16,14 @@
  *
  */
 
-import { SessionState } from './session-state'
 import { diag } from '@opentelemetry/api'
-import { StorageManager } from '../storage'
-import { SESSION_INACTIVITY_TIMEOUT_MS, SESSION_DURATION_MS, SESSION_ID_LENGTH } from './constants'
+
 import { generateId } from '../../utils'
-import { Observable } from '../../utils/observable'
 import { isTrustedEvent } from '../../utils/is-trusted-event'
+import { Observable } from '../../utils/observable'
+import { StorageManager } from '../storage'
+import { SESSION_DURATION_MS, SESSION_ID_LENGTH, SESSION_INACTIVITY_TIMEOUT_MS } from './constants'
+import { SessionState } from './session-state'
 
 // Events that extend the session or create a new one
 const USER_ACTIVITY_EVENTS = ['click', 'touchstart', 'keydown', 'scroll']
@@ -44,12 +45,12 @@ export class SessionManager {
 		const previousState = this._session
 		this._session = state
 
-		diag.debug('SessionManager: Updating session', { previousState, currentState: state })
+		diag.debug('SessionManager: Updating session', { currentState: state, previousState })
 		if (state.state === 'active') {
 			this.storageManager.persistSessionState(this._session)
 		}
 
-		this.sessionStateChange.notify({ previousState, currentState: state })
+		this.sessionStateChange.notify({ currentState: state, previousState })
 	}
 
 	private readonly sessionStateChange = new Observable<SessionStateChange>()
@@ -145,9 +146,9 @@ export class SessionManager {
 
 		return {
 			expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
+			id: sessionId,
 			startTime: Date.now(),
 			state,
-			id: sessionId,
 		}
 	}
 
@@ -181,8 +182,8 @@ export class SessionManager {
 			if (nativeSessionId) {
 				this.session = {
 					...session,
-					id: nativeSessionId,
 					expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
+					id: nativeSessionId,
 					state: 'native',
 				}
 			}
@@ -273,8 +274,8 @@ export class SessionManager {
 			if (persistedSessionState) {
 				this.session = {
 					...persistedSessionState,
-					state: 'active' as const,
 					expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
+					state: 'active' as const,
 				}
 			} else {
 				this.session = SessionManager.generateNewSession('active')

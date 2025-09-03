@@ -15,9 +15,9 @@
  * limitations under the License.
  *
  */
-import { RecorderPublicConfig } from '../recorder'
-import { SensitivityRule, SensitivityRuleType, ConfigFeatures, PackAssetsConfig } from '../cdn-module'
 import { isString } from '../../type-guards'
+import { ConfigFeatures, PackAssetsConfig, SensitivityRule, SensitivityRuleType } from '../cdn-module'
+import { RecorderPublicConfig } from '../recorder'
 
 export const migrateRRWebConfigToSplunkConfig = (
 	config: NonNullable<Record<string, unknown>>,
@@ -28,10 +28,10 @@ export const migrateRRWebConfigToSplunkConfig = (
 })
 
 const migrateConfigToFeatures = ({
-	recordCanvas,
-	inlineStylesheet,
-	inlineImages,
 	collectFonts,
+	inlineImages,
+	inlineStylesheet,
+	recordCanvas,
 }: NonNullable<Record<string, unknown>>): ConfigFeatures | undefined => {
 	const features: ConfigFeatures = {}
 	const packAssets: PackAssetsConfig = {}
@@ -60,14 +60,14 @@ const migrateConfigToFeatures = ({
 }
 
 const migratePrivacyOptionsToSensitivityRules = ({
-	maskTextClass = 'rr-mask',
-	maskTextSelector,
 	blockClass = 'rr-block',
 	blockSelector,
 	ignoreClass = 'rr-ignore',
 	maskInputFn,
-	maskTextFn,
 	maskInputOptions,
+	maskTextClass = 'rr-mask',
+	maskTextFn,
+	maskTextSelector,
 }: NonNullable<Record<string, unknown>>): SensitivityRule[] | undefined => {
 	if (maskInputFn) {
 		throwOnUnsupportedOption('Config option "maskInputFn" cannot be migrated automatically.')

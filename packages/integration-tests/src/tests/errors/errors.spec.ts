@@ -15,9 +15,10 @@
  * limitations under the License.
  *
  */
-import { expect } from '@playwright/test'
-import { test } from '../../utils/test'
 import { Span } from '@opentelemetry/exporter-zipkin/build/src/types'
+import { expect } from '@playwright/test'
+
+import { test } from '../../utils/test'
 
 test.describe('errors', () => {
 	test('DOM resource 4xx', async ({ recordPage }) => {
@@ -41,7 +42,7 @@ test.describe('errors', () => {
 		expect(errorSpans[0].tags['error.message']).toBe('Failed to load <img src="/nonexistent.png" />')
 	})
 
-	test('JS syntax error', async ({ recordPage, browserName }) => {
+	test('JS syntax error', async ({ browserName, recordPage }) => {
 		await recordPage.goTo('/errors/views/js-syntax-error.ejs')
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'onerror').length === 1)
 		const errorSpans = recordPage.receivedSpans.filter((span) => span.name === 'onerror')
@@ -61,7 +62,7 @@ test.describe('errors', () => {
 		expect(errorSpans[0].tags['error.message']).toBe(errorMessageMap[browserName])
 	})
 
-	test('JS unhandled error', async ({ recordPage, browserName }) => {
+	test('JS unhandled error', async ({ browserName, recordPage }) => {
 		await recordPage.goTo('/errors/views/unhandled-error.ejs')
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'onerror').length === 1)
 		const errorSpans = recordPage.receivedSpans.filter((span) => span.name === 'onerror')
@@ -95,7 +96,7 @@ test.describe('errors', () => {
 		expect(errorSpans[0].tags['error.message']).toBe('rejection-value')
 	})
 
-	test('manual console.error', async ({ recordPage, browserName }) => {
+	test('manual console.error', async ({ browserName, recordPage }) => {
 		await recordPage.goTo('/errors/views/console-error.ejs')
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'console.error').length === 1)
 		const errorSpans = recordPage.receivedSpans.filter((span) => span.name === 'console.error')
@@ -117,7 +118,7 @@ test.describe('errors', () => {
 		expect(errorSpans[0].tags['error.message']).toBe(errorMessageMap[browserName])
 	})
 
-	test('SplunkRum.reportError', async ({ recordPage, browserName }) => {
+	test('SplunkRum.reportError', async ({ browserName, recordPage }) => {
 		const url = 'http://localhost:3000/errors/views/splunkrum-reporterror.ejs'
 		await recordPage.goTo(url)
 		await recordPage.waitForSpans(

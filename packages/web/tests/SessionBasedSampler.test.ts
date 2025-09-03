@@ -16,13 +16,13 @@
  *
  */
 
-import { SessionBasedSampler } from '../src/SessionBasedSampler'
 import { context, SamplingDecision } from '@opentelemetry/api'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { deinit, initWithDefaultConfig, SpanCapturer } from './utils'
-import { getGlobal } from '../src/global-utils'
 import { SplunkOtelWebType } from '../src'
+import { getGlobal } from '../src/global-utils'
+import { SessionBasedSampler } from '../src/SessionBasedSampler'
+import { deinit, initWithDefaultConfig, SpanCapturer } from './utils'
 
 describe('Session based sampler', () => {
 	let capturer: SpanCapturer

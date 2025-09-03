@@ -15,8 +15,9 @@
  * limitations under the License.
  *
  */
-import { createWebTracerProvider } from './web-tracer-provider'
 import { Span } from '@opentelemetry/api'
+
+import { createWebTracerProvider } from './web-tracer-provider'
 
 export const createSpan = (name: string) => {
 	const webTracerProvider = createWebTracerProvider()

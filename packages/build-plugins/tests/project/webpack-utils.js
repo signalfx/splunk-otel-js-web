@@ -22,10 +22,10 @@ module.exports = {
 			main: './src/index.js',
 			other: './src/other-entry.js',
 		},
+		mode: 'production',
 		output: {
 			filename: '[name].js',
 			path: path.resolve(__dirname, 'dist/' + path.basename(configFilename).replaceAll('.', '-')),
 		},
-		mode: 'production',
 	}),
 }
