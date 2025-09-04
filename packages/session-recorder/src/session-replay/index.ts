@@ -16,5 +16,3 @@
  *
  */
 export * from './cdn-module'
-export * from './config'
-export * from './recorder'

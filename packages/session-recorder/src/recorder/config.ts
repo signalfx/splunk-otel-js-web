@@ -15,15 +15,14 @@
  * limitations under the License.
  *
  */
+import { migrateRRWebConfigToSplunkConfig } from './migrations/config-migration'
+import { SplunkRecorderPublicConfig } from './splunk-recorder'
+import { RRWebRecorderPublicConfig } from './rrweb-recorder'
+import { mergeRecorderConfig } from './migrations/config-merge'
 
-export type RecorderType = 'rrweb' | 'splunk'
-
-export type SessionState = {
-	expiresAt: number
-	id: string
-	rt?: RecorderType
-	startTime: number
-	state: 'active' | 'native' | 'expired-inactivity' | 'expired-duration'
+export const getSplunkRecorderConfig = (
+	config: SplunkRecorderPublicConfig & RRWebRecorderPublicConfig,
+): SplunkRecorderPublicConfig => {
+	const migratedRRWebConfig = migrateRRWebConfigToSplunkConfig(config)
+	return mergeRecorderConfig(config, migratedRRWebConfig)
 }
-
-export type PersistedSessionState = Pick<SessionState, 'expiresAt' | 'rt' | 'id' | 'startTime'>

@@ -17,16 +17,17 @@
  */
 
 import { ProxyTracerProvider, trace, Tracer, TracerProvider } from '@opentelemetry/api'
+import OTLPLogExporter from './OTLPLogExporter'
+import { BatchLogProcessor } from './BatchLogProcessor'
+import { VERSION } from './version'
+import { getGlobal, getSplunkRumVersion } from './utils'
+
 import type { Resource } from '@opentelemetry/resources'
 import type { SplunkOtelWebType } from '@splunk/otel-web'
 import { JsonObject } from 'type-fest'
 
-import { BatchLogProcessor } from './BatchLogProcessor'
+import { Recorder, RecorderType, RRWebRecorderPublicConfig, SplunkRecorderPublicConfig } from './recorder'
 import { log } from './log'
-import OTLPLogExporter from './OTLPLogExporter'
-import { Recorder, RecorderPublicConfig } from './session-replay'
-import { getGlobal, getSplunkRumVersion } from './utils'
-import { VERSION } from './version'
 
 interface BasicTracerProvider extends TracerProvider {
 	readonly resource: Resource
@@ -44,12 +45,16 @@ export type SplunkRumRecorderConfig = {
 	 */
 	realm?: string
 
+	/** Type of the recorder */
+	recorder?: RecorderType
+
 	/**
 	 * RUM authorization token for data sending. Please make sure this is a token
 	 * with only RUM scope as it's visible to every user of your app
 	 **/
 	rumAccessToken?: string
-} & RecorderPublicConfig
+} & RRWebRecorderPublicConfig &
+	SplunkRecorderPublicConfig
 
 let inited: true | false | undefined = false
 let tracer: Tracer
@@ -59,14 +64,8 @@ let recorder: Recorder | undefined
 let sessionStateUnsubscribe: undefined | (() => void)
 
 const SplunkRumRecorder = {
-	deinit(): void {
-		if (!inited) {
-			return
-		}
-
-		recorder?.stop()
-		sessionStateUnsubscribe?.()
-		inited = false
+	get inited(): boolean {
+		return Boolean(inited)
 	},
 
 	init(config: SplunkRumRecorderConfig): void {
@@ -118,11 +117,32 @@ const SplunkRumRecorder = {
 
 		const resource = SplunkRum.resource
 
-		const { beaconEndpoint, realm, rumAccessToken, ...initRecorderConfig } = config
+		const {
+			beaconEndpoint,
+			realm,
+			rumAccessToken,
+			recorder: recorderType = 'rrweb',
+			...initRecorderConfig
+		} = config
+		const isSplunkRecorder = recorderType === 'splunk'
+
+		if (recorderType === 'rrweb' && SplunkRum.userTrackingMode === 'anonymousTracking') {
+			log.error(
+				'SplunkSessionRecorder: Using rrweb recorder with anonymous tracking mode is not supported. Please use splunk recorder instead. Session recording will not be initialized.',
+			)
+			return
+		}
+
+		// TODO: Handle recorder type change (splunk -> rrweb or rrweb -> splunk)
+		// SplunkRum._internalCheckSessionRecorderType(recorderType)
 
 		// Mark recorded session as splunk
 		if (SplunkRum.provider) {
-			SplunkRum.provider.resource.attributes['splunk.sessionReplay'] = 'splunk'
+			const sessionReplayAttribute = isSplunkRecorder ? 'splunk' : 'rrweb'
+			SplunkRum.provider.resource.attributes['splunk.sessionReplay'] = sessionReplayAttribute
+			log.debug(
+				`SplunkSessionRecorder: splunk.sessionReplay resource attribute set to '${sessionReplayAttribute}'.`,
+			)
 		}
 
 		tracer = trace.getTracer('splunk.rr-web', VERSION)
@@ -170,11 +190,11 @@ const SplunkRumRecorder = {
 				return newAttributes
 			},
 			sessionId: SplunkRum.getSessionId() ?? '',
-			usePersistentExportQueue: true,
+			usePersistentExportQueue: isSplunkRecorder,
 		})
 		const processor = new BatchLogProcessor(exporter)
 
-		sessionStateUnsubscribe = SplunkRum.sessionManager.subscribe(({ currentState, previousState }) => {
+		sessionStateUnsubscribe = SplunkRum.sessionManager.subscribe(({ previousState, currentState }) => {
 			if (!previousState) {
 				return
 			}
@@ -183,6 +203,7 @@ const SplunkRumRecorder = {
 				recorder?.stop()
 				recorder = new Recorder({
 					initRecorderConfig,
+					isSplunkRecorder,
 					processor,
 				})
 				recorder.start()
@@ -192,6 +213,7 @@ const SplunkRumRecorder = {
 		try {
 			recorder = new Recorder({
 				initRecorderConfig,
+				isSplunkRecorder,
 				processor,
 			})
 			recorder.start()
@@ -201,9 +223,6 @@ const SplunkRumRecorder = {
 		}
 	},
 
-	get inited(): boolean {
-		return Boolean(inited)
-	},
 	resume(): void {
 		if (!inited) {
 			return
@@ -227,6 +246,15 @@ const SplunkRumRecorder = {
 		}
 
 		paused = true
+	},
+	deinit(): void {
+		if (!inited) {
+			return
+		}
+
+		recorder?.stop()
+		sessionStateUnsubscribe?.()
+		inited = false
 	},
 }
 
