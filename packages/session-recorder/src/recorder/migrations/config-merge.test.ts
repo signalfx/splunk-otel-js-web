@@ -15,36 +15,36 @@
  * limitations under the License.
  *
  */
-import { describe, expect, it } from 'vitest'
-
-import { RecorderPublicConfig } from '../recorder'
+import { describe, it, expect } from 'vitest'
 import { mergeRecorderConfig } from './config-merge'
+import { SplunkRecorderPublicConfig } from '../splunk-recorder'
 
 describe('mergeRecorderConfig', () => {
 	it('merges recorder configs', () => {
-		const config: RecorderPublicConfig = {
+		const config: SplunkRecorderPublicConfig = {
+			maskAllInputs: true,
 			features: {
 				canvas: true,
 				packAssets: {
 					images: true,
 				},
 			},
-			maskAllInputs: true,
 			sensitivityRules: [{ rule: 'mask', selector: '.mask' }],
 		}
 
-		const migratedConfig: RecorderPublicConfig = {
+		const migratedConfig: SplunkRecorderPublicConfig = {
+			maskAllInputs: false,
 			features: {
 				packAssets: {
 					styles: true,
 				},
 			},
-			maskAllInputs: false,
 			sensitivityRules: [{ rule: 'exclude', selector: '.exclude' }],
 		}
 
 		const actual = mergeRecorderConfig(config, migratedConfig)
 		const expected = {
+			maskAllInputs: true,
 			features: {
 				canvas: true,
 				packAssets: {
@@ -52,7 +52,6 @@ describe('mergeRecorderConfig', () => {
 					styles: true,
 				},
 			},
-			maskAllInputs: true,
 			sensitivityRules: [
 				{ rule: 'mask', selector: '.mask' },
 				{ rule: 'exclude', selector: '.exclude' },

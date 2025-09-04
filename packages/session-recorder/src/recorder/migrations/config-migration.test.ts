@@ -64,7 +64,7 @@ describe('migrateRRWebConfigToSplunkConfig', () => {
 		const actual = migrateRRWebConfigToSplunkConfig({})
 		const expected = {
 			features: undefined,
-			maskAllInputs: true,
+			maskAllInputs: undefined,
 			sensitivityRules: defaultSensitivityRules,
 		}
 		expect(actual).toStrictEqual(expected)
@@ -77,18 +77,19 @@ describe('migrateRRWebConfigToSplunkConfig', () => {
 		})
 		const expectedEmptyString = {
 			features: undefined,
-			maskAllInputs: true,
+			maskAllInputs: undefined,
 			sensitivityRules: defaultSensitivityRules,
 		}
 		expect(actualEmptyString).toStrictEqual(expectedEmptyString)
 
 		// Boolean
 		const actualBool = migrateRRWebConfigToSplunkConfig({
+			// @ts-expect-error Boolean value
 			maskTextSelector: false,
 		})
 		const expectedBool = {
 			features: undefined,
-			maskAllInputs: true,
+			maskAllInputs: undefined,
 			sensitivityRules: defaultSensitivityRules,
 		}
 		expect(actualBool).toStrictEqual(expectedBool)

@@ -74,14 +74,14 @@ export class StorageManager {
 	}
 
 	persistSessionState(sessionState: SessionState) {
-		const { expiresAt, id, startTime } = sessionState
+		const { expiresAt, id, rt, startTime } = sessionState
 
-		diag.debug('SessionManager: Persisting session state', { expiresAt, id, startTime })
+		diag.debug('SessionManager: Persisting session state', { expiresAt, id, rt, startTime })
 
 		try {
 			return this.sessionStorageProvider.safelyStoreJson<PersistedSessionState>(
 				SESSION_STORAGE_KEY,
-				{ expiresAt, id, startTime },
+				{ expiresAt, id, rt, startTime },
 				{
 					...this.options,
 					expires: SESSION_EXPIRATION_COOKIE_SEC,

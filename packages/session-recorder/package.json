@@ -1,7 +1,7 @@
 {
 	"name": "@splunk/otel-web-session-recorder",
 	"version": "0.24.0",
-	"description": "Session recorder for Splunk Observability",
+	"description": "Splunk distribution of rrweb for recording session",
 	"repository": "github:signalfx/splunk-otel-js-browser",
 	"scripts": {
 		"build": "webpack --mode production --color",
@@ -35,6 +35,7 @@
 		"core-js": "3.45.1",
 		"fflate": "^0.8.0",
 		"nanoid": "^5.1.5",
+		"rrweb": "^1.1.3",
 		"type-fest": "^4.37.0"
 	},
 	"peerDependencies": {
