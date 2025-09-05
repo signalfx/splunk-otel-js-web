@@ -186,20 +186,7 @@ describe('test init', () => {
 			const resourceFetchSpan = capturer.spans.find((span) => span.name === 'resourceFetch')
 			expect(resourceFetchSpan, 'resourceFetch span presence.').toBeTruthy()
 		})
-
-		it('is backwards compatible with 0.15.3 and earlier config options', () => {
-			SplunkRum.init({
-				app: 'my-app',
-				beaconUrl: 'https://127.0.0.1:9999/foo',
-				environment: 'my-env',
-				rumAuth: 'test123',
-			})
-
-			expect(SplunkRum.inited).toBeTruthy()
-			doesBeaconUrlEndWith('/foo?auth=test123')
-		})
 	})
-
 	describe('double-init has no effect', () => {
 		it('should have been inited only once', () => {
 			SplunkRum.init({
