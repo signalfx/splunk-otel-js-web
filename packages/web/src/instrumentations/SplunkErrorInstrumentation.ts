@@ -95,7 +95,7 @@ function addStackIfUseful(span: Span, err: Error) {
 
 export const ERROR_INSTRUMENTATION_NAME = 'errors'
 export const ERROR_INSTRUMENTATION_VERSION = '1'
-const THROTTLE_LIMIT = 500
+const THROTTLE_LIMIT = 1000
 
 type BackwardsCompatErrorLike = InternalErrorLike | any[]
 type ErrorWithContext = { context: SpanContext; error: BackwardsCompatErrorLike }
