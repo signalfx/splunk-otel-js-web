@@ -24,9 +24,7 @@ import { log } from '../log'
 import { Segment, SessionReplay, SessionReplayConfig } from './cdn-module'
 import { getSplunkRecorderConfig } from './config'
 
-// TODO: When backend is deployed, also remove data splitting
-// const MAX_CHUNK_SIZE = 4000 * 1024 // ~4000 KB
-const MAX_CHUNK_SIZE = 950 * 1024 // ~950 KB
+const MAX_CHUNK_SIZE = 4000 * 1024 // ~4000 KB
 
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()
