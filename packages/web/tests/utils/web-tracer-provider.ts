@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-import { SplunkWebTracerProvider } from '../../src/SplunkWebTracerProvider'
+import { SplunkWebTracerProvider } from '../../src/splunk-web-tracer-provider'
 
 export const createWebTracerProvider = (params?: ConstructorParameters<typeof SplunkWebTracerProvider>[0]) =>
 	new SplunkWebTracerProvider(params)

@@ -18,7 +18,7 @@
 import { FastifyReply } from 'fastify'
 
 const generateHex = (length: number) =>
-	[...Array(length).keys()].map(() => Math.floor(Math.random() * 16).toString(16)).join('')
+	[...Array.from({ length }).keys()].map(() => Math.floor(Math.random() * 16).toString(16)).join('')
 
 export const generateServerTiming = () => {
 	const traceId = generateHex(32)

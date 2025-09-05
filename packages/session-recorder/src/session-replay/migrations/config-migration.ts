@@ -83,6 +83,7 @@ const migratePrivacyOptionsToSensitivityRules = ({
 
 	const rules: SensitivityRule[] = []
 
+	/* eslint-disable unicorn/prefer-single-call */
 	// Mask
 	rules.push(...migratePrivacyClass(maskTextClass, 'mask'))
 	rules.push(...migratePrivacySelector(maskTextSelector, 'mask'))
@@ -93,6 +94,7 @@ const migratePrivacyOptionsToSensitivityRules = ({
 
 	// Ignore
 	rules.push(...migratePrivacyClass(ignoreClass, 'mask'))
+	/* eslint-enable unicorn/prefer-single-call */
 
 	return rules.length > 0 ? rules : undefined
 }

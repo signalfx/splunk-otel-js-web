@@ -25,6 +25,7 @@ export function sharedHelperFunctionThatThrowsError() {
 	return thisFunctionDoesNotExist()
 }
 
+// eslint-disable-next-line unicorn/prefer-native-coercion-functions
 export function otherHelperFunction(value) {
 	return String(value)
 }

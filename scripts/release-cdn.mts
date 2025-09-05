@@ -16,9 +16,9 @@
  *
  */
 
-import crypto from 'crypto'
-import * as fs from 'fs/promises'
-import * as path from 'path'
+import crypto from 'node:crypto'
+import * as fs from 'node:fs/promises'
+import path from 'node:path'
 
 import dotenv from 'dotenv'
 
@@ -34,12 +34,12 @@ import {
 	uploadToS3,
 } from './utils/index.mjs'
 
-const CDN_LISTED_FILES = ['splunk-otel-web.js', 'splunk-otel-web-session-recorder.js']
+const CDN_LISTED_FILES = new Set(['splunk-otel-web.js', 'splunk-otel-web-session-recorder.js'])
 const ARTIFACTS_DIR = './artifacts'
 const OWNER = process.env.GITHUB_OWNER ?? 'signalfx'
 const REPO = process.env.GITHUB_REPO ?? 'splunk-otel-js-web'
 
-const isDryRun = process.argv.some((arg) => arg === '--dry-run')
+const isDryRun = process.argv.includes('--dry-run')
 if (isDryRun) {
 	console.log('---- DRY RUN ----')
 }
@@ -102,7 +102,9 @@ for (const asset of assets) {
 		const publicUrl = `https://cdn.signalfx.com/${key}`
 		const contentType = getMimeType(asset)
 
-		if (!isDryRun) {
+		if (isDryRun) {
+			console.log(`\t\t\t\t- would be uploaded as ${publicUrl} ${contentType}`)
+		} else {
 			await uploadToS3({
 				bucketName: CDN_BUCKET_NAME,
 				buffer: assetBuffer,
@@ -111,11 +113,9 @@ for (const asset of assets) {
 				key,
 			})
 			console.log(`\t\t\t\t- uploaded as ${publicUrl}`)
-		} else {
-			console.log(`\t\t\t\t- would be uploaded as ${publicUrl} ${contentType}`)
 		}
 
-		if (CDN_LISTED_FILES.includes(asset)) {
+		if (CDN_LISTED_FILES.has(asset)) {
 			console.log('\t\t\t\t- generating script snippet')
 
 			cdnLinksByVersion[version.name].push(
@@ -145,13 +145,13 @@ if (semverRegex.test(targetVersion)) {
 	console.log(`I have found the latest version to be: ${ghRelease.tag_name} named "${ghRelease.name}."`)
 
 	console.log('Appending CDN instructions to release description.')
-	if (!isDryRun) {
-		await patchGithubReleaseBody(ghRelease, ghRelease.body + cdnLinks.join('\n'))
-		console.log(`Please verify that instructions are correct by navigating to: ${ghRelease.html_url}`)
-	} else {
+	if (isDryRun) {
 		console.log('Following would be added to the release notes:')
 		console.log('------')
 		console.log(cdnLinks.join('\n'))
 		console.log('------')
+	} else {
+		await patchGithubReleaseBody(ghRelease, ghRelease.body + cdnLinks.join('\n'))
+		console.log(`Please verify that instructions are correct by navigating to: ${ghRelease.html_url}`)
 	}
 }

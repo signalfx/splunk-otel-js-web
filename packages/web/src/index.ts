@@ -33,7 +33,7 @@ import {
 } from '@opentelemetry/sdk-trace-base'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 
-import { InternalEventTarget, SplunkOtelWebEventTarget } from './EventTarget'
+import { InternalEventTarget, SplunkOtelWebEventTarget } from './event-target'
 import { type SplunkExporterConfig } from './exporters/common'
 import { SplunkOTLPTraceExporter } from './exporters/otlp'
 import { SplunkZipkinExporter } from './exporters/zipkin'
@@ -55,12 +55,12 @@ import {
 	UserInteractionEventsConfig,
 } from './instrumentations'
 import { BrowserInstanceService } from './services/browser-instance-service'
-import { SessionBasedSampler } from './SessionBasedSampler'
-import { SplunkContextManager } from './SplunkContextManager'
-import { SplunkSamplerWrapper } from './SplunkSamplerWrapper'
-import { SplunkSpanAttributesProcessor } from './SplunkSpanAttributesProcessor'
-import { SplunkWebTracerProvider } from './SplunkWebTracerProvider'
-import { SplunkXhrPlugin } from './SplunkXhrPlugin'
+import { SessionBasedSampler } from './session-based-sampler'
+import { SplunkContextManager } from './splunk-context-manager'
+import { SplunkSamplerWrapper } from './splunk-sampler-wrapper'
+import { SplunkSpanAttributesProcessor } from './splunk-span-attributes-processor'
+import { SplunkWebTracerProvider } from './splunk-web-tracer-provider'
+import { SplunkXhrPlugin } from './splunk-xhr-plugin'
 import { getSyntheticsRunId, SYNTHETICS_RUN_ID_ATTRIBUTE } from './synthetics'
 import {
 	isPersistenceType,
@@ -80,11 +80,9 @@ import './polyfill-safari10'
 
 export { type SplunkExporterConfig } from './exporters/common'
 export { SplunkZipkinExporter } from './exporters/zipkin'
-export * from './SessionBasedSampler'
-export * from './SplunkWebTracerProvider'
+export * from './session-based-sampler'
+export * from './splunk-web-tracer-provider'
 import { SessionManager, SessionState, StorageManager } from './managers'
-
-export type { SplunkOtelWebConfig, SplunkOtelWebExporterOptions }
 
 interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
 	bufferSize?: number
@@ -396,7 +394,7 @@ export const SplunkRum: SplunkOtelWebType = {
 
 	getSessionId() {
 		if (!inited) {
-			return undefined
+			return
 		}
 
 		return this.sessionManager?.getSessionId()
@@ -404,7 +402,7 @@ export const SplunkRum: SplunkOtelWebType = {
 
 	getSessionState() {
 		if (!inited) {
-			return undefined
+			return
 		}
 
 		return this.sessionManager?.getSessionState()
@@ -414,7 +412,7 @@ export const SplunkRum: SplunkOtelWebType = {
 		userTrackingMode = options.user?.trackingMode ?? 'noTracking'
 
 		if (typeof window !== 'object') {
-			throw Error(
+			throw new TypeError(
 				'SplunkRum Error: This library is intended to run in a browser environment. Please ensure the code is evaluated within a browser context.',
 			)
 		}
@@ -479,10 +477,10 @@ export const SplunkRum: SplunkOtelWebType = {
 		this._processedOptions = processedOptions
 
 		if (processedOptions.realm) {
-			if (!processedOptions.beaconEndpoint) {
-				processedOptions.beaconEndpoint = getBeaconEndpointForRealm(processedOptions)
-			} else {
+			if (processedOptions.beaconEndpoint) {
 				diag.warn('SplunkRum: Realm value ignored (beaconEndpoint has been specified)')
+			} else {
+				processedOptions.beaconEndpoint = getBeaconEndpointForRealm(processedOptions)
 			}
 		}
 
@@ -547,7 +545,7 @@ export const SplunkRum: SplunkOtelWebType = {
 					? { 'deployment.environment': deploymentEnvironment, 'environment': deploymentEnvironment }
 					: {}),
 				...(version ? { 'app.version': version } : {}),
-				...(processedOptions.globalAttributes || {}),
+				...processedOptions.globalAttributes,
 			},
 			this._processedOptions.persistence === 'localStorage',
 			() => userTrackingMode,
@@ -604,6 +602,7 @@ export const SplunkRum: SplunkOtelWebType = {
 			}
 
 			return null
+			// eslint-disable-next-line unicorn/prefer-native-coercion-functions
 		}).filter((a): a is Exclude<typeof a, null> => Boolean(a))
 
 		window.addEventListener('visibilitychange', () => {
@@ -695,3 +694,5 @@ export const SplunkRum: SplunkOtelWebType = {
 }
 
 export default SplunkRum
+
+export { type SplunkOtelWebConfig, type SplunkOtelWebExporterOptions } from './types'

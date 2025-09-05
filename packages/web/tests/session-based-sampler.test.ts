@@ -21,7 +21,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { SplunkOtelWebType } from '../src'
 import { getGlobal } from '../src/global-utils'
-import { SessionBasedSampler } from '../src/SessionBasedSampler'
+import { SessionBasedSampler } from '../src/session-based-sampler'
 import { deinit, initWithDefaultConfig, SpanCapturer } from './utils'
 
 describe('Session based sampler', () => {

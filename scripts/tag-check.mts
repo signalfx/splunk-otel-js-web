@@ -16,15 +16,15 @@
  *
  */
 
-import { exec } from 'child_process'
-import { readFileSync } from 'fs'
-import * as path from 'path'
+import { exec } from 'node:child_process'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 
 const appRoot = process.cwd()
 const packageJsonPath = path.join(appRoot, 'package.json')
 
 // Read and parse package.json to get the version
-const packageJsonValue = JSON.parse(readFileSync(packageJsonPath, 'utf-8'))
+const packageJsonValue = JSON.parse(readFileSync(packageJsonPath, 'utf8'))
 const version: string = packageJsonValue.version
 
 exec('git tag -l --contains HEAD', (err, stdout) => {

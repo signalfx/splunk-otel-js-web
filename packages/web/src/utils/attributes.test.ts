@@ -54,7 +54,8 @@ describe('isAttributeValue', () => {
 		expect(isValidAttributeValue(() => {})).toBe(false)
 		expect(isValidAttributeValue(Symbol('s'))).toBe(false)
 		expect(isValidAttributeValue(null)).toBe(false)
-		expect(isValidAttributeValue(undefined)).toBe(false)
+		// @ts-expect-error No argument on purpose
+		expect(isValidAttributeValue()).toBe(false)
 	})
 })
 

@@ -11,7 +11,8 @@
 		"target": "ES2017",
 		"types": ["node"],
 		"strict": true,
-		"noImplicitAny": true
+		"noImplicitAny": true,
+		"allowSyntheticDefaultImports": true
 	},
 	"include": ["src/**/*.ts", "src/**/*.js"],
 	"exclude": ["node_modules"]

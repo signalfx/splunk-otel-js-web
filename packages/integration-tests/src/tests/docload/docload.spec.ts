@@ -31,11 +31,11 @@ test.describe('docload', () => {
 
 		const resources = ['css-font-img.css', 'splunk-black.png?delay=300', 'iframe.ejs', 'splunk.woff']
 		for (const urlEnd of resources) {
-			const resourceSpans = recordPage.receivedSpans.filter(
+			const resourceSpan = recordPage.receivedSpans.find(
 				(span) => span.tags['http.url'] && (span.tags['http.url'] as string).endsWith(urlEnd),
 			)
 
-			expect(docLoadSpans[0].traceId, `${urlEnd} has correct traceId`).toBe(resourceSpans[0].traceId)
+			expect(docLoadSpans[0].traceId, `${urlEnd} has correct traceId`).toBe(resourceSpan.traceId)
 		}
 
 		const ignoredResources = ['/some-data', '/some-data?delay=1', '/api/v2/spans']
@@ -92,7 +92,7 @@ test.describe('docload', () => {
 		expect(scriptFetchSpans[0].tags['component']).toBe('document-load')
 		if (browserName !== 'webkit') {
 			// Webkit does not support https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/responseStatus
-			expect(parseInt(scriptFetchSpans[0].tags['http.status_code'] as string)).toBe(200)
+			expect(Number.parseInt(scriptFetchSpans[0].tags['http.status_code'] as string)).toBe(200)
 		}
 
 		expect(brokenImageFetchSpans.length).toBeGreaterThanOrEqual(1)
@@ -100,7 +100,7 @@ test.describe('docload', () => {
 		expect(brokenImageFetchSpans[0].parentId).toBe(docLoadSpans[0].id)
 		if (browserName !== 'webkit') {
 			// Webkit does not support https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/responseStatus
-			expect(parseInt(brokenImageFetchSpans[0].tags['http.status_code'] as string)).toBe(404)
+			expect(Number.parseInt(brokenImageFetchSpans[0].tags['http.status_code'] as string)).toBe(404)
 		}
 
 		expect(docFetchSpans[0].tags['component']).toBe('document-load')
@@ -116,10 +116,10 @@ test.describe('docload', () => {
 		expect(docFetchSpans[0].tags['link.spanId']).toBeDefined()
 		if (browserName !== 'webkit') {
 			// Webkit does not support https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/responseStatus
-			expect(parseInt(docFetchSpans[0].tags['http.status_code'] as string)).toBe(200)
+			expect(Number.parseInt(docFetchSpans[0].tags['http.status_code'] as string)).toBe(200)
 		}
 
-		expect(parseInt(scriptFetchSpans[0].tags['http.response_content_length'] as string)).toBeGreaterThan(0)
+		expect(Number.parseInt(scriptFetchSpans[0].tags['http.response_content_length'] as string)).toBeGreaterThan(0)
 
 		expect(docLoadSpans[0].tags['component']).toBe('document-load')
 		expect(docLoadSpans[0].tags['location.href']).toBe('http://localhost:3000/docload/docload.ejs')
@@ -151,8 +151,8 @@ test.describe('docload', () => {
 		await recordPage.goTo('/docload/docload.ejs?disableInstrumentation=document')
 
 		await recordPage.waitForTimeoutAndFlushData(1000)
-		const SPAN_TYPES = ['documentFetch', 'documentLoad', 'resourceFetch']
-		const documentSpans = recordPage.receivedSpans.filter((span) => SPAN_TYPES.includes(span.name))
+		const SPAN_TYPES = new Set(['documentFetch', 'documentLoad', 'resourceFetch'])
+		const documentSpans = recordPage.receivedSpans.filter((span) => SPAN_TYPES.has(span.name))
 
 		expect(documentSpans).toHaveLength(0)
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)

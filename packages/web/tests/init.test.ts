@@ -31,6 +31,19 @@ const doesBeaconUrlEndWith = (suffix: string) => {
 	expect(beaconUrl.endsWith(suffix), `Checking beaconUrl if (${beaconUrl}) ends with ${suffix}`).toBeTruthy()
 }
 
+function init() {
+	SplunkRum.init({
+		applicationName: 'my-app',
+		beaconEndpoint: 'https://127.0.0.1:9999/foo',
+		deploymentEnvironment: 'my-env',
+		globalAttributes: { customerType: 'GOLD' },
+		instrumentations: {
+			websocket: true,
+		},
+		rumAccessToken: undefined,
+	})
+}
+
 describe('test init', () => {
 	let capturer: SpanCapturer
 
@@ -205,8 +218,8 @@ describe('test init', () => {
 
 	describe('exporter option', () => {
 		it('allows setting factory', async () => {
-			const exportMock = vi.fn().mockReturnValue(undefined)
-			const onAttributesSerializingMock = vi.fn().mockReturnValue(undefined)
+			const exportMock = vi.fn().mockReturnValue()
+			const onAttributesSerializingMock = vi.fn().mockReturnValue()
 
 			SplunkRum._internalInit({
 				allowInsecureBeacon: true,
@@ -234,19 +247,6 @@ describe('test init', () => {
 	})
 
 	describe('multiple instance protection', () => {
-		function init() {
-			SplunkRum.init({
-				applicationName: 'my-app',
-				beaconEndpoint: 'https://127.0.0.1:9999/foo',
-				deploymentEnvironment: 'my-env',
-				globalAttributes: { customerType: 'GOLD' },
-				instrumentations: {
-					websocket: true,
-				},
-				rumAccessToken: undefined,
-			})
-		}
-
 		it('sets the global version flag', () => {
 			init()
 			expect(SplunkRum.inited).toBeTruthy()
@@ -441,6 +441,7 @@ describe('test error', () => {
 
 	it('should capture an error span', async () => {
 		const origOnError = window.onerror
+		// eslint-disable-next-line unicorn/prefer-add-event-listener
 		window.onerror = function () {
 			// nop to prevent failing the test
 		}
@@ -455,12 +456,13 @@ describe('test error', () => {
 		await new Promise<void>((resolve) => {
 			// and later look for it
 			setTimeout(() => {
+				// eslint-disable-next-line unicorn/prefer-add-event-listener
 				window.onerror = origOnError // restore proper error handling
 				resolve()
 			}, 100)
 		})
 
-		const span = capturer.spans[capturer.spans.length - 1]
+		const span = capturer.spans.at(-1)
 		expect(span.attributes.component).toBe('error')
 		expect(span.name).toBe('onerror')
 		expect((span.attributes['error.stack'] as string).includes('callChain')).toBeTruthy()
@@ -492,9 +494,9 @@ describe('test stack length', () => {
 	it('should limit length of stack', async () => {
 		try {
 			recurAndThrow(50)
-		} catch (e) {
+		} catch (error) {
 			try {
-				SplunkRum.reportError(e as Error)
+				SplunkRum.reportError(error as Error)
 			} catch {
 				// swallow
 			}
@@ -593,7 +595,7 @@ describe('test unloaded img', () => {
 
 		const img = document.createElement('img')
 		img.src = location.href + '/IAlwaysWantToUseVeryVerboseDescriptionsWhenIHaveToEnsureSomethingDoesNotExist.jpg'
-		document.body.appendChild(img)
+		document.body.append(img)
 
 		await new Promise<void>((resolve) => {
 			setTimeout(() => {
@@ -721,6 +723,7 @@ describe('event listener shenanigans', () => {
 
 	// https://github.com/Pomax/react-onclickoutside/blob/15c3cdaed0d8314ac68bc53c7fad7b2c2f3c4ae2/src/index.js#L19
 	it("doesn't break on null capture arg", () => {
+		// eslint-disable-next-line unicorn/consistent-function-scoping
 		const listener = () => {}
 		// fails on throwing error
 		document.body.addEventListener('test', listener, null)

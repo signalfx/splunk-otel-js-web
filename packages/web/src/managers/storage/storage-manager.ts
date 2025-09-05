@@ -29,13 +29,16 @@ export class StorageManager {
 
 	private get sessionStorageProvider() {
 		switch (this.options.sessionPersistence) {
-			case 'cookie':
+			case 'cookie': {
 				return this.cookieStorageProvider
-			case 'localStorage':
+			}
+			case 'localStorage': {
 				return this.localStorageProvider
-			default:
+			}
+			default: {
 				// This should never happen due to TypeScript typing, but provides runtime safety
 				throw new Error(`Unknown persistence type: ${this.options.sessionPersistence}`)
+			}
 		}
 	}
 
@@ -69,7 +72,7 @@ export class StorageManager {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				options: this.options,
 			})
-			return undefined
+			return
 		}
 	}
 

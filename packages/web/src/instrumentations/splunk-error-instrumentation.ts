@@ -147,7 +147,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 			return
 		}
 
-		if (arg instanceof Array && arg.length === 1) {
+		if (Array.isArray(arg) && arg.length === 1) {
 			arg = arg[0]
 		}
 
@@ -297,8 +297,8 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 			}
 
 			;({ context: transformedCtx, error: transformedError } = transformed)
-		} catch (e) {
-			diag.warn('onError handler failed:', e)
+		} catch (error_) {
+			diag.warn('onError handler failed:', error_)
 			return { context: spanContext, error }
 		}
 
@@ -322,18 +322,10 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 
 	private attachClearingInterval(): void {
 		this.clearingIntervalId = setInterval(() => {
-			const callback = () => {
-				this.throttleMap.forEach((relativeTime, throttleKey) => {
-					if (performance.now() - relativeTime > THROTTLE_LIMIT) {
-						this.throttleMap.delete(throttleKey)
-					}
-				})
-			}
-
 			if (typeof requestIdleCallback === 'function') {
-				requestIdleCallback(callback, { timeout: 1000 })
+				requestIdleCallback(this.clearExpiredItemsInThrottleMap, { timeout: 1000 })
 			} else {
-				callback()
+				this.clearExpiredItemsInThrottleMap()
 			}
 		}, 5000)
 	}
@@ -352,6 +344,14 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		for (const [k, v] of entries) {
 			span.setAttribute(k, v)
 		}
+	}
+
+	private clearExpiredItemsInThrottleMap = () => {
+		this.throttleMap.forEach((relativeTime, throttleKey) => {
+			if (performance.now() - relativeTime > THROTTLE_LIMIT) {
+				this.throttleMap.delete(throttleKey)
+			}
+		})
 	}
 
 	private consoleErrorHandler =

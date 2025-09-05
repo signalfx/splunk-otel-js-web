@@ -45,4 +45,5 @@ export const hasSizeLikeProperty = (maybeSizeLike: unknown): maybeSizeLike is Si
 	return false
 }
 
+// eslint-disable-next-line unicorn/explicit-length-check
 export const getSize = (o: SizeLikeObject) => o.byteLength || o.size || o.length

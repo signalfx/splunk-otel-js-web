@@ -25,15 +25,15 @@ test.describe('mouse', () => {
 		await recordPage.locator('#btn1').click()
 
 		// TODO: Two click spans are being created. Investigate why.
-		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'click').length >= 1)
-		const clickSpans = recordPage.receivedSpans.filter((span) => span.name === 'click')
-		const mouseDownSpans = recordPage.receivedSpans.filter((span) => span.name === 'mousedown')
-		const mouseUpSpans = recordPage.receivedSpans.filter((span) => span.name === 'mouseup')
+		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'click'))
+		const clickSpan = recordPage.receivedSpans.find((span) => span.name === 'click')
+		const mouseDownSpan = recordPage.receivedSpans.find((span) => span.name === 'mousedown')
+		const mouseUpSpan = recordPage.receivedSpans.find((span) => span.name === 'mouseup')
 
 		for (const spanData of [
-			{ name: 'click', span: clickSpans[0] },
-			{ name: 'mousedown', span: mouseDownSpans[0] },
-			{ name: 'mouseup', span: mouseUpSpans[0] },
+			{ name: 'click', span: clickSpan },
+			{ name: 'mousedown', span: mouseDownSpan },
+			{ name: 'mouseup', span: mouseUpSpan },
 		]) {
 			expect(spanData.span.tags['component']).toBe('user-interaction')
 			expect(spanData.span.tags['event_type']).toBe(spanData.name)
@@ -63,13 +63,13 @@ test.describe('mouse', () => {
 		await recordPage.goTo('/user-interaction/mouse-document.ejs')
 		await recordPage.locator('#btn1').click()
 
-		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'click').length >= 1)
-		const clickSpans = recordPage.receivedSpans.filter((span) => span.name === 'click')
+		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'click'))
+		const clickSpan = recordPage.receivedSpans.find((span) => span.name === 'click')
 
-		expect(clickSpans[0].tags['component']).toBe('user-interaction')
-		expect(clickSpans[0].tags['event_type']).toBe('click')
-		expect(clickSpans[0].tags['target_element']).toBe('BUTTON')
-		expect(clickSpans[0].tags['target_xpath']).toBe('//*[@id="btn1"]')
+		expect(clickSpan.tags['component']).toBe('user-interaction')
+		expect(clickSpan.tags['event_type']).toBe('click')
+		expect(clickSpan.tags['target_element']).toBe('BUTTON')
+		expect(clickSpan.tags['target_xpath']).toBe('//*[@id="btn1"]')
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})
 
@@ -77,7 +77,7 @@ test.describe('mouse', () => {
 		await recordPage.goTo('/user-interaction/mouse-bubble.ejs')
 		await recordPage.locator('#inner').click()
 
-		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'click').length >= 1)
+		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'click'))
 		const resultElementText = await recordPage.locator('#result').textContent()
 
 		expect(resultElementText).toBe('container')
@@ -88,15 +88,15 @@ test.describe('mouse', () => {
 		await recordPage.goTo('/user-interaction/mouse.ejs')
 		await recordPage.locator('#btn-svg-target').click()
 
-		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'click').length >= 1)
-		const clickSpans = recordPage.receivedSpans.filter((span) => span.name === 'click')
-		const mouseDownSpans = recordPage.receivedSpans.filter((span) => span.name === 'mousedown')
-		const mouseUpSpans = recordPage.receivedSpans.filter((span) => span.name === 'mouseup')
+		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'click'))
+		const clickSpan = recordPage.receivedSpans.find((span) => span.name === 'click')
+		const mouseDownSpan = recordPage.receivedSpans.find((span) => span.name === 'mousedown')
+		const mouseUpSpan = recordPage.receivedSpans.find((span) => span.name === 'mouseup')
 
 		for (const spanData of [
-			{ name: 'click', span: clickSpans[0] },
-			{ name: 'mousedown', span: mouseDownSpans[0] },
-			{ name: 'mouseup', span: mouseUpSpans[0] },
+			{ name: 'click', span: clickSpan },
+			{ name: 'mousedown', span: mouseDownSpan },
+			{ name: 'mouseup', span: mouseUpSpan },
 		]) {
 			expect(spanData.span.tags['component']).toBe('user-interaction')
 			expect(spanData.span.tags['event_type']).toBe(spanData.name)

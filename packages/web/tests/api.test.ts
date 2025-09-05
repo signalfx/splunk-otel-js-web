@@ -22,6 +22,13 @@ import { afterEach, assert, beforeEach, describe, expect, it } from 'vitest'
 import SplunkOtelWeb, { INSTRUMENTATIONS_ALL_DISABLED } from '../src'
 import { deinit, SpanCapturer } from './utils'
 
+function getTestTracer() {
+	const testTracer = SplunkOtelWeb.provider?.getTracer('test')
+	assert(testTracer)
+
+	return testTracer
+}
+
 // note: we've added these tests mainly to keep track of substantial changes in the Open Telemetry API
 describe('Transitive API', () => {
 	let spanCapturer = new SpanCapturer()
@@ -42,13 +49,6 @@ describe('Transitive API', () => {
 	})
 
 	describe('Tracer', () => {
-		function getTestTracer() {
-			const testTracer = SplunkOtelWeb.provider?.getTracer('test')
-			assert(testTracer)
-
-			return testTracer
-		}
-
 		it('should return a tracer', () => {
 			const tracer = getTestTracer()
 			expect(typeof tracer.startSpan).toBe('function')

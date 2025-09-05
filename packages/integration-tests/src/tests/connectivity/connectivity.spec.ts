@@ -44,7 +44,7 @@ test.describe('connectivity', () => {
 		expect(connectivitySpansAfterOffline.length).toBe(0)
 
 		await recordPage.setOnline()
-		await recordPage.waitForSpans((spans) => spans.filter((s) => s.name === 'connectivity').length >= 1)
+		await recordPage.waitForSpans((spans) => spans.some((s) => s.name === 'connectivity'))
 		const connectivitySpansAfterOnline = recordPage.receivedSpans.filter((span) => span.name === 'connectivity')
 
 		expect(connectivitySpansAfterOnline).toHaveLength(2)

@@ -24,7 +24,7 @@ function App() {
 	useEffect(() => {
 		const interval = setInterval(() => {
 			void fetch(process.env.PUBLIC_REACT_APP_BACKEND + '/ping')
-		}, 60000)
+		}, 60_000)
 
 		return () => {
 			clearInterval(interval)

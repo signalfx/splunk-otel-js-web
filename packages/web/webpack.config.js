@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-const path = require('path')
+const path = require('node:path')
 
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin')
 const TerserPlugin = require('terser-webpack-plugin')
@@ -126,7 +126,7 @@ const browserConfig = (env, argv) => {
 	const baseConfig = getBaseConfig(env, argv)
 	return {
 		...baseConfig,
-		entry: path.resolve(__dirname, './src/indexBrowser.ts'),
+		entry: path.resolve(__dirname, './src/index-browser.ts'),
 		output: {
 			...baseConfig.output,
 			filename: 'splunk-otel-web.js',
@@ -143,7 +143,7 @@ const browserLegacyConfig = (env, argv) => {
 	const baseConfig = getBaseConfig(env, argv, { isLegacyBuild: true })
 	return {
 		...baseConfig,
-		entry: [path.resolve(__dirname, './src/polyfills/index.ts'), path.resolve(__dirname, './src/indexBrowser.ts')],
+		entry: [path.resolve(__dirname, './src/polyfills/index.ts'), path.resolve(__dirname, './src/index-browser.ts')],
 		output: {
 			...baseConfig.output,
 			filename: 'splunk-otel-web-legacy.js',

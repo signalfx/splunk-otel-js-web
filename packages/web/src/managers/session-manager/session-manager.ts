@@ -68,12 +68,8 @@ export class SessionManager {
 			}
 		} else {
 			const sessionState = this.getSessionStateFromStorageAndValidate()
-			if (!sessionState) {
-				this._session = SessionManager.generateNewSession('active')
-			} else {
-				this._session = sessionState
-			}
-
+			// eslint-disable-next-line unicorn/prefer-logical-operator-over-ternary
+			this._session = sessionState ? sessionState : SessionManager.generateNewSession('active')
 			this.storageManager.persistSessionState(this._session)
 		}
 
@@ -175,6 +171,7 @@ export class SessionManager {
 	}
 
 	private attachNativeSessionWatch() {
+		// eslint-disable-next-line unicorn/consistent-function-scoping
 		const nativeSessionWatch = () => {
 			const nativeSessionId = SessionManager.getNativeSessionId()
 			const session = this.session
@@ -264,28 +261,26 @@ export class SessionManager {
 		const previousState = this.session
 
 		// The session cannot be used because it has either expired or reached its maximum allowed duration
-		if (!SessionManager.canContinueUsingSession(previousState)) {
+		if (SessionManager.canContinueUsingSession(previousState)) {
+			diag.debug('SessionManager: Extending expiration of the current session.', { previousState })
+			this.session = {
+				...previousState,
+				expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
+			}
+		} else {
 			diag.debug(
 				'SessionManager: Cannot continue current session: session has expired or reached its maximum duration.',
 			)
 
 			// Check if another tab has already created a new session. If not, continue using the existing session.
 			const persistedSessionState = this.getSessionStateFromStorageAndValidate()
-			if (persistedSessionState) {
-				this.session = {
-					...persistedSessionState,
-					expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
-					state: 'active' as const,
-				}
-			} else {
-				this.session = SessionManager.generateNewSession('active')
-			}
-		} else {
-			diag.debug('SessionManager: Extending expiration of the current session.', { previousState })
-			this.session = {
-				...previousState,
-				expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
-			}
+			this.session = persistedSessionState
+				? {
+						...persistedSessionState,
+						expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
+						state: 'active' as const,
+					}
+				: SessionManager.generateNewSession('active')
 		}
 	}
 
@@ -296,11 +291,7 @@ export class SessionManager {
 		}
 
 		const sessionState = { ...persistedSessionState, state: 'active' as const }
-		if (SessionManager.canContinueUsingSession(sessionState)) {
-			return sessionState
-		} else {
-			return null
-		}
+		return SessionManager.canContinueUsingSession(sessionState) ? sessionState : null
 	}
 
 	private synchronizeStorageWithCurrentSessionState = () => {

@@ -15,12 +15,12 @@
  * limitations under the License.
  *
  */
-import { accessSync, readdirSync } from 'fs'
-import { resolve } from 'path'
+import { accessSync, readdirSync } from 'node:fs'
+import path from 'node:path'
 
 export const getPackageRoots = () => {
 	const appRoot = process.cwd()
-	const packagesDir = resolve(appRoot, 'packages')
+	const packagesDir = path.resolve(appRoot, 'packages')
 
 	return readdirSync(packagesDir, { withFileTypes: true })
 		.filter((dirent) => {
@@ -29,11 +29,11 @@ export const getPackageRoots = () => {
 			}
 
 			try {
-				accessSync(resolve(packagesDir, dirent.name, 'package.json'))
+				accessSync(path.resolve(packagesDir, dirent.name, 'package.json'))
 				return true
 			} catch {
 				return false
 			}
 		})
-		.map((dirent) => resolve(packagesDir, dirent.name))
+		.map((dirent) => path.resolve(packagesDir, dirent.name))
 }

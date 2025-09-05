@@ -20,7 +20,7 @@ import * as api from '@opentelemetry/api'
 import { InstrumentationBase, isWrapped } from '@opentelemetry/instrumentation'
 import { getElementXPath } from '@opentelemetry/sdk-trace-web'
 
-import { AttributeNames } from './enums/AttributeNames'
+import { AttributeNames } from './enums/attribute-names'
 import { SpanData } from './internal-types'
 import { EventName, ShouldPreventSpanCreation, UserInteractionInstrumentationConfig } from './types'
 import { VERSION } from './version'
@@ -246,8 +246,8 @@ export class UserInteractionInstrumentation<
 			})
 
 			return span
-		} catch (e) {
-			this._diag.error('failed to start create new user interaction span', e)
+		} catch (error) {
+			this._diag.error('failed to start create new user interaction span', error)
 		}
 		return undefined
 	}
@@ -270,11 +270,7 @@ export class UserInteractionInstrumentation<
 
 	// utility method to deal with the Function|EventListener nature of addEventListener
 	private _invokeListener(listener: EventListenerOrEventListenerObject, target: any, args: [evt: Event]): any {
-		if (typeof listener === 'function') {
-			return listener.apply(target, args)
-		} else {
-			return listener.handleEvent(args[0])
-		}
+		return typeof listener === 'function' ? listener.apply(target, args) : listener.handleEvent(args[0])
 	}
 
 	/**
@@ -353,11 +349,9 @@ export class UserInteractionInstrumentation<
 				useCapture?: boolean | EventListenerOptions,
 			) {
 				const wrappedListener = listener && instrumentation.removePatchedListener(this, type, listener)
-				if (wrappedListener) {
-					return original.call(this, type, wrappedListener, useCapture)
-				} else {
-					return original.call(this, type, listener, useCapture)
-				}
+				return wrappedListener
+					? original.call(this, type, wrappedListener, useCapture)
+					: original.call(this, type, listener, useCapture)
 			}
 	}
 

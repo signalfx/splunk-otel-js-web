@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-import { createServer } from 'http'
+import { createServer } from 'node:http'
 
 import { Server } from 'socket.io'
 

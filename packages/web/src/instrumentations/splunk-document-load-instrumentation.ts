@@ -35,7 +35,7 @@ export interface SplunkDocLoadInstrumentationConfig extends InstrumentationConfi
 	ignoreUrls?: (string | RegExp)[]
 }
 
-const excludedInitiatorTypes = ['beacon', 'fetch', 'xmlhttprequest']
+const excludedInitiatorTypes = new Set(['beacon', 'fetch', 'xmlhttprequest'])
 
 function addExtraDocLoadTags(span: api.Span) {
 	if (document.referrer && document.referrer !== '') {
@@ -131,10 +131,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 		}
 
 		exposedSuper._initResourceSpan = (resource, parentSpan) => {
-			if (
-				excludedInitiatorTypes.indexOf(resource.initiatorType) !== -1 ||
-				isUrlIgnored(resource.name, config.ignoreUrls)
-			) {
+			if (excludedInitiatorTypes.has(resource.initiatorType) || isUrlIgnored(resource.name, config.ignoreUrls)) {
 				return
 			}
 

@@ -54,8 +54,8 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
 				if (options.headers && Array.isArray(options.headers)) {
 					;(options as RequestInit).headers = new Headers(options.headers)
 				}
-			} catch (err) {
-				diag.error('Error fixing headers', err)
+			} catch (error) {
+				diag.error('Error fixing headers', error)
 			}
 
 			return _superAddHeaders(options, spanUrl)

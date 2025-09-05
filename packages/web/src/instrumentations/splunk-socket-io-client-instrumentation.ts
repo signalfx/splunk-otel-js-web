@@ -79,7 +79,14 @@ function seemsLikeSocketIoClient(io: unknown): io is SocketIOClient {
 
 // Events that can't be emitted over the socket
 // https://github.com/socketio/socket.io-client/blob/eaf782c41b9b92d4f39aa221a4166de4a30fb560/lib/socket.ts#L22
-const RESERVED_EVENTS = ['connect', 'connect_error', 'disconnect', 'disconnecting', 'newListener', 'removeListener']
+const RESERVED_EVENTS = new Set([
+	'connect',
+	'connect_error',
+	'disconnect',
+	'disconnecting',
+	'newListener',
+	'removeListener',
+])
 
 export class SplunkSocketIoClientInstrumentation extends InstrumentationBase {
 	_onDisable?: () => void
@@ -144,7 +151,7 @@ export class SplunkSocketIoClientInstrumentation extends InstrumentationBase {
 
 					try {
 						return context.with(trace.setSpan(context.active(), span), () =>
-							original.apply(this, [eventName, ...args]),
+							Reflect.apply(original, this, [eventName, ...args]),
 						)
 					} catch (error) {
 						let message: string | undefined
@@ -166,7 +173,7 @@ export class SplunkSocketIoClientInstrumentation extends InstrumentationBase {
 			'on',
 			(original) =>
 				function (this: unknown, eventName: string, listener) {
-					if (RESERVED_EVENTS.includes(eventName) || typeof listener !== 'function') {
+					if (RESERVED_EVENTS.has(eventName) || typeof listener !== 'function') {
 						return original.call(this, eventName, listener)
 					}
 
@@ -214,15 +221,13 @@ export class SplunkSocketIoClientInstrumentation extends InstrumentationBase {
 				// all of the remove are implemented as one function
 				// https://github.com/socketio/emitter/blob/cd703fe28e5bf85ecf137b0e6422e2608c0eefbf/index.js#L81
 				function (this: unknown, eventName?: string, listener?: (...args: unknown[]) => void) {
-					if (!eventName || RESERVED_EVENTS.includes(eventName) || typeof listener !== 'function') {
+					if (!eventName || RESERVED_EVENTS.has(eventName) || typeof listener !== 'function') {
 						return original.call(this, eventName, listener)
 					}
 
-					if (inst.listeners.has(listener)) {
-						return original.call(this, eventName, inst.listeners.get(listener))
-					} else {
-						return original.call(this, eventName, listener)
-					}
+					return inst.listeners.has(listener)
+						? original.call(this, eventName, inst.listeners.get(listener))
+						: original.call(this, eventName, listener)
 				},
 		)
 		io.Socket.prototype.removeListener = io.Socket.prototype.off

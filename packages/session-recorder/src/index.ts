@@ -21,9 +21,9 @@ import type { Resource } from '@opentelemetry/resources'
 import type { SplunkOtelWebType } from '@splunk/otel-web'
 import { JsonObject } from 'type-fest'
 
-import { BatchLogProcessor } from './BatchLogProcessor'
+import { BatchLogProcessor } from './batch-log-processor'
 import { log } from './log'
-import OTLPLogExporter from './OTLPLogExporter'
+import OTLPLogExporter from './otlp-log-exporter'
 import { Recorder, RecorderPublicConfig } from './session-replay'
 import { getGlobal, getSplunkRumVersion } from './utils'
 import { VERSION } from './version'
@@ -75,7 +75,7 @@ const SplunkRumRecorder = {
 		}
 
 		if (typeof window !== 'object') {
-			throw Error(
+			throw new TypeError(
 				'SplunkSessionRecorder Error: This library is intended to run in a browser environment. Please ensure the code is evaluated within a browser context.',
 			)
 		}
@@ -137,10 +137,10 @@ const SplunkRumRecorder = {
 
 		let exportUrl = beaconEndpoint
 		if (realm) {
-			if (!exportUrl) {
-				exportUrl = `https://rum-ingest.${realm}.signalfx.com/v1/rumreplay`
-			} else {
+			if (exportUrl) {
 				log.warn('SplunkSessionRecorder: Realm value ignored (beaconEndpoint has been specified)')
+			} else {
+				exportUrl = `https://rum-ingest.${realm}.signalfx.com/v1/rumreplay`
 			}
 		}
 

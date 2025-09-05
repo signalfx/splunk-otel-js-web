@@ -208,6 +208,7 @@ export class SplunkContextManager implements ContextManager {
 
 		return function (this: unknown, ...innerArgs) {
 			const context = contextGetter()
+			// eslint-disable-next-line unicorn/prefer-ternary
 			if (context && manager._enabled) {
 				// @ts-expect-error on orig: Type 'void' is not assignable to type 'ReturnType<E>'.
 				return manager.with(context, orig, this, ...innerArgs)
@@ -518,11 +519,9 @@ export class SplunkContextManager implements ContextManager {
 						if (isFunction(args[0])) {
 							const orig = args[0]
 							args[0] = function (this: { [ATTACHED_CONTEXT_KEY]: Context | null }, ...innerArgs) {
-								if (this[ATTACHED_CONTEXT_KEY] && manager._enabled) {
-									return manager.with(this[ATTACHED_CONTEXT_KEY], orig, this, ...innerArgs)
-								} else {
-									return orig.apply(this, innerArgs)
-								}
+								return this[ATTACHED_CONTEXT_KEY] && manager._enabled
+									? manager.with(this[ATTACHED_CONTEXT_KEY], orig, this, ...innerArgs)
+									: orig.apply(this, innerArgs)
 							}
 						}
 

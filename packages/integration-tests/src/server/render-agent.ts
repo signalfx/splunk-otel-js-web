@@ -17,6 +17,7 @@
  */
 import { html } from './utils'
 
+// eslint-disable-next-line unicorn/template-indent
 export const RENDER_AGENT_TEMPLATE = html`
 	<script src="<%= file -%>" crossorigin="anonymous"></script>
 	<script src="<%= otelApiGlobalsFile -%>" crossorigin="anonymous"></script>

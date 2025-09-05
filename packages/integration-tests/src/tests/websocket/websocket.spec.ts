@@ -24,7 +24,7 @@ test.describe('websockets', () => {
 		await recordPage.goTo('/websocket/websocket.ejs')
 
 		await recordPage.locator('#connectWs').click()
-		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'connect').length > 0)
+		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'connect'))
 		const connectSpans = recordPage.receivedSpans.filter((span) => span.name === 'connect')
 
 		expect(connectSpans).toHaveLength(1)
@@ -40,9 +40,7 @@ test.describe('websockets', () => {
 		await recordPage.goTo('/websocket/websocket-ignored.ejs')
 
 		await recordPage.locator('#connectWs').click()
-		await recordPage.waitForSpans(
-			(spans) => spans.filter((span) => span.name === 'websocket-guard-span').length > 0,
-		)
+		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'websocket-guard-span'))
 		const connectSpans = recordPage.receivedSpans.filter((span) => span.name === 'connect')
 		expect(connectSpans).toHaveLength(0)
 	})
@@ -53,7 +51,7 @@ test.describe('websockets', () => {
 		await recordPage.locator('#connectWs').click()
 		await recordPage.locator('#sendWs').click()
 
-		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'send').length > 0)
+		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'send'))
 		const connectSpans = recordPage.receivedSpans.filter((span) => span.name === 'connect')
 		const messageSpans = recordPage.receivedSpans.filter((span) => span.name === 'onmessage')
 		const sendSpans = recordPage.receivedSpans.filter((span) => span.name === 'send')
@@ -80,7 +78,7 @@ test.describe('websockets', () => {
 
 		await recordPage.locator('#connectWs').click()
 
-		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'connect').length > 0)
+		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'connect'))
 		const connectSpans = recordPage.receivedSpans.filter((span) => span.name === 'connect')
 
 		expect(connectSpans).toHaveLength(1)
@@ -92,7 +90,7 @@ test.describe('websockets', () => {
 
 		await recordPage.locator('#connectWs').click()
 
-		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'send').length > 0)
+		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'send'))
 		const sendSpans = recordPage.receivedSpans.filter((span) => span.name === 'send')
 
 		expect(sendSpans).toHaveLength(1)
@@ -106,7 +104,7 @@ test.describe('websockets', () => {
 
 		await recordPage.locator('#connectWs').click()
 
-		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'connect').length > 0)
+		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'connect'))
 		const connectSpans = recordPage.receivedSpans.filter((span) => span.name === 'connect')
 		expect(connectSpans).toHaveLength(1)
 		expect(connectSpans[0].tags['location.href']).toBe('http://localhost:3000/websocket/websocket-sub-protocol.ejs')
@@ -114,7 +112,7 @@ test.describe('websockets', () => {
 
 		await recordPage.locator('#sendWs').click()
 
-		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'onmessage').length > 0)
+		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'onmessage'))
 		const messageSpans = recordPage.receivedSpans.filter((span) => span.name === 'onmessage')
 
 		expect(messageSpans).toHaveLength(1)
@@ -124,7 +122,7 @@ test.describe('websockets', () => {
 		expect(messageSpans[0].tags['http.url']).toBe('ws://localhost:3000/ws')
 		expect(messageSpans[0].tags['http.response_content_length']).toBe('14')
 
-		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'send').length > 0)
+		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'send'))
 		const sendSpans = recordPage.receivedSpans.filter((span) => span.name === 'send')
 
 		expect(sendSpans).toHaveLength(1)
