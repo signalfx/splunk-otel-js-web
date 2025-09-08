@@ -19,7 +19,7 @@
 import { Attributes, diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api'
 import { _globalThis, SDK_INFO } from '@opentelemetry/core'
 import { registerInstrumentations } from '@opentelemetry/instrumentation'
-import { Resource, ResourceAttributes } from '@opentelemetry/resources'
+import { DetectedResourceAttributes, Resource, resourceFromAttributes } from '@opentelemetry/resources'
 import {
 	AlwaysOffSampler,
 	AlwaysOnSampler,
@@ -503,7 +503,7 @@ export const SplunkRum: SplunkOtelWebType = {
 		// they will be enabled in registerInstrumentations
 		const pluginDefaults = { enabled: false, ignoreUrls }
 
-		const resourceAttrs: ResourceAttributes = {
+		const resourceAttrs: DetectedResourceAttributes = {
 			...SDK_INFO,
 			'app': applicationName,
 			[SemanticResourceAttributes.TELEMETRY_SDK_NAME]: '@splunk/otel-web',
@@ -536,7 +536,7 @@ export const SplunkRum: SplunkOtelWebType = {
 			}
 		})
 
-		this.resource = new Resource(resourceAttrs)
+		this.resource = resourceFromAttributes(resourceAttrs)
 
 		this.attributesProcessor = new SplunkSpanAttributesProcessor(
 			this.sessionManager,

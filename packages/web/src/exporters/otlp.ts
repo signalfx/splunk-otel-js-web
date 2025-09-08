@@ -40,7 +40,7 @@ export class SplunkOTLPTraceExporter extends OTLPTraceExporter {
 	}
 
 	send(items: ReadableSpan[], onSuccess: () => void): void {
-		if (this._shutdownOnce.isCalled) {
+		if (this._delegate._shutdownOnce.isCalled) {
 			diag.debug('Shutdown already started. Cannot send objects')
 			return
 		}
@@ -72,14 +72,14 @@ export class SplunkOTLPTraceExporter extends OTLPTraceExporter {
 
 		// Changed: Determine which exporter to use at the time of export
 		if (document.hidden && this._beaconSender && body.length <= 64_000) {
-			this._beaconSender(this.url, body, { type: 'application/json' })
+			this._beaconSender(this._delegate.url, body, { type: 'application/json' })
 		} else if (this._xhrSender) {
-			this._xhrSender(this.url, body, {
+			this._xhrSender(this._delegate.url, body, {
 				// These headers may only be necessary for otel's collector,
 				// need to test with actual ingest
 				'Accept': 'application/json',
 				'Content-Type': 'application/json',
-				...this.headers,
+				...this._delegate.headers,
 			})
 		}
 
