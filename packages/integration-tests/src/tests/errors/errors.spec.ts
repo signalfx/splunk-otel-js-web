@@ -237,7 +237,7 @@ test.describe('errors', () => {
 		// in case the test is run on a slow machine
 		expect(Object.keys(groupedSpans).length).toBeLessThan(20)
 		for (const group of groupedSpans) {
-			const timestamps = group.map((span) => span.timestamp).sort((a, b) => a - b)
+			const timestamps = group.map((span) => span.timestamp).toSorted((a, b) => a - b)
 			for (let i = 1; i < timestamps.length; i++) {
 				expect(timestamps[i] - timestamps[i - 1]).toBeGreaterThanOrEqual(1000)
 			}

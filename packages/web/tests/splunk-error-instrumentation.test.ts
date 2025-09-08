@@ -249,7 +249,7 @@ describe('SplunkErrorInstrumentation', () => {
 			urls.add(match[0])
 		}
 		const urlArr = [...urls]
-		expect(urlArr.sort()).toStrictEqual(randomPaths.sort())
+		expect(urlArr.toSorted()).toStrictEqual(randomPaths.toSorted())
 	})
 
 	describe('onError hook', () => {
