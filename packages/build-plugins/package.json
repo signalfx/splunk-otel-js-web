@@ -31,10 +31,10 @@
 	"dependencies": {
 		"axios": "^1.11.0",
 		"form-data": "^4.0.4",
-		"unplugin": "^2.3.9"
+		"unplugin": "^2.3.10"
 	},
 	"devDependencies": {
-		"@types/node": "^24.3.0",
+		"@types/node": "^24.3.1",
 		"ts-node": "^10.9.1",
 		"wait-on": "^8.0.4",
 		"webpack": "^5.101.3",
