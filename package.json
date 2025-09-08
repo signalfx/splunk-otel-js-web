@@ -1,7 +1,7 @@
 {
 	"name": "@splunk/otel-web-dev-root",
 	"private": true,
-	"version": "0.24.0",
+	"version": "1.0.0-alpha.0",
 	"engines": {
 		"node": ">=22",
 		"pnpm": ">=10"
