@@ -378,18 +378,9 @@ importers:
       '@opentelemetry/semantic-conventions':
         specifier: ^1.25.1
         version: 1.34.0
-      core-js:
-        specifier: 3.45.1
-        version: 3.45.1
-      regenerator-runtime:
-        specifier: ^0.14.1
-        version: 0.14.1
       shimmer:
         specifier: ^1.2.1
         version: 1.2.1
-      source-map-loader:
-        specifier: ^5.0.0
-        version: 5.0.0(webpack@5.101.3)
       web-vitals:
         specifier: ^3.5.2
         version: 3.5.2
@@ -412,6 +403,9 @@ importers:
       socket.io-client:
         specifier: ^4.8.1
         version: 4.8.1
+      source-map-loader:
+        specifier: ^5.0.0
+        version: 5.0.0(webpack@5.101.3)
       swc-loader:
         specifier: ^0.2.6
         version: 0.2.6(@swc/core@1.13.5(@swc/helpers@0.5.17))(webpack@5.101.3)
@@ -5022,9 +5016,6 @@ packages:
     resolution: {integrity: sha512-00o4I+DVrefhv+nX0ulyi3biSHCPDe+yLv5o/p6d/UVlirijB8E16FtfwSAi4g3tcqrQ4lRAqQSoFEZJehYEcw==}
     engines: {node: '>= 0.4'}
 
-  regenerator-runtime@0.14.1:
-    resolution: {integrity: sha512-dYnhHh0nJoMfnkZs6GmmhFknAGRrLznOu5nc9ML+EJxGvrx6H7teuevqVqCuPcPK//3eDrrjQhehXVx9cnkGdw==}
-
   regexp-tree@0.1.27:
     resolution: {integrity: sha512-iETxpjK6YoRWJG5o6hXLwvjYAoW+FEZn9os0PD/b6AP6xQwsa/Y7lCVgIixBbUPMfhu+i2LtdeAqVTgGlQarfA==}
     hasBin: true
@@ -9013,12 +9004,12 @@ snapshots:
   '@webpack-cli/configtest@3.0.1(webpack-cli@6.0.1)(webpack@5.101.3)':
     dependencies:
       webpack: 5.101.3(@swc/core@1.13.5(@swc/helpers@0.5.17))(webpack-cli@6.0.1)
-      webpack-cli: 6.0.1(webpack@5.101.3)
+      webpack-cli: 6.0.1(webpack-dev-server@5.2.2)(webpack@5.101.3)
 
   '@webpack-cli/info@3.0.1(webpack-cli@6.0.1)(webpack@5.101.3)':
     dependencies:
       webpack: 5.101.3(@swc/core@1.13.5(@swc/helpers@0.5.17))(webpack-cli@6.0.1)
-      webpack-cli: 6.0.1(webpack@5.101.3)
+      webpack-cli: 6.0.1(webpack-dev-server@5.2.2)(webpack@5.101.3)
 
   '@webpack-cli/serve@3.0.1(webpack-cli@6.0.1)(webpack-dev-server@5.2.2)(webpack@5.101.3)':
     dependencies:
@@ -11646,8 +11637,6 @@ snapshots:
       get-proto: 1.0.1
       which-builtin-type: 1.2.1
 
-  regenerator-runtime@0.14.1: {}
-
   regexp-tree@0.1.27: {}
 
   regexp.prototype.flags@1.5.4:
@@ -12749,7 +12738,7 @@ snapshots:
       watchpack: 2.4.4
       webpack-sources: 3.3.3
     optionalDependencies:
-      webpack-cli: 6.0.1(webpack@5.101.3)
+      webpack-cli: 6.0.1(webpack-dev-server@5.2.2)(webpack@5.101.3)
     transitivePeerDependencies:
       - '@swc/core'
       - esbuild
