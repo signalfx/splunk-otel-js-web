@@ -12,8 +12,8 @@ importers:
         specifier: ^3.883.0
         version: 3.883.0
       '@aws-sdk/client-s3':
-        specifier: ^3.883.0
-        version: 3.883.0
+        specifier: ^3.884.0
+        version: 3.884.0
       '@eslint/js':
         specifier: ^9.35.0
         version: 9.35.0
@@ -461,8 +461,8 @@ packages:
     resolution: {integrity: sha512-pchcrJZnnyw1p/+nkQrYYFnSF0L9fdPtmGVoWEKO02pTV1b6oOoIn4ORRr5fOZJibFDFnu3KGN+3KWMD1zta6A==}
     engines: {node: '>=18.0.0'}
 
-  '@aws-sdk/client-s3@3.883.0':
-    resolution: {integrity: sha512-+l/p5G/bbobzcils5wKSV1vQEITvJIXDkLfkMWLpF6CC3YfdSDlVn1VOD+NcfuOuVGv4UkwcJzWuC6eaX6t8jg==}
+  '@aws-sdk/client-s3@3.884.0':
+    resolution: {integrity: sha512-Okwg52/iho5wMCzd7A70g50k+bEYS+VUbSjD3NOzwrvZ3c7DwYjDUt13hVnUwMGygTVL+NGSpXSziTZe9P3/Cg==}
     engines: {node: '>=18.0.0'}
 
   '@aws-sdk/client-sso@3.883.0':
@@ -6145,7 +6145,7 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-s3@3.883.0':
+  '@aws-sdk/client-s3@3.884.0':
     dependencies:
       '@aws-crypto/sha1-browser': 5.2.0
       '@aws-crypto/sha256-browser': 5.2.0
