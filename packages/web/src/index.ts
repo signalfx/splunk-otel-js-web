@@ -123,31 +123,6 @@ const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
 	},
 }
 
-function migrateConfigOption(
-	config: SplunkOtelWebConfig,
-	from: keyof SplunkOtelWebConfig,
-	to: keyof SplunkOtelWebConfig,
-) {
-	if (from in config && !(to in config && config[to] !== OPTIONS_DEFAULTS[to])) {
-		console.warn(
-			`[SPLUNK OTEL WEB] DEPRECATION WARNING: Configuration option "${String(from)}" is deprecated and will be removed in a future major version. Please use "${String(to)}" instead.`,
-		)
-		// @ts-expect-error There's no way to type this right
-		config[to] = config[from]
-	}
-}
-
-/**
- * Update configuration based on configuration option renames
- */
-function migrateConfig(config: SplunkOtelWebConfig) {
-	migrateConfigOption(config, 'app', 'applicationName')
-	migrateConfigOption(config, 'beaconUrl', 'beaconEndpoint')
-	migrateConfigOption(config, 'environment', 'deploymentEnvironment')
-	migrateConfigOption(config, 'rumAuth', 'rumAccessToken')
-	return config
-}
-
 const INSTRUMENTATIONS = [
 	{ confKey: 'document', disable: false, Instrument: SplunkDocumentLoadInstrumentation },
 	{ confKey: 'xhr', disable: false, Instrument: SplunkXhrPlugin },
@@ -200,16 +175,6 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	SessionBasedSampler: typeof SessionBasedSampler
 
 	/**
-	 * @deprecated Use {@link getGlobalAttributes()}
-	 */
-	_experimental_getGlobalAttributes: () => Attributes
-
-	/**
-	 * @deprecated Use {@link getSessionId()}
-	 */
-	_experimental_getSessionId: () => string | undefined
-
-	/**
 	 * Allows experimental options to be passed. No versioning guarantees are given for this method.
 	 */
 	_internalInit: (options: Partial<SplunkOtelWebConfigInternal>) => void
@@ -231,12 +196,6 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	 * True if library detected a bot and was disabled based on 'disableBots' setting.
 	 */
 	disabledByBotDetection?: boolean
-
-	/**
-	 * @deprecated This method is deprecated and will be removed in future versions.
-	 * Use {@link reportError} instead.
-	 */
-	error: (...args: Array<any>) => void
 
 	getAnonymousId: () => string | undefined
 
@@ -285,31 +244,6 @@ let eventTarget: InternalEventTarget | undefined
 let _sessionStateUnsubscribe: undefined | (() => void)
 
 export const SplunkRum: SplunkOtelWebType = {
-	_experimental_addEventListener(name, callback): void {
-		console.warn(
-			'[SPLUNK OTEL WEB] DEPRECATION WARNING: The "SplunkRum._experimental_addEventListener(name, callback)" method is deprecated and will be removed in a future major version. Please use "SplunkRum.addEventListener(name, callback)" instead.',
-		)
-		return this.addEventListener(name, callback)
-	},
-	_experimental_getGlobalAttributes() {
-		console.warn(
-			'[SPLUNK OTEL WEB] DEPRECATION WARNING: The "SplunkRum._experimental_getGlobalAttributes()" method is deprecated and will be removed in a future major version. Please use "SplunkRum.getGlobalAttributes()" instead.',
-		)
-		return this.getGlobalAttributes()
-	},
-
-	_experimental_getSessionId() {
-		console.warn(
-			'[SPLUNK OTEL WEB] DEPRECATION WARNING: The "SplunkRum._experimental_getSessionId()" method is deprecated and will be removed in a future major version. Please use "SplunkRum.getSessionId()" instead.',
-		)
-		return this.getSessionId()
-	},
-	_experimental_removeEventListener(name, callback): void {
-		console.warn(
-			'[SPLUNK OTEL WEB] DEPRECATION WARNING: The "SplunkRum._experimental_removeEventListener(name, callback)" method is deprecated and will be removed in a future major version. Please use "SplunkRum.removeEventListener(name, callback)" instead.',
-		)
-		return this.removeEventListener(name, callback)
-	},
 	_internalInit: function (options: Partial<SplunkOtelWebConfigInternal>) {
 		SplunkRum.init({
 			...OPTIONS_DEFAULTS,
@@ -355,24 +289,6 @@ export const SplunkRum: SplunkOtelWebType = {
 
 		forgetAnonymousId()
 		inited = false
-	},
-
-	error(...args) {
-		console.warn(
-			'[SPLUNK OTEL WEB] DEPRECATION WARNING: The "SplunkRum.error(...args)" method is deprecated and will be removed in a future major version. Please use "SplunkRum.reportError(error, context)" instead.',
-		)
-
-		if (!inited) {
-			diag.debug('SplunkRum not inited')
-			return
-		}
-
-		if (!_errorInstrumentation) {
-			diag.error('Error was reported, but error instrumentation is disabled.')
-			return
-		}
-
-		_errorInstrumentation.report('SplunkRum.error', args, {})
 	},
 
 	getAnonymousId() {
@@ -455,14 +371,9 @@ export const SplunkRum: SplunkOtelWebType = {
 
 		eventTarget = new InternalEventTarget()
 
-		const processedOptions: SplunkOtelWebConfigInternal = Object.assign(
-			{},
-			OPTIONS_DEFAULTS,
-			migrateConfig(options),
-			{
-				exporter: Object.assign({}, OPTIONS_DEFAULTS.exporter, options.exporter),
-			},
-		)
+		const processedOptions: SplunkOtelWebConfigInternal = Object.assign({}, OPTIONS_DEFAULTS, options, {
+			exporter: Object.assign({}, OPTIONS_DEFAULTS.exporter, options.exporter),
+		})
 
 		if (
 			!processedOptions.persistence ||
