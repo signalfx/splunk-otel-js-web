@@ -24,6 +24,9 @@ import { AttributeNames } from './enums/attribute-names'
 import { SpanData } from './internal-types'
 import { EventName, ShouldPreventSpanCreation, UserInteractionInstrumentationConfig } from './types'
 import { VERSION } from './version'
+import { PrivacyManager, PrivacyManagerConfig } from './privacy/privacy-manager'
+import { isNode, SplunkOtelWebConfig } from '../../types'
+import { getTextFromNode } from '../../utils/index'
 
 const EVENT_NAVIGATION_NAME = 'Navigation:'
 const DEFAULT_EVENT_NAMES: EventName[] = ['click']
@@ -49,6 +52,8 @@ export class UserInteractionInstrumentation<
 	// for event bubbling
 	private _eventsSpanMap: WeakMap<Event, api.Span> = new WeakMap<Event, api.Span>()
 
+	private _privacyManager: PrivacyManager
+
 	private _shouldPreventSpanCreation: ShouldPreventSpanCreation
 
 	private _spansData = new WeakMap<api.Span, SpanData>()
@@ -61,13 +66,29 @@ export class UserInteractionInstrumentation<
 
 	private _zonePatched?: boolean
 
-	constructor(config: T) {
+	constructor(config: T, otelConfig: SplunkOtelWebConfig) {
 		super('@opentelemetry/instrumentation-user-interaction', VERSION, config)
 		this._eventNames = new Set(config?.eventNames ?? DEFAULT_EVENT_NAMES)
 		this._shouldPreventSpanCreation =
 			typeof config?.shouldPreventSpanCreation === 'function'
 				? config.shouldPreventSpanCreation
 				: defaultShouldPreventSpanCreation
+
+		let privacy: PrivacyManagerConfig = {
+			maskAllInputs: true,
+			maskAllText: true,
+			sensitivityRules: [],
+			useNativeTreeWalker: false,
+		}
+
+		if (typeof otelConfig.instrumentations?.interactions === 'object') {
+			privacy = {
+				...privacy,
+				...otelConfig.instrumentations.interactions.privacy,
+			}
+		}
+
+		this._privacyManager = new PrivacyManager(privacy)
 	}
 
 	/**
@@ -307,6 +328,17 @@ export class UserInteractionInstrumentation<
 					}
 
 					const span = instrumentation._createSpan(target, type, parentSpan)
+
+					if (event.type === 'click' && event.target && isNode(event.target)) {
+						const textValue = getTextFromNode(
+							event.target,
+							(node) => !instrumentation._privacyManager.shouldMaskTextNode(node),
+						)
+						if (textValue) {
+							span?.setAttribute('target_text', textValue)
+						}
+					}
+
 					if (span) {
 						if (event) {
 							instrumentation._eventsSpanMap.set(event, span)
