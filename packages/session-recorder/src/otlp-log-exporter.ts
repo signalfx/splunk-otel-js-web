@@ -23,17 +23,10 @@ import { nanoid } from 'nanoid'
 import type { JsonArray, JsonObject, JsonValue } from 'type-fest'
 
 import { apiFetch, ApiParams } from './api/api-fetch'
-import {
-	addLogToQueue,
-	getQueuedLogs,
-	QueuedLog,
-	removeAssetsFromQueuedLog,
-	removeQueuedLog,
-	removeQueuedLogs,
-} from './export-log-queue'
 import { log } from './log'
+import { indexDBStorageProvider } from './providers'
 import { compressAsync } from './session-replay/utils'
-import { IAnyValue, Log } from './types'
+import { IAnyValue, Log, QueuedLog } from './types'
 import { VERSION } from './version'
 
 interface OTLPLogExporterConfig {
@@ -106,7 +99,7 @@ export default class OTLPLogExporter {
 
 	constructor(config: OTLPLogExporterConfig) {
 		this.config = config
-		this.exportQueuedLogs()
+		void this.exportQueuedLogs()
 	}
 
 	constructLogData(logs: Log[]) {
@@ -161,43 +154,14 @@ export default class OTLPLogExporter {
 
 		if (queuedLog) {
 			log.debug('Adding log to queue', { ...queuedLog, data: '[truncated]' })
-			const isPersisted = addLogToQueue(queuedLog)
-			if (!isPersisted) {
-				const { log: queuedLogWithoutImage, stats } = removeAssetsFromQueuedLog(queuedLog, {
-					css: false,
-					fonts: false,
-					images: true,
-				})
-				const isPersistedWithoutImage = addLogToQueue(queuedLogWithoutImage)
-				if (!isPersistedWithoutImage) {
-					const { log: queuedLogWithoutAllAssets } = removeAssetsFromQueuedLog(queuedLogWithoutImage, {
-						css: true,
-						fonts: true,
-						images: true,
-					})
-					const isPersistedWithoutAllAssets = addLogToQueue(queuedLogWithoutAllAssets)
-					if (!isPersistedWithoutAllAssets) {
-						log.error(
-							`Failed to add log to queue after assets removed Total: ${stats?.assets.plain.total}}, CSS: ${stats?.assets.plain.css}, Images: ${stats?.assets.plain.images}, Fonts: ${stats?.assets.plain.fonts}, Other: ${stats?.assets.plain.other}`,
-							{
-								...queuedLog,
-								data: '[truncated]',
-							},
-						)
-					}
-				}
-			}
+			void indexDBStorageProvider.storeLog(queuedLog)
 		}
 
 		OTLPLogExporter.sendDataToBackend(queuedLog, uint8ArrayData, endpoint, headers)
 	}
 
-	exportQueuedLogs(): void {
-		let logs: QueuedLog[] = []
-		logs = getQueuedLogs() ?? []
-
-		// Remove all logs and add only ones that are relevant before sending
-		removeQueuedLogs()
+	exportQueuedLogs = async () => {
+		const logs: QueuedLog[] = (await indexDBStorageProvider.getStoredLogs()) ?? []
 
 		for (const logItem of logs) {
 			log.debug('Found queued log', { ...logItem, data: '[truncated]' })
@@ -209,11 +173,9 @@ export default class OTLPLogExporter {
 					{ ...logItem, data: '[truncated]' },
 					{ sessionId: this.config.sessionId },
 				)
+				void indexDBStorageProvider.removeLog(logItem.requestId)
 				continue
 			}
-
-			// Add log to queue and remove after it has been successfully sent
-			addLogToQueue(logItem)
 
 			const logData = strToU8(JSON.stringify(logItem.data))
 			OTLPLogExporter.sendDataToBackend(logItem, logData, logItem.url, logItem.headers)
@@ -232,7 +194,7 @@ export default class OTLPLogExporter {
 			}
 
 			log.debug('Removing queued log', { ...queuedLog, data: '[truncated]' })
-			removeQueuedLog(queuedLog)
+			void indexDBStorageProvider.removeLog(queuedLog.requestId)
 		}
 
 		if (document.visibilityState === 'hidden') {
