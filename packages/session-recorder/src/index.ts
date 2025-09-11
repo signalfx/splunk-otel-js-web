@@ -40,6 +40,22 @@ export type SplunkRumRecorderConfig = {
 	debug?: boolean
 
 	/**
+	 * Enables persistence of session replay data when upload requests fail.
+	 *
+	 * When enabled, session replay chunks that fail to upload (due to network issues,
+	 * server errors, or browser issues) are automatically stored in local browser storage
+	 * and retried on subsequent page loads.
+	 *
+	 * This feature helps prevent data loss and ensures comprehensive session coverage
+	 * even in unreliable network conditions. The queue is automatically managed and
+	 * cleaned up after successful uploads.
+	 *
+	 * Storage: Currently the data is stored in localStorage.
+	 * @default true
+	 */
+	persistFailedReplayData?: boolean
+
+	/**
 	 * The name of your organization’s realm. Automatically configures beaconUrl with correct URL
 	 */
 	realm?: string
@@ -170,7 +186,7 @@ const SplunkRumRecorder = {
 				return newAttributes
 			},
 			sessionId: SplunkRum.getSessionId() ?? '',
-			usePersistentExportQueue: true,
+			usePersistentExportQueue: config.persistFailedReplayData ?? true,
 		})
 		const processor = new BatchLogProcessor(exporter)
 
