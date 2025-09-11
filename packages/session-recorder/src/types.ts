@@ -77,3 +77,29 @@ export interface IKeyValueList {
 	/** KeyValueList values */
 	values?: IKeyValue[] | null
 }
+
+export interface QueuedLog {
+	data: {
+		resourceLogs: {
+			scopeLogs: {
+				logRecords: {
+					attributes: {
+						key: string
+						value: {
+							stringValue: string
+						}
+					}[]
+					body: {
+						stringValue: string
+					}
+				}[]
+			}[]
+		}[]
+		spanLogs: JsonObject[]
+	}
+	headers: Record<string, string>
+	requestId: string
+	sessionId: string
+	timestamp: number
+	url: string
+}
