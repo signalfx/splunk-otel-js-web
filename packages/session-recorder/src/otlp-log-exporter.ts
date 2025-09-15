@@ -177,7 +177,7 @@ export default class OTLPLogExporter {
 					})
 					const isPersistedWithoutAllAssets = addLogToQueue(queuedLogWithoutAllAssets)
 					if (!isPersistedWithoutAllAssets) {
-						log.error(
+						log.warn(
 							`Failed to add log to queue after assets removed Total: ${stats?.assets.plain.total}}, CSS: ${stats?.assets.plain.css}, Images: ${stats?.assets.plain.images}, Fonts: ${stats?.assets.plain.fonts}, Other: ${stats?.assets.plain.other}`,
 							{
 								...queuedLog,
