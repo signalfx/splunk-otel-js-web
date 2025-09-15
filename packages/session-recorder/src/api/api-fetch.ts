@@ -48,7 +48,7 @@ const defaultHeaders = {
 
 const abortControllersByUrl = new Map<string, AbortController>()
 
-const ERROR_CODES_TO_RETRY = new Set([408, 429, 500, 502, 503, 504])
+const ERROR_CODES_TO_RETRY = new Set([408, 500, 502, 503, 504])
 
 const MAX_HTTP_ERROR_RETRIES = 3
 
