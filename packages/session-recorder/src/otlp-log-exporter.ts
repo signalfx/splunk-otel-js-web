@@ -22,7 +22,7 @@ import { gzipSync, strToU8 } from 'fflate'
 import { nanoid } from 'nanoid'
 import type { JsonArray, JsonObject, JsonValue } from 'type-fest'
 
-import { apiFetch, ApiParams } from './api/api-fetch'
+import { ApiError, apiFetch, ApiParams } from './api'
 import {
 	addLogToQueue,
 	getQueuedLogs,
@@ -177,7 +177,7 @@ export default class OTLPLogExporter {
 					})
 					const isPersistedWithoutAllAssets = addLogToQueue(queuedLogWithoutAllAssets)
 					if (!isPersistedWithoutAllAssets) {
-						log.error(
+						log.warn(
 							`Failed to add log to queue after assets removed Total: ${stats?.assets.plain.total}}, CSS: ${stats?.assets.plain.css}, Images: ${stats?.assets.plain.images}, Fonts: ${stats?.assets.plain.fonts}, Other: ${stats?.assets.plain.other}`,
 							{
 								...queuedLog,
@@ -235,6 +235,17 @@ export default class OTLPLogExporter {
 			removeQueuedLog(queuedLog)
 		}
 
+		const onFetchError = (error: unknown) => {
+			if (!queuedLog) {
+				return
+			}
+
+			if (error instanceof ApiError && error.status === 429) {
+				log.debug('Removing queued log', { ...queuedLog, data: '[truncated]' })
+				removeQueuedLog(queuedLog)
+			}
+		}
+
 		if (document.visibilityState === 'hidden') {
 			const compressedData = gzipSync(uint8ArrayData)
 
@@ -245,11 +256,12 @@ export default class OTLPLogExporter {
 				endpoint,
 				{ body: compressedData, headers, keepalive: shouldUseKeepAliveOption },
 				onFetchSuccess,
+				onFetchError,
 			)
 		} else {
 			compressAsync(uint8ArrayData)
 				.then((compressedData) => {
-					void sendByFetch(endpoint, { body: compressedData, headers }, onFetchSuccess)
+					void sendByFetch(endpoint, { body: compressedData, headers }, onFetchSuccess, onFetchError)
 				})
 				.catch((error) => {
 					log.error('Could not compress data', error)
@@ -262,6 +274,7 @@ const sendByFetchInternal = async (
 	endpoint: string,
 	fetchParams: Pick<ApiParams, 'headers' | 'keepalive' | 'body'>,
 	onSuccess: () => void,
+	onError: (error: unknown) => void,
 ) => {
 	try {
 		await apiFetch(endpoint, {
@@ -278,6 +291,7 @@ const sendByFetchInternal = async (
 		onSuccess()
 	} catch (error) {
 		log.error('Could not sent data to BE - fetch', error)
+		onError(error)
 	}
 }
 

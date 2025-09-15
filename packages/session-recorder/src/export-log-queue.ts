@@ -48,6 +48,7 @@ export interface QueuedLog {
 }
 
 const QUEUED_LOGS_STORAGE_KEY = '_splunk_session_recorder_queue_data'
+const MAX_QUEUE_SIZE_BYTES = 2 * 1024 * 1024 // 2MB limit
 
 export const getQueuedLogs = (): QueuedLog[] | null => {
 	const storedLogs = safelyGetLocalStorage(QUEUED_LOGS_STORAGE_KEY)
@@ -71,8 +72,32 @@ export const getQueuedLogs = (): QueuedLog[] | null => {
 
 export const addLogToQueue = (logItem: QueuedLog): boolean => {
 	const queuedLogs = getQueuedLogs() ?? []
+
+	if (wouldExceedSizeLimit(queuedLogs, logItem)) {
+		const currentSize = calculateQueueSize(queuedLogs)
+		const newLogSize = calculateQueueSize([logItem])
+		const currentSizeKB = Math.round(currentSize / 1024)
+		const newLogSizeKB = Math.round(newLogSize / 1024)
+		const limitKB = Math.round(MAX_QUEUE_SIZE_BYTES / 1024)
+		log.warn(
+			`Cannot add log to queue - would exceed 2MB limit. Current queue: ${currentSizeKB}KB, New log: ${newLogSizeKB}KB, Limit: ${limitKB}KB`,
+		)
+		return false
+	}
+
 	queuedLogs.push(logItem)
 	return setQueuedLogs(queuedLogs)
+}
+
+const calculateQueueSize = (queuedLogs: QueuedLog[]): number => {
+	const serialized = JSON.stringify(queuedLogs)
+	return new TextEncoder().encode(serialized).length
+}
+
+const wouldExceedSizeLimit = (existingLogs: QueuedLog[], newLog: QueuedLog): boolean => {
+	const combinedLogs = [...existingLogs, newLog]
+	const combinedSize = calculateQueueSize(combinedLogs)
+	return combinedSize > MAX_QUEUE_SIZE_BYTES
 }
 
 const setQueuedLogs = (queuedLogs: QueuedLog[]): boolean => {
@@ -81,7 +106,8 @@ const setQueuedLogs = (queuedLogs: QueuedLog[]): boolean => {
 		return true
 	}
 
-	return safelySetLocalStorage(QUEUED_LOGS_STORAGE_KEY, JSON.stringify(queuedLogs))
+	const serializedLogs = JSON.stringify(queuedLogs)
+	return safelySetLocalStorage(QUEUED_LOGS_STORAGE_KEY, serializedLogs)
 }
 
 export const removeQueuedLog = (logToRemove: QueuedLog): boolean => {
@@ -130,15 +156,15 @@ export const removeAssetsFromQueuedLog = (
 
 				try {
 					const segment = SessionReplay.loadPlainSegment({
-						...JSON.parse(logRecord.body.stringValue),
+						data: JSON.parse(logRecord.body.stringValue),
 						metadata: JSON.parse(metadata.value.stringValue),
 					})
-					const { metadata: convertedMetadata, ...plainSegment } = segment.toPlain({
+					const plainSegment = segment.toPlain({
 						omit,
 					})
 
-					logRecord.body.stringValue = JSON.stringify(plainSegment)
-					metadata.value.stringValue = JSON.stringify(convertedMetadata)
+					logRecord.body.stringValue = JSON.stringify(plainSegment.data)
+					metadata.value.stringValue = JSON.stringify(plainSegment.metadata)
 					stats = segment.stats()
 				} catch (error) {
 					log.error('Error happened during segment conversion', error)
