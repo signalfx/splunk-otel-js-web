@@ -240,8 +240,11 @@ export default class OTLPLogExporter {
 				return
 			}
 
-			if (error instanceof ApiError && error.status === 429) {
-				log.debug('Removing queued log', { ...queuedLog, data: '[truncated]' })
+			if (error instanceof ApiError && error.status >= 300) {
+				log.debug(`Removing queued log. Request failed with status code ${error.status}`, {
+					...queuedLog,
+					data: '[truncated]',
+				})
 				removeQueuedLog(queuedLog)
 			}
 		}
@@ -283,7 +286,6 @@ const sendByFetchInternal = async (
 			doNotRetryOnDocumentHidden: true,
 			method: 'POST',
 			retryCount: 100,
-			retryOnHttpErrorStatusCodes: true,
 			...fetchParams,
 		})
 
