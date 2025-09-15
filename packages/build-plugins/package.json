@@ -1,6 +1,6 @@
 {
 	"name": "@splunk/rum-build-plugins",
-	"version": "1.0.0-alpha.0",
+	"version": "1.0.0-alpha.1",
 	"description": "Build plugins for users of @splunk/otel-web",
 	"repository": "github:signalfx/splunk-otel-js-browser",
 	"scripts": {
