@@ -30,7 +30,6 @@ export type ApiParams = RequestInit & {
 	logPayloadOnError?: boolean
 	retryCount?: number
 	retryInterval?: number
-	retryOnHttpErrorStatusCodes?: boolean
 	throwOnConvert?: boolean
 	waitForOnlineStatus?: boolean
 }
@@ -48,10 +47,6 @@ const defaultHeaders = {
 
 const abortControllersByUrl = new Map<string, AbortController>()
 
-const ERROR_CODES_TO_RETRY = new Set([408, 429, 500, 502, 503, 504])
-
-const MAX_HTTP_ERROR_RETRIES = 3
-
 export const apiFetch = async <T>(
 	pathName: string,
 	{
@@ -65,7 +60,6 @@ export const apiFetch = async <T>(
 		logPayloadOnError = false,
 		retryCount = 3,
 		retryInterval = 1000,
-		retryOnHttpErrorStatusCodes = false,
 		throwOnConvert = false,
 		waitForOnlineStatus = false,
 		...params
@@ -202,16 +196,6 @@ export const apiFetch = async <T>(
 				undefined,
 				fetchError,
 			)
-		}
-
-		if (
-			retryOnHttpErrorStatusCodes &&
-			ERROR_CODES_TO_RETRY.has(response.status) &&
-			counter < retryCount &&
-			//! To ensure protection against self DDoS when the server is down, we have decided to allow a maximum of 3 retries for HTTP errors.
-			counter < MAX_HTTP_ERROR_RETRIES
-		) {
-			continue
 		}
 
 		if (response.status > 399) {
