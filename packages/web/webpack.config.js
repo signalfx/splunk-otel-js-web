@@ -22,9 +22,8 @@ const TerserPlugin = require('terser-webpack-plugin')
 
 const artifactsPath = path.resolve(__dirname, './dist/artifacts')
 
-const getBaseConfig = (env, argv, options = {}) => {
+const getBaseConfig = (env, argv) => {
 	const isDevelopmentMode = argv.mode === 'development'
-	const isLegacyBuild = options.isLegacyBuild === true
 
 	return {
 		devtool: isDevelopmentMode ? 'inline-source-map' : 'source-map',
@@ -38,11 +37,7 @@ const getBaseConfig = (env, argv, options = {}) => {
 							loader: 'swc-loader',
 							options: {
 								env: {
-									coreJs: isLegacyBuild ? '3.42' : undefined,
-									mode: isLegacyBuild ? 'usage' : undefined,
-									targets: isLegacyBuild
-										? 'defaults, chrome >= 50, safari >= 11, firefox >= 50, ie >= 11'
-										: 'defaults, chrome >= 71, safari >= 12.1, firefox >= 65',
+									targets: 'defaults, chrome >= 71, safari >= 12.1, firefox >= 65',
 								},
 								jsc: {
 									externalHelpers: true,
@@ -54,24 +49,7 @@ const getBaseConfig = (env, argv, options = {}) => {
 						},
 					],
 				},
-				// For legacy builds, we need to transpile OpenTelemetry packages to ES5
-				{
-					include: isLegacyBuild ? /node_modules\/@opentelemetry\// : [],
-					test: /\.m?js$/,
-					use: [
-						{
-							loader: 'swc-loader',
-							options: {
-								jsc: {
-									parser: {
-										syntax: 'ecmascript',
-									},
-									target: 'es5',
-								},
-							},
-						},
-					],
-				},
+
 				{
 					enforce: 'pre',
 					test: /\.js$/,
@@ -85,7 +63,7 @@ const getBaseConfig = (env, argv, options = {}) => {
 				new TerserPlugin({
 					extractComments: false,
 					terserOptions: {
-						ecma: isLegacyBuild ? 5 : 6,
+						ecma: 6,
 						format: {
 							comments: false,
 						},
@@ -139,23 +117,6 @@ const browserConfig = (env, argv) => {
 	}
 }
 
-const browserLegacyConfig = (env, argv) => {
-	const baseConfig = getBaseConfig(env, argv, { isLegacyBuild: true })
-	return {
-		...baseConfig,
-		entry: [path.resolve(__dirname, './src/polyfills/index.ts'), path.resolve(__dirname, './src/index-browser.ts')],
-		output: {
-			...baseConfig.output,
-			filename: 'splunk-otel-web-legacy.js',
-			library: {
-				export: 'default',
-				name: 'SplunkRum',
-				type: 'window',
-			},
-		},
-	}
-}
-
 const otelApiGlobalsConfig = (env, argv) => {
 	const baseConfig = getBaseConfig(env, argv)
 	return {
@@ -172,4 +133,4 @@ const otelApiGlobalsConfig = (env, argv) => {
 	}
 }
 
-module.exports = [browserConfig, browserLegacyConfig, otelApiGlobalsConfig]
+module.exports = [browserConfig, otelApiGlobalsConfig]
