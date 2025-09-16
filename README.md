@@ -22,8 +22,6 @@
 The Splunk distribution of [OpenTelemetry JavaScript for
 Web](https://github.com/open-telemetry/opentelemetry-js)
 
-> :construction: This project is currently in **BETA**. It is **officially supported** by Splunk. However, breaking changes **MAY** be introduced.
-
 ## Getting Started
 
 For complete instructions for how to get started with the Splunk distribution of OpenTelemetry JavaScript for Web, see [Install the Browser RUM agent for Splunk RUM](https://quickdraw.splunk.com/redirect/?product=Observability&location=github.rum.get.started&version=current)
