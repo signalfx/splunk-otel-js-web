@@ -18,7 +18,6 @@
 import { JsonObject } from 'type-fest'
 
 import { log } from './log'
-import { SessionReplay, Stats } from './session-replay'
 import { safelyGetLocalStorage, safelyRemoveFromLocalStorage, safelySetLocalStorage } from './storage'
 
 export interface QueuedLog {
@@ -136,42 +135,4 @@ const isQueuedLogs = (maybeQueuedLogs: unknown): maybeQueuedLogs is QueuedLog[] 
 	}
 
 	return maybeQueuedLogs.every(isQueuedLog)
-}
-
-export const removeAssetsFromQueuedLog = (
-	queuedLog: QueuedLog,
-	omit: { css: boolean; fonts: boolean; images: boolean },
-): { log: QueuedLog; stats: Stats | null } => {
-	const clonedLog = JSON.parse(JSON.stringify(queuedLog)) as QueuedLog
-	let stats: Stats | null = null
-	for (const log_ of clonedLog.data.resourceLogs) {
-		const scopeLogs = log_.scopeLogs || []
-		for (const scopeLog of scopeLogs) {
-			for (const logRecord of scopeLog.logRecords) {
-				log.debug('Processing log record', omit, logRecord)
-				const metadata = logRecord.attributes.find((a) => a.key === 'segmentMetadata')
-				if (!metadata) {
-					continue
-				}
-
-				try {
-					const segment = SessionReplay.loadPlainSegment({
-						data: JSON.parse(logRecord.body.stringValue),
-						metadata: JSON.parse(metadata.value.stringValue),
-					})
-					const plainSegment = segment.toPlain({
-						omit,
-					})
-
-					logRecord.body.stringValue = JSON.stringify(plainSegment.data)
-					metadata.value.stringValue = JSON.stringify(plainSegment.metadata)
-					stats = segment.stats()
-				} catch (error) {
-					log.error('Error happened during segment conversion', error)
-				}
-			}
-		}
-	}
-
-	return { log: clonedLog, stats }
 }

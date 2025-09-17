@@ -23,14 +23,7 @@ import { nanoid } from 'nanoid'
 import type { JsonArray, JsonObject, JsonValue } from 'type-fest'
 
 import { ApiError, apiFetch, ApiParams } from './api'
-import {
-	addLogToQueue,
-	getQueuedLogs,
-	QueuedLog,
-	removeAssetsFromQueuedLog,
-	removeQueuedLog,
-	removeQueuedLogs,
-} from './export-log-queue'
+import { addLogToQueue, getQueuedLogs, QueuedLog, removeQueuedLog, removeQueuedLogs } from './export-log-queue'
 import { log } from './log'
 import { compressAsync } from './session-replay/utils'
 import { IAnyValue, Log } from './types'
@@ -163,29 +156,7 @@ export default class OTLPLogExporter {
 			log.debug('Adding log to queue', { ...queuedLog, data: '[truncated]' })
 			const isPersisted = addLogToQueue(queuedLog)
 			if (!isPersisted) {
-				const { log: queuedLogWithoutImage, stats } = removeAssetsFromQueuedLog(queuedLog, {
-					css: false,
-					fonts: false,
-					images: true,
-				})
-				const isPersistedWithoutImage = addLogToQueue(queuedLogWithoutImage)
-				if (!isPersistedWithoutImage) {
-					const { log: queuedLogWithoutAllAssets } = removeAssetsFromQueuedLog(queuedLogWithoutImage, {
-						css: true,
-						fonts: true,
-						images: true,
-					})
-					const isPersistedWithoutAllAssets = addLogToQueue(queuedLogWithoutAllAssets)
-					if (!isPersistedWithoutAllAssets) {
-						log.warn(
-							`Failed to add log to queue after assets removed Total: ${stats?.assets.plain.total}}, CSS: ${stats?.assets.plain.css}, Images: ${stats?.assets.plain.images}, Fonts: ${stats?.assets.plain.fonts}, Other: ${stats?.assets.plain.other}`,
-							{
-								...queuedLog,
-								data: '[truncated]',
-							},
-						)
-					}
-				}
+				log.debug('Failed to add log to queue', { ...queuedLog, data: '[truncated]' })
 			}
 		}
 
