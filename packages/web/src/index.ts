@@ -52,6 +52,7 @@ import {
 	SplunkSocketIoClientInstrumentation,
 	SplunkUserInteractionInstrumentation,
 	SplunkWebSocketInstrumentation,
+	SplunkXhrInstrumentation,
 	UserInteractionEventsConfig,
 } from './instrumentations'
 import { BrowserInstanceService } from './services/browser-instance-service'
@@ -60,7 +61,6 @@ import { SplunkContextManager } from './splunk-context-manager'
 import { SplunkSamplerWrapper } from './splunk-sampler-wrapper'
 import { SplunkSpanAttributesProcessor } from './splunk-span-attributes-processor'
 import { SplunkWebTracerProvider } from './splunk-web-tracer-provider'
-import { SplunkXhrPlugin } from './splunk-xhr-plugin'
 import { getSyntheticsRunId, SYNTHETICS_RUN_ID_ATTRIBUTE } from './synthetics'
 import {
 	isPersistenceType,
@@ -125,7 +125,7 @@ const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
 
 const INSTRUMENTATIONS = [
 	{ confKey: 'document', disable: false, Instrument: SplunkDocumentLoadInstrumentation },
-	{ confKey: 'xhr', disable: false, Instrument: SplunkXhrPlugin },
+	{ confKey: 'xhr', disable: false, Instrument: SplunkXhrInstrumentation },
 	{ confKey: 'interactions', disable: false, Instrument: SplunkUserInteractionInstrumentation },
 	{ confKey: 'postload', disable: false, Instrument: SplunkPostDocLoadResourceInstrumentation },
 	{ confKey: 'fetch', disable: false, Instrument: SplunkFetchInstrumentation },
