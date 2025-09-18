@@ -3,8 +3,9 @@ default:
 
 include:
     - project: 'ci-cd/templates'
-      ref: master
       file: '/prodsec/.oss-scan.yml'
+    - project: 'ci-cd/templates'
+      file: '/prodsec/.sast-scan.yml'
 
 cache:
     key:
