@@ -22,14 +22,14 @@ import {
 	XMLHttpRequestInstrumentationConfig,
 } from '@opentelemetry/instrumentation-xml-http-request'
 
-import { captureTraceParent } from './servertiming'
+import { captureTraceParent } from '../servertiming'
 
 type ExposedSuper = {
 	_addResourceObserver: (xhr: XMLHttpRequest, spanUrl: string) => void
 	_createSpan: (xhr: XMLHttpRequest, url: string, method: string) => api.Span | undefined
 }
 
-export class SplunkXhrPlugin extends XMLHttpRequestInstrumentation {
+export class SplunkXhrInstrumentation extends XMLHttpRequestInstrumentation {
 	constructor(config: XMLHttpRequestInstrumentationConfig = {}) {
 		super(config)
 
