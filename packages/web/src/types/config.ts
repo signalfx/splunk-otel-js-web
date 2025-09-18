@@ -27,8 +27,8 @@ import {
 	SplunkErrorInstrumentationConfig,
 	SplunkPostDocLoadResourceInstrumentationConfig,
 	SplunkUserInteractionInstrumentationConfig,
+	SplunkWebVitalsInstrumentationConfig,
 } from '../instrumentations'
-import { WebVitalsInstrumentationConfig } from '../webvitals'
 
 export interface SplunkOtelWebOptionsInstrumentations {
 	connectivity?: boolean | InstrumentationConfig
@@ -41,7 +41,7 @@ export interface SplunkOtelWebOptionsInstrumentations {
 	socketio?: boolean | SocketIoClientInstrumentationConfig
 	visibility?: boolean | InstrumentationConfig
 	websocket?: boolean | InstrumentationConfig
-	webvitals?: boolean | WebVitalsInstrumentationConfig
+	webvitals?: boolean | SplunkWebVitalsInstrumentationConfig
 	xhr?: boolean | XMLHttpRequestInstrumentationConfig
 }
 

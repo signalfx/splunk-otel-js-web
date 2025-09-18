@@ -52,6 +52,7 @@ import {
 	SplunkSocketIoClientInstrumentation,
 	SplunkUserInteractionInstrumentation,
 	SplunkWebSocketInstrumentation,
+	SplunkWebVitalsInstrumentation,
 	SplunkXhrInstrumentation,
 	UserInteractionEventsConfig,
 } from './instrumentations'
@@ -74,7 +75,6 @@ import { generateId, getPluginConfig } from './utils'
 import { getValidAttributes, SpanContext } from './utils/attributes'
 import { isBot } from './utils/is-bot'
 import { VERSION } from './version'
-import { initWebVitals } from './webvitals'
 
 import './polyfill-safari10'
 
@@ -134,6 +134,7 @@ const INSTRUMENTATIONS = [
 	{ confKey: ERROR_INSTRUMENTATION_NAME, disable: false, Instrument: SplunkErrorInstrumentation },
 	{ confKey: 'visibility', disable: true, Instrument: SplunkPageVisibilityInstrumentation },
 	{ confKey: 'connectivity', disable: true, Instrument: SplunkConnectivityInstrumentation },
+	{ confKey: 'webvitals', disable: false, Instrument: SplunkWebVitalsInstrumentation },
 	{ confKey: 'socketio', disable: true, Instrument: SplunkSocketIoClientInstrumentation },
 ] as const
 
@@ -539,11 +540,6 @@ export const SplunkRum: SplunkOtelWebType = {
 		})
 
 		this.provider = provider
-
-		const vitalsConf = getPluginConfig(processedOptions.instrumentations.webvitals)
-		if (vitalsConf !== false) {
-			initWebVitals(provider, vitalsConf)
-		}
 
 		inited = true
 		diag.info('SplunkRum.init() complete')
