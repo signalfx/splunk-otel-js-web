@@ -76,8 +76,6 @@ import { getValidAttributes, SpanContext } from './utils/attributes'
 import { isBot } from './utils/is-bot'
 import { VERSION } from './version'
 
-import './polyfill-safari10'
-
 export { type SplunkExporterConfig } from './exporters/common'
 export { SplunkZipkinExporter } from './exporters/zipkin'
 export * from './session-based-sampler'
