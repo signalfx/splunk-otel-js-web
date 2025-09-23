@@ -28,7 +28,7 @@
 		"size-limit": "size-limit"
 	},
 	"devDependencies": {
-		"@aws-sdk/client-cloudfront": "^3.891.0",
+		"@aws-sdk/client-cloudfront": "^3.894.0",
 		"@aws-sdk/client-s3": "^3.894.0",
 		"@eslint/js": "^9.36.0",
 		"@octokit/request": "^10.0.2",
