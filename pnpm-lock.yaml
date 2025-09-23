@@ -203,8 +203,8 @@ importers:
         specifier: ^10.9.1
         version: 10.9.2(@swc/core@1.13.5(@swc/helpers@0.5.17))(@types/node@24.5.2)(typescript@5.8.3)
       wait-on:
-        specifier: ^9.0.0
-        version: 9.0.0
+        specifier: ^9.0.1
+        version: 9.0.1
       webpack:
         specifier: ^5.101.3
         version: 5.101.3(@swc/core@1.13.5(@swc/helpers@0.5.17))(webpack-cli@6.0.1)
@@ -291,8 +291,8 @@ importers:
         specifier: ^0.8.0
         version: 0.8.2
       nanoid:
-        specifier: ^5.1.5
-        version: 5.1.5
+        specifier: ^5.1.6
+        version: 5.1.6
       type-fest:
         specifier: ^5.0.0
         version: 5.0.0
@@ -328,8 +328,8 @@ importers:
         specifier: ^9.5.4
         version: 9.5.4(typescript@5.8.3)(webpack@5.101.3)
       wait-on:
-        specifier: ^9.0.0
-        version: 9.0.0
+        specifier: ^9.0.1
+        version: 9.0.1
       webpack:
         specifier: ^5.101.3
         version: 5.101.3(@swc/core@1.13.5(@swc/helpers@0.5.17))(webpack-cli@6.0.1)
@@ -410,8 +410,8 @@ importers:
         specifier: ^0.2.6
         version: 0.2.6(@swc/core@1.13.5(@swc/helpers@0.5.17))(webpack@5.101.3)
       wait-on:
-        specifier: ^9.0.0
-        version: 9.0.0
+        specifier: ^9.0.1
+        version: 9.0.1
       webpack:
         specifier: ^5.101.3
         version: 5.101.3(@swc/core@1.13.5(@swc/helpers@0.5.17))(webpack-cli@6.0.1)
@@ -4566,8 +4566,8 @@ packages:
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
-  nanoid@5.1.5:
-    resolution: {integrity: sha512-Ir/+ZpE9fDsNH0hQ3C68uyThDXzYcim2EqcZ8zn8Chtt1iylPT9xXJB0kPCnqzgcEGikO9RxSrh63MsmVCU7Fw==}
+  nanoid@5.1.6:
+    resolution: {integrity: sha512-c7+7RQ+dMB5dPwwCp4ee1/iV/q2P6aK1mTZcfr1BTuVlyW9hJYiMPybJCcnBlQtuSmTIWNeazm/zqNoZSSElBg==}
     engines: {node: ^18 || >=20}
     hasBin: true
 
@@ -5849,8 +5849,8 @@ packages:
       jsdom:
         optional: true
 
-  wait-on@9.0.0:
-    resolution: {integrity: sha512-bKOl7CJ4zGhKW4qvoasLM5t2NtLUcc1Ar2N6XeYCQpW0w+DMdLC0YH1JUH3bTWDCsHblapHMzhtFmmPc+ITNJw==}
+  wait-on@9.0.1:
+    resolution: {integrity: sha512-noeCAI+XbqWMXY23sKril0BSURhuLYarkVXwJv1uUWwoojZJE7pmX3vJ7kh7SZaNgPGzfsCSQIZM/AGvu0Q9pA==}
     engines: {node: '>=20.0.0'}
     hasBin: true
 
@@ -11168,7 +11168,7 @@ snapshots:
 
   nanoid@3.3.11: {}
 
-  nanoid@5.1.5: {}
+  nanoid@5.1.6: {}
 
   nanospinner@1.2.2:
     dependencies:
@@ -12618,7 +12618,7 @@ snapshots:
       - tsx
       - yaml
 
-  wait-on@9.0.0:
+  wait-on@9.0.1:
     dependencies:
       axios: 1.12.2
       joi: 18.0.1
