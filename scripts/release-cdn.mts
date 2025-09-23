@@ -65,7 +65,7 @@ if (!process.env.CDN_BUCKET_NAME) {
 const { CDN_BUCKET_NAME } = process.env
 
 if (!process.env.GITHUB_TOKEN && !isDryRun) {
-	throw new Error('You are missing an environment variable GITHUB_TOKEN.')
+	console.warn('You are missing an environment variable GITHUB_TOKEN. The github release will not be created.')
 }
 
 console.log('I will now process the files:')
@@ -141,17 +141,20 @@ if (!isDryRun) {
 
 const semverRegex = /^v[0-9]+\.[0-9]+\.[0-9]+(-beta\.[0-9]+)?$/
 if (semverRegex.test(targetVersion)) {
-	const ghRelease = await getReleaseForTag(OWNER, REPO, targetVersion)
-	console.log(`I have found the latest version to be: ${ghRelease.tag_name} named "${ghRelease.name}."`)
+	console.log('Following will be added to the release notes:')
+	console.log('------')
+	console.log(cdnLinks.join('\n'))
+	console.log('------')
 
-	console.log('Appending CDN instructions to release description.')
-	if (isDryRun) {
-		console.log('Following would be added to the release notes:')
-		console.log('------')
-		console.log(cdnLinks.join('\n'))
-		console.log('------')
-	} else {
-		await patchGithubReleaseBody(ghRelease, ghRelease.body + cdnLinks.join('\n'))
-		console.log(`Please verify that instructions are correct by navigating to: ${ghRelease.html_url}`)
+	try {
+		const ghRelease = await getReleaseForTag(OWNER, REPO, targetVersion)
+		console.log(`I have found the latest version to be: ${ghRelease.tag_name} named "${ghRelease.name}."`)
+		console.log('Appending CDN instructions to release description.')
+		if (!isDryRun) {
+			await patchGithubReleaseBody(ghRelease, ghRelease.body + cdnLinks.join('\n'))
+			console.log(`Please verify that instructions are correct by navigating to: ${ghRelease.html_url}`)
+		}
+	} catch (error) {
+		console.error('Failed to update release notes:', error)
 	}
 }
