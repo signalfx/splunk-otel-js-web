@@ -25,11 +25,13 @@ import * as shimmer from 'shimmer'
 import { isElement } from '../types'
 import { limitLen } from '../utils'
 import { getValidAttributes, isPlainObject, removePropertiesWithAdvancedTypes, SpanContext } from '../utils/attributes'
+import { hashSHA256, isCryptoAvailable } from '../utils/hash'
 
 // FIXME take timestamps from events?
 
 const STACK_LIMIT = 4096
 const MESSAGE_LIMIT = 1024
+const MAX_THOTTLE_MAP_SIZE = isCryptoAvailable ? 50_000 : 10_000
 
 export const STACK_TRACE_URL_PATTER = /[\w]+:\/\/[^\s]+?(?::\d+)?(?=:[\d]+:[\d]+)/g
 
@@ -142,7 +144,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		errorArg instanceof Event ||
 		typeof errorArg === 'string'
 
-	report(source: string, arg: InternalErrorLike, spanContext: SpanContext): void {
+	async report(source: string, arg: InternalErrorLike, spanContext: SpanContext): Promise<void> {
 		if (Array.isArray(arg) && arg.length === 0) {
 			return
 		}
@@ -159,28 +161,28 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 
 		const { context: transformedCtx, error: transformedArg } = transformed
 		if (transformedArg instanceof Error) {
-			this.reportError(source, transformedArg, transformedCtx)
+			await this.reportError(source, transformedArg, transformedCtx)
 		} else if (transformedArg instanceof ErrorEvent) {
-			this.reportErrorEvent(source, transformedArg, transformedCtx)
+			await this.reportErrorEvent(source, transformedArg, transformedCtx)
 		} else if (transformedArg instanceof Event) {
-			this.reportEvent(source, transformedArg, transformedCtx)
+			await this.reportEvent(source, transformedArg, transformedCtx)
 		} else if (typeof transformedArg === 'string') {
-			this.reportString(source, transformedArg, undefined, transformedCtx)
+			await this.reportString(source, transformedArg, undefined, transformedCtx)
 		} else if (Array.isArray(transformedArg)) {
 			// if any arguments are Errors then add the stack trace even though the message is handled differently
 			const firstError = transformedArg.find((x) => x instanceof Error)
-			this.reportString(
+			await this.reportString(
 				source,
 				transformedArg.map((x) => stringifyValue(x)).join(' '),
 				firstError,
 				transformedCtx,
 			)
 		} else {
-			this.reportString(source, stringifyValue(transformedArg), undefined, transformedCtx) // FIXME or JSON.stringify?
+			await this.reportString(source, stringifyValue(transformedArg), undefined, transformedCtx) // FIXME or JSON.stringify?
 		}
 	}
 
-	protected reportError(source: string, err: Error, spanContext: SpanContext): void {
+	protected async reportError(source: string, err: Error, spanContext: SpanContext): Promise<void> {
 		const msg = err.message || err.toString()
 		if (!useful(msg) && !err.stack) {
 			return
@@ -200,18 +202,18 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		span.setAttribute('error.message', limitLen(msg, MESSAGE_LIMIT))
 		addStackIfUseful(span, err)
 
-		this.endSpanWithThrottle(span, now)
+		await this.endSpanWithThrottle(span, now)
 	}
 
-	protected reportErrorEvent(source: string, ev: ErrorEvent, spanContext: SpanContext): void {
+	protected async reportErrorEvent(source: string, ev: ErrorEvent, spanContext: SpanContext): Promise<void> {
 		if (ev.error) {
-			this.report(source, ev.error, spanContext)
+			await this.report(source, ev.error, spanContext)
 		} else if (ev.message) {
-			this.report(source, ev.message, spanContext)
+			await this.report(source, ev.message, spanContext)
 		}
 	}
 
-	protected reportEvent(source: string, ev: Event, spanContext: SpanContext): void {
+	protected async reportEvent(source: string, ev: Event, spanContext: SpanContext): Promise<void> {
 		// FIXME consider other sources of global 'error' DOM callback - what else can be captured here?
 		if (!ev.target && !useful(ev.type)) {
 			return
@@ -249,15 +251,15 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 			}
 		}
 
-		this.endSpanWithThrottle(span, now)
+		await this.endSpanWithThrottle(span, now)
 	}
 
-	protected reportString(
+	protected async reportString(
 		source: string,
 		message: string,
 		firstError: Error | undefined,
 		spanContext: SpanContext,
-	): void {
+	): Promise<void> {
 		if (!useful(message)) {
 			return
 		}
@@ -273,7 +275,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 			addStackIfUseful(span, firstError)
 		}
 
-		this.endSpanWithThrottle(span, now)
+		await this.endSpanWithThrottle(span, now)
 	}
 
 	protected transform(error: InternalErrorLike, spanContext: SpanContext): ErrorWithContext | null {
@@ -304,14 +306,14 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 
 		if (!this.isValidErrorArg(transformedError) && !Array.isArray(transformedError)) {
 			diag.warn(
-				`ignoring an error because onError handler was expected to produce a valid error, but instead returned: ${transformedError}`,
+				`ignoring an error because onError handler was expected to produce a valid error, but instead returned: ${typeof transformedError}`,
 			)
 			return { context: spanContext, error }
 		}
 
 		if (!this.isValidContext(transformedCtx)) {
 			diag.warn(
-				`onError handler was expected to produce a valid context (POJO), but instead returned: ${transformedCtx}`,
+				`onError handler was expected to produce a valid context (POJO), but instead returned: ${typeof transformedCtx}`,
 			)
 			return { context: spanContext, error }
 		}
@@ -356,24 +358,28 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 
 	private consoleErrorHandler =
 		(original: Console['error']) =>
-		(...args: any[]) => {
-			this.report('console.error', args, {})
+		async (...args: any[]) => {
+			await this.report('console.error', args, {})
 			return original.apply(this, args)
 		}
 
-	private documentErrorListener = (event: ErrorEvent) => {
-		this.report('eventListener.error', event, {})
+	private documentErrorListener = async (event: ErrorEvent) => {
+		await this.report('eventListener.error', event, {})
 	}
 
-	private endSpanWithThrottle(span: Span, endTime: number): void {
+	private async endSpanWithThrottle(span: Span, endTime: number) {
 		try {
 			// @ts-expect-error Attributes are defined but hidden
 			const spanKey = JSON.stringify([span.attributes, span.name])
+			const spanKeyHash = (await hashSHA256(spanKey)) ?? spanKey
 			if (
-				!this.throttleMap.has(spanKey) ||
-				performance.now() - (this.throttleMap.get(spanKey) || 0) > THROTTLE_LIMIT
+				!this.throttleMap.has(spanKeyHash) ||
+				performance.now() - (this.throttleMap.get(spanKeyHash) || 0) > THROTTLE_LIMIT
 			) {
-				this.throttleMap.set(spanKey, performance.now())
+				if (this.throttleMap.size < MAX_THOTTLE_MAP_SIZE) {
+					this.throttleMap.set(spanKeyHash, performance.now())
+				}
+
 				span.end(endTime)
 			}
 		} catch (error) {
@@ -383,11 +389,11 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		}
 	}
 
-	private errorListener = (event: ErrorEvent) => {
-		this.report('onerror', event, {})
+	private errorListener = async (event: ErrorEvent) => {
+		await this.report('onerror', event, {})
 	}
 
-	private unhandledRejectionListener = (event: PromiseRejectionEvent) => {
-		this.report('unhandledrejection', event.reason, {})
+	private unhandledRejectionListener = async (event: PromiseRejectionEvent) => {
+		await this.report('unhandledrejection', event.reason, {})
 	}
 }

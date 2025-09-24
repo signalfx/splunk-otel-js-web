@@ -216,7 +216,7 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 
 	provider?: SplunkWebTracerProvider
 
-	reportError: (error: string | Event | Error | ErrorEvent, context?: SpanContext) => void
+	reportError: (error: string | Event | Error | ErrorEvent, context?: SpanContext) => Promise<void>
 
 	resource?: Resource
 
@@ -553,7 +553,7 @@ export const SplunkRum: SplunkOtelWebType = {
 		eventTarget?.removeEventListener(name, callback)
 	},
 
-	reportError(error: string | Event | Error | ErrorEvent, context: SpanContext = {}) {
+	async reportError(error: string | Event | Error | ErrorEvent, context: SpanContext = {}) {
 		if (!inited) {
 			diag.debug('SplunkRum not inited')
 			return
@@ -577,7 +577,7 @@ export const SplunkRum: SplunkOtelWebType = {
 		}
 
 		const parsedAdditionalAttributes = getValidAttributes(context)
-		_errorInstrumentation.report('SplunkRum.reportError', error, parsedAdditionalAttributes)
+		await _errorInstrumentation.report('SplunkRum.reportError', error, parsedAdditionalAttributes)
 	},
 
 	SessionBasedSampler,
