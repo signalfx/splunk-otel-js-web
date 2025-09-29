@@ -197,6 +197,7 @@ const SplunkRumRecorder = {
 
 			if (previousState.id !== currentState.id) {
 				recorder?.stop()
+				recorder?.destroy()
 				recorder = new Recorder({
 					initRecorderConfig,
 					processor,

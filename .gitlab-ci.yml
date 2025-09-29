@@ -21,7 +21,7 @@ cache:
 
 .default-setup: &pnpm-setup
     before_script:
-        - sudo npm install -g pnpm@10.12.1
+        - sudo npm install -g pnpm@10.17.1
 
 stages:
     - setup

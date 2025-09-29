@@ -100,15 +100,9 @@ export class Recorder {
 		}
 	}
 
-	onSessionChanged() {
-		log.debug('Recorder: onSessionChanged')
-		this.stop()
+	destroy() {
+		this.sessionReplay.destroy()
 		Recorder.clear()
-		this.start()
-	}
-
-	pause() {
-		this.stop()
 	}
 
 	resume() {
