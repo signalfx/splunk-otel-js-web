@@ -304,7 +304,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 			return { context: spanContext, error }
 		}
 
-		if (!this.isValidErrorArg(transformedError) && !Array.isArray(transformedError)) {
+		if (transformedError !== error && !this.isValidErrorArg(transformedError) && !Array.isArray(transformedError)) {
 			diag.warn(
 				`ignoring an error because onError handler was expected to produce a valid error, but instead returned: ${typeof transformedError}`,
 			)
