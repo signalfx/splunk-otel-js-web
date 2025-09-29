@@ -16,8 +16,6 @@
  *
  */
 
-export const isCryptoAvailable = typeof crypto !== 'undefined' && crypto.subtle && crypto.subtle.digest
-
 export async function hashSHA256(key: string): Promise<string | null> {
 	if (typeof crypto === 'undefined' || !crypto.subtle || !crypto.subtle.digest) {
 		return null

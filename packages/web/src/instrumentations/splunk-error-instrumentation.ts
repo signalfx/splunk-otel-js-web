@@ -25,13 +25,13 @@ import * as shimmer from 'shimmer'
 import { isElement } from '../types'
 import { limitLen } from '../utils'
 import { getValidAttributes, isPlainObject, removePropertiesWithAdvancedTypes, SpanContext } from '../utils/attributes'
-import { hashSHA256, isCryptoAvailable } from '../utils/hash'
+import { hashSHA256 } from '../utils/hash'
 
 // FIXME take timestamps from events?
 
 const STACK_LIMIT = 4096
 const MESSAGE_LIMIT = 1024
-const MAX_THOTTLE_MAP_SIZE = isCryptoAvailable ? 50_000 : 10_000
+const MAX_THOTTLE_MAP_SIZE = 10_000
 
 export const STACK_TRACE_URL_PATTER = /[\w]+:\/\/[^\s]+?(?::\d+)?(?=:[\d]+:[\d]+)/g
 
