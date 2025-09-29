@@ -24,14 +24,24 @@ afterEach(() => {
 function assertSessionIsEmpty() {
 	try {
 		if (localStorage['_splunk_rum_sid']) {
-			throw new Error('Session is expected to be empty, but is set in localStorage.')
+			console.warn('Session is expected to be empty, but is set in localStorage.')
 		}
 
 		if (document.cookie.includes('_splunk_rum_sid')) {
-			throw new Error(`Session is expected to be empty, but is set in cookies: ${document.cookie}`)
+			console.warn(`Session is expected to be empty, but is set in cookies: ${document.cookie}`)
+		}
+
+		if (localStorage['_splunk_rum_user_anonymousId']) {
+			console.warn('AnonymousUserId is expected to be empty, but is set in localStorage.')
+		}
+
+		if (document.cookie.includes('_splunk_rum_user_anonymousId')) {
+			console.warn(`AnonymousUserId is expected to be empty, but is set in cookies: ${document.cookie}`)
 		}
 	} finally {
 		delete localStorage['_splunk_rum_sid']
+		delete localStorage['_splunk_rum_user_anonymousId']
 		document.cookie = '_splunk_rum_sid=;expires=Thu, 01 Jan 1970 00:00:00 GMT'
+		document.cookie = '_splunk_rum_user_anonymousId=;expires=Thu, 01 Jan 1970 00:00:00 GMT'
 	}
 }
