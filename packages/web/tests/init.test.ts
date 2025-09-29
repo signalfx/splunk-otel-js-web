@@ -483,7 +483,7 @@ describe('test stack length', () => {
 			recurAndThrow(50)
 		} catch (error) {
 			try {
-				SplunkRum.reportError(error as Error)
+				await SplunkRum.reportError(error as Error)
 			} catch {
 				// swallow
 			}
@@ -609,12 +609,12 @@ describe('test manual report', () => {
 		deinit()
 	})
 
-	it('should not report useless items', () => {
+	it('should not report useless items', async () => {
 		capturer.clear()
-		SplunkRum.reportError('')
-		SplunkRum.reportError()
-		SplunkRum.reportError([])
-		SplunkRum.reportError({})
+		await SplunkRum.reportError('')
+		await SplunkRum.reportError()
+		await SplunkRum.reportError([])
+		await SplunkRum.reportError({})
 		expect(capturer.spans.length).toBe(0)
 	})
 })
