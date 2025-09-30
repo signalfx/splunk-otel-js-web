@@ -89,7 +89,7 @@ SplunkSessionRecorder.init({
 ></script>
 ```
 
-> Replace `<version>` and `<integrity>` with the values from [GitHub Releases](https://github.com/splunk/splunk-otel-js-web/releases).
+> Replace `<version>` and `<integrity>` with the values from [GitHub Releases](https://github.com/signalfx/splunk-otel-js-web/releases).
 
 #### 2. Initialize RUM and Session Recorder
 
