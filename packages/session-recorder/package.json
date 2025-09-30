@@ -10,7 +10,7 @@
 		"monitoring",
 		"browser",
 		"web",
-		"user-experience"
+		"user experience"
 	],
 	"repository": "github:signalfx/splunk-otel-js-browser",
 	"scripts": {
