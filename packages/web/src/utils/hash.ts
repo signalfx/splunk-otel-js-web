@@ -16,16 +16,18 @@
  *
  */
 
-export {
-	type ConfigFeatures,
-	type PackAssetsConfig,
-	type Segment,
-	type SensitivityRule,
-	type SensitivityRuleType,
-	SessionReplay,
-	type SessionReplayConfig,
-	type SessionReplayPlainSegment,
-	Stats,
-} from 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.5.1/session-replay.module.legacy.min.js'
-// If you update the module version above, also update the version in cdn-module.d.ts.
-// Regenerate webpack.lock: delete it, set frozen to false in webpack.config.js, then run `pnpm run build`.
+export async function hashSHA256(key: string): Promise<string | null> {
+	if (typeof crypto === 'undefined' || !crypto.subtle || !crypto.subtle.digest) {
+		return null
+	}
+
+	try {
+		const encoder = new TextEncoder()
+		const data = encoder.encode(key)
+		const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+		const hashArray = Array.from(new Uint8Array(hashBuffer))
+		return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
+	} catch {
+		return null
+	}
+}

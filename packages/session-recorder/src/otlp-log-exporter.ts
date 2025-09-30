@@ -256,7 +256,7 @@ const sendByFetchInternal = async (
 			doNotConvert: true,
 			doNotRetryOnDocumentHidden: true,
 			method: 'POST',
-			retryCount: 100,
+			retryCount: 5,
 			...fetchParams,
 		})
 

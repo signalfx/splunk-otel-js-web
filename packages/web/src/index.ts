@@ -52,6 +52,8 @@ import {
 	SplunkSocketIoClientInstrumentation,
 	SplunkUserInteractionInstrumentation,
 	SplunkWebSocketInstrumentation,
+	SplunkWebVitalsInstrumentation,
+	SplunkXhrInstrumentation,
 	UserInteractionEventsConfig,
 } from './instrumentations'
 import { BrowserInstanceService } from './services/browser-instance-service'
@@ -60,7 +62,6 @@ import { SplunkContextManager } from './splunk-context-manager'
 import { SplunkSamplerWrapper } from './splunk-sampler-wrapper'
 import { SplunkSpanAttributesProcessor } from './splunk-span-attributes-processor'
 import { SplunkWebTracerProvider } from './splunk-web-tracer-provider'
-import { SplunkXhrPlugin } from './splunk-xhr-plugin'
 import { getSyntheticsRunId, SYNTHETICS_RUN_ID_ATTRIBUTE } from './synthetics'
 import {
 	isPersistenceType,
@@ -74,9 +75,6 @@ import { generateId, getPluginConfig } from './utils'
 import { getValidAttributes, SpanContext } from './utils/attributes'
 import { isBot } from './utils/is-bot'
 import { VERSION } from './version'
-import { initWebVitals } from './webvitals'
-
-import './polyfill-safari10'
 
 export { type SplunkExporterConfig } from './exporters/common'
 export { SplunkZipkinExporter } from './exporters/zipkin'
@@ -125,7 +123,7 @@ const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
 
 const INSTRUMENTATIONS = [
 	{ confKey: 'document', disable: false, Instrument: SplunkDocumentLoadInstrumentation },
-	{ confKey: 'xhr', disable: false, Instrument: SplunkXhrPlugin },
+	{ confKey: 'xhr', disable: false, Instrument: SplunkXhrInstrumentation },
 	{ confKey: 'interactions', disable: false, Instrument: SplunkUserInteractionInstrumentation },
 	{ confKey: 'postload', disable: false, Instrument: SplunkPostDocLoadResourceInstrumentation },
 	{ confKey: 'fetch', disable: false, Instrument: SplunkFetchInstrumentation },
@@ -134,6 +132,7 @@ const INSTRUMENTATIONS = [
 	{ confKey: ERROR_INSTRUMENTATION_NAME, disable: false, Instrument: SplunkErrorInstrumentation },
 	{ confKey: 'visibility', disable: true, Instrument: SplunkPageVisibilityInstrumentation },
 	{ confKey: 'connectivity', disable: true, Instrument: SplunkConnectivityInstrumentation },
+	{ confKey: 'webvitals', disable: false, Instrument: SplunkWebVitalsInstrumentation },
 	{ confKey: 'socketio', disable: true, Instrument: SplunkSocketIoClientInstrumentation },
 ] as const
 
@@ -217,7 +216,7 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 
 	provider?: SplunkWebTracerProvider
 
-	reportError: (error: string | Event | Error | ErrorEvent, context?: SpanContext) => void
+	reportError: (error: string | Event | Error | ErrorEvent, context?: SpanContext) => Promise<void>
 
 	resource?: Resource
 
@@ -540,11 +539,6 @@ export const SplunkRum: SplunkOtelWebType = {
 
 		this.provider = provider
 
-		const vitalsConf = getPluginConfig(processedOptions.instrumentations.webvitals)
-		if (vitalsConf !== false) {
-			initWebVitals(provider, vitalsConf)
-		}
-
 		inited = true
 		diag.info('SplunkRum.init() complete')
 	},
@@ -559,7 +553,7 @@ export const SplunkRum: SplunkOtelWebType = {
 		eventTarget?.removeEventListener(name, callback)
 	},
 
-	reportError(error: string | Event | Error | ErrorEvent, context: SpanContext = {}) {
+	async reportError(error: string | Event | Error | ErrorEvent, context: SpanContext = {}) {
 		if (!inited) {
 			diag.debug('SplunkRum not inited')
 			return
@@ -583,7 +577,7 @@ export const SplunkRum: SplunkOtelWebType = {
 		}
 
 		const parsedAdditionalAttributes = getValidAttributes(context)
-		_errorInstrumentation.report('SplunkRum.reportError', error, parsedAdditionalAttributes)
+		await _errorInstrumentation.report('SplunkRum.reportError', error, parsedAdditionalAttributes)
 	},
 
 	SessionBasedSampler,
