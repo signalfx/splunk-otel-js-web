@@ -17,9 +17,6 @@
   <a href="https://www.npmjs.com/package/@splunk/rum-build-plugins">
     <img alt="npm package version" src="https://img.shields.io/npm/v/@splunk/rum-build-plugins?style=for-the-badge">
   </a>
-  <a href="https://bundlephobia.com/package/@splunk/rum-build-plugins">
-    <img alt="Bundle size" src="https://img.shields.io/bundlephobia/minzip/@splunk/rum-build-plugins?style=for-the-badge">
-  </a>
 </p>
 
 ---
@@ -74,6 +71,6 @@ npm run build
 
 ## 📜 License
 
-Licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE) for the full license text.
+Licensed under the Apache License, Version 2.0. See [LICENSE](../../LICENSE) for the full license text.
 
 ---
