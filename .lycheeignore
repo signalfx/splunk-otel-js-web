@@ -1,2 +1,3 @@
 http://localhost:9100/
 %3C%25=%20assetPrefix%20%25%3E/.*
+https://www.npmjs.com/*
