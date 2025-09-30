@@ -19,7 +19,7 @@
   <a href="https://www.npmjs.com/package/@splunk/otel-web">
     <img alt="npm package version" src="https://img.shields.io/npm/v/@splunk/otel-web?style=for-the-badge">
   </a>
-  <a href="./LICENSE">
+  <a href="../../LICENSE">
     <img alt="Apache 2.0 License" src="https://img.shields.io/badge/license-Apache%202.0-blue.svg?style=for-the-badge">
   </a>
   <a href="https://bundlephobia.com/package/@splunk/otel-web">
@@ -262,7 +262,7 @@ For troubleshooting issues with the Splunk Distribution of OpenTelemetry JS for 
 
 ## 📜 License
 
-Licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE) for the full license text.
+Licensed under the Apache License, Version 2.0. See [LICENSE](../../LICENSE) for the full license text.
 
 ---
 
