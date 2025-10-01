@@ -396,9 +396,13 @@ export const SplunkRum: SplunkOtelWebType = {
 
 		if (!processedOptions.debug) {
 			if (!processedOptions.beaconEndpoint) {
-				throw new Error("SplunkRum.init( {beaconEndpoint: 'https://something'} ) is required.")
+				diag.error("SplunkRum.init( {beaconEndpoint: 'https://something'} ) is required.")
+				diag.error('SplunkRum will not be initialized.')
+				return
 			} else if (!processedOptions.beaconEndpoint.startsWith('https') && !processedOptions.allowInsecureBeacon) {
-				throw new Error('Not using https is unsafe, if you want to force it use allowInsecureBeacon option.')
+				diag.error('Not using https is unsafe, if you want to force it use allowInsecureBeacon option.')
+				diag.error('SplunkRum will not be initialized.')
+				return
 			}
 
 			if (!processedOptions.rumAccessToken) {
