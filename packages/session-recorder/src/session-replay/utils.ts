@@ -61,7 +61,7 @@ export const isCompressionSupported = async () => {
 	return true
 }
 
-export const compressAsync = async (data: Uint8Array): Promise<Uint8Array | Blob> => {
+export const compressAsync = async (data: Uint8Array<ArrayBuffer>) => {
 	if (!SessionReplay) {
 		log.warn('SessionReplay module undefined, fallback to gzip.')
 		return compressGzipAsync(data)
@@ -77,19 +77,20 @@ export const compressAsync = async (data: Uint8Array): Promise<Uint8Array | Blob
 	return compressData(dataBlob.stream(), 'gzip')
 }
 
-const compressGzipAsync = async (data: Uint8Array): Promise<Uint8Array> =>
-	new Promise<Uint8Array>((resolve, reject) => {
+const compressGzipAsync = async (data: Uint8Array): Promise<Uint8Array<ArrayBuffer>> =>
+	new Promise<Uint8Array<ArrayBuffer>>((resolve, reject) => {
 		gzip(data, (err, compressedData) => {
 			if (err) {
 				reject(err)
 				return
 			}
 
-			resolve(compressedData)
+			// TODO: https://github.com/101arrowz/fflate/issues/242
+			resolve(compressedData as Uint8Array<ArrayBuffer>)
 		})
 	})
 
-const compressData = async (dataStream: ReadableStream<Uint8Array>, format: 'deflate' | 'gzip') => {
+const compressData = async (dataStream: ReadableStream, format: 'deflate' | 'gzip') => {
 	const errorMessage = 'Compression'
 
 	const processStream = new CompressionStream(format)
