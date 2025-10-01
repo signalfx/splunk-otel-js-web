@@ -2,6 +2,12 @@
 
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
+## 1.0.1
+
+- `@splunk/otel-web`
+    - **Improved Configuration Error Handling** [#1431](https://github.com/signalfx/splunk-otel-js-web/pull/1431)
+        - Invalid configuration options no longer throw errors that can break initialization. Instead, the SDK now logs an error message and gracefully stops initialization, preventing application crashes due to misconfiguration.
+
 ## 1.0.0
 
 🎉 **We're out of beta!** This is the first stable release of Splunk OpenTelemetry JavaScript Web SDK.

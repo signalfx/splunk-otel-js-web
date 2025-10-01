@@ -1,6 +1,6 @@
 {
 	"name": "@splunk/rum-build-plugins",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Build plugins for users of @splunk/otel-web",
 	"keywords": [
 		"splunk",
