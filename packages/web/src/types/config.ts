@@ -72,6 +72,11 @@ export function isPersistenceType(value: string): value is PersistenceType {
 	return ['cookie', 'localStorage'].includes(value)
 }
 
+type SensitivityRule = {
+	rule: 'mask' | 'unmask' | 'exclude'
+	selector: string
+}
+
 export interface SplunkOtelWebConfig {
 	/** Allows http beacon urls */
 	allowInsecureBeacon?: boolean
@@ -132,6 +137,11 @@ export interface SplunkOtelWebConfig {
 	 * If not specified, `'cookie'` will be used as the default storage method.
 	 */
 	persistence?: PersistenceType
+
+	privacy?: {
+		maskAllText: boolean
+		sensitivityRules: SensitivityRule[]
+	}
 
 	/**
 	 * The name of your organization’s realm. Automatically configures beaconUrl with correct URL
