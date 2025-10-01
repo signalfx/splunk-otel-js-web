@@ -1,6 +1,6 @@
 {
 	"name": "@splunk/otel-web",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Splunk distribution of Open Telemetry for browser environment.",
 	"keywords": [
 		"splunk",
