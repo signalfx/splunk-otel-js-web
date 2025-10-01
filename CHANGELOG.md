@@ -2,6 +2,87 @@
 
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
+## 1.0.0
+
+🎉 **We're out of beta!** This is the first stable release of Splunk OpenTelemetry JavaScript Web SDK.
+
+### Breaking Changes
+
+This release includes several breaking changes as we graduate from beta to stable:
+
+- `@splunk/otel-web`
+    - **Removed Legacy Build Support** [#1366](https://github.com/signalfx/splunk-otel-js-web/pull/1366)
+        - Dropped support for legacy browsers (Internet Explorer)
+        - The legacy build that provided IE compatibility has been removed
+
+    - **Removed Deprecated and Experimental APIs** [#1331](https://github.com/signalfx/splunk-otel-js-web/pull/1331)
+        - All APIs marked as deprecated in previous versions have been removed
+        - All experimental APIs (prefixed with `_experimental_`) have been removed or promoted to stable
+        - **Removed deprecated configuration options:**
+            - `app` - Use `applicationName` instead
+            - `beaconUrl` - Use `beaconEndpoint` instead
+            - `environment` - Use `deploymentEnvironment` instead
+            - `rumAuth` - Use `rumAccessToken` instead
+        - **Removed deprecated API methods:**
+            - `SplunkRum._experimental_getGlobalAttributes()` - Use `SplunkRum.getGlobalAttributes()` instead
+            - `SplunkRum.error(...args)` - Use `SplunkRum.reportError(error, context)` instead
+            - `SplunkRum._experimental_addEventListener(name, callback)` - Use `SplunkRum.addEventListener(name, callback)` instead
+            - `SplunkRum._experimental_removeEventListener(name, callback)` - Use `SplunkRum.removeEventListener(name, callback)` instead
+            - `SplunkRum._experimental_getSessionId()` - Use `SplunkRum.getSessionId()` instead
+
+    - **Session Management Changes** [#1289](https://github.com/signalfx/splunk-otel-js-web/pull/1289)
+        - Session lifecycle management has been simplified and now works independently
+        - Sessions are extended only when `click`, `scroll`, `touch`, and `keydown` events are detected
+        - Previously, we extended sessions based on the `_experimental_allSpansExtendSession` and `_experimental_longtaskNoStartSession` config options. These options are no longer supported and can be removed from your configuration.
+
+- `@splunk/otel-web-session-recorder`
+    - **Session Recorder Breaking Changes** [#1330](https://github.com/signalfx/splunk-otel-js-web/pull/1330)
+        - **Removed rrweb dependency** - The session recorder no longer uses the external rrweb library
+        - **Replaced with Splunk's native recorder** - Session recording is now handled by Splunk's proprietary, more efficient recording engine
+        - **Removed `recorderType` configuration option** - The `recorder: 'rrweb|splunk'` option is no longer supported
+        - Please refer to the [Record browser sessions docs](https://help.splunk.com/en/splunk-observability-cloud/monitor-end-user-experience/real-user-monitoring/replay-user-sessions/record-browser-sessions) for more details.
+
+    - **Session Replay Enhancements** [#1368](https://github.com/signalfx/splunk-otel-js-web/pull/1368)
+        - Added `persistFailedReplayData` option to improve replay data reliability (set to `true` by default)
+        - When `persistFailedReplayData` is enabled, data that we are unable to send to Splunk is persisted to local storage and sent again when the page is reloaded.
+        - There is a 2MB limit for data stored in local storage
+
+### Migration Guide
+
+If you're upgrading from a previous version, please ensure:
+
+1. **Update your configuration** to use the new option names:
+
+    ```javascript
+    // Before (deprecated)
+    SplunkRum.init({
+    	app: 'my-app',
+    	beaconUrl: 'https://...',
+    	environment: 'production',
+    	rumAuth: 'token',
+    })
+
+    // After (stable)
+    SplunkRum.init({
+    	applicationName: 'my-app',
+    	beaconEndpoint: 'https://...',
+    	deploymentEnvironment: 'production',
+    	rumAccessToken: 'token',
+    })
+    ```
+
+2. **Update your API calls** to use the stable methods:
+
+    ```javascript
+    // Before (deprecated)
+    SplunkRum._experimental_getGlobalAttributes()
+    SplunkRum.error('Something went wrong')
+
+    // After (stable)
+    SplunkRum.getGlobalAttributes()
+    SplunkRum.reportError('Something went wrong')
+    ```
+
 ## 0.24.0
 
 - `@splunk/otel-web`

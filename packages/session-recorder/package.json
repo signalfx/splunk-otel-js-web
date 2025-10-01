@@ -1,7 +1,17 @@
 {
 	"name": "@splunk/otel-web-session-recorder",
-	"version": "1.0.0-alpha.6",
+	"version": "1.0.0",
 	"description": "Session recorder for Splunk Observability",
+	"keywords": [
+		"splunk",
+		"session recorder",
+		"session replay",
+		"observability",
+		"monitoring",
+		"browser",
+		"web",
+		"user experience"
+	],
 	"repository": "github:signalfx/splunk-otel-js-browser",
 	"scripts": {
 		"build": "webpack --mode production --color",
