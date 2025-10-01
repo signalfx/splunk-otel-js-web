@@ -146,12 +146,6 @@ SplunkRum.init({
 | `instrumentations.webvitals`       | `boolean\|Config`                   | ❌       | `true`                     | Web Vitals collection                    |
 | `instrumentations.websocket`       | `boolean\|Config`                   | ❌       | `false`                    | WebSocket monitoring                     |
 | `instrumentations.xhr`             | `boolean\|Config`                   | ❌       | `true`                     | XMLHttpRequest monitoring                |
-| **Advanced Options**               |                                     |          |                            |                                          |
-| `context.async`                    | `boolean`                           | ❌       | `true`                     | Enable async tracking of span parents    |
-| `context.onBeforeContextStart`     | `function`                          | ❌       | -                          | Callback before context starts           |
-| `context.onBeforeContextEnd`       | `function`                          | ❌       | -                          | Callback before context ends             |
-| `spanProcessors`                   | `SpanProcessor[]`                   | ❌       | `[]`                       | Additional span processors               |
-| `tracer`                           | `WebTracerConfig`                   | ❌       | `{}`                       | Configuration passed to web tracer       |
 
 ### Complete Configuration Example
 
@@ -216,21 +210,6 @@ SplunkRum.init({
 		socketio: false,
 		visibility: false,
 		websocket: false,
-
-		// Advanced configurations
-		fetch: {
-			propagateTraceHeaderCorsUrls: [/^https:\/\/api\.example\.com/],
-		},
-		interactions: {
-			eventNames: ['click', 'submit', 'keydown'],
-		},
-	},
-
-	// Advanced options
-	context: {
-		async: true,
-		onBeforeContextStart: () => console.log('Context starting'),
-		onBeforeContextEnd: () => console.log('Context ending'),
 	},
 
 	// Development
