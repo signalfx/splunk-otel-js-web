@@ -188,6 +188,8 @@ interface SensitivityRule {
 
 // Example usage
 SplunkSessionRecorder.init({
+	realm: 'us1',
+	rumAccessToken: 'YOUR_RUM_ACCESS_TOKEN',
 	sensitivityRules: [
 		{ rule: 'mask', selector: '.sensitive-data' },
 		{ rule: 'exclude', selector: '.payment-form' },
@@ -213,6 +215,8 @@ interface PackAssetsConfig {
 
 // Example usage
 SplunkSessionRecorder.init({
+	realm: 'us1',
+	rumAccessToken: 'YOUR_RUM_ACCESS_TOKEN',
 	features: {
 		packAssets: {
 			fonts: true,
