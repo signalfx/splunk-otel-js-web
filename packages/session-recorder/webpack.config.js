@@ -34,6 +34,22 @@ const getBaseConfig = (env, argv) => {
 				frozen: true,
 			},
 		},
+		module: {
+			rules: [
+				{
+					generator: {
+						filename: 'background-service.html',
+					},
+					test: /\.html$/,
+					type: 'asset/resource',
+				},
+				{
+					enforce: 'pre',
+					test: /\.js$/,
+					use: ['source-map-loader'],
+				},
+			],
+		},
 		resolve: {
 			extensions: ['.ts', '.js', '.json'],
 		},
@@ -46,6 +62,7 @@ const browserConfig = (env, argv) => {
 		...baseConfig,
 		module: {
 			rules: [
+				...baseConfig.module.rules,
 				{
 					exclude: /node_modules/,
 					test: /\.tsx?$/,
@@ -65,11 +82,6 @@ const browserConfig = (env, argv) => {
 							},
 						},
 					},
-				},
-				{
-					enforce: 'pre',
-					test: /\.js$/,
-					use: ['source-map-loader'],
 				},
 			],
 		},
@@ -126,16 +138,12 @@ const cjsConfig = (env, argv) => {
 		...baseConfig,
 		module: {
 			rules: [
+				...baseConfig.module.rules,
 				{
 					exclude: /node_modules/,
 					loader: 'ts-loader',
 					options: { configFile: 'tsconfig.cjs.json' },
 					test: /\.ts$/,
-				},
-				{
-					enforce: 'pre',
-					test: /\.js$/,
-					use: ['source-map-loader'],
 				},
 			],
 		},
@@ -170,16 +178,12 @@ const esmConfig = (env, argv) => {
 		},
 		module: {
 			rules: [
+				...baseConfig.module.rules,
 				{
 					exclude: /node_modules/,
 					loader: 'ts-loader',
 					options: { configFile: 'tsconfig.esm.json' },
 					test: /\.ts$/,
-				},
-				{
-					enforce: 'pre',
-					test: /\.js$/,
-					use: ['source-map-loader'],
 				},
 			],
 		},

@@ -21,6 +21,8 @@ import { suppressTracing } from '@opentelemetry/core'
 import { BatchLogProcessor, convert } from '../batch-log-processor'
 import { SplunkRumRecorderConfig } from '../index'
 import { log } from '../log'
+import { isBoolean, isString } from '../type-guards'
+import { VERSION } from '../version'
 import { Segment, SessionReplay, SessionReplayConfig } from './cdn-module'
 import { getSplunkRecorderConfig } from './config'
 
@@ -74,9 +76,21 @@ export class Recorder {
 			...getSplunkRecorderConfig(initRecorderConfig),
 		}
 
+		let backgroundServiceSrc = this.config.features?.backgroundServiceSrc
+		const backgroundService = this.config.features?.backgroundService
+		if (backgroundService !== undefined) {
+			if (isBoolean(backgroundService)) {
+				backgroundServiceSrc = backgroundService
+					? `https://cdn.signalfx.com/o11y-gdi-rum/v${VERSION}/background-service.html`
+					: undefined
+			} else if (isString(backgroundService)) {
+				backgroundServiceSrc = backgroundService
+			}
+		}
+
 		this.sessionReplay = new SessionReplay({
 			features: {
-				backgroundServiceSrc: this.config.features?.backgroundServiceSrc,
+				backgroundServiceSrc: backgroundServiceSrc,
 				cacheAssets: this.config.features?.cacheAssets ?? false,
 				canvas: this.config.features?.canvas ?? false,
 				iframes: this.config.features?.iframes ?? false,
