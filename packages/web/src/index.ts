@@ -269,25 +269,30 @@ export const SplunkRum: SplunkOtelWebType = {
 			return
 		}
 
-		_deregisterInstrumentations?.()
-		_deregisterInstrumentations = undefined
+		try {
+			_deregisterInstrumentations?.()
+			_deregisterInstrumentations = undefined
 
-		_deinitSessionTracking?.()
-		_deinitSessionTracking = undefined
+			_deinitSessionTracking?.()
+			_deinitSessionTracking = undefined
 
-		_sessionStateUnsubscribe?.()
-		this.sessionManager?.stop()
+			_sessionStateUnsubscribe?.()
+			this.sessionManager?.stop()
 
-		void this.provider?.shutdown()
-		delete this.provider
+			void this.provider?.shutdown()
+			delete this.provider
 
-		eventTarget = undefined
+			eventTarget = undefined
 
-		diag.disable()
-		unregisterGlobal()
+			unregisterGlobal()
 
-		forgetAnonymousId()
-		inited = false
+			forgetAnonymousId()
+		} catch (error) {
+			diag.warn('[Splunk]: SplunkRum.deinit() encountered an error during cleanup.', { error })
+		} finally {
+			inited = false
+			diag.disable()
+		}
 	},
 
 	getAnonymousId() {
@@ -296,10 +301,18 @@ export const SplunkRum: SplunkOtelWebType = {
 		}
 
 		if (userTrackingMode === 'anonymousTracking') {
-			return getOrCreateAnonymousId({
-				domain: this._processedOptions.cookieDomain,
-				useLocalStorage: this._processedOptions.persistence === 'localStorage',
-			})
+			try {
+				return getOrCreateAnonymousId({
+					domain: this._processedOptions.cookieDomain,
+					useLocalStorage: this._processedOptions.persistence === 'localStorage',
+				})
+			} catch (error) {
+				diag.warn(
+					'[Splunk]: SplunkRum.getAnonymousId() encountered an error while trying to get anonymous ID.',
+					{ error },
+				)
+				return
+			}
 		}
 	},
 
@@ -312,7 +325,13 @@ export const SplunkRum: SplunkOtelWebType = {
 			return
 		}
 
-		return this.sessionManager?.getSessionId()
+		try {
+			return this.sessionManager?.getSessionId()
+		} catch (error) {
+			diag.warn('[Splunk]: SplunkRum.getSessionId() encountered an error while trying to get session ID.', {
+				error,
+			})
+		}
 	},
 
 	getSessionState() {
@@ -320,16 +339,23 @@ export const SplunkRum: SplunkOtelWebType = {
 			return
 		}
 
-		return this.sessionManager?.getSessionState()
+		try {
+			return this.sessionManager?.getSessionState()
+		} catch (error) {
+			diag.warn('[Splunk]: SplunkRum.getSessionState() encountered an error while trying to get session state.', {
+				error,
+			})
+		}
 	},
 
 	init: function (options) {
 		userTrackingMode = options.user?.trackingMode ?? 'noTracking'
 
 		if (typeof window !== 'object') {
-			throw new TypeError(
-				'SplunkRum Error: This library is intended to run in a browser environment. Please ensure the code is evaluated within a browser context.',
+			console.warn(
+				'[Splunk]: SplunkRum.init() - Error: This library is intended to run in a browser environment. Please ensure the code is evaluated within a browser context.',
 			)
+			return
 		}
 
 		// "env" based config still a bad idea for web
@@ -339,212 +365,226 @@ export const SplunkRum: SplunkOtelWebType = {
 		}
 
 		if (inited) {
-			console.warn('SplunkRum already initialized.')
+			diag.warn('[Splunk]: SplunkRum.init() - already initialized.')
 			return
 		}
 
-		// touches otel globals, our registerGlobal requires this first
-		diag.setLogger(new DiagConsoleLogger(), options?.debug ? DiagLogLevel.DEBUG : DiagLogLevel.WARN)
+		try {
+			// touches otel globals, our registerGlobal requires this first
+			diag.setLogger(new DiagConsoleLogger(), options?.debug ? DiagLogLevel.DEBUG : DiagLogLevel.WARN)
 
-		const registered = registerGlobal(this)
-		if (!registered) {
-			return
-		}
-
-		if (typeof Symbol !== 'function') {
-			diag.error('SplunkRum: browser not supported, disabling instrumentation.')
-			return
-		}
-
-		if (options.disableBots && isBot(navigator.userAgent)) {
-			this.disabledByBotDetection = true
-			diag.error('SplunkRum will not be initialized, bots are not allowed.')
-			return
-		}
-
-		if (options.disableAutomationFrameworks && navigator.webdriver) {
-			this.disabledByAutomationFrameworkDetection = true
-			diag.error('SplunkRum will not be initialized, automation frameworks are not allowed.')
-			return
-		}
-
-		eventTarget = new InternalEventTarget()
-
-		const processedOptions: SplunkOtelWebConfigInternal = Object.assign({}, OPTIONS_DEFAULTS, options, {
-			exporter: Object.assign({}, OPTIONS_DEFAULTS.exporter, options.exporter),
-		})
-
-		if (
-			!processedOptions.persistence ||
-			(processedOptions.persistence && !isPersistenceType(processedOptions.persistence))
-		) {
-			diag.error(
-				`Invalid persistence flag: The value for "persistence" must be either "cookie", "localStorage", or omitted entirely, but was: ${processedOptions.persistence}`,
-			)
-			return
-		}
-
-		this._processedOptions = processedOptions
-
-		if (processedOptions.realm) {
-			if (processedOptions.beaconEndpoint) {
-				diag.warn('SplunkRum: Realm value ignored (beaconEndpoint has been specified)')
-			} else {
-				processedOptions.beaconEndpoint = getBeaconEndpointForRealm(processedOptions)
-			}
-		}
-
-		if (!processedOptions.debug) {
-			if (!processedOptions.beaconEndpoint) {
-				diag.error("SplunkRum.init( {beaconEndpoint: 'https://something'} ) is required.")
-				diag.error('SplunkRum will not be initialized.')
-				return
-			} else if (!processedOptions.beaconEndpoint.startsWith('https') && !processedOptions.allowInsecureBeacon) {
-				diag.error('Not using https is unsafe, if you want to force it use allowInsecureBeacon option.')
-				diag.error('SplunkRum will not be initialized.')
+			const registered = registerGlobal(this)
+			if (!registered) {
 				return
 			}
 
-			if (!processedOptions.rumAccessToken) {
-				diag.warn('rumAccessToken will be required in the future')
+			if (typeof Symbol !== 'function') {
+				diag.warn('[Splunk]: SplunkRum.init() - browser not supported, disabling instrumentation.')
+				return
 			}
-		}
 
-		const instanceId = generateId(64)
-
-		const { applicationName, deploymentEnvironment, ignoreUrls, version } = processedOptions
-		// enabled: false prevents registerInstrumentations from enabling instrumentations in constructor
-		// they will be enabled in registerInstrumentations
-		const pluginDefaults = { enabled: false, ignoreUrls }
-
-		const resourceAttrs: ResourceAttributes = {
-			...SDK_INFO,
-			'app': applicationName,
-			[SemanticResourceAttributes.TELEMETRY_SDK_NAME]: '@splunk/otel-web',
-			[SemanticResourceAttributes.TELEMETRY_SDK_VERSION]: VERSION,
-			// Splunk specific attributes
-			'splunk.rumVersion': VERSION,
-			'splunk.scriptInstance': instanceId,
-		}
-
-		if (BrowserInstanceService.id) {
-			resourceAttrs['browser.instance.id'] = BrowserInstanceService.id
-		}
-
-		const syntheticsRunId = getSyntheticsRunId()
-		if (syntheticsRunId) {
-			resourceAttrs[SYNTHETICS_RUN_ID_ATTRIBUTE] = syntheticsRunId
-		}
-
-		const storageManager = new StorageManager({
-			domain: processedOptions.cookieDomain,
-			sessionPersistence: processedOptions.persistence,
-		})
-		this.sessionManager = new SessionManager(storageManager)
-		this.sessionManager.start()
-		_sessionStateUnsubscribe = this.sessionManager.subscribe(({ currentState, previousState }) => {
-			if (!previousState) {
-				eventTarget?.emit('session-changed', { sessionId: currentState.id })
-			} else if (previousState.id !== currentState.id) {
-				eventTarget?.emit('session-changed', { sessionId: currentState.id })
+			if (options.disableBots && isBot(navigator.userAgent)) {
+				this.disabledByBotDetection = true
+				diag.warn('[Splunk]: SplunkRum.init() - will not be initialized, bots are not allowed.')
+				return
 			}
-		})
 
-		this.resource = new Resource(resourceAttrs)
+			if (options.disableAutomationFrameworks && navigator.webdriver) {
+				this.disabledByAutomationFrameworkDetection = true
+				diag.warn(
+					'[Splunk]: SplunkRum.init() - will not be initialized, automation frameworks are not allowed.',
+				)
+				return
+			}
 
-		this.attributesProcessor = new SplunkSpanAttributesProcessor(
-			this.sessionManager,
-			{
-				...(deploymentEnvironment
-					? { 'deployment.environment': deploymentEnvironment, 'environment': deploymentEnvironment }
-					: {}),
-				...(version ? { 'app.version': version } : {}),
-				...processedOptions.globalAttributes,
-			},
-			this._processedOptions.persistence === 'localStorage',
-			() => userTrackingMode,
-			processedOptions.cookieDomain,
-		)
+			eventTarget = new InternalEventTarget()
 
-		const spanProcessors: SpanProcessor[] = [this.attributesProcessor]
-
-		if (processedOptions.beaconEndpoint) {
-			const exporter = buildExporter(processedOptions)
-			const spanProcessor = processedOptions.spanProcessor.factory(exporter, {
-				maxExportBatchSize: processedOptions.bufferSize,
-				scheduledDelayMillis: processedOptions.bufferTimeout,
+			const processedOptions: SplunkOtelWebConfigInternal = Object.assign({}, OPTIONS_DEFAULTS, options, {
+				exporter: Object.assign({}, OPTIONS_DEFAULTS.exporter, options.exporter),
 			})
-			spanProcessors.push(spanProcessor)
-			this._processor = spanProcessor
-		}
 
-		if (processedOptions.debug) {
-			spanProcessors.push(new SimpleSpanProcessor(new ConsoleSpanExporter()))
-		}
-
-		if (options.spanProcessors) {
-			spanProcessors.push(...options.spanProcessors)
-		}
-
-		const provider = new SplunkWebTracerProvider({
-			...processedOptions.tracer,
-			resource: this.resource,
-			sampler: new SplunkSamplerWrapper({
-				decider: processedOptions.tracer?.sampler ?? new AlwaysOnSampler(),
-			}),
-			spanProcessors,
-		})
-
-		const instrumentations = INSTRUMENTATIONS.map(({ confKey, disable, Instrument }) => {
-			const pluginConf = getPluginConfig(processedOptions.instrumentations[confKey], pluginDefaults, disable)
-			if (pluginConf) {
-				const instrumentation =
-					Instrument === SplunkLongTaskInstrumentation
-						? new Instrument(pluginConf, options)
-						: // @ts-expect-error Can't mark in any way that processedOptions.instrumentations[confKey] is of specifc config type
-							new Instrument(pluginConf)
-
-				if (confKey === ERROR_INSTRUMENTATION_NAME && instrumentation instanceof SplunkErrorInstrumentation) {
-					_errorInstrumentation = instrumentation
-				}
-
-				if (confKey === 'postload' && instrumentation instanceof SplunkPostDocLoadResourceInstrumentation) {
-					_postDocLoadInstrumentation = instrumentation
-				}
-
-				return instrumentation
+			if (
+				!processedOptions.persistence ||
+				(processedOptions.persistence && !isPersistenceType(processedOptions.persistence))
+			) {
+				diag.error(
+					`[Splunk]: SplunkRum.init() - Invalid persistence flag: The value for "persistence" must be either "cookie", "localStorage", or omitted entirely, but was: ${processedOptions.persistence}`,
+				)
+				return
 			}
 
-			return null
-			// eslint-disable-next-line unicorn/prefer-native-coercion-functions
-		}).filter((a): a is Exclude<typeof a, null> => Boolean(a))
+			this._processedOptions = processedOptions
 
-		window.addEventListener('visibilitychange', () => {
-			// this condition applies when the page is hidden or when it's closed
-			// see for more details: https://developers.google.com/web/updates/2018/07/page-lifecycle-api#developer-recommendations-for-each-state
-			if (document.visibilityState === 'hidden') {
-				void this._processor?.forceFlush()
+			if (processedOptions.realm) {
+				if (processedOptions.beaconEndpoint) {
+					diag.warn('[Splunk]: SplunkRum.init() - Realm value ignored (beaconEndpoint has been specified)')
+				} else {
+					processedOptions.beaconEndpoint = getBeaconEndpointForRealm(processedOptions)
+				}
 			}
-		})
 
-		provider.register({
-			contextManager: new SplunkContextManager({
-				...processedOptions.context,
-				onBeforeContextEnd: () => _postDocLoadInstrumentation?.onBeforeContextChange(),
-				onBeforeContextStart: () => _postDocLoadInstrumentation?.onBeforeContextChange(),
-			}),
-		})
+			if (!processedOptions.debug) {
+				if (!processedOptions.beaconEndpoint) {
+					diag.error(
+						'[Splunk]: SplunkRum.init() - beaconEndpoint is required. SplunkRum will not be initialized.',
+					)
+					return
+				} else if (
+					!processedOptions.beaconEndpoint.startsWith('https') &&
+					!processedOptions.allowInsecureBeacon
+				) {
+					diag.error(
+						'[Splunk]: SplunkRum.init() - beaconEndpoint not using https is unsafe, if you want to force it use allowInsecureBeacon option. SplunkRum will not be initialized.',
+					)
+					return
+				}
 
-		// After context manager registration so instrumentation event listeners are affected accordingly
-		_deregisterInstrumentations = registerInstrumentations({
-			instrumentations,
-			tracerProvider: provider,
-		})
+				if (!processedOptions.rumAccessToken) {
+					diag.warn('[Splunk]: SplunkRum.init() - rumAccessToken will be required in the future')
+				}
+			}
 
-		this.provider = provider
+			const instanceId = generateId(64)
 
-		inited = true
-		diag.info('SplunkRum.init() complete')
+			const { applicationName, deploymentEnvironment, ignoreUrls, version } = processedOptions
+			// enabled: false prevents registerInstrumentations from enabling instrumentations in constructor
+			// they will be enabled in registerInstrumentations
+			const pluginDefaults = { enabled: false, ignoreUrls }
+
+			const resourceAttrs: ResourceAttributes = {
+				...SDK_INFO,
+				'app': applicationName,
+				[SemanticResourceAttributes.TELEMETRY_SDK_NAME]: '@splunk/otel-web',
+				[SemanticResourceAttributes.TELEMETRY_SDK_VERSION]: VERSION,
+				// Splunk specific attributes
+				'splunk.rumVersion': VERSION,
+				'splunk.scriptInstance': instanceId,
+			}
+
+			if (BrowserInstanceService.id) {
+				resourceAttrs['browser.instance.id'] = BrowserInstanceService.id
+			}
+
+			const syntheticsRunId = getSyntheticsRunId()
+			if (syntheticsRunId) {
+				resourceAttrs[SYNTHETICS_RUN_ID_ATTRIBUTE] = syntheticsRunId
+			}
+
+			const storageManager = new StorageManager({
+				domain: processedOptions.cookieDomain,
+				sessionPersistence: processedOptions.persistence,
+			})
+			this.sessionManager = new SessionManager(storageManager)
+			this.sessionManager.start()
+			_sessionStateUnsubscribe = this.sessionManager.subscribe(({ currentState, previousState }) => {
+				if (!previousState) {
+					eventTarget?.emit('session-changed', { sessionId: currentState.id })
+				} else if (previousState.id !== currentState.id) {
+					eventTarget?.emit('session-changed', { sessionId: currentState.id })
+				}
+			})
+
+			this.resource = new Resource(resourceAttrs)
+
+			this.attributesProcessor = new SplunkSpanAttributesProcessor(
+				this.sessionManager,
+				{
+					...(deploymentEnvironment
+						? { 'deployment.environment': deploymentEnvironment, 'environment': deploymentEnvironment }
+						: {}),
+					...(version ? { 'app.version': version } : {}),
+					...processedOptions.globalAttributes,
+				},
+				this._processedOptions.persistence === 'localStorage',
+				() => userTrackingMode,
+				processedOptions.cookieDomain,
+			)
+
+			const spanProcessors: SpanProcessor[] = [this.attributesProcessor]
+
+			if (processedOptions.beaconEndpoint) {
+				const exporter = buildExporter(processedOptions)
+				const spanProcessor = processedOptions.spanProcessor.factory(exporter, {
+					maxExportBatchSize: processedOptions.bufferSize,
+					scheduledDelayMillis: processedOptions.bufferTimeout,
+				})
+				spanProcessors.push(spanProcessor)
+				this._processor = spanProcessor
+			}
+
+			if (processedOptions.debug) {
+				spanProcessors.push(new SimpleSpanProcessor(new ConsoleSpanExporter()))
+			}
+
+			if (options.spanProcessors) {
+				spanProcessors.push(...options.spanProcessors)
+			}
+
+			const provider = new SplunkWebTracerProvider({
+				...processedOptions.tracer,
+				resource: this.resource,
+				sampler: new SplunkSamplerWrapper({
+					decider: processedOptions.tracer?.sampler ?? new AlwaysOnSampler(),
+				}),
+				spanProcessors,
+			})
+
+			const instrumentations = INSTRUMENTATIONS.map(({ confKey, disable, Instrument }) => {
+				const pluginConf = getPluginConfig(processedOptions.instrumentations[confKey], pluginDefaults, disable)
+				if (pluginConf) {
+					const instrumentation =
+						Instrument === SplunkLongTaskInstrumentation
+							? new Instrument(pluginConf, options)
+							: // @ts-expect-error Can't mark in any way that processedOptions.instrumentations[confKey] is of specifc config type
+								new Instrument(pluginConf)
+
+					if (
+						confKey === ERROR_INSTRUMENTATION_NAME &&
+						instrumentation instanceof SplunkErrorInstrumentation
+					) {
+						_errorInstrumentation = instrumentation
+					}
+
+					if (confKey === 'postload' && instrumentation instanceof SplunkPostDocLoadResourceInstrumentation) {
+						_postDocLoadInstrumentation = instrumentation
+					}
+
+					return instrumentation
+				}
+
+				return null
+				// eslint-disable-next-line unicorn/prefer-native-coercion-functions
+			}).filter((a): a is Exclude<typeof a, null> => Boolean(a))
+
+			window.addEventListener('visibilitychange', () => {
+				// this condition applies when the page is hidden or when it's closed
+				// see for more details: https://developers.google.com/web/updates/2018/07/page-lifecycle-api#developer-recommendations-for-each-state
+				if (document.visibilityState === 'hidden') {
+					void this._processor?.forceFlush()
+				}
+			})
+
+			provider.register({
+				contextManager: new SplunkContextManager({
+					...processedOptions.context,
+					onBeforeContextEnd: () => _postDocLoadInstrumentation?.onBeforeContextChange(),
+					onBeforeContextStart: () => _postDocLoadInstrumentation?.onBeforeContextChange(),
+				}),
+			})
+
+			// After context manager registration so instrumentation event listeners are affected accordingly
+			_deregisterInstrumentations = registerInstrumentations({
+				instrumentations,
+				tracerProvider: provider,
+			})
+
+			this.provider = provider
+
+			inited = true
+			diag.info('SplunkRum.init() complete')
+		} catch (error) {
+			diag.warn('[Splunk]: SplunkRum.init() - Failed to initialize due to internal exception.', { error })
+		}
 	},
 
 	get inited(): boolean {
@@ -554,43 +594,69 @@ export const SplunkRum: SplunkOtelWebType = {
 	ParentBasedSampler,
 
 	removeEventListener(name, callback): void {
-		eventTarget?.removeEventListener(name, callback)
+		try {
+			eventTarget?.removeEventListener(name, callback)
+		} catch (error) {
+			diag.warn(
+				'[Splunk]: SplunkRum.removeEventListener() encountered an error while trying to remove event listener.',
+				{ error },
+			)
+		}
 	},
 
 	async reportError(error: string | Event | Error | ErrorEvent, context: SpanContext = {}) {
 		if (!inited) {
-			diag.debug('SplunkRum not inited')
+			diag.warn(
+				'[Splunk]: SplunkRum.reportError() - Splunk RUM agent is not initialized. Call SplunkRum.init() first. Error will not be reported.',
+			)
 			return
 		}
 
 		if (!_errorInstrumentation) {
-			diag.error('SplunkRum.reportError error was reported, but error instrumentation is disabled.')
+			diag.warn(
+				'[Splunk]: SplunkRum.reportError() - Error instrumentation is disabled. Enable it in configuration to report errors.',
+			)
 			return
 		}
 
 		if (!error) {
-			diag.warn('SplunkRum.reportError called with no argument - ignoring.')
+			diag.warn(
+				'[Splunk]: SplunkRum.reportError() - Called with empty or null error argument. Provide a valid error to report.',
+			)
 			return
 		}
 
 		if (!_errorInstrumentation.isValidErrorArg(error)) {
 			diag.warn(
-				'SplunkRum.reportError called with invalid argument, ignoring. Expected string, Error, ErrorEvent or Event.',
+				'[Splunk]: SplunkRum.reportError() - Invalid error argument type. Expected string, Error, ErrorEvent, or Event object. Error will not be reported.',
 			)
 			return
 		}
 
-		const parsedAdditionalAttributes = getValidAttributes(context)
-		await _errorInstrumentation.report('SplunkRum.reportError', error, parsedAdditionalAttributes)
+		try {
+			const parsedAdditionalAttributes = getValidAttributes(context)
+			await _errorInstrumentation.report('SplunkRum.reportError', error, parsedAdditionalAttributes)
+		} catch (caughtError) {
+			diag.warn('[Splunk]: SplunkRum.reportError() - Failed to report error due to internal exception.', {
+				error: caughtError,
+			})
+		}
 	},
 
 	SessionBasedSampler,
 
 	setGlobalAttributes(this: SplunkOtelWebType, attributes?: Attributes) {
-		this.attributesProcessor?.setGlobalAttributes(attributes)
-		eventTarget?.emit('global-attributes-changed', {
-			attributes: this.attributesProcessor?.getGlobalAttributes() || {},
-		})
+		try {
+			this.attributesProcessor?.setGlobalAttributes(attributes)
+			eventTarget?.emit('global-attributes-changed', {
+				attributes: this.attributesProcessor?.getGlobalAttributes() || {},
+			})
+		} catch (error) {
+			diag.warn(
+				'[Splunk]: SplunkRum.setGlobalAttributes() - Failed to set global attributes due to internal error. Check attribute format and values.',
+				{ error },
+			)
+		}
 	},
 
 	setUserTrackingMode(mode: UserTrackingMode) {

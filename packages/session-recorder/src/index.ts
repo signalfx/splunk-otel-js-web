@@ -90,123 +90,133 @@ const SplunkRumRecorder = {
 			return
 		}
 
-		if (typeof window !== 'object') {
-			throw new TypeError(
-				'SplunkSessionRecorder Error: This library is intended to run in a browser environment. Please ensure the code is evaluated within a browser context.',
-			)
-		}
+		try {
+			log.setLoggingLevel(config.debug ? 'debug' : 'warn')
 
-		log.setLoggingLevel(config.debug ? 'debug' : 'warn')
-
-		let tracerProvider: BasicTracerProvider | ProxyTracerProvider = trace.getTracerProvider() as BasicTracerProvider
-		if (tracerProvider && 'getDelegate' in tracerProvider) {
-			tracerProvider = (tracerProvider as unknown as ProxyTracerProvider).getDelegate() as BasicTracerProvider
-		}
-
-		const SplunkRum = getGlobal<SplunkOtelWebType>()
-		if (!SplunkRum) {
-			log.error('SplunkRum must be initialized before session recorder.')
-			return
-		}
-
-		if (SplunkRum.disabledByBotDetection) {
-			log.error('SplunkSessionRecorder will not be initialized, bots are not allowed.')
-			return
-		}
-
-		if (SplunkRum.disabledByAutomationFrameworkDetection) {
-			log.error('SplunkSessionRecorder will not be initialized, automation frameworks are not allowed.')
-			return
-		}
-
-		const splunkRumVersion = getSplunkRumVersion()
-		if (!splunkRumVersion || splunkRumVersion !== VERSION) {
-			log.error(
-				`SplunkSessionRecorder will not be initialized. Version mismatch with SplunkRum (SplunkRum: ${splunkRumVersion ?? 'N/A'}, SplunkSessionRecorder: ${VERSION})`,
-			)
-			return
-		}
-
-		if (!SplunkRum.resource || !SplunkRum.sessionManager) {
-			log.error('Splunk OTEL Web must be initialized before session recorder.')
-			return
-		}
-
-		const resource = SplunkRum.resource
-
-		const { beaconEndpoint, realm, rumAccessToken, ...initRecorderConfig } = config
-
-		// Mark recorded session as splunk
-		if (SplunkRum.provider) {
-			SplunkRum.provider.resource.attributes['splunk.sessionReplay'] = 'splunk'
-		}
-
-		tracer = trace.getTracer('splunk.rr-web', VERSION)
-		const span = tracer.startSpan('record init')
-
-		// Check if sampler is ignoring this
-		if (!span.isRecording()) {
-			return
-		}
-
-		span.end()
-
-		let exportUrl = beaconEndpoint
-		if (realm) {
-			if (exportUrl) {
-				log.warn('SplunkSessionRecorder: Realm value ignored (beaconEndpoint has been specified)')
-			} else {
-				exportUrl = `https://rum-ingest.${realm}.signalfx.com/v1/rumreplay`
-			}
-		}
-
-		if (!exportUrl) {
-			log.error(
-				'SplunkSessionRecorder could not determine `exportUrl`, please ensure that `realm` or `beaconEndpoint` is specified and try again',
-			)
-			return
-		}
-
-		if (rumAccessToken) {
-			exportUrl += `?auth=${rumAccessToken}`
-		}
-
-		const exporter = new OTLPLogExporter({
-			beaconUrl: exportUrl,
-			getResourceAttributes() {
-				const newAttributes: JsonObject = {
-					...resource.attributes,
-					'splunk.rumSessionId': SplunkRum.getSessionId() ?? '',
-				}
-				const anonymousId = SplunkRum.getAnonymousId()
-				if (anonymousId) {
-					newAttributes['user.anonymous_id'] = anonymousId
-				}
-
-				return newAttributes
-			},
-			sessionId: SplunkRum.getSessionId() ?? '',
-			usePersistentExportQueue: config.persistFailedReplayData ?? true,
-		})
-		const processor = new BatchLogProcessor(exporter)
-
-		sessionStateUnsubscribe = SplunkRum.sessionManager.subscribe(({ currentState, previousState }) => {
-			if (!previousState) {
+			if (typeof window !== 'object') {
+				log.warn(
+					'[Splunk]: SplunkSessionRecorder.init() - Library requires browser environment. Ensure code runs in browser context.',
+				)
 				return
 			}
 
-			if (previousState.id !== currentState.id) {
-				recorder?.stop()
-				recorder?.destroy()
-				recorder = new Recorder({
-					initRecorderConfig,
-					processor,
-				})
-				recorder.start()
+			let tracerProvider: BasicTracerProvider | ProxyTracerProvider =
+				trace.getTracerProvider() as BasicTracerProvider
+			if (tracerProvider && 'getDelegate' in tracerProvider) {
+				tracerProvider = (tracerProvider as unknown as ProxyTracerProvider).getDelegate() as BasicTracerProvider
 			}
-		})
 
-		try {
+			const SplunkRum = getGlobal<SplunkOtelWebType>()
+			if (!SplunkRum) {
+				log.error(
+					'[Splunk]: SplunkSessionRecorder.init() - SplunkRum must be initialized first. Call SplunkRum.init() before initializing session recorder.',
+				)
+				return
+			}
+
+			if (SplunkRum.disabledByBotDetection) {
+				log.error('[Splunk]: SplunkSessionRecorder.init() - Session recording disabled due to bot detection.')
+				return
+			}
+
+			if (SplunkRum.disabledByAutomationFrameworkDetection) {
+				log.error(
+					'[Splunk]: SplunkSessionRecorder.init() - Session recording disabled due to automation framework detection.',
+				)
+				return
+			}
+
+			const splunkRumVersion = getSplunkRumVersion()
+			if (!splunkRumVersion || splunkRumVersion !== VERSION) {
+				log.error(
+					`[Splunk]: SplunkSessionRecorder.init() - Version mismatch detected. SplunkRum: ${splunkRumVersion ?? 'N/A'}, SplunkSessionRecorder: ${VERSION}. Ensure compatible versions are used.`,
+				)
+				return
+			}
+
+			if (!SplunkRum.resource || !SplunkRum.sessionManager) {
+				log.error(
+					'[Splunk]: SplunkSessionRecorder.init() - SplunkRum initialization incomplete. Resource and session manager are required.',
+				)
+				return
+			}
+
+			const resource = SplunkRum.resource
+
+			const { beaconEndpoint, realm, rumAccessToken, ...initRecorderConfig } = config
+
+			// Mark recorded session as splunk
+			if (SplunkRum.provider) {
+				SplunkRum.provider.resource.attributes['splunk.sessionReplay'] = 'splunk'
+			}
+
+			tracer = trace.getTracer('splunk.rr-web', VERSION)
+			const span = tracer.startSpan('record init')
+
+			// Check if sampler is ignoring this
+			if (!span.isRecording()) {
+				return
+			}
+
+			span.end()
+
+			let exportUrl = beaconEndpoint
+			if (realm) {
+				if (exportUrl) {
+					log.warn(
+						'[Splunk]: SplunkSessionRecorder.init() - Realm value ignored because beaconEndpoint is already specified.',
+					)
+				} else {
+					exportUrl = `https://rum-ingest.${realm}.signalfx.com/v1/rumreplay`
+				}
+			}
+
+			if (!exportUrl) {
+				log.error(
+					'[Splunk]: SplunkSessionRecorder.init() - Cannot determine export URL. Specify either realm or beaconEndpoint in configuration.',
+				)
+				return
+			}
+
+			if (rumAccessToken) {
+				exportUrl += `?auth=${rumAccessToken}`
+			}
+
+			const exporter = new OTLPLogExporter({
+				beaconUrl: exportUrl,
+				getResourceAttributes() {
+					const newAttributes: JsonObject = {
+						...resource.attributes,
+						'splunk.rumSessionId': SplunkRum.getSessionId() ?? '',
+					}
+					const anonymousId = SplunkRum.getAnonymousId()
+					if (anonymousId) {
+						newAttributes['user.anonymous_id'] = anonymousId
+					}
+
+					return newAttributes
+				},
+				sessionId: SplunkRum.getSessionId() ?? '',
+				usePersistentExportQueue: config.persistFailedReplayData ?? true,
+			})
+			const processor = new BatchLogProcessor(exporter)
+
+			sessionStateUnsubscribe = SplunkRum.sessionManager.subscribe(({ currentState, previousState }) => {
+				if (!previousState) {
+					return
+				}
+
+				if (previousState.id !== currentState.id) {
+					recorder?.stop()
+					recorder?.destroy()
+					recorder = new Recorder({
+						initRecorderConfig,
+						processor,
+					})
+					recorder.start()
+				}
+			})
+
 			recorder = new Recorder({
 				initRecorderConfig,
 				processor,
@@ -214,13 +224,17 @@ const SplunkRumRecorder = {
 			recorder.start()
 			inited = true
 		} catch (error) {
-			log.error('SplunkSessionRecorder: Failed to initialize recorder', error)
+			log.error(
+				'[Splunk]: SplunkSessionRecorder.init() - Failed to initialize session recorder. Check browser compatibility and permissions.',
+				{ error },
+			)
 		}
 	},
 
 	get inited(): boolean {
 		return Boolean(inited)
 	},
+
 	resume(): void {
 		if (!inited) {
 			return
@@ -229,18 +243,33 @@ const SplunkRumRecorder = {
 		const oldPaused = paused
 		paused = false
 		if (!oldPaused) {
-			void recorder?.resume()
-			tracer.startSpan('record resume').end()
+			try {
+				void recorder?.resume()
+				tracer.startSpan('record resume').end()
+			} catch (error) {
+				log.warn(
+					'[Splunk]: SplunkSessionRecorder.resume() - Failed to resume recording session due to internal error.',
+					{ error },
+				)
+			}
 		}
 	},
+
 	stop(): void {
 		if (!inited) {
 			return
 		}
 
 		if (paused) {
-			recorder?.stop()
-			tracer.startSpan('record stop').end()
+			try {
+				recorder?.stop()
+				tracer.startSpan('record stop').end()
+			} catch (error) {
+				log.warn(
+					'[Splunk]: SplunkSessionRecorder.stop() - Failed to stop recording session due to internal error.',
+					{ error },
+				)
+			}
 		}
 
 		paused = true
