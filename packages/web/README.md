@@ -133,6 +133,8 @@ SplunkRum.init({
 | `user.trackingMode`                | `'noTracking'\|'anonymousTracking'` | ❌       | `'noTracking'`             | User tracking behavior                   |
 | `exporter.otlp`                    | `boolean`                           | ❌       | `false`                    | Use OTLP format instead of Zipkin        |
 | `exporter.onAttributesSerializing` | `function`                          | ❌       | -                          | Transform attributes before export       |
+| `privacy.maskAllText`              | `boolean`                           | ❌       | `true`                     | Mask all text from text nodes            |
+| `privacy.sensitivityRules`         | `Array<SensitivityRule>`            | ❌       | `[]`                       | Rules for text sensitivity by selector   |
 | **Instrumentations**               |                                     |          |                            |                                          |
 | `instrumentations.connectivity`    | `boolean\|Config`                   | ❌       | `false`                    | Network connectivity monitoring          |
 | `instrumentations.document`        | `boolean\|Config`                   | ❌       | `true`                     | Document load instrumentation            |
@@ -146,6 +148,32 @@ SplunkRum.init({
 | `instrumentations.webvitals`       | `boolean\|Config`                   | ❌       | `true`                     | Web Vitals collection                    |
 | `instrumentations.websocket`       | `boolean\|Config`                   | ❌       | `false`                    | WebSocket monitoring                     |
 | `instrumentations.xhr`             | `boolean\|Config`                   | ❌       | `true`                     | XMLHttpRequest monitoring                |
+
+### Privacy Configuration
+
+The `privacy` configuration allows you to control how text content is collected from user interactions:
+
+- **`maskAllText`**: When `true` (default), all text from text nodes is masked unless an unmask rule applies
+- **`sensitivityRules`**: Array of rules that determine text sensitivity based on CSS selectors. Rules are applied in order, with later rules overriding earlier ones
+
+**Rule Types:**
+
+- `mask`: Mask text content in matching elements
+- `unmask`: Unmask text content in matching elements
+- `exclude`: Exclude matching elements from text collection entirely
+
+**Example:**
+
+```typescript
+privacy: {
+  maskAllText: true,
+  sensitivityRules: [
+    { rule: 'unmask', selector: '.public-content' },
+    { rule: 'exclude', selector: '.sensitive-data' },
+    { rule: 'mask', selector: '.public-content .private-info' }
+  ]
+}
+```
 
 ### Complete Configuration Example
 
@@ -179,6 +207,20 @@ SplunkRum.init({
 	// User tracking
 	user: {
 		trackingMode: 'anonymousTracking',
+	},
+
+	// Privacy configuration
+	privacy: {
+		maskAllText: true, // Mask all text from text nodes by default
+		sensitivityRules: [
+			// Unmask text in specific elements
+			{ rule: 'unmask', selector: '.public-content' },
+			{ rule: 'unmask', selector: 'h1, h2, h3' },
+			// Exclude sensitive elements entirely
+			{ rule: 'exclude', selector: '.sensitive-data' },
+			// Override previous rules for specific cases
+			{ rule: 'mask', selector: '.public-content .private-info' },
+		],
 	},
 
 	// Export options

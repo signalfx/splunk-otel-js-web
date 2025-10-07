@@ -20,6 +20,9 @@ import * as api from '@opentelemetry/api'
 import { InstrumentationBase, isWrapped } from '@opentelemetry/instrumentation'
 import { getElementXPath } from '@opentelemetry/sdk-trace-web'
 
+import { PrivacyManager, PrivacyManagerConfig } from '../../managers/privacy/privacy-manager'
+import { isNode, SplunkOtelWebConfig } from '../../types'
+import { getTextFromNode } from '../../utils/index'
 import { AttributeNames } from './enums/attribute-names'
 import { SpanData } from './internal-types'
 import { EventName, ShouldPreventSpanCreation, UserInteractionInstrumentationConfig } from './types'
@@ -49,6 +52,8 @@ export class UserInteractionInstrumentation<
 	// for event bubbling
 	private _eventsSpanMap: WeakMap<Event, api.Span> = new WeakMap<Event, api.Span>()
 
+	private _privacyManager: PrivacyManager
+
 	private _shouldPreventSpanCreation: ShouldPreventSpanCreation
 
 	private _spansData = new WeakMap<api.Span, SpanData>()
@@ -61,13 +66,21 @@ export class UserInteractionInstrumentation<
 
 	private _zonePatched?: boolean
 
-	constructor(config: T) {
+	constructor(config: T, otelConfig: SplunkOtelWebConfig) {
 		super('@opentelemetry/instrumentation-user-interaction', VERSION, config)
 		this._eventNames = new Set(config?.eventNames ?? DEFAULT_EVENT_NAMES)
 		this._shouldPreventSpanCreation =
 			typeof config?.shouldPreventSpanCreation === 'function'
 				? config.shouldPreventSpanCreation
 				: defaultShouldPreventSpanCreation
+
+		const privacy: PrivacyManagerConfig = {
+			maskAllText: true,
+			sensitivityRules: [],
+			...otelConfig.privacy,
+		}
+
+		this._privacyManager = new PrivacyManager(privacy)
 	}
 
 	/**
@@ -295,32 +308,37 @@ export class UserInteractionInstrumentation<
 				// filter out null (typeof null === 'object')
 				const once = useCapture && typeof useCapture === 'object' && useCapture.once
 				const patchedListener = function (this: Element, ...args: [evt: Event]) {
-					let parentSpan: api.Span | undefined
-					const event: Event | undefined = args[0]
+					const event = args[0]
+					const parentSpan = instrumentation._eventsSpanMap.get(event)
 					const target = event?.target
-					if (event) {
-						parentSpan = instrumentation._eventsSpanMap.get(event)
-					}
 
 					if (once) {
 						instrumentation.removePatchedListener(this, type, listener)
 					}
 
 					const span = instrumentation._createSpan(target, type, parentSpan)
-					if (span) {
-						if (event) {
-							instrumentation._eventsSpanMap.set(event, span)
-						}
 
-						return api.context.with(api.trace.setSpan(api.context.active(), span), () => {
-							const result = instrumentation._invokeListener(listener, this, args)
-							// no zone so end span immediately
-							span.end()
-							return result
-						})
-					} else {
+					if (!span) {
 						return instrumentation._invokeListener(listener, this, args)
 					}
+
+					if (event.type === 'click' && event.target && isNode(event.target)) {
+						const textValue = getTextFromNode(
+							event.target,
+							(node) => !instrumentation._privacyManager.shouldMaskTextNode(node),
+						)
+
+						span.setAttribute('target_text', textValue || `<${event.target.nodeName.toLowerCase()}>`)
+					}
+
+					instrumentation._eventsSpanMap.set(event, span)
+
+					return api.context.with(api.trace.setSpan(api.context.active(), span), () => {
+						const result = instrumentation._invokeListener(listener, this, args)
+						// no zone so end span immediately
+						span.end()
+						return result
+					})
 				}
 				if (instrumentation.addPatchedListener(this, type, listener, patchedListener)) {
 					return original.call(this, type, patchedListener, useCapture)
