@@ -73,8 +73,7 @@ declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.5.1/sess
 
 	type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 
-	export const SensitivityRuleTypesArray = ['mask', 'unmask', 'exclude'] as const
-	export type SensitivityRuleType = (typeof SensitivityRuleTypesArray)[number]
+	export type SensitivityRuleType = 'mask' | 'unmask' | 'exclude'
 
 	export interface SensitivityRule {
 		rule: SensitivityRuleType
