@@ -160,23 +160,24 @@ SplunkSessionRecorder.init({
 
 ## ⚙️ Configuration Options
 
-| Option                    | Type                                     | Required | Default  | Description                                                |
-| ------------------------- | ---------------------------------------- | -------- | -------- | ---------------------------------------------------------- |
-| `realm`                   | `string`                                 | ✅       | -        | Splunk realm (us0, us1, eu0, etc.)                         |
-| `rumAccessToken`          | `string`                                 | ✅       | -        | RUM access token for authentication                        |
-| `beaconEndpoint`          | `string`                                 | ❌       | -        | Custom destination URL for captured data (overrides realm) |
-| `debug`                   | `boolean`                                | ❌       | `false`  | Enable debug logging                                       |
-| `persistFailedReplayData` | `boolean`                                | ❌       | `true`   | Store failed uploads in localStorage for retry             |
-| `maskAllInputs`           | `boolean`                                | ❌       | `true`   | Mask all form input values                                 |
-| `maskAllText`             | `boolean`                                | ❌       | `false`  | Mask all text content                                      |
-| `sensitivityRules`        | `SensitivityRule[]`                      | ❌       | `[]`     | Custom rules for masking, unmasking, or excluding elements |
-| `features.canvas`         | `boolean`                                | ❌       | `false`  | Record canvas elements                                     |
-| `features.iframes`        | `boolean`                                | ❌       | `false`  | Record iframe content                                      |
-| `features.video`          | `boolean`                                | ❌       | `false`  | Record video elements                                      |
-| `features.cacheAssets`    | `boolean`                                | ❌       | `true`   | Cache assets for replay                                    |
-| `features.packAssets`     | `boolean \| PackAssetsConfig`            | ❌       | `true`   | Pack assets to reduce payload size                         |
-| `maxExportIntervalMs`     | `number`                                 | ❌       | `5000`   | Maximum interval between data exports (milliseconds)       |
-| `logLevel`                | `'debug' \| 'info' \| 'warn' \| 'error'` | ❌       | `'warn'` | Logging level for session recorder                         |
+| Option                       | Type                                     | Required | Default  | Description                                                |
+| ---------------------------- | ---------------------------------------- | -------- | -------- | ---------------------------------------------------------- |
+| `realm`                      | `string`                                 | ✅       | -        | Splunk realm (us0, us1, eu0, etc.)                         |
+| `rumAccessToken`             | `string`                                 | ✅       | -        | RUM access token for authentication                        |
+| `beaconEndpoint`             | `string`                                 | ❌       | -        | Custom destination URL for captured data (overrides realm) |
+| `debug`                      | `boolean`                                | ❌       | `false`  | Enable debug logging                                       |
+| `persistFailedReplayData`    | `boolean`                                | ❌       | `true`   | Store failed uploads in localStorage for retry             |
+| `maskAllInputs`              | `boolean`                                | ❌       | `true`   | Mask all form input values                                 |
+| `maskAllText`                | `boolean`                                | ❌       | `false`  | Mask all text content                                      |
+| `sensitivityRules`           | `SensitivityRule[]`                      | ❌       | `[]`     | Custom rules for masking, unmasking, or excluding elements |
+| `features.backgroundService` | `string \| boolean`                      | ❌       | `false`  | Custom URL for background service worker                   |
+| `features.canvas`            | `boolean`                                | ❌       | `false`  | Record canvas elements                                     |
+| `features.iframes`           | `boolean`                                | ❌       | `false`  | Record iframe content                                      |
+| `features.video`             | `boolean`                                | ❌       | `false`  | Record video elements                                      |
+| `features.cacheAssets`       | `boolean`                                | ❌       | `true`   | Cache assets for replay                                    |
+| `features.packAssets`        | `boolean \| PackAssetsConfig`            | ❌       | `true`   | Pack assets to reduce payload size                         |
+| `maxExportIntervalMs`        | `number`                                 | ❌       | `5000`   | Maximum interval between data exports (milliseconds)       |
+| `logLevel`                   | `'debug' \| 'info' \| 'warn' \| 'error'` | ❌       | `'warn'` | Logging level for session recorder                         |
 
 ### Sensitivity Rules Configuration
 
@@ -198,6 +199,43 @@ SplunkSessionRecorder.init({
 })
 ```
 
+### Background Service Configuration
+
+The background service is used to offload session replay processing to a 3rd party iframe (separate thread), improving performance by preventing the session replay logic from blocking the main thread.
+**It is required for image compression** - the background service handles compressing captured images to reduce payload size during session replay.
+
+**When to customize:**
+
+- Self-hosting the session recorder files
+- Using a custom Content Security Policy (CSP)
+- Deploying behind a firewall that blocks CDN access
+
+```typescript
+// Example: Self-hosted background service - ensure the domain is different from the main domain to ensure the background service is loaded in a separate thread.
+SplunkSessionRecorder.init({
+	realm: 'us1',
+	rumAccessToken: 'YOUR_RUM_ACCESS_TOKEN',
+	features: {
+		backgroundService: 'https://my-other-domain.com/assets/background-service.html',
+	},
+})
+
+// Example: spunk domain
+// It will load an 3rd party iframe (background service) from this domain 'https://cdn.signalfx.com/o11y-gdi-rum/<version>/background-service.html'
+// Ensure you have this domain whitelisted in your CSP config
+SplunkSessionRecorder.init({
+	realm: 'us1',
+	rumAccessToken: 'YOUR_RUM_ACCESS_TOKEN',
+	features: {
+		backgroundService: true,
+	},
+})
+```
+
+> 💡 **Default behavior:** If not specified, asset processing is not offloaded and is handled on the main page thread.
+>
+> 📁 **File location:** When using npm installation, find `background-service.html` in `node_modules/@splunk/otel-web-session-recorder/dist/artifacts` to copy to your static assets or use `true` and load it from CDN.
+
 ### Asset Packing Configuration
 
 ```typescript
@@ -209,7 +247,7 @@ interface PackAssetsConfig {
 		| {
 				onlyViewportImages?: boolean // Only pack visible images
 				pack?: boolean // Enable image packing
-				quality?: number // JPEG quality (0-1)
+				quality?: number // JPEG quality (0-1). Only available when backgroundService is set, otherwise silently ignored
 		  }
 }
 
@@ -255,6 +293,7 @@ SplunkSessionRecorder.init({
 
 	// Feature Control
 	features: {
+		backgroundService: true,,
 		canvas: false, // Skip canvas recording for privacy
 		iframes: false, // Skip iframe content
 		video: false, // Skip video elements
@@ -310,6 +349,7 @@ interface SessionRecorderConfig {
 
 	// Feature Control
 	features?: {
+		backgroundService?: string | boolean
 		canvas?: boolean
 		iframes?: boolean
 		video?: boolean
