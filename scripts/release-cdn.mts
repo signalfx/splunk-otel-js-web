@@ -34,7 +34,11 @@ import {
 	uploadToS3,
 } from './utils/index.mjs'
 
-const CDN_LISTED_FILES = new Set(['splunk-otel-web.js', 'splunk-otel-web-session-recorder.js'])
+const CDN_LISTED_FILES = new Set([
+	'splunk-otel-web.js',
+	'splunk-otel-web-session-recorder.js',
+	'background-service.html',
+])
 const ARTIFACTS_DIR = './artifacts'
 const OWNER = process.env.GITHUB_OWNER ?? 'signalfx'
 const REPO = process.env.GITHUB_REPO ?? 'splunk-otel-js-web'
@@ -72,7 +76,7 @@ console.log('I will now process the files:')
 const cdnLinksByVersion: Record<string, string[]> = {}
 
 // Avoid accidental assets upload
-const allowedExtensions = ['.tgz', '.js', '.js.map', '.txt']
+const allowedExtensions = ['.tgz', '.js', '.js.map', '.txt', '.html']
 const assets = await fs.readdir(ARTIFACTS_DIR)
 const versions = getAllVersions(targetVersion)
 versions.forEach((version) => {
