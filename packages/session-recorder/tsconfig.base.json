@@ -10,7 +10,6 @@
 		"pretty": true,
 		"resolveJsonModule": true,
 		"target": "ES2017",
-		"types": ["./src/session-replay/cdn-module.d.ts"],
 		"skipLibCheck": true,
 		"strict": true
 	},

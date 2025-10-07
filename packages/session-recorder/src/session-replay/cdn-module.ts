@@ -16,6 +16,7 @@
  *
  */
 
+/// <reference types="./cdn-module-types.d.ts" preserve="true"  />
 export {
 	type ConfigFeatures,
 	type PackAssetsConfig,

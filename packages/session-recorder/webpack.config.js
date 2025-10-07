@@ -17,6 +17,7 @@
  */
 const path = require('node:path')
 
+const CopyWebpackPlugin = require('copy-webpack-plugin')
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin')
 const TerserPlugin = require('terser-webpack-plugin')
 
@@ -154,6 +155,16 @@ const cjsConfig = (env, argv) => {
 			},
 			path: path.resolve(__dirname, './dist/cjs'),
 		},
+		plugins: [
+			new CopyWebpackPlugin({
+				patterns: [
+					{
+						from: 'src/session-replay/cdn-module-types.d.ts',
+						to: 'session-replay/cdn-module-types.d.ts',
+					},
+				],
+			}),
+		],
 	}
 }
 
@@ -184,6 +195,16 @@ const esmConfig = (env, argv) => {
 			},
 			path: path.resolve(__dirname, './dist/esm'),
 		},
+		plugins: [
+			new CopyWebpackPlugin({
+				patterns: [
+					{
+						from: 'src/session-replay/cdn-module-types.d.ts',
+						to: 'session-replay/cdn-module-types.d.ts',
+					},
+				],
+			}),
+		],
 	}
 }
 
