@@ -15,7 +15,19 @@
  * limitations under the License.
  *
  */
-export * from './detect-latest'
-export * from './text'
-export * from './traverse'
-export * from './url'
+import { isScriptElement } from '../types'
+
+export const isAgentLoadedViaLatestTag = () => {
+	let isLatestTagUsed = false
+	try {
+		if (document.currentScript && isScriptElement(document.currentScript)) {
+			const src = document.currentScript.src
+			// Check for "latest" version in CDN URL
+			isLatestTagUsed = /\/o11y-gdi-rum\/latest\//i.test(src)
+		}
+	} catch {
+		// ignore
+	}
+
+	return isLatestTagUsed
+}

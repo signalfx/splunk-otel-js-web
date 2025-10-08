@@ -37,3 +37,19 @@ export function getSplunkRumVersion(): string | undefined {
 	// @ts-expect-error FIXME: Symbol type is not assignable to string
 	return globalThis[GLOBAL_OPENTELEMETRY_API_KEY]?.[GLOBAL_SPLUNK_RUM_VERSION_KEY]
 }
+
+export function parseVersion(version: string): {
+	exactVersion: string
+	majorVersion: string
+	minorVersion: string
+} {
+	// Remove prerelease tags like -beta.0, -alpha.5, -rc.1, etc.
+	const cleanVersion = version.split('-')[0]
+	const versionParts = cleanVersion.split('.')
+
+	return {
+		exactVersion: `v${cleanVersion}`,
+		majorVersion: `v${versionParts[0]}`,
+		minorVersion: `v${versionParts[0]}.${versionParts[1]}`,
+	}
+}

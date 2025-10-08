@@ -15,7 +15,19 @@
  * limitations under the License.
  *
  */
-export * from './detect-latest'
-export * from './text'
-export * from './traverse'
-export * from './url'
+
+export function parseVersion(version: string): {
+	exactVersion: string
+	majorVersion: string
+	minorVersion: string
+} {
+	// Remove prerelease tags like -beta.0, -alpha.5, -rc.1, etc.
+	const cleanVersion = version.split('-')[0]
+	const versionParts = cleanVersion.split('.')
+
+	return {
+		exactVersion: `v${cleanVersion}`,
+		majorVersion: `v${versionParts[0]}`,
+		minorVersion: `v${versionParts[0]}.${versionParts[1]}`,
+	}
+}
