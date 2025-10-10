@@ -48,6 +48,9 @@ export const isStyleElement = (
 ): maybeStyleElement is HTMLStyleElement | SVGStyleElement =>
 	maybeStyleElement !== null && (maybeStyleElement.nodeName === 'STYLE' || maybeStyleElement.nodeName === 'style')
 
+export const isScriptElement = (maybeScriptElement: Node): maybeScriptElement is HTMLScriptElement =>
+	maybeScriptElement.nodeName === 'SCRIPT'
+
 export const isScriptOrNoScriptElement = (
 	maybeScriptOrNoScriptElement: Node,
 ): maybeScriptOrNoScriptElement is HTMLScriptElement =>

@@ -65,15 +65,45 @@ SplunkRum.init({
 
 #### 1. Load the Script
 
+Choose a versioning strategy based on your needs:
+
+**Major Version Lock (Recommended)**
+
 ```html
+<!-- Locks to v1.x.x - gets latest minor and patch updates -->
+<script src="https://cdn.signalfx.com/o11y-gdi-rum/v1/splunk-otel-web.js" crossorigin="anonymous"></script>
+```
+
+**Minor Version Lock**
+
+```html
+<!-- Locks to v1.0.x - gets latest patch updates only -->
+<script src="https://cdn.signalfx.com/o11y-gdi-rum/v1.0/splunk-otel-web.js" crossorigin="anonymous"></script>
+```
+
+**Exact Version Lock**
+
+```html
+<!-- Locks to exact version v1.0.1 - no automatic updates -->
 <script
-	src="https://cdn.signalfx.com/o11y-gdi-rum/<version>/splunk-otel-web.js"
+	src="https://cdn.signalfx.com/o11y-gdi-rum/v1.0.1/splunk-otel-web.js"
 	crossorigin="anonymous"
 	integrity="sha384-<integrity>"
 ></script>
 ```
 
-> Replace `<version>` and `<integrity>` with the values from [GitHub Releases](https://github.com/signalfx/splunk-otel-js-web/releases).
+**Latest Version (Not Recommended)**
+
+```html
+<!-- Always pulls the latest released version -->
+<script src="https://cdn.signalfx.com/o11y-gdi-rum/latest/splunk-otel-web.js" crossorigin="anonymous"></script>
+```
+
+> ⚠️ **Warning:** Using `latest` automatically pulls the newest released version of the RUM agent, which may introduce breaking changes without notice. This can cause unexpected behavior in production. Use a version lock strategy instead.
+
+> 📖 For version numbers and integrity hashes, see [GitHub Releases](https://github.com/signalfx/splunk-otel-js-web/releases).
+>
+> 📚 For detailed CDN setup instructions, see the [official documentation](https://quickdraw.splunk.com/redirect/?product=Observability&location=github.rum.get.started&version=current).
 
 #### 2. Initialize RUM
 
@@ -95,8 +125,8 @@ SplunkRum.init({
 <html>
 	<head>
 		<title>My Web App</title>
-		<!-- Load Splunk RUM -->
-		<script src="https://cdn.signalfx.com/o11y-gdi-rum/latest/splunk-otel-web.js"></script>
+		<!-- Load Splunk RUM (using major version lock) -->
+		<script src="https://cdn.signalfx.com/o11y-gdi-rum/v1/splunk-otel-web.js" crossorigin="anonymous"></script>
 		<script>
 			SplunkRum.init({
 				realm: 'us1',

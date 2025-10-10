@@ -28,3 +28,6 @@ export function isNumber(value: unknown): value is number {
 export function isBoolean(value: unknown): value is boolean {
 	return typeof value == 'boolean'
 }
+
+export const isScriptElement = (maybeScriptElement: Node): maybeScriptElement is HTMLScriptElement =>
+	maybeScriptElement.nodeName === 'SCRIPT'

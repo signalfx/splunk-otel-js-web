@@ -73,7 +73,9 @@ import {
 import { forgetAnonymousId, getOrCreateAnonymousId } from './user-tracking'
 import { generateId, getPluginConfig } from './utils'
 import { getValidAttributes, SpanContext } from './utils/attributes'
+import { isAgentLoadedViaLatestTag } from './utils/detect-latest'
 import { isBot } from './utils/is-bot'
+import { parseVersion } from './utils/parse-version'
 import { VERSION } from './version'
 
 export { type SplunkExporterConfig } from './exporters/common'
@@ -241,6 +243,7 @@ let _errorInstrumentation: SplunkErrorInstrumentation | undefined
 let _postDocLoadInstrumentation: SplunkPostDocLoadResourceInstrumentation | undefined
 let eventTarget: InternalEventTarget | undefined
 let _sessionStateUnsubscribe: undefined | (() => void)
+const isLatestTagUsed = isAgentLoadedViaLatestTag() || true
 
 export const SplunkRum: SplunkOtelWebType = {
 	_internalInit: function (options: Partial<SplunkOtelWebConfigInternal>) {
@@ -372,6 +375,22 @@ export const SplunkRum: SplunkOtelWebType = {
 		try {
 			// touches otel globals, our registerGlobal requires this first
 			diag.setLogger(new DiagConsoleLogger(), options?.debug ? DiagLogLevel.DEBUG : DiagLogLevel.WARN)
+
+			if (isLatestTagUsed) {
+				const { exactVersion, majorVersion, minorVersion } = parseVersion(VERSION)
+				const cdnBase = 'https://cdn.signalfx.com/o11y-gdi-rum'
+
+				diag.warn(
+					'[Splunk]: You are using the "latest" version of splunk-otel-web.js. ' +
+						'This automatically pulls the newest released version, which may introduce breaking changes without notice. ' +
+						'This can cause unexpected behavior in production environments. ' +
+						'Please use a version lock strategy instead:\n' +
+						`  - Major version lock (recommended): ${cdnBase}/${majorVersion}/splunk-otel-web.js\n` +
+						`  - Minor version lock:               ${cdnBase}/${minorVersion}/splunk-otel-web.js\n` +
+						`  - Exact version lock:               ${cdnBase}/${exactVersion}/splunk-otel-web.js\n\n` +
+						'See: https://help.splunk.com/en/splunk-observability-cloud/manage-data/instrument-front-end-applications/instrument-mobile-and-web-applications-for-splunk-rum/instrument-browser-based-web-applications-for-splunk-rum/installation#splunk-cdn-0',
+				)
+			}
 
 			const registered = registerGlobal(this)
 			if (!registered) {

@@ -22,10 +22,11 @@ import type { SplunkOtelWebType } from '@splunk/otel-web'
 import { JsonObject } from 'type-fest'
 
 import { BatchLogProcessor } from './batch-log-processor'
+import { isRecorderLoadedViaLatestTag } from './detect-latest'
 import { log } from './log'
 import OTLPLogExporter from './otlp-log-exporter'
 import { Recorder, RecorderPublicConfig } from './session-replay'
-import { getGlobal, getSplunkRumVersion } from './utils'
+import { getGlobal, getSplunkRumVersion, parseVersion } from './utils'
 import { VERSION } from './version'
 
 interface BasicTracerProvider extends TracerProvider {
@@ -73,6 +74,7 @@ let tracer: Tracer
 let paused = false
 let recorder: Recorder | undefined
 let sessionStateUnsubscribe: undefined | (() => void)
+const isLatestTagUsed = isRecorderLoadedViaLatestTag()
 
 const SplunkRumRecorder = {
 	deinit(): void {
@@ -92,6 +94,22 @@ const SplunkRumRecorder = {
 
 		try {
 			log.setLoggingLevel(config.debug ? 'debug' : 'warn')
+
+			if (isLatestTagUsed) {
+				const { exactVersion, majorVersion, minorVersion } = parseVersion(VERSION)
+				const cdnBase = 'https://cdn.signalfx.com/o11y-gdi-rum'
+
+				log.warn(
+					'[Splunk]: You are using the "latest" version of splunk-otel-web-session-recorder.js. ' +
+						'This automatically pulls the newest released version, which may introduce breaking changes without notice. ' +
+						'This can cause unexpected behavior in production environments. ' +
+						'Please use a version lock strategy instead:\n' +
+						`  - Major version lock (recommended): ${cdnBase}/${majorVersion}/splunk-otel-web-session-recorder.js\n` +
+						`  - Minor version lock:               ${cdnBase}/${minorVersion}/splunk-otel-web-session-recorder.js\n` +
+						`  - Exact version lock:               ${cdnBase}/${exactVersion}/splunk-otel-web-session-recorder.js\n\n` +
+						'See: https://help.splunk.com/en/splunk-observability-cloud/manage-data/instrument-front-end-applications/instrument-mobile-and-web-applications-for-splunk-rum/instrument-browser-based-web-applications-for-splunk-rum/installation#splunk-cdn-0',
+				)
+			}
 
 			if (typeof window !== 'object') {
 				log.warn(
