@@ -55,7 +55,7 @@
 		"@opentelemetry/semantic-conventions": "^1.25.1",
 		"core-js": "3.47.0",
 		"shimmer": "^1.2.1",
-		"web-vitals": "^3.5.2"
+		"web-vitals": "5.1.0"
 	},
 	"devDependencies": {
 		"@swc/core": "^1.15.3",

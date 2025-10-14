@@ -129,6 +129,7 @@ const INSTRUMENTATIONS = [
 	{ confKey: 'document', disable: false, Instrument: SplunkDocumentLoadInstrumentation },
 	{ confKey: 'xhr', disable: false, Instrument: SplunkXhrInstrumentation },
 	{ confKey: 'frustrationSignals', disable: false, Instrument: SplunkFrustrationSignalsInstrumentation },
+	{ confKey: 'webvitals', disable: false, Instrument: SplunkWebVitalsInstrumentation },
 	{ confKey: 'interactions', disable: false, Instrument: SplunkUserInteractionInstrumentation },
 	{ confKey: 'postload', disable: false, Instrument: SplunkPostDocLoadResourceInstrumentation },
 	{ confKey: 'fetch', disable: false, Instrument: SplunkFetchInstrumentation },
@@ -137,7 +138,6 @@ const INSTRUMENTATIONS = [
 	{ confKey: ERROR_INSTRUMENTATION_NAME, disable: false, Instrument: SplunkErrorInstrumentation },
 	{ confKey: 'visibility', disable: true, Instrument: SplunkPageVisibilityInstrumentation },
 	{ confKey: 'connectivity', disable: true, Instrument: SplunkConnectivityInstrumentation },
-	{ confKey: 'webvitals', disable: false, Instrument: SplunkWebVitalsInstrumentation },
 	{ confKey: 'socketio', disable: true, Instrument: SplunkSocketIoClientInstrumentation },
 ] as const
 

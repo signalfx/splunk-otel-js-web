@@ -17,7 +17,7 @@
  */
 
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
-import { Metric, onCLS, onFID, onINP, onLCP, ReportOpts } from 'web-vitals'
+import { Metric, onCLS, onINP, onLCP, ReportOpts } from 'web-vitals'
 
 import { VERSION } from '../version'
 
@@ -25,7 +25,6 @@ const MODULE_NAME = 'splunk-webvitals'
 
 export interface SplunkWebVitalsInstrumentationConfig extends InstrumentationConfig {
 	cls?: boolean | ReportOpts
-	fid?: boolean | ReportOpts
 	inp?: boolean | ReportOpts
 	lcp?: boolean | ReportOpts
 }
@@ -52,15 +51,6 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 		}
 
 		this.areCallbackAttached = true
-
-		if (this._config.fid !== false) {
-			onFID(
-				(metric) => {
-					this.reportMetric('fid', metric)
-				},
-				typeof this._config.fid === 'object' ? this._config.fid : undefined,
-			)
-		}
 
 		if (this._config.cls !== false) {
 			onCLS(
