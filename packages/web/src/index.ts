@@ -388,7 +388,7 @@ export const SplunkRum: SplunkOtelWebType = {
 						`  - Major version lock (recommended): ${cdnBase}/${majorVersion}/splunk-otel-web.js\n` +
 						`  - Minor version lock:               ${cdnBase}/${minorVersion}/splunk-otel-web.js\n` +
 						`  - Exact version lock:               ${cdnBase}/${exactVersion}/splunk-otel-web.js\n\n` +
-						'See: https://help.splunk.com/en/splunk-observability-cloud/manage-data/instrument-front-end-applications/instrument-mobile-and-web-applications-for-splunk-rum/instrument-browser-based-web-applications-for-splunk-rum/installation#splunk-cdn-0',
+						'See: https://quickdraw.splunk.com/redirect/?location=rum.browser.cdn&product=Observability&version=current',
 				)
 			}
 
