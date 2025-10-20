@@ -69,6 +69,11 @@ export class SplunkSpanAttributesProcessor implements SpanProcessor {
 		}
 
 		span.setAttribute('browser.instance.visibility_state', document.visibilityState)
+
+		// Remove 'unknown_service' service.name from resource
+		if (span.resource.attributes['service.name'] === 'unknown_service') {
+			delete span.resource.attributes['service.name']
+		}
 	}
 
 	setGlobalAttributes(attributes?: Attributes): void {
