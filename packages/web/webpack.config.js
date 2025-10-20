@@ -31,12 +31,14 @@ const getBaseConfig = (env, argv) => {
 			rules: [
 				{
 					exclude: /node_modules/,
-					test: /\.tsx?$/,
+					test: /\.(ts|js)$/,
 					use: [
 						{
 							loader: 'swc-loader',
 							options: {
 								env: {
+									coreJs: '3.42',
+									mode: 'usage',
 									targets: 'defaults, chrome >= 71, safari >= 12.1, firefox >= 65',
 								},
 								jsc: {

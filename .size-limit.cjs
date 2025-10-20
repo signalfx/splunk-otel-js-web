@@ -23,7 +23,7 @@ module.exports = [
 	},
 
 	{
-		limit: '48 kB',
+		limit: '80 kB',
 		name: 'artifacts/splunk-otel-web.js',
 		path: './packages/web/dist/artifacts/splunk-otel-web.js',
 	},
