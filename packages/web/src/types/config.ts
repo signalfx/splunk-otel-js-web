@@ -25,6 +25,7 @@ import { WebTracerConfig } from '@opentelemetry/sdk-trace-web'
 import {
 	SocketIoClientInstrumentationConfig,
 	SplunkErrorInstrumentationConfig,
+	SplunkFrustrationSignalsInstrumentationConfig,
 	SplunkPostDocLoadResourceInstrumentationConfig,
 	SplunkUserInteractionInstrumentationConfig,
 	SplunkWebVitalsInstrumentationConfig,
@@ -35,6 +36,7 @@ export interface SplunkOtelWebOptionsInstrumentations {
 	document?: boolean | InstrumentationConfig
 	errors?: boolean | SplunkErrorInstrumentationConfig
 	fetch?: boolean | FetchInstrumentationConfig
+	frustrationSignals?: boolean | SplunkFrustrationSignalsInstrumentationConfig
 	interactions?: boolean | SplunkUserInteractionInstrumentationConfig
 	longtask?: boolean | InstrumentationConfig
 	postload?: boolean | SplunkPostDocLoadResourceInstrumentationConfig
