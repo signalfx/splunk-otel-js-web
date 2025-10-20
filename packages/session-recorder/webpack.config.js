@@ -65,23 +65,25 @@ const browserConfig = (env, argv) => {
 				...baseConfig.module.rules,
 				{
 					exclude: /node_modules/,
-					test: /\.tsx?$/,
-					use: {
-						loader: 'swc-loader',
-						options: {
-							env: {
-								coreJs: '3.42',
-								mode: 'usage',
-								targets: 'defaults, chrome >= 71, safari >= 12.1, firefox >= 65',
-							},
-							jsc: {
-								externalHelpers: true,
-								parser: {
-									syntax: 'typescript',
+					test: /\.(ts|js)$/,
+					use: [
+						{
+							loader: 'swc-loader',
+							options: {
+								env: {
+									coreJs: '3.45.1',
+									mode: 'usage',
+									targets: ['defaults', 'chrome >= 71', 'firefox >= 65', 'safari >= 12.1'],
+								},
+								jsc: {
+									externalHelpers: true,
+									parser: {
+										syntax: 'typescript',
+									},
 								},
 							},
 						},
-					},
+					],
 				},
 			],
 		},

@@ -94,6 +94,10 @@ const SplunkRumRecorder = {
 
 		try {
 			log.setLoggingLevel(config.debug ? 'debug' : 'warn')
+			if (typeof globalThis === 'undefined') {
+				log.warn('[Splunk]: SplunkSessionRecorder is not supported in this browser.')
+				return
+			}
 
 			if (isLatestTagUsed) {
 				const { exactVersion, majorVersion, minorVersion } = parseVersion(VERSION)
