@@ -20,7 +20,7 @@ import * as api from '@opentelemetry/api'
 import { InstrumentationBase, isWrapped } from '@opentelemetry/instrumentation'
 import { getElementXPath } from '@opentelemetry/sdk-trace-web'
 
-import { PrivacyManager, PrivacyManagerConfig } from '../../managers/privacy/privacy-manager'
+import { PrivacyManager } from '../../managers/privacy/privacy-manager'
 import { isNode, SplunkOtelWebConfig } from '../../types'
 import { getTextFromNode } from '../../utils/index'
 import { AttributeNames } from './enums/attribute-names'
@@ -52,8 +52,6 @@ export class UserInteractionInstrumentation<
 	// for event bubbling
 	private _eventsSpanMap: WeakMap<Event, api.Span> = new WeakMap<Event, api.Span>()
 
-	private _privacyManager: PrivacyManager
-
 	private _shouldPreventSpanCreation: ShouldPreventSpanCreation
 
 	private _spansData = new WeakMap<api.Span, SpanData>()
@@ -66,21 +64,16 @@ export class UserInteractionInstrumentation<
 
 	private _zonePatched?: boolean
 
-	constructor(config: T, otelConfig: SplunkOtelWebConfig) {
+	constructor(
+		config: T,
+		private otelConfig: SplunkOtelWebConfig,
+	) {
 		super('@opentelemetry/instrumentation-user-interaction', VERSION, config)
 		this._eventNames = new Set(config?.eventNames ?? DEFAULT_EVENT_NAMES)
 		this._shouldPreventSpanCreation =
 			typeof config?.shouldPreventSpanCreation === 'function'
 				? config.shouldPreventSpanCreation
 				: defaultShouldPreventSpanCreation
-
-		const privacy: PrivacyManagerConfig = {
-			maskAllText: true,
-			sensitivityRules: [],
-			...otelConfig.privacy,
-		}
-
-		this._privacyManager = new PrivacyManager(privacy)
 	}
 
 	/**
@@ -325,7 +318,7 @@ export class UserInteractionInstrumentation<
 					if (event.type === 'click' && event.target && isNode(event.target)) {
 						const textValue = getTextFromNode(
 							event.target,
-							(node) => !instrumentation._privacyManager.shouldMaskTextNode(node),
+							(node) => !PrivacyManager.shouldMaskTextNode(node, instrumentation.otelConfig.privacy),
 						)
 
 						span.setAttribute('target_text', textValue || `<${event.target.nodeName.toLowerCase()}>`)
