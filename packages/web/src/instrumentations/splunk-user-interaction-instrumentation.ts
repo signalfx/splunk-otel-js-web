@@ -51,6 +51,23 @@ const ROUTING_INSTRUMENTATION_VERSION = '1'
 export interface SplunkUserInteractionInstrumentationConfig extends UserInteractionInstrumentationConfig {
 	events?: UserInteractionEventsConfig
 	ignoreUrls?: (string | RegExp)[]
+	rageClick?: {
+		/**
+		 * Number of clicks within the timeout to consider it a rage click
+		 * Defaults to 3
+		 */
+		count?: number
+		/**
+		 * CSS selectors to ignore for rage click detection
+		 * Defaults to []
+		 */
+		ignoreSelectors?: string[]
+		/**
+		 * Time window in seconds to consider multiple clicks as a rage click
+		 * Defaults to 1
+		 */
+		timeframeSeconds?: number
+	}
 }
 
 function isPatchableEventListner(listener: Parameters<EventTarget['addEventListener']>[1]) {

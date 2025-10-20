@@ -52,6 +52,10 @@ export class UserInteractionInstrumentation<
 	// for event bubbling
 	private _eventsSpanMap: WeakMap<Event, api.Span> = new WeakMap<Event, api.Span>()
 
+	private _lastClickTimes: number[] = []
+
+	private _otelConfig: SplunkOtelWebConfig
+
 	private _privacyManager: PrivacyManager
 
 	private _shouldPreventSpanCreation: ShouldPreventSpanCreation
@@ -80,6 +84,7 @@ export class UserInteractionInstrumentation<
 			...otelConfig.privacy,
 		}
 
+		this._otelConfig = otelConfig
 		this._privacyManager = new PrivacyManager(privacy)
 	}
 
@@ -323,6 +328,25 @@ export class UserInteractionInstrumentation<
 					}
 
 					if (event.type === 'click' && event.target && isNode(event.target)) {
+						const interactions = instrumentation._otelConfig.instrumentations?.interactions
+						if (typeof interactions === 'object' && typeof interactions?.rageClick === 'object') {
+							const currentTime = Date.now()
+							const { count = 3, ignoreSelectors = [], timeframeSeconds = 1 } = interactions.rageClick
+
+							instrumentation._lastClickTimes = instrumentation._lastClickTimes.filter(
+								(time) => currentTime - time < timeframeSeconds * 1000 /* convert to ms */,
+							)
+							instrumentation._lastClickTimes.push(currentTime)
+							if (instrumentation._lastClickTimes.length >= count) {
+								const ignored = ignoreSelectors.some((selector) =>
+									(event.target as Element).matches(selector),
+								)
+								if (!ignored) {
+									// TODO generate a special rage click span or event
+								}
+							}
+						}
+
 						const textValue = getTextFromNode(
 							event.target,
 							(node) => !instrumentation._privacyManager.shouldMaskTextNode(node),
