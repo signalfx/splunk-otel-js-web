@@ -37,9 +37,9 @@ const getBaseConfig = (env, argv) => {
 							loader: 'swc-loader',
 							options: {
 								env: {
-									coreJs: '3.42',
+									coreJs: '3.45.1',
 									mode: 'usage',
-									targets: 'defaults, chrome >= 71, safari >= 12.1, firefox >= 65',
+									targets: ['defaults', 'chrome >= 71', 'firefox >= 65', 'safari >= 12.1'],
 								},
 								jsc: {
 									externalHelpers: true,
