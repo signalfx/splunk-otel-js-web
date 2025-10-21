@@ -2,6 +2,22 @@
 
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
+## 1.1.0
+
+- `@splunk/otel-web`
+    - **Collect Text from Clicked Elements** [#1332](https://github.com/signalfx/splunk-otel-js-web/pull/1332)
+        - Click events now capture text content from the clicked elements with privacy-first defaults
+        - **Default Behavior**: By default, only the element's tag name is collected (e.g., `[Button]`), ensuring no sensitive information is captured
+        - **Masking & Unmasking**: Use `maskAllText` and `sensitiveRules` configuration options to control text capture behavior, similar to session replay functionality
+        - **Examples**:
+            - Default: `Clicked to '[Button]'` for `<button>Potentially sensitive text</button>`
+            - After explicitly unmasking: `Clicked to 'Potentially sensitive text'`
+        - See [documentation](https://help.splunk.com/en/splunk-observability-cloud/monitor-end-user-experience/real-user-monitoring/replay-user-sessions/record-browser-sessions) for details on masking configuration
+
+- `@splunk/otel-web-session-recorder`
+    - **Add browser compatibility guard and enable polyfills for session recorder CDN bundle** [#1450](https://github.com/signalfx/splunk-otel-js-web/pull/1450)
+        - Prevents session recorder initialization in unsupported browsers and enables automatic polyfill injection for the CDN bundle.
+
 ## 1.0.1
 
 - `@splunk/otel-web`
