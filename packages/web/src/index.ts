@@ -243,7 +243,7 @@ let _errorInstrumentation: SplunkErrorInstrumentation | undefined
 let _postDocLoadInstrumentation: SplunkPostDocLoadResourceInstrumentation | undefined
 let eventTarget: InternalEventTarget | undefined
 let _sessionStateUnsubscribe: undefined | (() => void)
-const isLatestTagUsed = isAgentLoadedViaLatestTag() || true
+const isLatestTagUsed = isAgentLoadedViaLatestTag()
 
 export const SplunkRum: SplunkOtelWebType = {
 	_internalInit: function (options: Partial<SplunkOtelWebConfigInternal>) {
