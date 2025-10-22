@@ -176,6 +176,49 @@ describe('SplunkZipkinExporter', () => {
 		expect(sentSpan.annotations).toHaveLength(2)
 	})
 
+	it('filters out not set service.name', () => {
+		exporter = new SplunkZipkinExporter({
+			url: 'https://localhost',
+			xhrSender: xhrSenderMock,
+		})
+
+		const dummySpan = buildDummySpan({
+			attributes: {
+				'http.url': 'https://example.com/resource.png',
+			},
+			name: 'asd',
+		})
+
+		exporter.export([dummySpan], () => {})
+		expect(xhrSenderMock).toHaveBeenCalledTimes(1)
+		const sendXhrArgs = xhrSenderMock.mock.calls[0]
+		const sentSpan = JSON.parse(sendXhrArgs[1])[0]
+
+		expect(sentSpan.tags['service.name']).toBeUndefined()
+	})
+
+	it('preserves set service.name', () => {
+		exporter = new SplunkZipkinExporter({
+			url: 'https://localhost',
+			xhrSender: xhrSenderMock,
+		})
+
+		const dummySpan = buildDummySpan({
+			attributes: {
+				'http.url': 'https://example.com/resource.png',
+				'service.name': 'my-service',
+			},
+			name: 'asd',
+		})
+
+		exporter.export([dummySpan], () => {})
+		expect(xhrSenderMock).toHaveBeenCalledTimes(1)
+		const sendXhrArgs = xhrSenderMock.mock.calls[0]
+		const sentSpan = JSON.parse(sendXhrArgs[1])[0]
+
+		expect(sentSpan.tags['service.name']).toBe('my-service')
+	})
+
 	it('allows hooking into serialization', () => {
 		exporter = new SplunkZipkinExporter({
 			onAttributesSerializing: (attributes) => ({
