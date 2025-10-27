@@ -131,7 +131,7 @@ const INSTRUMENTATIONS = [
 	{ confKey: 'fetch', disable: false, Instrument: SplunkFetchInstrumentation },
 	{ confKey: 'websocket', disable: true, Instrument: SplunkWebSocketInstrumentation },
 	{ confKey: 'longtask', disable: false, Instrument: SplunkLongTaskInstrumentation },
-	{ confKey: ERROR_INSTRUMENTATION_NAME, disable: false, Instrument: SplunkErrorInstrumentation },
+	// { confKey: ERROR_INSTRUMENTATION_NAME, disable: false, Instrument: SplunkErrorInstrumentation },
 	{ confKey: 'visibility', disable: true, Instrument: SplunkPageVisibilityInstrumentation },
 	{ confKey: 'connectivity', disable: true, Instrument: SplunkConnectivityInstrumentation },
 	{ confKey: 'webvitals', disable: false, Instrument: SplunkWebVitalsInstrumentation },
@@ -557,12 +557,12 @@ export const SplunkRum: SplunkOtelWebType = {
 							: // @ts-expect-error Can't mark in any way that processedOptions.instrumentations[confKey] is of specifc config type
 								new Instrument(pluginConf, options)
 
-					if (
-						confKey === ERROR_INSTRUMENTATION_NAME &&
-						instrumentation instanceof SplunkErrorInstrumentation
-					) {
-						_errorInstrumentation = instrumentation
-					}
+					// if (
+					// 	confKey === ERROR_INSTRUMENTATION_NAME &&
+					// 	instrumentation instanceof SplunkErrorInstrumentation
+					// ) {
+					// 	_errorInstrumentation = instrumentation
+					// }
 
 					if (confKey === 'postload' && instrumentation instanceof SplunkPostDocLoadResourceInstrumentation) {
 						_postDocLoadInstrumentation = instrumentation
@@ -583,12 +583,13 @@ export const SplunkRum: SplunkOtelWebType = {
 				}
 			})
 
+			console.error('with context provider')
 			provider.register({
-				contextManager: new SplunkContextManager({
-					...processedOptions.context,
-					onBeforeContextEnd: () => _postDocLoadInstrumentation?.onBeforeContextChange(),
-					onBeforeContextStart: () => _postDocLoadInstrumentation?.onBeforeContextChange(),
-				}),
+				// contextManager: new SplunkContextManager({
+				// 	...processedOptions.context,
+				// 	onBeforeContextEnd: () => _postDocLoadInstrumentation?.onBeforeContextChange(),
+				// 	onBeforeContextStart: () => _postDocLoadInstrumentation?.onBeforeContextChange(),
+				// }),
 			})
 
 			// After context manager registration so instrumentation event listeners are affected accordingly

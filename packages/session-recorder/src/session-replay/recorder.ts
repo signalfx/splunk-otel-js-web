@@ -125,6 +125,7 @@ export class Recorder {
 
 	start() {
 		if (document.visibilityState === 'visible') {
+			console.error('starting', { SessionReplay })
 			void this.sessionReplay.start()
 		}
 

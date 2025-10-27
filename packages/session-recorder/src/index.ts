@@ -88,6 +88,7 @@ const SplunkRumRecorder = {
 	},
 
 	init(config: SplunkRumRecorderConfig): void {
+		console.error('init session recorder', inited)
 		if (inited) {
 			return
 		}
@@ -177,9 +178,11 @@ const SplunkRumRecorder = {
 
 			// Check if sampler is ignoring this
 			if (!span.isRecording()) {
+				console.error('sampler returned false', { span, tracer })
 				return
 			}
 
+			console.error('span end')
 			span.end()
 
 			let exportUrl = beaconEndpoint
@@ -239,6 +242,7 @@ const SplunkRumRecorder = {
 				}
 			})
 
+			console.error('Starting new recorder')
 			recorder = new Recorder({
 				initRecorderConfig,
 				processor,
@@ -246,10 +250,7 @@ const SplunkRumRecorder = {
 			recorder.start()
 			inited = true
 		} catch (error) {
-			log.error(
-				'[Splunk]: SplunkSessionRecorder.init() - Failed to initialize session recorder. Check browser compatibility and permissions.',
-				{ error },
-			)
+			log.error('[Splunk]: SplunkSessionRecorder.init() - Failed to initialize session recorder.', { error })
 		}
 	},
 
