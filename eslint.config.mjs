@@ -321,6 +321,12 @@ const config = [
 		},
 	},
 	{
+		files: ['examples/electron/**/*.ts'],
+		rules: {
+			'@typescript-eslint/no-require-imports': 'off',
+		},
+	},
+	{
 		ignores: [
 			'**/dist/',
 			'**/node_modules/',
@@ -334,6 +340,7 @@ const config = [
 			'**/playwright-report/',
 			'**/artifacts/',
 			'examples/next-ssr-example/next-env.d.ts',
+			'examples/electron/.webpack/',
 		],
 	},
 ]

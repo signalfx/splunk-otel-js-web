@@ -45,7 +45,7 @@
 		"@types/node": "^24.7.0",
 		"ts-node": "^10.9.1",
 		"wait-on": "^9.0.1",
-		"webpack": "^5.102.0",
+		"webpack": "^5.102.1",
 		"webpack-cli": "^6.0.1"
 	},
 	"peerDependencies": {

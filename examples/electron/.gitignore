@@ -1,0 +1,7 @@
+# Environment variables (contains secrets)
+.env
+
+# Webpack build output
+.webpack
+
+out/
