@@ -83,4 +83,12 @@ test.describe('Privacy', () => {
 			path: '/privacy/privacy-unmask.ejs',
 		}),
 	)
+
+	test(
+		'privacy-length.ejs',
+		createTestFn({
+			expectedTargetText: 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstu...',
+			path: '/privacy/privacy-length.ejs',
+		}),
+	)
 })
