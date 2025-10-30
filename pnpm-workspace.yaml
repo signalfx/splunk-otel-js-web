@@ -1,11 +1,15 @@
 packages:
-    - examples/**/*
-    - packages/**/*
+  - examples/**/*
+  - packages/**/*
 
 onlyBuiltDependencies:
-    - '@splunk/otel'
-    - '@swc/core'
-    - core-js
-    - esbuild
-    - protobufjs
-    - sharp
+  - '@splunk/otel'
+  - '@swc/core'
+  - core-js
+  - electron
+  - electron-winstaller
+  - esbuild
+  - fs-xattr
+  - macos-alias
+  - protobufjs
+  - sharp

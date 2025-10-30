@@ -18,14 +18,26 @@
 import SplunkOtelWeb from '@splunk/otel-web'
 import SplunkSessionRecorder from '@splunk/otel-web-session-recorder'
 
+// Read configuration from environment variables (injected by webpack)
+const realm = process.env.SPLUNK_RUM_REALM
+const rumAccessToken = process.env.SPLUNK_RUM_ACCESS_TOKEN
+const applicationName = process.env.SPLUNK_RUM_APPLICATION_NAME || 'splunk-otel-electron-example'
+const deploymentEnvironment = process.env.SPLUNK_RUM_ENVIRONMENT || 'development'
+const debug = process.env.SPLUNK_RUM_DEBUG === 'true'
+
 SplunkOtelWeb.init({
-	applicationName: process.env.NEXT_PUBLIC_SPLUNK_RUM_APPLICATION_NAME,
-	beaconEndpoint: process.env.NEXT_PUBLIC_SPLUNK_RUM_BEACON_ENDPOINT,
-	deploymentEnvironment: process.env.NEXT_PUBLIC_SPLUNK_RUM_DEPLOYMENT_ENVIROMENT,
-	rumAccessToken: process.env.NEXT_PUBLIC_SPLUNK_RUM_ACCESS_TOKEN,
+	applicationName,
+	debug,
+	deploymentEnvironment,
+	persistence: 'localStorage',
+	realm,
+	rumAccessToken,
 })
 
 SplunkSessionRecorder.init({
-	beaconEndpoint: process.env.NEXT_PUBLIC_SPLUNK_RUM_SESSION_REPLAY_BEACON_ENDPOINT,
-	rumAccessToken: process.env.NEXT_PUBLIC_SPLUNK_RUM_ACCESS_TOKEN,
+	debug,
+	realm,
+	rumAccessToken,
 })
+
+console.log(`✅ Splunk RUM and Session Recorder initialized for Electron`)

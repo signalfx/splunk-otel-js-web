@@ -1,0 +1,101 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<title>Splunk RUM Electron Example</title>
+		<style>
+			body {
+				font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+				max-width: 800px;
+				margin: 40px auto;
+				padding: 20px;
+				line-height: 1.6;
+			}
+			.status {
+				background: #e8f5e9;
+				border-left: 4px solid #4caf50;
+				padding: 15px;
+				margin: 20px 0;
+				border-radius: 4px;
+			}
+			.demo-section {
+				margin: 30px 0;
+				padding: 20px;
+				border: 1px solid #e0e0e0;
+				border-radius: 8px;
+			}
+			button {
+				background: #1976d2;
+				color: white;
+				border: none;
+				padding: 10px 20px;
+				border-radius: 4px;
+				cursor: pointer;
+				font-size: 14px;
+				margin: 5px;
+			}
+			button:hover {
+				background: #1565c0;
+			}
+			input {
+				padding: 8px;
+				border: 1px solid #ccc;
+				border-radius: 4px;
+				margin: 5px;
+			}
+			.error-demo {
+				background: #ffebee;
+				border-left: 4px solid #f44336;
+			}
+		</style>
+	</head>
+	<body>
+		<h1>🚀 Splunk RUM Electron Example</h1>
+
+		<div class="status">
+			<strong>✅ Status:</strong> Splunk RUM and Session Recorder are active!<br />
+			<small>Open DevTools (View → Toggle Developer Tools) to see telemetry data.</small>
+		</div>
+
+		<div class="demo-section">
+			<h2>📊 Test User Interactions</h2>
+			<p>These interactions will be captured by Splunk RUM and Session Replay:</p>
+
+			<button id="clickBtn">Click Me!</button>
+			<button id="errorBtn" class="error-demo">Trigger Error</button>
+
+			<div style="margin-top: 20px">
+				<input type="text" id="nameInput" placeholder="Enter your name (masked in replay)" />
+				<input type="email" id="emailInput" placeholder="Email (masked)" />
+			</div>
+
+			<div
+				id="output"
+				style="margin-top: 20px; padding: 10px; background: #f5f5f5; border-radius: 4px; min-height: 50px"
+			>
+				<em>Interaction results will appear here...</em>
+			</div>
+		</div>
+
+		<script>
+			// Demo interaction handlers
+			let clickCount = 0
+			const output = document.getElementById('output')
+
+			document.getElementById('clickBtn').addEventListener('click', () => {
+				clickCount++
+				output.innerHTML = `<strong>Click Event!</strong> Button clicked ${clickCount} time(s). 🎉`
+			})
+
+			document.getElementById('errorBtn').addEventListener('click', () => {
+				output.innerHTML = '<strong>Triggering error...</strong>'
+				setTimeout(() => {
+					throw new Error('Demo error for testing RUM error tracking! This is intentional.')
+				}, 100)
+			})
+
+			// Log that the page is ready
+			console.log('✅ Demo page loaded and ready for testing')
+		</script>
+	</body>
+</html>

@@ -34,3 +34,5 @@ playwright/.cache/
 .turbo
 
 coverage
+
+examples/electron/.webpack
