@@ -14,12 +14,12 @@ runs:
         - name: Install pnpm
           uses: pnpm/action-setup@v4.1.0
           with:
-              version: 10.17.1
+              version: 10.20.0
 
         - name: Setup
           uses: actions/setup-node@v4.3.0
           with:
-              node-version: 22.17.0
+              node-version: 24.11.0
               registry-url: 'https://registry.npmjs.org'
               cache: 'pnpm'
 
