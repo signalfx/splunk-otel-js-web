@@ -169,8 +169,8 @@ importers:
         specifier: ^7.1.2
         version: 7.1.2(@rspack/core@1.6.0(@swc/helpers@0.5.17))(webpack@5.102.1)
       dotenv:
-        specifier: ^16.4.7
-        version: 16.6.1
+        specifier: ^17.2.3
+        version: 17.2.3
       electron:
         specifier: 39.0.0
         version: 39.0.0
@@ -3980,10 +3980,6 @@ packages:
     engines: {node: '>=10'}
     peerDependencies:
       webpack: ^4 || ^5
-
-  dotenv@16.6.1:
-    resolution: {integrity: sha512-uBq4egWHTcTt33a72vpSG0z3HnPuIl6NqYcTrKEg2azoEyl2hpW0zqlxysq2pK9HlDIHyHyakeYaYnSAwd8bow==}
-    engines: {node: '>=12'}
 
   dotenv@17.2.3:
     resolution: {integrity: sha512-JVUnt+DUIzu87TABbhPmNfVdBDt18BLOWjMUFJMSi/Qqg7NTYtabbvSNJGOJ7afbRuv9D/lngizHtP7QyLQ+9w==}
@@ -12047,8 +12043,6 @@ snapshots:
     dependencies:
       dotenv-defaults: 2.0.2
       webpack: 5.102.1
-
-  dotenv@16.6.1: {}
 
   dotenv@17.2.3: {}
 
