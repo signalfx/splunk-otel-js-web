@@ -27,7 +27,7 @@ describe('Observable', () => {
 
 	beforeEach(() => {
 		observable = new Observable<string>()
-		mockDiagError = vi.fn<(message: string, ...args: unknown[]) => void>()
+		mockDiagError = vi.fn()
 		vi.spyOn(diag, 'error').mockImplementation(mockDiagError)
 	})
 
