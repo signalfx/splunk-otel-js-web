@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Privacy</title>
+
+		<%- renderAgent({
+			privacy: {
+				maskAllText: true,
+				sensitivityRules: [{
+					rule: 'unmask',
+					selector: 'h1'
+				}]
+			}
+		}) %>
+	</head>
+	<body>
+		<h1>abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz</h1>
+		<script>
+			document.querySelector('h1')?.addEventListener('click', () => {})
+		</script>
+	</body>
+</html>

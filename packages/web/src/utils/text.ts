@@ -17,7 +17,7 @@
  */
 import { traverseDFS } from './traverse'
 
-export const MAX_CLICK_TEXT_LENGTH = 128
+export const MAX_CLICK_TEXT_LENGTH = 50
 
 export const trimClickText = (text: string) => {
 	if (text.length > MAX_CLICK_TEXT_LENGTH) {
