@@ -28,7 +28,7 @@ jobs:
 
             - name: Upload blob report to GitHub Actions Artifacts
               if: ${{ !cancelled() }}
-              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+              uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
               with:
                   name: blob-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
                   path: packages/integration-tests/blob-report
@@ -42,7 +42,7 @@ jobs:
               run: pnpm run test:unit --browser.name=${{ matrix.browser }}
 
             - name: Upload test:unit report
-              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+              uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
               if: ${{ !cancelled() && matrix.browser != 'edge' && matrix.browser != 'chrome' }}
               with:
                   name: vitest-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
@@ -74,7 +74,7 @@ jobs:
 
             - name: Upload blob report to GitHub Actions Artifacts
               if: ${{ !cancelled() }}
-              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+              uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
               with:
                   name: blob-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
                   path: packages/integration-tests/blob-report
@@ -84,7 +84,7 @@ jobs:
               run: pnpm run test:unit --browser.name=${{ matrix.browser }}
 
             - name: Upload test:unit report
-              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+              uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
               if: ${{ !cancelled() }}
               with:
                   name: vitest-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
@@ -105,7 +105,7 @@ jobs:
               uses: ./.github/actions/setup
 
             - name: Download blob reports from GitHub Actions Artifacts
-              uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+              uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53
               with:
                   path: packages/integration-tests/all-blob-reports
                   pattern: blob-report-*
@@ -116,7 +116,7 @@ jobs:
               working-directory: ./packages/integration-tests
 
             - name: Upload HTML report
-              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+              uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
               with:
                   name: playwright-report--attempt-${{ github.run_attempt }}
                   path: packages/integration-tests/playwright-report
