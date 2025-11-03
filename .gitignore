@@ -36,3 +36,4 @@ playwright/.cache/
 coverage
 
 examples/electron/.webpack
+examples/electron/out
