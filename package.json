@@ -37,9 +37,9 @@
 		"@types/ws": "^8.18.0",
 		"@typescript-eslint/eslint-plugin": "^8.46.0",
 		"@typescript-eslint/parser": "^8.46.0",
-		"@vitest/browser": "^3.2.3",
-		"@vitest/coverage-istanbul": "^3.2.3",
-		"@vitest/ui": "^3.2.3",
+		"@vitest/browser": "^4.0.6",
+		"@vitest/coverage-istanbul": "^4.0.6",
+		"@vitest/ui": "^4.0.6",
 		"dotenv": "^17.2.3",
 		"eslint": "^9.37.0",
 		"eslint-config-prettier": "^10.1.8",
@@ -59,7 +59,7 @@
 		"turbo": "^2.6.0",
 		"typescript": "^5.9.3",
 		"typescript-eslint": "^8.46.0",
-		"vitest": "^3.2.3",
+		"vitest": "^4.0.6",
 		"ws": "^8.18.3"
 	},
 	"packageManager": "pnpm@10.17.1"
