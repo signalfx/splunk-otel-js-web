@@ -22,7 +22,7 @@
 		"@electron-forge/plugin-fuses": "^7.10.2",
 		"@electron-forge/plugin-webpack": "^7.10.2",
 		"@electron-forge/shared-types": "^7.10.2",
-		"@electron/fuses": "^1.8.0",
+		"@electron/fuses": "^2.0.0",
 		"@timfish/webpack-asset-relocator-loader": "^0.1.0",
 		"css-loader": "^7.1.2",
 		"dotenv": "^16.4.7",
