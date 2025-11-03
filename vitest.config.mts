@@ -17,6 +17,7 @@
  */
 import path from 'node:path'
 
+import { playwright } from '@vitest/browser-playwright'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
@@ -51,7 +52,7 @@ export default defineConfig({
 								browser: 'webkit',
 							},
 						],
-						provider: 'playwright',
+						provider: playwright(),
 					},
 					globalSetup: ['./tests/global-setup.ts'],
 					include: ['**/*.test.ts'],

@@ -17,13 +17,13 @@
  */
 
 import { diag } from '@opentelemetry/api'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, Mock, vi } from 'vitest'
 
 import { Observable } from './observable'
 
 describe('Observable', () => {
 	let observable: Observable<string>
-	let mockDiagError: ReturnType<typeof vi.fn>
+	let mockDiagError: Mock
 
 	beforeEach(() => {
 		observable = new Observable<string>()

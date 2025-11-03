@@ -17,7 +17,7 @@
  */
 
 import { server } from '@vitest/browser/context'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, Mock, vi } from 'vitest'
 
 import { SESSION_EXPIRATION_COOKIE_SEC } from '../constants'
 import { SessionPersistence } from './base-storage-provider'
@@ -31,7 +31,7 @@ const validOptions = {
 describe('CookieStorageProvider', () => {
 	let provider: CookieStorageProvider
 	let setCookieNames: Set<string>
-	let cookieSetterSpy: ReturnType<typeof vi.spyOn>
+	let cookieSetterSpy: Mock
 
 	beforeEach(() => {
 		provider = new CookieStorageProvider()
