@@ -95,8 +95,7 @@ export class BatchLogProcessor {
 
 	private flushAll(): Promise<void> {
 		return new Promise((resolve, reject) => {
-			const promises: Promise<void>[] = []
-			promises.push(this.flushOneBatch())
+			const promises: Promise<void>[] = [this.flushOneBatch()]
 
 			Promise.all(promises)
 				.then(() => {

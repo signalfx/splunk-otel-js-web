@@ -166,9 +166,8 @@ export class Recorder {
 				'rr-web.event': eventI,
 				'rr-web.offset': this.logCounter,
 				'rr-web.total-chunks': totalC,
+				'segmentMetadata': JSON.stringify(emitContext.data.metadata),
 			}
-
-			dataToConvert['segmentMetadata'] = JSON.stringify(emitContext.data.metadata)
 
 			const logData = convert(decoder.decode(body.slice(start, end)), time, dataToConvert)
 

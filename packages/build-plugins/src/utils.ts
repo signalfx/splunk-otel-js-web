@@ -48,7 +48,7 @@ export async function computeSourceMapIdFromFile(sourceMapFilePath: string): Pro
 	return shaToSourceMapId(sha)
 }
 
-const SNIPPET_TEMPLATE = `;if (typeof window === 'object') { window.sourceMapIds = window.sourceMapIds || {}; let s = ''; try { throw new Error(); } catch (e) { s = (e.stack.match(/https?:\\/\\/[^\\s]+?(?::\\d+)?(?=:[\\d]+:[\\d]+)/) || [])[0]; } if (s) {window.sourceMapIds[s] = '__SOURCE_MAP_ID_PLACEHOLDER__';}};`
+const SNIPPET_TEMPLATE = String.raw`;if (typeof window === 'object') { window.sourceMapIds = window.sourceMapIds || {}; let s = ''; try { throw new Error(); } catch (e) { s = (e.stack.match(/https?:\/\/[^\s]+?(?::\d+)?(?=:[\d]+:[\d]+)/) || [])[0]; } if (s) {window.sourceMapIds[s] = '__SOURCE_MAP_ID_PLACEHOLDER__';}};`
 
 export function getCodeSnippet(sourceMapId: string): string {
 	return SNIPPET_TEMPLATE.replace('__SOURCE_MAP_ID_PLACEHOLDER__', sourceMapId)
