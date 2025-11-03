@@ -81,20 +81,13 @@ const migratePrivacyOptionsToSensitivityRules = ({
 		throwOnUnsupportedOption('Config option "maskInputOptions" cannot be migrated automatically.')
 	}
 
-	const rules: SensitivityRule[] = []
-
-	/* eslint-disable unicorn/prefer-single-call */
-	// Mask
-	rules.push(...migratePrivacyClass(maskTextClass, 'mask'))
-	rules.push(...migratePrivacySelector(maskTextSelector, 'mask'))
-
-	// Block
-	rules.push(...migratePrivacyClass(blockClass, 'exclude'))
-	rules.push(...migratePrivacySelector(blockSelector, 'exclude'))
-
-	// Ignore
-	rules.push(...migratePrivacyClass(ignoreClass, 'mask'))
-	/* eslint-enable unicorn/prefer-single-call */
+	const rules: SensitivityRule[] = [
+		...migratePrivacyClass(maskTextClass, 'mask'),
+		...migratePrivacySelector(maskTextSelector, 'mask'),
+		...migratePrivacyClass(blockClass, 'exclude'),
+		...migratePrivacySelector(blockSelector, 'exclude'),
+		...migratePrivacyClass(ignoreClass, 'mask'),
+	]
 
 	return rules.length > 0 ? rules : undefined
 }

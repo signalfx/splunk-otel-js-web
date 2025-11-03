@@ -84,10 +84,9 @@ export const apiFetch = async <T>(
 		...defaultParams,
 		body,
 		...params,
+		headers: headers === undefined ? defaultHeaders : headers,
 		signal: abortController.signal,
 	}
-
-	requestOptions.headers = headers === undefined ? defaultHeaders : headers
 
 	let response: Response | undefined
 	let responseData = null
