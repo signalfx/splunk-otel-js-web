@@ -2,6 +2,21 @@
 
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
+## 1.1.1
+
+- `@splunk/otel-web`
+    - **Fixed service.name attribute handling** [#1451](https://github.com/signalfx/splunk-otel-js-web/pull/1451)
+        - Prevents the default `unknown_service` value from being included in exported spans when no explicit service name is configured
+    - **Reduced click text capture length** [#1455](https://github.com/signalfx/splunk-otel-js-web/pull/1455)
+        - Decreased maximum captured click text length from 128 to 50 characters
+    - **Updated dependencies**
+        - Updated various dependencies
+
+- `@splunk/otel-web-session-recorder`
+    - **Updated session replay CDN package** [#1468](https://github.com/signalfx/splunk-otel-js-web/pull/1468)
+        - Updated session replay module from v2.5.2 to v2.5.4
+        - Fixes potential website crashes in Safari in certain scenarios related to WebKit bug ([WebKit Bug 301688](https://bugs.webkit.org/show_bug.cgi?id=301688))
+
 ## 1.1.0
 
 - `@splunk/otel-web`
