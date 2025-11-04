@@ -339,7 +339,7 @@ const config = [
 			'**/html/',
 			'**/playwright-report/',
 			'**/artifacts/',
-			'examples/next-ssr-example/next-env.d.ts',
+			'examples/nextjs/next-env.d.ts',
 			'examples/electron/.webpack/',
 		],
 	},
