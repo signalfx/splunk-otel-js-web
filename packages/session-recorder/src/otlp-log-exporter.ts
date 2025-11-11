@@ -266,7 +266,7 @@ const sendByFetchInternal = async (
 		log.debug('Data sent by fetch', { keepalive: fetchParams.keepalive })
 		onSuccess()
 	} catch (error) {
-		log.error('Could not sent data to BE - fetch', error)
+		log.error('Could not send data to BE - fetch', error)
 		onError(error)
 	}
 }
