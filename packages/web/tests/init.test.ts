@@ -21,6 +21,7 @@ import * as tracing from '@opentelemetry/sdk-trace-base'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import SplunkRum from '../src'
+import { mockNavigator } from '../src/utils/platform.test'
 import { VERSION } from '../src/version'
 import { deinit, initWithDefaultConfig, SpanCapturer } from './utils'
 
@@ -730,16 +731,11 @@ describe('platform attributes', () => {
 	})
 
 	it('should include basic platform information in global attributes', () => {
-		// Mock navigator for consistent testing
-		const mockNavigator = {
+		mockNavigator({
 			platform: 'Win32',
 			userAgentData: {
 				platform: 'Windows',
 			},
-		}
-		Object.defineProperty(globalThis, 'navigator', {
-			value: mockNavigator,
-			writable: true,
 		})
 
 		SplunkRum.init({
@@ -757,12 +753,8 @@ describe('platform attributes', () => {
 	})
 
 	it('should fallback to navigator.platform when userAgentData is not available', () => {
-		const mockNavigator = {
+		mockNavigator({
 			platform: 'MacIntel',
-		}
-		Object.defineProperty(globalThis, 'navigator', {
-			value: mockNavigator,
-			writable: true,
 		})
 
 		SplunkRum.init({
@@ -777,19 +769,14 @@ describe('platform attributes', () => {
 	})
 
 	it('should automatically update platform attributes with enhanced information', async () => {
-		const mockNavigator = {
+		mockNavigator({
 			platform: 'Linux x86_64',
 			userAgentData: {
 				getHighEntropyValues: vi.fn().mockResolvedValue({
-					architecture: 'x64',
 					platformVersion: '5.4.0',
 				}),
 				platform: 'Linux',
 			},
-		}
-		Object.defineProperty(globalThis, 'navigator', {
-			value: mockNavigator,
-			writable: true,
 		})
 
 		SplunkRum.init({
@@ -813,15 +800,11 @@ describe('platform attributes', () => {
 	})
 
 	it('should apply platform attributes to spans', async () => {
-		const mockNavigator = {
+		mockNavigator({
 			platform: 'Win32',
 			userAgentData: {
 				platform: 'Windows',
 			},
-		}
-		Object.defineProperty(globalThis, 'navigator', {
-			value: mockNavigator,
-			writable: true,
 		})
 
 		SplunkRum.init({

@@ -21,7 +21,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getBasicPlatformInfo, getEnhancedPlatformInfo } from './platform'
 
 // Test utility function to mock navigator
-function mockNavigator(config: {
+export function mockNavigator(config: {
 	language?: string
 	platform?: string
 	userAgent?: string
