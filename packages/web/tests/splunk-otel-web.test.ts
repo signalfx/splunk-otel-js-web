@@ -37,9 +37,14 @@ describe('SplunkOtelWeb', () => {
 				},
 				rumAccessToken: '<token>',
 			})
-			expect(SplunkRum.getGlobalAttributes()).toStrictEqual({
+			const globalAttributes = SplunkRum.getGlobalAttributes()
+			expect(globalAttributes).toMatchObject({
 				key1: 'value1',
 			})
+			// Should also include platform attributes
+			expect(globalAttributes).toHaveProperty('user_agent.os.name')
+			expect(globalAttributes).toHaveProperty('user_agent.language')
+			expect(globalAttributes).toHaveProperty('user_agent.original')
 		})
 
 		it('should be patchable via setGlobalAttributes and then readable', () => {
@@ -58,11 +63,16 @@ describe('SplunkOtelWeb', () => {
 				key3: 'value3',
 			})
 
-			expect(SplunkRum.getGlobalAttributes()).toStrictEqual({
+			const globalAttributes = SplunkRum.getGlobalAttributes()
+			expect(globalAttributes).toMatchObject({
 				key1: 'value1',
 				key2: 'value2-changed',
 				key3: 'value3',
 			})
+			// Should also include platform attributes
+			expect(globalAttributes).toHaveProperty('user_agent.os.name')
+			expect(globalAttributes).toHaveProperty('user_agent.language')
+			expect(globalAttributes).toHaveProperty('user_agent.original')
 		})
 
 		it('should notify about changes via setGlobalAttributes', () => {
@@ -86,11 +96,15 @@ describe('SplunkOtelWeb', () => {
 				key3: 'value3',
 			})
 
-			expect(receivedAttributes).toStrictEqual({
+			expect(receivedAttributes).toMatchObject({
 				key1: 'value1',
 				key2: 'value2-changed',
 				key3: 'value3',
 			})
+			// Should also include platform attributes
+			expect(receivedAttributes).toHaveProperty('user_agent.os.name')
+			expect(receivedAttributes).toHaveProperty('user_agent.language')
+			expect(receivedAttributes).toHaveProperty('user_agent.original')
 		})
 	})
 
