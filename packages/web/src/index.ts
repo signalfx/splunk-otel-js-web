@@ -76,6 +76,7 @@ import { getValidAttributes, SpanContext } from './utils/attributes'
 import { isAgentLoadedViaLatestTag } from './utils/detect-latest'
 import { isBot } from './utils/is-bot'
 import { parseVersion } from './utils/parse-version'
+import { getBasicPlatformInfo, getEnhancedPlatformInfo } from './utils/platform'
 import { VERSION } from './version'
 
 export { type SplunkExporterConfig } from './exporters/common'
@@ -599,8 +600,22 @@ export const SplunkRum: SplunkOtelWebType = {
 
 			this.provider = provider
 
+			// Set basic platform attributes immediately
+			const basicPlatformInfo = getBasicPlatformInfo()
+			this.setGlobalAttributes(basicPlatformInfo as Record<string, any>)
+
 			inited = true
 			diag.info('SplunkRum.init() complete')
+
+			// Automatically update platform attributes with enhanced information in the background
+			getEnhancedPlatformInfo()
+				.then((platformInfo) => {
+					this.setGlobalAttributes(platformInfo as Record<string, any>)
+					diag.debug('[Splunk]: Enhanced platform attributes updated')
+				})
+				.catch((error: any) => {
+					diag.debug('[Splunk]: Could not get enhanced platform attributes:', error)
+				})
 		} catch (error) {
 			diag.warn('[Splunk]: SplunkRum.init() - Failed to initialize due to internal exception.', { error })
 		}
