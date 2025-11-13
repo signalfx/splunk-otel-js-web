@@ -37,26 +37,32 @@ export interface PrivacyManagerConfig {
 }
 
 export class PrivacyManager {
-	constructor(private config: PrivacyManagerConfig) {}
-
-	shouldMaskTextNode = (textNode: Node): boolean => {
-		const privacyInfo = this.retrieveNodePrivacyInfo(textNode)
+	static shouldMaskTextNode = (textNode: Node, partialConfig?: Partial<PrivacyManagerConfig>): boolean => {
+		const config = {
+			maskAllText: true,
+			sensitivityRules: [],
+			...partialConfig,
+		}
+		const privacyInfo = this.retrieveNodePrivacyInfo(config, textNode)
 		const maskTypes: NodeSensitivityRuleType[] = ['mask', 'exclude']
 
 		if (maskTypes.includes(privacyInfo.sensitivityRuleType)) {
 			return true
 		}
 
-		if (this.config.maskAllText && privacyInfo.sensitivityRuleType !== 'unmask') {
+		if (config.maskAllText && privacyInfo.sensitivityRuleType !== 'unmask') {
 			return true
 		}
 
 		return false
 	}
 
-	private retrieveNodePrivacyInfo = (node: Node): NodePrivacyInfoWithPosition => {
+	private static retrieveNodePrivacyInfo = (
+		config: PrivacyManagerConfig,
+		node: Node,
+	): NodePrivacyInfoWithPosition => {
 		const parentNode = getParentNode(node)
-		const sensitivityRules = this.config.sensitivityRules
+		const sensitivityRules = config.sensitivityRules
 
 		const parentPrivacyInfo = parentNode ? getNodePrivacyInfo(parentNode, sensitivityRules) : null
 		const nodePrivacyInfo = getNodePrivacyInfo(node, sensitivityRules)
