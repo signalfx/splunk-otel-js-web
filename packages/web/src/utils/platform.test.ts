@@ -18,39 +18,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { mockNavigator } from '../../tests/utils'
 import { getBasicPlatformInfo, getEnhancedPlatformInfo } from './platform'
-
-// Test utility function to mock navigator
-export function mockNavigator(config: {
-	language?: string
-	platform?: string
-	userAgent?: string
-	userAgentData?: {
-		getHighEntropyValues?: any
-		mobile?: boolean
-		platform?: string
-	}
-}) {
-	const mockNav = {
-		language: config.language || 'en-US',
-		platform: config.platform || 'Win32',
-		userAgent: config.userAgent || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-		...(config.userAgentData && {
-			userAgentData: {
-				getHighEntropyValues: config.userAgentData.getHighEntropyValues || vi.fn().mockResolvedValue({}),
-				mobile: config.userAgentData.mobile,
-				platform: config.userAgentData.platform || config.platform || 'Windows',
-			},
-		}),
-	}
-
-	Object.defineProperty(globalThis, 'navigator', {
-		value: mockNav,
-		writable: true,
-	})
-
-	return mockNav
-}
 
 // Mock console.warn to avoid noise in tests
 const originalConsoleWarn = console.warn
@@ -103,7 +72,7 @@ describe('platform utilities', () => {
 
 	describe('getEnhancedPlatformInfo', () => {
 		it('should return enhanced platform info when User Agent Client Hints API is available', async () => {
-			const mockNav = mockNavigator({
+			mockNavigator({
 				language: 'en-US',
 				platform: 'Win32',
 				userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -124,7 +93,7 @@ describe('platform utilities', () => {
 				'user_agent.os.name': 'Windows',
 				'user_agent.os.version': '10.0.0',
 			})
-			expect(mockNav.userAgentData?.getHighEntropyValues).toHaveBeenCalledWith(['platformVersion'])
+			expect(navigator.userAgentData?.getHighEntropyValues).toHaveBeenCalledWith(['platformVersion'])
 		})
 
 		it('should return only available fields when some high entropy values are missing', async () => {

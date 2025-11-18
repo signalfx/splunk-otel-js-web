@@ -21,9 +21,8 @@ import * as tracing from '@opentelemetry/sdk-trace-base'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import SplunkRum from '../src'
-import { mockNavigator } from '../src/utils/platform.test'
 import { VERSION } from '../src/version'
-import { deinit, initWithDefaultConfig, SpanCapturer } from './utils'
+import { deinit, initWithDefaultConfig, mockNavigator, SpanCapturer } from './utils'
 
 const doesBeaconUrlEndWith = (suffix: string) => {
 	const sps = (SplunkRum.provider.getActiveSpanProcessor() as any)._spanProcessors

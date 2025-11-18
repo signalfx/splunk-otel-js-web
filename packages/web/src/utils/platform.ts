@@ -16,21 +16,8 @@
  *
  */
 
-import type { ExtendedNavigator } from '../types'
-
-export interface PlatformBasicInfo {
-	'user_agent.language': string
-	'user_agent.mobile'?: boolean
-	'user_agent.original': string
-	'user_agent.os.name': string
-}
-export interface PlatformInfo extends PlatformBasicInfo {
-	'user_agent.os.version'?: string
-}
-
-export function getBasicPlatformInfo(): PlatformBasicInfo {
-	const extendedNavigator = navigator as ExtendedNavigator
-	const userAgentData = extendedNavigator.userAgentData
+export function getBasicPlatformInfo() {
+	const userAgentData = navigator.userAgentData
 	return {
 		'user_agent.language': navigator.language,
 		'user_agent.mobile': userAgentData?.mobile,
@@ -43,19 +30,18 @@ export function getBasicPlatformInfo(): PlatformBasicInfo {
  * Gets enhanced platform information using User Agent Client Hints API
  * Falls back to basic info if the API is not available
  */
-export async function getEnhancedPlatformInfo(): Promise<PlatformInfo> {
+export async function getEnhancedPlatformInfo() {
 	const basicInfo = getBasicPlatformInfo()
-	const extendedNavigator = navigator as ExtendedNavigator
 
 	// Check if User Agent Client Hints API is available
-	if (!extendedNavigator.userAgentData?.getHighEntropyValues) {
+	if (!navigator.userAgentData?.getHighEntropyValues) {
 		return basicInfo
 	}
 
 	try {
-		const highEntropy = await extendedNavigator.userAgentData.getHighEntropyValues(['platformVersion'])
+		const highEntropy = await navigator.userAgentData.getHighEntropyValues(['platformVersion'])
 
-		if (highEntropy.platformVersion) {
+		if (highEntropy?.platformVersion) {
 			return {
 				...basicInfo,
 				'user_agent.os.version': highEntropy.platformVersion,

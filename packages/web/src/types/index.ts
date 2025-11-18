@@ -16,6 +16,5 @@
  *
  */
 export * from './config'
-export * from './navigator'
 export * from './type-guards'
 export * from './window'
