@@ -22,6 +22,34 @@ declare global {
 		}
 		__splunkRumIntegrationTestSessionId?: string
 	}
+
+	interface Navigator {
+		readonly userAgentData?: {
+			mobile?: boolean
+			platform?: string
+			getHighEntropyValues(hints: string[]): Promise<
+				| {
+						architecture?: string
+						bitness?: string
+						brands?: Array<{
+							brand: string
+							version: string
+						}>
+						fullVersionList?: Array<{
+							brand: string
+							version: string
+						}>
+						mobile?: boolean
+						model?: string
+						platform?: string
+						platformVersion?: string
+						uaFullVersion?: string
+						wow64?: boolean
+				  }
+				| undefined
+			>
+		}
+	}
 }
 
 // eslint-disable-next-line

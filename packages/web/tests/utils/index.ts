@@ -17,6 +17,7 @@
  */
 export * from './init'
 export * from './memory-exporter'
+export * from './navigator'
 export * from './span'
 export * from './span-capturer'
 export * from './web-tracer-provider'

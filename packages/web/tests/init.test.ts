@@ -22,7 +22,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import SplunkRum from '../src'
 import { VERSION } from '../src/version'
-import { deinit, initWithDefaultConfig, SpanCapturer } from './utils'
+import { deinit, initWithDefaultConfig, mockNavigator, SpanCapturer } from './utils'
 
 const doesBeaconUrlEndWith = (suffix: string) => {
 	const sps = (SplunkRum.provider.getActiveSpanProcessor() as any)._spanProcessors
@@ -715,6 +715,116 @@ describe('event listener shenanigans', () => {
 		// fails on throwing error
 		document.body.addEventListener('test', listener, null)
 		document.body.removeEventListener('test', listener, null)
+	})
+})
+
+describe('platform attributes', () => {
+	let capturer: SpanCapturer
+
+	beforeEach(() => {
+		capturer = new SpanCapturer()
+	})
+
+	afterEach(() => {
+		deinit()
+	})
+
+	it('should include basic platform information in global attributes', () => {
+		mockNavigator({
+			platform: 'Win32',
+			userAgentData: {
+				platform: 'Windows',
+			},
+		})
+
+		SplunkRum.init({
+			applicationName: 'test-app',
+			beaconEndpoint: 'https://127.0.0.1:9999/test',
+			rumAccessToken: undefined,
+			spanProcessors: [capturer],
+		})
+
+		expect(SplunkRum.inited).toBeTruthy()
+
+		// Check that platform.name is in global attributes
+		const globalAttributes = SplunkRum.getGlobalAttributes()
+		expect(globalAttributes['user_agent.os.name']).toBe('Windows')
+	})
+
+	it('should fallback to navigator.platform when userAgentData is not available', () => {
+		mockNavigator({
+			platform: 'MacIntel',
+		})
+
+		SplunkRum.init({
+			applicationName: 'test-app',
+			beaconEndpoint: 'https://127.0.0.1:9999/test',
+			rumAccessToken: undefined,
+			spanProcessors: [capturer],
+		})
+
+		const globalAttributes = SplunkRum.getGlobalAttributes()
+		expect(globalAttributes['user_agent.os.name']).toBe('MacIntel')
+	})
+
+	it('should automatically update platform attributes with enhanced information', async () => {
+		mockNavigator({
+			platform: 'Linux x86_64',
+			userAgentData: {
+				getHighEntropyValues: vi.fn().mockResolvedValue({
+					platformVersion: '5.4.0',
+				}),
+				platform: 'Linux',
+			},
+		})
+
+		SplunkRum.init({
+			applicationName: 'test-app',
+			beaconEndpoint: 'https://127.0.0.1:9999/test',
+			rumAccessToken: undefined,
+			spanProcessors: [capturer],
+		})
+
+		// Initially should have basic platform info
+		let globalAttributes = SplunkRum.getGlobalAttributes()
+		expect(globalAttributes['user_agent.os.name']).toBe('Linux')
+
+		// Wait for automatic platform attributes update to complete
+		await new Promise((resolve) => setTimeout(resolve, 100))
+
+		// Should now have enhanced platform info automatically
+		globalAttributes = SplunkRum.getGlobalAttributes()
+		expect(globalAttributes['user_agent.os.name']).toBe('Linux')
+		expect(globalAttributes['user_agent.os.version']).toBe('5.4.0')
+	})
+
+	it('should apply platform attributes to spans', async () => {
+		mockNavigator({
+			platform: 'Win32',
+			userAgentData: {
+				platform: 'Windows',
+			},
+		})
+
+		SplunkRum.init({
+			applicationName: 'test-app',
+			beaconEndpoint: 'https://127.0.0.1:9999/test',
+			rumAccessToken: undefined,
+			spanProcessors: [capturer],
+		})
+
+		// Create a test span
+		const tracer = SplunkRum.provider.getTracer('test')
+		const span = tracer.startSpan('test-span')
+		span.end()
+
+		// Wait for span to be processed
+		await new Promise((resolve) => setTimeout(resolve, 100))
+
+		expect(capturer.spans.length).toBeGreaterThan(0)
+		const testSpan = capturer.spans.find((s) => s.name === 'test-span')
+		expect(testSpan).toBeTruthy()
+		expect(testSpan.attributes['user_agent.os.name']).toBe('Windows')
 	})
 })
 
