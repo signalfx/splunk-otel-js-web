@@ -46,6 +46,7 @@ import {
 	SplunkDocumentLoadInstrumentation,
 	SplunkErrorInstrumentation,
 	SplunkFetchInstrumentation,
+	SplunkFrustrationSignalsInstrumentation,
 	SplunkLongTaskInstrumentation,
 	SplunkPageVisibilityInstrumentation,
 	SplunkPostDocLoadResourceInstrumentation,
@@ -127,6 +128,7 @@ const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
 const INSTRUMENTATIONS = [
 	{ confKey: 'document', disable: false, Instrument: SplunkDocumentLoadInstrumentation },
 	{ confKey: 'xhr', disable: false, Instrument: SplunkXhrInstrumentation },
+	{ confKey: 'frustrationSignals', disable: false, Instrument: SplunkFrustrationSignalsInstrumentation },
 	{ confKey: 'interactions', disable: false, Instrument: SplunkUserInteractionInstrumentation },
 	{ confKey: 'postload', disable: false, Instrument: SplunkPostDocLoadResourceInstrumentation },
 	{ confKey: 'fetch', disable: false, Instrument: SplunkFetchInstrumentation },
