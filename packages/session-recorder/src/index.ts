@@ -246,14 +246,17 @@ const SplunkRumRecorder = {
 				if (previousState.id !== currentState.id) {
 					recorder?.stop()
 					recorder?.destroy()
+					recorder = undefined
+
+					if (!logSpan(SpanName.IS_RECORDING)) {
+						return
+					}
+
 					recorder = new Recorder({
 						initRecorderConfig,
 						processor,
 					})
 					recorder.start()
-
-					// Log span for new session
-					logSpan(SpanName.IS_RECORDING)
 				}
 			})
 
