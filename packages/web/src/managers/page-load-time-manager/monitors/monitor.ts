@@ -16,6 +16,29 @@
  *
  */
 
-export * from './page-load-time-manager'
-export * from './session-manager'
-export * from './storage'
+export enum ResourceState {
+	DISCOVERED = 'discovered',
+	ERROR = 'error',
+	LOADED = 'loaded',
+}
+
+export type ResourceStateEvent =
+	| { state: ResourceState.DISCOVERED; url: string }
+	| { state: ResourceState.ERROR; url: string }
+	| { loadTime: number; state: ResourceState.LOADED; url: string }
+
+export interface MonitorConfig {
+	onResourceStateChange: (event: ResourceStateEvent) => void
+}
+
+export abstract class Monitor {
+	protected config: MonitorConfig
+
+	constructor(config: MonitorConfig) {
+		this.config = config
+	}
+
+	abstract start(): void
+
+	abstract stop(): void
+}

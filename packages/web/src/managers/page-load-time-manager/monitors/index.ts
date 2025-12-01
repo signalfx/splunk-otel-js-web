@@ -16,6 +16,4 @@
  *
  */
 
-export * from './page-load-time-manager'
-export * from './session-manager'
-export * from './storage'
+export { MediaMonitor } from './media-monitor'
