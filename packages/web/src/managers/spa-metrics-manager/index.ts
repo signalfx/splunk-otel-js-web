@@ -16,6 +16,4 @@
  *
  */
 
-export * from './session-manager'
 export * from './spa-metrics-manager'
-export * from './storage'

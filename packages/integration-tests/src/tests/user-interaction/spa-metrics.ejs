@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>SPA Metrics test</title>
+	<%- renderAgent({ _experimentalSPAMetrics: { quietTime: 500 } }) %>
+</head>
+<body>
+	<h1>SPA Metrics test</h1>
+
+	<button type="button" id="btnNavigate">Navigate</button>
+	<button type="button" id="btnNavigateWithFetch">Navigate with fetch</button>
+	<button type="button" id="btnNavigateWithImage">Navigate with image</button>
+
+	<div id="content"></div>
+
+	<script>
+		document.querySelector('#btnNavigate').addEventListener('click', function () {
+			location.hash = 'page1';
+		});
+
+		document.querySelector('#btnNavigateWithFetch').addEventListener('click', function () {
+			location.hash = 'page2';
+			// Simulate API call after navigation
+			fetch('/some-data').then(function(response) {
+				return response.json();
+			}).then(function(data) {
+				document.getElementById('content').textContent = JSON.stringify(data);
+			});
+		});
+
+		document.querySelector('#btnNavigateWithImage').addEventListener('click', function () {
+			location.hash = 'page3';
+			// Add image after navigation
+			const img = document.createElement('img');
+			img.src = 'assets/splunk-black.png?delay=300';
+			document.getElementById('content').appendChild(img);
+		});
+	</script>
+</body>
+</html>
