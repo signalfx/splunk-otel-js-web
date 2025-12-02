@@ -53,12 +53,12 @@
 		"@opentelemetry/sdk-trace-base": "^1.25.1",
 		"@opentelemetry/sdk-trace-web": "^1.25.1",
 		"@opentelemetry/semantic-conventions": "^1.25.1",
-		"core-js": "3.46.0",
+		"core-js": "3.47.0",
 		"shimmer": "^1.2.1",
 		"web-vitals": "^3.5.2"
 	},
 	"devDependencies": {
-		"@swc/core": "^1.13.5",
+		"@swc/core": "^1.15.3",
 		"@swc/helpers": "^0.5.17",
 		"@types/shimmer": "^1.2.0",
 		"fork-ts-checker-webpack-plugin": "^9.1.0",
@@ -66,8 +66,8 @@
 		"socket.io-client": "^4.8.1",
 		"source-map-loader": "^5.0.0",
 		"swc-loader": "^0.2.6",
-		"wait-on": "^9.0.1",
-		"webpack": "^5.102.0",
+		"wait-on": "^9.0.3",
+		"webpack": "^5.103.0",
 		"webpack-cli": "^6.0.1",
 		"webpack-dev-server": "^5.2.2"
 	},

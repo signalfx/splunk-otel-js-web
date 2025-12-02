@@ -11,9 +11,9 @@
 	"devDependencies": {
 		"@rsbuild/core": "^1.6.11",
 		"@rsbuild/plugin-react": "^1.4.2",
-		"@splunk/otel": "4.0.1",
+		"@splunk/otel": "4.1.0",
 		"@splunk/otel-web": "workspace:*",
-		"@types/react": "^19.2.2",
+		"@types/react": "^19.2.7",
 		"@types/react-dom": "^19.2.3",
 		"body-parser": "2.2.1",
 		"cors": "2.8.5",
