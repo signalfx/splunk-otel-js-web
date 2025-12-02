@@ -42,7 +42,11 @@ test.describe('Frustration signals', () => {
 			spans.some((span) => span.name === 'rage' && span.tags['target_xpath'] === '//html/body/h1'),
 		)
 
-		expect(recordPage.receivedSpans.filter(({ name }) => name === 'rage')).toHaveLength(1)
+		const rageClickSpans = recordPage.receivedSpans.filter(({ name }) => name === 'rage')
+
+		expect(rageClickSpans).toHaveLength(1)
+		expect(rageClickSpans[0].duration).toBe(0)
+
 		expect(recordPage.receivedSpans.filter(({ name }) => name === 'click')).toHaveLength(6)
 	})
 })
