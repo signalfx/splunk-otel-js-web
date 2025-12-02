@@ -257,6 +257,9 @@ const SplunkRumRecorder = {
 						processor,
 					})
 					recorder.start()
+
+					// Log span for new session
+					logSpan(SpanName.IS_RECORDING)
 				}
 			})
 

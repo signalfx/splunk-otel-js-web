@@ -27,7 +27,7 @@ export {
 	type SessionReplayConfig,
 	type SessionReplayPlainSegment,
 	Stats,
-} from 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.5.4/session-replay.module.legacy.min.js'
-import 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.5.4/background-service.html'
+} from 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.5.6/session-replay.module.legacy.min.js'
+import 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.5.6/background-service.html'
 // If you update the module version above, also update the version in cdn-module.d.ts.
 // Regenerate webpack.lock: delete it, set frozen to false in webpack.config.js, then run `pnpm run build`.

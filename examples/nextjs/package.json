@@ -9,16 +9,16 @@
 		"clean": "rm -rf .next .turbo"
 	},
 	"dependencies": {
-		"next": "16.0.1",
+		"next": "16.0.6",
 		"react": "19.2.0",
 		"react-dom": "19.2.0"
 	},
 	"devDependencies": {
 		"@splunk/otel-web": "workspace:*",
 		"@splunk/otel-web-session-recorder": "workspace:*",
-		"@types/node": "24.10.0",
-		"@types/react": "19.2.2",
-		"@types/react-dom": "19.2.2",
+		"@types/node": "24.10.1",
+		"@types/react": "19.2.7",
+		"@types/react-dom": "19.2.3",
 		"typescript": "5.9.3"
 	}
 }
