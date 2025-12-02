@@ -49,10 +49,10 @@ test.describe('Frustration signals', () => {
 })
 
 async function makeClicks(browserName: string, recordPage: RecordPage) {
-	if (browserName === 'webkit') {
-		// WebKit requires at least one click listener to generate click events
-		await recordPage.evaluate(() => document.addEventListener('click', () => {}))
-	}
+	// if (browserName === 'webkit') {
+	// 	// WebKit requires at least one click listener to generate click events
+	// 	await recordPage.evaluate(() => document.addEventListener('click', () => {}))
+	// }
 
 	await recordPage.locator('#no-rage').click()
 	await recordPage.locator('#no-rage').click()
