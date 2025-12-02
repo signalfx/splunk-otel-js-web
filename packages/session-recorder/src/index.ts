@@ -243,9 +243,22 @@ const SplunkRumRecorder = {
 					return
 				}
 
+				if (currentState.state === 'expired-duration' && recorder) {
+					recorder?.stop()
+					recorder?.destroy()
+					recorder = undefined
+					return
+				}
+
 				if (previousState.id !== currentState.id) {
 					recorder?.stop()
 					recorder?.destroy()
+					recorder = undefined
+
+					if (!logSpan(SpanName.IS_RECORDING)) {
+						return
+					}
+
 					recorder = new Recorder({
 						initRecorderConfig,
 						processor,
