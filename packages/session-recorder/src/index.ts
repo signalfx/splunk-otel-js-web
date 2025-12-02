@@ -16,7 +16,7 @@
  *
  */
 
-import { ProxyTracerProvider, trace, Tracer, TracerProvider } from '@opentelemetry/api'
+import { ProxyTracerProvider, Span, trace, Tracer, TracerProvider } from '@opentelemetry/api'
 import type { Resource } from '@opentelemetry/resources'
 import type { SplunkOtelWebType } from '@splunk/otel-web'
 import { JsonObject } from 'type-fest'
@@ -75,6 +75,31 @@ let paused = false
 let recorder: Recorder | undefined
 let sessionStateUnsubscribe: undefined | (() => void)
 const isLatestTagUsed = isRecorderLoadedViaLatestTag()
+
+enum SpanName {
+	IS_RECORDING = 'splunk.sessionReplay.isRecording',
+	RESUME = 'splunk.sessionReplay.resume',
+	STOP = 'splunk.sessionReplay.stop',
+}
+
+// Return span or undefined if sampler is ignoring this session
+const logSpan = (spanName: SpanName): Span | undefined => {
+	if (!tracer) {
+		tracer = trace.getTracer('splunk.sessionReplay', VERSION)
+	}
+
+	const now = Date.now()
+	const span = tracer.startSpan(spanName.toString(), { startTime: now })
+	span.setAttribute('splunk.sessionReplay', 'splunk')
+
+	// Check if sampler is ignoring this
+	if (!span.isRecording()) {
+		return
+	}
+
+	span.end(now)
+	return span
+}
 
 const SplunkRumRecorder = {
 	deinit(): void {
@@ -167,20 +192,10 @@ const SplunkRumRecorder = {
 
 			const { beaconEndpoint, realm, rumAccessToken, ...initRecorderConfig } = config
 
-			// Mark recorded session as splunk
-			if (SplunkRum.provider) {
-				SplunkRum.provider.resource.attributes['splunk.sessionReplay'] = 'splunk'
-			}
-
-			tracer = trace.getTracer('splunk.rr-web', VERSION)
-			const span = tracer.startSpan('record init')
-
-			// Check if sampler is ignoring this
-			if (!span.isRecording()) {
+			// Sampler is ignoring this session
+			if (!logSpan(SpanName.IS_RECORDING)) {
 				return
 			}
-
-			span.end()
 
 			let exportUrl = beaconEndpoint
 			if (realm) {
@@ -236,6 +251,9 @@ const SplunkRumRecorder = {
 						processor,
 					})
 					recorder.start()
+
+					// Log span for new session
+					logSpan(SpanName.IS_RECORDING)
 				}
 			})
 
@@ -267,7 +285,7 @@ const SplunkRumRecorder = {
 		if (!oldPaused) {
 			try {
 				void recorder?.resume()
-				tracer.startSpan('record resume').end()
+				logSpan(SpanName.RESUME)
 			} catch (error) {
 				log.warn(
 					'[Splunk]: SplunkSessionRecorder.resume() - Failed to resume recording session due to internal error.',
@@ -285,7 +303,7 @@ const SplunkRumRecorder = {
 		if (paused) {
 			try {
 				recorder?.stop()
-				tracer.startSpan('record stop').end()
+				logSpan(SpanName.STOP)
 			} catch (error) {
 				log.warn(
 					'[Splunk]: SplunkSessionRecorder.stop() - Failed to stop recording session due to internal error.',
