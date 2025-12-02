@@ -200,7 +200,7 @@ test.describe('errors', () => {
 		expect(
 			errorSpans3[2].tags['error.source_map_ids'] as string,
 			'this expect must be kept in-sync with the sourceMapId injected into build-plugins/tests/project/dist/webpack-config-devtool-source-map-js/main.js',
-		).toContain('328c08b5-d292-2d46-c8e2-05be588c2f24')
+		).toContain('acb44e4d-1860-4e5e-bd63-77d0e9f02c51')
 	})
 
 	test('module error', async ({ recordPage }) => {
