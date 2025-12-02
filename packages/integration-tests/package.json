@@ -24,7 +24,7 @@
 		"@splunk/otel-web-session-recorder": "workspace:*",
 		"@splunk/rum-build-plugins": "workspace:*",
 		"@types/ejs": "^3.1.5",
-		"@types/express": "^5.0.0",
+		"@types/express": "^5.0.6",
 		"@types/node": "^24.10.0",
 		"cors": "^2.8.5",
 		"ejs": "^3.1.10",
