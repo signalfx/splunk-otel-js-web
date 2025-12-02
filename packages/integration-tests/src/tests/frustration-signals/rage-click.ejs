@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Rage click</title>
+
+		<%- renderAgent({
+			instrumentations: {
+				frustrationSignals: {
+					rageClick: {
+						count: 3,
+						timeframeSeconds: 1,
+						ignoreSelectors: ['#no-rage']
+					}
+				}
+			}
+		}) %>
+	</head>
+	<body>
+		<h1>Rage click</h1>
+		<button id="no-rage">No Rage Click Here</button>
+	</body>
+</html>
