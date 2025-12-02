@@ -7,7 +7,7 @@
 		"clean": "rm -rf dist .turbo"
 	},
 	"devDependencies": {
-		"@rsbuild/core": "^1.6.1",
+		"@rsbuild/core": "^1.6.11",
 		"@splunk/otel-web": "workspace:*"
 	}
 }
