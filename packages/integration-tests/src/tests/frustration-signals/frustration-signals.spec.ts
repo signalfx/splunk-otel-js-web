@@ -25,10 +25,7 @@ test.describe('Frustration signals', () => {
 		await recordPage.goTo('/frustration-signals/rage-click-default.ejs')
 		await makeClicks(browserName, recordPage)
 
-		await recordPage.waitForSpans((spans) => {
-			console.log(spans.filter((span) => span.name === 'click').length)
-			return spans.filter((span) => span.name === 'click').length === 6
-		})
+		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'click').length === 6)
 
 		expect(recordPage.receivedSpans.filter(({ name }) => name === 'rage')).toHaveLength(0)
 		expect(recordPage.receivedSpans.filter(({ name }) => name === 'click')).toHaveLength(6)
