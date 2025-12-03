@@ -33,11 +33,13 @@ const MODULE_NAME = 'splunk-frustration-signals'
 const DEFAULT_RAGE_CLICK_COUNT = 3
 const DEFAULT_RAGE_CLICK_TIMEFRAME_SECONDS = 1
 
-type RageClickOptions = {
-	count?: number
-	ignoreSelectors?: string[]
-	timeframeSeconds?: number
-}
+type RageClickOptions =
+	| {
+			count?: number
+			ignoreSelectors?: string[]
+			timeframeSeconds?: number
+	  }
+	| true
 
 type ResolvedRageClickConfig = {
 	count: number
@@ -109,6 +111,14 @@ export class SplunkFrustrationSignalsInstrumentation extends InstrumentationBase
 	}
 
 	private normalizeRageClickConfig(config: RageClickOptions): ResolvedRageClickConfig {
+		if (config === true) {
+			return {
+				count: DEFAULT_RAGE_CLICK_COUNT,
+				ignoreSelectors: [],
+				timeframeMs: DEFAULT_RAGE_CLICK_TIMEFRAME_SECONDS * 1000,
+			}
+		}
+
 		const count =
 			typeof config.count === 'number' && config.count > 0 ? Math.floor(config.count) : DEFAULT_RAGE_CLICK_COUNT
 		const timeframeSeconds =
@@ -160,7 +170,7 @@ export class SplunkFrustrationSignalsInstrumentation extends InstrumentationBase
 		const frustrationSignals = this.otelConfig.instrumentations?.frustrationSignals
 		if (frustrationSignals && typeof frustrationSignals === 'object') {
 			const rageClick = frustrationSignals.rageClick
-			if (rageClick && typeof rageClick === 'object') {
+			if (typeof rageClick === 'object' || rageClick === true) {
 				return this.normalizeRageClickConfig(rageClick)
 			}
 		}
