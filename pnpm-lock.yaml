@@ -473,8 +473,8 @@ importers:
         specifier: ^1.2.1
         version: 1.2.1
       web-vitals:
-        specifier: ^3.5.2
-        version: 3.5.2
+        specifier: 5.1.0
+        version: 5.1.0
     devDependencies:
       '@swc/core':
         specifier: ^1.15.3
@@ -7419,8 +7419,8 @@ packages:
   wcwidth@1.0.1:
     resolution: {integrity: sha512-XHPEwS0q6TaxcvG85+8EYkbiCux2XtWG2mkc47Ng2A77BQu9+DqIOJldST4HgPkuea7dvKSj5VgX3P1d4rW8Tg==}
 
-  web-vitals@3.5.2:
-    resolution: {integrity: sha512-c0rhqNcHXRkY/ogGDJQxZ9Im9D19hDihbzSQJrsioex+KnFgmMzBiy57Z1EjkhX/+OjyBpclDCzz2ITtjokFmg==}
+  web-vitals@5.1.0:
+    resolution: {integrity: sha512-ArI3kx5jI0atlTtmV0fWU3fjpLmq/nD3Zr1iFFlJLaqa5wLBkUSzINwBPySCX/8jRyjlmy1Volw1kz1g9XE4Jg==}
 
   webidl-conversions@3.0.1:
     resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}
@@ -16189,7 +16189,7 @@ snapshots:
     dependencies:
       defaults: 1.0.4
 
-  web-vitals@3.5.2: {}
+  web-vitals@5.1.0: {}
 
   webidl-conversions@3.0.1: {}
 

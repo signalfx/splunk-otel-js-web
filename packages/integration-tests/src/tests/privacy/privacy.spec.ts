@@ -24,13 +24,10 @@ type TestFn = Params[2]
 
 const createTestFn: (params: { expectedTargetText: string; path: string }) => TestFn =
 	({ expectedTargetText, path }) =>
-	async ({ browserName, recordPage }) => {
+	async ({ recordPage }) => {
 		await recordPage.goTo(path)
 
-		if (browserName === 'webkit') {
-			// WebKit requires at least one click listener to generate click events
-			await recordPage.evaluate(() => document.addEventListener('click', () => {}))
-		}
+		await recordPage.evaluate(() => document.addEventListener('click', () => {}))
 
 		await recordPage.locator('h1').click()
 

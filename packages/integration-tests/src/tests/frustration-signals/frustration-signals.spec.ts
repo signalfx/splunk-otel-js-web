@@ -21,9 +21,9 @@ import { RecordPage } from '../../pages/record-page'
 import { test } from '../../utils/test'
 
 test.describe('Frustration signals', () => {
-	test('Rage click is disabled by default', async ({ browserName, recordPage }) => {
+	test('Rage click is disabled by default', async ({ recordPage }) => {
 		await recordPage.goTo('/frustration-signals/rage-click-default.ejs')
-		await makeClicks(browserName, recordPage)
+		await makeClicks(recordPage)
 
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'click').length === 6)
 
@@ -31,13 +31,14 @@ test.describe('Frustration signals', () => {
 		expect(recordPage.receivedSpans.filter(({ name }) => name === 'click')).toHaveLength(6)
 	})
 
-	test('Rage click', async ({ browserName, recordPage }) => {
+	test('Rage click', async ({ recordPage }) => {
 		await recordPage.goTo('/frustration-signals/rage-click.ejs')
-		await makeClicks(browserName, recordPage)
+		await makeClicks(recordPage)
 
 		await recordPage.waitForSpans((spans) =>
 			spans.some((span) => span.name === 'rage' && span.tags['target_xpath'] === '//html/body/h1'),
 		)
+		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'click').length === 6)
 
 		const rageClickSpans = recordPage.receivedSpans.filter(({ name }) => name === 'rage')
 
@@ -48,11 +49,8 @@ test.describe('Frustration signals', () => {
 	})
 })
 
-async function makeClicks(browserName: string, recordPage: RecordPage) {
-	// if (browserName === 'webkit') {
-	// 	// WebKit requires at least one click listener to generate click events
-	// 	await recordPage.evaluate(() => document.addEventListener('click', () => {}))
-	// }
+async function makeClicks(recordPage: RecordPage) {
+	await recordPage.evaluate(() => document.addEventListener('click', () => {}))
 
 	await recordPage.locator('#no-rage').click()
 	await recordPage.locator('#no-rage').click()
