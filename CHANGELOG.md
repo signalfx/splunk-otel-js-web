@@ -2,6 +2,47 @@
 
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
+## 1.2.0
+
+- `@splunk/otel-web`
+    - **Added Rage Click Detection** [#1484](https://github.com/signalfx/splunk-otel-js-web/pull/1484)
+        - Automatically detects and reports rage click events (multiple rapid clicks on the same element)
+        - Helps identify user frustration signals and usability issues
+        - **Disabled by default** - must be explicitly enabled in configuration
+        - Example of how to enable rage click detection:
+            ```javascript
+            SplunkRum.init({
+            	// ... other config options
+            	instrumentations: {
+            		frustrationSignals: {
+            			rageClick: {
+            				count: 3, // Number of clicks to trigger rage click (default: 3)
+            				timeframeSeconds: 1, // Timeframe in seconds (default: 1)
+            				ignoreSelectors: ['#no-rage'], // CSS selectors to ignore (optional)
+            			},
+            		},
+            	},
+            })
+            ```
+        - Set `rageClick: true` or `rageClick: {}` to use default settings (3 clicks within 1 second)
+    - **Added Platform Attributes Including OS Version** [#1482](https://github.com/signalfx/splunk-otel-js-web/pull/1482)
+        - Spans now include detailed platform information such as operating system name and version
+        - Uses the User Agent Client Hints API to obtain enhanced platform data
+        - Automatically falls back to basic platform information if the API is not available
+    - **Removed FID (First Input Delay) Metric** [#1448](https://github.com/signalfx/splunk-otel-js-web/pull/1448)
+        - Removed FID metric collection as it has been deprecated by Chrome
+        - FID was previously replaced by INP (Interaction to Next Paint) metric which provides better insights into page responsiveness
+        - Updated web-vitals dependency to latest version
+
+- `@splunk/otel-web-session-recorder`
+    - **Fixed Session Replay Sampling** [#1486](https://github.com/signalfx/splunk-otel-js-web/pull/1486)
+        - Session replay now properly respects the configured sampling rate
+    - **Fixed Session Recording on Session Expiration** [#1488](https://github.com/signalfx/splunk-otel-js-web/pull/1488)
+        - Recording now stops correctly when a session expires
+    - **Change span names for session replay lifecycle events** [#1485](https://github.com/signalfx/splunk-otel-js-web/pull/1485)
+    - **Updated Session Replay CDN Module** [#1525](https://github.com/signalfx/splunk-otel-js-web/pull/1525)
+        - Updated to the latest version of the session replay CDN script
+
 ## 1.1.1
 
 - `@splunk/otel-web`
