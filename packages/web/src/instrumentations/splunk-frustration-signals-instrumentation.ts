@@ -170,7 +170,7 @@ export class SplunkFrustrationSignalsInstrumentation extends InstrumentationBase
 		const frustrationSignals = this.otelConfig.instrumentations?.frustrationSignals
 		if (frustrationSignals && typeof frustrationSignals === 'object') {
 			const rageClick = frustrationSignals.rageClick
-			if (rageClick) {
+			if (typeof rageClick === 'object' || rageClick === true) {
 				return this.normalizeRageClickConfig(rageClick)
 			}
 		}
