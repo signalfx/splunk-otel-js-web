@@ -197,6 +197,11 @@ const SplunkRumRecorder = {
 				return
 			}
 
+			// Mark recorded session as splunk
+			if (SplunkRum.provider) {
+				SplunkRum.provider.resource.attributes['splunk.sessionReplay'] = 'splunk'
+			}
+
 			let exportUrl = beaconEndpoint
 			if (realm) {
 				if (exportUrl) {
