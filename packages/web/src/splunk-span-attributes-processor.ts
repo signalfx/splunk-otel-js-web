@@ -19,7 +19,7 @@
 import { Attributes } from '@opentelemetry/api'
 import { Span, SpanProcessor } from '@opentelemetry/sdk-trace-base'
 
-import { SessionManager } from './managers'
+import { SESSION_DURATION_MS, SessionManager } from './managers'
 import { UserTrackingMode } from './types/config'
 import { forgetAnonymousId, getOrCreateAnonymousId } from './user-tracking'
 
@@ -44,8 +44,21 @@ export class SplunkSpanAttributesProcessor implements SpanProcessor {
 		return this._globalAttributes
 	}
 
-	onEnd(): void {
-		// Intentionally empty
+	onEnd(span: Span): void {
+		const spanEndTimeSeconds = span.endTime[0]
+		const sessionId = (span.attributes['splunk.rumSessionId'] as string | undefined) ?? ''
+		const sessionState = this.sessionManager.sessionHistory.get(sessionId)
+		if (sessionState) {
+			const sessionMaxDurationTimeInSeconds = (sessionState.startTime + SESSION_DURATION_MS) / 1000
+			// If there is a long span for example fetch that takes hours and the session expires, we need to truncate the span
+			// to the session expiration time
+			if (spanEndTimeSeconds > sessionMaxDurationTimeInSeconds) {
+				span.endTime[0] = sessionMaxDurationTimeInSeconds
+				span.endTime[1] = 0
+				span.duration[0] = sessionMaxDurationTimeInSeconds - span.startTime[0]
+				span.duration[1] = 0
+			}
+		}
 	}
 
 	onStart(span: Span): void {

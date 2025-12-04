@@ -31,6 +31,8 @@ const USER_ACTIVITY_EVENTS = ['click', 'touchstart', 'keydown', 'scroll']
 type SessionStateChange = { currentState: SessionState; previousState: SessionState | null }
 
 export class SessionManager {
+	sessionHistory: Map<string, SessionState> = new Map()
+
 	private _session: SessionState
 
 	private isStarted = false
@@ -44,6 +46,7 @@ export class SessionManager {
 	private set session(state: SessionState) {
 		const previousState = this._session
 		this._session = state
+		this.sessionHistory.set(state.id, state)
 
 		diag.debug('SessionManager: Updating session', { currentState: state, previousState })
 		if (state.state === 'active') {
@@ -91,6 +94,14 @@ export class SessionManager {
 	}
 
 	getSessionId() {
+		// When the tab is in the background or sleeps, setInterval is throttled, which may cause the session state to be updated too late.
+		// For example, a span might be emitted before the interval runs, resulting in the span being sent even though it should be dropped due to session expiration.
+		// This ensures that a fresh session state is always retrieved.
+		const updatedSessionState = this.getUpdatedSessionStateIfExpired()
+		if (updatedSessionState) {
+			this.watchSessionState()
+		}
+
 		return SessionManager.getNativeSessionId() ?? this.session.id
 	}
 
@@ -294,6 +305,21 @@ export class SessionManager {
 		return SessionManager.canContinueUsingSession(sessionState) ? sessionState : null
 	}
 
+	private getUpdatedSessionStateIfExpired = (): SessionState | undefined => {
+		if (!SessionManager.canContinueUsingSession(this._session)) {
+			const newState = SessionManager.isSessionMaxDurationReached(this._session)
+				? 'expired-duration'
+				: 'expired-inactivity'
+
+			if (this.session.state !== newState) {
+				return {
+					...this.session,
+					state: newState,
+				}
+			}
+		}
+	}
+
 	private synchronizeStorageWithCurrentSessionState = () => {
 		// Check if another tab did not start a new session
 		const persistedSessionState = this.getSessionStateFromStorageAndValidate()
@@ -325,17 +351,9 @@ export class SessionManager {
 	}
 
 	private watchSessionState = () => {
-		if (!SessionManager.canContinueUsingSession(this.session)) {
-			const newState = SessionManager.isSessionMaxDurationReached(this.session)
-				? 'expired-duration'
-				: 'expired-inactivity'
-
-			if (this.session.state !== newState) {
-				this.session = {
-					...this.session,
-					state: newState,
-				}
-			}
+		const state = this.getUpdatedSessionStateIfExpired()
+		if (state) {
+			this.session = state
 		}
 	}
 }
