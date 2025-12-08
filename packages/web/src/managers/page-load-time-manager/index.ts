@@ -16,6 +16,4 @@
  *
  */
 
-export * from './page-load-time-manager'
-export * from './session-manager'
-export * from './storage'
+export * from './page-completion-time-manager'

@@ -57,3 +57,6 @@ export const isScriptOrNoScriptElement = (
 	maybeScriptOrNoScriptElement.nodeName === 'SCRIPT' || maybeScriptOrNoScriptElement.nodeName === 'NOSCRIPT'
 
 export const isTextNode = (maybeTextNode: Node): maybeTextNode is Text => maybeTextNode.nodeType === Node.TEXT_NODE
+
+export const isMediaElement = (element: Element): element is HTMLMediaElement =>
+	element.tagName === 'IMG' || element.tagName === 'VIDEO' || element.tagName === 'AUDIO'
