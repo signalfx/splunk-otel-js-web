@@ -8,7 +8,7 @@
 		"server:same-origin": "PORT=3000 tsx src/server/server.ts",
 		"server:cross-origin": "PORT=3001 tsx src/server/server.ts",
 		"server:socketio": "PORT=3002 tsx src/server/server-socketio.ts",
-		"start": "nodemon --exec run-p server:* --ext js,ts,ejs",
+		"start": "nodemon --watch server --exec run-p server:* --ext js,ts,ejs",
 		"test": "pnpm exec playwright test",
 		"test:e2e": "pnpm run test",
 		"build": "exit 0;",
