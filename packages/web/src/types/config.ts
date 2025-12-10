@@ -80,6 +80,15 @@ type SensitivityRule = {
 }
 
 export interface SplunkOtelWebConfig {
+	/**
+	 * Experimental: Data attribute names to capture from elements during user interactions.
+	 *
+	 * When specified, these data attributes will be collected from interacted elements and attached
+	 * to interaction spans as span attributes. Only data-* attributes are captured.
+	 * Currently supported for click and rage click spans.
+	 */
+	__experimental_dataAttributesToCapture?: string[]
+
 	/** Allows http beacon urls */
 	allowInsecureBeacon?: boolean
 

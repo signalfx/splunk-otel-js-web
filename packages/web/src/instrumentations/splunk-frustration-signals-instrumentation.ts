@@ -25,6 +25,7 @@ import { getElementXPath } from '@opentelemetry/sdk-trace-web'
 
 import { PrivacyManager } from '../managers/privacy/privacy-manager'
 import { isElement, isNode, SplunkOtelWebConfig } from '../types'
+import { captureElementDataAttributes } from '../utils/element-attributes'
 import { getTextFromNode } from '../utils/text'
 import { VERSION } from '../version'
 
@@ -158,6 +159,8 @@ export class SplunkFrustrationSignalsInstrumentation extends InstrumentationBase
 				)
 
 				span.setAttribute('target_text', textValue || `<${target.nodeName.toLowerCase()}>`)
+
+				captureElementDataAttributes(span, target, this.otelConfig.__experimental_dataAttributesToCapture)
 
 				span.end(startTime)
 			}
