@@ -27,6 +27,13 @@ const getBaseConfig = (env, argv) => {
 
 	return {
 		devtool: isDevelopmentMode ? 'inline-source-map' : 'source-map',
+		experiments: {
+			buildHttp: {
+				allowedUris: ['https://cdn.signalfx.com/', 'http://localhost:8080/'],
+				cacheLocation: false,
+				frozen: false, // Allow local development
+			},
+		},
 		module: {
 			rules: [
 				{
@@ -98,6 +105,9 @@ const getBaseConfig = (env, argv) => {
 		],
 		resolve: {
 			extensions: ['.ts', '.js', '.json'],
+			extensionAlias: {
+				'.js': ['.ts', '.js'],
+			},
 		},
 	}
 }
@@ -110,6 +120,7 @@ const browserConfig = (env, argv) => {
 		output: {
 			...baseConfig.output,
 			filename: 'splunk-otel-web.js',
+			chunkFilename: '[name].min.js',
 			library: {
 				export: 'default',
 				name: 'SplunkRum',

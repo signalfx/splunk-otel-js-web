@@ -15,28 +15,13 @@
  * limitations under the License.
  *
  */
-module.exports = [
-	{
-		limit: '3 kB',
-		name: 'artifacts/otel-api-globals.js',
-		path: './packages/web/dist/artifacts/otel-api-globals.js',
-	},
 
-	{
-		limit: '82 kB',
-		name: 'artifacts/splunk-otel-web.js',
-		path: './packages/web/dist/artifacts/splunk-otel-web.js',
-	},
+export declare const isPickerWindow: () => boolean
 
-	{
-		limit: '109 kB',
-		name: 'artifacts/splunk-otel-web-session-recorder.js',
-		path: './packages/session-recorder/dist/artifacts/splunk-otel-web-session-recorder.js',
-	},
+export type CreatePickerParams = {
+	getElementText: (element: HTMLElement) => string
+	getElementXPath: (element: HTMLElement) => string
+	window: Window
+}
 
-	{
-		limit: '12 kB',
-		name: 'picker chunk (dynamic import)',
-		path: './packages/web/dist/artifacts/picker.min.js',
-	},
-]
+export declare const createPicker: (params: CreatePickerParams, targetOrigin: string) => void

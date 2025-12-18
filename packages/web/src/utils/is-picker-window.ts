@@ -15,28 +15,11 @@
  * limitations under the License.
  *
  */
-module.exports = [
-	{
-		limit: '3 kB',
-		name: 'artifacts/otel-api-globals.js',
-		path: './packages/web/dist/artifacts/otel-api-globals.js',
-	},
 
-	{
-		limit: '82 kB',
-		name: 'artifacts/splunk-otel-web.js',
-		path: './packages/web/dist/artifacts/splunk-otel-web.js',
-	},
+// Import from picker package source for development
+// In production, this will be replaced with CDN import via webpack buildHttp
+// Local development: using local HTTP server
+// @ts-expect-error - HTTP module import resolved by webpack buildHttp
+export { isPickerWindow } from 'http://localhost:8080/picker.is-picker-window-module.min.js'
+// Production: https://cdn.signalfx.com/o11y-gdi-rum/picker/v1.0.0/picker.is-picker-window-module.min.js
 
-	{
-		limit: '109 kB',
-		name: 'artifacts/splunk-otel-web-session-recorder.js',
-		path: './packages/session-recorder/dist/artifacts/splunk-otel-web-session-recorder.js',
-	},
-
-	{
-		limit: '12 kB',
-		name: 'picker chunk (dynamic import)',
-		path: './packages/web/dist/artifacts/picker.min.js',
-	},
-]
