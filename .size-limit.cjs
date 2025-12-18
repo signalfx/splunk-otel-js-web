@@ -33,4 +33,10 @@ module.exports = [
 		name: 'artifacts/splunk-otel-web-session-recorder.js',
 		path: './packages/session-recorder/dist/artifacts/splunk-otel-web-session-recorder.js',
 	},
+
+	{
+		limit: '12 kB',
+		name: 'picker chunk (dynamic import)',
+		path: './packages/web/dist/artifacts/picker.min.js',
+	},
 ]
