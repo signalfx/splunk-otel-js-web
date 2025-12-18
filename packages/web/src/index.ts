@@ -31,6 +31,7 @@ import {
 	SpanExporter,
 	SpanProcessor,
 } from '@opentelemetry/sdk-trace-base'
+import { getElementXPath as getElementXPathFromOtel } from '@opentelemetry/sdk-trace-web'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 
 import { InternalEventTarget, SplunkOtelWebEventTarget } from './event-target'
@@ -76,8 +77,10 @@ import { generateId, getPluginConfig } from './utils'
 import { getValidAttributes, SpanContext } from './utils/attributes'
 import { isAgentLoadedViaLatestTag } from './utils/detect-latest'
 import { isBot } from './utils/is-bot'
+import { isPickerWindow } from './utils/is-picker-window'
 import { parseVersion } from './utils/parse-version'
 import { getBasicPlatformInfo, getEnhancedPlatformInfo } from './utils/platform'
+import { getTextFromNode } from './utils/text'
 import { VERSION } from './version'
 
 export { type SplunkExporterConfig } from './exporters/common'
@@ -366,6 +369,25 @@ export const SplunkRum: SplunkOtelWebType = {
 			console.warn(
 				'[Splunk]: SplunkRum.init() - Error: This library is intended to run in a browser environment. Please ensure the code is evaluated within a browser context.',
 			)
+			return
+		}
+
+		if (isPickerWindow()) {
+			// Dynamically import picker from CDN only when needed to avoid including it in main bundle
+			void import(/* webpackChunkName: "picker" */ './picker/create-picker.js')
+				.then((pickerModule) => {
+					pickerModule.createPicker(
+						{
+							getElementText: (element: HTMLElement) => getTextFromNode(element, () => true),
+							getElementXPath: (element: HTMLElement) => getElementXPathFromOtel(element, true),
+							window,
+						},
+						window.location.origin,
+					)
+				})
+				.catch((error) => {
+					diag.warn('[Splunk]: SplunkRum.init() - Failed to initialize picker.', { error })
+				})
 			return
 		}
 
