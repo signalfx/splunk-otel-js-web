@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Data Attributes Capture Test</title>
+    <%- renderAgent({
+        __experimental_dataAttributesToCapture: ['data-testid', 'data-track', 'data-component', 'data-non-existent']
+	}) %>
+</head>
+<body>
+  <h1>Data Attributes Capture Test</h1>
+
+  <button
+    type="button"
+    id="btnWithData"
+    data-testid="submit-button"
+    data-track="purchase"
+    aria-label="Submit form">
+    Button with data attributes
+  </button>
+
+  <pre id="scenarioDisplay"></pre>
+  <script id="scenario">
+    btnWithData.addEventListener('click', function () {
+      console.log('btnWithData clicked');
+    });
+  </script>
+  <script>scenarioDisplay.innerHTML = scenario.innerHTML;</script>
+</body>
+</html>

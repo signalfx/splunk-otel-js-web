@@ -16,6 +16,7 @@
  *
  */
 export * from './detect-latest'
+export * from './element-attributes'
 export * from './text'
 export * from './traverse'
 export * from './url'
