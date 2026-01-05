@@ -42,7 +42,7 @@
 		"unplugin": "^2.3.11"
 	},
 	"devDependencies": {
-		"@types/node": "^24.10.1",
+		"@types/node": "^25.0.3",
 		"ts-node": "^10.9.1",
 		"wait-on": "^9.0.3",
 		"webpack": "^5.104.1",
