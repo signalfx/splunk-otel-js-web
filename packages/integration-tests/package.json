@@ -17,7 +17,7 @@
 	"author": "Splunk Observability Instrumentals Team <ssg-observability-instrumentals-npm@splunk.com>",
 	"license": "Apache-2.0",
 	"devDependencies": {
-		"@fastify/cors": "^11.1.0",
+		"@fastify/cors": "^11.2.0",
 		"@fastify/static": "^9.0.0",
 		"@playwright/test": "^1.57.0",
 		"@splunk/otel-web": "workspace:*",
