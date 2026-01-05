@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2020-2025 Splunk Inc.
+ * Copyright 2020-2026 Splunk Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,7 @@
  *
  */
 
-/// <reference types="./cdn-module-types.d.ts" preserve="true" />
-// Local development: using local HTTP server
-// @ts-expect-error - HTTP module import resolved by webpack buildHttp
-export { createPicker } from 'http://localhost:8080/picker.module.min.js'
-// Production: https://cdn.signalfx.com/o11y-gdi-rum/picker/v1.0.0/picker.module.min.js
-// If you update the module version above, also update the version in cdn-module-types.d.ts.
-
+export {
+	createPicker,
+	isPickerWindow,
+} from 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.6.0/picker/picker.module.min.js'

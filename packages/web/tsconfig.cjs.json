@@ -1,11 +1,12 @@
 {
 	"compilerOptions": {
 		"declaration": true,
+		"emitDeclarationOnly": true,
 		"module": "NodeNext",
 		"moduleResolution": "nodenext",
 		"outDir": "./dist/cjs",
 		"rootDir": "src",
-		"sourceMap": true
+		"sourceMap": false
 	},
 	"extends": "./tsconfig.base.json",
 	"include": ["src/**/*.ts"],

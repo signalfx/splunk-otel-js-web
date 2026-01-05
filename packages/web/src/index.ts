@@ -31,7 +31,6 @@ import {
 	SpanExporter,
 	SpanProcessor,
 } from '@opentelemetry/sdk-trace-base'
-import { getElementXPath as getElementXPathFromOtel } from '@opentelemetry/sdk-trace-web'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 
 import { InternalEventTarget, SplunkOtelWebEventTarget } from './event-target'
@@ -77,17 +76,20 @@ import { generateId, getPluginConfig } from './utils'
 import { getValidAttributes, SpanContext } from './utils/attributes'
 import { isAgentLoadedViaLatestTag } from './utils/detect-latest'
 import { isBot } from './utils/is-bot'
-import { isPickerWindow } from './utils/is-picker-window'
 import { parseVersion } from './utils/parse-version'
+import { createPicker, isPickerWindow } from './utils/picker'
 import { getBasicPlatformInfo, getEnhancedPlatformInfo } from './utils/platform'
-import { getTextFromNode } from './utils/text'
 import { VERSION } from './version'
 
 export { type SplunkExporterConfig } from './exporters/common'
 export { SplunkZipkinExporter } from './exporters/zipkin'
 export * from './session-based-sampler'
 export * from './splunk-web-tracer-provider'
+import { getElementXPath } from '@opentelemetry/sdk-trace-web'
+
 import { SessionManager, SessionState, StorageManager } from './managers'
+import { PrivacyManager } from './managers/privacy/privacy-manager'
+import { getTextFromNode } from './utils/text'
 
 interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
 	bufferSize?: number
@@ -184,6 +186,7 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	DEFAULT_AUTO_INSTRUMENTED_EVENT_NAMES: (keyof HTMLElementEventMap)[]
 
 	ParentBasedSampler: typeof ParentBasedSampler
+
 	SessionBasedSampler: typeof SessionBasedSampler
 
 	/**
@@ -372,25 +375,6 @@ export const SplunkRum: SplunkOtelWebType = {
 			return
 		}
 
-		if (isPickerWindow()) {
-			// Dynamically import picker from CDN only when needed to avoid including it in main bundle
-			void import(/* webpackChunkName: "picker" */ './picker/create-picker.js')
-				.then((pickerModule) => {
-					pickerModule.createPicker(
-						{
-							getElementText: (element: HTMLElement) => getTextFromNode(element, () => true),
-							getElementXPath: (element: HTMLElement) => getElementXPathFromOtel(element, true),
-							window,
-						},
-						window.location.origin,
-					)
-				})
-				.catch((error) => {
-					diag.warn('[Splunk]: SplunkRum.init() - Failed to initialize picker.', { error })
-				})
-			return
-		}
-
 		// "env" based config still a bad idea for web
 		if (!('OTEL_TRACES_EXPORTER' in _globalThis)) {
 			// @ts-expect-error OTEL_TRACES_EXPORTER is not defined in the global scope
@@ -463,6 +447,23 @@ export const SplunkRum: SplunkOtelWebType = {
 			}
 
 			this._processedOptions = processedOptions
+
+			// Initialize picker if this is a picker window
+			if (isPickerWindow()) {
+				try {
+					createPicker({
+						getElementText: (element: HTMLElement) =>
+							getTextFromNode(
+								element,
+								(node) => !PrivacyManager.shouldMaskTextNode(node, processedOptions.privacy),
+							),
+						getElementXPath: (element: HTMLElement) => getElementXPath(element, true),
+					})
+				} catch (error) {
+					diag.error('[Splunk]: SplunkSessionRecorder.init() - Failed to initialize picker.', { error })
+				}
+				return
+			}
 
 			if (processedOptions.realm) {
 				if (processedOptions.beaconEndpoint) {
