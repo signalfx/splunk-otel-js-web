@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2020-2025 Splunk Inc.
+ * Copyright 2020-2026 Splunk Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,10 @@
  * limitations under the License.
  *
  */
-
-export declare const isPickerWindow: () => boolean
-
-export type CreatePickerParams = {
-	getElementText: (element: HTMLElement) => string
-	getElementXPath: (element: HTMLElement) => string
-	window: Window
+declare module 'http://localhost:8080/picker.is-picker-window-module.min.js' {
+	export const isPickerWindow: () => boolean
 }
 
-export declare const createPicker: (params: CreatePickerParams, targetOrigin: string) => void
+declare module 'https://cdn.signalfx.com/o11y-gdi-rum/picker/v1.0.0/picker.is-picker-window-module.min.js' {
+	export const isPickerWindow: () => boolean
+}

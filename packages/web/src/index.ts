@@ -31,7 +31,6 @@ import {
 	SpanExporter,
 	SpanProcessor,
 } from '@opentelemetry/sdk-trace-base'
-import { getElementXPath as getElementXPathFromOtel } from '@opentelemetry/sdk-trace-web'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 
 import { InternalEventTarget, SplunkOtelWebEventTarget } from './event-target'
@@ -80,7 +79,6 @@ import { isBot } from './utils/is-bot'
 import { isPickerWindow } from './utils/is-picker-window'
 import { parseVersion } from './utils/parse-version'
 import { getBasicPlatformInfo, getEnhancedPlatformInfo } from './utils/platform'
-import { getTextFromNode } from './utils/text'
 import { VERSION } from './version'
 
 export { type SplunkExporterConfig } from './exporters/common'
@@ -88,6 +86,8 @@ export { SplunkZipkinExporter } from './exporters/zipkin'
 export * from './session-based-sampler'
 export * from './splunk-web-tracer-provider'
 import { SessionManager, SessionState, StorageManager } from './managers'
+import { PrivacyManager } from './managers/privacy/privacy-manager'
+import { getTextFromNode } from './utils/text'
 
 interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
 	bufferSize?: number
@@ -184,6 +184,9 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	DEFAULT_AUTO_INSTRUMENTED_EVENT_NAMES: (keyof HTMLElementEventMap)[]
 
 	ParentBasedSampler: typeof ParentBasedSampler
+
+	PrivacyManager: typeof PrivacyManager
+
 	SessionBasedSampler: typeof SessionBasedSampler
 
 	/**
@@ -222,6 +225,8 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	getSessionId: () => string | undefined
 
 	getSessionState: () => SessionState | undefined
+
+	getTextFromNode: typeof getTextFromNode
 
 	init: (options: SplunkOtelWebConfig) => void
 
@@ -362,6 +367,8 @@ export const SplunkRum: SplunkOtelWebType = {
 		}
 	},
 
+	getTextFromNode,
+
 	init: function (options) {
 		userTrackingMode = options.user?.trackingMode ?? 'noTracking'
 
@@ -369,25 +376,6 @@ export const SplunkRum: SplunkOtelWebType = {
 			console.warn(
 				'[Splunk]: SplunkRum.init() - Error: This library is intended to run in a browser environment. Please ensure the code is evaluated within a browser context.',
 			)
-			return
-		}
-
-		if (isPickerWindow()) {
-			// Dynamically import picker from CDN only when needed to avoid including it in main bundle
-			void import(/* webpackChunkName: "picker" */ './picker/create-picker.js')
-				.then((pickerModule) => {
-					pickerModule.createPicker(
-						{
-							getElementText: (element: HTMLElement) => getTextFromNode(element, () => true),
-							getElementXPath: (element: HTMLElement) => getElementXPathFromOtel(element, true),
-							window,
-						},
-						window.location.origin,
-					)
-				})
-				.catch((error) => {
-					diag.warn('[Splunk]: SplunkRum.init() - Failed to initialize picker.', { error })
-				})
 			return
 		}
 
@@ -463,6 +451,11 @@ export const SplunkRum: SplunkOtelWebType = {
 			}
 
 			this._processedOptions = processedOptions
+
+			if (isPickerWindow()) {
+				// Silently exit if this is a picker window - picker will be initialized by session-recorder
+				return
+			}
 
 			if (processedOptions.realm) {
 				if (processedOptions.beaconEndpoint) {
@@ -651,6 +644,8 @@ export const SplunkRum: SplunkOtelWebType = {
 	},
 
 	ParentBasedSampler,
+
+	PrivacyManager,
 
 	removeEventListener(name, callback): void {
 		try {

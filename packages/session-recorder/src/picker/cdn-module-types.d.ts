@@ -15,13 +15,18 @@
  * limitations under the License.
  *
  */
+declare module 'http://localhost:8080/picker.module.min.js' {
+	export const isPickerWindow: () => boolean
+	export const createPicker: (options: {
+		getElementText: (element: HTMLElement) => string
+		getElementXPath: (element: HTMLElement) => string
+	}) => void
+}
 
-/// <reference types="./cdn-module-types.d.ts" preserve="true" />
-// Import from picker module CDN - webpack buildHttp will download and bundle it at build time
-// Local development: using local HTTP server
-import { isPickerWindow as _isPickerWindow } from 'http://localhost:8080/picker.is-picker-window-module.min.js'
-// Production: https://cdn.signalfx.com/o11y-gdi-rum/picker/v1.0.0/picker.is-picker-window-module.min.js
-// If you update the module version above, also update the version in cdn-module-types.d.ts.
-export function isPickerWindow(): boolean {
-	return _isPickerWindow()
+declare module 'https://cdn.signalfx.com/o11y-gdi-rum/picker/v1.0.0/picker.module.min.js' {
+	export const isPickerWindow: () => boolean
+	export const createPicker: (options: {
+		getElementText: (element: HTMLElement) => string
+		getElementXPath: (element: HTMLElement) => string
+	}) => void
 }
