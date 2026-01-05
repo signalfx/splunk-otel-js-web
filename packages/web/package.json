@@ -58,7 +58,7 @@
 		"web-vitals": "5.1.0"
 	},
 	"devDependencies": {
-		"@swc/core": "^1.15.3",
+		"@swc/core": "^1.15.8",
 		"@swc/helpers": "^0.5.18",
 		"@types/shimmer": "^1.2.0",
 		"fork-ts-checker-webpack-plugin": "^9.1.0",
