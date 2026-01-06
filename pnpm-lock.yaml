@@ -401,8 +401,8 @@ importers:
         specifier: ^4.1.5
         version: 4.1.5
       protobufjs-cli:
-        specifier: ^1.1.3
-        version: 1.1.3(protobufjs@7.5.4)
+        specifier: ^2.0.0
+        version: 2.0.0(protobufjs@7.5.4)
       source-map-loader:
         specifier: ^5.0.0
         version: 5.0.0(webpack@5.104.1)
@@ -6305,8 +6305,8 @@ packages:
     resolution: {integrity: sha512-y+WKFlBR8BGXnsNlIHFGPZmyDf3DFMoLhaflAnyZgV6rG6xu+JwesTo2Q9R6XwYmtmwAFCkAk3e35jEdoeh/3g==}
     engines: {node: '>=10'}
 
-  protobufjs-cli@1.1.3:
-    resolution: {integrity: sha512-MqD10lqF+FMsOayFiNOdOGNlXc4iKDCf0ZQPkPR+gizYh9gqUeGTWulABUCdI+N67w5RfJ6xhgX4J8pa8qmMXQ==}
+  protobufjs-cli@2.0.0:
+    resolution: {integrity: sha512-/QGByFXSLY9Was5Oq8yKn5lu1pMywGMHgE0fDR9b4nZFTvaWJonHiJxT3HHu2ZuOQAxd7ufYyQtW8Q1ZgW+gPg==}
     engines: {node: '>=12.0.0'}
     hasBin: true
     peerDependencies:
@@ -14910,7 +14910,7 @@ snapshots:
       err-code: 2.0.3
       retry: 0.12.0
 
-  protobufjs-cli@1.1.3(protobufjs@7.5.4):
+  protobufjs-cli@2.0.0(protobufjs@7.5.4):
     dependencies:
       chalk: 4.1.2
       escodegen: 1.14.3
