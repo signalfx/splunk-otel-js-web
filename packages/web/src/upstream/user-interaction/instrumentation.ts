@@ -22,7 +22,7 @@ import { getElementXPath } from '@opentelemetry/sdk-trace-web'
 
 import { PrivacyManager } from '../../managers/privacy/privacy-manager'
 import { isNode, SplunkOtelWebConfig } from '../../types'
-import { getTextFromNode } from '../../utils/index'
+import { captureElementDataAttributes, getTextFromNode } from '../../utils/index'
 import { AttributeNames } from './enums/attribute-names'
 import { SpanData } from './internal-types'
 import { EventName, ShouldPreventSpanCreation, UserInteractionInstrumentationConfig } from './types'
@@ -322,6 +322,12 @@ export class UserInteractionInstrumentation<
 						)
 
 						span.setAttribute('target_text', textValue || `<${event.target.nodeName.toLowerCase()}>`)
+
+						captureElementDataAttributes(
+							span,
+							event.target,
+							instrumentation.otelConfig.__experimental_dataAttributesToCapture,
+						)
 					}
 
 					instrumentation._eventsSpanMap.set(event, span)
