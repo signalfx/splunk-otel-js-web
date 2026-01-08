@@ -16,6 +16,7 @@
  *
  */
 
-export * from './session-manager'
-export * from './spa-metrics-manager'
-export * from './storage'
+export { FetchXhrMonitor } from './fetch-xhr-monitor'
+export { MediaMonitor } from './media-monitor'
+export { ResourceState, type ResourceStateEvent } from './monitor'
+export { PerformanceMonitor } from './performance-monitor'

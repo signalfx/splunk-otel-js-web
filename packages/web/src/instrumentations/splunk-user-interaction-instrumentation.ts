@@ -16,9 +16,10 @@
  *
  */
 
-import { Span, trace, Tracer, TracerProvider } from '@opentelemetry/api'
+import { diag, Span, trace, Tracer, TracerProvider } from '@opentelemetry/api'
 import { isUrlIgnored } from '@opentelemetry/core'
 
+import { SpaMetricsManager } from '../managers'
 import { SplunkOtelWebConfig } from '../types'
 import { UserInteractionInstrumentation } from '../upstream/user-interaction/instrumentation'
 import { UserInteractionInstrumentationConfig } from '../upstream/user-interaction/types'
@@ -53,7 +54,7 @@ export interface SplunkUserInteractionInstrumentationConfig extends UserInteract
 	ignoreUrls?: (string | RegExp)[]
 }
 
-function isPatchableEventListner(listener: Parameters<EventTarget['addEventListener']>[1]) {
+function isPatchableEventListener(listener: Parameters<EventTarget['addEventListener']>[1]) {
 	return (
 		listener &&
 		(typeof listener === 'function' || (typeof listener === 'object' && typeof listener.handleEvent === 'function'))
@@ -71,6 +72,8 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 
 	private _routingTracer: Tracer
 
+	private spaMetricsManager: SpaMetricsManager | null = null
+
 	constructor(config: SplunkUserInteractionInstrumentationConfig = {}, otelConfig: SplunkOtelWebConfig) {
 		// Prefer otel's eventNames property
 		if (!config.eventNames) {
@@ -83,6 +86,16 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 		}
 
 		super(config, otelConfig)
+
+		if (otelConfig._experimentalSPAMetrics) {
+			const spaMetricConfig =
+				otelConfig._experimentalSPAMetrics === true ? {} : otelConfig._experimentalSPAMetrics
+
+			this.spaMetricsManager = new SpaMetricsManager({
+				beaconEndpoint: otelConfig.beaconEndpoint,
+				...spaMetricConfig,
+			})
+		}
 
 		this._routingTracer = trace.getTracer(ROUTING_INSTRUMENTATION_NAME, ROUTING_INSTRUMENTATION_VERSION)
 
@@ -119,7 +132,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 					useCapture?: boolean | AddEventListenerOptions,
 				) {
 					// Only forward to otel if it can patch it
-					if (!isPatchableEventListner(listener)) {
+					if (!isPatchableEventListener(listener)) {
 						return original.call(this, type, listener, useCapture)
 					}
 
@@ -142,7 +155,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 				const result = original.apply(this, args)
 				const newHref = location.href
 				if (oldHref !== newHref) {
-					that._emitRouteChangeSpan(oldHref)
+					void that._emitRouteChangeSpan(oldHref)
 				}
 
 				return result
@@ -154,11 +167,15 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 		if (this.__hashChangeHandler) {
 			window.removeEventListener('hashchange', this.__hashChangeHandler)
 		}
+
+		this.spaMetricsManager?.stop()
 	}
 
 	enable(): void {
+		this.spaMetricsManager?.start()
+
 		this.__hashChangeHandler = (event: Event) => {
-			this._emitRouteChangeSpan((event as HashChangeEvent).oldURL)
+			void this._emitRouteChangeSpan((event as HashChangeEvent).oldURL)
 		}
 
 		// Hash can be changed with location.hash = '#newThing', no way to hook that directly...
@@ -177,7 +194,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 		this._routingTracer = tracerProvider.getTracer(ROUTING_INSTRUMENTATION_NAME, ROUTING_INSTRUMENTATION_VERSION)
 	}
 
-	private _emitRouteChangeSpan(oldHref: string) {
+	private async _emitRouteChangeSpan(oldHref: string) {
 		const config = this.getConfig()
 		if (isUrlIgnored(location.href, config.ignoreUrls)) {
 			return
@@ -188,6 +205,18 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 		span.setAttribute('component', this.moduleName)
 		span.setAttribute('prev.href', oldHref)
 		// location.href set with new value by default
-		span.end(now)
+
+		if (this.spaMetricsManager) {
+			// Wait for all in-flight resources (XHR, fetch, media) to finish loading,
+			// then resolve after a quiet period with no new network activity.
+			const { loadTime, timestampOfLastLoadedResource } = await this.spaMetricsManager.waitForPageLoad({
+				startTime: performance.now(),
+			})
+
+			span.end(now + loadTime)
+			diag.debug('Route change span ended', { loadTime, span, timestampOfLastLoadedResource })
+		} else {
+			span.end(now)
+		}
 	}
 }

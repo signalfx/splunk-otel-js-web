@@ -154,7 +154,7 @@ const config = [
 				{
 					// when we apply proxies we often need to access some variable
 					// from outer scope, and we cannot really use arrow functions
-					allowedNames: ['instrumentation', 'that', 'capturedThis'],
+					allowedNames: ['instrumentation', 'that', 'capturedThis', 'self'],
 				},
 			],
 			'@typescript-eslint/no-unsafe-argument': 'off', // TODO: temporarily disabled
