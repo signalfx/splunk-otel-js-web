@@ -128,11 +128,16 @@ const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
 const INSTRUMENTATIONS = [
 	{ confKey: 'document', disable: false, Instrument: SplunkDocumentLoadInstrumentation },
 	{ confKey: 'xhr', disable: false, Instrument: SplunkXhrInstrumentation },
+	// TODO: Fetch must be enabled before interactions instrumentation. The interactions instrumentation
+	// 	wraps fetch to track Page Completion Time (PCT), and SplunkFetchInstrumentation wrongly unwraps
+	// 	fetch during enable(). It is fixed in new versions of ``@opentelemetry/instrumentation-xml-http-request`
+	// 	once we are able to upgrade to a version that fixes this issue, we can remove this ordering/comment
+	// 	This ordering ensures our PCT fetch wrapper remains intact.
+	{ confKey: 'fetch', disable: false, Instrument: SplunkFetchInstrumentation },
 	{ confKey: 'frustrationSignals', disable: false, Instrument: SplunkFrustrationSignalsInstrumentation },
 	{ confKey: 'webvitals', disable: false, Instrument: SplunkWebVitalsInstrumentation },
 	{ confKey: 'interactions', disable: false, Instrument: SplunkUserInteractionInstrumentation },
 	{ confKey: 'postload', disable: false, Instrument: SplunkPostDocLoadResourceInstrumentation },
-	{ confKey: 'fetch', disable: false, Instrument: SplunkFetchInstrumentation },
 	{ confKey: 'websocket', disable: true, Instrument: SplunkWebSocketInstrumentation },
 	{ confKey: 'longtask', disable: false, Instrument: SplunkLongTaskInstrumentation },
 	{ confKey: ERROR_INSTRUMENTATION_NAME, disable: false, Instrument: SplunkErrorInstrumentation },
@@ -556,9 +561,9 @@ export const SplunkRum: SplunkOtelWebType = {
 				if (pluginConf) {
 					const instrumentation =
 						Instrument === SplunkLongTaskInstrumentation
-							? new Instrument(pluginConf, options)
+							? new Instrument(pluginConf, processedOptions)
 							: // @ts-expect-error Can't mark in any way that processedOptions.instrumentations[confKey] is of specifc config type
-								new Instrument(pluginConf, options)
+								new Instrument(pluginConf, processedOptions)
 
 					if (
 						confKey === ERROR_INSTRUMENTATION_NAME &&
