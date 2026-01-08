@@ -95,6 +95,74 @@ describe('MediaMonitor', () => {
 			expect(events[0].state).toBe(ResourceState.LOADED)
 			expect('loadTime' in events[0] && events[0].loadTime).toBe(0)
 		})
+
+		it('skips lazy-loaded images', async () => {
+			monitor.start()
+
+			const img = document.createElement('img')
+			img.loading = 'lazy'
+			img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+			document.body.append(img)
+
+			await new Promise((resolve) => setTimeout(resolve, 50))
+
+			expect(events.length).toBe(0)
+		})
+
+		it('tracks eager-loaded images (loading="eager")', async () => {
+			monitor.start()
+
+			const img = document.createElement('img')
+			img.loading = 'eager'
+			img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+			document.body.append(img)
+
+			await new Promise<void>((resolve) => {
+				img.addEventListener('load', () => resolve())
+				img.addEventListener('error', () => resolve())
+			})
+			await new Promise((resolve) => setTimeout(resolve, 0))
+
+			expect(events.length).toBeGreaterThanOrEqual(1)
+			const lastEvent = events.at(-1)
+			expect(lastEvent?.state).toBe(ResourceState.LOADED)
+		})
+
+		it('tracks images without loading attribute', async () => {
+			monitor.start()
+
+			const img = document.createElement('img')
+			// No loading attribute set (default behavior)
+			img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+			document.body.append(img)
+
+			await new Promise<void>((resolve) => {
+				img.addEventListener('load', () => resolve())
+				img.addEventListener('error', () => resolve())
+			})
+			await new Promise((resolve) => setTimeout(resolve, 0))
+
+			expect(events.length).toBeGreaterThanOrEqual(1)
+			const lastEvent = events.at(-1)
+			expect(lastEvent?.state).toBe(ResourceState.LOADED)
+		})
+
+		it('skips existing lazy-loaded images when monitor starts', async () => {
+			// Create lazy image before starting monitor
+			const img = document.createElement('img')
+			img.loading = 'lazy'
+			img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+			document.body.append(img)
+
+			await new Promise((resolve) => setTimeout(resolve, 50))
+
+			// Start monitor after lazy image exists
+			monitor.start()
+			await new Promise((resolve) => setTimeout(resolve, 50))
+
+			// Should not track the lazy image
+			expect(events.length).toBe(0)
+		})
 	})
 
 	describe('nested elements', () => {

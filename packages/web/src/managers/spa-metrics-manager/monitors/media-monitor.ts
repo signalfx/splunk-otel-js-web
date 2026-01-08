@@ -65,6 +65,10 @@ export class MediaMonitor extends Monitor {
 			return
 		}
 
+		if (element instanceof HTMLImageElement && element.loading === 'lazy') {
+			return
+		}
+
 		this.monitoredMediaElements.add(element)
 		if (this.isElementAlreadyLoaded(element)) {
 			this.config.onResourceStateChange({
