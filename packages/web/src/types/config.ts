@@ -81,40 +81,6 @@ type SensitivityRule = {
 
 export interface SplunkOtelWebConfig {
 	/**
-	 * **Experimental** - Enables SPA (Single Page Application) metrics.
-	 *
-	 * Currently supported metrics:
-	 * - **Page Completion Time (PCT)**: Measures the time from a route change until all network
-	 *   requests (fetch/XHR) and media elements have finished loading
-	 *
-	 * @experimental This feature is under active development and may change in future releases.
-	 * @default false (disabled)
-	 *
-	 * @example
-	 * ```typescript
-	 * // Enable with defaults
-	 * _experimentalSPAMetrics: true
-	 *
-	 * // Enable with custom configuration
-	 * _experimentalSPAMetrics: {
-	 *   ignoreUrls: [/analytics\.example\.com/],
-	 *   quietTime: 1000,
-	 *   maxResourcesToWatch: 100
-	 * }
-	 * ```
-	 */
-	_experimentalSPAMetrics?:
-		| boolean
-		| {
-				/** URLs to exclude from PCT tracking (e.g., analytics, third-party scripts) */
-				ignoreUrls?: Array<string | RegExp>
-				/** Maximum number of concurrent resources to track. @default 100 */
-				maxResourcesToWatch?: number
-				/** Time in milliseconds to wait after last resource loads before considering page complete. @default 1000 */
-				quietTime?: number
-		  }
-
-	/**
 	 * Experimental: Data attribute names to capture from elements during user interactions.
 	 *
 	 * When specified, these data attributes will be collected from interacted elements and attached
@@ -129,6 +95,40 @@ export interface SplunkOtelWebConfig {
 	 * @example ['data-test-id', 'userName'] // Both are valid
 	 */
 	_experimental_dataAttributesToCapture?: string[]
+
+	/**
+	 * **Experimental** - Enables SPA (Single Page Application) metrics.
+	 *
+	 * Currently supported metrics:
+	 * - **Page Completion Time (PCT)**: Measures the time from a route change until all network
+	 *   requests (fetch/XHR) and media elements have finished loading
+	 *
+	 * @experimental This feature is under active development and may change in future releases.
+	 * @default false (disabled)
+	 *
+	 * @example
+	 * ```typescript
+	 * // Enable with defaults
+	 * _experimental_spaMetrics: true
+	 *
+	 * // Enable with custom configuration
+	 * _experimental_spaMetrics: {
+	 *   ignoreUrls: [/analytics\.example\.com/],
+	 *   quietTime: 1000,
+	 *   maxResourcesToWatch: 100
+	 * }
+	 * ```
+	 */
+	_experimental_spaMetrics?:
+		| boolean
+		| {
+				/** URLs to exclude from PCT tracking (e.g., analytics, third-party scripts) */
+				ignoreUrls?: Array<string | RegExp>
+				/** Maximum number of concurrent resources to track. @default 100 */
+				maxResourcesToWatch?: number
+				/** Time in milliseconds to wait after last resource loads before considering page complete. @default 1000 */
+				quietTime?: number
+		  }
 
 	/** Allows http beacon urls */
 	allowInsecureBeacon?: boolean
