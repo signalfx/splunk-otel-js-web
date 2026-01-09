@@ -326,7 +326,7 @@ export class UserInteractionInstrumentation<
 						captureElementDataAttributes(
 							span,
 							event.target,
-							instrumentation.otelConfig.__experimental_dataAttributesToCapture,
+							instrumentation.otelConfig._experimental_dataAttributesToCapture,
 						)
 					}
 
