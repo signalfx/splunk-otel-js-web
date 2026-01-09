@@ -81,6 +81,22 @@ type SensitivityRule = {
 
 export interface SplunkOtelWebConfig {
 	/**
+	 * Experimental: Data attribute names to capture from elements during user interactions.
+	 *
+	 * When specified, these data attributes will be collected from interacted elements and attached
+	 * to interaction spans as span attributes. Only data-* attributes are captured.
+	 * Currently supported for click and rage click spans.
+	 *
+	 * Attribute names can be specified in either format:
+	 * - Hyphenated: `'data-test-id'`, `'data-user-name'`
+	 * - CamelCase: `'testId'`, `'userName'` (without `data-` prefix)
+	 *
+	 * Both formats are normalized to `dataset.camelCase` in the span attributes.
+	 * @example ['data-test-id', 'userName'] // Both are valid
+	 */
+	_experimental_dataAttributesToCapture?: string[]
+
+	/**
 	 * **Experimental** - Enables SPA (Single Page Application) metrics.
 	 *
 	 * Currently supported metrics:
@@ -113,22 +129,6 @@ export interface SplunkOtelWebConfig {
 				/** Time in milliseconds to wait after last resource loads before considering page complete. @default 1000 */
 				quietTime?: number
 		  }
-
-	/**
-	 * Experimental: Data attribute names to capture from elements during user interactions.
-	 *
-	 * When specified, these data attributes will be collected from interacted elements and attached
-	 * to interaction spans as span attributes. Only data-* attributes are captured.
-	 * Currently supported for click and rage click spans.
-	 *
-	 * Attribute names can be specified in either format:
-	 * - Hyphenated: `'data-test-id'`, `'data-user-name'`
-	 * - CamelCase: `'testId'`, `'userName'` (without `data-` prefix)
-	 *
-	 * Both formats are normalized to `dataset.camelCase` in the span attributes.
-	 * @example ['data-test-id', 'userName'] // Both are valid
-	 */
-	_experimental_dataAttributesToCapture?: string[]
 
 	/** Allows http beacon urls */
 	allowInsecureBeacon?: boolean
