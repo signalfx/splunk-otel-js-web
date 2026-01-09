@@ -160,7 +160,7 @@ export class SplunkFrustrationSignalsInstrumentation extends InstrumentationBase
 
 				span.setAttribute('target_text', textValue || `<${target.nodeName.toLowerCase()}>`)
 
-				captureElementDataAttributes(span, target, this.otelConfig.__experimental_dataAttributesToCapture)
+				captureElementDataAttributes(span, target, this.otelConfig._experimental_dataAttributesToCapture)
 
 				span.end(startTime)
 			}
