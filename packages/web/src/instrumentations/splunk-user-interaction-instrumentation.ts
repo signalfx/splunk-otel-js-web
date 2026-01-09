@@ -87,9 +87,9 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 
 		super(config, otelConfig)
 
-		if (otelConfig._experimentalSPAMetrics) {
+		if (otelConfig._experimental_spaMetrics) {
 			const spaMetricConfig =
-				otelConfig._experimentalSPAMetrics === true ? {} : otelConfig._experimentalSPAMetrics
+				otelConfig._experimental_spaMetrics === true ? {} : otelConfig._experimental_spaMetrics
 
 			this.spaMetricsManager = new SpaMetricsManager({
 				beaconEndpoint: otelConfig.beaconEndpoint,

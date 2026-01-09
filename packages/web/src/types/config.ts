@@ -109,17 +109,17 @@ export interface SplunkOtelWebConfig {
 	 * @example
 	 * ```typescript
 	 * // Enable with defaults
-	 * _experimentalSPAMetrics: true
+	 * _experimental_spaMetrics: true
 	 *
 	 * // Enable with custom configuration
-	 * _experimentalSPAMetrics: {
+	 * _experimental_spaMetrics: {
 	 *   ignoreUrls: [/analytics\.example\.com/],
 	 *   quietTime: 1000,
 	 *   maxResourcesToWatch: 100
 	 * }
 	 * ```
 	 */
-	_experimentalSPAMetrics?:
+	_experimental_spaMetrics?:
 		| boolean
 		| {
 				/** URLs to exclude from PCT tracking (e.g., analytics, third-party scripts) */
