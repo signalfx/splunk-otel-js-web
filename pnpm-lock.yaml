@@ -369,6 +369,9 @@ importers:
       '@opentelemetry/resources':
         specifier: ^1.25.1
         version: 1.30.1(@opentelemetry/api@1.9.0)
+      '@opentelemetry/sdk-trace-web':
+        specifier: ^1.25.1
+        version: 1.30.1(@opentelemetry/api@1.9.0)
       core-js:
         specifier: 3.47.0
         version: 3.47.0
@@ -497,6 +500,9 @@ importers:
       swc-loader:
         specifier: ^0.2.6
         version: 0.2.6(@swc/core@1.15.8(@swc/helpers@0.5.18))(webpack@5.104.1)
+      ts-loader:
+        specifier: ^9.5.4
+        version: 9.5.4(typescript@5.9.3)(webpack@5.104.1)
       wait-on:
         specifier: ^9.0.3
         version: 9.0.3

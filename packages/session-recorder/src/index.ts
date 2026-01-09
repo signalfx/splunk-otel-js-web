@@ -18,6 +18,7 @@
 
 import { ProxyTracerProvider, Span, trace, Tracer, TracerProvider } from '@opentelemetry/api'
 import type { Resource } from '@opentelemetry/resources'
+import { getElementXPath } from '@opentelemetry/sdk-trace-web'
 import type { SplunkOtelWebType } from '@splunk/otel-web'
 import { JsonObject } from 'type-fest'
 
@@ -25,6 +26,7 @@ import { BatchLogProcessor } from './batch-log-processor'
 import { isRecorderLoadedViaLatestTag } from './detect-latest'
 import { log } from './log'
 import OTLPLogExporter from './otlp-log-exporter'
+import { createPicker, isPickerWindow } from './picker'
 import { Recorder, RecorderPublicConfig } from './session-replay'
 import { getGlobal, getSplunkRumVersion, parseVersion } from './utils'
 import { VERSION } from './version'
@@ -158,6 +160,27 @@ const SplunkRumRecorder = {
 				log.error(
 					'[Splunk]: SplunkSessionRecorder.init() - SplunkRum must be initialized first. Call SplunkRum.init() before initializing session recorder.',
 				)
+				return
+			}
+
+			// Initialize picker if this is a picker window
+			if (isPickerWindow()) {
+				try {
+					createPicker({
+						getElementText: (element: HTMLElement) =>
+							SplunkRum.getTextFromNode(
+								element,
+								(node) =>
+									!SplunkRum.PrivacyManager.shouldMaskTextNode(
+										node,
+										SplunkRum._processedOptions?.privacy,
+									),
+							),
+						getElementXPath: (element: HTMLElement) => getElementXPath(element, true),
+					})
+				} catch (error) {
+					log.warn('[Splunk]: SplunkSessionRecorder.init() - Failed to initialize picker.', { error })
+				}
 				return
 			}
 

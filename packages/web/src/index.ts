@@ -76,6 +76,7 @@ import { generateId, getPluginConfig } from './utils'
 import { getValidAttributes, SpanContext } from './utils/attributes'
 import { isAgentLoadedViaLatestTag } from './utils/detect-latest'
 import { isBot } from './utils/is-bot'
+import { isPickerWindow } from './utils/is-picker-window'
 import { parseVersion } from './utils/parse-version'
 import { getBasicPlatformInfo, getEnhancedPlatformInfo } from './utils/platform'
 import { VERSION } from './version'
@@ -85,6 +86,8 @@ export { SplunkZipkinExporter } from './exporters/zipkin'
 export * from './session-based-sampler'
 export * from './splunk-web-tracer-provider'
 import { SessionManager, SessionState, StorageManager } from './managers'
+import { PrivacyManager } from './managers/privacy/privacy-manager'
+import { getTextFromNode } from './utils/text'
 
 interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
 	bufferSize?: number
@@ -181,6 +184,9 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	DEFAULT_AUTO_INSTRUMENTED_EVENT_NAMES: (keyof HTMLElementEventMap)[]
 
 	ParentBasedSampler: typeof ParentBasedSampler
+
+	PrivacyManager: typeof PrivacyManager
+
 	SessionBasedSampler: typeof SessionBasedSampler
 
 	/**
@@ -219,6 +225,8 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	getSessionId: () => string | undefined
 
 	getSessionState: () => SessionState | undefined
+
+	getTextFromNode: typeof getTextFromNode
 
 	init: (options: SplunkOtelWebConfig) => void
 
@@ -359,6 +367,8 @@ export const SplunkRum: SplunkOtelWebType = {
 		}
 	},
 
+	getTextFromNode,
+
 	init: function (options) {
 		userTrackingMode = options.user?.trackingMode ?? 'noTracking'
 
@@ -441,6 +451,11 @@ export const SplunkRum: SplunkOtelWebType = {
 			}
 
 			this._processedOptions = processedOptions
+
+			if (isPickerWindow()) {
+				// Silently exit if this is a picker window - picker will be initialized by session-recorder
+				return
+			}
 
 			if (processedOptions.realm) {
 				if (processedOptions.beaconEndpoint) {
@@ -629,6 +644,8 @@ export const SplunkRum: SplunkOtelWebType = {
 	},
 
 	ParentBasedSampler,
+
+	PrivacyManager,
 
 	removeEventListener(name, callback): void {
 		try {

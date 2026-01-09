@@ -29,9 +29,9 @@ const getBaseConfig = (env, argv) => {
 		entry: path.resolve(__dirname, './src/index.ts'),
 		experiments: {
 			buildHttp: {
-				allowedUris: ['https://cdn.signalfx.com/'],
+				allowedUris: ['https://cdn.signalfx.com/', 'http://localhost:8080/'],
 				cacheLocation: false,
-				frozen: true,
+				frozen: false,
 			},
 		},
 		module: {

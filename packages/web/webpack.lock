@@ -1,0 +1,5 @@
+{
+  "http://localhost:8080/picker.is-picker-window-module.min.js": { "integrity": "sha512-k+FOtuwoG+pIgtWy/DpP2Xet7CYdD+S/S9o9P5Jgf58gtAwClSR4P/l6xg/3zMHCuuufH3xT8Ye9BqsLZtYwlg==", "contentType": "text/javascript" },
+  "http://localhost:8080/picker.module.min.js": { "integrity": "sha512-PFrQvDTZX56QkUQrnnQoGJkaChm5dmB8YdDcAza/iAPYR7aiz08HkeNxrIbkh5XpkF0Zz7wfJkGmsXRlF+13rQ==", "contentType": "text/javascript" },
+  "version": 1
+}

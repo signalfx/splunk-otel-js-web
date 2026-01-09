@@ -22,85 +22,96 @@ const TerserPlugin = require('terser-webpack-plugin')
 
 const artifactsPath = path.resolve(__dirname, './dist/artifacts')
 
-const getBaseConfig = (env, argv) => {
-	const isDevelopmentMode = argv.mode === 'development'
+const isDevelopmentMode = (argv) => argv.mode === 'development'
 
-	return {
-		devtool: isDevelopmentMode ? 'inline-source-map' : 'source-map',
-		module: {
-			rules: [
-				{
-					exclude: /node_modules/,
-					test: /\.(ts|js)$/,
-					use: [
-						{
-							loader: 'swc-loader',
-							options: {
-								env: {
-									coreJs: '3.45.1',
-									mode: 'usage',
-									targets: ['defaults', 'chrome >= 71', 'firefox >= 65', 'safari >= 12.1'],
-								},
-								jsc: {
-									externalHelpers: true,
-									parser: {
-										syntax: 'typescript',
-									},
+const getBaseConfig = (env, argv) => ({
+	devtool: isDevelopmentMode(argv) ? 'inline-source-map' : 'source-map',
+	experiments: {
+		buildHttp: {
+			allowedUris: ['https://cdn.signalfx.com/', 'http://localhost:8080/'],
+			cacheLocation: false,
+			frozen: false,
+		},
+	},
+	module: {
+		rules: [
+			{
+				exclude: (filePath) => {
+					const normalizedPath = filePath.replaceAll('\\', '/')
+					return normalizedPath.includes('node_modules')
+				},
+				test: /\.(ts|js)$/,
+				use: [
+					{
+						loader: 'swc-loader',
+						options: {
+							env: {
+								coreJs: '3.45.1',
+								mode: 'usage',
+								targets: ['defaults', 'chrome >= 71', 'firefox >= 65', 'safari >= 12.1'],
+							},
+							jsc: {
+								externalHelpers: true,
+								parser: {
+									syntax: 'typescript',
 								},
 							},
 						},
-					],
-				},
-
-				{
-					enforce: 'pre',
-					test: /\.js$/,
-					use: ['source-map-loader'],
-				},
-			],
-		},
-		optimization: {
-			minimize: true,
-			minimizer: [
-				new TerserPlugin({
-					extractComments: false,
-					terserOptions: {
-						ecma: 6,
-						format: {
-							comments: false,
-						},
 					},
-				}),
-			],
-		},
-		output: {
-			crossOriginLoading: 'anonymous',
-			environment: {
-				// without this line, webpack would wrap our code to an arrow function
-				arrowFunction: false,
-				bigIntLiteral: false,
-				const: false,
-				destructuring: false,
-				dynamicImport: false,
-				forOf: false,
-				module: false,
+				],
 			},
-			iife: true,
-			path: artifactsPath,
-		},
-		plugins: [
-			new ForkTsCheckerWebpackPlugin({
-				typescript: {
-					configFile: 'tsconfig.base.json',
-					diagnosticOptions: { semantic: true, syntactic: true },
+
+			{
+				enforce: 'pre',
+				test: /\.js$/,
+				use: ['source-map-loader'],
+			},
+		],
+	},
+	optimization: {
+		minimize: true,
+		minimizer: [
+			new TerserPlugin({
+				extractComments: false,
+				terserOptions: {
+					ecma: 6,
+					format: {
+						comments: false,
+					},
 				},
 			}),
 		],
-		resolve: {
-			extensions: ['.ts', '.js', '.json'],
+	},
+	output: {
+		crossOriginLoading: 'anonymous',
+		environment: {
+			// without this line, webpack would wrap our code to an arrow function
+			arrowFunction: false,
+			bigIntLiteral: false,
+			const: false,
+			destructuring: false,
+			dynamicImport: false,
+			forOf: false,
+			module: false,
 		},
-	}
-}
+		iife: true,
+		path: artifactsPath,
+	},
+	plugins: [
+		new ForkTsCheckerWebpackPlugin({
+			typescript: {
+				configFile: 'tsconfig.base.json',
+				diagnosticOptions: { semantic: true, syntactic: true },
+			},
+		}),
+	],
+	resolve: {
+		extensionAlias: {
+			'.js': ['.ts', '.js'],
+		},
+		extensions: ['.ts', '.js', '.json'],
+	},
+})
 
 const browserConfig = (env, argv) => {
 	const baseConfig = getBaseConfig(env, argv)
@@ -109,6 +120,7 @@ const browserConfig = (env, argv) => {
 		entry: path.resolve(__dirname, './src/index-browser.ts'),
 		output: {
 			...baseConfig.output,
+			chunkFilename: '[name].min.js',
 			filename: 'splunk-otel-web.js',
 			library: {
 				export: 'default',
@@ -135,4 +147,122 @@ const otelApiGlobalsConfig = (env, argv) => {
 	}
 }
 
-module.exports = [browserConfig, otelApiGlobalsConfig]
+const cjsConfig = (env, argv) => {
+	const baseConfig = getBaseConfig(env, argv)
+	return {
+		...baseConfig,
+		entry: path.resolve(__dirname, './src/index.ts'),
+		module: {
+			rules: [
+				{
+					exclude: /node_modules/,
+					test: /\.ts$/,
+					use: [
+						{
+							loader: 'swc-loader',
+							options: {
+								jsc: {
+									externalHelpers: true,
+									parser: {
+										syntax: 'typescript',
+									},
+									target: 'es2020',
+									transform: {
+										useDefineForClassFields: false,
+									},
+								},
+								module: {
+									type: 'commonjs',
+								},
+							},
+						},
+					],
+				},
+				{
+					enforce: 'pre',
+					test: /\.js$/,
+					use: ['source-map-loader'],
+				},
+			],
+		},
+		output: {
+			clean: !isDevelopmentMode(argv),
+			filename: 'index.js',
+			library: {
+				type: 'commonjs2',
+			},
+			path: path.resolve(__dirname, './dist/cjs'),
+		},
+		plugins: [
+			new ForkTsCheckerWebpackPlugin({
+				typescript: {
+					configFile: 'tsconfig.cjs.json',
+					diagnosticOptions: { semantic: true, syntactic: true },
+				},
+			}),
+		],
+	}
+}
+
+const esmConfig = (env, argv) => {
+	const baseConfig = getBaseConfig(env, argv)
+	return {
+		...baseConfig,
+		entry: path.resolve(__dirname, './src/index.ts'),
+		experiments: {
+			...baseConfig.experiments,
+			outputModule: true,
+		},
+		module: {
+			rules: [
+				{
+					exclude: /node_modules/,
+					test: /\.ts$/,
+					use: [
+						{
+							loader: 'swc-loader',
+							options: {
+								jsc: {
+									externalHelpers: true,
+									parser: {
+										syntax: 'typescript',
+									},
+									target: 'es2020',
+									transform: {
+										useDefineForClassFields: false,
+									},
+								},
+								module: {
+									type: 'es6',
+								},
+							},
+						},
+					],
+				},
+				{
+					enforce: 'pre',
+					test: /\.js$/,
+					use: ['source-map-loader'],
+				},
+			],
+		},
+		output: {
+			clean: !isDevelopmentMode(argv),
+			filename: 'index.js',
+			library: {
+				type: 'module',
+			},
+			path: path.resolve(__dirname, './dist/esm'),
+		},
+		plugins: [
+			new ForkTsCheckerWebpackPlugin({
+				typescript: {
+					configFile: 'tsconfig.esm.json',
+					diagnosticOptions: { semantic: true, syntactic: true },
+				},
+			}),
+		],
+	}
+}
+
+module.exports = [browserConfig, otelApiGlobalsConfig, cjsConfig, esmConfig]
