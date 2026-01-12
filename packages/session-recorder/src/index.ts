@@ -16,8 +16,7 @@
  *
  */
 
-import { ProxyTracerProvider, Span, trace, Tracer, TracerProvider } from '@opentelemetry/api'
-import type { Resource } from '@opentelemetry/resources'
+import { Span, trace, Tracer } from '@opentelemetry/api'
 import type { SplunkOtelWebType } from '@splunk/otel-web'
 import { JsonObject } from 'type-fest'
 
@@ -28,10 +27,6 @@ import OTLPLogExporter from './otlp-log-exporter'
 import { Recorder, RecorderPublicConfig } from './session-replay'
 import { getGlobal, getSplunkRumVersion, parseVersion } from './utils'
 import { VERSION } from './version'
-
-interface BasicTracerProvider extends TracerProvider {
-	readonly resource: Resource
-}
 
 export type SplunkRumRecorderConfig = {
 	/** Destination for the captured data */
@@ -145,12 +140,6 @@ const SplunkRumRecorder = {
 					'[Splunk]: SplunkSessionRecorder.init() - Library requires browser environment. Ensure code runs in browser context.',
 				)
 				return
-			}
-
-			let tracerProvider: BasicTracerProvider | ProxyTracerProvider =
-				trace.getTracerProvider() as BasicTracerProvider
-			if (tracerProvider && 'getDelegate' in tracerProvider) {
-				tracerProvider = (tracerProvider as unknown as ProxyTracerProvider).getDelegate() as BasicTracerProvider
 			}
 
 			const SplunkRum = getGlobal<SplunkOtelWebType>()
