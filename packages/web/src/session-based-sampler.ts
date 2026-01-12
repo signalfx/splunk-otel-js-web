@@ -67,6 +67,10 @@ export class SessionBasedSampler implements Sampler {
 		this.notSampled = notSampled
 	}
 
+	isSessionSampled(sessionId: string): boolean {
+		return this._accumulate(sessionId) < this.upperBound
+	}
+
 	shouldSample(
 		context: Context,
 		traceId: string,
