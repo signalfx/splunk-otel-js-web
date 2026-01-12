@@ -181,11 +181,6 @@ const SplunkRumRecorder = {
 
 			const { beaconEndpoint, realm, rumAccessToken, ...initRecorderConfig } = config
 
-			// Sampler is ignoring this session
-			if (!logSpan(SpanName.IS_RECORDING)) {
-				return
-			}
-
 			// Mark recorded session as splunk
 			if (SplunkRum.provider) {
 				SplunkRum.provider.resource.attributes['splunk.sessionReplay'] = 'splunk'
@@ -268,7 +263,13 @@ const SplunkRumRecorder = {
 				initRecorderConfig,
 				processor,
 			})
-			recorder.start()
+
+			// Can record this session so starting recorder
+			// If sampler decides to not record, we do not start the recorder and wait for the next session
+			if (logSpan(SpanName.IS_RECORDING)) {
+				recorder.start()
+			}
+
 			inited = true
 		} catch (error) {
 			log.error(
