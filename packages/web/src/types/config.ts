@@ -197,8 +197,8 @@ export interface SplunkOtelWebConfig {
 	 *   based on CSS selectors. The later rules override the earlier ones.
 	 */
 	privacy?: {
-		maskAllText: boolean
-		sensitivityRules: SensitivityRule[]
+		maskAllText?: boolean
+		sensitivityRules?: SensitivityRule[]
 	}
 
 	/**

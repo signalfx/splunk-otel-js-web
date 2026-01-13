@@ -15,8 +15,4 @@
  * limitations under the License.
  *
  */
-
-export * from './privacy'
-export * from './session-manager'
-export * from './spa-metrics-manager'
-export * from './storage'
+export * from './privacy-manager'

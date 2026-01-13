@@ -16,7 +16,7 @@
  *
  */
 
-export * from './privacy'
-export * from './session-manager'
-export * from './spa-metrics-manager'
-export * from './storage'
+export {
+	createPicker,
+	isPickerWindow,
+} from 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.6.0/picker/picker.module.min.js'

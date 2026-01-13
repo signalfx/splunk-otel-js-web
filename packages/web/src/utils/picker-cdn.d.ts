@@ -15,8 +15,10 @@
  * limitations under the License.
  *
  */
-
-export * from './privacy'
-export * from './session-manager'
-export * from './spa-metrics-manager'
-export * from './storage'
+declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.6.0/picker/picker.module.min.js' {
+	export const isPickerWindow: () => boolean
+	export const createPicker: (options: {
+		getElementText: (element: HTMLElement) => string
+		getElementXPath: (element: HTMLElement) => string
+	}) => void
+}
