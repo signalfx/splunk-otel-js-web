@@ -87,8 +87,7 @@ export * from './session-based-sampler'
 export * from './splunk-web-tracer-provider'
 import { getElementXPath } from '@opentelemetry/sdk-trace-web'
 
-import { SessionManager, SessionState, StorageManager } from './managers'
-import { PrivacyManager } from './managers/privacy/privacy-manager'
+import { PrivacyManager, SessionManager, SessionState, StorageManager } from './managers'
 import { getTextFromNode } from './utils/text'
 
 interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
