@@ -1,4 +1,4 @@
 {
-  "https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.6.0/picker/picker.module.min.js": { "integrity": "sha512-KhSeBAq9k11OtdsaSvUbWqFcFmiKhX+Xv9hYFHL/4rPnsU67icZP4hAIFV2e0vmHTvDoz9yYeMuGq6QsP+znMA==", "contentType": "text/javascript" },
+  "https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.6.1/picker/picker.module.min.js": { "integrity": "sha512-AJe021Nf8+Wbut7IjV/fMXz6CF9O0yXGf3Tvq+kIqmRXWkKkAecukb7SkdnB+2iAczQAYWoM3yVWJEomW3RD1w==", "contentType": "text/javascript" },
   "version": 1
 }
