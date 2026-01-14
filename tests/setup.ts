@@ -18,30 +18,8 @@
 import { afterEach } from 'vitest'
 
 afterEach(() => {
-	assertSessionIsEmpty()
+	delete localStorage['_splunk_rum_sid']
+	delete localStorage['_splunk_rum_user_anonymousId']
+	document.cookie = '_splunk_rum_sid=;expires=Thu, 01 Jan 1970 00:00:00 GMT'
+	document.cookie = '_splunk_rum_user_anonymousId=;expires=Thu, 01 Jan 1970 00:00:00 GMT'
 })
-
-function assertSessionIsEmpty() {
-	try {
-		if (localStorage['_splunk_rum_sid']) {
-			console.warn('Session is expected to be empty, but is set in localStorage.')
-		}
-
-		if (document.cookie.includes('_splunk_rum_sid')) {
-			console.warn(`Session is expected to be empty, but is set in cookies: ${document.cookie}`)
-		}
-
-		if (localStorage['_splunk_rum_user_anonymousId']) {
-			console.warn('AnonymousUserId is expected to be empty, but is set in localStorage.')
-		}
-
-		if (document.cookie.includes('_splunk_rum_user_anonymousId')) {
-			console.warn(`AnonymousUserId is expected to be empty, but is set in cookies: ${document.cookie}`)
-		}
-	} finally {
-		delete localStorage['_splunk_rum_sid']
-		delete localStorage['_splunk_rum_user_anonymousId']
-		document.cookie = '_splunk_rum_sid=;expires=Thu, 01 Jan 1970 00:00:00 GMT'
-		document.cookie = '_splunk_rum_user_anonymousId=;expires=Thu, 01 Jan 1970 00:00:00 GMT'
-	}
-}
