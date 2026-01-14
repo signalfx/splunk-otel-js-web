@@ -19,4 +19,4 @@
 export {
 	createPicker,
 	isPickerWindow,
-} from 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.6.0/picker/picker.module.min.js'
+} from 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.6.1/picker/picker.module.min.js'
