@@ -31,6 +31,7 @@ import { VERSION } from './version'
 
 interface OTLPLogExporterConfig {
 	beaconUrl: string
+	exportQueuedLogs: boolean
 	getResourceAttributes: () => JsonObject
 	headers?: Record<string, string>
 	sessionId: string
@@ -99,7 +100,9 @@ export default class OTLPLogExporter {
 
 	constructor(config: OTLPLogExporterConfig) {
 		this.config = config
-		this.exportQueuedLogs()
+		if (this.config.exportQueuedLogs) {
+			this.exportQueuedLogs()
+		}
 	}
 
 	constructLogData(logs: Log[]) {

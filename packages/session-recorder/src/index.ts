@@ -16,8 +16,7 @@
  *
  */
 
-import { ProxyTracerProvider, Span, trace, Tracer, TracerProvider } from '@opentelemetry/api'
-import type { Resource } from '@opentelemetry/resources'
+import { Attributes, Span, trace, Tracer } from '@opentelemetry/api'
 import type { SplunkOtelWebType } from '@splunk/otel-web'
 import { JsonObject } from 'type-fest'
 
@@ -28,10 +27,6 @@ import OTLPLogExporter from './otlp-log-exporter'
 import { Recorder, RecorderPublicConfig } from './session-replay'
 import { getGlobal, getSplunkRumVersion, parseVersion } from './utils'
 import { VERSION } from './version'
-
-interface BasicTracerProvider extends TracerProvider {
-	readonly resource: Resource
-}
 
 export type SplunkRumRecorderConfig = {
 	/** Destination for the captured data */
@@ -66,11 +61,19 @@ export type SplunkRumRecorderConfig = {
 	 * with only RUM scope as it's visible to every user of your app
 	 **/
 	rumAccessToken?: string
+
+	/**
+	 * Optional session sampler instance to control which sessions get recorded.
+	 * Use SplunkRum.SessionBasedSampler to create one with a specific ratio.
+	 * @example
+	 * sampler: new SplunkRum.SessionBasedSampler({ ratio: 0.5 })
+	 */
+	sampler?: InstanceType<SplunkOtelWebType['SessionBasedSampler']>
 } & RecorderPublicConfig
 
 let inited: true | false | undefined = false
 let tracer: Tracer
-
+let sessionSampler: InstanceType<SplunkOtelWebType['SessionBasedSampler']> | undefined
 let paused = false
 let recorder: Recorder | undefined
 let sessionStateUnsubscribe: undefined | (() => void)
@@ -83,7 +86,7 @@ enum SpanName {
 }
 
 // Return span or undefined if sampler is ignoring this session
-const logSpan = (spanName: SpanName): Span | undefined => {
+const logSpan = (spanName: SpanName, sessionId: string | undefined): Span | undefined => {
 	if (!tracer) {
 		tracer = trace.getTracer('splunk.sessionReplay', VERSION)
 	}
@@ -97,11 +100,53 @@ const logSpan = (spanName: SpanName): Span | undefined => {
 		return
 	}
 
+	if (!sessionId || (sessionSampler && !sessionSampler.isSessionSampled(sessionId))) {
+		log.debug('Session sampler - session is not recorded', { sessionId })
+		return
+	} else {
+		log.debug('Session sampler - session is recorded', { sessionId })
+	}
+
 	span.end(now)
 	return span
 }
 
 const SplunkRumRecorder = {
+	_getProcessorForSession({
+		anonymousUserId,
+		attributes,
+		exportQueuedLogs,
+		exportUrl,
+		persistFailedReplayData,
+		sessionId,
+	}: {
+		anonymousUserId?: string
+		attributes: Attributes
+		exportQueuedLogs: boolean
+		exportUrl: string
+		persistFailedReplayData: boolean
+		sessionId: string
+	}): BatchLogProcessor {
+		const exporter = new OTLPLogExporter({
+			beaconUrl: exportUrl,
+			exportQueuedLogs,
+			getResourceAttributes() {
+				const newAttributes: JsonObject = {
+					...attributes,
+					'splunk.rumSessionId': sessionId,
+				}
+				if (anonymousUserId) {
+					newAttributes['user.anonymous_id'] = anonymousUserId
+				}
+
+				return newAttributes
+			},
+			sessionId,
+			usePersistentExportQueue: persistFailedReplayData,
+		})
+		return new BatchLogProcessor(exporter)
+	},
+
 	deinit(): void {
 		if (!inited) {
 			return
@@ -147,12 +192,6 @@ const SplunkRumRecorder = {
 				return
 			}
 
-			let tracerProvider: BasicTracerProvider | ProxyTracerProvider =
-				trace.getTracerProvider() as BasicTracerProvider
-			if (tracerProvider && 'getDelegate' in tracerProvider) {
-				tracerProvider = (tracerProvider as unknown as ProxyTracerProvider).getDelegate() as BasicTracerProvider
-			}
-
 			const SplunkRum = getGlobal<SplunkOtelWebType>()
 			if (!SplunkRum) {
 				log.error(
@@ -190,12 +229,8 @@ const SplunkRumRecorder = {
 
 			const resource = SplunkRum.resource
 
-			const { beaconEndpoint, realm, rumAccessToken, ...initRecorderConfig } = config
-
-			// Sampler is ignoring this session
-			if (!logSpan(SpanName.IS_RECORDING)) {
-				return
-			}
+			const { beaconEndpoint, realm, rumAccessToken, sampler, ...initRecorderConfig } = config
+			sessionSampler = sampler
 
 			// Mark recorded session as splunk
 			if (SplunkRum.provider) {
@@ -224,25 +259,6 @@ const SplunkRumRecorder = {
 				exportUrl += `?auth=${rumAccessToken}`
 			}
 
-			const exporter = new OTLPLogExporter({
-				beaconUrl: exportUrl,
-				getResourceAttributes() {
-					const newAttributes: JsonObject = {
-						...resource.attributes,
-						'splunk.rumSessionId': SplunkRum.getSessionId() ?? '',
-					}
-					const anonymousId = SplunkRum.getAnonymousId()
-					if (anonymousId) {
-						newAttributes['user.anonymous_id'] = anonymousId
-					}
-
-					return newAttributes
-				},
-				sessionId: SplunkRum.getSessionId() ?? '',
-				usePersistentExportQueue: config.persistFailedReplayData ?? true,
-			})
-			const processor = new BatchLogProcessor(exporter)
-
 			sessionStateUnsubscribe = SplunkRum.sessionManager.subscribe(({ currentState, previousState }) => {
 				if (!previousState) {
 					return
@@ -260,26 +276,44 @@ const SplunkRumRecorder = {
 					recorder?.destroy()
 					recorder = undefined
 
-					if (!logSpan(SpanName.IS_RECORDING)) {
+					if (!logSpan(SpanName.IS_RECORDING, currentState.id)) {
 						return
 					}
 
 					recorder = new Recorder({
 						initRecorderConfig,
-						processor,
+						processor: this._getProcessorForSession({
+							anonymousUserId: SplunkRum.getAnonymousId(),
+							attributes: resource.attributes,
+							exportQueuedLogs: false,
+							exportUrl,
+							persistFailedReplayData: config.persistFailedReplayData ?? true,
+							sessionId: currentState.id,
+						}),
 					})
 					recorder.start()
 
 					// Log span for new session
-					logSpan(SpanName.IS_RECORDING)
+					logSpan(SpanName.IS_RECORDING, currentState.id)
 				}
 			})
 
-			recorder = new Recorder({
-				initRecorderConfig,
-				processor,
-			})
-			recorder.start()
+			const sessionId = SplunkRum.getSessionId()
+			if (sessionId && logSpan(SpanName.IS_RECORDING, sessionId)) {
+				recorder = new Recorder({
+					initRecorderConfig,
+					processor: this._getProcessorForSession({
+						anonymousUserId: SplunkRum.getAnonymousId(),
+						attributes: resource.attributes,
+						exportQueuedLogs: true,
+						exportUrl,
+						persistFailedReplayData: config.persistFailedReplayData ?? true,
+						sessionId,
+					}),
+				})
+				recorder.start()
+			}
+
 			inited = true
 		} catch (error) {
 			log.error(
@@ -303,7 +337,8 @@ const SplunkRumRecorder = {
 		if (!oldPaused) {
 			try {
 				void recorder?.resume()
-				logSpan(SpanName.RESUME)
+				const SplunkRum = getGlobal<SplunkOtelWebType>()
+				logSpan(SpanName.RESUME, SplunkRum?.getSessionId())
 			} catch (error) {
 				log.warn(
 					'[Splunk]: SplunkSessionRecorder.resume() - Failed to resume recording session due to internal error.',
@@ -321,7 +356,8 @@ const SplunkRumRecorder = {
 		if (paused) {
 			try {
 				recorder?.stop()
-				logSpan(SpanName.STOP)
+				const SplunkRum = getGlobal<SplunkOtelWebType>()
+				logSpan(SpanName.STOP, SplunkRum?.getSessionId())
 			} catch (error) {
 				log.warn(
 					'[Splunk]: SplunkSessionRecorder.stop() - Failed to stop recording session due to internal error.',
