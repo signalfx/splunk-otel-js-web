@@ -52,6 +52,7 @@ check_tag:
 lint:
     <<: *pnpm-setup
     stage: build
+    needs: ['build']
     script:
         - pnpm run lint
         - pnpm run lint:markdown
