@@ -23,6 +23,7 @@
 		"dev:tsc:init": "tsc --build tsconfig.cjs.json tsconfig.esm.json",
 		"dev:webpack": "webpack --mode development --watch --color",
 		"dev:tsc": "tsc --build --watch tsconfig.cjs.json tsconfig.esm.json",
+		"clean": "rm -rf dist .turbo",
 		"wait": "wait-on dist/esm/index.js  dist/cjs/index.js"
 	},
 	"author": "Splunk Observability Instrumentals Team <ssg-observability-instrumentals-npm@splunk.com>",
