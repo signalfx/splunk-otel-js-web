@@ -243,7 +243,6 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 
 	/**
 	 * `userTrackingMode` available values: `'noTracking'` (default) | `'anonymousTracking'`.
-	 *  If set to `'anonymousTracking'`, ensure you use the Splunk recorder if used together with the session recorder.
 	 */
 	userTrackingMode: UserTrackingMode
 }
@@ -365,7 +364,7 @@ export const SplunkRum: SplunkOtelWebType = {
 	},
 
 	init: function (options) {
-		userTrackingMode = options.user?.trackingMode ?? 'noTracking'
+		userTrackingMode = options.user?.trackingMode ?? 'anonymousTracking'
 
 		if (typeof window !== 'object') {
 			console.warn(
