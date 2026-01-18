@@ -36,9 +36,6 @@ jobs:
 
             - name: Run Unit Tests
               if: ${{ matrix.browser != 'edge' && matrix.browser != 'chrome' }}
-              # Firefox tests are flaky.
-              # Remove once this issue is resolved: https://github.com/vitest-dev/vitest/issues/7377
-              continue-on-error: ${{ matrix.browser == 'firefox' }}
               run: pnpm run test:unit --browser.name=${{ matrix.browser }}
 
             - name: Upload test:unit report

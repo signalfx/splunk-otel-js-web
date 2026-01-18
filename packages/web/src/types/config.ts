@@ -220,7 +220,14 @@ export interface SplunkOtelWebConfig {
 	tracer?: WebTracerConfig
 
 	user?: {
-		/** Sets tracking mode of user. Defaults to 'noTracking'. */
+		/**
+		 * Controls whether the agent creates and attaches an anonymous user ID to spans.
+		 * Use `noTracking` to avoid generating or storing any anonymous user ID.
+		 * Use `anonymousTracking` (default) to generate a persistent anonymous user ID, stored via the configured
+		 * persistence method (default: cookie). This enables the correlation of user behavior across sessions,
+		 * helping analyze user journeys, diagnose issues, and improve the overall digital experience without
+		 * identifying individual users.
+		 */
 		trackingMode?: UserTrackingMode
 	}
 

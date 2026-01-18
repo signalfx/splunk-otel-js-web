@@ -29,11 +29,16 @@ stages:
     - test
     - release
 
-pnpm_install:
+setup_and_build:
     <<: *pnpm-setup
     stage: setup
+    artifacts:
+        paths:
+            - packages/*/dist/
+            - packages/build-plugins/tests/project/dist/
     script:
         - pnpm install --frozen-lockfile
+        - pnpm run build
 
 check_version:
     <<: *pnpm-setup
@@ -52,25 +57,15 @@ check_tag:
 lint:
     <<: *pnpm-setup
     stage: build
+    needs: ['setup_and_build']
     script:
         - pnpm run lint
         - pnpm run lint:markdown
 
-build:
-    <<: *pnpm-setup
-    stage: build
-    only:
-        - /^[^v].*/
-    artifacts:
-        paths:
-            - packages/*/dist/
-            - packages/build-plugins/tests/project/dist/
-    script:
-        - pnpm run build
-
 build_artifacts:
     <<: *pnpm-setup
     stage: build
+    needs: ['setup_and_build']
     only:
         - /^(v\d+\.\d+\.\d+(-[a-zA-Z]+\.\d)?|main)$/
     artifacts:
@@ -78,7 +73,6 @@ build_artifacts:
             - artifacts/
     script:
         - if [ ! -d "artifacts" ]; then mkdir artifacts; fi
-        - pnpm run build
         - pnpm pack --pack-destination artifacts --filter "./packages/session-recorder" --filter "./packages/web" --filter "./packages/build-plugins"
         - cp packages/web/dist/artifacts/* artifacts/
         - cp packages/session-recorder/dist/artifacts/* artifacts/
@@ -87,10 +81,9 @@ build_artifacts:
 unit_test:
     <<: *pnpm-setup
     stage: test
+    needs: ['setup_and_build']
     script:
-        - pnpm install --frozen-lockfile
         - pnpm exec playwright install --with-deps
-        - pnpm run build
         - pnpm run test:unit --browser.name chromium
 
 oss-scan:
