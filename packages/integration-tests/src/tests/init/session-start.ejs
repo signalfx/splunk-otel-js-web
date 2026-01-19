@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Test session.start span</title>
+
+	<%- renderAgent({}) %>
+</head>
+<body>
+	<p>Session start test</p>
+	<button id="clearSession" onclick="clearSession()">Clear Session</button>
+	<button id="triggerActivity">Trigger Activity</button>
+</body>
+<script>
+	function clearSession() {
+		// Clear session cookie to force a new session on next activity
+		document.cookie = '_splunk_rum_sid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+		// Also clear localStorage if used
+		localStorage.removeItem('_splunk_rum_sid');
+	}
+</script>
+</html>
