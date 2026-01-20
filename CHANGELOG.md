@@ -31,18 +31,50 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 - `@splunk/otel-web-session-recorder`
     - **Added Session Replay Sampling** [#1577](https://github.com/signalfx/splunk-otel-js-web/pull/1577)
         - Introduced `SessionBasedSampler` to control the percentage of sessions that get recorded by session recorder
-        - The agent's sampling decision always takes precedence; session replay sampling is only evaluated when the agent allows recording
+        - SplunkRum takes a `ratio` of all possible sessions, e.g. `0.8` means 80% of all possible sessions will be sent to the backend
+        - SplunkSessionRecorder also takes a `ratio` of all possible sessions, e.g. `0.02` means that replay will be recorded for the 2% of all possible sessions
+        - Note that if you record 20% of the sessions, and you want the replay for 10% of recorded sessions then you need to multiply: `0.2 * 0.1 = 0.02`, so the ratio for `SplunkRum` is `0.2` and the ration for `SplunkSessionRecorder` is `0.02`
+        - We ensure that if the replay is recorded then the session itself is recorded and that the ratios are preserved
         - Example usage:
+
             ```javascript
+            // Example 1: Record 30% of all sessions (independent of agent sampling)
             SplunkSessionRecorder.init({
             	realm: 'us0',
             	rumAccessToken: '....',
-            	sampler: new SplunkRum.SessionBasedSampler({ ratio: 0.5 }), // record ~50% of sessions
+            	sampler: new SplunkRum.SessionBasedSampler({ ratio: 0.3 }), // records 30% of sessions
+            })
+
+            // Example 2: If agent samples 80% and you want session recorder to record 20% of ALL sessions
+            // (not 20% of the agent-sampled sessions), use:
+            SplunkRum.init({
+            	realm: 'us0',
+            	rumAccessToken: '....',
+            	sampler: new SplunkRum.SessionBasedSampler({ ratio: 0.8 }), // agent samples 80%
+            })
+            SplunkSessionRecorder.init({
+            	realm: 'us0',
+            	rumAccessToken: '....',
+            	sampler: new SplunkRum.SessionBasedSampler({ ratio: 0.2 }), // records 20% of all sessions
+            })
+            // Result: 20% of all sessions will have session replay
+
+            // Example 3: If agent samples 80% and you want session recorder to record 20% of of the agent-sampled sessions, use:
+            SplunkRum.init({
+            	realm: 'us0',
+            	rumAccessToken: '....',
+            	sampler: new SplunkRum.SessionBasedSampler({ ratio: 0.8 }), // agent samples 80%
+            })
+            SplunkSessionRecorder.init({
+            	realm: 'us0',
+            	rumAccessToken: '....',
+            	sampler: new SplunkRum.SessionBasedSampler({ ratio: 0.16 }), // 0.8 * 0.2 = 0.16
             })
             ```
-        - **Bug fixes included**:
-            - Replay export is now scoped to the current session. This fixes a case where the last chunk from the previous session could be attached to a new session
-            - Recording now re-checks sampling when a new session starts, not just on the first page load. This prevents sessions from being skipped when sampling changes across sessions
+
+            - **Bug fixes included**:
+                - Replay export is now scoped to the current session. This fixes a case where the last chunk from the previous session could be attached to a new session
+                - Recording now re-checks sampling when a new session starts, not just on the first page load. This prevents sessions from being skipped when sampling changes across sessions
 
 - `@splunk/otel-web`
     - **Added Experimental Data Attributes Capture** [#1537](https://github.com/signalfx/splunk-otel-js-web/pull/1537)
