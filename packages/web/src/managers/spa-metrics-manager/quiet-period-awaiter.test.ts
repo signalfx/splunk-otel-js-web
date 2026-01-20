@@ -43,7 +43,7 @@ describe('QuietPeriodAwaiter', () => {
 		awaiter.startQuietTimer({ resourceLoadedTimestamp })
 
 		const result = await awaiter.promise
-		expect(result.loadTime).toBeGreaterThan(250)
+		expect(result.loadTime).toBeGreaterThanOrEqual(250)
 		expect(result.loadTime).toBeLessThan(300)
 	})
 

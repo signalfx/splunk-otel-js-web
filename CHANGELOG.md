@@ -2,6 +2,104 @@
 
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
+## 2.0.0
+
+### Breaking Changes
+
+- `@splunk/otel-web`
+    - **Anonymous User Tracking Enabled by Default** [#1579](https://github.com/signalfx/splunk-otel-js-web/pull/1579)
+        - Changed the default value of `user.trackingMode` from `noTracking` to `anonymousTracking`
+        - The agent now generates a persistent anonymous user ID (`_splunk_rum_user_anonymousId`) stored via the configured persistence method (default: cookie)
+        - This enables:
+            - User journey correlation across sessions
+            - Issue diagnosis by tracking user behavior patterns
+            - Digital experience analytics without identifying individual users
+        - **Migration**: Users who do not want this behavior can explicitly set `user.trackingMode: 'noTracking'` in their configuration
+        - Example:
+            ```javascript
+            SplunkRum.init({
+            	realm: 'us0',
+            	rumAccessToken: '....',
+            	user: {
+            		trackingMode: 'noTracking', // Opt out of anonymous tracking
+            	},
+            })
+            ```
+
+### New Features and Improvements
+
+- `@splunk/otel-web-session-recorder`
+    - **Added Session Replay Sampling** [#1577](https://github.com/signalfx/splunk-otel-js-web/pull/1577)
+        - Introduced `SessionBasedSampler` to control the percentage of sessions that get recorded by session recorder
+        - The agent's sampling decision always takes precedence; session replay sampling is only evaluated when the agent allows recording
+        - Example usage:
+            ```javascript
+            SplunkSessionRecorder.init({
+            	realm: 'us0',
+            	rumAccessToken: '....',
+            	sampler: new SplunkRum.SessionBasedSampler({ ratio: 0.5 }), // record ~50% of sessions
+            })
+            ```
+        - **Bug fixes included**:
+            - Replay export is now scoped to the current session. This fixes a case where the last chunk from the previous session could be attached to a new session
+            - Recording now re-checks sampling when a new session starts, not just on the first page load. This prevents sessions from being skipped when sampling changes across sessions
+
+- `@splunk/otel-web`
+    - **Added Experimental Data Attributes Capture** [#1537](https://github.com/signalfx/splunk-otel-js-web/pull/1537)
+        - Added `__experimental_dataAttributesToCapture` config option to capture custom `data-*` attributes from clicked elements
+        - Captured attributes are attached to click and rage click spans
+        - Supports both hyphenated and camelCase format for attribute names
+        - Example:
+            ```javascript
+            SplunkRum.init({
+            	realm: 'us0',
+            	rumAccessToken: 'YOUR_TOKEN',
+            	applicationName: 'my-app',
+            	__experimental_dataAttributesToCapture: [
+            		'data-testid', // hyphenated format
+            		'track', // camelCase format (looks up data-track)
+            		'userName', // camelCase format (looks up data-user-name)
+            	],
+            })
+            ```
+        - When a button with these attributes is clicked, the span will include:
+            - `element.dataset.testid: "submit-btn"`
+            - `element.dataset.track: "purchase"`
+            - `element.dataset.userName: "john-doe"`
+    - **Added Page Completion Time (PCT) Metric for SPAs** [#1536](https://github.com/signalfx/splunk-otel-js-web/pull/1536)
+        - Introduced a new `SpaMetricsManager` for measuring page load times in Single Page Applications (SPAs)
+        - Unlike traditional page load metrics that rely on browser navigation events, this monitors actual resource loading activity to determine when a page has finished loading
+        - **When enabled, PCT is automatically recorded as the duration of every `routeChange` span in your application**
+        - **How PCT is calculated**:
+            - When a user navigates within your SPA (clicking links, tabs, or menu items), the timer starts
+            - Monitors all resource loading activity (API calls, images, stylesheets, etc.)
+            - Uses a quiet period detection algorithm - waits for a configurable period (default: 5 seconds) with no new resource activity
+            - The total time is recorded as the duration of the `routeChange` span
+        - **Disabled by default** - must be explicitly enabled in configuration
+        - **How to enable**:
+
+            ```javascript
+            // Option 1: Enable with defaults
+            SplunkOtelWeb.init({
+            	realm: 'us0',
+            	rumAccessToken: 'your-token',
+            	applicationName: 'my-spa-app',
+            	_experimental_spaMetrics: true,
+            })
+
+            // Option 2: Enable with custom configuration
+            SplunkOtelWeb.init({
+            	realm: 'us0',
+            	rumAccessToken: 'your-token',
+            	applicationName: 'my-spa-app',
+            	_experimental_spaMetrics: {
+            		quietTime: 3000, // 3 seconds quiet period (default: 5000ms)
+            		maxResourcesToWatch: 50, // Limit tracked resources (default: 100)
+            		ignoreUrls: [/analytics/], // Additional URLs to ignore
+            	},
+            })
+            ```
+
 ## 1.2.0
 
 - `@splunk/otel-web`
