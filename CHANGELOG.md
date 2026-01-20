@@ -31,12 +31,10 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 - `@splunk/otel-web-session-recorder`
     - **Added Session Replay Sampling** [#1577](https://github.com/signalfx/splunk-otel-js-web/pull/1577)
         - Introduced `SessionBasedSampler` to control the percentage of sessions that get recorded by session recorder
-        - The agent's sampling decision always takes precedence; session replay sampling is only evaluated when the agent allows recording
-        - **Important: Session recorder sampling is independent of agent sampling**
-            - The session recorder sampler operates independently on the full set of sessions, not on the subset sampled by the agent
-            - For example, if you set agent sampling to 50% (`ratio: 0.5`) and session recorder sampling to 25% (`ratio: 0.25`), the session recorder will record 25% of **all sessions**, not 25% of the 50% sampled by the agent
-            - To record 1/3 of the sessions that are sampled by the agent (i.e., 1/3 of 60% = 20% of all sessions), you need to multiply the ratios: `0.6 * (1/3) = 0.6 * 0.333... = 0.2`
-            - **Note:** Setting a higher sampling ratio in the session recorder than in the agent doesn't make practical sense. For example, if the agent samples 30% of sessions and the session recorder is configured to record 70%, the session recorder will only be able to record up to 30% of sessions (those sampled by the agent), because the agent's sampling decision always takes precedence. The extra 40% configured for session recording will have no effect.
+        - SplunkRum takes a `ratio` of all possible sessions, e.g. `0.8` means 80% of all possible sessions will be sent to the backend
+        - SplunkSessionRecorder also takes a `ratio` of all possible sessions, e.g. `0.02` means that replay will be recorded for the 2% of all possible sessions
+		- Note that if you record 20% of the sessions, and you want the replay for 10% of recorded sessions then you need to multiply: `0.2 * 0.1 = 0.02`, so the ratio for `SplunkRum` is `0.2` and the ration for `SplunkSessionRecorder` is `0.02`
+      	- We ensure that if the replay is recorded then the session itself is recorded and that the ratios are preserved
         - Example usage:
 
             ```javascript
