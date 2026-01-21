@@ -31,6 +31,9 @@ export const buildInMemorySplunkExporter = () => {
 	})
 
 	return {
+		clearSpans: () => {
+			spans.length = 0
+		},
 		exporter,
 		getFinishedSpans: () => spans,
 	}

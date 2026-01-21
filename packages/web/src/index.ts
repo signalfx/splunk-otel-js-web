@@ -520,17 +520,20 @@ export const SplunkRum: SplunkOtelWebType = {
 				domain: processedOptions.cookieDomain,
 				sessionPersistence: processedOptions.persistence,
 			})
+
+			this.resource = new Resource(resourceAttrs)
 			this.sessionManager = new SessionManager(storageManager)
-			this.sessionManager.start()
 			_sessionStateUnsubscribe = this.sessionManager.subscribe(({ currentState, previousState }) => {
+				if (currentState.isNew) {
+					provider.getTracer('splunk-sessions').startSpan('session.start').end()
+				}
+
 				if (!previousState) {
 					eventTarget?.emit('session-changed', { sessionId: currentState.id })
 				} else if (previousState.id !== currentState.id) {
 					eventTarget?.emit('session-changed', { sessionId: currentState.id })
 				}
 			})
-
-			this.resource = new Resource(resourceAttrs)
 
 			this.attributesProcessor = new SplunkSpanAttributesProcessor(
 				this.sessionManager,
@@ -574,6 +577,8 @@ export const SplunkRum: SplunkOtelWebType = {
 				}),
 				spanProcessors,
 			})
+
+			this.sessionManager.start()
 
 			const instrumentations = INSTRUMENTATIONS.map(({ confKey, disable, Instrument }) => {
 				const pluginConf = getPluginConfig(processedOptions.instrumentations[confKey], pluginDefaults, disable)

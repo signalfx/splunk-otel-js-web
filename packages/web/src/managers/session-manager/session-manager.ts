@@ -28,7 +28,7 @@ import { SessionState } from './session-state'
 // Events that extend the session or create a new one
 const USER_ACTIVITY_EVENTS = ['click', 'touchstart', 'keydown', 'scroll']
 
-type SessionStateChange = { currentState: SessionState; previousState: SessionState | null }
+type SessionStateChange = { currentState: SessionState & { isNew?: true }; previousState: SessionState | null }
 
 export class SessionManager {
 	sessionHistory: Map<string, SessionState> = new Map()
@@ -39,7 +39,11 @@ export class SessionManager {
 
 	private lastActivityProcessed = 0
 
-	private get session() {
+	private readonly newSessionsPendingToReport = new Set<string>()
+
+	private previousSessionState: SessionState | null = null
+
+	private get session(): SessionState {
 		return this._session
 	}
 
@@ -53,7 +57,7 @@ export class SessionManager {
 			this.storageManager.persistSessionState(this._session)
 		}
 
-		this.sessionStateChange.notify({ currentState: state, previousState })
+		this.notifySessionStateChange()
 	}
 
 	private readonly sessionStateChange = new Observable<SessionStateChange>()
@@ -71,8 +75,14 @@ export class SessionManager {
 			}
 		} else {
 			const sessionState = this.getSessionStateFromStorageAndValidate()
-			// eslint-disable-next-line unicorn/prefer-logical-operator-over-ternary
-			this._session = sessionState ? sessionState : SessionManager.generateNewSession('active')
+			if (sessionState) {
+				this._session = sessionState
+			} else {
+				const newSession = SessionManager.generateNewSession('active')
+				this.newSessionsPendingToReport.add(newSession.id)
+				this._session = newSession
+			}
+
 			this.storageManager.persistSessionState(this._session)
 		}
 
@@ -124,6 +134,8 @@ export class SessionManager {
 			this.attachVisibilityListener()
 			this.attachWatchSessionState()
 		}
+
+		this.notifySessionStateChange()
 	}
 
 	stop() {
@@ -285,13 +297,17 @@ export class SessionManager {
 
 			// Check if another tab has already created a new session. If not, continue using the existing session.
 			const persistedSessionState = this.getSessionStateFromStorageAndValidate()
-			this.session = persistedSessionState
-				? {
-						...persistedSessionState,
-						expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
-						state: 'active' as const,
-					}
-				: SessionManager.generateNewSession('active')
+			if (persistedSessionState) {
+				this.session = {
+					...persistedSessionState,
+					expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
+					state: 'active' as const,
+				}
+			} else {
+				const newSession = SessionManager.generateNewSession('active')
+				this.newSessionsPendingToReport.add(newSession.id)
+				this.session = newSession
+			}
 		}
 	}
 
@@ -317,6 +333,19 @@ export class SessionManager {
 					state: newState,
 				}
 			}
+		}
+	}
+
+	private notifySessionStateChange = () => {
+		const isNew = this.newSessionsPendingToReport.has(this._session.id)
+
+		this.sessionStateChange.notify({
+			currentState: isNew ? { ...this._session, isNew: true } : this._session,
+			previousState: this.previousSessionState,
+		})
+
+		if (isNew) {
+			this.newSessionsPendingToReport.delete(this._session.id)
 		}
 	}
 
