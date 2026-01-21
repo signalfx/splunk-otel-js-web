@@ -18,11 +18,10 @@
 
 import * as api from '@opentelemetry/api'
 import { InstrumentationBase, isWrapped } from '@opentelemetry/instrumentation'
-import { getElementXPath } from '@opentelemetry/sdk-trace-web'
 
 import { PrivacyManager } from '../../managers/privacy/privacy-manager'
 import { isNode, SplunkOtelWebConfig } from '../../types'
-import { captureElementDataAttributes, getTextFromNode } from '../../utils/index'
+import { captureElementDataAttributes, getElementXPath, getTextFromNode } from '../../utils/index'
 import { AttributeNames } from './enums/attribute-names'
 import { SpanData } from './internal-types'
 import { EventName, ShouldPreventSpanCreation, UserInteractionInstrumentationConfig } from './types'
