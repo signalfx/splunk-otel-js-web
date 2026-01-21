@@ -33,7 +33,7 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
         - Introduced `SessionBasedSampler` to control the percentage of sessions that get recorded by session recorder
         - SplunkRum takes a `ratio` of all possible sessions, e.g. `0.8` means 80% of all possible sessions will be sent to the backend
         - SplunkSessionRecorder also takes a `ratio` of all possible sessions, e.g. `0.02` means that replay will be recorded for the 2% of all possible sessions
-        - Note that if you record 20% of the sessions, and you want the replay for 10% of recorded sessions then you need to multiply: `0.2 * 0.1 = 0.02`, so the ratio for `SplunkRum` is `0.2` and the ration for `SplunkSessionRecorder` is `0.02`
+        - Note that if you record 20% of the sessions, and you want the replay for 10% of recorded sessions then you need to multiply: `0.2 * 0.1 = 0.02`, so the ratio for `SplunkRum` is `0.2` and the ratio for `SplunkSessionRecorder` is `0.02`
         - We ensure that if the replay is recorded then the session itself is recorded and that the ratios are preserved
         - Example usage:
 
