@@ -19,13 +19,13 @@
 import { context, diag, Span } from '@opentelemetry/api'
 import { suppressTracing } from '@opentelemetry/core'
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
-import { getElementXPath } from '@opentelemetry/sdk-trace-web'
 import * as shimmer from 'shimmer'
 
 import { isElement } from '../types'
 import { limitLen } from '../utils'
 import { getValidAttributes, isPlainObject, removePropertiesWithAdvancedTypes, SpanContext } from '../utils/attributes'
 import { hashSHA256 } from '../utils/hash'
+import { getElementXPath } from '../utils/index'
 
 // FIXME take timestamps from events?
 
@@ -225,7 +225,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		span.setAttribute('component', 'error')
 		span.setAttribute('error.type', ev.type)
 		if (ev.target) {
-			span.setAttribute('target_xpath', getElementXPath(ev.target, true))
+			span.setAttribute('target_xpath', getElementXPath(ev.target as Node, true))
 
 			if (isElement(ev.target)) {
 				span.setAttribute('target_element', ev.target.tagName)

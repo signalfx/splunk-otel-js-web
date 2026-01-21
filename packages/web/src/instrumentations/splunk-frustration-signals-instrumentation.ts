@@ -21,11 +21,11 @@ import {
 	InstrumentationConfig,
 	InstrumentationModuleDefinition,
 } from '@opentelemetry/instrumentation'
-import { getElementXPath } from '@opentelemetry/sdk-trace-web'
 
 import { PrivacyManager } from '../managers/privacy/privacy-manager'
 import { isElement, isNode, SplunkOtelWebConfig } from '../types'
 import { captureElementDataAttributes } from '../utils/element-attributes'
+import { getElementXPath } from '../utils/index'
 import { getTextFromNode } from '../utils/text'
 import { VERSION } from '../version'
 
