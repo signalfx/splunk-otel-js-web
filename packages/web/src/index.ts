@@ -85,10 +85,8 @@ export { type SplunkExporterConfig } from './exporters/common'
 export { SplunkZipkinExporter } from './exporters/zipkin'
 export * from './session-based-sampler'
 export * from './splunk-web-tracer-provider'
-import { getElementXPath } from '@opentelemetry/sdk-trace-web'
-
 import { PrivacyManager, SessionManager, SessionState, StorageManager } from './managers'
-import { getTextFromNode } from './utils/text'
+import { getElementXPath, getTextFromNode } from './utils/index'
 
 interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
 	bufferSize?: number
