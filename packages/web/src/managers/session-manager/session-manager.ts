@@ -104,18 +104,12 @@ export class SessionManager {
 	}
 
 	getSessionId() {
-		// When the tab is in the background or sleeps, setInterval is throttled, which may cause the session state to be updated too late.
-		// For example, a span might be emitted before the interval runs, resulting in the span being sent even though it should be dropped due to session expiration.
-		// This ensures that a fresh session state is always retrieved.
-		const updatedSessionState = this.getUpdatedSessionStateIfExpired()
-		if (updatedSessionState) {
-			this.watchSessionState()
-		}
-
+		this.ensureSessionStateIsUpToDate()
 		return SessionManager.getNativeSessionId() ?? this.session.id
 	}
 
 	getSessionState() {
+		this.ensureSessionStateIsUpToDate()
 		return this.session
 	}
 
@@ -258,6 +252,18 @@ export class SessionManager {
 		const intervalId = setInterval(this.watchSessionState, 1000)
 
 		this.stopCallbacks.push(() => clearInterval(intervalId))
+	}
+
+	/**
+	 * When the tab is in the background or sleeps, setInterval is throttled, which may cause the session state to be updated too late.
+	 * For example, a span might be emitted before the interval runs, resulting in the span being sent even though it should be dropped due to session expiration.
+	 * This ensures that a fresh session state is always retrieved.
+	 */
+	private ensureSessionStateIsUpToDate() {
+		const updatedSessionState = this.getUpdatedSessionStateIfExpired()
+		if (updatedSessionState) {
+			this.watchSessionState()
+		}
 	}
 
 	private extendOrCreateNewSession = (event: Event) => {
