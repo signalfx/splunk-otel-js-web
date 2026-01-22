@@ -100,4 +100,29 @@ test.describe('init', () => {
 		expect(documentLoadSpans[0].tags['telemetry.sdk.version']).toBe(VERSION)
 		expect(documentLoadSpans[0].tags['splunk.rumVersion']).toBe(VERSION)
 	})
+
+	test('session.start span is emitted for new sessions', async ({ recordPage }) => {
+		await recordPage.goTo('/init/session-start.ejs')
+
+		// Wait for initial session.start span
+		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'session.start').length === 1)
+
+		const sessionStartSpans = recordPage.receivedSpans.filter((span) => span.name === 'session.start')
+		expect(sessionStartSpans).toHaveLength(1)
+
+		// Verify the span has a session ID
+		const initialSessionId = sessionStartSpans[0].tags['splunk.rumSessionId']
+		expect(initialSessionId).toBeDefined()
+
+		// Clear received spans
+		recordPage.clearReceivedSpans()
+
+		// Trigger activity - should NOT create another session.start span
+		await recordPage.locator('#triggerActivity').click()
+		await recordPage.waitForTimeout(1000)
+		await recordPage.flushData()
+
+		const sessionStartSpansAfterActivity = recordPage.receivedSpans.filter((span) => span.name === 'session.start')
+		expect(sessionStartSpansAfterActivity).toHaveLength(0)
+	})
 })
