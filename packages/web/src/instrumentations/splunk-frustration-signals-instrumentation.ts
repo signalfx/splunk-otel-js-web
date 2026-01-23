@@ -31,7 +31,7 @@ import { VERSION } from '../version'
 
 const MODULE_NAME = 'splunk-frustration-signals'
 
-const DEFAULT_RAGE_CLICK_COUNT = 3
+const DEFAULT_RAGE_CLICK_COUNT = 4
 const DEFAULT_RAGE_CLICK_TIMEFRAME_SECONDS = 1
 
 type RageClickOptions =
