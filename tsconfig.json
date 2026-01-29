@@ -28,7 +28,8 @@
 		"*.mts",
 		"tests/**/*.ts",
 		"scripts/**/*.ts",
-		"scripts/**/*.mts"
+		"scripts/**/*.mts",
+		"packages/web/scripts/remove-jaeger-vars.ts"
 	],
 	"exclude": ["node_modules", "dist"]
 }

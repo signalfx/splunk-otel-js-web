@@ -16,8 +16,8 @@
  *
  */
 
-import * as fs from 'fs'
-import * as path from 'path'
+import * as fs from 'node:fs'
+import path from 'node:path'
 
 const bundlePath = path.join(__dirname, '../dist/artifacts/splunk-otel-web.js')
 
@@ -36,7 +36,7 @@ let content = fs.readFileSync(bundlePath, 'utf8')
 // Since this variable is completely unused and always empty, we replace the name with
 // OTEL_EXPORTER_JAEGER_P to prevent these false positive security alerts while keeping
 // the code structure valid.
-content = content.replace(/OTEL_EXPORTER_JAEGER_PASSWORD/g, 'OTEL_EXPORTER_JAEGER_P')
+content = content.replaceAll('OTEL_EXPORTER_JAEGER_PASSWORD', 'OTEL_EXPORTER_JAEGER_P')
 
 // Write back
 fs.writeFileSync(bundlePath, content)
