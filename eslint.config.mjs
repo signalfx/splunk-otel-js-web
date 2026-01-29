@@ -307,7 +307,7 @@ const config = [
 		},
 	},
 	{
-		files: ['scripts/**/*.ts', 'scripts/**/*.mts'],
+		files: ['scripts/**/*.ts', 'scripts/**/*.mts', 'packages/web/scripts/remove-jaeger-vars.ts'],
 		languageOptions: {
 			globals: {
 				...globals.node,
