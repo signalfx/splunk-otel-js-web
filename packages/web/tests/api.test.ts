@@ -42,6 +42,8 @@ describe('Transitive API', () => {
 			rumAccessToken: 'xxx',
 			spanProcessors: [spanCapturer],
 		})
+		// Clear the session.start span that was emitted during init
+		spanCapturer.clear()
 	})
 
 	afterEach(() => {

@@ -21,17 +21,17 @@ import {
 	InstrumentationConfig,
 	InstrumentationModuleDefinition,
 } from '@opentelemetry/instrumentation'
-import { getElementXPath } from '@opentelemetry/sdk-trace-web'
 
 import { PrivacyManager } from '../managers/privacy/privacy-manager'
 import { isElement, isNode, SplunkOtelWebConfig } from '../types'
 import { captureElementDataAttributes } from '../utils/element-attributes'
+import { getElementXPath } from '../utils/index'
 import { getTextFromNode } from '../utils/text'
 import { VERSION } from '../version'
 
 const MODULE_NAME = 'splunk-frustration-signals'
 
-const DEFAULT_RAGE_CLICK_COUNT = 3
+const DEFAULT_RAGE_CLICK_COUNT = 4
 const DEFAULT_RAGE_CLICK_TIMEFRAME_SECONDS = 1
 
 type RageClickOptions =
@@ -148,8 +148,9 @@ export class SplunkFrustrationSignalsInstrumentation extends InstrumentationBase
 			const ignored = isElement(target) && config.ignoreSelectors.some((selector) => target.matches(selector))
 			if (!ignored) {
 				const startTime = Date.now()
-				const span = this.tracer.startSpan('rage', { startTime })
-				span.setAttribute('event_type', 'click')
+				const span = this.tracer.startSpan('frustration', { startTime })
+				span.setAttribute('frustration_type', 'rage')
+				span.setAttribute('interaction_type', 'click')
 				span.setAttribute('component', 'user-interaction')
 				span.setAttribute('target_xpath', getElementXPath(target, true))
 

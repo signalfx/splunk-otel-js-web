@@ -207,6 +207,10 @@ describe('SessionManager', () => {
 			sessionManager.subscribe(mockSubscriber)
 			sessionManager.start()
 
+			// First notification from start()
+			expect(mockSubscriber).toHaveBeenCalledTimes(1)
+			mockSubscriber.mockClear()
+
 			const keydownEvent = new KeyboardEvent('keydown', {
 				bubbles: true,
 				cancelable: true,
@@ -217,7 +221,7 @@ describe('SessionManager', () => {
 			window.dispatchEvent(keydownEvent)
 
 			expect(mockSubscriber).toHaveBeenCalledTimes(1)
-			expect(mockSubscriber).toHaveBeenCalledWith(
+			expect(mockSubscriber).toHaveBeenLastCalledWith(
 				expect.objectContaining({
 					currentState: {
 						expiresAt: expect.any(Number),
@@ -225,14 +229,149 @@ describe('SessionManager', () => {
 						startTime: expect.any(Number),
 						state: 'active',
 					},
-					previousState: {
-						expiresAt: expect.any(Number),
-						id: expect.any(String),
-						startTime: expect.any(Number),
-						state: 'active',
-					},
+					previousState: null,
 				}),
 			)
+		})
+
+		it('should report isNew flag only once for a new session', () => {
+			const mockSubscriber = vi.fn()
+
+			// Create a new session manager (which creates a new session)
+			storageManager = new StorageManager({
+				sessionPersistence: 'cookie',
+			})
+			storageManager.getSessionState = vi.fn().mockReturnValue(null)
+			storageManager.persistSessionState = vi.fn().mockReturnValue(true)
+			sessionManager = new SessionManager(storageManager)
+
+			sessionManager.subscribe(mockSubscriber)
+			sessionManager.start()
+
+			// First notification should have isNew: true
+			expect(mockSubscriber).toHaveBeenCalledTimes(1)
+			expect(mockSubscriber).toHaveBeenNthCalledWith(
+				1,
+				expect.objectContaining({
+					currentState: expect.objectContaining({
+						isNew: true,
+						state: 'active',
+					}),
+					previousState: null,
+				}),
+			)
+
+			mockSubscriber.mockClear()
+
+			// Trigger another session state change by extending the session
+			const keydownEvent = new KeyboardEvent('keydown', {
+				bubbles: true,
+				cancelable: true,
+				code: 'Enter',
+				key: 'Enter',
+			})
+
+			window.dispatchEvent(keydownEvent)
+
+			// Second notification should NOT have isNew flag
+			expect(mockSubscriber).toHaveBeenCalledTimes(1)
+			expect(mockSubscriber).toHaveBeenNthCalledWith(
+				1,
+				expect.objectContaining({
+					currentState: expect.not.objectContaining({
+						isNew: true,
+					}),
+				}),
+			)
+		})
+
+		it('should report isNew flag when creating a new session after expiration', () => {
+			vi.useFakeTimers()
+
+			const mockSubscriber = vi.fn()
+			const persistedSession = {
+				expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
+				id: 'initial-session-id',
+				startTime: Date.now(),
+			}
+
+			storageManager = new StorageManager({
+				sessionPersistence: 'cookie',
+			})
+			storageManager.getSessionState = vi.fn().mockReturnValue(persistedSession)
+			storageManager.persistSessionState = vi.fn().mockReturnValue(true)
+			sessionManager = new SessionManager(storageManager)
+
+			sessionManager.subscribe(mockSubscriber)
+			sessionManager.start()
+
+			// First notification for existing session should NOT have isNew flag
+			expect(mockSubscriber).toHaveBeenCalledTimes(1)
+			expect(mockSubscriber).toHaveBeenNthCalledWith(
+				1,
+				expect.objectContaining({
+					currentState: expect.not.objectContaining({
+						isNew: true,
+					}),
+				}),
+			)
+
+			mockSubscriber.mockClear()
+
+			// Expire the session
+			vi.advanceTimersByTime(SESSION_INACTIVITY_TIMEOUT_MS + 1000)
+
+			// watchSessionState interval will detect expiration and trigger a notification
+			// This notification will mark the session as expired but NOT have isNew
+			expect(mockSubscriber).toHaveBeenCalled()
+			mockSubscriber.mockClear()
+
+			// Mock storage to return null (no new session from another tab)
+			storageManager.getSessionState = vi.fn().mockReturnValue(null)
+
+			// Trigger user activity to create a new session
+			const keydownEvent = new KeyboardEvent('keydown', {
+				bubbles: true,
+				cancelable: true,
+				code: 'Enter',
+				key: 'Enter',
+			})
+
+			window.dispatchEvent(keydownEvent)
+
+			// Should notify with isNew: true for the new session
+			expect(mockSubscriber).toHaveBeenCalled()
+			const newSessionCall = mockSubscriber.mock.calls.find((call) => call[0].currentState.isNew === true)
+			expect(newSessionCall).toBeDefined()
+			expect(newSessionCall?.[0]).toMatchObject({
+				currentState: expect.objectContaining({
+					isNew: true,
+					state: 'active',
+				}),
+			})
+
+			// Verify the session ID changed
+			expect(sessionManager.getSessionId()).not.toBe('initial-session-id')
+
+			mockSubscriber.mockClear()
+
+			// Advance time past throttle window (1 second)
+			vi.advanceTimersByTime(1000)
+
+			// Trigger another activity event - should NOT have isNew flag
+			window.dispatchEvent(keydownEvent)
+
+			expect(mockSubscriber).toHaveBeenCalledTimes(1)
+			expect(mockSubscriber).toHaveBeenNthCalledWith(
+				1,
+				expect.objectContaining({
+					currentState: expect.not.objectContaining({
+						isNew: true,
+					}),
+				}),
+			)
+
+			vi.useRealTimers()
 		})
 
 		it('should persist active session state to storage', () => {
@@ -315,7 +454,6 @@ describe('SessionManager', () => {
 		it('should sync with storage when another tab creates a new session', () => {
 			vi.useFakeTimers()
 			const mockSubscriber = vi.fn()
-			sessionManager.subscribe(mockSubscriber)
 
 			const newSessionFromStorage = {
 				expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
@@ -323,7 +461,12 @@ describe('SessionManager', () => {
 				startTime: Date.now(),
 			}
 
+			sessionManager.subscribe(mockSubscriber)
 			sessionManager.start()
+
+			// First notification from start()
+			expect(mockSubscriber).toHaveBeenCalledTimes(1)
+			mockSubscriber.mockClear()
 
 			expect(sessionManager.getSessionId()).toHaveLength(32)
 
@@ -341,12 +484,7 @@ describe('SessionManager', () => {
 						startTime: expect.any(Number),
 						state: 'active',
 					},
-					previousState: {
-						expiresAt: expect.any(Number),
-						id: expect.any(String),
-						startTime: expect.any(Number),
-						state: 'active',
-					},
+					previousState: null,
 				}),
 			)
 		})

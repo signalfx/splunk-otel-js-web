@@ -273,6 +273,8 @@ describe('SplunkErrorInstrumentation', () => {
 				rumAccessToken: 'xxx',
 				spanProcessors: [capturer],
 			})
+			// Clear the session.start span that was emitted during init
+			capturer.clear()
 		}
 
 		afterEach(() => {

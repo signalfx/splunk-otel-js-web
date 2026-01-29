@@ -25,10 +25,17 @@ test.describe('Frustration signals', () => {
 		await recordPage.goTo('/frustration-signals/rage-click-default.ejs')
 		await makeClicks(recordPage)
 
-		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'click').length === 6)
+		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'click').length === 8)
 
-		expect(recordPage.receivedSpans.filter(({ name }) => name === 'rage')).toHaveLength(0)
-		expect(recordPage.receivedSpans.filter(({ name }) => name === 'click')).toHaveLength(6)
+		expect(
+			recordPage.receivedSpans.filter(
+				(span) =>
+					span.name === 'frustration' &&
+					span.tags['frustration_type'] === 'rage' &&
+					span.tags['interaction_type'] === 'click',
+			),
+		).toHaveLength(0)
+		expect(recordPage.receivedSpans.filter(({ name }) => name === 'click')).toHaveLength(8)
 	})
 
 	test('Rage click', async ({ recordPage }) => {
@@ -36,16 +43,27 @@ test.describe('Frustration signals', () => {
 		await makeClicks(recordPage)
 
 		await recordPage.waitForSpans((spans) =>
-			spans.some((span) => span.name === 'rage' && span.tags['target_xpath'] === '//html/body/h1'),
+			spans.some(
+				(span) =>
+					span.name === 'frustration' &&
+					span.tags['frustration_type'] === 'rage' &&
+					span.tags['interaction_type'] === 'click' &&
+					span.tags['target_xpath'] === '//html/body/h1',
+			),
 		)
-		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'click').length === 6)
+		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'click').length === 8)
 
-		const rageClickSpans = recordPage.receivedSpans.filter(({ name }) => name === 'rage')
+		const rageClickSpans = recordPage.receivedSpans.filter(
+			(span) =>
+				span.name === 'frustration' &&
+				span.tags['frustration_type'] === 'rage' &&
+				span.tags['interaction_type'] === 'click',
+		)
 
 		expect(rageClickSpans).toHaveLength(1)
 		expect(rageClickSpans[0].duration).toBe(0)
 
-		expect(recordPage.receivedSpans.filter(({ name }) => name === 'click')).toHaveLength(6)
+		expect(recordPage.receivedSpans.filter(({ name }) => name === 'click')).toHaveLength(8)
 	})
 })
 
@@ -55,6 +73,8 @@ async function makeClicks(recordPage: RecordPage) {
 	await recordPage.locator('#no-rage').click()
 	await recordPage.locator('#no-rage').click()
 	await recordPage.locator('#no-rage').click()
+	await recordPage.locator('#no-rage').click()
+	await recordPage.locator('h1').click()
 	await recordPage.locator('h1').click()
 	await recordPage.locator('h1').click()
 	await recordPage.locator('h1').click()

@@ -40,13 +40,16 @@ export const initWithDefaultConfig = (capturer: SpanCapturer, additionalOptions 
 	if (!SplunkRum.inited) {
 		throw new Error('SplunkRum not initialized')
 	}
+
+	// Clear the session.start span that was emitted during init
+	capturer.clear()
 }
 
 export function initWithSyncPipeline(additionalOptions = {}): {
 	forceFlush: () => Promise<void>
 	getFinishedSpans: () => ZipkinSpan[]
 } {
-	const { exporter, getFinishedSpans } = buildInMemorySplunkExporter()
+	const { clearSpans, exporter, getFinishedSpans } = buildInMemorySplunkExporter()
 	const processor = new SimpleSpanProcessor(exporter)
 
 	SplunkRum._internalInit({
@@ -61,6 +64,9 @@ export function initWithSyncPipeline(additionalOptions = {}): {
 		version: '1.2-test.3',
 		...additionalOptions,
 	})
+
+	// Clear the session.start span that was emitted during init
+	clearSpans()
 
 	return {
 		forceFlush: () => processor.forceFlush(),
