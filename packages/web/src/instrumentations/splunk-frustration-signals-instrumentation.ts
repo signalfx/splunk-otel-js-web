@@ -148,8 +148,9 @@ export class SplunkFrustrationSignalsInstrumentation extends InstrumentationBase
 			const ignored = isElement(target) && config.ignoreSelectors.some((selector) => target.matches(selector))
 			if (!ignored) {
 				const startTime = Date.now()
-				const span = this.tracer.startSpan('rage', { startTime })
-				span.setAttribute('event_type', 'click')
+				const span = this.tracer.startSpan('frustration', { startTime })
+				span.setAttribute('frustration_type', 'rage')
+				span.setAttribute('interaction_type', 'click')
 				span.setAttribute('component', 'user-interaction')
 				span.setAttribute('target_xpath', getElementXPath(target, true))
 
