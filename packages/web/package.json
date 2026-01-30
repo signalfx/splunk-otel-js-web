@@ -17,7 +17,7 @@
 	"repository": "github:signalfx/splunk-otel-js-browser",
 	"scripts": {
 		"build": "npm-run-all -s build:*",
-		"build:browser": "webpack --mode production --color",
+		"build:browser": "webpack --mode production --color && tsx scripts/remove-jaeger-vars.ts",
 		"build:tsc": "tsc --build tsconfig.cjs.json tsconfig.esm.json",
 		"dev": "npm-run-all -s dev:tsc:init -p dev:*",
 		"dev:tsc:init": "tsc --build tsconfig.cjs.json tsconfig.esm.json",
