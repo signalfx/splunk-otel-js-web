@@ -370,8 +370,8 @@ importers:
         specifier: ^1.25.1
         version: 1.30.1(@opentelemetry/api@1.9.0)
       core-js:
-        specifier: 3.47.0
-        version: 3.47.0
+        specifier: 3.48.0
+        version: 3.48.0
       fflate:
         specifier: ^0.8.0
         version: 0.8.2
@@ -464,8 +464,8 @@ importers:
         specifier: ^1.25.1
         version: 1.38.0
       core-js:
-        specifier: 3.47.0
-        version: 3.47.0
+        specifier: 3.48.0
+        version: 3.48.0
       shimmer:
         specifier: ^1.2.1
         version: 1.2.1
@@ -3602,6 +3602,9 @@ packages:
 
   core-js@3.47.0:
     resolution: {integrity: sha512-c3Q2VVkGAUyupsjRnaNX6u8Dq2vAdzm9iuPj5FW0fRxzlxgq9Q39MDq10IvmQSpLgHQNyQzQmOo6bgGHmH3NNg==}
+
+  core-js@3.48.0:
+    resolution: {integrity: sha512-zpEHTy1fjTMZCKLHUZoVeylt9XrzaIN2rbPXEt0k+q7JE5CkCZdo6bNq55bn24a69CH7ErAVLKijxJja4fw+UQ==}
 
   core-util-is@1.0.3:
     resolution: {integrity: sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ==}
@@ -11511,6 +11514,8 @@ snapshots:
       browserslist: 4.28.1
 
   core-js@3.47.0: {}
+
+  core-js@3.48.0: {}
 
   core-util-is@1.0.3: {}
 
