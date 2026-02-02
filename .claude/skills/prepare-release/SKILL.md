@@ -85,8 +85,9 @@ Format the changelog to match the existing CHANGELOG.md structure:
 - **Include PR references** - Add `[#PR_NUMBER](PR_URL)` after each title
 - **Indentation** - Use 4 spaces for nested items under the package scope
 - **Dependencies**:
-    - Add as a separate bullet point: `- **Updated dependencies**`
-    - **NEVER list the package names that were updated** - just say "Updated dependencies"
+    - Add as a separate bullet point: `- **Updated dependencies** [#PR1](URL), [#PR2](URL), ...`
+    - **NEVER list the package names that were updated** - just say "Updated dependencies" followed by links to all dependency PRs
+    - Include links to ALL dependency-related PRs in a comma-separated list
     - This is a top-level bullet point, not under a package name
 - Strip conventional commit prefixes (feat:, fix:, etc.) from the changelog entries
 - Omit empty sections
@@ -159,12 +160,12 @@ Based on the commits since v2.0.0, I suggest version **v2.1.0** (minor bump due 
     - **Added Custom Event Recording** [#1236](https://github.com/signalfx/splunk-otel-js-web/pull/1236)
         - New API for recording custom events in session replay
 
-- **Updated dependencies**
+- **Updated dependencies** [#1240](https://github.com/signalfx/splunk-otel-js-web/pull/1240), [#1241](https://github.com/signalfx/splunk-otel-js-web/pull/1241)
 ```
 
 ## Notes
 
 - This skill follows Semantic Versioning (semver) principles
-- Dependency updates are condensed to a single "Updated dependencies" bullet - never list package names
+- Dependency updates are condensed to a single "Updated dependencies" bullet with links to all dependency PRs - never list package names
 - The skill examines PR descriptions as the primary source for detailed changelog entries (via `gh pr view` or the GitHub API), falling back to commit messages when PR info is unavailable
 - Breaking changes should always be highlighted first when present
