@@ -404,8 +404,8 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0(webpack@5.104.1)
       swc-loader:
-        specifier: ^0.2.6
-        version: 0.2.6(@swc/core@1.15.11(@swc/helpers@0.5.18))(webpack@5.104.1)
+        specifier: ^0.2.7
+        version: 0.2.7(@swc/core@1.15.11(@swc/helpers@0.5.18))(webpack@5.104.1)
       terser-webpack-plugin:
         specifier: ^5.3.16
         version: 5.3.16(@swc/core@1.15.11(@swc/helpers@0.5.18))(webpack@5.104.1)
@@ -495,8 +495,8 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0(webpack@5.104.1)
       swc-loader:
-        specifier: ^0.2.6
-        version: 0.2.6(@swc/core@1.15.11(@swc/helpers@0.5.18))(webpack@5.104.1)
+        specifier: ^0.2.7
+        version: 0.2.7(@swc/core@1.15.11(@swc/helpers@0.5.18))(webpack@5.104.1)
       ts-loader:
         specifier: ^9.5.4
         version: 9.5.4(typescript@5.9.3)(webpack@5.104.1)
@@ -6681,8 +6681,8 @@ packages:
     resolution: {integrity: sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==}
     engines: {node: '>= 0.4'}
 
-  swc-loader@0.2.6:
-    resolution: {integrity: sha512-9Zi9UP2YmDpgmQVbyOPJClY0dwf58JDyDMQ7uRc4krmc72twNI2fvlBWHLqVekBpPc7h5NJkGVT1zNDxFrqhvg==}
+  swc-loader@0.2.7:
+    resolution: {integrity: sha512-nwYWw3Fh9ame3Rtm7StS9SBLpHRRnYcK7bnpF3UKZmesAK0gw2/ADvlURFAINmPvKtDLzp+GBiP9yLoEjg6S9w==}
     peerDependencies:
       '@swc/core': ^1.2.147
       webpack: '>=2'
@@ -15170,7 +15170,7 @@ snapshots:
 
   supports-preserve-symlinks-flag@1.0.0: {}
 
-  swc-loader@0.2.6(@swc/core@1.15.11(@swc/helpers@0.5.18))(webpack@5.104.1):
+  swc-loader@0.2.7(@swc/core@1.15.11(@swc/helpers@0.5.18))(webpack@5.104.1):
     dependencies:
       '@swc/core': 1.15.11(@swc/helpers@0.5.18)
       '@swc/counter': 0.1.3
