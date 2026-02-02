@@ -42,7 +42,7 @@
 		"@opentelemetry/api": "^1.9.0",
 		"@opentelemetry/core": "^1.25.1",
 		"@opentelemetry/resources": "^1.25.1",
-		"core-js": "3.47.0",
+		"core-js": "3.48.0",
 		"fflate": "^0.8.0",
 		"nanoid": "^5.1.6",
 		"type-fest": "^5.3.1"
@@ -52,7 +52,7 @@
 	},
 	"devDependencies": {
 		"@splunk/otel-web": "workspace:*",
-		"@swc/core": "^1.15.8",
+		"@swc/core": "^1.15.11",
 		"@swc/helpers": "^0.5.18",
 		"copy-webpack-plugin": "^13.0.1",
 		"fork-ts-checker-webpack-plugin": "^9.1.0",
