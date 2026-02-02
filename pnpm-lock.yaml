@@ -379,8 +379,8 @@ importers:
         specifier: ^5.1.6
         version: 5.1.6
       type-fest:
-        specifier: ^5.3.1
-        version: 5.3.1
+        specifier: ^5.4.3
+        version: 5.4.3
     devDependencies:
       '@splunk/otel-web':
         specifier: workspace:*
@@ -6909,8 +6909,8 @@ packages:
     resolution: {integrity: sha512-yGSza74xk0UG8k+pLh5oeoYirvIiWo5t0/o3zHHAO2tRDiZcxWP7fywNlXhqb6/r6sWvwi+RsyQMWhVLe4BVuA==}
     engines: {node: '>=10'}
 
-  type-fest@5.3.1:
-    resolution: {integrity: sha512-VCn+LMHbd4t6sF3wfU/+HKT63C9OoyrSIf4b+vtWHpt2U7/4InZG467YDNMFMR70DdHjAdpPWmw2lzRdg0Xqqg==}
+  type-fest@5.4.3:
+    resolution: {integrity: sha512-AXSAQJu79WGc79/3e9/CR77I/KQgeY1AhNvcShIH4PTcGYyC4xv6H4R4AUOwkPS5799KlVDAu8zExeCrkGquiA==}
     engines: {node: '>=20'}
 
   type-is@1.6.18:
@@ -15402,7 +15402,7 @@ snapshots:
 
   type-fest@1.4.0: {}
 
-  type-fest@5.3.1:
+  type-fest@5.4.3:
     dependencies:
       tagged-tag: 1.0.0
 
