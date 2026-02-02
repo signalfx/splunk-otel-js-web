@@ -40,8 +40,8 @@
 	],
 	"dependencies": {
 		"@opentelemetry/api": "^1.9.0",
-		"@opentelemetry/core": "^1.25.1",
-		"@opentelemetry/resources": "^1.25.1",
+		"@opentelemetry/core": "^2.5.0",
+		"@opentelemetry/resources": "^2.5.0",
 		"core-js": "3.48.0",
 		"fflate": "^0.8.0",
 		"nanoid": "^5.1.6",
