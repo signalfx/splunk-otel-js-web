@@ -33,6 +33,9 @@ updates:
           rsbuild:
               patterns:
                   - '@rsbuild/*'
+          electron-forge:
+              patterns:
+                  - '@electron-forge/*'
 
     - package-ecosystem: 'github-actions'
       directory: '/'
