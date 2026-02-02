@@ -89,10 +89,10 @@ Choose a versioning strategy based on your needs:
 **Minor Version Lock**
 
 ```html
-<!-- Locks to v2.0.x - gets latest patch updates only -->
-<script src="https://cdn.signalfx.com/o11y-gdi-rum/v2.0/splunk-otel-web.js" crossorigin="anonymous"></script>
+<!-- Locks to v2.1.x - gets latest patch updates only -->
+<script src="https://cdn.signalfx.com/o11y-gdi-rum/v2.1/splunk-otel-web.js" crossorigin="anonymous"></script>
 <script
-	src="https://cdn.signalfx.com/o11y-gdi-rum/v2.0/splunk-otel-web-session-recorder.js"
+	src="https://cdn.signalfx.com/o11y-gdi-rum/v2.1/splunk-otel-web-session-recorder.js"
 	crossorigin="anonymous"
 ></script>
 ```
@@ -100,14 +100,14 @@ Choose a versioning strategy based on your needs:
 **Exact Version Lock**
 
 ```html
-<!-- Locks to exact version v2.0.0 - no automatic updates -->
+<!-- Locks to exact version v2.1.0 - no automatic updates -->
 <script
-	src="https://cdn.signalfx.com/o11y-gdi-rum/v2.0.0/splunk-otel-web.js"
+	src="https://cdn.signalfx.com/o11y-gdi-rum/v2.1.0/splunk-otel-web.js"
 	crossorigin="anonymous"
 	integrity="sha384-<integrity>"
 ></script>
 <script
-	src="https://cdn.signalfx.com/o11y-gdi-rum/v2.0.0/splunk-otel-web-session-recorder.js"
+	src="https://cdn.signalfx.com/o11y-gdi-rum/v2.1.0/splunk-otel-web-session-recorder.js"
 	crossorigin="anonymous"
 	integrity="sha384-<integrity>"
 ></script>
