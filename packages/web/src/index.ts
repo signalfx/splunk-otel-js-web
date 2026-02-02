@@ -446,18 +446,27 @@ export const SplunkRum: SplunkOtelWebType = {
 
 			// Initialize picker if this is a picker window
 			if (isPickerWindow()) {
-				try {
-					createPicker({
-						getElementText: (element: HTMLElement) =>
-							getTextFromNode(
-								element,
-								(node) => !PrivacyManager.shouldMaskTextNode(node, processedOptions.privacy),
-							),
-						getElementXPath: (element: HTMLElement) => getElementXPath(element, true),
-					})
-				} catch (error) {
-					diag.error('[Splunk]: SplunkSessionRecorder.init() - Failed to initialize picker.', { error })
+				const initializePicker = () => {
+					try {
+						createPicker({
+							getElementText: (element: HTMLElement) =>
+								getTextFromNode(
+									element,
+									(node) => !PrivacyManager.shouldMaskTextNode(node, processedOptions.privacy),
+								),
+							getElementXPath: (element: HTMLElement) => getElementXPath(element, true),
+						})
+					} catch (error) {
+						diag.error('[Splunk]: SplunkSessionRecorder.init() - Failed to initialize picker.', { error })
+					}
 				}
+
+				if (document.readyState === 'loading') {
+					window.addEventListener('DOMContentLoaded', initializePicker, { once: true })
+				} else {
+					initializePicker()
+				}
+
 				return
 			}
 
