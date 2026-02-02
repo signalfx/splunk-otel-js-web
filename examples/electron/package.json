@@ -21,7 +21,7 @@
 		"@electron-forge/plugin-auto-unpack-natives": "^7.10.2",
 		"@electron-forge/plugin-fuses": "^7.10.2",
 		"@electron-forge/plugin-webpack": "^7.10.2",
-		"@electron-forge/shared-types": "^7.10.2",
+		"@electron-forge/shared-types": "^7.11.1",
 		"@electron/fuses": "^1.8.0",
 		"@timfish/webpack-asset-relocator-loader": "^0.1.0",
 		"css-loader": "^7.1.3",

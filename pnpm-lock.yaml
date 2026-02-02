@@ -157,8 +157,8 @@ importers:
         specifier: ^7.10.2
         version: 7.10.2(@rspack/core@1.7.4(@swc/helpers@0.5.18))
       '@electron-forge/shared-types':
-        specifier: ^7.10.2
-        version: 7.10.2
+        specifier: ^7.11.1
+        version: 7.11.1
       '@electron/fuses':
         specifier: ^1.8.0
         version: 1.8.0
@@ -824,6 +824,10 @@ packages:
     resolution: {integrity: sha512-e2pd9RsdbKwsNf6UtKoolmJGy92Nc0/XO4SI91doV8cM954hM2XSYz3VHoqXebMFAF1JDfXoEUt6UCRbEDgMgw==}
     engines: {node: '>= 16.4.0'}
 
+  '@electron-forge/shared-types@7.11.1':
+    resolution: {integrity: sha512-vvBWdAEh53UJlDGUevpaJk1+sqDMQibfrbHR+0IPA4MPyQex7/Uhv3vYH9oGHujBVAChQahjAuJt0fG6IJBLZg==}
+    engines: {node: '>= 16.4.0'}
+
   '@electron-forge/template-base@7.10.2':
     resolution: {integrity: sha512-D9DbEx3rtikIhUyn4tcz2pJqHNU/+FXKNnzSvmrJoJ9LusR3C42OU9GtbU8oT3nawpnCGgPFIOGXrzexFPp6DA==}
     engines: {node: '>= 16.4.0'}
@@ -846,6 +850,10 @@ packages:
 
   '@electron-forge/tracer@7.10.2':
     resolution: {integrity: sha512-jhLLQbttfZViSOYn/3SJc8HML+jNZAytPVJwgGGd3coUiFysWJ2Xald99iqOiouPAhIigBfNPxQb/q/EbcDu4g==}
+    engines: {node: '>= 14.17.5'}
+
+  '@electron-forge/tracer@7.11.1':
+    resolution: {integrity: sha512-tiB6cglVQFcSw9N8GRwVwZUeB9u0DOx2Mj7aFXBUsFLUYQapvVGv51tUSy/UAW5lvmubGscYIILuVko+II3+NA==}
     engines: {node: '>= 14.17.5'}
 
   '@electron-forge/web-multi-logger@7.10.2':
@@ -5532,8 +5540,8 @@ packages:
   no-case@3.0.4:
     resolution: {integrity: sha512-fgAN3jGAh+RoxUGZHTSOLJIqUc2wmoBwGR4tbpNAKmmovFoWq0OdRkb0VkldReO2a2iBT/OEulG9XSUc10r3zg==}
 
-  node-abi@3.85.0:
-    resolution: {integrity: sha512-zsFhmbkAzwhTft6nd3VxcG0cvJsT70rL+BIGHWVq5fi6MwGrHwzqKaxXE+Hl2GmnGItnDKPPkO5/LQqjVkIdFg==}
+  node-abi@3.87.0:
+    resolution: {integrity: sha512-+CGM1L1CgmtheLcBuleyYOn7NWPVu0s0EJH2C4puxgEZb9h8QpR9G2dBfZJOAUhi7VQxuBPMd0hiISWcTyiYyQ==}
     engines: {node: '>=10'}
 
   node-abort-controller@3.1.1:
@@ -8237,6 +8245,16 @@ snapshots:
       - bluebird
       - supports-color
 
+  '@electron-forge/shared-types@7.11.1':
+    dependencies:
+      '@electron-forge/tracer': 7.11.1
+      '@electron/packager': 18.4.4
+      '@electron/rebuild': 3.7.2
+      listr2: 7.0.2
+    transitivePeerDependencies:
+      - bluebird
+      - supports-color
+
   '@electron-forge/template-base@7.10.2':
     dependencies:
       '@electron-forge/core-utils': 7.10.2
@@ -8293,6 +8311,10 @@ snapshots:
       - supports-color
 
   '@electron-forge/tracer@7.10.2':
+    dependencies:
+      chrome-trace-event: 1.0.4
+
+  '@electron-forge/tracer@7.11.1':
     dependencies:
       chrome-trace-event: 1.0.4
 
@@ -8418,7 +8440,7 @@ snapshots:
       detect-libc: 2.1.2
       fs-extra: 10.1.0
       got: 11.8.6
-      node-abi: 3.85.0
+      node-abi: 3.87.0
       node-api-version: 0.2.1
       ora: 5.4.1
       read-binary-file-arch: 1.0.6
@@ -13848,7 +13870,7 @@ snapshots:
       lower-case: 2.0.2
       tslib: 2.8.1
 
-  node-abi@3.85.0:
+  node-abi@3.87.0:
     dependencies:
       semver: 7.7.3
 
