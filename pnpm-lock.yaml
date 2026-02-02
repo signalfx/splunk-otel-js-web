@@ -166,8 +166,8 @@ importers:
         specifier: ^0.1.0
         version: 0.1.0
       css-loader:
-        specifier: ^7.1.2
-        version: 7.1.2(@rspack/core@1.7.4(@swc/helpers@0.5.18))(webpack@5.104.1)
+        specifier: ^7.1.3
+        version: 7.1.3(@rspack/core@1.7.4(@swc/helpers@0.5.18))(webpack@5.104.1)
       dotenv:
         specifier: ^17.2.3
         version: 17.2.3
@@ -3640,8 +3640,8 @@ packages:
     resolution: {integrity: sha512-n63i0lZ0rvQ6FXiGQ+/JFCKAUyPFhLQYJIqKaa+tSJtfKeULF/IDNDAbdnSIxgS4NTuw2b0+lj8LzfITuq+ZxQ==}
     engines: {node: '>=12.10'}
 
-  css-loader@7.1.2:
-    resolution: {integrity: sha512-6WvYYn7l/XEGN8Xu2vWFt9nVzrCn39vKyTEFf/ExEyoksJjjSZV/0/35XPlMbpnr6VGhZIUg5yJrL8tGfes/FA==}
+  css-loader@7.1.3:
+    resolution: {integrity: sha512-frbERmjT0UC5lMheWpJmMilnt9GEhbZJN/heUb7/zaJYeIzj5St9HvDcfshzzOqbsS+rYpMk++2SD3vGETDSyA==}
     engines: {node: '>= 18.12.0'}
     peerDependencies:
       '@rspack/core': 0.x || 1.x
@@ -11551,7 +11551,7 @@ snapshots:
 
   cross-zip@4.0.1: {}
 
-  css-loader@7.1.2(@rspack/core@1.7.4(@swc/helpers@0.5.18))(webpack@5.104.1):
+  css-loader@7.1.3(@rspack/core@1.7.4(@swc/helpers@0.5.18))(webpack@5.104.1):
     dependencies:
       icss-utils: 5.1.0(postcss@8.5.6)
       postcss: 8.5.6
