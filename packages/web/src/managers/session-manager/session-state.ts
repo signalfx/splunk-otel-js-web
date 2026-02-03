@@ -19,8 +19,9 @@
 export type SessionState = {
 	expiresAt: number
 	id: string
+	source: 'native' | 'web'
 	startTime: number
-	state: 'active' | 'native' | 'expired-inactivity' | 'expired-duration'
+	state: 'active' | 'expired-inactivity' | 'expired-duration'
 }
 
 export type PersistedSessionState = Pick<SessionState, 'expiresAt' | 'id' | 'startTime'>

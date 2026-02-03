@@ -70,8 +70,9 @@ export class SessionManager {
 			this._session = {
 				expiresAt: Date.now() + 4 * SESSION_INACTIVITY_TIMEOUT_MS,
 				id: nativeSessionId,
+				source: 'native',
 				startTime: Date.now(),
-				state: 'native',
+				state: 'active',
 			}
 		} else {
 			const sessionState = this.getSessionStateFromStorageAndValidate()
@@ -160,6 +161,7 @@ export class SessionManager {
 		return {
 			expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
 			id: sessionId,
+			source: 'web',
 			startTime: Date.now(),
 			state,
 		}
@@ -198,7 +200,8 @@ export class SessionManager {
 					...session,
 					expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
 					id: nativeSessionId,
-					state: 'native',
+					source: 'native',
+					state: 'active',
 				}
 			}
 		}
@@ -323,7 +326,8 @@ export class SessionManager {
 			return null
 		}
 
-		const sessionState = { ...persistedSessionState, state: 'active' as const }
+		// Default to 'web' when it is read from storage
+		const sessionState = { source: 'web' as const, ...persistedSessionState, state: 'active' as const }
 		return SessionManager.canContinueUsingSession(sessionState) ? sessionState : null
 	}
 
