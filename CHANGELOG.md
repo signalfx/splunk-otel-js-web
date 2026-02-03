@@ -2,6 +2,30 @@
 
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
+## 2.1.0
+
+- `@splunk/otel-web`
+    - **Change Rage Click Type to Frustration** [#1593](https://github.com/signalfx/splunk-otel-js-web/pull/1593)
+        - Renamed rage click feature to "frustration" to enable future expansion to additional frustration categories
+        - Added new `frustration_type` and `interaction_type` attributes
+        - This allows future support for error clicks and dead clicks
+    - **Increase Default Rage Click Limit from 3 to 4** [#1590](https://github.com/signalfx/splunk-otel-js-web/pull/1590)
+        - Raised the threshold for detecting rage clicks from 3 to 4 occurrences within a one-second timeframe
+    - **Emit Session Start Span** [#1584](https://github.com/signalfx/splunk-otel-js-web/pull/1584)
+        - Added automatic emission of a `session.start` span when a new session begins
+        - Each session generates exactly one span for tracking session lifecycles
+    - **Fix Secret Scanning False Positives in Bundle** [#1594](https://github.com/signalfx/splunk-otel-js-web/pull/1594)
+        - Fixed an issue where GitHub's secret scanning triggered false alerts when including the library's bundle in repositories
+        - Replaced occurrences of unused "OTEL_EXPORTER_JAEGER_PASSWORD" environment variable name
+    - **Internal: Ensure Fresh Session State is Returned** [#1589](https://github.com/signalfx/splunk-otel-js-web/pull/1589)
+    - **Internal: Fix Optimised Parameter in getElementXPath** [#1588](https://github.com/signalfx/splunk-otel-js-web/pull/1588)
+
+- `@splunk/otel-web-session-recorder`
+    - **Updated Session Replay CDN Module** [#1630](https://github.com/signalfx/splunk-otel-js-web/pull/1630)
+        - Bumped session-replay to latest upstream version
+
+- **Updated dependencies** [#1592](https://github.com/signalfx/splunk-otel-js-web/pull/1592), [#1595](https://github.com/signalfx/splunk-otel-js-web/pull/1595), [#1596](https://github.com/signalfx/splunk-otel-js-web/pull/1596), [#1597](https://github.com/signalfx/splunk-otel-js-web/pull/1597), [#1599](https://github.com/signalfx/splunk-otel-js-web/pull/1599), [#1601](https://github.com/signalfx/splunk-otel-js-web/pull/1601), [#1602](https://github.com/signalfx/splunk-otel-js-web/pull/1602), [#1603](https://github.com/signalfx/splunk-otel-js-web/pull/1603), [#1604](https://github.com/signalfx/splunk-otel-js-web/pull/1604), [#1605](https://github.com/signalfx/splunk-otel-js-web/pull/1605), [#1608](https://github.com/signalfx/splunk-otel-js-web/pull/1608), [#1609](https://github.com/signalfx/splunk-otel-js-web/pull/1609), [#1610](https://github.com/signalfx/splunk-otel-js-web/pull/1610), [#1611](https://github.com/signalfx/splunk-otel-js-web/pull/1611), [#1616](https://github.com/signalfx/splunk-otel-js-web/pull/1616), [#1620](https://github.com/signalfx/splunk-otel-js-web/pull/1620), [#1621](https://github.com/signalfx/splunk-otel-js-web/pull/1621), [#1622](https://github.com/signalfx/splunk-otel-js-web/pull/1622), [#1623](https://github.com/signalfx/splunk-otel-js-web/pull/1623), [#1624](https://github.com/signalfx/splunk-otel-js-web/pull/1624), [#1625](https://github.com/signalfx/splunk-otel-js-web/pull/1625), [#1627](https://github.com/signalfx/splunk-otel-js-web/pull/1627), [#1628](https://github.com/signalfx/splunk-otel-js-web/pull/1628), [#1632](https://github.com/signalfx/splunk-otel-js-web/pull/1632), [#1633](https://github.com/signalfx/splunk-otel-js-web/pull/1633), [#1634](https://github.com/signalfx/splunk-otel-js-web/pull/1634), [#1635](https://github.com/signalfx/splunk-otel-js-web/pull/1635), [#1636](https://github.com/signalfx/splunk-otel-js-web/pull/1636)
+
 ## 2.0.0
 
 ### Breaking Changes
