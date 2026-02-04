@@ -116,7 +116,7 @@ describe('can produce websocket events', () => {
 })
 
 describe('window global io', () => {
-	let capturer
+	let capturer: SpanCapturer | undefined
 
 	beforeEach(() => {
 		// @ts-expect-error io isn't standard window prop
@@ -144,7 +144,7 @@ describe('window global io', () => {
 
 		await new Promise((resolve) => setTimeout(resolve, 1000))
 
-		const sioSpans = capturer.spans.filter((span) => span.attributes['messaging.system'] === 'socket.io')
+		const sioSpans = capturer?.spans.filter((span) => span.attributes['messaging.system'] === 'socket.io')
 
 		expect(sioSpans).toHaveLength(1)
 

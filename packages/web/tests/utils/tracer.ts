@@ -15,11 +15,14 @@
  * limitations under the License.
  *
  */
-export * from './init'
-export * from './memory-exporter'
-export * from './navigator'
-export * from './otel-api'
-export * from './span'
-export * from './span-capturer'
-export * from './tracer'
-export * from './web-tracer-provider'
+import type { Tracer } from '@opentelemetry/api'
+import { assert } from 'vitest'
+
+import SplunkRum from '../../src/index'
+
+export function getTracer(name: string): Tracer {
+	const tracer = SplunkRum.provider?.getTracer(name)
+	assert(tracer, 'Tracer should be defined')
+
+	return tracer
+}

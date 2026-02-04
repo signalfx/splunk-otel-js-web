@@ -2,6 +2,10 @@
 	"$schema": "https://turbo.build/schema.json",
 	"globalDependencies": ["package.json", "pnpm-lock.yaml", "tsconfig.json", "eslint.config.js"],
 	"tasks": {
+		"//#typecheck:root": {
+			"cache": true,
+			"dependsOn": ["^build"]
+		},
 		"build": {
 			"cache": true,
 			"dependsOn": ["^build"],

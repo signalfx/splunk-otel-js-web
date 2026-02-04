@@ -224,7 +224,7 @@ describe('SplunkZipkinExporter', () => {
 			onAttributesSerializing: (attributes) => ({
 				...attributes,
 				key1: 'new value 1',
-				key3: null,
+				key3: undefined,
 			}),
 			url: 'https://localhost',
 			xhrSender: xhrSenderMock,

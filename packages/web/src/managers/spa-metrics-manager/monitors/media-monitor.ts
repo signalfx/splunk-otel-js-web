@@ -120,7 +120,11 @@ export class MediaMonitor extends Monitor {
 		const videos = document.querySelectorAll('video')
 		const audios = document.querySelectorAll('audio')
 
-		const allMediaElements = [...images, ...videos, ...audios] as HTMLMediaElement[]
+		const allMediaElements = [
+			...Array.from(images),
+			...Array.from(videos),
+			...Array.from(audios),
+		] as HTMLMediaElement[]
 
 		allMediaElements.forEach((element) => this.attachMediaListener(element))
 	}

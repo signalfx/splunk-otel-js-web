@@ -15,11 +15,17 @@
  * limitations under the License.
  *
  */
-export * from './init'
-export * from './memory-exporter'
-export * from './navigator'
-export * from './otel-api'
-export * from './span'
-export * from './span-capturer'
-export * from './tracer'
-export * from './web-tracer-provider'
+
+const OTEL_API_SYMBOL = Symbol.for('opentelemetry.js.api.1')
+
+export interface GlobalOtelApi {
+	[key: string]: unknown
+}
+
+export function getGlobalOtelApi(): GlobalOtelApi {
+	return (window as unknown as Record<symbol, GlobalOtelApi>)[OTEL_API_SYMBOL]
+}
+
+export function setGlobalOtelApi(value: GlobalOtelApi | undefined): void {
+	;(window as unknown as Record<symbol, GlobalOtelApi | undefined>)[OTEL_API_SYMBOL] = value
+}
