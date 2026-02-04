@@ -40,6 +40,9 @@ export class UserManager {
 		private readonly storageManager: StorageManager,
 	) {}
 
+	static isUserTrackingMode = (value: unknown): value is UserTrackingMode =>
+		value === 'noTracking' || value === 'anonymousTracking'
+
 	/**
 	 * Clears the anonymous user ID from memory.
 	 * Note: This does not remove the ID from persistent storage.

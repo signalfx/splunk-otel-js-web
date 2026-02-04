@@ -715,6 +715,13 @@ export const SplunkRum: SplunkOtelWebType = {
 			return
 		}
 
+		if (!UserManager.isUserTrackingMode(mode)) {
+			diag.warn(
+				`[Splunk]: SplunkRum.setUserTrackingMode() - Invalid user tracking mode: ${mode}. Valid modes are 'noTracking' and 'anonymousTracking'. User tracking mode will not be set.`,
+			)
+			return
+		}
+
 		this.userManager.userTrackingMode = mode
 	},
 
