@@ -851,3 +851,67 @@ describe('can produce click events', () => {
 		expect(capturer.spans[0].attributes.component).toBe('user-interaction')
 	})
 })
+
+describe('native session handling', () => {
+	let capturer: SpanCapturer
+
+	beforeEach(() => {
+		capturer = new SpanCapturer()
+	})
+
+	afterEach(() => {
+		deinit()
+		window.SplunkRumNative = undefined
+	})
+
+	it('should not create session.start span for native sessions', async () => {
+		// Mock native SDK
+		window.SplunkRumNative = {
+			getNativeSessionId: vi.fn().mockReturnValue('native-session-id-123'),
+		}
+
+		SplunkRum.init({
+			applicationName: 'test-app',
+			beaconEndpoint: 'https://127.0.0.1:9999/test',
+			rumAccessToken: undefined,
+			spanProcessors: [capturer],
+		})
+
+		expect(SplunkRum.inited).toBeTruthy()
+
+		await new Promise((resolve) => setTimeout(resolve, 500))
+
+		// Verify no session.start span was created
+		const sessionStartSpan = capturer.spans.find((span) => span.name === 'session.start')
+		expect(sessionStartSpan).toBeUndefined()
+
+		// Verify session state has native source
+		const sessionState = SplunkRum.getSessionState()
+		expect(sessionState?.source).toBe('native')
+		expect(sessionState?.id).toBe('native-session-id-123')
+	})
+
+	it('should create session.start span for web sessions', async () => {
+		// No native SDK present
+		window.SplunkRumNative = undefined
+
+		SplunkRum.init({
+			applicationName: 'test-app',
+			beaconEndpoint: 'https://127.0.0.1:9999/test',
+			rumAccessToken: undefined,
+			spanProcessors: [capturer],
+		})
+
+		expect(SplunkRum.inited).toBeTruthy()
+
+		await new Promise((resolve) => setTimeout(resolve, 500))
+
+		// Verify session.start span was created
+		const sessionStartSpan = capturer.spans.find((span) => span.name === 'session.start')
+		expect(sessionStartSpan).toBeTruthy()
+
+		// Verify session state has web source
+		const sessionState = SplunkRum.getSessionState()
+		expect(sessionState?.source).toBe('web')
+	})
+})
