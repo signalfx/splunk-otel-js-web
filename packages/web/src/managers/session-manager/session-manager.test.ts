@@ -42,7 +42,7 @@ describe('SessionManager', () => {
 	beforeEach(() => {
 		window.SplunkRumNative = undefined
 		storageManager = new StorageManager({
-			sessionPersistence: 'cookie',
+			persistence: 'cookie',
 		})
 		storageManager.persistSessionState = vi.fn().mockReturnValue(true)
 		storageManager.getSessionState = vi.fn().mockReturnValue(null)
@@ -57,7 +57,7 @@ describe('SessionManager', () => {
 	describe('Constructor', () => {
 		it('should create a new active session when no persisted session exists', () => {
 			storageManager = new StorageManager({
-				sessionPersistence: 'cookie',
+				persistence: 'cookie',
 			})
 			// eslint-disable-next-line unicorn/no-useless-undefined
 			storageManager.getSessionState = vi.fn().mockReturnValue(undefined)
@@ -74,7 +74,7 @@ describe('SessionManager', () => {
 				startTime: Date.now(),
 			}
 			storageManager = new StorageManager({
-				sessionPersistence: 'cookie',
+				persistence: 'cookie',
 			})
 			storageManager.getSessionState = vi.fn().mockReturnValue(persistedSession)
 			storageManager.persistSessionState = vi.fn().mockReturnValue(true)
@@ -92,7 +92,7 @@ describe('SessionManager', () => {
 			}
 
 			storageManager = new StorageManager({
-				sessionPersistence: 'localStorage',
+				persistence: 'localStorage',
 			})
 			storageManager.getSessionState = vi.fn().mockReturnValue(expiredSession)
 			storageManager.persistSessionState = vi.fn().mockReturnValue(true)
@@ -115,7 +115,7 @@ describe('SessionManager', () => {
 			}
 
 			storageManager = new StorageManager({
-				sessionPersistence: 'localStorage',
+				persistence: 'localStorage',
 			})
 			storageManager.getSessionState = vi.fn().mockReturnValue(persistedSession)
 			storageManager.persistSessionState = vi.fn().mockReturnValue(true)
@@ -239,7 +239,7 @@ describe('SessionManager', () => {
 
 			// Create a new session manager (which creates a new session)
 			storageManager = new StorageManager({
-				sessionPersistence: 'cookie',
+				persistence: 'cookie',
 			})
 			storageManager.getSessionState = vi.fn().mockReturnValue(null)
 			storageManager.persistSessionState = vi.fn().mockReturnValue(true)
@@ -296,7 +296,7 @@ describe('SessionManager', () => {
 			}
 
 			storageManager = new StorageManager({
-				sessionPersistence: 'cookie',
+				persistence: 'cookie',
 			})
 			storageManager.getSessionState = vi.fn().mockReturnValue(persistedSession)
 			storageManager.persistSessionState = vi.fn().mockReturnValue(true)
@@ -376,7 +376,7 @@ describe('SessionManager', () => {
 
 		it('should persist active session state to storage', () => {
 			storageManager = new StorageManager({
-				sessionPersistence: 'cookie',
+				persistence: 'cookie',
 			})
 			storageManager.persistSessionState = vi.fn().mockReturnValue(true)
 			storageManager.getSessionState = vi.fn().mockReturnValue(null)
@@ -399,7 +399,7 @@ describe('SessionManager', () => {
 				startTime: Date.now(),
 			}
 			storageManager = new StorageManager({
-				sessionPersistence: 'cookie',
+				persistence: 'cookie',
 			})
 			storageManager.getSessionState = vi.fn().mockReturnValue(persistedSession)
 			storageManager.persistSessionState = vi.fn().mockReturnValue(true)
