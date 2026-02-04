@@ -66,6 +66,8 @@ export class UserManager {
 		const storedId = this.getAnonymousIdFromStorage()
 		if (storedId) {
 			this.anonymousId = storedId
+			// extend the expiration
+			this.persistAnonymousId(storedId)
 			return storedId
 		}
 
