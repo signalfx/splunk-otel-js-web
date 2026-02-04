@@ -21,8 +21,8 @@ import { RecordPage } from '../../pages/record-page'
 import { test } from '../../utils/test'
 
 test.describe('Frustration signals', () => {
-	test('Rage click is disabled by default', async ({ recordPage }) => {
-		await recordPage.goTo('/frustration-signals/rage-click-default.ejs')
+	test('Rage clicks disabled', async ({ recordPage }) => {
+		await recordPage.goTo('/frustration-signals/rage-click-disabled.ejs')
 		await makeClicks(recordPage)
 
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'click').length === 8)
@@ -38,7 +38,7 @@ test.describe('Frustration signals', () => {
 		expect(recordPage.receivedSpans.filter(({ name }) => name === 'click')).toHaveLength(8)
 	})
 
-	test('Rage click', async ({ recordPage }) => {
+	test('Rage clicks default settings', async ({ recordPage }) => {
 		await recordPage.goTo('/frustration-signals/rage-click.ejs')
 		await makeClicks(recordPage)
 
@@ -60,7 +60,35 @@ test.describe('Frustration signals', () => {
 				span.tags['interaction_type'] === 'click',
 		)
 
-		expect(rageClickSpans).toHaveLength(1)
+		expect(rageClickSpans).toHaveLength(2) // h1 and #no-rage
+		expect(rageClickSpans[0].duration).toBe(0)
+
+		expect(recordPage.receivedSpans.filter(({ name }) => name === 'click')).toHaveLength(8)
+	})
+
+	test('Rage clicks modified settings', async ({ recordPage }) => {
+		await recordPage.goTo('/frustration-signals/rage-click-modified.ejs')
+		await makeClicks(recordPage)
+
+		await recordPage.waitForSpans((spans) =>
+			spans.some(
+				(span) =>
+					span.name === 'frustration' &&
+					span.tags['frustration_type'] === 'rage' &&
+					span.tags['interaction_type'] === 'click' &&
+					span.tags['target_xpath'] === '//html/body/h1',
+			),
+		)
+		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'click').length === 8)
+
+		const rageClickSpans = recordPage.receivedSpans.filter(
+			(span) =>
+				span.name === 'frustration' &&
+				span.tags['frustration_type'] === 'rage' &&
+				span.tags['interaction_type'] === 'click',
+		)
+
+		expect(rageClickSpans).toHaveLength(1) // just h1
 		expect(rageClickSpans[0].duration).toBe(0)
 
 		expect(recordPage.receivedSpans.filter(({ name }) => name === 'click')).toHaveLength(8)

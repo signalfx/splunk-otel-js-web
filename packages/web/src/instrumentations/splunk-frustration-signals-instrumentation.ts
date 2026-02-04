@@ -171,7 +171,10 @@ export class SplunkFrustrationSignalsInstrumentation extends InstrumentationBase
 	}
 
 	private resolveRageClickConfig(): ResolvedRageClickConfig | undefined {
-		const frustrationSignals = this.otelConfig.instrumentations?.frustrationSignals
+		// rage clicks are enabled by default
+		const frustrationSignals = this.otelConfig.instrumentations?.frustrationSignals ?? {
+			rageClick: true,
+		}
 		if (frustrationSignals && typeof frustrationSignals === 'object') {
 			const rageClick = frustrationSignals.rageClick
 			if (typeof rageClick === 'object' || rageClick === true) {
