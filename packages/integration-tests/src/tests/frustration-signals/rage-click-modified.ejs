@@ -4,7 +4,17 @@
 		<meta charset="UTF-8" />
 		<title>Rage click</title>
 
-		<%- renderAgent() %>
+		<%- renderAgent({
+			instrumentations: {
+				frustrationSignals: {
+					rageClick: {
+						count: 4,
+						timeframeSeconds: 1,
+						ignoreSelectors: ['#no-rage']
+					}
+				}
+			}
+		}) %>
 	</head>
 	<body>
 		<h1>Rage click</h1>

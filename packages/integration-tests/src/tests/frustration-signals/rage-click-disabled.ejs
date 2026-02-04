@@ -2,9 +2,15 @@
 <html lang="en">
 	<head>
 		<meta charset="UTF-8" />
-		<title>Rage click disabled by default</title>
+		<title>Rage click disabled</title>
 
-		<%- renderAgent() %>
+		<%- renderAgent({
+			instrumentations: {
+				frustrationSignals: {
+					rageClick: false
+				}
+			}
+		}) %>
 	</head>
 	<body>
 		<h1>Rage click</h1>

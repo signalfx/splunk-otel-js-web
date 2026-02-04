@@ -97,27 +97,7 @@ export interface SplunkOtelWebConfig {
 	_experimental_dataAttributesToCapture?: string[]
 
 	/**
-	 * **Experimental** - Enables SPA (Single Page Application) metrics.
-	 *
-	 * Currently supported metrics:
-	 * - **Page Completion Time (PCT)**: Measures the time from a route change until all network
-	 *   requests (fetch/XHR) and media elements have finished loading
-	 *
-	 * @experimental This feature is under active development and may change in future releases.
-	 * @default false (disabled)
-	 *
-	 * @example
-	 * ```typescript
-	 * // Enable with defaults
-	 * _experimental_spaMetrics: true
-	 *
-	 * // Enable with custom configuration
-	 * _experimental_spaMetrics: {
-	 *   ignoreUrls: [/analytics\.example\.com/],
-	 *   quietTime: 1000,
-	 *   maxResourcesToWatch: 100
-	 * }
-	 * ```
+	 * @deprecated Please use `spaMetrics` instead.
 	 */
 	_experimental_spaMetrics?:
 		| boolean
@@ -211,6 +191,39 @@ export interface SplunkOtelWebConfig {
 	 * will be visible to every user of your app
 	 */
 	rumAccessToken?: string
+
+	/**
+	 * Enables SPA (Single Page Application) metrics.
+	 *
+	 * Currently supported metrics:
+	 * - **Page Completion Time (PCT)**: Measures the time from a route change until all network
+	 *   requests (fetch/XHR) and media elements have finished loading
+	 *
+	 * @default false (disabled)
+	 *
+	 * @example
+	 * ```typescript
+	 * // Enable with defaults
+	 * spaMetrics: true
+	 *
+	 * // Enable with custom configuration
+	 * spaMetrics: {
+	 *   ignoreUrls: [/analytics\.example\.com/],
+	 *   quietTime: 1000,
+	 *   maxResourcesToWatch: 100
+	 * }
+	 * ```
+	 */
+	spaMetrics?:
+		| boolean
+		| {
+				/** URLs to exclude from PCT tracking (e.g., analytics, third-party scripts) */
+				ignoreUrls?: Array<string | RegExp>
+				/** Maximum number of concurrent resources to track. @default 100 */
+				maxResourcesToWatch?: number
+				/** Time in milliseconds to wait after last resource loads before considering page complete. @default 1000 */
+				quietTime?: number
+		  }
 
 	spanProcessors?: Array<SpanProcessor>
 
