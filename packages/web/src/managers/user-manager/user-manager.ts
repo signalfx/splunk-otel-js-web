@@ -30,11 +30,6 @@ import { ANONYMOUS_USER_ID_LENGTH } from './constants'
 export class UserManager {
 	private anonymousId: string | undefined
 
-	/**
-	 * Creates a new UserManager instance.
-	 * @param userTrackingMode - The user tracking mode configuration
-	 * @param storageManager - The storage manager to use for persisting the anonymous user ID
-	 */
 	constructor(
 		public userTrackingMode: UserTrackingMode,
 		private readonly storageManager: StorageManager,
@@ -43,20 +38,10 @@ export class UserManager {
 	static isUserTrackingMode = (value: unknown): value is UserTrackingMode =>
 		value === 'noTracking' || value === 'anonymousTracking'
 
-	/**
-	 * Clears the anonymous user ID from memory.
-	 * Note: This does not remove the ID from persistent storage.
-	 */
 	forgetAnonymousId(): void {
 		this.anonymousId = undefined
 	}
 
-	/**
-	 * Gets the anonymous user ID if anonymous tracking is enabled, creating one if it doesn't exist.
-	 * Returns undefined if the user tracking mode is not set to 'anonymousTracking'.
-	 * When enabled, the ID is cached in memory and persisted to storage.
-	 * @returns The anonymous user ID if anonymous tracking is enabled, undefined otherwise
-	 */
 	getAnonymousIdIfEnabled(): string | undefined {
 		if (this.userTrackingMode !== 'anonymousTracking') {
 			return undefined
@@ -74,25 +59,17 @@ export class UserManager {
 			return storedId
 		}
 
-		const newId = this.generateAnonymousId()
+		const newId = UserManager.generateAnonymousId()
 		this.persistAnonymousId(newId)
 		this.anonymousId = newId
 
 		return newId
 	}
 
-	/**
-	 * Generates a new anonymous user ID.
-	 * @returns A newly generated anonymous user ID
-	 */
-	private generateAnonymousId(): string {
+	private static generateAnonymousId(): string {
 		return generateId(ANONYMOUS_USER_ID_LENGTH)
 	}
 
-	/**
-	 * Retrieves the anonymous user ID from storage.
-	 * @returns The stored anonymous user ID, or undefined if not found
-	 */
 	private getAnonymousIdFromStorage(): string | undefined {
 		try {
 			return this.storageManager.getAnonymousUserId()
@@ -104,11 +81,6 @@ export class UserManager {
 		}
 	}
 
-	/**
-	 * Persists the anonymous user ID to storage.
-	 * @param id - The anonymous user ID to persist
-	 * @returns true if the operation was successful, false otherwise
-	 */
 	private persistAnonymousId(id: string): boolean {
 		try {
 			return this.storageManager.persistAnonymousUserId(id)
