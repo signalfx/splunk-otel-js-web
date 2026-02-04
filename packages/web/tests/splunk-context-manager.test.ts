@@ -20,7 +20,7 @@ import { context, trace } from '@opentelemetry/api'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import SplunkOtelWeb, { INSTRUMENTATIONS_ALL_DISABLED } from '../src'
-import { deinit, SpanCapturer } from './utils'
+import { deinit, getTracer, SpanCapturer } from './utils'
 
 describe('async context propagation', () => {
 	let capturer: SpanCapturer
@@ -47,7 +47,7 @@ describe('async context propagation', () => {
 	})
 
 	it('setTimeout', async () => {
-		const tracer = SplunkOtelWeb.provider.getTracer('test')
+		const tracer = getTracer('test')
 		const span = tracer.startSpan('test-span')
 
 		await new Promise<void>((resolve) => {
@@ -68,7 +68,7 @@ describe('async context propagation', () => {
 	})
 
 	it('Promise.then', async () => {
-		const tracer = SplunkOtelWeb.provider.getTracer('test')
+		const tracer = getTracer('test')
 		const span = tracer.startSpan('test-span')
 		await new Promise<void>((resolve) => {
 			context.with(trace.setSpan(context.active(), span), () => {
@@ -87,7 +87,7 @@ describe('async context propagation', () => {
 	})
 
 	it('Promise.then - catch', async () => {
-		const tracer = SplunkOtelWeb.provider.getTracer('test')
+		const tracer = getTracer('test')
 		const span = tracer.startSpan('test-span')
 
 		await new Promise<void>((resolve) => {
@@ -111,7 +111,7 @@ describe('async context propagation', () => {
 	})
 
 	it('Promise.catch', async () => {
-		const tracer = SplunkOtelWeb.provider.getTracer('test')
+		const tracer = getTracer('test')
 		const span = tracer.startSpan('test-span')
 
 		await new Promise<void>((resolve) => {
@@ -132,7 +132,7 @@ describe('async context propagation', () => {
 	})
 
 	it('mutation observer on chardata', async () => {
-		const tracer = SplunkOtelWeb.provider.getTracer('test')
+		const tracer = getTracer('test')
 		const span = tracer.startSpan('test-span')
 
 		let isCallbackCalled = false
@@ -162,7 +162,7 @@ describe('async context propagation', () => {
 	})
 
 	it('xhr event', async () => {
-		const tracer = SplunkOtelWeb.provider.getTracer('test')
+		const tracer = getTracer('test')
 		const span = tracer.startSpan('test-span')
 
 		await new Promise<void>((resolve) => {
@@ -187,7 +187,8 @@ describe('async context propagation', () => {
 	})
 
 	it('xhr onevent', async () => {
-		const tracer = SplunkOtelWeb.provider.getTracer('test')
+		const tracer = getTracer('test')
+
 		const span = tracer.startSpan('test-span')
 
 		await new Promise<void>((resolve) => {
@@ -212,7 +213,8 @@ describe('async context propagation', () => {
 	})
 
 	it('MessagePort', async () => {
-		const tracer = SplunkOtelWeb.provider.getTracer('test')
+		const tracer = getTracer('test')
+
 		const span = tracer.startSpan('test-span')
 
 		const channel = new MessageChannel()

@@ -18,16 +18,15 @@
 
 import { describe, expect, it } from 'vitest'
 
-import SplunkRum from '../src'
 import { SYNTHETICS_RUN_ID_ATTRIBUTE } from '../src/synthetics'
-import { deinit, initWithSyncPipeline } from './utils'
+import { deinit, getTracer, initWithSyncPipeline } from './utils'
 
 describe('synthetics integration', () => {
 	it('uses window', async () => {
 		window.syntheticsRunId = '1234abcd'.repeat(4)
 		const { forceFlush, getFinishedSpans } = initWithSyncPipeline()
 
-		SplunkRum.provider?.getTracer('test-tracer').startSpan('test-span').end()
+		getTracer('test-tracer').startSpan('test-span').end()
 		await forceFlush()
 
 		const spans = getFinishedSpans()
@@ -41,7 +40,7 @@ describe('synthetics integration', () => {
 	it('does not set a tag unless synthetics is active', async () => {
 		const { forceFlush, getFinishedSpans } = initWithSyncPipeline()
 
-		SplunkRum.provider?.getTracer('test-tracer').startSpan('test-span').end()
+		getTracer('test-tracer').startSpan('test-span').end()
 		await forceFlush()
 
 		const spans = getFinishedSpans()
