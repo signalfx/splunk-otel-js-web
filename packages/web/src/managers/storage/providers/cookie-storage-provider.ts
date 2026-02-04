@@ -25,7 +25,7 @@ import { BaseStorageProvider, StorageOptions } from './base-storage-provider'
 export class CookieStorageProvider extends BaseStorageProvider {
 	providerName = 'cookie'
 
-	getValue(key: string): string | null {
+	static safelyGetValue(key: string): string | null {
 		try {
 			const cookies = document.cookie.split(';')
 
@@ -45,7 +45,7 @@ export class CookieStorageProvider extends BaseStorageProvider {
 		return null
 	}
 
-	removeValue(key: string, options: StorageOptions) {
+	static safelyRemoveValue(key: string, options: StorageOptions) {
 		try {
 			const expiredDate = 'Thu, 01 Jan 1970 00:00:01 GMT'
 			document.cookie = `${key}=;expires=${expiredDate};domain=${options.domain};path=/`
@@ -60,7 +60,7 @@ export class CookieStorageProvider extends BaseStorageProvider {
 		}
 	}
 
-	setValue(key: string, value: string, options: StorageOptions) {
+	static safelySetValue(key: string, value: string, options: StorageOptions) {
 		try {
 			const domainPart = options.domain ? `;domain=${options.domain}` : ''
 			const encodedValue = encodeURIComponent(value)
@@ -88,5 +88,17 @@ export class CookieStorageProvider extends BaseStorageProvider {
 			})
 			return false
 		}
+	}
+
+	getValue(...args: Parameters<(typeof CookieStorageProvider)['safelyGetValue']>) {
+		return CookieStorageProvider.safelyGetValue(...args)
+	}
+
+	removeValue(...args: Parameters<(typeof CookieStorageProvider)['safelyRemoveValue']>) {
+		return CookieStorageProvider.safelyRemoveValue(...args)
+	}
+
+	setValue(...args: Parameters<(typeof CookieStorageProvider)['safelySetValue']>) {
+		return CookieStorageProvider.safelySetValue(...args)
 	}
 }

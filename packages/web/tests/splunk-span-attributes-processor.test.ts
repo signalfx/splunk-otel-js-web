@@ -18,25 +18,21 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { SessionManager, StorageManager } from '../src/managers'
+import { SessionManager, StorageManager, UserManager } from '../src/managers'
 import { SplunkSpanAttributesProcessor } from '../src/splunk-span-attributes-processor'
 
 describe('SplunkSpanAttributesProcessor', () => {
 	const storageManager = new StorageManager({
-		sessionPersistence: 'cookie',
+		persistence: 'cookie',
 	})
+	const userManager = new UserManager('anonymousTracking', storageManager)
 	const sessionManager = new SessionManager(storageManager)
 
 	describe('setting global attribute', () => {
 		it('should set attributes via constructor', () => {
-			const processor = new SplunkSpanAttributesProcessor(
-				sessionManager,
-				{
-					key1: 'value1',
-				},
-				false,
-				() => 'anonymousTracking',
-			)
+			const processor = new SplunkSpanAttributesProcessor(sessionManager, userManager, {
+				key1: 'value1',
+			})
 
 			expect(processor.getGlobalAttributes()).toStrictEqual({
 				key1: 'value1',
@@ -44,15 +40,10 @@ describe('SplunkSpanAttributesProcessor', () => {
 		})
 
 		it('should patch attributes via .setGlobalAttributes()', () => {
-			const processor = new SplunkSpanAttributesProcessor(
-				sessionManager,
-				{
-					key1: 'value1',
-					key2: 'value2',
-				},
-				false,
-				() => 'anonymousTracking',
-			)
+			const processor = new SplunkSpanAttributesProcessor(sessionManager, userManager, {
+				key1: 'value1',
+				key2: 'value2',
+			})
 
 			processor.setGlobalAttributes({
 				key2: 'value2-updaged',

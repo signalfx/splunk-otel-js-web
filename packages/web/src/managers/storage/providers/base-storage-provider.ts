@@ -18,11 +18,6 @@
 
 import { diag } from '@opentelemetry/api'
 
-export type SessionPersistence = 'cookie' | 'localStorage'
-
-export const isSessionPersistence = (value: string): value is SessionPersistence =>
-	['cookie', 'localStorage'].includes(value)
-
 /**
  * Configuration options for storage operations
  */
@@ -31,8 +26,6 @@ export interface StorageOptions {
 	domain?: string
 	/** Expiration in seconds for cookie storage (only applicable for cookie providers) */
 	expires: number
-	/** Session persistence type (cookie or localStorage) */
-	sessionPersistence: SessionPersistence
 }
 
 /**

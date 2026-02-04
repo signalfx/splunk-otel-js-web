@@ -18,8 +18,14 @@
 
 import { diag } from '@opentelemetry/api'
 
+import { PersistenceType } from '../../types'
 import { PersistedSessionState, SessionState } from '../session-manager'
-import { SESSION_EXPIRATION_COOKIE_SEC, SESSION_STORAGE_KEY } from './constants'
+import {
+	ANONYMOUS_USER_ID_EXPIRATION_SEC,
+	ANONYMOUS_USER_ID_STORAGE_KEY,
+	SESSION_EXPIRATION_COOKIE_SEC,
+	SESSION_STORAGE_KEY,
+} from './constants'
 import { CookieStorageProvider, LocalStorageProvider, StorageOptions } from './providers'
 
 export class StorageManager {
@@ -27,8 +33,8 @@ export class StorageManager {
 
 	private readonly localStorageProvider = new LocalStorageProvider()
 
-	private get sessionStorageProvider() {
-		switch (this.options.sessionPersistence) {
+	private get storageProvider() {
+		switch (this.options.persistence) {
 			case 'cookie': {
 				return this.cookieStorageProvider
 			}
@@ -37,7 +43,7 @@ export class StorageManager {
 			}
 			default: {
 				// This should never happen due to TypeScript typing, but provides runtime safety
-				throw new Error(`Unknown persistence type: ${this.options.sessionPersistence}`)
+				throw new Error(`Unknown persistence type: ${this.options.persistence}`)
 			}
 		}
 	}
@@ -47,26 +53,23 @@ export class StorageManager {
 	 * The persistence type determines which storage mechanism to use ('cookie' or 'localStorage').
 	 * Domain is required for cookie storage.
 	 */
-	constructor(private readonly options: Omit<StorageOptions, 'expires'>) {}
+	constructor(private readonly options: Omit<StorageOptions, 'expires'> & { persistence: PersistenceType }) {}
 
-	clearSessionState() {
+	getAnonymousUserId(): string | undefined {
 		try {
-			return this.sessionStorageProvider.removeValue(SESSION_STORAGE_KEY, {
-				...this.options,
-				expires: SESSION_EXPIRATION_COOKIE_SEC,
-			})
+			return this.storageProvider.getValue(ANONYMOUS_USER_ID_STORAGE_KEY) || undefined
 		} catch (error) {
-			diag.warn('Failed to clear session state', {
+			diag.warn('Failed to retrieve anonymous user ID', {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				options: this.options,
 			})
-			return false
+			return undefined
 		}
 	}
 
 	getSessionState() {
 		try {
-			return this.sessionStorageProvider.safelyParseJson<PersistedSessionState>(SESSION_STORAGE_KEY)
+			return this.storageProvider.safelyParseJson<PersistedSessionState>(SESSION_STORAGE_KEY)
 		} catch (error) {
 			diag.warn('Failed to retrieve session state', {
 				error: error instanceof Error ? error.message : 'Unknown error',
@@ -76,13 +79,31 @@ export class StorageManager {
 		}
 	}
 
+	persistAnonymousUserId(anonymousUserId: string): boolean {
+		diag.debug('StorageManager: Persisting anonymous user ID', { anonymousUserId })
+
+		try {
+			return this.storageProvider.setValue(ANONYMOUS_USER_ID_STORAGE_KEY, anonymousUserId, {
+				...this.options,
+				expires: ANONYMOUS_USER_ID_EXPIRATION_SEC,
+			})
+		} catch (error) {
+			diag.warn('Failed to persist anonymous user ID', {
+				anonymousUserId,
+				error: error instanceof Error ? error.message : 'Unknown error',
+				options: this.options,
+			})
+			return false
+		}
+	}
+
 	persistSessionState(sessionState: SessionState) {
 		const { expiresAt, id, startTime } = sessionState
 
 		diag.debug('SessionManager: Persisting session state', { expiresAt, id, startTime })
 
 		try {
-			return this.sessionStorageProvider.safelyStoreJson<PersistedSessionState>(
+			return this.storageProvider.safelyStoreJson<PersistedSessionState>(
 				SESSION_STORAGE_KEY,
 				{ expiresAt, id, startTime },
 				{

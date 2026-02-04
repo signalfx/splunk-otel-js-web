@@ -71,7 +71,6 @@ import {
 	SplunkOtelWebOptionsInstrumentations,
 	UserTrackingMode,
 } from './types'
-import { forgetAnonymousId, getOrCreateAnonymousId } from './user-tracking'
 import { generateId, getPluginConfig } from './utils'
 import { getValidAttributes, SpanContext } from './utils/attributes'
 import { isAgentLoadedViaLatestTag } from './utils/detect-latest'
@@ -85,7 +84,7 @@ export { type SplunkExporterConfig } from './exporters/common'
 export { SplunkZipkinExporter } from './exporters/zipkin'
 export * from './session-based-sampler'
 export * from './splunk-web-tracer-provider'
-import { PrivacyManager, SessionManager, SessionState, StorageManager } from './managers'
+import { PrivacyManager, SessionManager, SessionState, StorageManager, UserManager } from './managers'
 import { getElementXPath, getTextFromNode } from './utils/index'
 
 interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
@@ -239,6 +238,8 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 
 	setUserTrackingMode: (mode: UserTrackingMode) => void
 
+	userManager?: UserManager
+
 	/**
 	 * `userTrackingMode` available values: `'noTracking'` (default) | `'anonymousTracking'`.
 	 */
@@ -246,7 +247,6 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 }
 
 let inited = false
-let userTrackingMode: UserTrackingMode = 'noTracking'
 let _deregisterInstrumentations: undefined | (() => void)
 let _deinitSessionTracking: undefined | (() => void)
 let _errorInstrumentation: SplunkErrorInstrumentation | undefined
@@ -299,7 +299,7 @@ export const SplunkRum: SplunkOtelWebType = {
 
 			unregisterGlobal()
 
-			forgetAnonymousId()
+			this.userManager?.forgetAnonymousId()
 		} catch (error) {
 			diag.warn('[Splunk]: SplunkRum.deinit() encountered an error during cleanup.', { error })
 		} finally {
@@ -309,24 +309,7 @@ export const SplunkRum: SplunkOtelWebType = {
 	},
 
 	getAnonymousId() {
-		if (!this._processedOptions) {
-			return
-		}
-
-		if (userTrackingMode === 'anonymousTracking') {
-			try {
-				return getOrCreateAnonymousId({
-					domain: this._processedOptions.cookieDomain,
-					useLocalStorage: this._processedOptions.persistence === 'localStorage',
-				})
-			} catch (error) {
-				diag.warn(
-					'[Splunk]: SplunkRum.getAnonymousId() encountered an error while trying to get anonymous ID.',
-					{ error },
-				)
-				return
-			}
-		}
+		return this.userManager?.getAnonymousIdIfEnabled()
 	},
 
 	getGlobalAttributes(this: SplunkOtelWebType) {
@@ -362,7 +345,7 @@ export const SplunkRum: SplunkOtelWebType = {
 	},
 
 	init: function (options) {
-		userTrackingMode = options.user?.trackingMode ?? 'anonymousTracking'
+		const userTrackingMode = options.user?.trackingMode ?? 'anonymousTracking'
 
 		if (typeof window !== 'object') {
 			console.warn(
@@ -527,11 +510,12 @@ export const SplunkRum: SplunkOtelWebType = {
 
 			const storageManager = new StorageManager({
 				domain: processedOptions.cookieDomain,
-				sessionPersistence: processedOptions.persistence,
+				persistence: processedOptions.persistence,
 			})
 
 			this.resource = new Resource(resourceAttrs)
 			this.sessionManager = new SessionManager(storageManager)
+			this.userManager = new UserManager(userTrackingMode, storageManager)
 			_sessionStateUnsubscribe = this.sessionManager.subscribe(({ currentState, previousState }) => {
 				if (currentState.isNew && currentState.source !== 'native') {
 					provider.getTracer('splunk-sessions').startSpan('session.start').end()
@@ -544,19 +528,13 @@ export const SplunkRum: SplunkOtelWebType = {
 				}
 			})
 
-			this.attributesProcessor = new SplunkSpanAttributesProcessor(
-				this.sessionManager,
-				{
-					...(deploymentEnvironment
-						? { 'deployment.environment': deploymentEnvironment, 'environment': deploymentEnvironment }
-						: {}),
-					...(version ? { 'app.version': version } : {}),
-					...processedOptions.globalAttributes,
-				},
-				this._processedOptions.persistence === 'localStorage',
-				() => userTrackingMode,
-				processedOptions.cookieDomain,
-			)
+			this.attributesProcessor = new SplunkSpanAttributesProcessor(this.sessionManager, this.userManager, {
+				...(deploymentEnvironment
+					? { 'deployment.environment': deploymentEnvironment, 'environment': deploymentEnvironment }
+					: {}),
+				...(version ? { 'app.version': version } : {}),
+				...processedOptions.globalAttributes,
+			})
 
 			const spanProcessors: SpanProcessor[] = [this.attributesProcessor]
 
@@ -730,11 +708,33 @@ export const SplunkRum: SplunkOtelWebType = {
 	},
 
 	setUserTrackingMode(mode: UserTrackingMode) {
-		userTrackingMode = mode
+		if (!inited || !this.userManager) {
+			diag.warn(
+				'[Splunk]: SplunkRum.setUserTrackingMode() - Splunk RUM agent is not initialized. Call SplunkRum.init() first. User tracking mode will not be set.',
+			)
+			return
+		}
+
+		if (!UserManager.isUserTrackingMode(mode)) {
+			diag.warn(
+				`[Splunk]: SplunkRum.setUserTrackingMode() - Invalid user tracking mode: ${mode}. Valid modes are 'noTracking' and 'anonymousTracking'. User tracking mode will not be set.`,
+			)
+			return
+		}
+
+		this.userManager.userTrackingMode = mode
 	},
 
 	get userTrackingMode() {
-		return userTrackingMode
+		if (!inited || !this.userManager) {
+			diag.warn(
+				'[Splunk]: SplunkRum.userTrackingMode - Splunk RUM agent is not initialized. Call SplunkRum.init() first.',
+			)
+
+			return 'anonymousTracking'
+		}
+
+		return this.userManager.userTrackingMode
 	},
 }
 

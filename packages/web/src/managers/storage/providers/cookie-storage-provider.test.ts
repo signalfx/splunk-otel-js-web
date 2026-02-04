@@ -20,13 +20,11 @@ import { server } from '@vitest/browser/context'
 import { afterEach, beforeEach, describe, expect, it, Mock, vi } from 'vitest'
 
 import { SESSION_EXPIRATION_COOKIE_SEC } from '../constants'
-import { SessionPersistence } from './base-storage-provider'
 import { CookieStorageProvider } from './cookie-storage-provider'
 
 const validOptions = {
 	expires: SESSION_EXPIRATION_COOKIE_SEC,
-	sessionPersistence: 'cookie' as SessionPersistence,
-}
+} as const
 
 describe('CookieStorageProvider', () => {
 	let provider: CookieStorageProvider
