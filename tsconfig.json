@@ -17,7 +17,10 @@
 		"incremental": true,
 		"noEmit": true,
 		"allowJs": true,
-		"esModuleInterop": true
+		"esModuleInterop": true,
+		"paths": {
+			"@test-utils/*": ["tests/utils/*"]
+		}
 	},
 	"include": [
 		"*.ts",
@@ -26,10 +29,12 @@
 		".*.cjs",
 		"*.mjs",
 		"*.mts",
-		"tests/**/*.ts",
 		"scripts/**/*.ts",
 		"scripts/**/*.mts",
-		"packages/web/scripts/remove-jaeger-vars.ts"
+		"packages/web/scripts/remove-jaeger-vars.ts",
+		"packages/**/*.test.ts",
+		"tests/**/*.ts",
+		"packages/**/*.d.ts"
 	],
 	"exclude": ["node_modules", "dist"]
 }

@@ -46,13 +46,13 @@ describe('SplunkSpanAttributesProcessor', () => {
 			})
 
 			processor.setGlobalAttributes({
-				key2: 'value2-updaged',
+				key2: 'value2-updated',
 				key3: 'value3',
 			})
 
 			expect(processor.getGlobalAttributes()).toStrictEqual({
 				key1: 'value1',
-				key2: 'value2-updaged',
+				key2: 'value2-updated',
 				key3: 'value3',
 			})
 		})

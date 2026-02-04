@@ -35,5 +35,7 @@ playwright/.cache/
 
 coverage
 
+tsconfig.tsbuildinfo
+
 examples/electron/.webpack
 examples/electron/out

@@ -7,7 +7,7 @@
 		"pnpm": ">=10"
 	},
 	"scripts": {
-		"build": "turbo run build --env-mode=loose --cache-dir=.turbo",
+		"build": "turbo run build --env-mode=loose --cache-dir=.turbo && turbo run typecheck:root --env-mode=loose --cache-dir=.turbo",
 		"dev": "FORCE_COLOR=1 turbo run dev --env-mode=loose",
 		"clean": "rm -rf .turbo && turbo run clean",
 		"lint": "run-p lint:eslint lint:prettier lint:markdown",
@@ -21,6 +21,7 @@
 		"test": "turbo run --env-mode=loose test:e2e test:unit",
 		"test:unit": "vitest --run",
 		"test:e2e": "turbo run --env-mode=loose --filter=@splunk/otel-js-web-integration-tests test:e2e",
+		"typecheck:root": "tsc --noEmit",
 		"postversion": "tsx ./scripts/version-update.mts",
 		"version:bump": "pnpm version --workspaces --include-workspace-root",
 		"version:check": "tsx ./scripts/version-check.mts",

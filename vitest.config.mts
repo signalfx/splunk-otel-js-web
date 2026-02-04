@@ -21,6 +21,11 @@ import { playwright } from '@vitest/browser-playwright'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
+	resolve: {
+		alias: {
+			'@test-utils': path.resolve(__dirname, './tests/utils'),
+		},
+	},
 	test: {
 		clearMocks: true,
 		coverage: {

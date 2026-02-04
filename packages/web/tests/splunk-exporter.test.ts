@@ -221,6 +221,7 @@ describe('SplunkZipkinExporter', () => {
 
 	it('allows hooking into serialization', () => {
 		exporter = new SplunkZipkinExporter({
+			// @ts-expect-error null is not a valid value, but we want to test that it gets stringified to "null"
 			onAttributesSerializing: (attributes) => ({
 				...attributes,
 				key1: 'new value 1',

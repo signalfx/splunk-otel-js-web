@@ -15,11 +15,19 @@
  * limitations under the License.
  *
  */
-export * from './init'
-export * from './memory-exporter'
-export * from './navigator'
-export * from './otel-api'
-export * from './span'
-export * from './span-capturer'
-export * from './tracer'
-export * from './web-tracer-provider'
+import { expect } from 'vitest'
+
+/**
+ * Asserts that a value is defined (not null or undefined) and narrows the TypeScript type.
+ * This eliminates the need for optional chaining (?.) in subsequent assertions.
+ *
+ * @example
+ * import { expectDefined } from '../../../tests/utils/assertions'
+ *
+ * const span = findSpan()
+ * expectDefined(span, 'Span should exist')
+ * expect(span.name).toBe('test') // No need for span?.name
+ */
+export function expectDefined<T>(value: T, message?: string): asserts value is NonNullable<T> {
+	expect(value, message).toBeTruthy()
+}

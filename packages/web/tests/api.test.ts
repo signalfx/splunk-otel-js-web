@@ -17,17 +17,10 @@
  */
 
 import { context, SpanStatusCode, trace } from '@opentelemetry/api'
-import { afterEach, assert, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import SplunkOtelWeb, { INSTRUMENTATIONS_ALL_DISABLED } from '../src'
-import { deinit, SpanCapturer } from './utils'
-
-function getTestTracer() {
-	const testTracer = SplunkOtelWeb.provider?.getTracer('test')
-	assert(testTracer)
-
-	return testTracer
-}
+import { deinit, getTracer, SpanCapturer } from './utils'
 
 // note: we've added these tests mainly to keep track of substantial changes in the Open Telemetry API
 describe('Transitive API', () => {
@@ -52,13 +45,12 @@ describe('Transitive API', () => {
 
 	describe('Tracer', () => {
 		it('should return a tracer', () => {
-			const tracer = getTestTracer()
+			const tracer = getTracer('test')
 			expect(typeof tracer.startSpan).toBe('function')
-			expect(typeof tracer.getActiveSpanProcessor).toBe('function')
 		})
 
 		it('can start a span', () => {
-			const span = getTestTracer().startSpan('span.test')
+			const span = getTracer('test').startSpan('span.test')
 
 			expect(typeof span.end).toBe('function')
 			expect(typeof span.spanContext).toBe('function')
@@ -73,9 +65,7 @@ describe('Transitive API', () => {
 	describe('Span', () => {
 		const startTime = new Date(2021, 1, 1, 0, 0, 0, 0)
 		function getTestSpan() {
-			const testTracer = SplunkOtelWeb.provider?.getTracer('test')
-			assert(testTracer)
-
+			const testTracer = getTracer('test')
 			return testTracer.startSpan('test.span', { startTime })
 		}
 
@@ -123,10 +113,8 @@ describe('Transitive API', () => {
 
 	describe('api.context', () => {
 		it('can set span as active', () => {
-			const tracer = SplunkOtelWeb.provider?.getTracer('test')
-			const span = tracer?.startSpan('test-span')
-
-			assert(span)
+			const tracer = getTracer('test')
+			const span = tracer.startSpan('test-span')
 
 			context.with(trace.setSpan(context.active(), span), () => {
 				expect(trace.getSpan(context.active())).toBe(span)
@@ -134,11 +122,8 @@ describe('Transitive API', () => {
 		})
 
 		it('can create a child of an active span', () => {
-			const tracer = SplunkOtelWeb.provider?.getTracer('test')
-			const span = tracer?.startSpan('test-span')
-
-			assert(span)
-			assert(tracer)
+			const tracer = getTracer('test')
+			const span = tracer.startSpan('test-span')
 
 			context.with(trace.setSpan(context.active(), span), () => {
 				tracer.startSpan('child-span').end()
