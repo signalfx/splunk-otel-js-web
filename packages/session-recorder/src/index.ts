@@ -85,10 +85,18 @@ enum SpanName {
 	STOP = 'splunk.sessionReplay.stop',
 }
 
-// Return span or undefined if sampler is ignoring this session
-const logSpan = (spanName: SpanName, sessionId: string | undefined): Span | undefined => {
+// Return span or undefined if session replay should not be recorded
+const createSessionReplaySpanIfAllowed = (spanName: SpanName, sessionId: string | undefined): Span | undefined => {
 	if (!tracer) {
 		tracer = trace.getTracer('splunk.sessionReplay', VERSION)
+	}
+
+	// Check if session is managed by native SDK
+	const SplunkRum = getGlobal<SplunkOtelWebType>()
+	const sessionState = SplunkRum?.sessionManager?.getSessionState()
+	if (sessionState?.source === 'native') {
+		log.debug('Session replay span not created - recording is managed by native SDK', { sessionId, spanName })
+		return
 	}
 
 	const now = Date.now()
@@ -276,7 +284,7 @@ const SplunkRumRecorder = {
 					recorder?.destroy()
 					recorder = undefined
 
-					if (!logSpan(SpanName.IS_RECORDING, currentState.id)) {
+					if (!createSessionReplaySpanIfAllowed(SpanName.IS_RECORDING, currentState.id)) {
 						return
 					}
 
@@ -294,12 +302,12 @@ const SplunkRumRecorder = {
 					recorder.start()
 
 					// Log span for new session
-					logSpan(SpanName.IS_RECORDING, currentState.id)
+					createSessionReplaySpanIfAllowed(SpanName.IS_RECORDING, currentState.id)
 				}
 			})
 
 			const sessionId = SplunkRum.getSessionId()
-			if (sessionId && logSpan(SpanName.IS_RECORDING, sessionId)) {
+			if (sessionId && createSessionReplaySpanIfAllowed(SpanName.IS_RECORDING, sessionId)) {
 				recorder = new Recorder({
 					initRecorderConfig,
 					processor: this._getProcessorForSession({
@@ -338,7 +346,7 @@ const SplunkRumRecorder = {
 			try {
 				void recorder?.resume()
 				const SplunkRum = getGlobal<SplunkOtelWebType>()
-				logSpan(SpanName.RESUME, SplunkRum?.getSessionId())
+				createSessionReplaySpanIfAllowed(SpanName.RESUME, SplunkRum?.getSessionId())
 			} catch (error) {
 				log.warn(
 					'[Splunk]: SplunkSessionRecorder.resume() - Failed to resume recording session due to internal error.',
@@ -357,7 +365,7 @@ const SplunkRumRecorder = {
 			try {
 				recorder?.stop()
 				const SplunkRum = getGlobal<SplunkOtelWebType>()
-				logSpan(SpanName.STOP, SplunkRum?.getSessionId())
+				createSessionReplaySpanIfAllowed(SpanName.STOP, SplunkRum?.getSessionId())
 			} catch (error) {
 				log.warn(
 					'[Splunk]: SplunkSessionRecorder.stop() - Failed to stop recording session due to internal error.',

@@ -533,7 +533,7 @@ export const SplunkRum: SplunkOtelWebType = {
 			this.resource = new Resource(resourceAttrs)
 			this.sessionManager = new SessionManager(storageManager)
 			_sessionStateUnsubscribe = this.sessionManager.subscribe(({ currentState, previousState }) => {
-				if (currentState.isNew) {
+				if (currentState.isNew && currentState.source !== 'native') {
 					provider.getTracer('splunk-sessions').startSpan('session.start').end()
 				}
 

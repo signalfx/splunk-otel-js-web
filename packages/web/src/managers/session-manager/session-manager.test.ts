@@ -226,6 +226,7 @@ describe('SessionManager', () => {
 					currentState: {
 						expiresAt: expect.any(Number),
 						id: expect.any(String),
+						source: 'web',
 						startTime: expect.any(Number),
 						state: 'active',
 					},
@@ -481,6 +482,7 @@ describe('SessionManager', () => {
 					currentState: {
 						expiresAt: expect.any(Number),
 						id: 'session-from-another-tab',
+						source: 'web',
 						startTime: expect.any(Number),
 						state: 'active',
 					},
