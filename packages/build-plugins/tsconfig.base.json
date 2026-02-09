@@ -12,6 +12,7 @@
 		"types": ["node"],
 		"strict": true,
 		"noImplicitAny": true,
+		"esModuleInterop": true,
 		"allowSyntheticDefaultImports": true
 	},
 	"include": ["src/**/*.ts", "src/**/*.js"],

@@ -19,7 +19,7 @@
 import { createReadStream } from 'node:fs'
 
 import axios from 'axios'
-import * as FormData from 'form-data'
+import FormData from 'form-data'
 
 interface FileUpload {
 	fieldName: string
