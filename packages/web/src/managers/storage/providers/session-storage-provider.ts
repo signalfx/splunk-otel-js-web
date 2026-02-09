@@ -27,7 +27,7 @@ export class SessionStorageProvider extends BaseStorageProvider {
 		try {
 			return window.sessionStorage.getItem(key)
 		} catch (error) {
-			diag.warn('Failed to retrieve item from localStorage', {
+			diag.warn('Failed to retrieve item from sessionStorage', {
 				error,
 				key,
 			})
