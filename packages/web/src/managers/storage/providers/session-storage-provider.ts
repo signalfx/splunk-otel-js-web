@@ -41,7 +41,7 @@ export class SessionStorageProvider extends BaseStorageProvider {
 
 			return true
 		} catch (error) {
-			diag.warn('Failed to remove item from localStorage', {
+			diag.warn('Failed to remove item from sessionStorage', {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				key,
 			})
