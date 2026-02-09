@@ -20,14 +20,14 @@ import { diag } from '@opentelemetry/api'
 
 import { BaseStorageProvider } from './base-storage-provider'
 
-export class LocalStorageProvider extends BaseStorageProvider {
-	providerName = 'localStorage'
+export class SessionStorageProvider extends BaseStorageProvider {
+	providerName = 'sessionStorage'
 
 	static safelyGetValue(key: string): string | null {
 		try {
-			return window.localStorage.getItem(key)
+			return window.sessionStorage.getItem(key)
 		} catch (error) {
-			diag.warn('Failed to retrieve item from localStorage', {
+			diag.warn('Failed to retrieve item from sessionStorage', {
 				error,
 				key,
 			})
@@ -37,11 +37,11 @@ export class LocalStorageProvider extends BaseStorageProvider {
 
 	static safelyRemoveValue(key: string) {
 		try {
-			window.localStorage.removeItem(key)
+			window.sessionStorage.removeItem(key)
 
 			return true
 		} catch (error) {
-			diag.warn('Failed to remove item from localStorage', {
+			diag.warn('Failed to remove item from sessionStorage', {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				key,
 			})
@@ -51,10 +51,10 @@ export class LocalStorageProvider extends BaseStorageProvider {
 
 	static safelySetValue(key: string, value: string) {
 		try {
-			window.localStorage.setItem(key, value)
+			window.sessionStorage.setItem(key, value)
 			return true
 		} catch (error) {
-			diag.warn('Failed to store item in localStorage', {
+			diag.warn('Failed to store item in sessionStorage', {
 				error,
 				key,
 			})
@@ -62,15 +62,15 @@ export class LocalStorageProvider extends BaseStorageProvider {
 		}
 	}
 
-	getValue(...args: Parameters<(typeof LocalStorageProvider)['safelyGetValue']>) {
-		return LocalStorageProvider.safelyGetValue(...args)
+	getValue(...args: Parameters<(typeof SessionStorageProvider)['safelyGetValue']>) {
+		return SessionStorageProvider.safelyGetValue(...args)
 	}
 
-	removeValue(...args: Parameters<(typeof LocalStorageProvider)['safelyRemoveValue']>) {
-		return LocalStorageProvider.safelyRemoveValue(...args)
+	removeValue(...args: Parameters<(typeof SessionStorageProvider)['safelyRemoveValue']>) {
+		return SessionStorageProvider.safelyRemoveValue(...args)
 	}
 
-	setValue(...args: Parameters<(typeof LocalStorageProvider)['safelySetValue']>) {
-		return LocalStorageProvider.safelySetValue(...args)
+	setValue(...args: Parameters<(typeof SessionStorageProvider)['safelySetValue']>) {
+		return SessionStorageProvider.safelySetValue(...args)
 	}
 }

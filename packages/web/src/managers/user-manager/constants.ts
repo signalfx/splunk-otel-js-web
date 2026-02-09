@@ -16,6 +16,7 @@
  *
  */
 
-export * from './constants'
-export * from './providers'
-export * from './storage-manager'
+/**
+ * Length of the anonymous user ID in bits
+ */
+export const ANONYMOUS_USER_ID_LENGTH = 128

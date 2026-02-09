@@ -20,3 +20,6 @@ import { SESSION_INACTIVITY_TIMEOUT_MS } from '../session-manager'
 
 export const SESSION_STORAGE_KEY = '_splunk_rum_sid'
 export const SESSION_EXPIRATION_COOKIE_SEC = SESSION_INACTIVITY_TIMEOUT_MS / 1000
+
+export const ANONYMOUS_USER_ID_STORAGE_KEY = '_splunk_rum_user_anonymousId'
+export const ANONYMOUS_USER_ID_EXPIRATION_SEC = 60 * 60 * 24 * 400

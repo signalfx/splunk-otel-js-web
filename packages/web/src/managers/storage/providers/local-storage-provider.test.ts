@@ -19,13 +19,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { SESSION_EXPIRATION_COOKIE_SEC } from '../constants'
-import { SessionPersistence } from './base-storage-provider'
 import { LocalStorageProvider } from './local-storage-provider'
 
 const validOptions = {
 	expires: SESSION_EXPIRATION_COOKIE_SEC, // 3 months
-	sessionPersistence: 'localStorage' as SessionPersistence,
-}
+} as const
 
 describe('LocalStorageProvider', () => {
 	let provider: LocalStorageProvider
