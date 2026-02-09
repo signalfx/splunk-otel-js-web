@@ -21,8 +21,9 @@ import path from 'node:path'
 import { AxiosError } from 'axios'
 import type { Compiler } from 'webpack'
 
-import { uploadFile } from '../http-utils'
-import { SplunkRumPluginOptions } from '../index'
+import type { SplunkRumPluginOptions } from '../index.js'
+
+import { uploadFile } from '../http-utils.js'
 import {
 	computeSourceMapId,
 	computeSourceMapIdFromFile,
@@ -31,7 +32,7 @@ import {
 	getSourceMapUploadUrl,
 	JS_FILE_REGEX,
 	PLUGIN_NAME,
-} from '../utils'
+} from '../utils.js'
 
 /**
  * The part of the webpack plugin responsible for injecting the sourceMapId code snippet into the JS bundles.

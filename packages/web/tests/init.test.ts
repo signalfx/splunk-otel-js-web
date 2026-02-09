@@ -530,11 +530,18 @@ describe('test unhandled promise rejection', () => {
 			}, 100)
 		})
 
-		const errorSpan = capturer.spans.find((span) => span.attributes.component === 'error')
-		expect(errorSpan).toBeTruthy()
-		expect(errorSpan.attributes.error).toBeTruthy()
-		expect((errorSpan.attributes['error.stack'] as string).includes('throwBacon')).toBeTruthy()
-		expect((errorSpan.attributes['error.message'] as string).includes('bacon')).toBeTruthy()
+		const errorSpans = capturer.spans.filter((span) => span.attributes.component === 'error')
+
+		expect(errorSpans.length).toBe(2)
+
+		// first one is PromiseRejection, second one is from the throw
+		expect(errorSpans[0]).toBeTruthy()
+		expect(errorSpans[0].attributes.error).toBeUndefined()
+		expect(errorSpans[0].attributes['error.type']).toBe('unhandledrejection')
+		expect(errorSpans[1]).toBeTruthy()
+		expect(errorSpans[1].attributes.error).toBeTruthy()
+		expect((errorSpans[1].attributes['error.stack'] as string).includes('throwBacon')).toBeTruthy()
+		expect((errorSpans[1].attributes['error.message'] as string).includes('bacon')).toBeTruthy()
 	})
 })
 

@@ -18,8 +18,8 @@
 import { createUnplugin, UnpluginFactory } from 'unplugin'
 import type { Compiler, WebpackPluginInstance } from 'webpack'
 
-import { PLUGIN_NAME } from './utils'
-import { applySourceMapsInject, applySourceMapsUpload } from './webpack'
+import { PLUGIN_NAME } from './utils.js'
+import { applySourceMapsInject, applySourceMapsUpload } from './webpack/index.js'
 
 export interface SplunkRumPluginOptions {
 	/** Optional. If provided, this should match the "applicationName" used where SplunkRum.init() is called. */

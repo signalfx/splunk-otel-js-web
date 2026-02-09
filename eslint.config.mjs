@@ -269,6 +269,7 @@ const config = [
 			'packages/web/test/plugins/**/*.{js,mjs,cjs}',
 			'packages/web/performance-tests/**/*.{js,mjs,cjs}',
 			'packages/web/integration-tests/**/*.{js,mjs,cjs}',
+			'examples/webpack-rum-build-plugin/**/*.{js,mjs,cjs}',
 			'**/*.conf.js',
 			'**/*.config.js',
 			'.size-limit.cjs',

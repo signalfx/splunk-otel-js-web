@@ -1,0 +1,9 @@
+# dependencies
+/node_modules
+
+# build artifacts
+/dist
+/.turbo
+
+# env files
+.env
