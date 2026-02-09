@@ -54,7 +54,7 @@ export class SessionStorageProvider extends BaseStorageProvider {
 			window.sessionStorage.setItem(key, value)
 			return true
 		} catch (error) {
-			diag.warn('Failed to store item in localStorage', {
+			diag.warn('Failed to store item in sessionStorage', {
 				error,
 				key,
 			})
