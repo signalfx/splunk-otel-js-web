@@ -18,14 +18,23 @@
 
 import { context, trace } from '@opentelemetry/api'
 import * as tracing from '@opentelemetry/sdk-trace-base'
+import { expectDefined } from '@test-utils/assertions'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import SplunkRum from '../src'
 import { VERSION } from '../src/version'
-import { deinit, initWithDefaultConfig, mockNavigator, SpanCapturer } from './utils'
+import {
+	deinit,
+	getGlobalOtelApi,
+	getTracer,
+	initWithDefaultConfig,
+	mockNavigator,
+	setGlobalOtelApi,
+	SpanCapturer,
+} from './utils'
 
 const doesBeaconUrlEndWith = (suffix: string) => {
-	const sps = (SplunkRum.provider.getActiveSpanProcessor() as any)._spanProcessors
+	const sps = (SplunkRum.provider?.getActiveSpanProcessor() as any)._spanProcessors
 	// TODO: refactor to make beaconUrl field private
 	const beaconUrl = sps[1]._exporter.beaconUrl || sps[1]._exporter.url
 	expect(beaconUrl.endsWith(suffix), `Checking beaconUrl if (${beaconUrl}) ends with ${suffix}`).toBeTruthy()
@@ -51,11 +60,12 @@ describe('test init', () => {
 		SplunkRum.deinit(true)
 
 		expect(SplunkRum.inited).toBeFalsy()
-		expect(!window[Symbol.for('opentelemetry.js.api.1')]['splunk.rum'])
-		expect(!window[Symbol.for('opentelemetry.js.api.1')]['splunk.rum.version'])
-		expect(!window[Symbol.for('opentelemetry.js.api.1')]['diag'])
+		const globalApi = getGlobalOtelApi()
+		expect(!globalApi['splunk.rum'])
+		expect(!globalApi['splunk.rum.version'])
+		expect(!globalApi['diag'])
 
-		window[Symbol.for('opentelemetry.js.api.1')] = undefined
+		setGlobalOtelApi(undefined)
 
 		deinit()
 	})
@@ -172,19 +182,14 @@ describe('test init', () => {
 				})
 
 			const documentFetchSpan = capturer.spans.find((span) => span.name === 'documentFetch')
-			expect(documentFetchSpan, 'documentFetch span presence.').toBeTruthy()
-
-			// TODO: Find a way to replace karma.customHeaders in vitest
-			// if (!navigator.userAgent.includes('Firefox')) {
-			// 	expect(documentFetchSpan.attributes['link.spanId']).toBe('0000000000000002')
-			// }
+			expectDefined(documentFetchSpan, 'documentFetch span presence.')
 
 			const documentLoadSpan = capturer.spans.find((span) => span.name === 'documentLoad')
-			expect(documentLoadSpan, 'documentLoad span presence.').toBeTruthy()
+			expectDefined(documentLoadSpan, 'documentLoad span presence.')
 			expect(/^[0-9]+x[0-9]+$/.test(documentLoadSpan.attributes['screen.xy'] as string)).toBeTruthy()
 
 			const resourceFetchSpan = capturer.spans.find((span) => span.name === 'resourceFetch')
-			expect(resourceFetchSpan, 'resourceFetch span presence.').toBeTruthy()
+			expectDefined(resourceFetchSpan, 'resourceFetch span presence.')
 		})
 	})
 	describe('double-init has no effect', () => {
@@ -205,8 +210,10 @@ describe('test init', () => {
 
 	describe('exporter option', () => {
 		it('allows setting factory', async () => {
-			const exportMock = vi.fn().mockReturnValue()
-			const onAttributesSerializingMock = vi.fn().mockReturnValue()
+			// eslint-disable-next-line unicorn/no-useless-undefined
+			const exportMock = vi.fn().mockReturnValue(undefined)
+			// eslint-disable-next-line unicorn/no-useless-undefined
+			const onAttributesSerializingMock = vi.fn().mockReturnValue(undefined)
 
 			SplunkRum._internalInit({
 				allowInsecureBeacon: true,
@@ -227,7 +234,7 @@ describe('test init', () => {
 				globalAttributes: { customerType: 'GOLD' },
 				rumAccessToken: '123-no-warn-spam-in-console',
 			})
-			SplunkRum.provider.getTracer('test').startSpan('testSpan').end()
+			getTracer('test').startSpan('testSpan').end()
 
 			await expect.poll(() => exportMock.mock.calls.length > 0).toBeTruthy()
 		})
@@ -238,7 +245,7 @@ describe('test init', () => {
 			init()
 			expect(SplunkRum.inited).toBeTruthy()
 
-			const globalApi = window[Symbol.for('opentelemetry.js.api.1')]
+			const globalApi = getGlobalOtelApi()
 
 			expect(typeof globalApi['splunk.rum.version'] === 'string').toBeTruthy()
 			expect(typeof globalApi['splunk.rum'] === 'object').toBeTruthy()
@@ -246,16 +253,18 @@ describe('test init', () => {
 		})
 
 		it('fails the init if the version does not match', () => {
-			window[Symbol.for('opentelemetry.js.api.1')] = {}
-			window[Symbol.for('opentelemetry.js.api.1')]['splunk.rum.version'] = '1.2.3'
+			const globalApi: Record<string, unknown> = {}
+			setGlobalOtelApi(globalApi)
+			globalApi['splunk.rum.version'] = '1.2.3'
 			init()
 			expect(SplunkRum.inited).toBeFalsy()
 		})
 
 		it('fails the init if splunk.rum already exists', () => {
-			window[Symbol.for('opentelemetry.js.api.1')] = {}
-			window[Symbol.for('opentelemetry.js.api.1')]['splunk.rum.version'] = VERSION
-			window[Symbol.for('opentelemetry.js.api.1')]['splunk.rum'] = {}
+			const globalApi: Record<string, unknown> = {}
+			setGlobalOtelApi(globalApi)
+			globalApi['splunk.rum.version'] = VERSION
+			globalApi['splunk.rum'] = {}
 			init()
 			expect(SplunkRum.inited).toBeFalsy()
 		})
@@ -277,7 +286,7 @@ describe('creating spans is possible', () => {
 
 	// FIXME figure out ways to validate zipkin 'export', sendBeacon, etc. etc.
 	it('should have extra fields added', () => {
-		const tracer = SplunkRum.provider.getTracer('test')
+		const tracer = getTracer('test')
 
 		const span = tracer.startSpan('testSpan')
 
@@ -319,7 +328,7 @@ describe('setGlobalAttributes', () => {
 	})
 
 	it('should have extra fields added', () => {
-		const tracer = SplunkRum.provider.getTracer('test')
+		const tracer = getTracer('test')
 		SplunkRum.setGlobalAttributes({ newKey: 'newVal' })
 		const span = tracer.startSpan('testSpan')
 		span.end()
@@ -362,6 +371,7 @@ describe('test xhr', () => {
 				(s.attributes.component === 'xml-http-request' && (s.attributes['http.url'] as string)) ===
 				location.href,
 		)
+		expectDefined(span)
 		expect(span.name).toBe('HTTP GET')
 		expect(span.attributes.component).toBe('xml-http-request')
 		expect((span.attributes['http.response_content_length'] as number) > 0).toBeTruthy()
@@ -395,7 +405,7 @@ describe('test fetch', () => {
 		})
 
 		const fetchSpan = capturer.spans.find((span) => span.attributes.component === 'fetch')
-		expect(fetchSpan, 'Check if fetch span is present.').toBeTruthy()
+		expectDefined(fetchSpan, 'Check if fetch span is present.')
 		expect(fetchSpan.name).toBe('HTTP GET')
 
 		// note: temporarily disabled because of instabilities in OTel's code
@@ -450,6 +460,7 @@ describe('test error', () => {
 		})
 
 		const span = capturer.spans.at(-1)
+		expectDefined(span)
 		expect(span.attributes.component).toBe('error')
 		expect(span.name).toBe('onerror')
 		expect((span.attributes['error.stack'] as string).includes('callChain')).toBeTruthy()
@@ -496,7 +507,7 @@ describe('test stack length', () => {
 		})
 
 		const errorSpan = capturer.spans.find((span) => span.attributes.component === 'error')
-		expect(errorSpan).toBeTruthy()
+		expectDefined(errorSpan)
 		expect((errorSpan.attributes['error.stack'] as string).includes('recurAndThrow')).toBeTruthy()
 		expect((errorSpan.attributes['error.stack'] as string).length <= 4096).toBeTruthy()
 		expect((errorSpan.attributes['error.message'] as string).includes('bad thing')).toBeTruthy()
@@ -567,7 +578,7 @@ describe('test console.error', () => {
 		})
 
 		const errorSpan = capturer.spans.find((span) => span.attributes.component === 'error')
-		expect(errorSpan).toBeTruthy()
+		expectDefined(errorSpan)
 		expect(errorSpan.attributes['error.message']).toBe('has some args')
 	})
 })
@@ -598,7 +609,7 @@ describe('test unloaded img', () => {
 		})
 
 		const span = capturer.spans.find((s) => s.attributes.component === 'error')
-		expect(span).toBeTruthy()
+		expectDefined(span)
 		expect(span.name).toBe('eventListener.error')
 		expect((span.attributes.target_src as string).endsWith('DoesNotExist.jpg')).toBeTruthy()
 	})
@@ -619,8 +630,11 @@ describe('test manual report', () => {
 	it('should not report useless items', async () => {
 		capturer.clear()
 		await SplunkRum.reportError('')
+		// @ts-expect-error testing invalid arg
 		await SplunkRum.reportError()
+		// @ts-expect-error testing invalid arg
 		await SplunkRum.reportError([])
+		// @ts-expect-error testing invalid arg
 		await SplunkRum.reportError({})
 		expect(capturer.spans.length).toBe(0)
 	})
@@ -643,7 +657,7 @@ describe('test route change', () => {
 		capturer.clear()
 		history.pushState({}, 'title', '/thisIsAChange#WithAHash')
 		const span = capturer.spans.find((s) => s.attributes.component === 'user-interaction')
-		expect(span, 'Check if user-interaction span is present.').toBeTruthy()
+		expectDefined(span, 'Check if user-interaction span is present.')
 		expect(span.name).toBe('routeChange')
 		expect((span.attributes['location.href'] as string).includes('/thisIsAChange#WithAHash')).toBeTruthy()
 		expect(oldUrl).toBe(span.attributes['prev.href'])
@@ -661,7 +675,7 @@ describe('test route change', () => {
 		})
 
 		const span = capturer.spans.find((s) => s.attributes.component === 'user-interaction')
-		expect(span, 'Check if user-interaction span is present.').toBeTruthy()
+		expectDefined(span, 'Check if user-interaction span is present.')
 		expect(span.name).toBe('routeChange')
 		expect((span.attributes['location.href'] as string).includes('#hashChange')).toBeTruthy()
 		expect(oldUrl).toBe(span.attributes['prev.href'])
@@ -710,8 +724,9 @@ describe('event listener shenanigans', () => {
 
 	// https://github.com/angular/components/blob/59002e1649123922df3532f4be78c485a73c5bc1/src/cdk/platform/features/passive-listeners.ts#L21
 	it("doesn't break on null listener", () => {
+		// @ts-expect-error testing invalid arg
 		document.body.addEventListener('test', null)
-		// fails on throwing error
+		// @ts-expect-error testing invalid arg
 		document.body.removeEventListener('test', null)
 	})
 
@@ -719,8 +734,10 @@ describe('event listener shenanigans', () => {
 	it("doesn't break on null capture arg", () => {
 		// eslint-disable-next-line unicorn/consistent-function-scoping
 		const listener = () => {}
-		// fails on throwing error
+
+		// @ts-expect-error testing invalid arg
 		document.body.addEventListener('test', listener, null)
+		// @ts-expect-error testing invalid arg
 		document.body.removeEventListener('test', listener, null)
 	})
 })
@@ -821,7 +838,7 @@ describe('platform attributes', () => {
 		})
 
 		// Create a test span
-		const tracer = SplunkRum.provider.getTracer('test')
+		const tracer = getTracer('test')
 		const span = tracer.startSpan('test-span')
 		span.end()
 
@@ -830,7 +847,7 @@ describe('platform attributes', () => {
 
 		expect(capturer.spans.length).toBeGreaterThan(0)
 		const testSpan = capturer.spans.find((s) => s.name === 'test-span')
-		expect(testSpan).toBeTruthy()
+		expectDefined(testSpan)
 		expect(testSpan.attributes['user_agent.os.name']).toBe('Windows')
 	})
 })
@@ -915,7 +932,7 @@ describe('native session handling', () => {
 
 		// Verify session.start span was created
 		const sessionStartSpan = capturer.spans.find((span) => span.name === 'session.start')
-		expect(sessionStartSpan).toBeTruthy()
+		expectDefined(sessionStartSpan)
 
 		// Verify session state has web source
 		const sessionState = SplunkRum.getSessionState()
