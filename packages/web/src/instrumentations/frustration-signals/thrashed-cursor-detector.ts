@@ -28,7 +28,6 @@ import { SplunkOtelWebConfig } from '../../types'
 export type ThrashedCursorOptions = Partial<ResolvedThrashedCursorConfig> | true
 
 type ResolvedThrashedCursorConfig = {
-	cooldownMs: number
 	ignoreUrls: Array<string | RegExp>
 	maxConfinedAreaSize: number
 	maxVelocity: number
@@ -50,7 +49,6 @@ type ResolvedThrashedCursorConfig = {
 // ============================================================================
 
 const DEFAULTS: ResolvedThrashedCursorConfig = {
-	cooldownMs: 2000,
 	ignoreUrls: [],
 	maxConfinedAreaSize: 200,
 	maxVelocity: 5000,
@@ -151,7 +149,7 @@ export class ThrashedCursorDetector {
 
 	private lastSampleTime = 0
 
-	private lastThrashingTime = 0
+	private lastThrashingTime = -Infinity
 
 	private listener?: (event: MouseEvent) => void
 
@@ -226,7 +224,6 @@ export class ThrashedCursorDetector {
 		}
 
 		return {
-			cooldownMs: resolveNumericOption(options.cooldownMs, DEFAULTS.cooldownMs),
 			ignoreUrls: Array.isArray(options.ignoreUrls) ? options.ignoreUrls : DEFAULTS.ignoreUrls,
 			maxConfinedAreaSize: resolveNumericOption(options.maxConfinedAreaSize, DEFAULTS.maxConfinedAreaSize),
 			maxVelocity: resolveNumericOption(options.maxVelocity, DEFAULTS.maxVelocity),
@@ -297,7 +294,7 @@ export class ThrashedCursorDetector {
 			return this.setAnalysisResult(false, undefined)
 		}
 
-		if (now - this.lastThrashingTime < this.config.cooldownMs) {
+		if (now - this.lastThrashingTime < this.config.timeWindowMs) {
 			return this.setAnalysisResult(false, undefined)
 		}
 
@@ -555,7 +552,7 @@ export class ThrashedCursorDetector {
 		this.lastMouseY = 0
 		this.hasLastMouse = false
 		this.lastSampleTime = 0
-		this.lastThrashingTime = 0
+		this.lastThrashingTime = -Infinity
 		this.cachedDeadZone = 0
 	}
 

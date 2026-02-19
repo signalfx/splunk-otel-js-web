@@ -225,13 +225,12 @@ The `frustrationSignals` instrumentation detects user frustration patterns and e
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `thrashedCursor` | `false \| object \| true` | `false` | Set to `true` or an options object to enable thrashed cursor detection |
-| `thrashedCursor.timeWindowMs` | `number` | `2000` | Analysis time window in milliseconds |
+| `thrashedCursor.timeWindowMs` | `number` | `2000` | Analysis time window in milliseconds. Also used as cooldown between detections |
 | `thrashedCursor.throttleMs` | `number` | `16` | Minimum interval between samples (min: 16ms) |
 | `thrashedCursor.minDirectionChanges` | `number` | `4` | Minimum direction changes to consider |
 | `thrashedCursor.minTotalDistance` | `number` | `300` | Minimum total distance in pixels |
 | `thrashedCursor.minAverageVelocity` | `number` | `300` | Minimum average velocity in px/s |
 | `thrashedCursor.thrashingScoreThreshold` | `number` | `0.6` | Score threshold (0–1) to trigger detection |
-| `thrashedCursor.cooldownMs` | `number` | `2000` | Cooldown between detections |
 | `thrashedCursor.ignoreUrls` | `Array<string\|RegExp>` | `[]` | URLs where detection is skipped |
 
 **Example:**
