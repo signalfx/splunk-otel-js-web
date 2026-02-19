@@ -2,6 +2,21 @@
 
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
+## Unreleased
+
+- `@splunk/otel-web`
+    - **Added Thrashed Cursor Detection**
+        - Detects erratic back-and-forth mouse movements as a user frustration signal
+        - Emits `frustration` spans with `frustration_type: 'thrash'` and `interaction_type: 'cursor'`
+        - Spans include `thrashing_score` and `pattern_description` attributes for detailed analysis
+        - Spans have a non-zero duration reflecting the analysis time window
+        - Enabled by default; configurable via `instrumentations.frustrationSignals.thrashedCursor`
+        - Supports `ignoreUrls` option to skip detection on specific URLs (e.g., interactive content pages)
+    - **Refactored Frustration Signals Architecture**
+        - Extracted rage click detection into a dedicated `RageClickDetector` class
+        - Extracted thrashed cursor detection into a dedicated `ThrashedCursorDetector` class
+        - `SplunkFrustrationSignalsInstrumentation` now orchestrates both detectors
+
 ## 2.2.0
 
 - `@splunk/otel-web`
