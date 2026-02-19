@@ -228,9 +228,16 @@ The `frustrationSignals` instrumentation detects user frustration patterns and e
 | `thrashedCursor.timeWindowMs` | `number` | `2000` | Analysis time window in milliseconds. Also used as cooldown between detections |
 | `thrashedCursor.throttleMs` | `number` | `16` | Minimum interval between samples (min: 16ms) |
 | `thrashedCursor.minDirectionChanges` | `number` | `4` | Minimum direction changes to consider |
+| `thrashedCursor.minDirectionChangeDegrees` | `number` | `45` | Minimum angle change (degrees) to count as a direction change |
 | `thrashedCursor.minTotalDistance` | `number` | `300` | Minimum total distance in pixels |
+| `thrashedCursor.minMovementDistance` | `number` | `5` | Dead zone radius in pixels; movements smaller than this are ignored |
 | `thrashedCursor.minAverageVelocity` | `number` | `300` | Minimum average velocity in px/s |
+| `thrashedCursor.maxVelocity` | `number` | `5000` | Maximum velocity in px/s; samples above this are discarded as noise |
+| `thrashedCursor.maxConfinedAreaSize` | `number` | `200` | Maximum bounding box size (px) for the confined-area score component |
 | `thrashedCursor.thrashingScoreThreshold` | `number` | `0.6` | Score threshold (0–1) to trigger detection |
+| `thrashedCursor.scoreWeightDirectionChanges` | `number` | `0.4` | Weight of direction-changes component in the thrashing score |
+| `thrashedCursor.scoreWeightVelocity` | `number` | `0.3` | Weight of velocity component in the thrashing score |
+| `thrashedCursor.scoreWeightConfinedArea` | `number` | `0.3` | Weight of confined-area component in the thrashing score |
 | `thrashedCursor.ignoreUrls` | `Array<string\|RegExp>` | `[]` | URLs where detection is skipped |
 
 **Example:**
