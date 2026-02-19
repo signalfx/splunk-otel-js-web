@@ -257,22 +257,14 @@ export class ThrashedCursorDetector {
 	}
 
 	private static resolveConfig(otelConfig: SplunkOtelWebConfig): ResolvedThrashedCursorConfig | undefined {
-		const frustrationSignals = otelConfig.instrumentations?.frustrationSignals ?? {
-			thrashedCursor: true,
-		}
+		const frustrationSignals = otelConfig.instrumentations?.frustrationSignals
 
 		if (frustrationSignals && typeof frustrationSignals === 'object') {
 			const thrashedCursor = frustrationSignals.thrashedCursor
 
-			if (thrashedCursor === false) {
-				return undefined
-			}
-
 			if (typeof thrashedCursor === 'object' || thrashedCursor === true) {
 				return ThrashedCursorDetector.normalizeConfig(thrashedCursor)
 			}
-
-			return ThrashedCursorDetector.normalizeConfig(true)
 		}
 
 		return undefined

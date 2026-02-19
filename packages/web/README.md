@@ -171,7 +171,7 @@ Choose a versioning strategy based on your needs:
 | `instrumentations.document`        | `boolean\|Config`                                     | ❌       | `true`                                         | Document load instrumentation                                                                                                                                                                                                                                                                                                                                           |
 | `instrumentations.errors`          | `boolean\|Config`                                     | ❌       | `true`                                         | Error capture                                                                                                                                                                                                                                                                                                                                                           |
 | `instrumentations.fetch`           | `boolean\|Config`                                     | ❌       | `true`                                         | Fetch API monitoring                                                                                                                                                                                                                                                                                                                                                    |
-| `instrumentations.frustrationSignals` | `boolean\|Config`                                  | ❌       | `true`                                         | User frustration detection (rage clicks, thrashed cursor). See [Frustration Signals](#frustration-signals) below                                                                                                                                                                                                                                                        |
+| `instrumentations.frustrationSignals` | `boolean\|Config`                                  | ❌       | `true`                                         | User frustration detection (rage clicks enabled by default, thrashed cursor opt-in). See [Frustration Signals](#frustration-signals) below                                                                                                                                                                                                                              |
 | `instrumentations.interactions`    | `boolean\|Config`                                     | ❌       | `true`                                         | User interaction tracking                                                                                                                                                                                                                                                                                                                                               |
 | `instrumentations.longtask`        | `boolean\|Config`                                     | ❌       | `true`                                         | Long task detection (>50ms)                                                                                                                                                                                                                                                                                                                                             |
 | `instrumentations.postload`        | `boolean\|Config`                                     | ❌       | `true`                                         | Post-load resource timing                                                                                                                                                                                                                                                                                                                                               |
@@ -209,7 +209,7 @@ privacy: {
 
 ### Frustration Signals
 
-The `frustrationSignals` instrumentation detects user frustration patterns and emits `frustration` spans. Both detectors are enabled by default.
+The `frustrationSignals` instrumentation detects user frustration patterns and emits `frustration` spans. Rage click detection is enabled by default. Thrashed cursor detection is disabled by default and must be explicitly enabled.
 
 **Rage Clicks** detect rapid repeated clicks on the same element, indicating the user is frustrated because the UI is unresponsive.
 
@@ -224,7 +224,7 @@ The `frustrationSignals` instrumentation detects user frustration patterns and e
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `thrashedCursor` | `false \| object \| true` | `true` | Set to `false` to disable thrashed cursor detection |
+| `thrashedCursor` | `false \| object \| true` | `false` | Set to `true` or an options object to enable thrashed cursor detection |
 | `thrashedCursor.timeWindowMs` | `number` | `2000` | Analysis time window in milliseconds |
 | `thrashedCursor.throttleMs` | `number` | `16` | Minimum interval between samples (min: 16ms) |
 | `thrashedCursor.minDirectionChanges` | `number` | `4` | Minimum direction changes to consider |
@@ -252,13 +252,13 @@ instrumentations: {
 }
 ```
 
-To disable a specific detector:
+To enable thrashed cursor detection while disabling rage clicks:
 
 ```typescript
 instrumentations: {
 	frustrationSignals: {
-		rageClick: false, // Disable rage click detection only
-		thrashedCursor: true, // Keep thrashed cursor detection
+		rageClick: false, // Disable rage click detection
+		thrashedCursor: true, // Enable thrashed cursor detection (disabled by default)
 	},
 }
 ```
@@ -331,7 +331,7 @@ SplunkRum.init({
 		fetch: true,
 		frustrationSignals: {
 			rageClick: { count: 4 },
-			thrashedCursor: true,
+			thrashedCursor: true, // Opt-in: disabled by default
 		},
 		interactions: true,
 		longtask: true,
