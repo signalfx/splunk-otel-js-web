@@ -24,21 +24,14 @@ import {
 
 import { SplunkOtelWebConfig } from '../types'
 import { VERSION } from '../version'
-import { RageClickDetector } from './frustration-signals/rage-click-detector'
-import { ThrashedCursorDetector } from './frustration-signals/thrashed-cursor-detector'
+import { RageClickDetector, RageClickOptions } from './frustration-signals/rage-click-detector'
+import { ThrashedCursorDetector, ThrashedCursorOptions } from './frustration-signals/thrashed-cursor-detector'
 
 const MODULE_NAME = 'splunk-frustration-signals'
 
 export interface SplunkFrustrationSignalsInstrumentationConfig extends InstrumentationConfig {
-	rageClick?:
-		| false
-		| true
-		| {
-				count?: number
-				ignoreSelectors?: string[]
-				timeframeSeconds?: number
-		  }
-	thrashedCursor?: boolean
+	rageClick?: false | RageClickOptions
+	thrashedCursor?: false | ThrashedCursorOptions
 }
 
 export class SplunkFrustrationSignalsInstrumentation extends InstrumentationBase<SplunkFrustrationSignalsInstrumentationConfig> {

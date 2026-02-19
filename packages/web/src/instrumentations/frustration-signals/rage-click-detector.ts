@@ -27,7 +27,7 @@ import { getTextFromNode } from '../../utils/text'
 const DEFAULT_RAGE_CLICK_COUNT = 4
 const DEFAULT_RAGE_CLICK_TIMEFRAME_SECONDS = 1
 
-type RageClickOptions =
+export type RageClickOptions =
 	| {
 			count?: number
 			ignoreSelectors?: string[]
