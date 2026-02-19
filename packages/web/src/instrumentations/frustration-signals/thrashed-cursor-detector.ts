@@ -551,7 +551,6 @@ export class ThrashedCursorDetector {
 		span.setAttribute('frustration_type', 'thrash')
 		span.setAttribute('interaction_type', 'cursor')
 		span.setAttribute('component', 'user-interaction')
-		span.setAttribute('page_url', window.location.href)
 		span.setAttribute('thrashing_score', analysis.thrashingScore!)
 		span.setAttribute('pattern_description', patternDescription)
 		span.end(endTime)
