@@ -2,6 +2,26 @@
 
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
+## 2.2.0
+
+- `@splunk/otel-web`
+    - **Enable rage clicks by default** [#1641](https://github.com/signalfx/splunk-otel-js-web/pull/1641)
+        - Rage clicks frustration signal is now enabled by default
+    - **Remove `_experimental` prefix from `spaMetrics`** [#1640](https://github.com/signalfx/splunk-otel-js-web/pull/1640)
+        - The spaMetrics feature is now stable and no longer marked as experimental
+    - **Prevent `session.start` spans and session replay for native sessions** [#1638](https://github.com/signalfx/splunk-otel-js-web/pull/1638)
+        - Prevents duplicate `session.start` spans and session replay when receiving a session ID from the mobile agent (MRUM)
+
+- `@splunk/otel-web-session-recorder`
+    - **Update session-replay CDN module to v2.6.7** [#1643](https://github.com/signalfx/splunk-otel-js-web/pull/1643)
+
+- `@splunk/otel-web-build-plugins`
+    - **Fix build of `@splunk/rum-build-plugins`** [#1644](https://github.com/signalfx/splunk-otel-js-web/pull/1644)
+        - Fixed broken source map upload functionality for both CommonJS and ES Module consumers
+        - Added webpack example for end-to-end validation of upload behavior
+
+- **Updated dependencies** [#1626](https://github.com/signalfx/splunk-otel-js-web/pull/1626)
+
 ## 2.1.0
 
 - `@splunk/otel-web`
