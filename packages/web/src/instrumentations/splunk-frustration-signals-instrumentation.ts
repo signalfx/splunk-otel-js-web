@@ -22,42 +22,29 @@ import {
 	InstrumentationModuleDefinition,
 } from '@opentelemetry/instrumentation'
 
-import { PrivacyManager } from '../managers/privacy/privacy-manager'
-import { isElement, isNode, SplunkOtelWebConfig } from '../types'
-import { captureElementDataAttributes } from '../utils/element-attributes'
-import { getElementXPath } from '../utils/index'
-import { getTextFromNode } from '../utils/text'
+import { SplunkOtelWebConfig } from '../types'
 import { VERSION } from '../version'
+import { RageClickDetector } from './frustration-signals/rage-click-detector'
+import { ThrashedCursorDetector } from './frustration-signals/thrashed-cursor-detector'
 
 const MODULE_NAME = 'splunk-frustration-signals'
 
-const DEFAULT_RAGE_CLICK_COUNT = 4
-const DEFAULT_RAGE_CLICK_TIMEFRAME_SECONDS = 1
-
-type RageClickOptions =
-	| {
-			count?: number
-			ignoreSelectors?: string[]
-			timeframeSeconds?: number
-	  }
-	| true
-
-type ResolvedRageClickConfig = {
-	count: number
-	ignoreSelectors: string[]
-	timeframeMs: number
-}
-
 export interface SplunkFrustrationSignalsInstrumentationConfig extends InstrumentationConfig {
-	rageClick?: false | RageClickOptions
+	rageClick?:
+		| false
+		| true
+		| {
+				count?: number
+				ignoreSelectors?: string[]
+				timeframeSeconds?: number
+		  }
+	thrashedCursor?: boolean
 }
 
 export class SplunkFrustrationSignalsInstrumentation extends InstrumentationBase<SplunkFrustrationSignalsInstrumentationConfig> {
-	private clickTimesByNode: WeakMap<Node, number[]> = new WeakMap()
+	private rageClickDetector?: RageClickDetector
 
-	private rageClickConfig?: ResolvedRageClickConfig
-
-	private rageClickListener?: (event: MouseEvent) => void
+	private thrashedCursorDetector?: ThrashedCursorDetector
 
 	constructor(
 		config: SplunkFrustrationSignalsInstrumentationConfig = {},
@@ -67,119 +54,26 @@ export class SplunkFrustrationSignalsInstrumentation extends InstrumentationBase
 	}
 
 	disable(): void {
-		this.rageClickConfig = undefined
-		this.clickTimesByNode = new WeakMap()
-		this.detachRageClickListener()
+		this.rageClickDetector?.disable()
+		this.rageClickDetector = undefined
+
+		this.thrashedCursorDetector?.disable()
+		this.thrashedCursorDetector = undefined
 	}
 
 	enable(): void {
-		this.rageClickConfig = this.resolveRageClickConfig()
-
-		if (!this.rageClickConfig) {
-			this.detachRageClickListener()
-			return
+		if (!this.rageClickDetector) {
+			this.rageClickDetector = RageClickDetector.create(this.tracer, this.otelConfig)
 		}
 
-		if (this.rageClickListener) {
-			return
+		this.rageClickDetector?.enable()
+
+		if (!this.thrashedCursorDetector) {
+			this.thrashedCursorDetector = ThrashedCursorDetector.create(this.tracer, this.otelConfig)
 		}
 
-		this.rageClickListener = (event: MouseEvent) => {
-			const config = this.rageClickConfig
-			if (!config) {
-				return
-			}
-
-			const target = event.target
-			if (!target || !isNode(target)) {
-				return
-			}
-
-			this.processRageClick(target, config)
-		}
-		document.addEventListener('click', this.rageClickListener, true)
+		this.thrashedCursorDetector?.enable()
 	}
 
 	protected init(): InstrumentationModuleDefinition | InstrumentationModuleDefinition[] | void {}
-
-	private detachRageClickListener(): void {
-		if (!this.rageClickListener) {
-			return
-		}
-
-		document.removeEventListener('click', this.rageClickListener, true)
-		this.rageClickListener = undefined
-	}
-
-	private normalizeRageClickConfig(config: RageClickOptions): ResolvedRageClickConfig {
-		if (config === true) {
-			return {
-				count: DEFAULT_RAGE_CLICK_COUNT,
-				ignoreSelectors: [],
-				timeframeMs: DEFAULT_RAGE_CLICK_TIMEFRAME_SECONDS * 1000,
-			}
-		}
-
-		const count =
-			typeof config.count === 'number' && config.count > 0 ? Math.floor(config.count) : DEFAULT_RAGE_CLICK_COUNT
-		const timeframeSeconds =
-			typeof config.timeframeSeconds === 'number' && config.timeframeSeconds > 0
-				? config.timeframeSeconds
-				: DEFAULT_RAGE_CLICK_TIMEFRAME_SECONDS
-
-		const ignoreSelectors = Array.isArray(config.ignoreSelectors) ? config.ignoreSelectors : []
-
-		return {
-			count,
-			ignoreSelectors,
-			timeframeMs: timeframeSeconds * 1000,
-		}
-	}
-
-	private processRageClick(target: Node, config: ResolvedRageClickConfig): void {
-		const currentTime = performance.now()
-
-		let clickTimes = this.clickTimesByNode.get(target) || []
-		clickTimes = clickTimes.filter((time) => currentTime - time < config.timeframeMs)
-		clickTimes.push(currentTime)
-
-		if (clickTimes.length >= config.count) {
-			clickTimes = []
-			const ignored = isElement(target) && config.ignoreSelectors.some((selector) => target.matches(selector))
-			if (!ignored) {
-				const startTime = Date.now()
-				const span = this.tracer.startSpan('frustration', { startTime })
-				span.setAttribute('frustration_type', 'rage')
-				span.setAttribute('interaction_type', 'click')
-				span.setAttribute('component', 'user-interaction')
-				span.setAttribute('target_xpath', getElementXPath(target, true))
-
-				const textValue = getTextFromNode(
-					target,
-					(node) => !PrivacyManager.shouldMaskTextNode(node, this.otelConfig.privacy),
-				)
-
-				span.setAttribute('target_text', textValue || `<${target.nodeName.toLowerCase()}>`)
-
-				captureElementDataAttributes(span, target, this.otelConfig._experimental_dataAttributesToCapture)
-
-				span.end(startTime)
-			}
-		}
-
-		this.clickTimesByNode.set(target, clickTimes)
-	}
-
-	private resolveRageClickConfig(): ResolvedRageClickConfig | undefined {
-		// rage clicks are enabled by default
-		const frustrationSignals = this.otelConfig.instrumentations?.frustrationSignals ?? {
-			rageClick: true,
-		}
-		if (frustrationSignals && typeof frustrationSignals === 'object') {
-			const rageClick = frustrationSignals.rageClick
-			if (typeof rageClick === 'object' || rageClick === true) {
-				return this.normalizeRageClickConfig(rageClick)
-			}
-		}
-	}
 }
