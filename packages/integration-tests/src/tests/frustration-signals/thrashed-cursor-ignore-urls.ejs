@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Thrashed cursor ignore URLs</title>
+
+		<%- renderAgent({
+			instrumentations: {
+				frustrationSignals: {
+					thrashedCursor: {
+						timeWindowMs: 2000,
+						throttleMs: 16,
+						minDirectionChanges: 4,
+						minTotalDistance: 100,
+						minAverageVelocity: 100,
+						thrashingScoreThreshold: 0.3
+					}
+				}
+			}
+		}, true) %>
+		<script>
+			window.SplunkRumOptions.instrumentations.frustrationSignals.thrashedCursor.ignoreUrls = [/thrashed-cursor-ignore-urls/];
+			window.SplunkRum && window.SplunkRum.init(window.SplunkRumOptions);
+		</script>
+	</head>
+	<body>
+		<h1>Thrashed cursor ignore URLs</h1>
+		<div id="target" style="width: 400px; height: 400px; background: #eee;"></div>
+	</body>
+</html>

@@ -69,6 +69,10 @@ export class RecordPage {
 		return this.page.keyboard
 	}
 
+	get mouse() {
+		return this.page.mouse
+	}
+
 	get evaluate() {
 		return this.page.evaluate.bind(this.page)
 	}

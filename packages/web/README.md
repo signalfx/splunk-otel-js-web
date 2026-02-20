@@ -171,6 +171,7 @@ Choose a versioning strategy based on your needs:
 | `instrumentations.document`        | `boolean\|Config`                                     | ❌       | `true`                                         | Document load instrumentation                                                                                                                                                                                                                                                                                                                                           |
 | `instrumentations.errors`          | `boolean\|Config`                                     | ❌       | `true`                                         | Error capture                                                                                                                                                                                                                                                                                                                                                           |
 | `instrumentations.fetch`           | `boolean\|Config`                                     | ❌       | `true`                                         | Fetch API monitoring                                                                                                                                                                                                                                                                                                                                                    |
+| `instrumentations.frustrationSignals` | `boolean\|Config`                                  | ❌       | `true`                                         | User frustration detection (rage clicks enabled by default, thrashed cursor opt-in). See [Frustration Signals](#frustration-signals) below                                                                                                                                                                                                                              |
 | `instrumentations.interactions`    | `boolean\|Config`                                     | ❌       | `true`                                         | User interaction tracking                                                                                                                                                                                                                                                                                                                                               |
 | `instrumentations.longtask`        | `boolean\|Config`                                     | ❌       | `true`                                         | Long task detection (>50ms)                                                                                                                                                                                                                                                                                                                                             |
 | `instrumentations.postload`        | `boolean\|Config`                                     | ❌       | `true`                                         | Post-load resource timing                                                                                                                                                                                                                                                                                                                                               |
@@ -203,6 +204,68 @@ privacy: {
     { rule: 'exclude', selector: '.sensitive-data' },
     { rule: 'mask', selector: '.public-content .private-info' }
   ]
+}
+```
+
+### Frustration Signals
+
+The `frustrationSignals` instrumentation detects user frustration patterns and emits `frustration` spans. Rage click detection is enabled by default. Thrashed cursor detection is disabled by default and must be explicitly enabled.
+
+**Rage Clicks** detect rapid repeated clicks on the same element, indicating the user is frustrated because the UI is unresponsive.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `rageClick` | `false \| object \| true` | `true` | Set to `false` to disable rage click detection |
+| `rageClick.count` | `number` | `4` | Number of clicks to trigger detection |
+| `rageClick.timeframeSeconds` | `number` | `1` | Time window in seconds |
+| `rageClick.ignoreSelectors` | `string[]` | `[]` | CSS selectors to exclude from detection |
+
+**Thrashed Cursor** detects erratic back-and-forth mouse movements, indicating the user is confused or annoyed.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `thrashedCursor` | `false \| object \| true` | `false` | Set to `true` or an options object to enable thrashed cursor detection |
+| `thrashedCursor.timeWindowMs` | `number` | `2000` | Analysis time window in milliseconds. Also used as cooldown between detections |
+| `thrashedCursor.throttleMs` | `number` | `16` | Minimum interval between samples (min: 16ms) |
+| `thrashedCursor.minDirectionChanges` | `number` | `4` | Minimum direction changes to consider |
+| `thrashedCursor.minDirectionChangeDegrees` | `number` | `45` | Minimum angle change (degrees) to count as a direction change |
+| `thrashedCursor.minTotalDistance` | `number` | `300` | Minimum total distance in pixels |
+| `thrashedCursor.minMovementDistance` | `number` | `5` | Dead zone radius in pixels; movements smaller than this are ignored |
+| `thrashedCursor.minAverageVelocity` | `number` | `300` | Minimum average velocity in px/s |
+| `thrashedCursor.maxVelocity` | `number` | `5000` | Maximum velocity in px/s; samples above this are discarded as noise |
+| `thrashedCursor.maxConfinedAreaSize` | `number` | `200` | Maximum bounding box size (px) for the confined-area score component |
+| `thrashedCursor.thrashingScoreThreshold` | `number` | `0.6` | Score threshold (0–1) to trigger detection |
+| `thrashedCursor.scoreWeightDirectionChanges` | `number` | `0.4` | Weight of direction-changes component in the thrashing score |
+| `thrashedCursor.scoreWeightVelocity` | `number` | `0.3` | Weight of velocity component in the thrashing score |
+| `thrashedCursor.scoreWeightConfinedArea` | `number` | `0.3` | Weight of confined-area component in the thrashing score |
+| `thrashedCursor.ignoreUrls` | `Array<string\|RegExp>` | `[]` | URLs where detection is skipped |
+
+**Example:**
+
+```typescript
+instrumentations: {
+	frustrationSignals: {
+		rageClick: {
+			count: 4,
+			timeframeSeconds: 1,
+			ignoreSelectors: ['#interactive-canvas'],
+		},
+		thrashedCursor: {
+			thrashingScoreThreshold: 0.7,
+			ignoreUrls: [/\/game/, /\/drawing-tool/],
+		},
+	},
+}
+```
+
+To enable thrashed cursor detection while disabling rage clicks:
+
+```typescript
+instrumentations: {
+	frustrationSignals: {
+		rageClick: false, // Disable rage click detection
+		thrashedCursor: true, // Enable thrashed cursor detection (disabled by default)
+	},
 }
 ```
 
@@ -272,6 +335,10 @@ SplunkRum.init({
 		document: true,
 		errors: true,
 		fetch: true,
+		frustrationSignals: {
+			rageClick: { count: 4 },
+			thrashedCursor: true, // Opt-in: disabled by default
+		},
 		interactions: true,
 		longtask: true,
 		postload: true,
