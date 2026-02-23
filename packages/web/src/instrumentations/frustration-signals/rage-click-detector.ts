@@ -18,11 +18,9 @@
 
 import { Tracer } from '@opentelemetry/api'
 
-import { PrivacyManager } from '../../managers/privacy/privacy-manager'
+import { PrivacyManager } from '../../managers'
 import { isElement, isNode, SplunkOtelWebConfig } from '../../types'
-import { captureElementDataAttributes } from '../../utils/element-attributes'
-import { getElementXPath } from '../../utils/index'
-import { getTextFromNode } from '../../utils/text'
+import { captureElementDataAttributes, getElementXPath, getTextFromNode } from '../../utils/index'
 
 const DEFAULT_RAGE_CLICK_COUNT = 4
 const DEFAULT_RAGE_CLICK_TIMEFRAME_SECONDS = 1

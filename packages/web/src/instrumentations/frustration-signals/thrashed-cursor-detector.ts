@@ -20,6 +20,7 @@ import { Tracer } from '@opentelemetry/api'
 import { isUrlIgnored } from '@opentelemetry/core'
 
 import { SplunkOtelWebConfig } from '../../types'
+import { angleDifference, calculateAngle, distance } from './math-utils'
 
 // ============================================================================
 // Types
@@ -565,28 +566,21 @@ export class ThrashedCursorDetector {
 }
 
 // ============================================================================
-// Pure math utilities (module-level for zero-cost reuse across instances)
+// Pure utilities (module-level for zero-cost reuse across instances)
 // ============================================================================
 
-const RADIANS_TO_DEGREES = 180 / Math.PI
-
-function distance(x1: number, y1: number, x2: number, y2: number): number {
-	return Math.hypot(x2 - x1, y2 - y1)
+/**
+ * Validates a numeric config option, returning the default if the value
+ * is not a number or is not greater than the minimum.
+ */
+function resolveNumericOption(val: number | undefined, def: number, min = 0): number {
+	return typeof val === 'number' && val > min ? val : def
 }
 
-function calculateAngle(x1: number, y1: number, x2: number, y2: number): number {
-	const degrees = Math.atan2(y2 - y1, x2 - x1) * RADIANS_TO_DEGREES
-
-	return degrees >= 0 ? degrees : degrees + 360
-}
-
-function angleDifference(angle1: number, angle2: number): number {
-	const diff = Math.abs(angle1 - angle2)
-
-	return diff > 180 ? 360 - diff : diff
-}
-
-function getPatternDescription(metrics: MetricsResult, config: ResolvedThrashedCursorConfig): string {
+/**
+ * Generates a description of the thrashing pattern based on the metrics and configuration.
+ */
+export function getPatternDescription(metrics: MetricsResult, config: ResolvedThrashedCursorConfig): string {
 	const parts: string[] = []
 
 	const boundingBoxSize = metrics.boundingBox.size || 0
@@ -619,12 +613,4 @@ function getPatternDescription(metrics: MetricsResult, config: ResolvedThrashedC
 	}
 
 	return parts.join(', ')
-}
-
-/**
- * Validates a numeric config option, returning the default if the value
- * is not a number or is not greater than the minimum.
- */
-function resolveNumericOption(val: number | undefined, def: number, min = 0): number {
-	return typeof val === 'number' && val > min ? val : def
 }
