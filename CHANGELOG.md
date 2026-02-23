@@ -666,7 +666,7 @@ Changelog since v0.16.5:
     - remove zone.js from user-interaction instrumentation ([#719](https://github.com/signalfx/splunk-otel-js-web/pull/719))
     - Preprations for OTLP export support ([#745](https://github.com/signalfx/splunk-otel-js-web/pull/745))
 - `@splunk/otel-web-session-recorder`
-    - Internal changes in how data is shared with `@splunk/otel-web`  
+    - Internal changes in how data is shared with `@splunk/otel-web`
       **Note**: make sure that to use the same version of `@splunk/otel-web` and `@splunk/otel-web-session-recorder` libraries
 
 ## 0.17.0-beta.1
@@ -807,7 +807,7 @@ Changelog since last general release:
 | ------------------ | ------ | -------------------------- |
 | ^1.2.0             | ^1.7.0 | ^0.33.0 & compatible       |
 
-- Updated versioning strategy to use caret version range ([#432](https://github.com/signalfx/splunk-otel-js-web/pull/432))  
+- Updated versioning strategy to use caret version range ([#432](https://github.com/signalfx/splunk-otel-js-web/pull/432))
   This will reduce the amount of duplicate packages in NPM installations (which would lead to larger app bundle size) and improve compatibility with otel API package version used for custom instrumentations in applications
 
 ## 0.12.3 & 0.12.2

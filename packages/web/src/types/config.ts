@@ -85,7 +85,7 @@ export interface SplunkOtelWebConfig {
 	 *
 	 * When specified, these data attributes will be collected from interacted elements and attached
 	 * to interaction spans as span attributes. Only data-* attributes are captured.
-	 * Currently supported for click and rage click spans.
+	 * Currently supported for click and rage click spans. Not yet supported for thrashed cursor spans.
 	 *
 	 * Attribute names can be specified in either format:
 	 * - Hyphenated: `'data-test-id'`, `'data-user-name'`

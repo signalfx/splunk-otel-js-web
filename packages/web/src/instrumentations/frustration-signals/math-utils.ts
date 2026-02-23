@@ -15,22 +15,21 @@
  * limitations under the License.
  *
  */
-module.exports = [
-	{
-		limit: '3 kB',
-		name: 'artifacts/otel-api-globals.js',
-		path: './packages/web/dist/artifacts/otel-api-globals.js',
-	},
 
-	{
-		limit: '96 kB',
-		name: 'artifacts/splunk-otel-web.js',
-		path: './packages/web/dist/artifacts/splunk-otel-web.js',
-	},
+const RADIANS_TO_DEGREES = 180 / Math.PI
 
-	{
-		limit: '104 kB',
-		name: 'artifacts/splunk-otel-web-session-recorder.js',
-		path: './packages/session-recorder/dist/artifacts/splunk-otel-web-session-recorder.js',
-	},
-]
+export function distance(x1: number, y1: number, x2: number, y2: number): number {
+	return Math.hypot(x2 - x1, y2 - y1)
+}
+
+export function calculateAngle(x1: number, y1: number, x2: number, y2: number): number {
+	const degrees = Math.atan2(y2 - y1, x2 - x1) * RADIANS_TO_DEGREES
+
+	return degrees >= 0 ? degrees : degrees + 360
+}
+
+export function angleDifference(angle1: number, angle2: number): number {
+	const diff = Math.abs(angle1 - angle2)
+
+	return diff > 180 ? 360 - diff : diff
+}

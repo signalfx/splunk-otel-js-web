@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Thrashed cursor</title>
+
+		<%- renderAgent({
+			instrumentations: {
+				frustrationSignals: {
+					thrashedCursor: {
+						timeWindowMs: 2000,
+						throttleMs: 16,
+						minDirectionChanges: 4,
+						minTotalDistance: 100,
+						minAverageVelocity: 100,
+						thrashingScoreThreshold: 0.3
+					}
+				}
+			}
+		}) %>
+	</head>
+	<body>
+		<h1>Thrashed cursor</h1>
+		<div id="target" style="width: 400px; height: 400px; background: #eee;"></div>
+	</body>
+</html>
