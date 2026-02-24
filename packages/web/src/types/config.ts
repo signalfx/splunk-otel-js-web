@@ -30,6 +30,7 @@ import {
 	SplunkUserInteractionInstrumentationConfig,
 	SplunkWebVitalsInstrumentationConfig,
 } from '../instrumentations'
+import { ExternalSessionMetadata } from './external-session-metadata'
 
 export interface SplunkOtelWebOptionsInstrumentations {
 	connectivity?: boolean | InstrumentationConfig
@@ -191,6 +192,8 @@ export interface SplunkOtelWebConfig {
 	 * will be visible to every user of your app
 	 */
 	rumAccessToken?: string
+
+	sessionMetadata?: NonNullable<ExternalSessionMetadata>
 
 	/**
 	 * Enables SPA (Single Page Application) metrics.

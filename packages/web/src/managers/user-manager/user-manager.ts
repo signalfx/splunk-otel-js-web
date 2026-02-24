@@ -33,7 +33,12 @@ export class UserManager {
 	constructor(
 		public userTrackingMode: UserTrackingMode,
 		private readonly storageManager: StorageManager,
-	) {}
+		anonymousId?: string,
+	) {
+		if (userTrackingMode === 'anonymousTracking') {
+			this.anonymousId = anonymousId
+		}
+	}
 
 	static isUserTrackingMode = (value: unknown): value is UserTrackingMode =>
 		value === 'noTracking' || value === 'anonymousTracking'

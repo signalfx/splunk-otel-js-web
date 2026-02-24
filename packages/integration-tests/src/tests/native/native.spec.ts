@@ -19,8 +19,8 @@ import { expect } from '@playwright/test'
 
 import { test } from '../../utils/test'
 
-test.describe('native', () => {
-	test('native session id integration', async ({ recordPage }) => {
+test.describe('external', () => {
+	test('external session id integration', async ({ recordPage }) => {
 		await recordPage.goTo('/native/native.ejs')
 
 		await recordPage.waitForSpans((spans) => spans.some((s) => s.name === 'documentFetch'))

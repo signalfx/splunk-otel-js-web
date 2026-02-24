@@ -94,7 +94,7 @@ const createSessionReplaySpanIfAllowed = (spanName: SpanName, sessionId: string 
 	// Check if session is managed by native SDK
 	const SplunkRum = getGlobal<SplunkOtelWebType>()
 	const sessionState = SplunkRum?.sessionManager?.getSessionState()
-	if (sessionState?.source === 'native') {
+	if (sessionState?.source === 'external') {
 		log.debug('Session replay span not created - recording is managed by native SDK', { sessionId, spanName })
 		return
 	}

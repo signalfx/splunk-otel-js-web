@@ -18,6 +18,7 @@
 
 import { diag } from '@opentelemetry/api'
 
+import { ExternalSessionMetadata } from '../../types/external-session-metadata'
 import { generateId } from '../../utils'
 import { isTrustedEvent } from '../../utils/is-trusted-event'
 import { Observable } from '../../utils/observable'
@@ -64,15 +65,32 @@ export class SessionManager {
 
 	private stopCallbacks: Array<() => void> = []
 
-	constructor(private readonly storageManager: StorageManager) {
-		const nativeSessionId = SessionManager.getNativeSessionId()
-		if (nativeSessionId) {
-			this._session = {
-				expiresAt: Date.now() + 4 * SESSION_INACTIVITY_TIMEOUT_MS,
-				id: nativeSessionId,
-				source: 'native',
-				startTime: Date.now(),
+	constructor(
+		private readonly storageManager: StorageManager,
+		externalSessionMetadata?: NonNullable<ExternalSessionMetadata>,
+	) {
+		if (externalSessionMetadata) {
+			const externalSessionInit: SessionState = {
+				expiresAt: externalSessionMetadata.sessionLastActivity + SESSION_INACTIVITY_TIMEOUT_MS,
+				id: externalSessionMetadata.sessionId,
+				source: 'external',
+				startTime: externalSessionMetadata.sessionStart,
 				state: 'active',
+			}
+
+			if (SessionManager.canContinueUsingSession(externalSessionInit)) {
+				this._session = externalSessionInit
+				diag.debug('SessionManager: Initialized with provided external session metadata.', {
+					state: this._session,
+				})
+				return
+			}
+		}
+
+		const externalSession = SessionManager.getExternalSession()
+		if (externalSession) {
+			this._session = {
+				...externalSession,
 			}
 		} else {
 			const sessionState = this.getSessionStateFromStorageAndValidate()
@@ -90,23 +108,74 @@ export class SessionManager {
 		diag.debug('SessionManager: Initialized. Current session state', { state: this._session })
 	}
 
-	static getNativeSessionId() {
-		if (!(typeof window !== 'undefined' && window.SplunkRumNative && window.SplunkRumNative.getNativeSessionId)) {
+	static getExternalSession(): SessionState | null {
+		if (typeof window === 'undefined') {
 			return null
 		}
 
-		return window.SplunkRumNative.getNativeSessionId()
+		if (window.SplunkRumExternal && window.SplunkRumExternal.getSessionMetadata) {
+			const sessionMetadata = window.SplunkRumExternal.getSessionMetadata()
+			const externalSession: SessionState = {
+				expiresAt: sessionMetadata.sessionLastActivity + SESSION_INACTIVITY_TIMEOUT_MS,
+				id: sessionMetadata.sessionId,
+				source: 'external',
+				startTime: sessionMetadata.sessionStart,
+				state: 'active',
+			}
+
+			if (SessionManager.canContinueUsingSession(externalSession)) {
+				return externalSession
+			} else {
+				diag.warn(
+					'Retrieved session from SplunkRumExternal, but it cannot be continued (it may be expired or have reached its maximum duration). Ignoring the external session.',
+				)
+			}
+		} else if (window.SplunkRumNative && window.SplunkRumNative.getNativeSessionId) {
+			const externalSessionId = window.SplunkRumNative.getNativeSessionId()
+
+			return {
+				expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
+				id: externalSessionId,
+				source: 'external',
+				startTime: Date.now(),
+				state: 'active',
+			}
+		}
+
+		return null
 	}
 
-	static hasNativeSessionId() {
-		return Boolean(
-			typeof window !== 'undefined' && window.SplunkRumNative && window.SplunkRumNative.getNativeSessionId,
+	static hasExternalSession(): boolean {
+		if (typeof window === 'undefined') {
+			return false
+		}
+
+		const isNativeSessionPresent = Boolean(window.SplunkRumNative && window.SplunkRumNative.getNativeSessionId)
+		const isExternalSessionPresent = Boolean(
+			window.SplunkRumExternal && window.SplunkRumExternal.getSessionMetadata(),
 		)
+
+		return isNativeSessionPresent || isExternalSessionPresent
 	}
 
 	getSessionId() {
 		this.ensureSessionStateIsUpToDate()
-		return SessionManager.getNativeSessionId() ?? this.session.id
+		return SessionManager.getExternalSession()?.id ?? this.session.id
+	}
+
+	getSessionMetadata(): {
+		sessionId: string
+		sessionLastActivity: number
+		sessionStart: number
+	} | null {
+		this.ensureSessionStateIsUpToDate()
+		const session = this.session
+
+		return {
+			sessionId: session.id,
+			sessionLastActivity: session.expiresAt - SESSION_INACTIVITY_TIMEOUT_MS,
+			sessionStart: session.startTime,
+		}
 	}
 
 	getSessionState() {
@@ -121,7 +190,7 @@ export class SessionManager {
 		}
 
 		this.isStarted = true
-		if (SessionManager.hasNativeSessionId()) {
+		if (SessionManager.hasExternalSession()) {
 			this.attachNativeSessionWatch()
 		} else {
 			this.attachUserActivityListeners()
@@ -192,16 +261,13 @@ export class SessionManager {
 	private attachNativeSessionWatch() {
 		// eslint-disable-next-line unicorn/consistent-function-scoping
 		const nativeSessionWatch = () => {
-			const nativeSessionId = SessionManager.getNativeSessionId()
+			const externalSession = SessionManager.getExternalSession()
 			const session = this.session
 
-			if (nativeSessionId) {
+			if (externalSession) {
 				this.session = {
 					...session,
-					expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
-					id: nativeSessionId,
-					source: 'native',
-					state: 'active',
+					...externalSession,
 				}
 			}
 		}
@@ -285,7 +351,7 @@ export class SessionManager {
 			return
 		}
 
-		if (SessionManager.hasNativeSessionId()) {
+		if (SessionManager.hasExternalSession()) {
 			diag.debug('SessionManager: Native session ID detected. Session extension or creation is managed natively.')
 			return
 		}

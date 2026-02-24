@@ -876,7 +876,7 @@ describe('can produce click events', () => {
 	})
 })
 
-describe('native session handling', () => {
+describe('external session handling', () => {
 	let capturer: SpanCapturer
 
 	beforeEach(() => {
@@ -885,13 +885,19 @@ describe('native session handling', () => {
 
 	afterEach(() => {
 		deinit()
-		window.SplunkRumNative = undefined
+		window.SplunkRumExternal = undefined
 	})
 
-	it('should not create session.start span for native sessions', async () => {
-		// Mock native SDK
-		window.SplunkRumNative = {
-			getNativeSessionId: vi.fn().mockReturnValue('native-session-id-123'),
+	it('should not create session.start span for external sessions', async () => {
+		const now = Date.now()
+
+		window.SplunkRumExternal = {
+			getSessionMetadata: vi.fn().mockReturnValue({
+				anonymousUserId: 'external-anon-id-123',
+				sessionId: 'external-session-id-123',
+				sessionLastActivity: now,
+				sessionStart: now - 1000,
+			}),
 		}
 
 		SplunkRum.init({
@@ -909,15 +915,14 @@ describe('native session handling', () => {
 		const sessionStartSpan = capturer.spans.find((span) => span.name === 'session.start')
 		expect(sessionStartSpan).toBeUndefined()
 
-		// Verify session state has native source
+		// Verify session state has external source
 		const sessionState = SplunkRum.getSessionState()
-		expect(sessionState?.source).toBe('native')
-		expect(sessionState?.id).toBe('native-session-id-123')
+		expect(sessionState?.source).toBe('external')
+		expect(sessionState?.id).toBe('external-session-id-123')
 	})
 
 	it('should create session.start span for web sessions', async () => {
-		// No native SDK present
-		window.SplunkRumNative = undefined
+		window.SplunkRumExternal = undefined
 
 		SplunkRum.init({
 			applicationName: 'test-app',

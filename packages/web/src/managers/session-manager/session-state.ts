@@ -19,7 +19,7 @@
 export type SessionState = {
 	expiresAt: number
 	id: string
-	source: 'native' | 'web'
+	source: 'external' | 'web'
 	startTime: number
 	state: 'active' | 'expired-inactivity' | 'expired-duration'
 }
