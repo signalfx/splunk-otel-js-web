@@ -18,7 +18,7 @@
 
 import { diag } from '@opentelemetry/api'
 
-import { ExternalSessionMetadata } from '../../types/external-session-metadata'
+import { ExternalSessionMetadata, isValidExternalSessionMetadata } from '../../types/external-session-metadata'
 import { generateId } from '../../utils'
 import { isTrustedEvent } from '../../utils/is-trusted-event'
 import { Observable } from '../../utils/observable'
@@ -113,33 +113,41 @@ export class SessionManager {
 			return null
 		}
 
-		if (window.SplunkRumExternal && window.SplunkRumExternal.getSessionMetadata) {
-			const sessionMetadata = window.SplunkRumExternal.getSessionMetadata()
-			const externalSession: SessionState = {
-				expiresAt: sessionMetadata.sessionLastActivity + SESSION_INACTIVITY_TIMEOUT_MS,
-				id: sessionMetadata.sessionId,
-				source: 'external',
-				startTime: sessionMetadata.sessionStart,
-				state: 'active',
-			}
+		try {
+			if (window.SplunkRumExternal && window.SplunkRumExternal.getSessionMetadata) {
+				const sessionMetadata = window.SplunkRumExternal.getSessionMetadata()
+				if (!isValidExternalSessionMetadata(sessionMetadata)) {
+					return null
+				}
 
-			if (SessionManager.canContinueUsingSession(externalSession)) {
-				return externalSession
-			} else {
-				diag.warn(
-					'Retrieved session from SplunkRumExternal, but it cannot be continued (it may be expired or have reached its maximum duration). Ignoring the external session.',
-				)
-			}
-		} else if (window.SplunkRumNative && window.SplunkRumNative.getNativeSessionId) {
-			const externalSessionId = window.SplunkRumNative.getNativeSessionId()
+				const externalSession: SessionState = {
+					expiresAt: sessionMetadata.sessionLastActivity + SESSION_INACTIVITY_TIMEOUT_MS,
+					id: sessionMetadata.sessionId,
+					source: 'external',
+					startTime: sessionMetadata.sessionStart,
+					state: 'active',
+				}
 
-			return {
-				expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
-				id: externalSessionId,
-				source: 'external',
-				startTime: Date.now(),
-				state: 'active',
+				if (SessionManager.canContinueUsingSession(externalSession)) {
+					return externalSession
+				} else {
+					diag.warn(
+						'Retrieved session from SplunkRumExternal, but it cannot be continued (it may be expired or have reached its maximum duration). Ignoring the external session.',
+					)
+				}
+			} else if (window.SplunkRumNative && window.SplunkRumNative.getNativeSessionId) {
+				const externalSessionId = window.SplunkRumNative.getNativeSessionId()
+
+				return {
+					expiresAt: Date.now() + SESSION_INACTIVITY_TIMEOUT_MS,
+					id: externalSessionId,
+					source: 'external',
+					startTime: Date.now(),
+					state: 'active',
+				}
 			}
+		} catch (error) {
+			diag.warn('Error while retrieving external session', error)
 		}
 
 		return null
