@@ -28,7 +28,7 @@ jobs:
 
             - name: Upload blob report to GitHub Actions Artifacts
               if: ${{ !cancelled() }}
-              uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+              uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
               with:
                   name: blob-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
                   path: packages/integration-tests/blob-report
@@ -39,7 +39,7 @@ jobs:
               run: pnpm run test:unit --browser.name=${{ matrix.browser }}
 
             - name: Upload test:unit report
-              uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+              uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
               if: ${{ !cancelled() && matrix.browser != 'edge' && matrix.browser != 'chrome' }}
               with:
                   name: vitest-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
@@ -71,7 +71,7 @@ jobs:
 
             - name: Upload blob report to GitHub Actions Artifacts
               if: ${{ !cancelled() }}
-              uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+              uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
               with:
                   name: blob-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
                   path: packages/integration-tests/blob-report
@@ -81,7 +81,7 @@ jobs:
               run: pnpm run test:unit --browser.name=${{ matrix.browser }}
 
             - name: Upload test:unit report
-              uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+              uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
               if: ${{ !cancelled() }}
               with:
                   name: vitest-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
@@ -113,7 +113,7 @@ jobs:
               working-directory: ./packages/integration-tests
 
             - name: Upload HTML report
-              uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+              uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
               with:
                   name: playwright-report--attempt-${{ github.run_attempt }}
                   path: packages/integration-tests/playwright-report
