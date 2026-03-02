@@ -250,7 +250,13 @@ describe('SessionManager', () => {
 						startTime: expect.any(Number),
 						state: 'active',
 					},
-					previousState: null,
+					previousState: {
+						expiresAt: expect.any(Number),
+						id: expect.any(String),
+						source: 'web',
+						startTime: expect.any(Number),
+						state: 'active',
+					},
 				}),
 			)
 		})
@@ -508,7 +514,13 @@ describe('SessionManager', () => {
 						startTime: expect.any(Number),
 						state: 'active',
 					},
-					previousState: null,
+					previousState: {
+						expiresAt: expect.any(Number),
+						id: expect.any(String),
+						source: 'web',
+						startTime: expect.any(Number),
+						state: 'active',
+					},
 				}),
 			)
 		})
