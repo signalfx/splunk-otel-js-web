@@ -20,11 +20,13 @@ import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instr
 import { Metric, onCLS, onINP, onLCP, ReportOpts } from 'web-vitals'
 
 import { VERSION } from '../version'
+import { SplunkDocumentLoadInstrumentation } from './splunk-document-load-instrumentation'
 
 const MODULE_NAME = 'splunk-webvitals'
 
 export interface SplunkWebVitalsInstrumentationConfig extends InstrumentationConfig {
 	cls?: boolean | ReportOpts
+	docLoadInstrumentation?: SplunkDocumentLoadInstrumentation
 	inp?: boolean | ReportOpts
 	lcp?: boolean | ReportOpts
 }
@@ -55,7 +57,7 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 		if (this._config.cls !== false) {
 			onCLS(
 				(metric) => {
-					this.reportMetric('cls', metric)
+					void this.reportMetric('cls', metric)
 				},
 				typeof this._config.cls === 'object' ? this._config.cls : undefined,
 			)
@@ -64,7 +66,7 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 		if (this._config.lcp !== false) {
 			onLCP(
 				(metric) => {
-					this.reportMetric('lcp', metric)
+					void this.reportMetric('lcp', metric)
 				},
 				typeof this._config.lcp === 'object' ? this._config.lcp : undefined,
 			)
@@ -73,7 +75,7 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 		if (this._config.inp !== false) {
 			onINP(
 				(metric) => {
-					this.reportMetric('inp', metric)
+					void this.reportMetric('inp', metric)
 				},
 				typeof this._config.inp === 'object' ? this._config.inp : undefined,
 			)
@@ -82,7 +84,7 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 
 	init(): void {}
 
-	private reportMetric(name: string, metric: Metric): void {
+	private async reportMetric(name: string, metric: Metric): Promise<void> {
 		if (!this.isRecording) {
 			return
 		}
@@ -93,10 +95,23 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 
 		this.reported[name] = true
 
+		const docLoadPromise = this._config.docLoadInstrumentation?.getDocLoadSpan()
+		const docLoadSpan = await docLoadPromise
+
 		const value = metric.value
 		const now = Date.now()
 
-		const span = this.tracer.startSpan('webvitals', { startTime: now })
+		const span = this.tracer.startSpan('webvitals', { startTime: docLoadSpan?.startTime ?? now })
+		const docLoadLocation = docLoadSpan?.attributes['location.href']
+		if (docLoadLocation) {
+			span.setAttribute('location.href', docLoadLocation)
+		}
+
+		const docLoadHttpUrl = docLoadSpan?.attributes['http.url']
+		if (docLoadHttpUrl) {
+			span.setAttribute('http.url', docLoadHttpUrl)
+		}
+
 		span.setAttribute(name, value)
 		span.end(now)
 	}
