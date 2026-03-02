@@ -37,7 +37,7 @@
 		"dist/esm/**/*.d.ts"
 	],
 	"dependencies": {
-		"axios": "^1.13.4",
+		"axios": "^1.13.6",
 		"form-data": "^4.0.5",
 		"unplugin": "^3.0.0"
 	},
