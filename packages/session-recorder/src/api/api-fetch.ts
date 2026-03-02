@@ -92,7 +92,7 @@ export const apiFetch = async <T>(
 	let responseData = null
 	let fetchStart = performance.now()
 	let fetchTotalMs = 0
-	let finalRetries = -1
+	let finalRetries: number
 	let fetchError: Error | undefined
 
 	for (let counter = 1; counter <= retryCount; counter++) {
@@ -297,6 +297,7 @@ export const apiFetch = async <T>(
 						: new Error(`Could not convert data to JSON in ${finalUrl.href} request`)
 				throw errorToThrow
 			} else if (throwOnConvert) {
+				// eslint-disable-next-line preserve-caught-error
 				throw new Error(`Unknown error happened during API call. ${JSON.stringify(error)}`)
 			} else {
 				break

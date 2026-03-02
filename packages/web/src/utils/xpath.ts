@@ -39,7 +39,7 @@ export function getElementXPath(target: Node, optimised: boolean): string {
 function getNodeValue(target: HTMLElement, optimised: boolean): string {
 	const nodeType = target.nodeType
 	const index = getNodeIndex(target)
-	let nodeValue = ''
+	let nodeValue: string
 	switch (nodeType) {
 		case Node.ELEMENT_NODE: {
 			const id = target.getAttribute('id')
