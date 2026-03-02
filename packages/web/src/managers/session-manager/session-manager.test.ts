@@ -468,7 +468,7 @@ describe('SessionManager', () => {
 			window.dispatchEvent(keydownEvent)
 
 			expect(diagDebugSpy).toHaveBeenCalledWith(
-				'SessionManager: Native session ID detected. Session extension or creation is managed natively.',
+				'SessionManager: External session ID detected. Session extension or creation is managed externally.',
 			)
 		})
 	})
