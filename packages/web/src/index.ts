@@ -222,7 +222,7 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	 */
 	getSessionId: () => string | undefined
 
-	getSessionMetadata: () => ExternalSessionMetadata | null
+	getSessionMetadata: () => ExternalSessionMetadata
 
 	getSessionState: () => SessionState | undefined
 
@@ -340,15 +340,20 @@ export const SplunkRum: SplunkOtelWebType = {
 		}
 
 		const session = this.sessionManager.getSessionMetadata()
-		const anonymousUserId = this.getAnonymousId()
-		if (!session || !anonymousUserId) {
+		if (!session) {
 			return null
 		}
 
-		return {
-			anonymousUserId,
+		const metadata: ExternalSessionMetadata = {
 			...session,
 		}
+
+		const anonymousUserId = this.getAnonymousId()
+		if (anonymousUserId) {
+			metadata.anonymousUserId = anonymousUserId
+		}
+
+		return metadata
 	},
 
 	getSessionState() {

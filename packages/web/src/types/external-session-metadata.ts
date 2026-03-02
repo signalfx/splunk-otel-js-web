@@ -17,7 +17,7 @@
  */
 
 export type ExternalSessionMetadata = {
-	anonymousUserId: string
+	anonymousUserId?: string
 	sessionId: string
 	sessionLastActivity: number
 	sessionStart: number
