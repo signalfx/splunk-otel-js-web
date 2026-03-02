@@ -564,13 +564,18 @@ export const SplunkRum: SplunkOtelWebType = {
 				}
 			})
 
-			this.attributesProcessor = new SplunkSpanAttributesProcessor(this.sessionManager, this.userManager, {
-				...(deploymentEnvironment
-					? { 'deployment.environment': deploymentEnvironment, 'environment': deploymentEnvironment }
-					: {}),
-				...(version ? { 'app.version': version } : {}),
-				...processedOptions.globalAttributes,
-			})
+			this.attributesProcessor = new SplunkSpanAttributesProcessor(
+				this.sessionManager,
+				this.userManager,
+				{
+					...(deploymentEnvironment
+						? { 'deployment.environment': deploymentEnvironment, 'environment': deploymentEnvironment }
+						: {}),
+					...(version ? { 'app.version': version } : {}),
+					...processedOptions.globalAttributes,
+				},
+				processedOptions._experimental_discardDataAfterInactivity,
+			)
 
 			const spanProcessors: SpanProcessor[] = [this.attributesProcessor]
 

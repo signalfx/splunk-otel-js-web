@@ -272,7 +272,12 @@ const SplunkRumRecorder = {
 					return
 				}
 
-				if (currentState.state === 'expired-duration' && recorder) {
+				if (
+					(currentState.state === 'expired-duration' ||
+						(currentState.state === 'expired-inactivity' &&
+							SplunkRum._processedOptions?._experimental_discardDataAfterInactivity)) &&
+					recorder
+				) {
 					recorder?.stop()
 					recorder?.destroy()
 					recorder = undefined
