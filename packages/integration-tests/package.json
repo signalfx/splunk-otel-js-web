@@ -25,10 +25,10 @@
 		"@splunk/rum-build-plugins": "workspace:*",
 		"@types/ejs": "^3.1.5",
 		"@types/express": "^5.0.6",
-		"@types/node": "^25.2.0",
+		"@types/node": "^25.3.3",
 		"cors": "^2.8.6",
 		"ejs": "^4.0.1",
-		"nodemon": "^3.1.11",
+		"nodemon": "^3.1.14",
 		"playwright": "^1.58.1"
 	},
 	"bugs": {
