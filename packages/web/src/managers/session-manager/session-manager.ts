@@ -160,7 +160,7 @@ export class SessionManager {
 
 		const isNativeSessionPresent = Boolean(window.SplunkRumNative && window.SplunkRumNative.getNativeSessionId)
 		const isExternalSessionPresent = Boolean(
-			window.SplunkRumExternal && window.SplunkRumExternal.getSessionMetadata(),
+			window.SplunkRumExternal && window.SplunkRumExternal.getSessionMetadata,
 		)
 
 		return isNativeSessionPresent || isExternalSessionPresent
@@ -199,7 +199,7 @@ export class SessionManager {
 
 		this.isStarted = true
 		if (SessionManager.hasExternalSession()) {
-			this.attachNativeSessionWatch()
+			this.attachExternalSessionWatcher()
 		} else {
 			this.attachUserActivityListeners()
 			this.attachStorageWatch()
@@ -266,9 +266,9 @@ export class SessionManager {
 		}
 	}
 
-	private attachNativeSessionWatch() {
+	private attachExternalSessionWatcher() {
 		// eslint-disable-next-line unicorn/consistent-function-scoping
-		const nativeSessionWatch = () => {
+		const externalSessionWatcher = () => {
 			const externalSession = SessionManager.getExternalSession()
 			const session = this.session
 
@@ -279,7 +279,7 @@ export class SessionManager {
 				}
 			}
 		}
-		const intervalId = setInterval(nativeSessionWatch, 1000)
+		const intervalId = setInterval(externalSessionWatcher, 1000)
 
 		this.stopCallbacks.push(() => clearInterval(intervalId))
 	}
@@ -360,7 +360,9 @@ export class SessionManager {
 		}
 
 		if (SessionManager.hasExternalSession()) {
-			diag.debug('SessionManager: Native session ID detected. Session extension or creation is managed natively.')
+			diag.debug(
+				'SessionManager: External session ID detected. Session extension or creation is managed externally.',
+			)
 			return
 		}
 
