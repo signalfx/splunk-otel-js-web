@@ -13,7 +13,7 @@
 		"@rsbuild/plugin-react": "^1.4.5",
 		"@splunk/otel": "4.3.0",
 		"@splunk/otel-web": "workspace:*",
-		"@types/react": "^19.2.10",
+		"@types/react": "^19.2.14",
 		"@types/react-dom": "^19.2.3",
 		"body-parser": "2.2.2",
 		"cors": "2.8.6",
