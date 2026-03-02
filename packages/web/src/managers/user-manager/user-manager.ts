@@ -36,7 +36,12 @@ export class UserManager {
 		anonymousId?: string,
 	) {
 		if (userTrackingMode === 'anonymousTracking') {
-			this.anonymousId = anonymousId
+			if (anonymousId) {
+				this.anonymousId = anonymousId
+				this.persistAnonymousId(anonymousId)
+			} else {
+				this.getAnonymousIdIfEnabled()
+			}
 		}
 	}
 
