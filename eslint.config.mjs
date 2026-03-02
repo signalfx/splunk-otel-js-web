@@ -341,6 +341,7 @@ const config = [
 			'**/artifacts/',
 			'examples/nextjs/next-env.d.ts',
 			'examples/electron/.webpack/',
+			'**/resource-observer/assets/**/*.js',
 		],
 	},
 ]

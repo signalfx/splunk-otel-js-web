@@ -168,8 +168,7 @@ export default class OTLPLogExporter {
 	}
 
 	exportQueuedLogs(): void {
-		let logs: QueuedLog[] = []
-		logs = getQueuedLogs() ?? []
+		const logs: QueuedLog[] = getQueuedLogs() ?? []
 
 		// Remove all logs and add only ones that are relevant before sending
 		removeQueuedLogs()
