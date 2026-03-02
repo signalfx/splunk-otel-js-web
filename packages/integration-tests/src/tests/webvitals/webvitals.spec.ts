@@ -56,6 +56,39 @@ test.describe('web vitals', () => {
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})
 
+	test('webvitals span inherits documentLoad startTime and URL even after SPA navigation', async ({
+		browserName,
+		recordPage,
+	}) => {
+		if (browserName === 'webkit' || browserName === 'firefox') {
+			test.skip()
+		}
+
+		const docLoadUrl = 'http://localhost:3000/webvitals/webvitals.ejs'
+
+		await recordPage.goTo('/webvitals/webvitals.ejs')
+
+		await recordPage.evaluate(() => {
+			history.pushState({}, '', '/spa-navigated-away')
+		})
+
+		await recordPage.locator('#clicky').click()
+		await expect(recordPage.locator('#p2')).toBeAttached()
+
+		await recordPage.changeVisibilityInTab('hidden')
+		await recordPage.waitForTimeoutAndFlushData(1000)
+
+		const docLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'documentLoad')
+		const webvitalsSpan = recordPage.receivedSpans.find((span) => span.tags.lcp !== undefined)
+
+		expect(docLoadSpan).toBeDefined()
+		expect(webvitalsSpan).toBeDefined()
+
+		expect(webvitalsSpan!.timestamp).toBe(docLoadSpan!.timestamp)
+		expect(webvitalsSpan!.tags['location.href']).toBe(docLoadUrl)
+		expect(webvitalsSpan!.tags['http.url']).toBe(docLoadUrl)
+	})
+
 	test('webvitals - specific metrics disabled', async ({ browserName, recordPage }) => {
 		if (browserName === 'webkit' || browserName === 'firefox') {
 			test.skip()
