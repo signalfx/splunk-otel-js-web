@@ -85,6 +85,7 @@ export { SplunkZipkinExporter } from './exporters/zipkin'
 export * from './session-based-sampler'
 export * from './splunk-web-tracer-provider'
 import { PrivacyManager, SessionManager, SessionState, StorageManager, UserManager } from './managers'
+import { ExternalSessionMetadata, isValidExternalSessionMetadata } from './types/external-session-metadata'
 import { getElementXPath, getTextFromNode } from './utils/index'
 
 interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
@@ -121,6 +122,7 @@ const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
 	instrumentations: {},
 	persistence: 'cookie',
 	rumAccessToken: undefined,
+	sessionMetadata: undefined,
 	spanProcessor: {
 		factory: (exporter, config) => new BatchSpanProcessor(exporter, config),
 	},
@@ -219,6 +221,8 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	 * This method returns current session ID
 	 */
 	getSessionId: () => string | undefined
+
+	getSessionMetadata: () => ExternalSessionMetadata
 
 	getSessionState: () => SessionState | undefined
 
@@ -328,6 +332,28 @@ export const SplunkRum: SplunkOtelWebType = {
 				error,
 			})
 		}
+	},
+
+	getSessionMetadata(): ExternalSessionMetadata {
+		if (!inited || !this.sessionManager) {
+			return null
+		}
+
+		const session = this.sessionManager.getSessionMetadata()
+		if (!session) {
+			return null
+		}
+
+		const metadata: ExternalSessionMetadata = {
+			...session,
+		}
+
+		const anonymousUserId = this.getAnonymousId()
+		if (anonymousUserId) {
+			metadata.anonymousUserId = anonymousUserId
+		}
+
+		return metadata
 	},
 
 	getSessionState() {
@@ -514,10 +540,20 @@ export const SplunkRum: SplunkOtelWebType = {
 			})
 
 			this.resource = new Resource(resourceAttrs)
-			this.sessionManager = new SessionManager(storageManager)
-			this.userManager = new UserManager(userTrackingMode, storageManager)
+
+			let sessionMetadataFromOptions: NonNullable<ExternalSessionMetadata> | undefined
+			if (processedOptions.sessionMetadata && isValidExternalSessionMetadata(processedOptions.sessionMetadata)) {
+				sessionMetadataFromOptions = processedOptions.sessionMetadata
+			}
+
+			this.sessionManager = new SessionManager(storageManager, sessionMetadataFromOptions)
+			this.userManager = new UserManager(
+				userTrackingMode,
+				storageManager,
+				sessionMetadataFromOptions?.anonymousUserId,
+			)
 			_sessionStateUnsubscribe = this.sessionManager.subscribe(({ currentState, previousState }) => {
-				if (currentState.isNew && currentState.source !== 'native') {
+				if (currentState.isNew && currentState.source !== 'external') {
 					provider.getTracer('splunk-sessions').startSpan('session.start').end()
 				}
 

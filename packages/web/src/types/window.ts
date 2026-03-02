@@ -15,11 +15,19 @@
  * limitations under the License.
  *
  */
+
+import { ExternalSessionMetadata } from './external-session-metadata'
+
 declare global {
 	interface Window {
+		SplunkRumExternal?: {
+			getSessionMetadata: () => NonNullable<ExternalSessionMetadata>
+		}
+
 		SplunkRumNative?: {
 			getNativeSessionId: () => string
 		}
+
 		__splunkRumIntegrationTestSessionId?: string
 	}
 
@@ -51,6 +59,3 @@ declare global {
 		}
 	}
 }
-
-// eslint-disable-next-line
-export {}

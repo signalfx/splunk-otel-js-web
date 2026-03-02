@@ -4,9 +4,15 @@
        <meta charset="UTF-8">
        <title>Native</title>
        <script>
-               window.SplunkRumNative = {
-                       getNativeSessionId: function() {
-                               return '12341234123412341234123412341234';
+               window.SplunkRumExternal = {
+                       getSessionMetadata: function() {
+                               const now = Date.now();
+                               return {
+                                       anonymousUserId: 'external-anonymous-user-id',
+                                       sessionId: '12341234123412341234123412341234',
+                                       sessionLastActivity: now,
+                                       sessionStart: now - 1000
+                               };
                        }
                };
        </script>

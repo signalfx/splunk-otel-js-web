@@ -19,6 +19,8 @@
 import { diag } from '@opentelemetry/api'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { ExternalSessionMetadata } from '../../types/external-session-metadata'
+
 import { StorageManager } from '../storage'
 import { SESSION_ID_LENGTH, SESSION_INACTIVITY_TIMEOUT_MS } from './constants'
 import { SessionManager } from './session-manager'
@@ -27,10 +29,24 @@ vi.mock('../../utils/is-trusted-event', () => ({
 	isTrustedEvent: vi.fn(() => true),
 }))
 
+function createExternalSessionMetadata(
+	overrides: Partial<NonNullable<ExternalSessionMetadata>> = {},
+): NonNullable<ExternalSessionMetadata> {
+	const now = Date.now()
+
+	return {
+		anonymousUserId: 'external-anonymous-id',
+		sessionId: 'external-session-id',
+		sessionLastActivity: now,
+		sessionStart: now - 1000,
+		...overrides,
+	}
+}
+
 declare global {
 	interface Window {
-		SplunkRumNative?: {
-			getNativeSessionId(): string
+		SplunkRumExternal?: {
+			getSessionMetadata(): NonNullable<ExternalSessionMetadata>
 		}
 	}
 }
@@ -40,7 +56,7 @@ describe('SessionManager', () => {
 	let storageManager: StorageManager
 
 	beforeEach(() => {
-		window.SplunkRumNative = undefined
+		window.SplunkRumExternal = undefined
 		storageManager = new StorageManager({
 			persistence: 'cookie',
 		})
@@ -103,9 +119,11 @@ describe('SessionManager', () => {
 			expect(sessionManager.getSessionId()).toHaveLength(SESSION_ID_LENGTH)
 		})
 
-		it('should use native session when available', () => {
-			window.SplunkRumNative = {
-				getNativeSessionId: vi.fn().mockReturnValue('native-session-id'),
+		it('should use external session when available', () => {
+			window.SplunkRumExternal = {
+				getSessionMetadata: vi
+					.fn()
+					.mockReturnValue(createExternalSessionMetadata({ sessionId: 'external-session-id' })),
 			}
 
 			const persistedSession = {
@@ -122,40 +140,42 @@ describe('SessionManager', () => {
 
 			sessionManager = new SessionManager(storageManager)
 
-			expect(sessionManager.getSessionId()).toBe('native-session-id')
+			expect(sessionManager.getSessionId()).toBe('external-session-id')
 		})
 	})
 
 	describe('Static Methods', () => {
-		describe('getNativeSessionId', () => {
-			it('should return null when SplunkRumNative is not available', () => {
-				window.SplunkRumNative = undefined
+		describe('getExternalSession', () => {
+			it('should return null when SplunkRumExternal is not available', () => {
+				window.SplunkRumExternal = undefined
 
-				expect(SessionManager.getNativeSessionId()).toBeNull()
+				expect(SessionManager.getExternalSession()).toBeNull()
 			})
 
-			it('should return native session ID when available', () => {
-				window.SplunkRumNative = {
-					getNativeSessionId: vi.fn().mockReturnValue('native-id'),
+			it('should return external session when available', () => {
+				window.SplunkRumExternal = {
+					getSessionMetadata: vi
+						.fn()
+						.mockReturnValue(createExternalSessionMetadata({ sessionId: 'external-id' })),
 				}
 
-				expect(SessionManager.getNativeSessionId()).toBe('native-id')
+				expect(SessionManager.getExternalSession()?.id).toBe('external-id')
 			})
 		})
 
-		describe('hasNativeSessionId', () => {
-			it('should return false when SplunkRumNative is not available', () => {
-				window.SplunkRumNative = undefined
+		describe('hasExternalSession', () => {
+			it('should return false when SplunkRumExternal is not available', () => {
+				window.SplunkRumExternal = undefined
 
-				expect(SessionManager.hasNativeSessionId()).toBe(false)
+				expect(SessionManager.hasExternalSession()).toBe(false)
 			})
 
-			it('should return true when SplunkRumNative is available', () => {
-				window.SplunkRumNative = {
-					getNativeSessionId: vi.fn(),
+			it('should return true when SplunkRumExternal is available', () => {
+				window.SplunkRumExternal = {
+					getSessionMetadata: vi.fn().mockReturnValue(createExternalSessionMetadata()),
 				}
 
-				expect(SessionManager.hasNativeSessionId()).toBe(true)
+				expect(SessionManager.hasExternalSession()).toBe(true)
 			})
 		})
 	})
@@ -427,13 +447,15 @@ describe('SessionManager', () => {
 			expect(sessionManager.getSessionId()).not.toBe('persisted-session-id')
 		})
 
-		it('should not extend session when native session is available', () => {
+		it('should not extend session when external session is available', () => {
 			const diagDebugSpy = vi.spyOn(diag, 'debug')
 
 			sessionManager.start()
 
-			window.SplunkRumNative = {
-				getNativeSessionId: vi.fn().mockReturnValue('native-id'),
+			window.SplunkRumExternal = {
+				getSessionMetadata: vi
+					.fn()
+					.mockReturnValue(createExternalSessionMetadata({ sessionId: 'external-id' })),
 			}
 
 			const keydownEvent = new KeyboardEvent('keydown', {
@@ -446,7 +468,7 @@ describe('SessionManager', () => {
 			window.dispatchEvent(keydownEvent)
 
 			expect(diagDebugSpy).toHaveBeenCalledWith(
-				'SessionManager: Native session ID detected. Session extension or creation is managed natively.',
+				'SessionManager: External session ID detected. Session extension or creation is managed externally.',
 			)
 		})
 	})
