@@ -2,6 +2,22 @@
 
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
+## 2.3.0
+
+- `@splunk/otel-web`
+    - **External session support** [#1648](https://github.com/signalfx/splunk-otel-js-web/pull/1648)
+        - Enables sharing a single RUM session between mobile and browser agents by transferring session metadata across application boundaries
+        - New `sessionMetadata` configuration parameter to initialize with externally provided session data
+        - New `SplunkRum.getSessionMetadata()` method to expose current session metadata for transfer
+        - Prevents fragmented sessions when users navigate from native app contexts to browser environments
+    - **Introduce `_experimental_discardDataAfterInactivity`** [#1670](https://github.com/signalfx/splunk-otel-js-web/pull/1670)
+        - Experimental flag to discard all data once user activity expires after 15 minutes of inactivity
+        - Also fixes a bug involving missing previous session state
+    - **Initialize anonymous ID on load** [#1674](https://github.com/signalfx/splunk-otel-js-web/pull/1674)
+        - Fixed a race condition where the anonymous user ID was persisted lazily, causing a second tab to generate its own ID if opened before the first span fired
+
+- **Updated dependencies** [#1649](https://github.com/signalfx/splunk-otel-js-web/pull/1649), [#1650](https://github.com/signalfx/splunk-otel-js-web/pull/1650), [#1651](https://github.com/signalfx/splunk-otel-js-web/pull/1651), [#1652](https://github.com/signalfx/splunk-otel-js-web/pull/1652), [#1654](https://github.com/signalfx/splunk-otel-js-web/pull/1654), [#1655](https://github.com/signalfx/splunk-otel-js-web/pull/1655), [#1656](https://github.com/signalfx/splunk-otel-js-web/pull/1656), [#1657](https://github.com/signalfx/splunk-otel-js-web/pull/1657), [#1658](https://github.com/signalfx/splunk-otel-js-web/pull/1658), [#1659](https://github.com/signalfx/splunk-otel-js-web/pull/1659), [#1660](https://github.com/signalfx/splunk-otel-js-web/pull/1660), [#1661](https://github.com/signalfx/splunk-otel-js-web/pull/1661), [#1663](https://github.com/signalfx/splunk-otel-js-web/pull/1663), [#1664](https://github.com/signalfx/splunk-otel-js-web/pull/1664), [#1665](https://github.com/signalfx/splunk-otel-js-web/pull/1665), [#1666](https://github.com/signalfx/splunk-otel-js-web/pull/1666), [#1667](https://github.com/signalfx/splunk-otel-js-web/pull/1667), [#1668](https://github.com/signalfx/splunk-otel-js-web/pull/1668), [#1669](https://github.com/signalfx/splunk-otel-js-web/pull/1669), [#1672](https://github.com/signalfx/splunk-otel-js-web/pull/1672)
+
 ## 2.2.0
 
 - `@splunk/otel-web`
