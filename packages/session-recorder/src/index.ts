@@ -304,9 +304,6 @@ const SplunkRumRecorder = {
 						}),
 					})
 					recorder.start()
-
-					// Log span for new session
-					createSessionReplaySpanIfAllowed(SpanName.IS_RECORDING, currentState.id)
 				}
 			})
 
