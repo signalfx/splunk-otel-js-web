@@ -1,5 +1,5 @@
 {
-  "https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.6.7/background-service.html": { "integrity": "sha512-nG+L/5fTm5UEe1j2+U09sQFvUNWfdiHM3MZ0PH/HE0inDrkxQ51lGTfgnaEoNto4BjlSG6oVfZ/pqBJ5Z0+l6Q==", "contentType": "text/html" },
-  "https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.6.7/session-replay.module.legacy.min.js": { "integrity": "sha512-EhDbrl2q0c8wiScU6vXYIsaQgyGAFMw7hwuxhOEUwi8rW52IIUYJx7QMNREEXWgwCV+667MyGMKb72W3RaAmmw==", "contentType": "text/javascript" },
+  "https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.6.8/background-service.html": { "integrity": "sha512-9SpXo+pJpbkkD5ReGrnaWFd7/ALNv9TLAWtYN8Bu6bld/NBfGh/MRwtZ8+Cq7bBWunGMfXVSJXi0Wwb9KN9RNg==", "contentType": "text/html" },
+  "https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.6.8/session-replay.module.legacy.min.js": { "integrity": "sha512-WQUWrgxLC6Z78aR/lrgDBIshioANQgZX/wSTHEI4bCN6rBVn/T+lkhUAGDyukF0CqmKlWkLBwib6b9nlYFNPYg==", "contentType": "text/javascript" },
   "version": 1
 }
