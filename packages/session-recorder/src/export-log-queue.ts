@@ -18,7 +18,7 @@
 import { JsonObject } from 'type-fest'
 
 import { log } from './log'
-import { safelyGetLocalStorage, safelyRemoveFromLocalStorage, safelySetLocalStorage } from './storage'
+import { safelyGetLocalStorage, safelyRemoveFromLocalStorage, safelySetLocalStorage } from './utils'
 
 export interface QueuedLog {
 	data: {
