@@ -16,6 +16,7 @@
  *
  */
 
+import { HrTime } from '@opentelemetry/api'
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 import { Metric, onCLS, onINP, onLCP, ReportOpts } from 'web-vitals'
 
@@ -27,6 +28,11 @@ const MODULE_NAME = 'splunk-webvitals'
 export interface SplunkWebVitalsInstrumentationConfig extends InstrumentationConfig {
 	cls?: boolean | ReportOpts
 	docLoadInstrumentation?: SplunkDocumentLoadInstrumentation
+	/**
+	 * If true, the webvitals spans will have their start time aligned with the document load span,
+	 * and will inherit the URL attributes from the document load span if available.
+	 */
+	experimental_alignWebVitalsSpansWithDocumentLoad?: boolean
 	inp?: boolean | ReportOpts
 	lcp?: boolean | ReportOpts
 }
@@ -96,23 +102,29 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 		this.reported[name] = true
 
 		const docLoadPromise = this._config.docLoadInstrumentation?.getDocLoadSpan()
-		const docLoadSpan = await docLoadPromise
 
 		const value = metric.value
 		const now = Date.now()
+		let endTime: HrTime | number = now
+		let span
+		if (this._config.experimental_alignWebVitalsSpansWithDocumentLoad) {
+			const docLoadSpan = await docLoadPromise
+			let startTime = docLoadSpan?.startTime
+			if (startTime && endTime) {
+				startTime = [startTime[0] + 1, startTime[1]]
+			}
 
-		const span = this.tracer.startSpan('webvitals', { startTime: docLoadSpan?.startTime ?? now })
-		const docLoadLocation = docLoadSpan?.attributes['location.href']
-		if (docLoadLocation) {
-			span.setAttribute('location.href', docLoadLocation)
-		}
-
-		const docLoadHttpUrl = docLoadSpan?.attributes['http.url']
-		if (docLoadHttpUrl) {
-			span.setAttribute('http.url', docLoadHttpUrl)
+			span = this.tracer.startSpan('webvitals', { startTime: startTime ?? now })
+			endTime = docLoadSpan?.startTime ?? now
+			const docLoadLocation = docLoadSpan?.attributes['location.href']
+			if (docLoadLocation) {
+				span.setAttribute('location.href', docLoadLocation)
+			}
+		} else {
+			span = this.tracer.startSpan('webvitals', { startTime: now })
 		}
 
 		span.setAttribute(name, value)
-		span.end(now)
+		span.end(endTime)
 	}
 }
