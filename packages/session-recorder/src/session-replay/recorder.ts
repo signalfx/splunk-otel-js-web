@@ -115,15 +115,18 @@ export class Recorder {
 	}
 
 	destroy() {
+		log.debug('Recorder destroy')
 		this.sessionReplay.destroy()
 		Recorder.clear()
 	}
 
 	resume() {
+		log.debug('Recorder resume')
 		this.start()
 	}
 
 	start() {
+		log.debug('Recorder started')
 		if (document.visibilityState === 'visible') {
 			void this.sessionReplay.start()
 		}
@@ -137,6 +140,7 @@ export class Recorder {
 	}
 
 	stop() {
+		log.debug('Recorder stopped')
 		this.sessionReplay.stop()
 
 		if (this.isVisibilityListenerAttached) {

@@ -19,9 +19,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { addLogToQueue, getQueuedLogs, QueuedLog } from './export-log-queue'
-import * as storage from './storage'
+import * as storage from './utils'
 
-vi.mock('./storage', () => ({
+vi.mock('./utils/storage', () => ({
 	safelyGetLocalStorage: vi.fn(),
 	safelyRemoveFromLocalStorage: vi.fn(),
 	safelySetLocalStorage: vi.fn(),
