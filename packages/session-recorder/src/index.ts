@@ -302,6 +302,7 @@ const SplunkRumRecorder = {
 							persistFailedReplayData: config.persistFailedReplayData ?? true,
 							sessionId: currentState.id,
 						}),
+						sessionId: currentState.id,
 					})
 					recorder.start()
 				}
@@ -319,6 +320,7 @@ const SplunkRumRecorder = {
 						persistFailedReplayData: config.persistFailedReplayData ?? true,
 						sessionId,
 					}),
+					sessionId,
 				})
 				recorder.start()
 			}
