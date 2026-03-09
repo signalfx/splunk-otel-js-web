@@ -16,7 +16,7 @@
  *
  */
 
-import { context, diag, Span } from '@opentelemetry/api'
+import { context, diag, SpanContext as OtelSpanContext, Span } from '@opentelemetry/api'
 import { suppressTracing } from '@opentelemetry/core'
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 import * as shimmer from 'shimmer'
@@ -108,13 +108,29 @@ export type SplunkErrorInstrumentationConfig = InstrumentationConfig & {
 }
 const DEFAULT_ON_ERROR: ErrorTransformer = (e, c) => ({ context: c, error: e })
 
+export interface ErrorReportedEvent {
+	errorMessage: string
+	errorObject: string
+	source: string
+	spanContext: OtelSpanContext
+	timestamp: number
+}
+
+export type ErrorReportedListener = (event: ErrorReportedEvent) => void
+
 export class SplunkErrorInstrumentation extends InstrumentationBase {
 	private clearingIntervalId?: ReturnType<typeof setInterval>
+
+	private errorReportedListeners: ErrorReportedListener[] = []
 
 	private throttleMap = new Map<string, number>()
 
 	constructor(protected _splunkConfig: SplunkErrorInstrumentationConfig) {
 		super(ERROR_INSTRUMENTATION_NAME, ERROR_INSTRUMENTATION_VERSION, _splunkConfig)
+	}
+
+	addErrorReportedListener(listener: ErrorReportedListener): void {
+		this.errorReportedListeners.push(listener)
 	}
 
 	disable(): void {
@@ -143,6 +159,13 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		errorArg instanceof ErrorEvent ||
 		errorArg instanceof Event ||
 		typeof errorArg === 'string'
+
+	removeErrorReportedListener(listener: ErrorReportedListener): void {
+		const idx = this.errorReportedListeners.indexOf(listener)
+		if (idx !== -1) {
+			this.errorReportedListeners.splice(idx, 1)
+		}
+	}
 
 	async report(source: string, arg: InternalErrorLike, spanContext: SpanContext): Promise<void> {
 		if (Array.isArray(arg) && arg.length === 0) {
@@ -195,14 +218,16 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 
 		span.setAttribute('component', 'error')
 		span.setAttribute('error', true)
-		span.setAttribute(
-			'error.object',
-			useful(err.name) ? err.name : err.constructor && err.constructor.name ? err.constructor.name : 'Error',
-		)
+		const errorObject = useful(err.name)
+			? err.name
+			: err.constructor && err.constructor.name
+				? err.constructor.name
+				: 'Error'
+		span.setAttribute('error.object', errorObject)
 		span.setAttribute('error.message', limitLen(msg, MESSAGE_LIMIT))
 		addStackIfUseful(span, err)
 
-		await this.endSpanWithThrottle(span, now)
+		await this.endSpanWithThrottle(span, now, source, limitLen(msg, MESSAGE_LIMIT), errorObject)
 	}
 
 	protected async reportErrorEvent(source: string, ev: ErrorEvent, spanContext: SpanContext): Promise<void> {
@@ -224,6 +249,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		this.attachSpanContext(span, ev, spanContext)
 		span.setAttribute('component', 'error')
 		span.setAttribute('error.type', ev.type)
+		let errorMessage = ev.type
 		if (ev.target) {
 			span.setAttribute('target_xpath', getElementXPath(ev.target as Node, true))
 
@@ -244,14 +270,12 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 					srcToDisplay = ` src="${srcToDisplay}"`
 				}
 
-				span.setAttribute(
-					'error.message',
-					`Failed to load <${ev.target.tagName.toLowerCase()}${srcToDisplay} />`,
-				)
+				errorMessage = `Failed to load <${ev.target.tagName.toLowerCase()}${srcToDisplay} />`
+				span.setAttribute('error.message', errorMessage)
 			}
 		}
 
-		await this.endSpanWithThrottle(span, now)
+		await this.endSpanWithThrottle(span, now, source, errorMessage, 'Event')
 	}
 
 	protected async reportString(
@@ -275,7 +299,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 			addStackIfUseful(span, firstError)
 		}
 
-		await this.endSpanWithThrottle(span, now)
+		await this.endSpanWithThrottle(span, now, source, limitLen(message, MESSAGE_LIMIT), 'String')
 	}
 
 	protected transform(error: InternalErrorLike, spanContext: SpanContext): ErrorWithContext | null {
@@ -367,7 +391,13 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		await this.report('eventListener.error', event, {})
 	}
 
-	private async endSpanWithThrottle(span: Span, endTime: number) {
+	private async endSpanWithThrottle(
+		span: Span,
+		endTime: number,
+		source?: string,
+		errorMessage?: string,
+		errorObject?: string,
+	) {
 		try {
 			// @ts-expect-error Attributes are defined but hidden
 			const spanKey = JSON.stringify([span.attributes, span.name])
@@ -381,6 +411,16 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 				}
 
 				span.end(endTime)
+
+				if (source && errorMessage) {
+					this.notifyErrorReported({
+						errorMessage,
+						errorObject: errorObject ?? 'Error',
+						source,
+						spanContext: span.spanContext(),
+						timestamp: endTime,
+					})
+				}
 			}
 		} catch (error) {
 			// If we fail to stringify attributes, just end the span without throttling
@@ -391,6 +431,16 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 
 	private errorListener = async (event: ErrorEvent) => {
 		await this.report('onerror', event, {})
+	}
+
+	private notifyErrorReported(event: ErrorReportedEvent): void {
+		for (const listener of this.errorReportedListeners) {
+			try {
+				listener(event)
+			} catch {
+				// Swallow to avoid breaking error reporting
+			}
+		}
 	}
 
 	private unhandledRejectionListener = async (event: PromiseRejectionEvent) => {

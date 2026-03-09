@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Error click console error</title>
+
+		<%- renderAgent({
+			instrumentations: {
+				frustrationSignals: {
+					errorClick: true
+				}
+			}
+		}) %>
+	</head>
+	<body>
+		<h1>Error click console error</h1>
+		<button id="btn-console-error">Console Error</button>
+
+		<script>
+			document.addEventListener('click', () => {});
+
+			document.getElementById('btn-console-error').addEventListener('click', function () {
+				console.error('console error from click');
+			});
+		</script>
+	</body>
+</html>
