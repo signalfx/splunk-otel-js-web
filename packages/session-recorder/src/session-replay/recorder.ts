@@ -58,9 +58,11 @@ export class Recorder {
 	constructor({
 		initRecorderConfig,
 		processor,
+		sessionId,
 	}: {
 		initRecorderConfig: Omit<SplunkRumRecorderConfig, 'realm' | 'recorder' | 'rumAccessToken' | 'beaconEndpoint'>
 		processor: BatchLogProcessor
+		sessionId: string
 	}) {
 		this.processor = processor
 		this.config = {
@@ -89,6 +91,7 @@ export class Recorder {
 		}
 
 		this.sessionReplay = new SessionReplay({
+			bindingKey: sessionId,
 			features: {
 				backgroundServiceSrc: backgroundServiceSrc,
 				cacheAssets: this.config.features?.cacheAssets ?? false,

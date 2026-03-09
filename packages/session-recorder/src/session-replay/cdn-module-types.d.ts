@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.6.8/session-replay.module.legacy.min.js' {
+declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.7.0/session-replay.module.legacy.min.js' {
 	type DeepPartial<T> = {
 		[P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P]
 	}
@@ -111,6 +111,7 @@ declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.6.8/sess
 	}
 
 	export interface SessionReplayConfig {
+		bindingKey?: string
 		features?: ConfigFeatures
 		logLevel?: LogLevel
 		maskAllInputs?: boolean
