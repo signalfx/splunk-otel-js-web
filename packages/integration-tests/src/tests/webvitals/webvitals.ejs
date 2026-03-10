@@ -4,7 +4,14 @@
 	<meta charset="UTF-8">
 	<title>Webvitals</title>
 
-	<%- renderAgent({ debug: true, experimental_alignWebVitalsSpansWithDocumentLoad: true }) %>
+	<%- renderAgent({
+        debug: true,
+        instrumentations: {
+            webvitals: {
+                experimental_alignWebVitalsSpansWithDocumentLoad: true,
+            }
+        },
+    }) %>
 
 	<style>
 		#container {
