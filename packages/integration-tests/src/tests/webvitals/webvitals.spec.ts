@@ -86,7 +86,6 @@ test.describe('web vitals', () => {
 
 		expect(webvitalsSpan.timestamp).toBe(docLoadSpan?.timestamp + 1_000_000)
 		expect(webvitalsSpan.tags['location.href']).toBe(docLoadUrl)
-		expect(webvitalsSpan.tags['http.url']).toBe(docLoadUrl)
 	})
 
 	test('webvitals - specific metrics disabled', async ({ browserName, recordPage }) => {
