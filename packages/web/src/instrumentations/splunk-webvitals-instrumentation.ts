@@ -16,15 +16,23 @@
  *
  */
 
+import { HrTime } from '@opentelemetry/api'
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 import { Metric, onCLS, onINP, onLCP, ReportOpts } from 'web-vitals'
 
 import { VERSION } from '../version'
+import { SplunkDocumentLoadInstrumentation } from './splunk-document-load-instrumentation'
 
 const MODULE_NAME = 'splunk-webvitals'
 
 export interface SplunkWebVitalsInstrumentationConfig extends InstrumentationConfig {
 	cls?: boolean | ReportOpts
+	docLoadInstrumentation?: SplunkDocumentLoadInstrumentation
+	/**
+	 * If true, the webvitals spans will have their start time aligned with the document load span,
+	 * and will inherit the URL attributes from the document load span if available.
+	 */
+	experimental_alignWebVitalsSpansWithDocumentLoad?: boolean
 	inp?: boolean | ReportOpts
 	lcp?: boolean | ReportOpts
 }
@@ -55,7 +63,7 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 		if (this._config.cls !== false) {
 			onCLS(
 				(metric) => {
-					this.reportMetric('cls', metric)
+					void this.reportMetric('cls', metric)
 				},
 				typeof this._config.cls === 'object' ? this._config.cls : undefined,
 			)
@@ -64,7 +72,7 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 		if (this._config.lcp !== false) {
 			onLCP(
 				(metric) => {
-					this.reportMetric('lcp', metric)
+					void this.reportMetric('lcp', metric)
 				},
 				typeof this._config.lcp === 'object' ? this._config.lcp : undefined,
 			)
@@ -73,7 +81,7 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 		if (this._config.inp !== false) {
 			onINP(
 				(metric) => {
-					this.reportMetric('inp', metric)
+					void this.reportMetric('inp', metric)
 				},
 				typeof this._config.inp === 'object' ? this._config.inp : undefined,
 			)
@@ -82,7 +90,7 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 
 	init(): void {}
 
-	private reportMetric(name: string, metric: Metric): void {
+	private async reportMetric(name: string, metric: Metric): Promise<void> {
 		if (!this.isRecording) {
 			return
 		}
@@ -93,11 +101,34 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 
 		this.reported[name] = true
 
-		const value = metric.value
-		const now = Date.now()
+		const docLoadPromise = this._config.docLoadInstrumentation?.getDocLoadSpan()
 
-		const span = this.tracer.startSpan('webvitals', { startTime: now })
+		const value = metric.value
+		if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+			return
+		}
+
+		const now = Date.now()
+		let endTime: HrTime | number = now
+		let span
+		if (this._config.experimental_alignWebVitalsSpansWithDocumentLoad) {
+			const docLoadSpan = await docLoadPromise
+			let startTime = docLoadSpan?.startTime
+			if (startTime && endTime) {
+				startTime = [startTime[0] + 1, startTime[1]]
+			}
+
+			span = this.tracer.startSpan('webvitals', { startTime: startTime ?? now })
+			endTime = docLoadSpan?.startTime ?? now
+			const docLoadLocation = docLoadSpan?.attributes['location.href']
+			if (docLoadLocation) {
+				span.setAttribute('location.href', docLoadLocation)
+			}
+		} else {
+			span = this.tracer.startSpan('webvitals', { startTime: now })
+		}
+
 		span.setAttribute(name, value)
-		span.end(now)
+		span.end(endTime)
 	}
 }

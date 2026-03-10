@@ -256,6 +256,7 @@ let _deregisterInstrumentations: undefined | (() => void)
 let _deinitSessionTracking: undefined | (() => void)
 let _errorInstrumentation: SplunkErrorInstrumentation | undefined
 let _postDocLoadInstrumentation: SplunkPostDocLoadResourceInstrumentation | undefined
+let _docLoadInstrumentation: SplunkDocumentLoadInstrumentation | undefined
 let eventTarget: InternalEventTarget | undefined
 let _sessionStateUnsubscribe: undefined | (() => void)
 const isLatestTagUsed = isAgentLoadedViaLatestTag()
@@ -615,6 +616,10 @@ export const SplunkRum: SplunkOtelWebType = {
 			const instrumentations = INSTRUMENTATIONS.map(({ confKey, disable, Instrument }) => {
 				const pluginConf = getPluginConfig(processedOptions.instrumentations[confKey], pluginDefaults, disable)
 				if (pluginConf) {
+					if (confKey === 'webvitals' && _docLoadInstrumentation) {
+						;(pluginConf as Record<string, unknown>).docLoadInstrumentation = _docLoadInstrumentation
+					}
+
 					const instrumentation =
 						Instrument === SplunkLongTaskInstrumentation
 							? new Instrument(pluginConf, processedOptions)
@@ -630,6 +635,10 @@ export const SplunkRum: SplunkOtelWebType = {
 
 					if (confKey === 'postload' && instrumentation instanceof SplunkPostDocLoadResourceInstrumentation) {
 						_postDocLoadInstrumentation = instrumentation
+					}
+
+					if (confKey === 'document' && instrumentation instanceof SplunkDocumentLoadInstrumentation) {
+						_docLoadInstrumentation = instrumentation
 					}
 
 					return instrumentation

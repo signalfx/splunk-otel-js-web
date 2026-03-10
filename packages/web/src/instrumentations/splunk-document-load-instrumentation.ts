@@ -71,8 +71,16 @@ type ExposedSuper = {
 }
 
 export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentation {
+	private readonly _docLoadSpanPromise: Promise<Span>
+
+	private _docLoadSpanResolve: ((span: Span) => void) | undefined
+
 	constructor(config: SplunkDocLoadInstrumentationConfig = {}) {
 		super(config)
+
+		this._docLoadSpanPromise = new Promise<Span>((resolve) => {
+			this._docLoadSpanResolve = resolve
+		})
 
 		const exposedSuper = this as any as ExposedSuper
 
@@ -127,7 +135,13 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 				addExtraDocLoadTags(span)
 			}
 
-			return _superEndSpan(span, performanceName, entries)
+			const result = _superEndSpan(span, performanceName, entries)
+			if (exposedSpan.name === AttributeNames.DOCUMENT_LOAD) {
+				this._docLoadSpanResolve?.(exposedSpan)
+				this._docLoadSpanResolve = undefined
+			}
+
+			return result
 		}
 
 		exposedSuper._initResourceSpan = (resource, parentSpan) => {
@@ -153,5 +167,9 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 				exposedSuper._endSpan(span, PTN.RESPONSE_END, resource)
 			}
 		}
+	}
+
+	getDocLoadSpan(): Promise<Span> {
+		return this._docLoadSpanPromise
 	}
 }
