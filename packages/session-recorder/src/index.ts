@@ -25,7 +25,7 @@ import { isRecorderLoadedViaLatestTag } from './detect-latest'
 import { log } from './log'
 import OTLPLogExporter from './otlp-log-exporter'
 import { Recorder, RecorderPublicConfig } from './session-replay'
-import { getGlobal, getSplunkRumVersion, parseVersion } from './utils'
+import { getGlobal, getSplunkRumVersion, isDebugMode, parseVersion } from './utils'
 import { VERSION } from './version'
 
 export type SplunkRumRecorderConfig = {
@@ -171,7 +171,7 @@ const SplunkRumRecorder = {
 		}
 
 		try {
-			log.setLoggingLevel(config.debug ? 'debug' : 'warn')
+			log.setLoggingLevel((config.debug ?? isDebugMode()) ? 'debug' : 'warn')
 			if (typeof globalThis === 'undefined') {
 				log.warn('[Splunk]: SplunkSessionRecorder is not supported in this browser.')
 				return
@@ -272,7 +272,11 @@ const SplunkRumRecorder = {
 					return
 				}
 
-				if (currentState.state === 'expired-duration' && recorder) {
+				if (
+					currentState.state === 'expired-duration' ||
+					(currentState.state === 'expired-inactivity' &&
+						SplunkRum._processedOptions?._experimental_discardDataAfterInactivity)
+				) {
 					recorder?.stop()
 					recorder?.destroy()
 					recorder = undefined
@@ -298,11 +302,9 @@ const SplunkRumRecorder = {
 							persistFailedReplayData: config.persistFailedReplayData ?? true,
 							sessionId: currentState.id,
 						}),
+						sessionId: currentState.id,
 					})
 					recorder.start()
-
-					// Log span for new session
-					createSessionReplaySpanIfAllowed(SpanName.IS_RECORDING, currentState.id)
 				}
 			})
 
@@ -318,6 +320,7 @@ const SplunkRumRecorder = {
 						persistFailedReplayData: config.persistFailedReplayData ?? true,
 						sessionId,
 					}),
+					sessionId,
 				})
 				recorder.start()
 			}

@@ -58,9 +58,11 @@ export class Recorder {
 	constructor({
 		initRecorderConfig,
 		processor,
+		sessionId,
 	}: {
 		initRecorderConfig: Omit<SplunkRumRecorderConfig, 'realm' | 'recorder' | 'rumAccessToken' | 'beaconEndpoint'>
 		processor: BatchLogProcessor
+		sessionId: string
 	}) {
 		this.processor = processor
 		this.config = {
@@ -89,6 +91,7 @@ export class Recorder {
 		}
 
 		this.sessionReplay = new SessionReplay({
+			bindingKey: sessionId,
 			features: {
 				backgroundServiceSrc: backgroundServiceSrc,
 				cacheAssets: this.config.features?.cacheAssets ?? false,
@@ -115,15 +118,18 @@ export class Recorder {
 	}
 
 	destroy() {
+		log.debug('Recorder destroy')
 		this.sessionReplay.destroy()
 		Recorder.clear()
 	}
 
 	resume() {
+		log.debug('Recorder resume')
 		this.start()
 	}
 
 	start() {
+		log.debug('Recorder started')
 		if (document.visibilityState === 'visible') {
 			void this.sessionReplay.start()
 		}
@@ -137,6 +143,7 @@ export class Recorder {
 	}
 
 	stop() {
+		log.debug('Recorder stopped')
 		this.sessionReplay.stop()
 
 		if (this.isVisibilityListenerAttached) {

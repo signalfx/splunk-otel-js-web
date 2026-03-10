@@ -98,6 +98,12 @@ export interface SplunkOtelWebConfig {
 	_experimental_dataAttributesToCapture?: string[]
 
 	/**
+	 * Experimental: If true, no additional span will be sent after 15 minutes of user inactivity (it will be dropped).
+	 * @default false
+	 */
+	_experimental_discardDataAfterInactivity?: boolean
+
+	/**
 	 * @deprecated Please use `spaMetrics` instead.
 	 */
 	_experimental_spaMetrics?:

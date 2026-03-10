@@ -51,6 +51,7 @@ export class SessionManager {
 	private set session(state: SessionState) {
 		const previousState = this._session
 		this._session = state
+		this.previousSessionState = previousState
 		this.sessionHistory.set(state.id, state)
 
 		diag.debug('SessionManager: Updating session', { currentState: state, previousState })

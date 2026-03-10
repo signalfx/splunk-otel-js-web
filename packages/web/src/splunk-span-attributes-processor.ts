@@ -28,6 +28,7 @@ export class SplunkSpanAttributesProcessor implements SpanProcessor {
 		private sessionManager: SessionManager,
 		private userManager: UserManager,
 		globalAttributes: Attributes,
+		private readonly _experimental_discardDataAfterInactivity: boolean = false,
 	) {
 		this._globalAttributes = globalAttributes ?? {}
 	}
@@ -63,7 +64,13 @@ export class SplunkSpanAttributesProcessor implements SpanProcessor {
 
 		const sessionState = this.sessionManager.getSessionState()
 
-		if (sessionState.state !== 'expired-duration') {
+		// Negated condition was hard to read
+		if (
+			sessionState.state === 'expired-duration' ||
+			(sessionState.state === 'expired-inactivity' && this._experimental_discardDataAfterInactivity)
+		) {
+			// Do not attach session ID to the span
+		} else {
 			span.setAttribute('splunk.rumSessionId', sessionState.id)
 		}
 

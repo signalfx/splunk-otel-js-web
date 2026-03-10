@@ -87,6 +87,7 @@ export * from './splunk-web-tracer-provider'
 import { PrivacyManager, SessionManager, SessionState, StorageManager, UserManager } from './managers'
 import { ExternalSessionMetadata, isValidExternalSessionMetadata } from './types/external-session-metadata'
 import { getElementXPath, getTextFromNode } from './utils/index'
+import { isDebugMode } from './utils/is-debug-mode'
 
 interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
 	bufferSize?: number
@@ -394,7 +395,10 @@ export const SplunkRum: SplunkOtelWebType = {
 
 		try {
 			// touches otel globals, our registerGlobal requires this first
-			diag.setLogger(new DiagConsoleLogger(), options?.debug ? DiagLogLevel.DEBUG : DiagLogLevel.WARN)
+			diag.setLogger(
+				new DiagConsoleLogger(),
+				(options?.debug ?? isDebugMode()) ? DiagLogLevel.DEBUG : DiagLogLevel.WARN,
+			)
 
 			if (isLatestTagUsed) {
 				const { exactVersion, majorVersion, minorVersion } = parseVersion(VERSION)
@@ -565,13 +569,18 @@ export const SplunkRum: SplunkOtelWebType = {
 				}
 			})
 
-			this.attributesProcessor = new SplunkSpanAttributesProcessor(this.sessionManager, this.userManager, {
-				...(deploymentEnvironment
-					? { 'deployment.environment': deploymentEnvironment, 'environment': deploymentEnvironment }
-					: {}),
-				...(version ? { 'app.version': version } : {}),
-				...processedOptions.globalAttributes,
-			})
+			this.attributesProcessor = new SplunkSpanAttributesProcessor(
+				this.sessionManager,
+				this.userManager,
+				{
+					...(deploymentEnvironment
+						? { 'deployment.environment': deploymentEnvironment, 'environment': deploymentEnvironment }
+						: {}),
+					...(version ? { 'app.version': version } : {}),
+					...processedOptions.globalAttributes,
+				},
+				processedOptions._experimental_discardDataAfterInactivity,
+			)
 
 			const spanProcessors: SpanProcessor[] = [this.attributesProcessor]
 
