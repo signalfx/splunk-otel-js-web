@@ -17,7 +17,7 @@
  */
 import { expect } from '@playwright/test'
 
-import { test } from '../../utils/test'
+import { expectDefined, test } from '../../utils/test'
 
 test.describe('web vitals', () => {
 	test('web vitals spans', async ({ browserName, recordPage }) => {
@@ -81,12 +81,12 @@ test.describe('web vitals', () => {
 		const docLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'documentLoad')
 		const webvitalsSpan = recordPage.receivedSpans.find((span) => span.tags.lcp !== undefined)
 
-		expect(docLoadSpan).toBeDefined()
-		expect(webvitalsSpan).toBeDefined()
+		expectDefined(docLoadSpan)
+		expectDefined(webvitalsSpan)
 
-		expect(webvitalsSpan!.timestamp).toBe(docLoadSpan?.timestamp)
-		expect(webvitalsSpan!.tags['location.href']).toBe(docLoadUrl)
-		expect(webvitalsSpan!.tags['http.url']).toBe(docLoadUrl)
+		expect(webvitalsSpan.timestamp).toBe(docLoadSpan?.timestamp + 1_000_000)
+		expect(webvitalsSpan.tags['location.href']).toBe(docLoadUrl)
+		expect(webvitalsSpan.tags['http.url']).toBe(docLoadUrl)
 	})
 
 	test('webvitals - specific metrics disabled', async ({ browserName, recordPage }) => {

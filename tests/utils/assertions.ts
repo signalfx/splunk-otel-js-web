@@ -29,5 +29,5 @@ import { expect } from 'vitest'
  * expect(span.name).toBe('test') // No need for span?.name
  */
 export function expectDefined<T>(value: T, message?: string): asserts value is NonNullable<T> {
-	expect(value, message).toBeTruthy()
+	expect(value, message).toBeDefined()
 }

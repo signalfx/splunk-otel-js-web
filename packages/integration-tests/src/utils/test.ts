@@ -17,6 +17,7 @@
  */
 
 import { test as base } from '@playwright/test'
+import { expect } from 'vitest'
 
 import { RecordPage } from '../pages/record-page'
 
@@ -35,3 +36,7 @@ export const test = base.extend<TestFixtures>({
 		await recordingContext.close()
 	},
 })
+
+export function expectDefined<T>(value: T, message?: string): asserts value is NonNullable<T> {
+	expect(value, message).toBeDefined()
+}
