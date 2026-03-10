@@ -16,8 +16,7 @@
  *
  */
 
-import { test as base } from '@playwright/test'
-import { expect } from 'vitest'
+import { test as base, expect } from '@playwright/test'
 
 import { RecordPage } from '../pages/record-page'
 
