@@ -104,6 +104,10 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 		const docLoadPromise = this._config.docLoadInstrumentation?.getDocLoadSpan()
 
 		const value = metric.value
+		if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+			return
+		}
+
 		const now = Date.now()
 		let endTime: HrTime | number = now
 		let span
