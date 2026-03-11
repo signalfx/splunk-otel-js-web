@@ -186,35 +186,6 @@ test.describe('Frustration signals', () => {
 			expect(errorClickSpans[0].tags['error.message']).toBe('console error from click')
 			expect(errorClickSpans[0].tags['error.source']).toBe('console.error')
 		})
-
-		test('Error click multiple errors mode emits span for each error', async ({ recordPage }) => {
-			await recordPage.goTo('/frustration-signals/error-click-multiple-errors.ejs')
-
-			await recordPage.locator('#btn-multi-error').click()
-
-			await recordPage.waitForSpans(
-				(spans) =>
-					spans.filter(
-						(span) =>
-							span.name === 'frustration' &&
-							span.tags['frustration_type'] === 'error' &&
-							span.tags['interaction_type'] === 'click',
-					).length >= 2,
-			)
-
-			const errorClickSpans = recordPage.receivedSpans.filter(
-				(span) =>
-					span.name === 'frustration' &&
-					span.tags['frustration_type'] === 'error' &&
-					span.tags['interaction_type'] === 'click',
-			)
-
-			expect(errorClickSpans).toHaveLength(2)
-
-			const messages = errorClickSpans.map((s) => s.tags['error.message'])
-			expect(messages).toContain('first error')
-			expect(messages).toContain('second error')
-		})
 	})
 
 	test.describe('Thrashed cursor', () => {

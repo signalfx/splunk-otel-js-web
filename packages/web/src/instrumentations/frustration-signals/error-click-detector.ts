@@ -31,12 +31,9 @@ import { RecentClickSpanTracker } from './recent-click-span-tracker'
 
 export type ErrorClickOptions = Partial<ResolvedErrorClickConfig> | true
 
-type MultipleErrorsOption = 'all' | 'closest'
-
 type ResolvedErrorClickConfig = {
 	ignoreSelectors: string[]
 	ignoreUrls: Array<string | RegExp>
-	multipleErrors: MultipleErrorsOption
 	timeWindowMs: number
 }
 
@@ -55,11 +52,8 @@ interface RecentClick {
 const DEFAULTS: ResolvedErrorClickConfig = {
 	ignoreSelectors: [],
 	ignoreUrls: [],
-	multipleErrors: 'closest',
 	timeWindowMs: 1000,
 }
-
-const VALID_MULTIPLE_ERRORS_OPTIONS: Set<MultipleErrorsOption> = new Set(['all', 'closest'])
 
 // ============================================================================
 // Detector class
@@ -136,7 +130,6 @@ export class ErrorClickDetector {
 			return {
 				ignoreSelectors: [],
 				ignoreUrls: [],
-				multipleErrors: DEFAULTS.multipleErrors,
 				timeWindowMs: DEFAULTS.timeWindowMs,
 			}
 		}
@@ -146,17 +139,11 @@ export class ErrorClickDetector {
 				? options.timeWindowMs
 				: DEFAULTS.timeWindowMs
 
-		const multipleErrors =
-			options.multipleErrors !== undefined && VALID_MULTIPLE_ERRORS_OPTIONS.has(options.multipleErrors)
-				? options.multipleErrors
-				: DEFAULTS.multipleErrors
-
 		return {
 			ignoreSelectors: Array.isArray(options.ignoreSelectors)
 				? options.ignoreSelectors
 				: DEFAULTS.ignoreSelectors,
 			ignoreUrls: Array.isArray(options.ignoreUrls) ? options.ignoreUrls : DEFAULTS.ignoreUrls,
-			multipleErrors,
 			timeWindowMs,
 		}
 	}
@@ -208,10 +195,8 @@ export class ErrorClickDetector {
 		span.setAttribute('error.source', errorEvent.source)
 
 		span.setAttribute('error.span_id', errorEvent.spanContext.spanId)
-		span.setAttribute('error.trace_id', errorEvent.spanContext.traceId)
 		if (clickSpanCtx) {
 			span.setAttribute('click.span_id', clickSpanCtx.spanId)
-			span.setAttribute('click.trace_id', clickSpanCtx.traceId)
 		}
 
 		span.end(now)
@@ -246,11 +231,8 @@ export class ErrorClickDetector {
 			}
 
 			this.emitFrustrationSpan(click, event)
-
-			if (this.config.multipleErrors === 'closest') {
-				click.consumed = true
-				return
-			}
+			click.consumed = true
+			return
 		}
 	}
 
