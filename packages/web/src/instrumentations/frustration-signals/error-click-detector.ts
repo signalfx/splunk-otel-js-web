@@ -163,20 +163,21 @@ export class ErrorClickDetector {
 	}
 
 	private emitFrustrationSpan(click: RecentClick, errorEvent: ErrorReportedEvent): void {
-		const now = Date.now()
-
-		const clickSpanCtx = this.clickSpanTracker?.findClickSpan(
+		const trackedClick = this.clickSpanTracker?.findClickSpan(
 			click.targetXpath,
 			errorEvent.timestamp,
 			this.config.timeWindowMs,
 		)
 
+		const startTime = trackedClick ? trackedClick.startTimeMs : click.wallTimestamp
+		const endTime = trackedClick ? trackedClick.endTimeMs : click.wallTimestamp
+
 		const links: Link[] = [{ context: errorEvent.spanContext }]
-		if (clickSpanCtx) {
-			links.push({ context: clickSpanCtx })
+		if (trackedClick) {
+			links.push({ context: trackedClick.spanContext })
 		}
 
-		const span = this.tracer.startSpan('frustration', { links, startTime: now })
+		const span = this.tracer.startSpan('frustration', { links, startTime })
 		span.setAttribute('frustration_type', 'error')
 		span.setAttribute('interaction_type', 'click')
 		span.setAttribute('component', 'user-interaction')
@@ -195,11 +196,11 @@ export class ErrorClickDetector {
 		span.setAttribute('error.source', errorEvent.source)
 
 		span.setAttribute('error.span_id', errorEvent.spanContext.spanId)
-		if (clickSpanCtx) {
-			span.setAttribute('click.span_id', clickSpanCtx.spanId)
+		if (trackedClick) {
+			span.setAttribute('click.span_id', trackedClick.spanContext.spanId)
 		}
 
-		span.end(now)
+		span.end(endTime)
 	}
 
 	private onErrorReported(event: ErrorReportedEvent): void {

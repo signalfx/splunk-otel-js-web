@@ -21,10 +21,11 @@ import { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-base'
 
 const MAX_ENTRIES = 20
 
-interface TrackedClick {
+export interface TrackedClickSpan {
+	endTimeMs: number
 	spanContext: SpanContext
+	startTimeMs: number
 	targetXpath: string
-	timestamp: number
 }
 
 /**
@@ -33,13 +34,13 @@ interface TrackedClick {
  * span links from frustration spans to the original click spans.
  */
 export class RecentClickSpanTracker implements SpanProcessor {
-	private recentClicks: TrackedClick[] = []
+	private recentClicks: TrackedClickSpan[] = []
 
-	findClickSpan(targetXpath: string, beforeTimestamp: number, windowMs: number): SpanContext | undefined {
+	findClickSpan(targetXpath: string, beforeTimestamp: number, windowMs: number): TrackedClickSpan | undefined {
 		for (let i = this.recentClicks.length - 1; i >= 0; i--) {
 			const entry = this.recentClicks[i]
-			if (entry.targetXpath === targetXpath && beforeTimestamp - entry.timestamp <= windowMs) {
-				return entry.spanContext
+			if (entry.targetXpath === targetXpath && beforeTimestamp - entry.startTimeMs <= windowMs) {
+				return entry
 			}
 		}
 		return undefined
@@ -51,13 +52,14 @@ export class RecentClickSpanTracker implements SpanProcessor {
 
 	onEnd(span: ReadableSpan): void {
 		if (span.attributes['component'] === 'user-interaction' && span.attributes['event_type'] === 'click') {
-			const hrTime = span.startTime
-			const timestampMs = hrTime[0] * 1000 + hrTime[1] / 1e6
+			const startTimeMs = span.startTime[0] * 1000 + span.startTime[1] / 1e6
+			const endTimeMs = span.endTime[0] * 1000 + span.endTime[1] / 1e6
 
 			this.recentClicks.push({
+				endTimeMs,
 				spanContext: span.spanContext(),
+				startTimeMs,
 				targetXpath: span.attributes['target_xpath'] as string,
-				timestamp: timestampMs,
 			})
 
 			if (this.recentClicks.length > MAX_ENTRIES) {
