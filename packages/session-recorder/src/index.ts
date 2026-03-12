@@ -17,6 +17,13 @@
  */
 
 import { Attributes, Span, trace, Tracer } from '@opentelemetry/api'
+import { ProxyTracerProvider, TracerProvider, trace, Tracer } from '@opentelemetry/api'
+//import OTLPLogExporter from './OTLPLogExporter'
+import { BatchLogProcessor, convert } from './BatchLogProcessor'
+import { VERSION } from './version'
+import { getSplunkRumVersion, getGlobal } from './utils'
+
+import type { Resource } from '@opentelemetry/resources'
 import type { SplunkOtelWebType } from '@splunk/otel-web'
 import { JsonObject } from 'type-fest'
 
@@ -27,6 +34,19 @@ import OTLPLogExporter from './otlp-log-exporter'
 import { Recorder, RecorderPublicConfig } from './session-replay'
 import { getGlobal, getSplunkRumVersion, isDebugMode, parseVersion } from './utils'
 import { VERSION } from './version'
+import {
+	Recorder,
+	ProprietaryRecorder,
+	RRWebRecorder,
+	RecorderEmitContext,
+	RRWebRecorderPublicConfig,
+} from './recorder'
+import { OTLPProtoLogExporter } from './OTLPProtoLogExporter'
+import { safelySetLocalStorage } from './storage'
+
+interface BasicTracerProvider extends TracerProvider {
+	readonly resource: Resource
+}
 
 export type SplunkRumRecorderConfig = {
 	/** Destination for the captured data */
@@ -271,6 +291,33 @@ const SplunkRumRecorder = {
 				if (!previousState) {
 					return
 				}
+		const exporter = new OTLPProtoLogExporter({
+			beaconUrl: exportUrl,
+			debug,
+			getResourceAttributes() {
+				return {
+					...resource.attributes,
+					'splunk.rumSessionId': SplunkRum.getSessionId() ?? '',
+				}
+			},
+			sessionId: SplunkRum.getSessionId() ?? '',
+			usePersistentExportQueue: isProprietaryRecorder,
+		})
+		const processor = new BatchLogProcessor(exporter)
+
+		lastKnownSession = SplunkRum.getSessionId()
+
+		if (isProprietaryRecorder && SplunkRum.isNewSessionId()) {
+			console.log('SplunkRum.isNewSessionId()')
+			ProprietaryRecorder.clear()
+		}
+
+		sessionStartTime = Date.now()
+
+		const onEmit = async (context: RecorderEmitContext) => {
+			if (paused) {
+				return
+			}
 
 				if (
 					currentState.state === 'expired-duration' ||
@@ -336,6 +383,66 @@ const SplunkRumRecorder = {
 
 	get inited(): boolean {
 		return Boolean(inited)
+			if (!isExtended) {
+				if (SplunkRum._internalOnExternalSpanCreated) {
+					SplunkRum._internalOnExternalSpanCreated()
+				}
+			}
+
+			const time = context.type === 'proprietary' ? Math.floor(context.startTime) : context.startTime
+			const eventI = eventCounter
+
+			eventCounter += 1
+
+			//const body = encoder.encode(JSON.stringify(context.data))
+			const arrayBuffer = await context.data.arrayBuffer()
+			const dataText = await context.data.text()
+			const body = new Uint8Array(arrayBuffer)
+
+			console.log('🔥 dbg: onEmit body', body, context.data)
+			console.log('🔥 dbg: onEmit dataText', dataText)
+
+			const log = convert(body, time, {
+				'rr-web.offset': logCounter,
+				'rr-web.event': eventI,
+				'rr-web.chunk': 1,
+				'rr-web.total-chunks': 1,
+			})
+
+			console.log('🔥 dbg: onEmit log', log)
+
+			logCounter += 1
+
+			if (debug) {
+				console.log(log)
+			}
+
+			processor.onEmit(log)
+
+			// for (let i = 0; i < totalC; i++) {
+			// 	const start = i * MAX_CHUNK_SIZE
+			// 	const end = (i + 1) * MAX_CHUNK_SIZE
+			// 	const log = convert(decoder.decode(body.slice(start, end)), time, {
+			// 		'rr-web.offset': logCounter,
+			// 		'rr-web.event': eventI,
+			// 		'rr-web.chunk': i + 1,
+			// 		'rr-web.total-chunks': totalC,
+			// 	})
+
+			// 	logCounter += 1
+
+			// 	if (debug) {
+			// 		console.log(log)
+			// 	}
+
+			// 	processor.onEmit(log)
+			// }
+		}
+
+		const recorderConfig = { ...initRecorderConfig, onEmit }
+		recorder = isProprietaryRecorder ? new ProprietaryRecorder(recorderConfig) : new RRWebRecorder(recorderConfig)
+		recorder.start()
+		inited = true
 	},
 
 	resume(): void {

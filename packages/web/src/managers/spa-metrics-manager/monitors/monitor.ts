@@ -15,6 +15,13 @@
  * limitations under the License.
  *
  */
+export interface RecorderEmitContext {
+	//data: Record<string, unknown>
+	data: Blob
+	onSessionChanged: () => void
+	startTime: number
+	type: 'proprietary' | 'rrweb'
+}
 
 export enum ResourceState {
 	DISCOVERED = 'discovered',
