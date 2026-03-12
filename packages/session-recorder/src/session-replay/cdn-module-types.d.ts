@@ -49,7 +49,7 @@ declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.7.1/sess
 
 	export interface Segment {
 		stats(): Stats
-		toBinary(params?: DeepPartial<Modifiers>): SessionReplayBinarySegment
+		toBinary(params?: DeepPartial<Modifiers>): Promise<SessionReplayBinarySegment>
 		toPlain(params?: DeepPartial<Modifiers>): SessionReplayPlainSegment
 	}
 

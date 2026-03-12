@@ -26,10 +26,7 @@ import { VERSION } from '../version'
 import { Segment, SessionReplay, SessionReplayConfig } from './cdn-module'
 import { getSplunkRecorderConfig } from './config'
 
-const MAX_CHUNK_SIZE = 4000 * 1024 // ~4000 KB
-
-const encoder = new TextEncoder()
-const decoder = new TextDecoder()
+const MAX_CHUNK_SIZE = 14_000 * 1024 // ~4000 KB
 
 export interface RecorderEmitContext {
 	data: Record<string, unknown>
@@ -154,47 +151,58 @@ export class Recorder {
 		this.isStoppedManually = true
 	}
 
-	private onEmit = (emitContext: RecorderEmitContext) => {
+	private onEmit = async (emitContext: RecorderEmitContext) => {
+		console.log('🔥 dbg: onEmit emitContext', emitContext)
+
 		const time = Math.floor(emitContext.startTime)
 		const eventI = this.eventCounter
 
 		this.eventCounter += 1
 
-		const body = encoder.encode(JSON.stringify(emitContext.data.data))
+		const body = emitContext.data.data as Blob
 
-		const totalC = Math.ceil(body.byteLength / MAX_CHUNK_SIZE)
+		console.log('🔥 dbg: onEmit body', body)
 
-		for (let i = 0; i < totalC; i++) {
-			const start = i * MAX_CHUNK_SIZE
-			const end = (i + 1) * MAX_CHUNK_SIZE
+		// for (let i = 0; i < totalC; i++) {
+		// 	const start = i * MAX_CHUNK_SIZE
+		// 	const end = (i + 1) * MAX_CHUNK_SIZE
 
-			const dataToConvert: Record<string, any> = {
-				'rr-web.chunk': i + 1,
-				'rr-web.event': eventI,
-				'rr-web.offset': this.logCounter,
-				'rr-web.total-chunks': totalC,
-				'segmentMetadata': JSON.stringify(emitContext.data.metadata),
-			}
+		// 	console.log('🔥 dbg: onEmit start', start)
+		// 	console.log('🔥 dbg: onEmit end', end)
 
-			const logData = convert(decoder.decode(body.slice(start, end)), time, dataToConvert)
-
-			this.logCounter += 1
-
-			log.debug('Emitting log', logData)
-
-			this.processor.onEmit(logData)
-			void this.processor.forceFlush()
+		const dataToConvert: Record<string, any> = {
+			'rr-web.chunk': 1,
+			'rr-web.event': eventI,
+			'rr-web.offset': this.logCounter,
+			'rr-web.total-chunks': 1,
+			'segmentMetadata': JSON.stringify(emitContext.data.metadata),
 		}
+
+		const arrayBuffer = await body.arrayBuffer()
+		console.log('🔥 dbg: onEmit arrayBuffer', arrayBuffer)
+
+		const logData = convert(new Uint8Array(arrayBuffer), time, dataToConvert)
+		console.log('🔥 dbg: onEmit logData', logData)
+		this.logCounter += 1
+
+		log.debug('Emitting log', logData)
+
+		this.processor.onEmit(logData)
+		console.log('🔥 dbg: onEmit processor.onEmit', logData)
+		void this.processor.forceFlush()
+		// }
 	}
 
-	private onSegment = (segment: Segment) => {
+	private onSegment = async (segment: Segment) => {
 		log.debug('Session replay segment: ', segment)
 
-		const plainSegment = segment.toPlain()
+		const binarySegment = await segment.toBinary()
 
-		this.onEmit({
-			data: plainSegment,
-			startTime: plainSegment.metadata.startUnixMs,
+		console.log('🔥 dbg: onSegment binarySegment', binarySegment)
+
+		void this.onEmit({
+			data: binarySegment,
+			startTime: binarySegment.metadata.startUnixMs,
 		})
 	}
 

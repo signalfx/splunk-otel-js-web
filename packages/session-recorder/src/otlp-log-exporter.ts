@@ -19,11 +19,10 @@
 import { context } from '@opentelemetry/api'
 import { suppressTracing } from '@opentelemetry/core'
 import { gzipSync, strToU8 } from 'fflate'
-import { nanoid } from 'nanoid'
 import type { JsonArray, JsonObject, JsonValue } from 'type-fest'
 
 import { ApiError, apiFetch, ApiParams } from './api'
-import { addLogToQueue, getQueuedLogs, QueuedLog, removeQueuedLog, removeQueuedLogs } from './export-log-queue'
+import { QueuedLog } from './export-log-queue'
 import { log } from './log'
 import { compressAsync } from './session-replay/utils'
 import { IAnyValue, Log } from './types'
@@ -101,7 +100,7 @@ export default class OTLPLogExporter {
 	constructor(config: OTLPLogExporterConfig) {
 		this.config = config
 		if (this.config.exportQueuedLogs) {
-			this.exportQueuedLogs()
+			// this.exportQueuedLogs()
 		}
 	}
 
@@ -118,8 +117,7 @@ export default class OTLPLogExporter {
 							logRecords: logs.map((logItem) => ({
 								attributes: convertToAnyValue(logItem.attributes || {}).kvlistValue
 									?.values as JsonArray,
-								// @ts-expect-error FIXME: `body` is not defined
-								body: convertToAnyValue(logItem.body) as JsonObject,
+								body: logItem.body,
 								timeUnixNano: logItem.timeUnixNano,
 							})),
 							scope: { name: 'splunk.rr-web', version: VERSION },
@@ -144,56 +142,56 @@ export default class OTLPLogExporter {
 		// TODO: https://github.com/101arrowz/fflate/issues/242
 		const uint8ArrayData = strToU8(JSON.stringify(logsData)) as Uint8Array<ArrayBuffer>
 
-		const requestId = nanoid()
-		const queuedLog: QueuedLog | null = this.config.usePersistentExportQueue
-			? {
-					data: logsData as unknown as QueuedLog['data'],
-					headers,
-					requestId,
-					sessionId: this.config.sessionId,
-					timestamp: Date.now(),
-					url: endpoint,
-				}
-			: null
+		//const requestId = nanoid()
+		// const queuedLog: QueuedLog | null = this.config.usePersistentExportQueue
+		// 	? {
+		// 			data: logsData as unknown as QueuedLog['data'],
+		// 			headers,
+		// 			requestId,
+		// 			sessionId: this.config.sessionId,
+		// 			timestamp: Date.now(),
+		// 			url: endpoint,
+		// 		}
+		// 	: null
 
-		if (queuedLog) {
-			log.debug('Adding log to queue', { ...queuedLog, data: '[truncated]' })
-			const isPersisted = addLogToQueue(queuedLog)
-			if (!isPersisted) {
-				log.debug('Failed to add log to queue', { ...queuedLog, data: '[truncated]' })
-			}
-		}
+		// if (queuedLog) {
+		// 	log.debug('Adding log to queue', { ...queuedLog, data: '[truncated]' })
+		// 	const isPersisted = addLogToQueue(queuedLog)
+		// 	if (!isPersisted) {
+		// 		log.debug('Failed to add log to queue', { ...queuedLog, data: '[truncated]' })
+		// 	}
+		// }
 
-		OTLPLogExporter.sendDataToBackend(queuedLog, uint8ArrayData, endpoint, headers)
+		OTLPLogExporter.sendDataToBackend(null, uint8ArrayData, endpoint, headers)
 	}
 
-	exportQueuedLogs(): void {
-		const logs: QueuedLog[] = getQueuedLogs() ?? []
+	// exportQueuedLogs(): void {
+	// 	const logs: QueuedLog[] = getQueuedLogs() ?? []
 
-		// Remove all logs and add only ones that are relevant before sending
-		removeQueuedLogs()
+	// 	// Remove all logs and add only ones that are relevant before sending
+	// 	// removeQueuedLogs()
 
-		for (const logItem of logs) {
-			log.debug('Found queued log', { ...logItem, data: '[truncated]' })
+	// 	for (const logItem of logs) {
+	// 		log.debug('Found queued log', { ...logItem, data: '[truncated]' })
 
-			// Only export logs that belong to the current session
-			if (logItem.sessionId !== this.config.sessionId) {
-				log.debug(
-					'exportQueuedLogs - session mismatch',
-					{ ...logItem, data: '[truncated]' },
-					{ sessionId: this.config.sessionId },
-				)
-				continue
-			}
+	// 		// Only export logs that belong to the current session
+	// 		if (logItem.sessionId !== this.config.sessionId) {
+	// 			log.debug(
+	// 				'exportQueuedLogs - session mismatch',
+	// 				{ ...logItem, data: '[truncated]' },
+	// 				{ sessionId: this.config.sessionId },
+	// 			)
+	// 			continue
+	// 		}
 
-			// Add log to queue and remove after it has been successfully sent
-			addLogToQueue(logItem)
+	// 		// Add log to queue and remove after it has been successfully sent
+	// 		// addLogToQueue(logItem)
 
-			// TODO: https://github.com/101arrowz/fflate/issues/242
-			const logData = strToU8(JSON.stringify(logItem.data)) as Uint8Array<ArrayBuffer>
-			OTLPLogExporter.sendDataToBackend(logItem, logData, logItem.url, logItem.headers)
-		}
-	}
+	// 		// TODO: https://github.com/101arrowz/fflate/issues/242
+	// 		const logData = strToU8(JSON.stringify(logItem.data)) as Uint8Array<ArrayBuffer>
+	// 		OTLPLogExporter.sendDataToBackend(logItem, logData, logItem.url, logItem.headers)
+	// 	}
+	// }
 
 	private static sendDataToBackend(
 		queuedLog: QueuedLog | null,
@@ -207,7 +205,6 @@ export default class OTLPLogExporter {
 			}
 
 			log.debug('Removing queued log', { ...queuedLog, data: '[truncated]' })
-			removeQueuedLog(queuedLog)
 		}
 
 		const onFetchError = (error: unknown) => {
@@ -220,7 +217,6 @@ export default class OTLPLogExporter {
 					...queuedLog,
 					data: '[truncated]',
 				})
-				removeQueuedLog(queuedLog)
 			}
 		}
 

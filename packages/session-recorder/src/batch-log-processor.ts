@@ -17,7 +17,7 @@
  */
 
 import { BindOnceFuture, callWithTimeout, globalErrorHandler, unrefTimer } from '@opentelemetry/core'
-import type { JsonObject, JsonValue } from 'type-fest'
+import type { JsonObject } from 'type-fest'
 
 import type { Log, LogExporter } from './types'
 
@@ -59,6 +59,7 @@ export class BatchLogProcessor {
 	}
 
 	public onEmit(log: Log): void {
+		console.log('🔥 dbg: BatchLogProcessor.onEmit log', log)
 		if (this.shutdownOnce.isCalled) {
 			return
 		}
@@ -158,7 +159,10 @@ export class BatchLogProcessor {
 	}
 }
 
-export function convert(body: JsonValue, timeUnixNano: number, attributes?: JsonObject): Log {
+export function convert(body: Uint8Array, timeUnixNano: number, attributes?: JsonObject): Log {
+	console.log('🔥 dbg: convert body', body)
+	console.log('🔥 dbg: convert timeUnixNano', timeUnixNano)
+	console.log('🔥 dbg: convert attributes', attributes)
 	return {
 		attributes,
 		body,

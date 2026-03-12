@@ -44,6 +44,7 @@
 		"@opentelemetry/resources": "^1.25.1",
 		"core-js": "3.48.0",
 		"fflate": "^0.8.0",
+		"@opentelemetry/otlp-transformer": "^0.57.2",
 		"nanoid": "^5.1.6",
 		"type-fest": "^5.4.3"
 	},
@@ -53,6 +54,8 @@
 	"devDependencies": {
 		"@splunk/otel-web": "workspace:*",
 		"@swc/core": "^1.15.18",
+		"protobufjs": "^7.4.0",
+		"protobufjs-cli": "^1.1.1",
 		"@swc/helpers": "^0.5.19",
 		"copy-webpack-plugin": "^13.0.1",
 		"fork-ts-checker-webpack-plugin": "^9.1.0",

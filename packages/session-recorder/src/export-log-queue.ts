@@ -18,7 +18,6 @@
 import { JsonObject } from 'type-fest'
 
 import { log } from './log'
-import { safelyGetLocalStorage, safelyRemoveFromLocalStorage, safelySetLocalStorage } from './utils'
 
 export interface QueuedLog {
 	data: {
@@ -46,28 +45,28 @@ export interface QueuedLog {
 	url: string
 }
 
-const QUEUED_LOGS_STORAGE_KEY = '_splunk_session_recorder_queue_data'
+// const QUEUED_LOGS_STORAGE_KEY = '_splunk_session_recorder_queue_data'
 const MAX_QUEUE_SIZE_BYTES = 2 * 1024 * 1024 // 2MB limit
 
-export const getQueuedLogs = (): QueuedLog[] | null => {
-	const storedLogs = safelyGetLocalStorage(QUEUED_LOGS_STORAGE_KEY)
-	if (!storedLogs) {
-		return null
-	}
+export const getQueuedLogs = (): QueuedLog[] | null => null
 
-	try {
-		const parsedQueuedLogs = JSON.parse(storedLogs)
-		if (isQueuedLogs(parsedQueuedLogs)) {
-			return parsedQueuedLogs
-		} else {
-			log.warn('Invalid queued log data found in local storage', parsedQueuedLogs)
-			return null
-		}
-	} catch {
-		log.warn('Malformed queued log data found in local storage', storedLogs)
-		return null
-	}
-}
+// const storedLogs = safelyGetLocalStorage(QUEUED_LOGS_STORAGE_KEY)
+// if (!storedLogs) {
+// 	return null
+// }
+
+// try {
+// 	const parsedQueuedLogs = JSON.parse(storedLogs)
+// 	if (isQueuedLogs(parsedQueuedLogs)) {
+// 		return parsedQueuedLogs
+// 	} else {
+// 		log.warn('Invalid queued log data found in local storage', parsedQueuedLogs)
+// 		return null
+// 	}
+// } catch {
+// 	log.warn('Malformed queued log data found in local storage', storedLogs)
+// 	return null
+// }
 
 export const addLogToQueue = (logItem: QueuedLog): boolean => {
 	const queuedLogs = getQueuedLogs() ?? []
@@ -85,7 +84,7 @@ export const addLogToQueue = (logItem: QueuedLog): boolean => {
 	}
 
 	queuedLogs.push(logItem)
-	return setQueuedLogs(queuedLogs)
+	return setQueuedLogs()
 }
 
 const calculateQueueSize = (queuedLogs: QueuedLog[]): number => {
@@ -99,40 +98,16 @@ const wouldExceedSizeLimit = (existingLogs: QueuedLog[], newLog: QueuedLog): boo
 	return combinedSize > MAX_QUEUE_SIZE_BYTES
 }
 
-const setQueuedLogs = (queuedLogs: QueuedLog[]): boolean => {
-	if (queuedLogs.length === 0) {
-		removeQueuedLogs()
-		return true
-	}
+const setQueuedLogs = (): boolean => true
 
-	const serializedLogs = JSON.stringify(queuedLogs)
-	return safelySetLocalStorage(QUEUED_LOGS_STORAGE_KEY, serializedLogs)
-}
+// if (queuedLogs.length === 0) {
+// 	removeQueuedLogs()
+// 	return true
+// }
 
-export const removeQueuedLog = (logToRemove: QueuedLog): boolean => {
-	const queuedLogs = getQueuedLogs() ?? []
-	const updatedLogs = queuedLogs.filter((logItem) => logItem.requestId !== logToRemove.requestId)
-	return setQueuedLogs(updatedLogs)
-}
+// const serializedLogs = JSON.stringify(queuedLogs)
+// return safelySetLocalStorage(QUEUED_LOGS_STORAGE_KEY, serializedLogs)
 
-export const removeQueuedLogs = () => {
-	safelyRemoveFromLocalStorage(QUEUED_LOGS_STORAGE_KEY)
-}
+export const removeQueuedLog = (): boolean => setQueuedLogs()
 
-const isQueuedLog = (maybeQueuedLog: unknown): maybeQueuedLog is QueuedLog => {
-	if (typeof maybeQueuedLog !== 'object' || maybeQueuedLog === null) {
-		return false
-	}
-
-	const queuedLogKeys = Object.keys(maybeQueuedLog)
-	const requiredKeys: (keyof QueuedLog)[] = ['data', 'requestId', 'timestamp', 'url', 'headers']
-	return requiredKeys.every((key) => queuedLogKeys.includes(key))
-}
-
-const isQueuedLogs = (maybeQueuedLogs: unknown): maybeQueuedLogs is QueuedLog[] => {
-	if (!Array.isArray(maybeQueuedLogs)) {
-		return false
-	}
-
-	return maybeQueuedLogs.every(isQueuedLog)
-}
+export const removeQueuedLogs = () => {}

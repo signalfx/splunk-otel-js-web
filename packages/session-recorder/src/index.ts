@@ -23,7 +23,7 @@ import { JsonObject } from 'type-fest'
 import { BatchLogProcessor } from './batch-log-processor'
 import { isRecorderLoadedViaLatestTag } from './detect-latest'
 import { log } from './log'
-import OTLPLogExporter from './otlp-log-exporter'
+import { OTLPProtoLogExporter } from './otlp-proto-log-exporter'
 import { Recorder, RecorderPublicConfig } from './session-replay'
 import { getGlobal, getSplunkRumVersion, isDebugMode, parseVersion } from './utils'
 import { VERSION } from './version'
@@ -123,7 +123,6 @@ const SplunkRumRecorder = {
 	_getProcessorForSession({
 		anonymousUserId,
 		attributes,
-		exportQueuedLogs,
 		exportUrl,
 		persistFailedReplayData,
 		sessionId,
@@ -135,9 +134,8 @@ const SplunkRumRecorder = {
 		persistFailedReplayData: boolean
 		sessionId: string
 	}): BatchLogProcessor {
-		const exporter = new OTLPLogExporter({
+		const exporter = new OTLPProtoLogExporter({
 			beaconUrl: exportUrl,
-			exportQueuedLogs,
 			getResourceAttributes() {
 				const newAttributes: JsonObject = {
 					...attributes,
