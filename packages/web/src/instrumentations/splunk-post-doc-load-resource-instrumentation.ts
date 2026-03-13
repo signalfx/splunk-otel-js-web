@@ -22,6 +22,7 @@ import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instr
 import { addSpanNetworkEvents } from '@opentelemetry/sdk-trace-web'
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions'
 
+import { SplunkOtelWebConfig } from '../types'
 import { VERSION } from '../version'
 
 export interface SplunkPostDocLoadResourceInstrumentationConfig extends InstrumentationConfig {
@@ -44,7 +45,10 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 
 	private urlToContextMap: Record<string, Context>
 
-	constructor(config: SplunkPostDocLoadResourceInstrumentationConfig = {}) {
+	constructor(
+		config: SplunkPostDocLoadResourceInstrumentationConfig = {},
+		protected otelConfig: SplunkOtelWebConfig,
+	) {
 		const processedConfig: SplunkPostDocLoadResourceInstrumentationConfig = Object.assign(
 			{},
 			{ allowedInitiatorTypes: defaultAllowedInitiatorTypes },

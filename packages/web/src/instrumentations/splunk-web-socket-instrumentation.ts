@@ -22,7 +22,7 @@ import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instr
 // FIXME convert into otel-js-contrib Plugin and upstream
 import * as shimmer from 'shimmer'
 
-import { isError } from '../types'
+import { isError, SplunkOtelWebConfig } from '../types'
 import { getSize, hasSizeLikeProperty } from '../utils/size'
 import { VERSION } from '../version'
 
@@ -33,7 +33,10 @@ interface SplunkWebSocketInstrumentationConfig extends InstrumentationConfig {
 export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWebSocketInstrumentationConfig> {
 	listener2ws2patched = new WeakMap()
 
-	constructor(config: SplunkWebSocketInstrumentationConfig) {
+	constructor(
+		config: SplunkWebSocketInstrumentationConfig,
+		protected otelConfig: SplunkOtelWebConfig,
+	) {
 		super('splunk-websocket', VERSION, config)
 		this._config = config
 	}

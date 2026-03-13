@@ -18,6 +18,7 @@
 
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 
+import { SplunkOtelWebConfig } from '../types'
 import { VERSION } from '../version'
 
 const MODULE_NAME = 'splunk-visibility'
@@ -29,7 +30,10 @@ export class SplunkPageVisibilityInstrumentation extends InstrumentationBase {
 
 	visibilityListener: any
 
-	constructor(config: InstrumentationConfig = {}) {
+	constructor(
+		config: InstrumentationConfig = {},
+		protected otelConfig: SplunkOtelWebConfig,
+	) {
 		super(MODULE_NAME, VERSION, Object.assign({}, config))
 		this.unloading = false
 	}

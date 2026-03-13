@@ -20,14 +20,18 @@ import { diag } from '@opentelemetry/api'
 import { FetchInstrumentation, FetchInstrumentationConfig } from '@opentelemetry/instrumentation-fetch'
 
 import { captureTraceParent } from '../servertiming'
+import { SplunkOtelWebConfig } from '../types'
 
 type ExposedSuper = {
 	_addHeaders: (options: Request | RequestInit, spanUrl: string) => void
 }
 
 export class SplunkFetchInstrumentation extends FetchInstrumentation {
-	constructor(config: FetchInstrumentationConfig = {}) {
+	protected otelConfig: SplunkOtelWebConfig
+
+	constructor(config: FetchInstrumentationConfig = {}, otelConfig: SplunkOtelWebConfig) {
 		const origCustomAttrs = config.applyCustomAttributesOnSpan
+
 		config.applyCustomAttributesOnSpan = function (span, request, result) {
 			// Temporary return to old span name until cleared by backend
 			span.updateName(`HTTP ${(request.method || 'GET').toUpperCase()}`)
@@ -46,6 +50,7 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
 		}
 
 		super(config)
+		this.otelConfig = otelConfig
 
 		const _superAddHeaders = (this as unknown as ExposedSuper)._addHeaders.bind(this)
 		;(this as unknown as ExposedSuper)._addHeaders = (options, spanUrl) => {

@@ -22,6 +22,8 @@ import { XMLHttpRequestInstrumentationConfig } from '@opentelemetry/instrumentat
 import { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { WebTracerConfig } from '@opentelemetry/sdk-trace-web'
 
+import type { SpanEmitterProcessor } from '../span-processors/span-emitter-processor'
+
 import {
 	SocketIoClientInstrumentationConfig,
 	SplunkErrorInstrumentationConfig,
@@ -233,6 +235,8 @@ export interface SplunkOtelWebConfig {
 				/** Time in milliseconds to wait after last resource loads before considering page complete. @default 1000 */
 				quietTime?: number
 		  }
+
+	spanEmitter?: SpanEmitterProcessor
 
 	spanProcessors?: Array<SpanProcessor>
 

@@ -59,7 +59,7 @@ import {
 } from './instrumentations'
 import { BrowserInstanceService } from './services/browser-instance-service'
 import { SessionBasedSampler } from './session-based-sampler'
-import { SpanAttributesProcessor } from './span-processors'
+import { SpanAttributesProcessor, SpanEmitterProcessor } from './span-processors'
 import { SplunkContextManager } from './splunk-context-manager'
 import { SplunkSamplerWrapper } from './splunk-sampler-wrapper'
 import { SplunkWebTracerProvider } from './splunk-web-tracer-provider'
@@ -197,6 +197,8 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 
 	_processor?: SpanProcessor
 
+	_spanEmitter?: SpanEmitterProcessor
+
 	attributesProcessor?: SpanAttributesProcessor
 
 	deinit: (force?: boolean) => void
@@ -300,6 +302,9 @@ export const SplunkRum: SplunkOtelWebType = {
 
 			void this.provider?.shutdown()
 			delete this.provider
+
+			void this._spanEmitter?.shutdown()
+			delete this._spanEmitter
 
 			eventTarget = undefined
 
@@ -582,7 +587,9 @@ export const SplunkRum: SplunkOtelWebType = {
 				processedOptions._experimental_discardDataAfterInactivity,
 			)
 
-			const spanProcessors: SpanProcessor[] = [this.attributesProcessor]
+			this._spanEmitter = new SpanEmitterProcessor()
+			processedOptions.spanEmitter = this._spanEmitter
+			const spanProcessors: SpanProcessor[] = [this.attributesProcessor, this._spanEmitter]
 
 			if (processedOptions.beaconEndpoint) {
 				const exporter = buildExporter(processedOptions)

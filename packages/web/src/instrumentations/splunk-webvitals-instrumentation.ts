@@ -20,6 +20,7 @@ import { HrTime } from '@opentelemetry/api'
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 import { Metric, onCLS, onINP, onLCP, ReportOpts } from 'web-vitals'
 
+import { SplunkOtelWebConfig } from '../types'
 import { VERSION } from '../version'
 import { SplunkDocumentLoadInstrumentation } from './splunk-document-load-instrumentation'
 
@@ -44,7 +45,10 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 
 	private reported: Record<string, boolean> = {}
 
-	constructor(config: SplunkWebVitalsInstrumentationConfig = {}) {
+	constructor(
+		config: SplunkWebVitalsInstrumentationConfig = {},
+		protected otelConfig: SplunkOtelWebConfig,
+	) {
 		super(MODULE_NAME, VERSION, config)
 	}
 

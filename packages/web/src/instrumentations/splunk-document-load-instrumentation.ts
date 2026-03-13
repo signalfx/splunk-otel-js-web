@@ -30,6 +30,7 @@ import { addSpanNetworkEvents, PerformanceEntries, PerformanceTimingNames as PTN
 import { SemanticAttributes, SEMATTRS_HTTP_URL } from '@opentelemetry/semantic-conventions'
 
 import { captureTraceParentFromPerformanceEntries } from '../servertiming'
+import { SplunkOtelWebConfig } from '../types'
 
 export interface SplunkDocLoadInstrumentationConfig extends InstrumentationConfig {
 	ignoreUrls?: (string | RegExp)[]
@@ -75,7 +76,10 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 
 	private _docLoadSpanResolve: ((span: Span) => void) | undefined
 
-	constructor(config: SplunkDocLoadInstrumentationConfig = {}) {
+	constructor(
+		config: SplunkDocLoadInstrumentationConfig = {},
+		protected otelConfig: SplunkOtelWebConfig,
+	) {
 		super(config)
 
 		this._docLoadSpanPromise = new Promise<Span>((resolve) => {
