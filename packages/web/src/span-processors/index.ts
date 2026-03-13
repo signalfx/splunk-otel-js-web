@@ -16,3 +16,4 @@
  *
  */
 export * from './span-attributes-processor'
+export * from './span-emitter-processor'
