@@ -35,8 +35,12 @@ import {
 
 const doesBeaconUrlEndWith = (suffix: string) => {
 	const sps = (SplunkRum.provider?.getActiveSpanProcessor() as any)._spanProcessors
+	const exporterProcessor = sps.find(
+		(spanProcessor: any) => spanProcessor?._exporter?.beaconUrl || spanProcessor?._exporter?.url,
+	)
+	expectDefined(exporterProcessor, 'Unable to find exporter span processor.')
 	// TODO: refactor to make beaconUrl field private
-	const beaconUrl = sps[1]._exporter.beaconUrl || sps[1]._exporter.url
+	const beaconUrl = exporterProcessor._exporter.beaconUrl || exporterProcessor._exporter.url
 	expect(beaconUrl.endsWith(suffix), `Checking beaconUrl if (${beaconUrl}) ends with ${suffix}`).toBeTruthy()
 }
 
