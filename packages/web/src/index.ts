@@ -668,6 +668,8 @@ export const SplunkRum: SplunkOtelWebType = {
 				tracerProvider: provider,
 			})
 
+			this._spanEmitter?.enable()
+
 			this.provider = provider
 
 			// Set basic platform attributes immediately
