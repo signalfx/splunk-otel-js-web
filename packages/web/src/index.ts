@@ -59,9 +59,9 @@ import {
 } from './instrumentations'
 import { BrowserInstanceService } from './services/browser-instance-service'
 import { SessionBasedSampler } from './session-based-sampler'
+import { SpanAttributesProcessor, SpanEmitterProcessor } from './span-processors'
 import { SplunkContextManager } from './splunk-context-manager'
 import { SplunkSamplerWrapper } from './splunk-sampler-wrapper'
-import { SplunkSpanAttributesProcessor } from './splunk-span-attributes-processor'
 import { SplunkWebTracerProvider } from './splunk-web-tracer-provider'
 import { getSyntheticsRunId, SYNTHETICS_RUN_ID_ATTRIBUTE } from './synthetics'
 import {
@@ -197,7 +197,9 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 
 	_processor?: SpanProcessor
 
-	attributesProcessor?: SplunkSpanAttributesProcessor
+	_spanEmitter?: SpanEmitterProcessor
+
+	attributesProcessor?: SpanAttributesProcessor
 
 	deinit: (force?: boolean) => void
 
@@ -256,7 +258,6 @@ let _deregisterInstrumentations: undefined | (() => void)
 let _deinitSessionTracking: undefined | (() => void)
 let _errorInstrumentation: SplunkErrorInstrumentation | undefined
 let _postDocLoadInstrumentation: SplunkPostDocLoadResourceInstrumentation | undefined
-let _docLoadInstrumentation: SplunkDocumentLoadInstrumentation | undefined
 let eventTarget: InternalEventTarget | undefined
 let _sessionStateUnsubscribe: undefined | (() => void)
 const isLatestTagUsed = isAgentLoadedViaLatestTag()
@@ -300,6 +301,9 @@ export const SplunkRum: SplunkOtelWebType = {
 
 			void this.provider?.shutdown()
 			delete this.provider
+
+			void this._spanEmitter?.shutdown()
+			delete this._spanEmitter
 
 			eventTarget = undefined
 
@@ -569,7 +573,7 @@ export const SplunkRum: SplunkOtelWebType = {
 				}
 			})
 
-			this.attributesProcessor = new SplunkSpanAttributesProcessor(
+			this.attributesProcessor = new SpanAttributesProcessor(
 				this.sessionManager,
 				this.userManager,
 				{
@@ -582,7 +586,9 @@ export const SplunkRum: SplunkOtelWebType = {
 				processedOptions._experimental_discardDataAfterInactivity,
 			)
 
-			const spanProcessors: SpanProcessor[] = [this.attributesProcessor]
+			this._spanEmitter = new SpanEmitterProcessor()
+			processedOptions.spanEmitter = this._spanEmitter
+			const spanProcessors: SpanProcessor[] = [this.attributesProcessor, this._spanEmitter]
 
 			if (processedOptions.beaconEndpoint) {
 				const exporter = buildExporter(processedOptions)
@@ -616,10 +622,6 @@ export const SplunkRum: SplunkOtelWebType = {
 			const instrumentations = INSTRUMENTATIONS.map(({ confKey, disable, Instrument }) => {
 				const pluginConf = getPluginConfig(processedOptions.instrumentations[confKey], pluginDefaults, disable)
 				if (pluginConf) {
-					if (confKey === 'webvitals' && _docLoadInstrumentation) {
-						;(pluginConf as Record<string, unknown>).docLoadInstrumentation = _docLoadInstrumentation
-					}
-
 					const instrumentation =
 						Instrument === SplunkLongTaskInstrumentation
 							? new Instrument(pluginConf, processedOptions)
@@ -635,10 +637,6 @@ export const SplunkRum: SplunkOtelWebType = {
 
 					if (confKey === 'postload' && instrumentation instanceof SplunkPostDocLoadResourceInstrumentation) {
 						_postDocLoadInstrumentation = instrumentation
-					}
-
-					if (confKey === 'document' && instrumentation instanceof SplunkDocumentLoadInstrumentation) {
-						_docLoadInstrumentation = instrumentation
 					}
 
 					return instrumentation
@@ -669,6 +667,8 @@ export const SplunkRum: SplunkOtelWebType = {
 				instrumentations,
 				tracerProvider: provider,
 			})
+
+			this._spanEmitter?.enable()
 
 			this.provider = provider
 

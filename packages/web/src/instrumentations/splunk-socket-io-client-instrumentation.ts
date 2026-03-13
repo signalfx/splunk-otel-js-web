@@ -24,6 +24,7 @@ import {
 	SemanticAttributes,
 } from '@opentelemetry/semantic-conventions'
 
+import { SplunkOtelWebConfig } from '../types'
 import { waitForGlobal } from '../utils'
 import { VERSION } from '../version'
 
@@ -93,7 +94,10 @@ export class SplunkSocketIoClientInstrumentation extends InstrumentationBase {
 
 	protected listeners = new WeakMap<(...args: unknown[]) => void, (...args: unknown[]) => void>()
 
-	constructor(config: SocketIoClientInstrumentationConfig = {}) {
+	constructor(
+		config: SocketIoClientInstrumentationConfig = {},
+		protected otelConfig: SplunkOtelWebConfig,
+	) {
 		super(MODULE_NAME, VERSION, Object.assign({ target: 'io' }, config))
 	}
 

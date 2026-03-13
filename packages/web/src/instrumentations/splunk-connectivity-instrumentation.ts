@@ -18,6 +18,7 @@
 
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 
+import { SplunkOtelWebConfig } from '../types'
 import { VERSION } from '../version'
 
 const MODULE_NAME = 'splunk-connectivity'
@@ -29,7 +30,10 @@ export class SplunkConnectivityInstrumentation extends InstrumentationBase {
 
 	onlineListener: any
 
-	constructor(config: InstrumentationConfig = {}) {
+	constructor(
+		config: InstrumentationConfig = {},
+		protected otelConfig: SplunkOtelWebConfig,
+	) {
 		super(MODULE_NAME, VERSION, Object.assign({}, config))
 		// For apps with offline support
 		this.offlineStart = navigator.onLine ? null : Date.now()

@@ -21,7 +21,7 @@ import { suppressTracing } from '@opentelemetry/core'
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 import * as shimmer from 'shimmer'
 
-import { isElement } from '../types'
+import { isElement, SplunkOtelWebConfig } from '../types'
 import { limitLen } from '../utils'
 import { getValidAttributes, isPlainObject, removePropertiesWithAdvancedTypes, SpanContext } from '../utils/attributes'
 import { hashSHA256 } from '../utils/hash'
@@ -113,7 +113,10 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 
 	private throttleMap = new Map<string, number>()
 
-	constructor(protected _splunkConfig: SplunkErrorInstrumentationConfig) {
+	constructor(
+		protected _splunkConfig: SplunkErrorInstrumentationConfig,
+		protected otelConfig: SplunkOtelWebConfig,
+	) {
 		super(ERROR_INSTRUMENTATION_NAME, ERROR_INSTRUMENTATION_VERSION, _splunkConfig)
 	}
 

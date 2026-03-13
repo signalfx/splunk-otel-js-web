@@ -23,6 +23,7 @@ import {
 } from '@opentelemetry/instrumentation-xml-http-request'
 
 import { captureTraceParent } from '../servertiming'
+import { SplunkOtelWebConfig } from '../types'
 
 type ExposedSuper = {
 	_addResourceObserver: (xhr: XMLHttpRequest, spanUrl: string) => void
@@ -30,8 +31,11 @@ type ExposedSuper = {
 }
 
 export class SplunkXhrInstrumentation extends XMLHttpRequestInstrumentation {
-	constructor(config: XMLHttpRequestInstrumentationConfig = {}) {
+	protected otelConfig: SplunkOtelWebConfig
+
+	constructor(config: XMLHttpRequestInstrumentationConfig = {}, otelConfig: SplunkOtelWebConfig) {
 		super(config)
+		this.otelConfig = otelConfig
 
 		// TODO: fix when upstream exposes this method
 		const _superCreateSpan = (this as any as ExposedSuper)._createSpan.bind(this)
