@@ -59,6 +59,12 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 		})
 
 		this.otelConfig.spanEmitter?.addEventListener('document-load', (span) => {
+			// `document-load` component emits both documentFetch and documentLoad spans.
+			// We only want the documentLoad span for alignment.
+			if (span.name !== 'documentLoad') {
+				return
+			}
+
 			this.docLoadSpanResolve?.(span)
 			this.docLoadSpanResolve = undefined
 		})
