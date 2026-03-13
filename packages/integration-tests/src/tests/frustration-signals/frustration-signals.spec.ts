@@ -96,6 +96,98 @@ test.describe('Frustration signals', () => {
 		})
 	})
 
+	test.describe('Error clicks', () => {
+		test('Error click disabled', async ({ recordPage }) => {
+			await recordPage.goTo('/frustration-signals/error-click-disabled.ejs')
+
+			await recordPage.locator('#btn-sync-error').click()
+			await recordPage.waitForTimeoutAndFlushData(2000)
+
+			const errorClickSpans = recordPage.receivedSpans.filter(
+				(span) =>
+					span.name === 'frustration' &&
+					span.tags['frustration_type'] === 'error' &&
+					span.tags['interaction_type'] === 'click',
+			)
+
+			expect(errorClickSpans).toHaveLength(0)
+		})
+
+		test('Error click detects async error after click', async ({ recordPage }) => {
+			await recordPage.goTo('/frustration-signals/error-click.ejs')
+
+			await recordPage.locator('#btn-async-error').click()
+
+			await recordPage.waitForSpans((spans) =>
+				spans.some(
+					(span) =>
+						span.name === 'frustration' &&
+						span.tags['frustration_type'] === 'error' &&
+						span.tags['interaction_type'] === 'click',
+				),
+			)
+
+			const errorClickSpans = recordPage.receivedSpans.filter(
+				(span) =>
+					span.name === 'frustration' &&
+					span.tags['frustration_type'] === 'error' &&
+					span.tags['interaction_type'] === 'click',
+			)
+
+			expect(errorClickSpans).toHaveLength(1)
+			expect(errorClickSpans[0].duration).toBeGreaterThanOrEqual(0)
+			expect(errorClickSpans[0].tags['component']).toBe('user-interaction')
+			expect(errorClickSpans[0].tags['error.message']).toBe('async error from click')
+			expect(errorClickSpans[0].tags['error.object']).toBe('ReferenceError')
+			expect(errorClickSpans[0].tags['error.source']).toBe('onerror')
+			expect(errorClickSpans[0].tags['target_xpath']).toBeDefined()
+			expect(errorClickSpans[0].tags['error.span_id']).toBeDefined()
+			expect(errorClickSpans[0].tags['error.trace_id']).toBeUndefined()
+		})
+
+		test('Error click does not trigger for clicks without errors', async ({ recordPage }) => {
+			await recordPage.goTo('/frustration-signals/error-click.ejs')
+
+			await recordPage.locator('#btn-no-error').click()
+			await recordPage.waitForTimeoutAndFlushData(2000)
+
+			const errorClickSpans = recordPage.receivedSpans.filter(
+				(span) =>
+					span.name === 'frustration' &&
+					span.tags['frustration_type'] === 'error' &&
+					span.tags['interaction_type'] === 'click',
+			)
+
+			expect(errorClickSpans).toHaveLength(0)
+		})
+
+		test('Error click detects console.error after click', async ({ recordPage }) => {
+			await recordPage.goTo('/frustration-signals/error-click-console-error.ejs')
+
+			await recordPage.locator('#btn-console-error').click()
+
+			await recordPage.waitForSpans((spans) =>
+				spans.some(
+					(span) =>
+						span.name === 'frustration' &&
+						span.tags['frustration_type'] === 'error' &&
+						span.tags['interaction_type'] === 'click',
+				),
+			)
+
+			const errorClickSpans = recordPage.receivedSpans.filter(
+				(span) =>
+					span.name === 'frustration' &&
+					span.tags['frustration_type'] === 'error' &&
+					span.tags['interaction_type'] === 'click',
+			)
+
+			expect(errorClickSpans).toHaveLength(1)
+			expect(errorClickSpans[0].tags['error.message']).toBe('console error from click')
+			expect(errorClickSpans[0].tags['error.source']).toBe('console.error')
+		})
+	})
+
 	test.describe('Thrashed cursor', () => {
 		test('detects erratic mouse movement and emits span with correct attributes', async ({ recordPage }) => {
 			await recordPage.goTo('/frustration-signals/thrashed-cursor.ejs')

@@ -42,6 +42,7 @@ import {
 	DEFAULT_AUTO_INSTRUMENTED_EVENT_NAMES,
 	DEFAULT_AUTO_INSTRUMENTED_EVENTS,
 	ERROR_INSTRUMENTATION_NAME,
+	FRUSTRATION_SIGNALS_INSTRUMENTATION_NAME,
 	SplunkConnectivityInstrumentation,
 	SplunkDocumentLoadInstrumentation,
 	SplunkErrorInstrumentation,
@@ -57,6 +58,7 @@ import {
 	SplunkXhrInstrumentation,
 	UserInteractionEventsConfig,
 } from './instrumentations'
+import { RecentClickSpanTracker } from './instrumentations/frustration-signals/recent-click-span-tracker'
 import { BrowserInstanceService } from './services/browser-instance-service'
 import { SessionBasedSampler } from './session-based-sampler'
 import { SplunkContextManager } from './splunk-context-manager'
@@ -138,7 +140,11 @@ const INSTRUMENTATIONS = [
 	// 	once we are able to upgrade to a version that fixes this issue, we can remove this ordering/comment
 	// 	This ordering ensures our PCT fetch wrapper remains intact.
 	{ confKey: 'fetch', disable: false, Instrument: SplunkFetchInstrumentation },
-	{ confKey: 'frustrationSignals', disable: false, Instrument: SplunkFrustrationSignalsInstrumentation },
+	{
+		confKey: FRUSTRATION_SIGNALS_INSTRUMENTATION_NAME,
+		disable: false,
+		Instrument: SplunkFrustrationSignalsInstrumentation,
+	},
 	{ confKey: 'webvitals', disable: false, Instrument: SplunkWebVitalsInstrumentation },
 	{ confKey: 'interactions', disable: false, Instrument: SplunkUserInteractionInstrumentation },
 	{ confKey: 'postload', disable: false, Instrument: SplunkPostDocLoadResourceInstrumentation },
@@ -582,7 +588,8 @@ export const SplunkRum: SplunkOtelWebType = {
 				processedOptions._experimental_discardDataAfterInactivity,
 			)
 
-			const spanProcessors: SpanProcessor[] = [this.attributesProcessor]
+			const clickSpanTracker = new RecentClickSpanTracker()
+			const spanProcessors: SpanProcessor[] = [this.attributesProcessor, clickSpanTracker]
 
 			if (processedOptions.beaconEndpoint) {
 				const exporter = buildExporter(processedOptions)
@@ -613,6 +620,8 @@ export const SplunkRum: SplunkOtelWebType = {
 
 			this.sessionManager.start()
 
+			let _frustrationSignalsInstrumentation: SplunkFrustrationSignalsInstrumentation | undefined
+
 			const instrumentations = INSTRUMENTATIONS.map(({ confKey, disable, Instrument }) => {
 				const pluginConf = getPluginConfig(processedOptions.instrumentations[confKey], pluginDefaults, disable)
 				if (pluginConf) {
@@ -641,12 +650,23 @@ export const SplunkRum: SplunkOtelWebType = {
 						_docLoadInstrumentation = instrumentation
 					}
 
+					if (
+						confKey === FRUSTRATION_SIGNALS_INSTRUMENTATION_NAME &&
+						instrumentation instanceof SplunkFrustrationSignalsInstrumentation
+					) {
+						_frustrationSignalsInstrumentation = instrumentation
+					}
+
 					return instrumentation
 				}
 
 				return null
 				// eslint-disable-next-line unicorn/prefer-native-coercion-functions
 			}).filter((a): a is Exclude<typeof a, null> => Boolean(a))
+
+			if (_errorInstrumentation && _frustrationSignalsInstrumentation) {
+				_frustrationSignalsInstrumentation.setErrorSource(_errorInstrumentation, clickSpanTracker)
+			}
 
 			window.addEventListener('visibilitychange', () => {
 				// this condition applies when the page is hidden or when it's closed
