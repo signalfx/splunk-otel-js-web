@@ -19,9 +19,9 @@
 import { Attributes } from '@opentelemetry/api'
 import { Span, SpanProcessor } from '@opentelemetry/sdk-trace-base'
 
-import { SESSION_DURATION_MS, SessionManager, UserManager } from './managers'
+import { SESSION_DURATION_MS, SessionManager, UserManager } from '../managers'
 
-export class SplunkSpanAttributesProcessor implements SpanProcessor {
+export class SpanAttributesProcessor implements SpanProcessor {
 	private readonly _globalAttributes: Attributes
 
 	constructor(

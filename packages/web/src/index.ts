@@ -59,9 +59,9 @@ import {
 } from './instrumentations'
 import { BrowserInstanceService } from './services/browser-instance-service'
 import { SessionBasedSampler } from './session-based-sampler'
+import { SpanAttributesProcessor } from './span-processors'
 import { SplunkContextManager } from './splunk-context-manager'
 import { SplunkSamplerWrapper } from './splunk-sampler-wrapper'
-import { SplunkSpanAttributesProcessor } from './splunk-span-attributes-processor'
 import { SplunkWebTracerProvider } from './splunk-web-tracer-provider'
 import { getSyntheticsRunId, SYNTHETICS_RUN_ID_ATTRIBUTE } from './synthetics'
 import {
@@ -197,7 +197,7 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 
 	_processor?: SpanProcessor
 
-	attributesProcessor?: SplunkSpanAttributesProcessor
+	attributesProcessor?: SpanAttributesProcessor
 
 	deinit: (force?: boolean) => void
 
@@ -569,7 +569,7 @@ export const SplunkRum: SplunkOtelWebType = {
 				}
 			})
 
-			this.attributesProcessor = new SplunkSpanAttributesProcessor(
+			this.attributesProcessor = new SpanAttributesProcessor(
 				this.sessionManager,
 				this.userManager,
 				{
