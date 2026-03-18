@@ -14,8 +14,12 @@
 	],
 	"repository": "github:signalfx/splunk-otel-js-browser",
 	"scripts": {
-		"build": "webpack --mode production --color",
-		"dev": "webpack --mode development --watch --color",
+		"build": "npm-run-all -s build:*",
+		"build:browser": "webpack --mode production --color",
+		"build:tsc": "tsc --build tsconfig.cjs.json tsconfig.esm.json",
+		"dev": "npm-run-all -s dev:*",
+		"dev:browser": "webpack --mode development --watch --color",
+		"dev:tsc": "tsc --build --watch tsconfig.cjs.json tsconfig.esm.json",
 		"clean": "rm -rf dist .turbo",
 		"wait": "wait-on dist/esm/index.js  dist/cjs/index.js"
 	},
