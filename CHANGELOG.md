@@ -2,6 +2,38 @@
 
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
+## 2.4.0
+
+- `@splunk/otel-web`
+    - **Align webvitals spans with document load span** [#1673](https://github.com/signalfx/splunk-otel-js-web/pull/1673)
+        - All webvitals spans (LCP, CLS, INP) can now be anchored to the document load span
+        - Start time is set to the same timestamp as the documentLoad span, rather than the time the metric was reported
+        - `location.href` is copied from the documentLoad span onto the webvitals span, reflecting where the page originally loaded rather than the current URL after SPA navigation
+        - This feature must be explicitly enabled via the `experimental_alignWebVitalsSpansWithDocumentLoad` option:
+            ```js
+            SplunkRum.init({
+            	// ...
+            	instrumentations: {
+            		webvitals: {
+            			experimental_alignWebVitalsSpansWithDocumentLoad: true,
+            		},
+            	},
+            })
+            ```
+    - **Debug mode** [#1678](https://github.com/signalfx/splunk-otel-js-web/pull/1678)
+        - Adds the ability to enable debug logging at runtime via localStorage, without requiring a config change
+    - **Add polyfills to npm target** [#1688](https://github.com/signalfx/splunk-otel-js-web/pull/1688)
+        - Polyfills are now applied to the npm build target as well, not just CDN artifacts
+    - **Improve anonymous user persistence between tabs** [#1687](https://github.com/signalfx/splunk-otel-js-web/pull/1687)
+        - Fixes a race condition where another tab could persist a different anonymous user ID simultaneously
+
+- `@splunk/otel-web-session-recorder`
+    - **Fix duplicate `isRecording` spans** [#1677](https://github.com/signalfx/splunk-otel-js-web/pull/1677)
+        - Prevents duplicate isRecording spans being created when session changes
+    - **Update session replay upstream** [#1679](https://github.com/signalfx/splunk-otel-js-web/pull/1679) [#1680](https://github.com/signalfx/splunk-otel-js-web/pull/1680)
+
+- **Updated dependencies** [#1685](https://github.com/signalfx/splunk-otel-js-web/pull/1685), [#1662](https://github.com/signalfx/splunk-otel-js-web/pull/1662)
+
 ## 2.3.0
 
 - `@splunk/otel-web`
