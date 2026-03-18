@@ -1,6 +1,7 @@
 {
 	"compilerOptions": {
 		"declaration": true,
+		"emitDeclarationOnly": true,
 		"module": "ESNext",
 		"moduleResolution": "bundler",
 		"outDir": "./dist/esm",
