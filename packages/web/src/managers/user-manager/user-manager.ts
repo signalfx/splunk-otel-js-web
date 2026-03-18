@@ -66,14 +66,20 @@ export class UserManager {
 			this.anonymousId = storedId
 			// extend the expiration
 			this.persistAnonymousId(storedId)
+
 			return storedId
 		}
 
 		const newId = UserManager.generateAnonymousId()
 		this.persistAnonymousId(newId)
-		this.anonymousId = newId
+		// Another tab may have persisted a different anonymous user ID simultaneously, so re-read from storage and use the existing one if present
+		const newlyStoredAnonymousUserId = this.getAnonymousIdFromStorage()
+		this.anonymousId =
+			newlyStoredAnonymousUserId !== newId && newlyStoredAnonymousUserId !== undefined
+				? newlyStoredAnonymousUserId
+				: newId
 
-		return newId
+		return this.anonymousId
 	}
 
 	private static generateAnonymousId(): string {
