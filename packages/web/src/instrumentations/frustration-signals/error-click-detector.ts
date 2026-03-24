@@ -134,11 +134,7 @@ export class ErrorClickDetector {
 
 	private static normalizeConfig(options: ErrorClickOptions): ResolvedErrorClickConfig {
 		if (options === true) {
-			return {
-				ignoreSelectors: [],
-				ignoreUrls: [],
-				timeWindowMs: DEFAULTS.timeWindowMs,
-			}
+			return DEFAULTS
 		}
 
 		const timeWindowMs =
