@@ -18,16 +18,16 @@
 
 import { HrTime } from '@opentelemetry/api'
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
+import { ReadableSpan } from '@opentelemetry/sdk-trace-base'
 import { Metric, onCLS, onINP, onLCP, ReportOpts } from 'web-vitals'
 
+import { SplunkOtelWebConfig } from '../types'
 import { VERSION } from '../version'
-import { SplunkDocumentLoadInstrumentation } from './splunk-document-load-instrumentation'
 
 const MODULE_NAME = 'splunk-webvitals'
 
 export interface SplunkWebVitalsInstrumentationConfig extends InstrumentationConfig {
 	cls?: boolean | ReportOpts
-	docLoadInstrumentation?: SplunkDocumentLoadInstrumentation
 	/**
 	 * If true, the webvitals spans will have their start time aligned with the document load span,
 	 * and will inherit the URL attributes from the document load span if available.
@@ -40,12 +40,34 @@ export interface SplunkWebVitalsInstrumentationConfig extends InstrumentationCon
 export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWebVitalsInstrumentationConfig> {
 	private areCallbackAttached = false
 
+	private docLoadSpanPromise: Promise<ReadableSpan>
+
+	private docLoadSpanResolve: ((span: ReadableSpan) => void) | undefined
+
 	private isRecording = false
 
 	private reported: Record<string, boolean> = {}
 
-	constructor(config: SplunkWebVitalsInstrumentationConfig = {}) {
+	constructor(
+		config: SplunkWebVitalsInstrumentationConfig = {},
+		protected otelConfig: SplunkOtelWebConfig,
+	) {
 		super(MODULE_NAME, VERSION, config)
+
+		this.docLoadSpanPromise = new Promise<ReadableSpan>((resolve) => {
+			this.docLoadSpanResolve = resolve
+		})
+
+		this.otelConfig.spanEmitter?.addEventListener('document-load', (span) => {
+			// `document-load` component emits both documentFetch and documentLoad spans.
+			// We only want the documentLoad span for alignment.
+			if (span.name !== 'documentLoad') {
+				return
+			}
+
+			this.docLoadSpanResolve?.(span)
+			this.docLoadSpanResolve = undefined
+		})
 	}
 
 	disable(): void {
@@ -101,8 +123,6 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 
 		this.reported[name] = true
 
-		const docLoadPromise = this._config.docLoadInstrumentation?.getDocLoadSpan()
-
 		const value = metric.value
 		if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
 			return
@@ -112,7 +132,7 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 		let endTime: HrTime | number = now
 		let span
 		if (this._config.experimental_alignWebVitalsSpansWithDocumentLoad) {
-			const docLoadSpan = await docLoadPromise
+			const docLoadSpan = await this.docLoadSpanPromise
 			let startTime = docLoadSpan?.startTime
 			if (startTime && endTime) {
 				startTime = [startTime[0] + 1, startTime[1]]

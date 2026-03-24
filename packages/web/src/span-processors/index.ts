@@ -15,10 +15,5 @@
  * limitations under the License.
  *
  */
-declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.9.4/picker/picker.module.min.js' {
-	export const isPickerWindow: () => boolean
-	export const createPicker: (options: {
-		getElementText: (element: HTMLElement) => string
-		getElementXPath: (element: HTMLElement) => string
-	}) => void
-}
+export * from './span-attributes-processor'
+export * from './span-emitter-processor'

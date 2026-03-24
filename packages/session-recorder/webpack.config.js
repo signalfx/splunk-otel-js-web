@@ -21,6 +21,12 @@ const CopyWebpackPlugin = require('copy-webpack-plugin')
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin')
 const TerserPlugin = require('terser-webpack-plugin')
 
+const swcEnv = {
+	coreJs: '3.45.1',
+	mode: 'usage',
+	targets: ['defaults', 'chrome >= 71', 'firefox >= 65', 'safari >= 12.1'],
+}
+
 const getBaseConfig = (env, argv) => {
 	const isDevelopmentMode = argv.mode === 'development'
 
@@ -70,11 +76,7 @@ const browserConfig = (env, argv) => {
 						{
 							loader: 'swc-loader',
 							options: {
-								env: {
-									coreJs: '3.45.1',
-									mode: 'usage',
-									targets: ['defaults', 'chrome >= 71', 'firefox >= 65', 'safari >= 12.1'],
-								},
+								env: swcEnv,
 								jsc: {
 									externalHelpers: true,
 									parser: {
@@ -143,9 +145,24 @@ const cjsConfig = (env, argv) => {
 				...baseConfig.module.rules,
 				{
 					exclude: /node_modules/,
-					loader: 'ts-loader',
-					options: { configFile: 'tsconfig.cjs.json' },
 					test: /\.ts$/,
+					use: [
+						{
+							loader: 'swc-loader',
+							options: {
+								env: swcEnv,
+								jsc: {
+									externalHelpers: true,
+									parser: {
+										syntax: 'typescript',
+									},
+								},
+								module: {
+									type: 'commonjs',
+								},
+							},
+						},
+					],
 				},
 			],
 		},
@@ -183,9 +200,24 @@ const esmConfig = (env, argv) => {
 				...baseConfig.module.rules,
 				{
 					exclude: /node_modules/,
-					loader: 'ts-loader',
-					options: { configFile: 'tsconfig.esm.json' },
 					test: /\.ts$/,
+					use: [
+						{
+							loader: 'swc-loader',
+							options: {
+								env: swcEnv,
+								jsc: {
+									externalHelpers: true,
+									parser: {
+										syntax: 'typescript',
+									},
+								},
+								module: {
+									type: 'es6',
+								},
+							},
+						},
+					],
 				},
 			],
 		},
