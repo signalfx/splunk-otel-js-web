@@ -24,6 +24,12 @@ const artifactsPath = path.resolve(__dirname, './dist/artifacts')
 
 const isDevelopmentMode = (argv) => argv.mode === 'development'
 
+const swcEnv = {
+	coreJs: '3.45.1',
+	mode: 'usage',
+	targets: ['defaults', 'chrome >= 71', 'firefox >= 65', 'safari >= 12.1'],
+}
+
 const sourceMapRule = {
 	enforce: 'pre',
 	test: /\.js$/,
@@ -49,11 +55,7 @@ const makeBrowserModuleRules = () => [
 			{
 				loader: 'swc-loader',
 				options: {
-					env: {
-						coreJs: '3.45.1',
-						mode: 'usage',
-						targets: ['defaults', 'chrome >= 71', 'firefox >= 65', 'safari >= 12.1'],
-					},
+					env: swcEnv,
 					jsc: {
 						externalHelpers: true,
 						parser: {
@@ -75,14 +77,11 @@ const makeLibModuleRules = (moduleType) => [
 			{
 				loader: 'swc-loader',
 				options: {
+					env: swcEnv,
 					jsc: {
 						externalHelpers: true,
 						parser: {
 							syntax: 'typescript',
-						},
-						target: 'es2020',
-						transform: {
-							useDefineForClassFields: false,
 						},
 					},
 					module: {

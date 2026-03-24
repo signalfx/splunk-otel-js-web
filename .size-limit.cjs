@@ -29,8 +29,20 @@ module.exports = [
 	},
 
 	{
-		limit: '104 kB',
+		limit: '105 kB',
 		name: 'artifacts/splunk-otel-web-session-recorder.js',
 		path: './packages/session-recorder/dist/artifacts/splunk-otel-web-session-recorder.js',
+	},
+
+	{
+		limit: '110 kB',
+		name: 'session-recorder/cjs',
+		path: './packages/session-recorder/dist/cjs/index.js',
+	},
+
+	{
+		limit: '95 kB',
+		name: 'session-recorder/esm',
+		path: './packages/session-recorder/dist/esm/index.js',
 	},
 ]
