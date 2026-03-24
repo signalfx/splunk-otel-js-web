@@ -10,7 +10,7 @@ This example shows how to add Splunk Real User Monitoring and Session Replay to 
     cp .env.example .env
     ```
 
-2. Edit `.env` with your [Splunk credentials](https://app.signalfx.com/#/organization/current?selectedKeyValue=sf_section:accesstokens):
+2. Edit `.env` with your [Splunk credentials](https://app.observability.splunkcloud.com/#/organization/current?selectedKeyValue=sf_section:accesstokens):
 
     ```bash
     SPLUNK_RUM_REALM=us0
@@ -68,8 +68,8 @@ This is already configured in `src/instrumentation.ts`.
 
 The main process configures Content Security Policy (CSP) headers via `session.webRequest.onHeadersReceived` to allow connections to Splunk RUM endpoints. This ensures the renderer process can:
 
-- Load scripts from Splunk CDN (`https://cdn.signalfx.com`)
-- Send telemetry data to Splunk ingest endpoints (`https://rum-ingest.${realm}.signalfx.com`)
+- Load scripts from Splunk CDN (`https://cdn.observability.splunkcloud.com`)
+- Send telemetry data to Splunk ingest endpoints (`https://rum-ingest.${realm}.observability.splunkcloud.com`)
 
 The CSP configuration automatically uses the `SPLUNK_RUM_REALM` environment variable to set the correct ingest endpoints.
 

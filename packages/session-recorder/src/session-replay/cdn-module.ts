@@ -28,7 +28,7 @@ export {
 	type SessionReplayConfig,
 	type SessionReplayPlainSegment,
 	type Stats,
-} from 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.13.0/session-replay.module.legacy.min.js'
-import 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.13.0/background-service.html'
+} from 'https://cdn.observability.splunkcloud.com/o11y-gdi-rum/session-replay/v2.13.0/session-replay.module.legacy.min.js'
+import 'https://cdn.observability.splunkcloud.com/o11y-gdi-rum/session-replay/v2.13.0/background-service.html'
 // If you update the module version above, also update the version in cdn-module.d.ts.
 // Regenerate webpack.lock: delete it, set frozen to false in webpack.config.js, then run `pnpm run build`.

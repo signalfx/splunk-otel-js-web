@@ -26,26 +26,26 @@ Update the version in the following files (replace old version with new version)
 
 Update the CDN URLs:
 
-- `https://cdn.signalfx.com/o11y-gdi-rum/session-replay/vX.Y.Z/session-replay.module.legacy.min.js`
-- `https://cdn.signalfx.com/o11y-gdi-rum/session-replay/vX.Y.Z/background-service.html`
+- `https://cdn.observability.splunkcloud.com/o11y-gdi-rum/session-replay/vX.Y.Z/session-replay.module.legacy.min.js`
+- `https://cdn.observability.splunkcloud.com/o11y-gdi-rum/session-replay/vX.Y.Z/background-service.html`
 
 ### packages/session-recorder/src/session-replay/cdn-module-types.d.ts
 
 Update the module declaration URL:
 
-- `declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/vX.Y.Z/session-replay.module.legacy.min.js'`
+- `declare module 'https://cdn.observability.splunkcloud.com/o11y-gdi-rum/session-replay/vX.Y.Z/session-replay.module.legacy.min.js'`
 
 ### packages/web/src/utils/picker.ts
 
 Update the CDN URL:
 
-- `https://cdn.signalfx.com/o11y-gdi-rum/session-replay/vX.Y.Z/picker/picker.module.min.js`
+- `https://cdn.observability.splunkcloud.com/o11y-gdi-rum/session-replay/vX.Y.Z/picker/picker.module.min.js`
 
 ### packages/web/src/utils/picker-cdn.d.ts
 
 Update the module declaration URL:
 
-- `declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/vX.Y.Z/picker/picker.module.min.js'`
+- `declare module 'https://cdn.observability.splunkcloud.com/o11y-gdi-rum/session-replay/vX.Y.Z/picker/picker.module.min.js'`
 
 ## 3. Disable frozen flag in webpack configs
 
@@ -58,7 +58,7 @@ Change:
 ```javascript
 experiments: {
   buildHttp: {
-    allowedUris: ['https://cdn.signalfx.com/'],
+    allowedUris: ['https://cdn.observability.splunkcloud.com/'],
     cacheLocation: false,
     frozen: false,  // Changed from true
   },
@@ -72,7 +72,7 @@ Change:
 ```javascript
 experiments: {
   buildHttp: {
-    allowedUris: ['https://cdn.signalfx.com/'],
+    allowedUris: ['https://cdn.observability.splunkcloud.com/'],
     cacheLocation: false,
     frozen: false,  // Changed from true
   },
@@ -109,7 +109,7 @@ Set `frozen: true` back in both webpack config files:
 ```javascript
 experiments: {
   buildHttp: {
-    allowedUris: ['https://cdn.signalfx.com/'],
+    allowedUris: ['https://cdn.observability.splunkcloud.com/'],
     cacheLocation: false,
     frozen: true,  // Restored
   },
@@ -121,7 +121,7 @@ experiments: {
 ```javascript
 experiments: {
   buildHttp: {
-    allowedUris: ['https://cdn.signalfx.com/'],
+    allowedUris: ['https://cdn.observability.splunkcloud.com/'],
     cacheLocation: false,
     frozen: true,  // Restored
   },

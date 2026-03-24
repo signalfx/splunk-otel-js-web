@@ -50,7 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 				{enableCDN && (
 					<>
 						<Script
-							src={`https://cdn.signalfx.com/o11y-gdi-rum/${process.env.NEXT_PUBLIC_SPLUNK_CDN_VERSION}/splunk-otel-web.js`}
+							src={`https://cdn.observability.splunkcloud.com/o11y-gdi-rum/${process.env.NEXT_PUBLIC_SPLUNK_CDN_VERSION}/splunk-otel-web.js`}
 							strategy="beforeInteractive"
 							crossOrigin="anonymous"
 						/>
@@ -69,7 +69,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 							}}
 						/>
 						<Script
-							src={`https://cdn.signalfx.com/o11y-gdi-rum/${process.env.NEXT_PUBLIC_SPLUNK_CDN_VERSION}/splunk-otel-web-session-recorder.js`}
+							src={`https://cdn.observability.splunkcloud.com/o11y-gdi-rum/${process.env.NEXT_PUBLIC_SPLUNK_CDN_VERSION}/splunk-otel-web-session-recorder.js`}
 							strategy="beforeInteractive"
 							crossOrigin="anonymous"
 						/>

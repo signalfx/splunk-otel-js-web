@@ -137,7 +137,7 @@ describe('test init', () => {
 			SplunkRum.init({ applicationName: 'app', realm: 'test', rumAccessToken: undefined })
 
 			expect(SplunkRum.inited).toBeTruthy()
-			doesBeaconUrlEndWith('https://rum-ingest.test.signalfx.com/v1/rum')
+			doesBeaconUrlEndWith('https://rum-ingest.test.observability.splunkcloud.com/v1/rum')
 		})
 
 		it('can use realm + otlp config option', () => {
@@ -150,7 +150,7 @@ describe('test init', () => {
 				rumAccessToken: undefined,
 			})
 			expect(SplunkRum.inited).toBeTruthy()
-			doesBeaconUrlEndWith('https://rum-ingest.test.signalfx.com/v1/rumotlp')
+			doesBeaconUrlEndWith('https://rum-ingest.test.observability.splunkcloud.com/v1/rumotlp')
 		})
 	})
 

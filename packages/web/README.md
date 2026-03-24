@@ -70,23 +70,29 @@ Choose a versioning strategy based on your needs:
 **Major Version Lock (Recommended)**
 
 ```html
-<!-- Locks to v2.x.x - gets latest minor and patch updates -->
-<script src="https://cdn.signalfx.com/o11y-gdi-rum/v2/splunk-otel-web.js" crossorigin="anonymous"></script>
+<!-- Locks to v3.x.x - gets latest minor and patch updates -->
+<script
+	src="https://cdn.observability.splunkcloud.com/o11y-gdi-rum/v3/splunk-otel-web.js"
+	crossorigin="anonymous"
+></script>
 ```
 
 **Minor Version Lock**
 
 ```html
-<!-- Locks to v2.5.x - gets latest patch updates only -->
-<script src="https://cdn.signalfx.com/o11y-gdi-rum/v2.5/splunk-otel-web.js" crossorigin="anonymous"></script>
+<!-- Locks to v3.0.x - gets latest patch updates only -->
+<script
+	src="https://cdn.observability.splunkcloud.com/o11y-gdi-rum/v3.0/splunk-otel-web.js"
+	crossorigin="anonymous"
+></script>
 ```
 
 **Exact Version Lock**
 
 ```html
-<!-- Locks to exact version v2.5.1 - no automatic updates -->
+<!-- Locks to exact version v3.0.0 - no automatic updates -->
 <script
-	src="https://cdn.signalfx.com/o11y-gdi-rum/v2.5.1/splunk-otel-web.js"
+	src="https://cdn.observability.splunkcloud.com/o11y-gdi-rum/v3.0.0/splunk-otel-web.js"
 	crossorigin="anonymous"
 	integrity="sha384-<integrity>"
 ></script>
@@ -94,12 +100,7 @@ Choose a versioning strategy based on your needs:
 
 **Latest Version (Not Recommended)**
 
-```html
-<!-- Always pulls the latest released version -->
-<script src="https://cdn.signalfx.com/o11y-gdi-rum/latest/splunk-otel-web.js" crossorigin="anonymous"></script>
-```
-
-> ⚠️ **Warning:** Using `latest` automatically pulls the newest released version of the RUM agent, which may introduce breaking changes without notice. This can cause unexpected behavior in production. Use a version lock strategy instead.
+> ⚠️ **Warning:** The `latest` tag has been deprecated and now defaults to version `2.5.1`. To receive future updates while avoiding breaking changes, we recommend pinning your configuration to a specific major version (e.g., `v3` or `v2`).
 
 > 📖 For version numbers and integrity hashes, see [GitHub Releases](https://github.com/signalfx/splunk-otel-js-web/releases).
 >
@@ -126,7 +127,10 @@ Choose a versioning strategy based on your needs:
 	<head>
 		<title>My Web App</title>
 		<!-- Load Splunk RUM (using major version lock) -->
-		<script src="https://cdn.signalfx.com/o11y-gdi-rum/v1/splunk-otel-web.js" crossorigin="anonymous"></script>
+		<script
+			src="https://cdn.observability.splunkcloud.com/o11y-gdi-rum/v1/splunk-otel-web.js"
+			crossorigin="anonymous"
+		></script>
 		<script>
 			SplunkRum.init({
 				realm: 'us1',
