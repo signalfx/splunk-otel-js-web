@@ -19,7 +19,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { SessionManager, StorageManager, UserManager } from '../src/managers'
-import { SplunkSpanAttributesProcessor } from '../src/splunk-span-attributes-processor'
+import { SpanAttributesProcessor } from '../src/span-processors'
 
 describe('SplunkSpanAttributesProcessor', () => {
 	const storageManager = new StorageManager({
@@ -30,7 +30,7 @@ describe('SplunkSpanAttributesProcessor', () => {
 
 	describe('setting global attribute', () => {
 		it('should set attributes via constructor', () => {
-			const processor = new SplunkSpanAttributesProcessor(sessionManager, userManager, {
+			const processor = new SpanAttributesProcessor(sessionManager, userManager, {
 				key1: 'value1',
 			})
 
@@ -40,7 +40,7 @@ describe('SplunkSpanAttributesProcessor', () => {
 		})
 
 		it('should patch attributes via .setGlobalAttributes()', () => {
-			const processor = new SplunkSpanAttributesProcessor(sessionManager, userManager, {
+			const processor = new SpanAttributesProcessor(sessionManager, userManager, {
 				key1: 'value1',
 				key2: 'value2',
 			})
