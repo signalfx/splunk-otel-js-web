@@ -58,7 +58,6 @@ import {
 	SplunkXhrInstrumentation,
 	UserInteractionEventsConfig,
 } from './instrumentations'
-import { RecentClickSpanTracker } from './instrumentations/frustration-signals/recent-click-span-tracker'
 import { BrowserInstanceService } from './services/browser-instance-service'
 import { SessionBasedSampler } from './session-based-sampler'
 import { SpanAttributesProcessor, SpanEmitterProcessor } from './span-processors'
@@ -594,8 +593,7 @@ export const SplunkRum: SplunkOtelWebType = {
 
 			this._spanEmitter = new SpanEmitterProcessor()
 			processedOptions.spanEmitter = this._spanEmitter
-			const clickSpanTracker = new RecentClickSpanTracker()
-			const spanProcessors: SpanProcessor[] = [this.attributesProcessor, this._spanEmitter, clickSpanTracker]
+			const spanProcessors: SpanProcessor[] = [this.attributesProcessor, this._spanEmitter]
 
 			if (processedOptions.beaconEndpoint) {
 				const exporter = buildExporter(processedOptions)
@@ -626,8 +624,6 @@ export const SplunkRum: SplunkOtelWebType = {
 
 			this.sessionManager.start()
 
-			let _frustrationSignalsInstrumentation: SplunkFrustrationSignalsInstrumentation | undefined
-
 			const instrumentations = INSTRUMENTATIONS.map(({ confKey, disable, Instrument }) => {
 				const pluginConf = getPluginConfig(processedOptions.instrumentations[confKey], pluginDefaults, disable)
 				if (pluginConf) {
@@ -648,27 +644,12 @@ export const SplunkRum: SplunkOtelWebType = {
 						_postDocLoadInstrumentation = instrumentation
 					}
 
-					if (confKey === 'document' && instrumentation instanceof SplunkDocumentLoadInstrumentation) {
-						_docLoadInstrumentation = instrumentation
-					}
-
-					if (
-						confKey === FRUSTRATION_SIGNALS_INSTRUMENTATION_NAME &&
-						instrumentation instanceof SplunkFrustrationSignalsInstrumentation
-					) {
-						_frustrationSignalsInstrumentation = instrumentation
-					}
-
 					return instrumentation
 				}
 
 				return null
 				// eslint-disable-next-line unicorn/prefer-native-coercion-functions
 			}).filter((a): a is Exclude<typeof a, null> => Boolean(a))
-
-			if (_errorInstrumentation && _frustrationSignalsInstrumentation) {
-				_frustrationSignalsInstrumentation.setErrorSource(_errorInstrumentation, clickSpanTracker)
-			}
 
 			window.addEventListener('visibilitychange', () => {
 				// this condition applies when the page is hidden or when it's closed

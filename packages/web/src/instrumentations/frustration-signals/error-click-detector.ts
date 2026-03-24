@@ -18,11 +18,11 @@
 
 import { Link, Tracer } from '@opentelemetry/api'
 import { isUrlIgnored } from '@opentelemetry/core'
+import { ReadableSpan } from '@opentelemetry/sdk-trace-base'
 
 import { PrivacyManager } from '../../managers'
 import { isElement, isNode, SplunkOtelWebConfig } from '../../types'
 import { captureElementDataAttributes, getElementXPath, getTextFromNode } from '../../utils/index'
-import { ErrorReportedEvent, ErrorReportedListener, SplunkErrorInstrumentation } from '../splunk-error-instrumentation'
 import { RecentClickSpanTracker } from './recent-click-span-tracker'
 
 // ============================================================================
@@ -62,7 +62,11 @@ const DEFAULTS: ResolvedErrorClickConfig = {
 export class ErrorClickDetector {
 	private clickListener?: (event: MouseEvent) => void
 
-	private errorListener?: ErrorReportedListener
+	private clickSpanEmitterListener?: (span: ReadableSpan) => void
+
+	private clickSpanTracker = new RecentClickSpanTracker()
+
+	private errorSpanEmitterListener?: (span: ReadableSpan) => void
 
 	private recentClicks: RecentClick[] = []
 
@@ -70,23 +74,16 @@ export class ErrorClickDetector {
 		private tracer: Tracer,
 		private otelConfig: SplunkOtelWebConfig,
 		private config: ResolvedErrorClickConfig,
-		private errorInstrumentation: SplunkErrorInstrumentation,
-		private clickSpanTracker?: RecentClickSpanTracker,
 	) {}
 
-	static create(
-		tracer: Tracer,
-		otelConfig: SplunkOtelWebConfig,
-		errorInstrumentation: SplunkErrorInstrumentation,
-		clickSpanTracker?: RecentClickSpanTracker,
-	): ErrorClickDetector | undefined {
+	static create(tracer: Tracer, otelConfig: SplunkOtelWebConfig): ErrorClickDetector | undefined {
 		const config = ErrorClickDetector.resolveConfig(otelConfig)
 
 		if (!config) {
 			return undefined
 		}
 
-		return new ErrorClickDetector(tracer, otelConfig, config, errorInstrumentation, clickSpanTracker)
+		return new ErrorClickDetector(tracer, otelConfig, config)
 	}
 
 	disable(): void {
@@ -95,9 +92,14 @@ export class ErrorClickDetector {
 			this.clickListener = undefined
 		}
 
-		if (this.errorListener) {
-			this.errorInstrumentation.removeErrorReportedListener(this.errorListener)
-			this.errorListener = undefined
+		if (this.clickSpanEmitterListener) {
+			this.otelConfig.spanEmitter?.removeEventListener('user-interaction', this.clickSpanEmitterListener)
+			this.clickSpanEmitterListener = undefined
+		}
+
+		if (this.errorSpanEmitterListener) {
+			this.otelConfig.spanEmitter?.removeEventListener('error', this.errorSpanEmitterListener)
+			this.errorSpanEmitterListener = undefined
 		}
 
 		this.recentClicks = []
@@ -119,10 +121,15 @@ export class ErrorClickDetector {
 		}
 		document.addEventListener('click', this.clickListener, true)
 
-		this.errorListener = (event: ErrorReportedEvent) => {
-			this.onErrorReported(event)
+		this.clickSpanEmitterListener = (span: ReadableSpan) => {
+			this.clickSpanTracker.onSpan(span)
 		}
-		this.errorInstrumentation.addErrorReportedListener(this.errorListener)
+		this.otelConfig.spanEmitter?.addEventListener('user-interaction', this.clickSpanEmitterListener)
+
+		this.errorSpanEmitterListener = (span: ReadableSpan) => {
+			this.onErrorSpan(span)
+		}
+		this.otelConfig.spanEmitter?.addEventListener('error', this.errorSpanEmitterListener)
 	}
 
 	private static normalizeConfig(options: ErrorClickOptions): ResolvedErrorClickConfig {
@@ -162,17 +169,18 @@ export class ErrorClickDetector {
 		return undefined
 	}
 
-	private emitFrustrationSpan(click: RecentClick, errorEvent: ErrorReportedEvent): void {
-		const trackedClick = this.clickSpanTracker?.findClickSpan(
+	private emitFrustrationSpan(click: RecentClick, errorSpan: ReadableSpan): void {
+		const errorTimestamp = errorSpan.endTime[0] * 1000 + errorSpan.endTime[1] / 1e6
+		const trackedClick = this.clickSpanTracker.findClickSpan(
 			click.targetXpath,
-			errorEvent.timestamp,
+			errorTimestamp,
 			this.config.timeWindowMs,
 		)
 
 		const startTime = trackedClick ? trackedClick.startTimeMs : click.wallTimestamp
 		const endTime = trackedClick ? trackedClick.endTimeMs : click.wallTimestamp
 
-		const links: Link[] = [{ context: errorEvent.spanContext }]
+		const links: Link[] = [{ context: errorSpan.spanContext() }]
 		if (trackedClick) {
 			links.push({ context: trackedClick.spanContext })
 		}
@@ -191,11 +199,11 @@ export class ErrorClickDetector {
 
 		captureElementDataAttributes(span, click.target, this.otelConfig._experimental_dataAttributesToCapture)
 
-		span.setAttribute('error.message', errorEvent.errorMessage)
-		span.setAttribute('error.object', errorEvent.errorObject)
-		span.setAttribute('error.source', errorEvent.source)
+		span.setAttribute('error.message', (errorSpan.attributes['error.message'] as string) ?? '')
+		span.setAttribute('error.object', (errorSpan.attributes['error.object'] as string) ?? 'Error')
+		span.setAttribute('error.source', errorSpan.name)
 
-		span.setAttribute('error.span_id', errorEvent.spanContext.spanId)
+		span.setAttribute('error.span_id', errorSpan.spanContext().spanId)
 		if (trackedClick) {
 			span.setAttribute('click.span_id', trackedClick.spanContext.spanId)
 		}
@@ -203,7 +211,7 @@ export class ErrorClickDetector {
 		span.end(endTime)
 	}
 
-	private onErrorReported(event: ErrorReportedEvent): void {
+	private onErrorSpan(errorSpan: ReadableSpan): void {
 		if (isUrlIgnored(window.location.href, this.config.ignoreUrls)) {
 			return
 		}
@@ -231,7 +239,7 @@ export class ErrorClickDetector {
 				continue
 			}
 
-			this.emitFrustrationSpan(click, event)
+			this.emitFrustrationSpan(click, errorSpan)
 			click.consumed = true
 			return
 		}

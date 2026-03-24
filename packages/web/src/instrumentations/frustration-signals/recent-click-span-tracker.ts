@@ -17,7 +17,7 @@
  */
 
 import { SpanContext } from '@opentelemetry/api'
-import { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-base'
+import { ReadableSpan } from '@opentelemetry/sdk-trace-base'
 
 const MAX_ENTRIES = 20
 
@@ -29,11 +29,11 @@ export interface TrackedClickSpan {
 }
 
 /**
- * Lightweight SpanProcessor that observes completed click spans and stores
+ * Observes completed click spans (fed via SpanEmitterProcessor) and stores
  * their SpanContexts in a ring buffer. Used by ErrorClickDetector to create
  * span links from frustration spans to the original click spans.
  */
-export class RecentClickSpanTracker implements SpanProcessor {
+export class RecentClickSpanTracker {
 	private recentClicks: TrackedClickSpan[] = []
 
 	findClickSpan(targetXpath: string, beforeTimestamp: number, windowMs: number): TrackedClickSpan | undefined {
@@ -46,31 +46,23 @@ export class RecentClickSpanTracker implements SpanProcessor {
 		return undefined
 	}
 
-	forceFlush(): Promise<void> {
-		return Promise.resolve()
-	}
-
-	onEnd(span: ReadableSpan): void {
-		if (span.attributes['component'] === 'user-interaction' && span.attributes['event_type'] === 'click') {
-			const startTimeMs = span.startTime[0] * 1000 + span.startTime[1] / 1e6
-			const endTimeMs = span.endTime[0] * 1000 + span.endTime[1] / 1e6
-
-			this.recentClicks.push({
-				endTimeMs,
-				spanContext: span.spanContext(),
-				startTimeMs,
-				targetXpath: span.attributes['target_xpath'] as string,
-			})
-
-			if (this.recentClicks.length > MAX_ENTRIES) {
-				this.recentClicks.shift()
-			}
+	onSpan(span: ReadableSpan): void {
+		if (span.attributes['event_type'] !== 'click') {
+			return
 		}
-	}
 
-	onStart(): void {}
+		const startTimeMs = span.startTime[0] * 1000 + span.startTime[1] / 1e6
+		const endTimeMs = span.endTime[0] * 1000 + span.endTime[1] / 1e6
 
-	shutdown(): Promise<void> {
-		return Promise.resolve()
+		this.recentClicks.push({
+			endTimeMs,
+			spanContext: span.spanContext(),
+			startTimeMs,
+			targetXpath: span.attributes['target_xpath'] as string,
+		})
+
+		if (this.recentClicks.length > MAX_ENTRIES) {
+			this.recentClicks.shift()
+		}
 	}
 }

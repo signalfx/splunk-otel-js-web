@@ -26,9 +26,7 @@ import { SplunkOtelWebConfig } from '../types'
 import { VERSION } from '../version'
 import { ErrorClickDetector, ErrorClickOptions } from './frustration-signals/error-click-detector'
 import { RageClickDetector, RageClickOptions } from './frustration-signals/rage-click-detector'
-import { RecentClickSpanTracker } from './frustration-signals/recent-click-span-tracker'
 import { ThrashedCursorDetector, ThrashedCursorOptions } from './frustration-signals/thrashed-cursor-detector'
-import { SplunkErrorInstrumentation } from './splunk-error-instrumentation'
 
 const MODULE_NAME = 'splunk-frustration-signals'
 
@@ -41,11 +39,7 @@ export interface SplunkFrustrationSignalsInstrumentationConfig extends Instrumen
 }
 
 export class SplunkFrustrationSignalsInstrumentation extends InstrumentationBase<SplunkFrustrationSignalsInstrumentationConfig> {
-	private clickSpanTracker?: RecentClickSpanTracker
-
 	private errorClickDetector?: ErrorClickDetector
-
-	private errorInstrumentation?: SplunkErrorInstrumentation
 
 	private rageClickDetector?: RageClickDetector
 
@@ -82,25 +76,11 @@ export class SplunkFrustrationSignalsInstrumentation extends InstrumentationBase
 
 		this.thrashedCursorDetector?.enable()
 
-		if (!this.errorClickDetector && this.errorInstrumentation) {
-			this.errorClickDetector = ErrorClickDetector.create(
-				this.tracer,
-				this.otelConfig,
-				this.errorInstrumentation,
-				this.clickSpanTracker,
-			)
+		if (!this.errorClickDetector) {
+			this.errorClickDetector = ErrorClickDetector.create(this.tracer, this.otelConfig)
 		}
 
 		this.errorClickDetector?.enable()
-	}
-
-	getClickSpanTracker(): RecentClickSpanTracker | undefined {
-		return this.clickSpanTracker
-	}
-
-	setErrorSource(errorInstrumentation: SplunkErrorInstrumentation, clickSpanTracker?: RecentClickSpanTracker): void {
-		this.errorInstrumentation = errorInstrumentation
-		this.clickSpanTracker = clickSpanTracker
 	}
 
 	protected init(): InstrumentationModuleDefinition | InstrumentationModuleDefinition[] | void {}
