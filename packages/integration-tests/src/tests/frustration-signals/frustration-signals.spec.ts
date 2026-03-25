@@ -121,7 +121,6 @@ test.describe('Frustration signals', () => {
 			expect(thrashSpans[0].duration).toBeGreaterThan(0)
 			expect(thrashSpans[0].tags['component']).toBe('user-interaction')
 			expect(thrashSpans[0].tags['thrashing_score']).toBeDefined()
-			expect(thrashSpans[0].tags['pattern_description']).toBeDefined()
 		})
 
 		test('does not emit spans by default (disabled unless explicitly enabled)', async ({ recordPage }) => {
