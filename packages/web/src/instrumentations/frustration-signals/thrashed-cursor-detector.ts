@@ -61,7 +61,7 @@ const DEFAULTS: ResolvedThrashedCursorConfig = {
 	scoreWeightConfinedArea: 0.3,
 	scoreWeightDirectionChanges: 0.4,
 	scoreWeightVelocity: 0.3,
-	thrashingScoreThreshold: 0.6,
+	thrashingScoreThreshold: 0.65,
 	throttleMs: 16,
 	timeWindowMs: 2000,
 }
@@ -533,8 +533,6 @@ export class ThrashedCursorDetector {
 			return
 		}
 
-		const patternDescription = getPatternDescription(this.metricsResult, this.config)
-
 		const endTime = Date.now()
 		const startTime = endTime - this.metricsResult.duration
 		const span = this.tracer.startSpan('frustration', { startTime })
@@ -542,7 +540,6 @@ export class ThrashedCursorDetector {
 		span.setAttribute('interaction_type', 'cursor')
 		span.setAttribute('component', 'user-interaction')
 		span.setAttribute('thrashing_score', analysis.thrashingScore!)
-		span.setAttribute('pattern_description', patternDescription)
 		span.end(endTime)
 	}
 
@@ -575,42 +572,4 @@ export class ThrashedCursorDetector {
  */
 function resolveNumericOption(val: number | undefined, def: number, min = 0): number {
 	return typeof val === 'number' && val > min ? val : def
-}
-
-/**
- * Generates a description of the thrashing pattern based on the metrics and configuration.
- */
-export function getPatternDescription(metrics: MetricsResult, config: ResolvedThrashedCursorConfig): string {
-	const parts: string[] = []
-
-	const boundingBoxSize = metrics.boundingBox.size || 0
-	const confinementRatio = 1 / (1 + (boundingBoxSize / config.maxConfinedAreaSize) ** 2)
-
-	if (confinementRatio > 0.5) {
-		parts.push('tightly confined')
-	} else if (confinementRatio > 0.2) {
-		parts.push('loosely confined')
-	}
-
-	if (metrics.directionChanges >= config.minDirectionChanges * 1.5) {
-		parts.push('high direction changes')
-	} else {
-		parts.push('moderate direction changes')
-	}
-
-	if (metrics.averageVelocity >= config.minAverageVelocity * 1.5) {
-		parts.push('fast movement')
-	} else {
-		parts.push('moderate speed')
-	}
-
-	const changeRate = metrics.directionChangesPerSecond
-
-	if (changeRate > 10) {
-		parts.push('very erratic')
-	} else if (changeRate > 5) {
-		parts.push('erratic')
-	}
-
-	return parts.join(', ')
 }
