@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Error click</title>
+
+		<%- renderAgent({
+			instrumentations: {
+				frustrationSignals: {
+					errorClick: true
+				}
+			}
+		}) %>
+	</head>
+	<body>
+		<h1>Error click</h1>
+		<button id="btn-sync-error">Sync Error</button>
+		<button id="btn-async-error">Async Error</button>
+		<button id="btn-no-error">No Error</button>
+
+		<script>
+			document.addEventListener('click', () => {});
+
+			document.getElementById('btn-sync-error').addEventListener('click', function () {
+				throw new TypeError('sync error from click');
+			});
+
+			document.getElementById('btn-async-error').addEventListener('click', function () {
+				setTimeout(function () {
+					throw new ReferenceError('async error from click');
+				}, 50);
+			});
+		</script>
+	</body>
+</html>

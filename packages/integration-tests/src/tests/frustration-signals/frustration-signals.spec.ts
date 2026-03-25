@@ -15,10 +15,21 @@
  * limitations under the License.
  *
  */
+import { Span } from '@opentelemetry/exporter-zipkin/build/src/types'
 import { expect } from '@playwright/test'
 
 import { RecordPage } from '../../pages/record-page'
 import { test } from '../../utils/test'
+
+const errorClickFilter = (span: Span) =>
+	span.name === 'frustration' &&
+	span.tags['frustration_type'] === 'error' &&
+	span.tags['interaction_type'] === 'click'
+
+const thrashedCursorFilter = (span: Span) =>
+	span.name === 'frustration' &&
+	span.tags['frustration_type'] === 'thrash' &&
+	span.tags['interaction_type'] === 'cursor'
 
 test.describe('Frustration signals', () => {
 	test.describe('Rage clicks', () => {
@@ -96,26 +107,68 @@ test.describe('Frustration signals', () => {
 		})
 	})
 
+	test.describe('Error clicks', () => {
+		test('Error click disabled', async ({ recordPage }) => {
+			await recordPage.goTo('/frustration-signals/error-click-disabled.ejs')
+
+			await recordPage.locator('#btn-sync-error').click()
+			await recordPage.waitForTimeoutAndFlushData(2000)
+
+			expect(recordPage.receivedSpans.filter(errorClickFilter)).toHaveLength(0)
+		})
+
+		test('Error click detects async error after click', async ({ recordPage }) => {
+			await recordPage.goTo('/frustration-signals/error-click.ejs')
+
+			await recordPage.locator('#btn-async-error').click()
+
+			await recordPage.waitForSpans((spans) => spans.some(errorClickFilter))
+
+			const errorClickSpans = recordPage.receivedSpans.filter(errorClickFilter)
+
+			expect(errorClickSpans).toHaveLength(1)
+			expect(errorClickSpans[0].duration).toBeGreaterThanOrEqual(0)
+			expect(errorClickSpans[0].tags['component']).toBe('user-interaction')
+			expect(errorClickSpans[0].tags['error.message']).toBe('async error from click')
+			expect(errorClickSpans[0].tags['error.object']).toBe('ReferenceError')
+			expect(errorClickSpans[0].tags['error.source']).toBe('onerror')
+			expect(errorClickSpans[0].tags['target_xpath']).toBeDefined()
+			expect(errorClickSpans[0].tags['error.span_id']).toBeDefined()
+			expect(errorClickSpans[0].tags['error.trace_id']).toBeUndefined()
+		})
+
+		test('Error click does not trigger for clicks without errors', async ({ recordPage }) => {
+			await recordPage.goTo('/frustration-signals/error-click.ejs')
+
+			await recordPage.locator('#btn-no-error').click()
+			await recordPage.waitForTimeoutAndFlushData(2000)
+
+			expect(recordPage.receivedSpans.filter(errorClickFilter)).toHaveLength(0)
+		})
+
+		test('Error click detects console.error after click', async ({ recordPage }) => {
+			await recordPage.goTo('/frustration-signals/error-click-console-error.ejs')
+
+			await recordPage.locator('#btn-console-error').click()
+
+			await recordPage.waitForSpans((spans) => spans.some(errorClickFilter))
+
+			const errorClickSpans = recordPage.receivedSpans.filter(errorClickFilter)
+
+			expect(errorClickSpans).toHaveLength(1)
+			expect(errorClickSpans[0].tags['error.message']).toBe('console error from click')
+			expect(errorClickSpans[0].tags['error.source']).toBe('console.error')
+		})
+	})
+
 	test.describe('Thrashed cursor', () => {
 		test('detects erratic mouse movement and emits span with correct attributes', async ({ recordPage }) => {
 			await recordPage.goTo('/frustration-signals/thrashed-cursor.ejs')
 			await simulateThrashedCursor(recordPage)
 
-			await recordPage.waitForSpans((spans) =>
-				spans.some(
-					(span) =>
-						span.name === 'frustration' &&
-						span.tags['frustration_type'] === 'thrash' &&
-						span.tags['interaction_type'] === 'cursor',
-				),
-			)
+			await recordPage.waitForSpans((spans) => spans.some(thrashedCursorFilter))
 
-			const thrashSpans = recordPage.receivedSpans.filter(
-				(span) =>
-					span.name === 'frustration' &&
-					span.tags['frustration_type'] === 'thrash' &&
-					span.tags['interaction_type'] === 'cursor',
-			)
+			const thrashSpans = recordPage.receivedSpans.filter(thrashedCursorFilter)
 
 			expect(thrashSpans.length).toBeGreaterThanOrEqual(1)
 			expect(thrashSpans[0].duration).toBeGreaterThan(0)
@@ -128,14 +181,7 @@ test.describe('Frustration signals', () => {
 			await simulateThrashedCursor(recordPage)
 			await recordPage.waitForTimeoutAndFlushData(2000)
 
-			const thrashSpans = recordPage.receivedSpans.filter(
-				(span) =>
-					span.name === 'frustration' &&
-					span.tags['frustration_type'] === 'thrash' &&
-					span.tags['interaction_type'] === 'cursor',
-			)
-
-			expect(thrashSpans).toHaveLength(0)
+			expect(recordPage.receivedSpans.filter(thrashedCursorFilter)).toHaveLength(0)
 		})
 
 		test('does not emit spans when URL matches ignoreUrls', async ({ recordPage }) => {
@@ -143,14 +189,7 @@ test.describe('Frustration signals', () => {
 			await simulateThrashedCursor(recordPage)
 			await recordPage.waitForTimeoutAndFlushData(2000)
 
-			const thrashSpans = recordPage.receivedSpans.filter(
-				(span) =>
-					span.name === 'frustration' &&
-					span.tags['frustration_type'] === 'thrash' &&
-					span.tags['interaction_type'] === 'cursor',
-			)
-
-			expect(thrashSpans).toHaveLength(0)
+			expect(recordPage.receivedSpans.filter(thrashedCursorFilter)).toHaveLength(0)
 		})
 	})
 })

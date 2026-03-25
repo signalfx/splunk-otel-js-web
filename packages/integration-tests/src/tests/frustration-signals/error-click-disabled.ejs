@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Error click disabled</title>
+
+		<%- renderAgent({
+			instrumentations: {
+				frustrationSignals: {
+					errorClick: false
+				}
+			}
+		}) %>
+	</head>
+	<body>
+		<h1>Error click disabled</h1>
+		<button id="btn-sync-error">Sync Error</button>
+
+		<script>
+			document.addEventListener('click', () => {});
+
+			document.getElementById('btn-sync-error').addEventListener('click', function () {
+				throw new TypeError('sync error from click');
+			});
+		</script>
+	</body>
+</html>

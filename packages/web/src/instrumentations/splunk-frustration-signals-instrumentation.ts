@@ -24,17 +24,23 @@ import {
 
 import { SplunkOtelWebConfig } from '../types'
 import { VERSION } from '../version'
+import { ErrorClickDetector, ErrorClickOptions } from './frustration-signals/error-click-detector'
 import { RageClickDetector, RageClickOptions } from './frustration-signals/rage-click-detector'
 import { ThrashedCursorDetector, ThrashedCursorOptions } from './frustration-signals/thrashed-cursor-detector'
 
 const MODULE_NAME = 'splunk-frustration-signals'
 
+export const FRUSTRATION_SIGNALS_INSTRUMENTATION_NAME = 'frustrationSignals'
+
 export interface SplunkFrustrationSignalsInstrumentationConfig extends InstrumentationConfig {
+	errorClick?: false | ErrorClickOptions
 	rageClick?: false | RageClickOptions
 	thrashedCursor?: false | ThrashedCursorOptions
 }
 
 export class SplunkFrustrationSignalsInstrumentation extends InstrumentationBase<SplunkFrustrationSignalsInstrumentationConfig> {
+	private errorClickDetector?: ErrorClickDetector
+
 	private rageClickDetector?: RageClickDetector
 
 	private thrashedCursorDetector?: ThrashedCursorDetector
@@ -52,6 +58,9 @@ export class SplunkFrustrationSignalsInstrumentation extends InstrumentationBase
 
 		this.thrashedCursorDetector?.disable()
 		this.thrashedCursorDetector = undefined
+
+		this.errorClickDetector?.disable()
+		this.errorClickDetector = undefined
 	}
 
 	enable(): void {
@@ -66,6 +75,12 @@ export class SplunkFrustrationSignalsInstrumentation extends InstrumentationBase
 		}
 
 		this.thrashedCursorDetector?.enable()
+
+		if (!this.errorClickDetector) {
+			this.errorClickDetector = ErrorClickDetector.create(this.tracer, this.otelConfig)
+		}
+
+		this.errorClickDetector?.enable()
 	}
 
 	protected init(): InstrumentationModuleDefinition | InstrumentationModuleDefinition[] | void {}

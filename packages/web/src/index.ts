@@ -42,6 +42,7 @@ import {
 	DEFAULT_AUTO_INSTRUMENTED_EVENT_NAMES,
 	DEFAULT_AUTO_INSTRUMENTED_EVENTS,
 	ERROR_INSTRUMENTATION_NAME,
+	FRUSTRATION_SIGNALS_INSTRUMENTATION_NAME,
 	SplunkConnectivityInstrumentation,
 	SplunkDocumentLoadInstrumentation,
 	SplunkErrorInstrumentation,
@@ -138,7 +139,11 @@ const INSTRUMENTATIONS = [
 	// 	once we are able to upgrade to a version that fixes this issue, we can remove this ordering/comment
 	// 	This ordering ensures our PCT fetch wrapper remains intact.
 	{ confKey: 'fetch', disable: false, Instrument: SplunkFetchInstrumentation },
-	{ confKey: 'frustrationSignals', disable: false, Instrument: SplunkFrustrationSignalsInstrumentation },
+	{
+		confKey: FRUSTRATION_SIGNALS_INSTRUMENTATION_NAME,
+		disable: false,
+		Instrument: SplunkFrustrationSignalsInstrumentation,
+	},
 	{ confKey: 'webvitals', disable: false, Instrument: SplunkWebVitalsInstrumentation },
 	{ confKey: 'interactions', disable: false, Instrument: SplunkUserInteractionInstrumentation },
 	{ confKey: 'postload', disable: false, Instrument: SplunkPostDocLoadResourceInstrumentation },
