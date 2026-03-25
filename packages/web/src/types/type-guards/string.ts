@@ -17,3 +17,5 @@
  */
 export const hasToString = (val: unknown): val is { toString: () => string } =>
 	!!val && typeof (val as { toString?: unknown }).toString === 'function'
+
+export const isString = (val: unknown): val is string => typeof val === 'string'

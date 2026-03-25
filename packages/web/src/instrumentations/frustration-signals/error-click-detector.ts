@@ -17,13 +17,10 @@
  */
 
 import { Link, Tracer } from '@opentelemetry/api'
-import { isUrlIgnored } from '@opentelemetry/core'
+import { hrTimeToMilliseconds, isUrlIgnored } from '@opentelemetry/core'
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base'
 
-import { PrivacyManager } from '../../managers'
-import { isElement, isNode, SplunkOtelWebConfig } from '../../types'
-import { captureElementDataAttributes, getElementXPath, getTextFromNode } from '../../utils/index'
-import { RecentClickSpanTracker } from './recent-click-span-tracker'
+import { isString, SplunkOtelWebConfig } from '../../types'
 
 // ============================================================================
 // Types
@@ -32,17 +29,15 @@ import { RecentClickSpanTracker } from './recent-click-span-tracker'
 export type ErrorClickOptions = Partial<ResolvedErrorClickConfig> | true
 
 type ResolvedErrorClickConfig = {
-	ignoreSelectors: string[]
 	ignoreUrls: Array<string | RegExp>
 	timeWindowMs: number
 }
 
 interface RecentClick {
 	consumed: boolean
-	target: Node
-	targetXpath: string
-	timestamp: number
-	wallTimestamp: number
+	endTimeMs: number
+	span: ReadableSpan
+	startTimeMs: number
 }
 
 // ============================================================================
@@ -50,7 +45,6 @@ interface RecentClick {
 // ============================================================================
 
 const DEFAULTS: ResolvedErrorClickConfig = {
-	ignoreSelectors: [],
 	ignoreUrls: [],
 	timeWindowMs: 1000,
 }
@@ -60,11 +54,7 @@ const DEFAULTS: ResolvedErrorClickConfig = {
 // ============================================================================
 
 export class ErrorClickDetector {
-	private clickListener?: (event: MouseEvent) => void
-
 	private clickSpanEmitterListener?: (span: ReadableSpan) => void
-
-	private clickSpanTracker = new RecentClickSpanTracker()
 
 	private errorSpanEmitterListener?: (span: ReadableSpan) => void
 
@@ -87,11 +77,6 @@ export class ErrorClickDetector {
 	}
 
 	disable(): void {
-		if (this.clickListener) {
-			document.removeEventListener('click', this.clickListener, true)
-			this.clickListener = undefined
-		}
-
 		if (this.clickSpanEmitterListener) {
 			this.otelConfig.spanEmitter?.removeEventListener('user-interaction', this.clickSpanEmitterListener)
 			this.clickSpanEmitterListener = undefined
@@ -106,23 +91,12 @@ export class ErrorClickDetector {
 	}
 
 	enable(): void {
-		if (this.clickListener) {
+		if (this.clickSpanEmitterListener) {
 			return
 		}
 
-		this.clickListener = (event: MouseEvent) => {
-			const target = event.target
-
-			if (!target || !isNode(target)) {
-				return
-			}
-
-			this.recordClick(target)
-		}
-		document.addEventListener('click', this.clickListener, true)
-
 		this.clickSpanEmitterListener = (span: ReadableSpan) => {
-			this.clickSpanTracker.onSpan(span)
+			this.onClickSpan(span)
 		}
 		this.otelConfig.spanEmitter?.addEventListener('user-interaction', this.clickSpanEmitterListener)
 
@@ -143,9 +117,6 @@ export class ErrorClickDetector {
 				: DEFAULTS.timeWindowMs
 
 		return {
-			ignoreSelectors: Array.isArray(options.ignoreSelectors)
-				? options.ignoreSelectors
-				: DEFAULTS.ignoreSelectors,
 			ignoreUrls: Array.isArray(options.ignoreUrls) ? options.ignoreUrls : DEFAULTS.ignoreUrls,
 			timeWindowMs,
 		}
@@ -166,45 +137,64 @@ export class ErrorClickDetector {
 	}
 
 	private emitFrustrationSpan(click: RecentClick, errorSpan: ReadableSpan): void {
-		const errorTimestamp = errorSpan.endTime[0] * 1000 + errorSpan.endTime[1] / 1e6
-		const trackedClick = this.clickSpanTracker.findClickSpan(
-			click.targetXpath,
-			errorTimestamp,
-			this.config.timeWindowMs,
-		)
+		const clickSpan = click.span
 
-		const startTime = trackedClick ? trackedClick.startTimeMs : click.wallTimestamp
-		const endTime = trackedClick ? trackedClick.endTimeMs : click.wallTimestamp
+		const links: Link[] = [{ context: errorSpan.spanContext() }, { context: clickSpan.spanContext() }]
 
-		const links: Link[] = [{ context: errorSpan.spanContext() }]
-		if (trackedClick) {
-			links.push({ context: trackedClick.spanContext })
-		}
-
-		const span = this.tracer.startSpan('frustration', { links, startTime })
+		const span = this.tracer.startSpan('frustration', { links, startTime: click.startTimeMs })
 		span.setAttribute('frustration_type', 'error')
 		span.setAttribute('interaction_type', 'click')
 		span.setAttribute('component', 'user-interaction')
-		span.setAttribute('target_xpath', click.targetXpath)
+		const targetXpath = clickSpan.attributes['target_xpath']
+		if (isString(targetXpath)) {
+			span.setAttribute('target_xpath', targetXpath)
+		}
 
-		const textValue = getTextFromNode(
-			click.target,
-			(node) => !PrivacyManager.shouldMaskTextNode(node, this.otelConfig.privacy),
-		)
-		span.setAttribute('target_text', textValue || `<${click.target.nodeName.toLowerCase()}>`)
+		const targetText = clickSpan.attributes['target_text']
+		if (isString(targetText)) {
+			span.setAttribute('target_text', targetText)
+		}
 
-		captureElementDataAttributes(span, click.target, this.otelConfig._experimental_dataAttributesToCapture)
+		for (const [key, value] of Object.entries(clickSpan.attributes)) {
+			if (key.startsWith('data.')) {
+				span.setAttribute(key, value!)
+			}
+		}
 
-		span.setAttribute('error.message', (errorSpan.attributes['error.message'] as string) ?? '')
-		span.setAttribute('error.object', (errorSpan.attributes['error.object'] as string) ?? 'Error')
+		const errorMessage = errorSpan.attributes['error.message']
+		if (isString(errorMessage)) {
+			span.setAttribute('error.message', errorMessage)
+		}
+
+		const errorObject = errorSpan.attributes['error.object']
+		if (isString(errorObject)) {
+			span.setAttribute('error.object', errorObject)
+		}
+
 		span.setAttribute('error.source', errorSpan.name)
 
 		span.setAttribute('error.span_id', errorSpan.spanContext().spanId)
-		if (trackedClick) {
-			span.setAttribute('click.span_id', trackedClick.spanContext.spanId)
+		span.setAttribute('click.span_id', clickSpan.spanContext().spanId)
+
+		span.end(click.endTimeMs)
+	}
+
+	private onClickSpan(span: ReadableSpan): void {
+		if (span.attributes['event_type'] !== 'click') {
+			return
 		}
 
-		span.end(endTime)
+		const startTimeMs = hrTimeToMilliseconds(span.startTime)
+		const endTimeMs = hrTimeToMilliseconds(span.endTime)
+
+		this.pruneOldClicks(startTimeMs)
+
+		this.recentClicks.push({
+			consumed: false,
+			endTimeMs,
+			span,
+			startTimeMs,
+		})
 	}
 
 	private onErrorSpan(errorSpan: ReadableSpan): void {
@@ -212,9 +202,9 @@ export class ErrorClickDetector {
 			return
 		}
 
-		const currentTime = performance.now()
+		const errorTimestamp = hrTimeToMilliseconds(errorSpan.endTime)
 
-		this.pruneOldClicks(currentTime)
+		this.pruneOldClicks(errorTimestamp)
 
 		for (let i = this.recentClicks.length - 1; i >= 0; i--) {
 			const click = this.recentClicks[i]
@@ -223,15 +213,7 @@ export class ErrorClickDetector {
 				continue
 			}
 
-			if (currentTime - click.timestamp > this.config.timeWindowMs) {
-				continue
-			}
-
-			const ignored =
-				isElement(click.target) &&
-				this.config.ignoreSelectors.some((selector) => (click.target as Element).matches(selector))
-
-			if (ignored) {
+			if (errorTimestamp - click.startTimeMs > this.config.timeWindowMs) {
 				continue
 			}
 
@@ -241,23 +223,9 @@ export class ErrorClickDetector {
 		}
 	}
 
-	private pruneOldClicks(currentTime: number): void {
+	private pruneOldClicks(currentTimeMs: number): void {
 		this.recentClicks = this.recentClicks.filter(
-			(click) => currentTime - click.timestamp <= this.config.timeWindowMs,
+			(click) => currentTimeMs - click.startTimeMs <= this.config.timeWindowMs,
 		)
-	}
-
-	private recordClick(target: Node): void {
-		const currentTime = performance.now()
-
-		this.pruneOldClicks(currentTime)
-
-		this.recentClicks.push({
-			consumed: false,
-			target,
-			targetXpath: getElementXPath(target, true),
-			timestamp: currentTime,
-			wallTimestamp: Date.now(),
-		})
 	}
 }
