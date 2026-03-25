@@ -114,12 +114,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 				element = document.documentElement
 			}
 
-			const span = _superCreateSpan(element, eventName, parentSpan)
-			if (span) {
-				span.setAttribute('component', this.moduleName)
-			}
-
-			return span
+			return _superCreateSpan(element, eventName, parentSpan)
 		}
 
 		const _superPatchAddEventListener = (this as unknown as ExposedSuper)._patchAddEventListener.bind(this)

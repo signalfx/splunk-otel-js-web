@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Dead click disabled</title>
+
+		<%- renderAgent({
+			instrumentations: {
+				frustrationSignals: {
+					deadClick: false
+				}
+			}
+		}) %>
+	</head>
+	<body>
+		<h1>Dead click disabled</h1>
+		<button id="btn-dead">Dead Button</button>
+
+		<script>
+			document.addEventListener('click', () => {});
+		</script>
+	</body>
+</html>

@@ -228,6 +228,7 @@ export class UserInteractionInstrumentation<
 		}
 
 		const xpath = getElementXPath(element, true)
+		const interactive = this._isInteractiveElement(element)
 		try {
 			const span = this.tracer.startSpan(
 				eventName,
@@ -236,7 +237,9 @@ export class UserInteractionInstrumentation<
 						[AttributeNames.EVENT_TYPE]: eventName,
 						[AttributeNames.HTTP_URL]: window.location.href,
 						[AttributeNames.TARGET_ELEMENT]: element.tagName,
+						[AttributeNames.TARGET_INTERACTIVE]: interactive,
 						[AttributeNames.TARGET_XPATH]: xpath,
+						component: this.moduleName,
 					},
 				},
 				parentSpan ? api.trace.setSpan(api.context.active(), parentSpan) : undefined,
@@ -276,6 +279,21 @@ export class UserInteractionInstrumentation<
 	// utility method to deal with the Function|EventListener nature of addEventListener
 	private _invokeListener(listener: EventListenerOrEventListenerObject, target: any, args: [evt: Event]): any {
 		return typeof listener === 'function' ? listener.apply(target, args) : listener.handleEvent(args[0])
+	}
+
+	private _isInteractiveElement(element: Element): boolean {
+		const tag = element.tagName.toUpperCase()
+
+		if (tag === 'A' || tag === 'BUTTON') {
+			return true
+		}
+
+		if (tag === 'INPUT') {
+			const type = (element.getAttribute('type') ?? '').toLowerCase()
+			return type === 'submit'
+		}
+
+		return false
 	}
 
 	/**

@@ -26,6 +26,9 @@ const errorClickFilter = (span: Span) =>
 	span.tags['frustration_type'] === 'error' &&
 	span.tags['interaction_type'] === 'click'
 
+const deadClickFilter = (span: Span) =>
+	span.name === 'frustration' && span.tags['frustration_type'] === 'dead' && span.tags['interaction_type'] === 'click'
+
 const thrashedCursorFilter = (span: Span) =>
 	span.name === 'frustration' &&
 	span.tags['frustration_type'] === 'thrash' &&
@@ -158,6 +161,73 @@ test.describe('Frustration signals', () => {
 			expect(errorClickSpans).toHaveLength(1)
 			expect(errorClickSpans[0].tags['error.message']).toBe('console error from click')
 			expect(errorClickSpans[0].tags['error.source']).toBe('console.error')
+		})
+	})
+
+	test.describe('Dead clicks', () => {
+		test('Dead click disabled', async ({ recordPage }) => {
+			await recordPage.goTo('/frustration-signals/dead-click-disabled.ejs')
+
+			await recordPage.locator('#btn-dead').click()
+			await recordPage.waitForTimeoutAndFlushData(2000)
+
+			expect(recordPage.receivedSpans.filter(deadClickFilter)).toHaveLength(0)
+		})
+
+		test('Dead click detects click on button with no response', async ({ recordPage }) => {
+			await recordPage.goTo('/frustration-signals/dead-click.ejs')
+
+			await recordPage.locator('#btn-dead').click()
+
+			await recordPage.waitForSpans((spans) => spans.some(deadClickFilter))
+
+			const deadClickSpans = recordPage.receivedSpans.filter(deadClickFilter)
+
+			expect(deadClickSpans).toHaveLength(1)
+			expect(deadClickSpans[0].duration).toBeGreaterThanOrEqual(0)
+			expect(deadClickSpans[0].tags['component']).toBe('user-interaction')
+			expect(deadClickSpans[0].tags['target_xpath']).toBeDefined()
+			expect(deadClickSpans[0].tags['click.span_id']).toBeDefined()
+		})
+
+		test('Dead click detects click on link with no response', async ({ recordPage }) => {
+			await recordPage.goTo('/frustration-signals/dead-click.ejs')
+
+			await recordPage.locator('#link-dead').click()
+
+			await recordPage.waitForSpans((spans) => spans.some(deadClickFilter))
+
+			const deadClickSpans = recordPage.receivedSpans.filter(deadClickFilter)
+
+			expect(deadClickSpans).toHaveLength(1)
+			expect(deadClickSpans[0].tags['target_xpath']).toBeDefined()
+		})
+
+		test('Dead click does not trigger when DOM mutation occurs', async ({ recordPage }) => {
+			await recordPage.goTo('/frustration-signals/dead-click.ejs')
+
+			await recordPage.locator('#btn-mutation').click()
+			await recordPage.waitForTimeoutAndFlushData(2000)
+
+			expect(recordPage.receivedSpans.filter(deadClickFilter)).toHaveLength(0)
+		})
+
+		test('Dead click does not trigger when fetch occurs', async ({ recordPage }) => {
+			await recordPage.goTo('/frustration-signals/dead-click.ejs')
+
+			await recordPage.locator('#btn-fetch').click()
+			await recordPage.waitForTimeoutAndFlushData(2000)
+
+			expect(recordPage.receivedSpans.filter(deadClickFilter)).toHaveLength(0)
+		})
+
+		test('Dead click does not trigger for non-interactive elements', async ({ recordPage }) => {
+			await recordPage.goTo('/frustration-signals/dead-click.ejs')
+
+			await recordPage.locator('#non-interactive').click()
+			await recordPage.waitForTimeoutAndFlushData(2000)
+
+			expect(recordPage.receivedSpans.filter(deadClickFilter)).toHaveLength(0)
 		})
 	})
 
