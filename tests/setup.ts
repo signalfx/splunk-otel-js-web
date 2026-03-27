@@ -15,7 +15,13 @@
  * limitations under the License.
  *
  */
-import { afterEach } from 'vitest'
+import { afterEach, beforeAll } from 'vitest'
+
+import { setUseNanoidForIds } from '../packages/web/src/utils'
+
+beforeAll(() => {
+	setUseNanoidForIds(true)
+})
 
 afterEach(() => {
 	delete localStorage['_splunk_rum_sid']
