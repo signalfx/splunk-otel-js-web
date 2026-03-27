@@ -34,7 +34,8 @@ export function generateId(bits: number): string {
 	}
 
 	const xes = 'x'.repeat(length)
-	return xes.replaceAll('x', function () {
+	// eslint-disable-next-line unicorn/prefer-string-replace-all
+	return xes.replace(/x/g, function () {
 		// eslint-disable-next-line unicorn/prefer-math-trunc
 		return ((Math.random() * 16) | 0).toString(16)
 	})
