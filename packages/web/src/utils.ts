@@ -23,7 +23,7 @@ const HEX_ALPHABET = '0123456789abcdef'
 
 let nanoidHex: ((size: number) => string) | undefined
 
-export function setUseNanoidForIds(value: boolean): void {
+export function setUseCryptoForIds(value: boolean): void {
 	nanoidHex = value ? customAlphabet(HEX_ALPHABET) : undefined
 }
 

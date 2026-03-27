@@ -17,10 +17,10 @@
  */
 import { afterEach, beforeAll } from 'vitest'
 
-import { setUseNanoidForIds } from '../packages/web/src/utils'
+import { setUseCryptoForIds } from '../packages/web/src/utils'
 
 beforeAll(() => {
-	setUseNanoidForIds(true)
+	setUseCryptoForIds(true)
 })
 
 afterEach(() => {

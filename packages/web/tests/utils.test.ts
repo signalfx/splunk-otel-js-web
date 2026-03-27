@@ -18,7 +18,7 @@
 
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { generateId, setUseNanoidForIds } from '../src/utils'
+import { generateId, setUseCryptoForIds } from '../src/utils'
 
 describe('generateId', () => {
 	it('should generate IDs of 64 and 128 bits', () => {
@@ -35,13 +35,13 @@ describe('generateId', () => {
 		expect(ids.size).toBe(100)
 	})
 
-	describe('with nanoid disabled', () => {
+	describe('with crypto disabled', () => {
 		afterEach(() => {
-			setUseNanoidForIds(true)
+			setUseCryptoForIds(true)
 		})
 
 		it('should generate valid hex IDs using Math.random fallback', () => {
-			setUseNanoidForIds(false)
+			setUseCryptoForIds(false)
 			const id64 = generateId(64)
 			const id128 = generateId(128)
 			expect(id64.length).toBe(16)
@@ -51,7 +51,7 @@ describe('generateId', () => {
 		})
 
 		it('should generate unique IDs using Math.random fallback', () => {
-			setUseNanoidForIds(false)
+			setUseCryptoForIds(false)
 			const ids = new Set(Array.from({ length: 100 }, () => generateId(128)))
 			expect(ids.size).toBe(100)
 		})
