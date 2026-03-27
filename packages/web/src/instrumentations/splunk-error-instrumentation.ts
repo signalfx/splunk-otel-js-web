@@ -21,6 +21,7 @@ import { suppressTracing } from '@opentelemetry/core'
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 import * as shimmer from 'shimmer'
 
+import { SessionManager } from '../managers'
 import { isElement, SplunkOtelWebConfig } from '../types'
 import { limitLen } from '../utils'
 import { getValidAttributes, isPlainObject, removePropertiesWithAdvancedTypes, SpanContext } from '../utils/attributes'
@@ -116,6 +117,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 	constructor(
 		protected _splunkConfig: SplunkErrorInstrumentationConfig,
 		protected otelConfig: SplunkOtelWebConfig,
+		public sessionManager?: SessionManager,
 	) {
 		super(ERROR_INSTRUMENTATION_NAME, ERROR_INSTRUMENTATION_VERSION, _splunkConfig)
 	}

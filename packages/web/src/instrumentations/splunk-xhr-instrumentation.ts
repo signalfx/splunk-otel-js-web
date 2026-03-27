@@ -22,6 +22,7 @@ import {
 	XMLHttpRequestInstrumentationConfig,
 } from '@opentelemetry/instrumentation-xml-http-request'
 
+import { SessionManager } from '../managers'
 import { captureTraceParent } from '../servertiming'
 import { SplunkOtelWebConfig } from '../types'
 
@@ -33,7 +34,11 @@ type ExposedSuper = {
 export class SplunkXhrInstrumentation extends XMLHttpRequestInstrumentation {
 	protected otelConfig: SplunkOtelWebConfig
 
-	constructor(config: XMLHttpRequestInstrumentationConfig = {}, otelConfig: SplunkOtelWebConfig) {
+	constructor(
+		config: XMLHttpRequestInstrumentationConfig = {},
+		otelConfig: SplunkOtelWebConfig,
+		public sessionManager?: SessionManager,
+	) {
 		super(config)
 		this.otelConfig = otelConfig
 
