@@ -72,7 +72,7 @@ import {
 	SplunkOtelWebOptionsInstrumentations,
 	UserTrackingMode,
 } from './types'
-import { generateId, getPluginConfig } from './utils'
+import { generateId, getPluginConfig, setUseCryptoForIds } from './utils'
 import { getValidAttributes, SpanContext } from './utils/attributes'
 import { isAgentLoadedViaLatestTag } from './utils/detect-latest'
 import { isBot } from './utils/is-bot'
@@ -466,6 +466,10 @@ export const SplunkRum: SplunkOtelWebType = {
 			}
 
 			this._processedOptions = processedOptions
+
+			if (processedOptions._experimental_useCryptoForIds) {
+				setUseCryptoForIds(true)
+			}
 
 			// Initialize picker if this is a picker window
 			if (isPickerWindow()) {

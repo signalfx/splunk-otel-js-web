@@ -58,6 +58,7 @@
 		"@opentelemetry/sdk-trace-web": "^1.25.1",
 		"@opentelemetry/semantic-conventions": "^1.25.1",
 		"core-js": "3.48.0",
+		"nanoid": "^5.1.7",
 		"shimmer": "^1.2.1",
 		"web-vitals": "5.1.0"
 	},

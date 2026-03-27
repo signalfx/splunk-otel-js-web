@@ -16,9 +16,9 @@
  *
  */
 
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
-import { generateId } from '../src/utils'
+import { generateId, setUseCryptoForIds } from '../src/utils'
 
 describe('generateId', () => {
 	it('should generate IDs of 64 and 128 bits', () => {
@@ -26,7 +26,34 @@ describe('generateId', () => {
 		const id128 = generateId(128)
 		expect(id64.length).toBe(16)
 		expect(id128.length).toBe(32)
-		expect(id64.match('^[0-9a-z]+$')).toBeTruthy()
-		expect(id128.match('^[0-9a-z]+$')).toBeTruthy()
+		expect(id64.match('^[0-9a-f]+$')).toBeTruthy()
+		expect(id128.match('^[0-9a-f]+$')).toBeTruthy()
+	})
+
+	it('should generate unique IDs', () => {
+		const ids = new Set(Array.from({ length: 100 }, () => generateId(128)))
+		expect(ids.size).toBe(100)
+	})
+
+	describe('with crypto disabled', () => {
+		afterEach(() => {
+			setUseCryptoForIds(true)
+		})
+
+		it('should generate valid hex IDs using Math.random fallback', () => {
+			setUseCryptoForIds(false)
+			const id64 = generateId(64)
+			const id128 = generateId(128)
+			expect(id64.length).toBe(16)
+			expect(id128.length).toBe(32)
+			expect(id64.match('^[0-9a-f]+$')).toBeTruthy()
+			expect(id128.match('^[0-9a-f]+$')).toBeTruthy()
+		})
+
+		it('should generate unique IDs using Math.random fallback', () => {
+			setUseCryptoForIds(false)
+			const ids = new Set(Array.from({ length: 100 }, () => generateId(128)))
+			expect(ids.size).toBe(100)
+		})
 	})
 })
