@@ -631,11 +631,8 @@ export const SplunkRum: SplunkOtelWebType = {
 			const instrumentations = INSTRUMENTATIONS.map(({ confKey, disable, Instrument }) => {
 				const pluginConf = getPluginConfig(processedOptions.instrumentations[confKey], pluginDefaults, disable)
 				if (pluginConf) {
-					const instrumentation =
-						Instrument === SplunkLongTaskInstrumentation
-							? new Instrument(pluginConf, processedOptions)
-							: // @ts-expect-error Can't mark in any way that processedOptions.instrumentations[confKey] is of specifc config type
-								new Instrument(pluginConf, processedOptions)
+					// @ts-expect-error Can't mark in any way that processedOptions.instrumentations[confKey] is of specifc config type
+					const instrumentation = new Instrument(pluginConf, processedOptions, this.sessionManager)
 
 					if (
 						confKey === ERROR_INSTRUMENTATION_NAME &&

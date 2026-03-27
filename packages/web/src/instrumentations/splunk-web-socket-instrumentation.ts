@@ -22,6 +22,7 @@ import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instr
 // FIXME convert into otel-js-contrib Plugin and upstream
 import * as shimmer from 'shimmer'
 
+import { SessionManager } from '../managers'
 import { isError, SplunkOtelWebConfig } from '../types'
 import { getSize, hasSizeLikeProperty } from '../utils/size'
 import { VERSION } from '../version'
@@ -36,6 +37,7 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 	constructor(
 		config: SplunkWebSocketInstrumentationConfig,
 		protected otelConfig: SplunkOtelWebConfig,
+		public sessionManager?: SessionManager,
 	) {
 		super('splunk-websocket', VERSION, config)
 		this._config = config
