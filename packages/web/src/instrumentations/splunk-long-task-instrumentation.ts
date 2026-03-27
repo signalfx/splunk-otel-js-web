@@ -18,6 +18,7 @@
 
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 
+import { SessionManager } from '../managers'
 import { SplunkOtelWebConfig } from '../types'
 import { VERSION } from '../version'
 
@@ -29,7 +30,11 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
 
 	private initOptions: SplunkOtelWebConfig
 
-	constructor(config: InstrumentationConfig = {}, initOptions: SplunkOtelWebConfig) {
+	constructor(
+		config: InstrumentationConfig = {},
+		initOptions: SplunkOtelWebConfig,
+		public sessionManager?: SessionManager,
+	) {
 		super(MODULE_NAME, VERSION, Object.assign({}, config))
 
 		this.initOptions = initOptions
@@ -60,6 +65,7 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
 		const span = this.tracer.startSpan(LONGTASK_PERFORMANCE_TYPE, {
 			startTime: entry.startTime,
 		})
+
 		span.setAttribute('component', MODULE_NAME)
 		span.setAttribute('longtask.name', entry.name)
 		span.setAttribute('longtask.entry_type', entry.entryType)

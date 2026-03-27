@@ -84,7 +84,7 @@ test.describe('web vitals', () => {
 		expectDefined(docLoadSpan)
 		expectDefined(webvitalsSpan)
 
-		expect(webvitalsSpan.timestamp).toBe(docLoadSpan?.timestamp + 1_000_000)
+		expect(webvitalsSpan.timestamp).toBe(docLoadSpan?.timestamp + 1000)
 		expect(webvitalsSpan.tags['location.href']).toBe(docLoadUrl)
 	})
 

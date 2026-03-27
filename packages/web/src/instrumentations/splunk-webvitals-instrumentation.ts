@@ -17,10 +17,12 @@
  */
 
 import { HrTime } from '@opentelemetry/api'
+import { hrTimeToMilliseconds } from '@opentelemetry/core'
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base'
 import { Metric, onCLS, onINP, onLCP, ReportOpts } from 'web-vitals'
 
+import { SessionManager } from '../managers'
 import { SplunkOtelWebConfig } from '../types'
 import { VERSION } from '../version'
 
@@ -51,6 +53,7 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 	constructor(
 		config: SplunkWebVitalsInstrumentationConfig = {},
 		protected otelConfig: SplunkOtelWebConfig,
+		public sessionManager?: SessionManager,
 	) {
 		super(MODULE_NAME, VERSION, config)
 
@@ -133,13 +136,20 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 		let span
 		if (this._config.experimental_alignWebVitalsSpansWithDocumentLoad) {
 			const docLoadSpan = await this.docLoadSpanPromise
-			let startTime = docLoadSpan?.startTime
-			if (startTime && endTime) {
-				startTime = [startTime[0] + 1, startTime[1]]
+			let startTime = hrTimeToMilliseconds(docLoadSpan.startTime) + 1
+			endTime = startTime
+			const sessionState = this.sessionManager?.getSessionMetadata()
+			if (sessionState && sessionState.sessionStart - startTime > 1000 * 60) {
+				// If the document load started more than 1 minute before the current session began,
+				// it likely belongs to a previous session. In that case, align the span to the
+				// current session's start time. The 1-minute tolerance accounts for the fact that
+				// the document load timestamp is based on the performance timeline origin,
+				// which can precede the session start.
+				startTime = sessionState.sessionStart
+				endTime = sessionState.sessionStart
 			}
 
-			span = this.tracer.startSpan('webvitals', { startTime: startTime ?? now })
-			endTime = docLoadSpan?.startTime ?? now
+			span = this.tracer.startSpan('webvitals', { startTime })
 			const docLoadLocation = docLoadSpan?.attributes['location.href']
 			if (docLoadLocation) {
 				span.setAttribute('location.href', docLoadLocation)

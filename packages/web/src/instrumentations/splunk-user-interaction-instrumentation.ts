@@ -19,7 +19,7 @@
 import { diag, Span, trace, Tracer, TracerProvider } from '@opentelemetry/api'
 import { isUrlIgnored } from '@opentelemetry/core'
 
-import { SpaMetricsManager } from '../managers'
+import { SessionManager, SpaMetricsManager } from '../managers'
 import { SplunkOtelWebConfig } from '../types'
 import { UserInteractionInstrumentation } from '../upstream/user-interaction/instrumentation'
 import { UserInteractionInstrumentationConfig } from '../upstream/user-interaction/types'
@@ -74,7 +74,11 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 
 	private spaMetricsManager: SpaMetricsManager | null = null
 
-	constructor(config: SplunkUserInteractionInstrumentationConfig = {}, otelConfig: SplunkOtelWebConfig) {
+	constructor(
+		config: SplunkUserInteractionInstrumentationConfig = {},
+		otelConfig: SplunkOtelWebConfig,
+		public sessionManager?: SessionManager,
+	) {
 		// Prefer otel's eventNames property
 		if (!config.eventNames) {
 			const eventMap = Object.assign({}, DEFAULT_AUTO_INSTRUMENTED_EVENTS, config.events)
