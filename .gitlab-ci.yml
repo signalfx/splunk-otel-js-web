@@ -8,9 +8,7 @@ include:
       file: '/prodsec/.sast-scan.yml'
 
 cache:
-    key:
-        files:
-            - pnpm-lock.yaml
+    key: ${CI_COMMIT_REF_SLUG}-$CI_PIPELINE_ID
     paths:
         - './.turbo'
         - './node_modules'
