@@ -74,7 +74,7 @@ import {
 } from './types'
 import { generateId, getPluginConfig, setUseCryptoForIds } from './utils'
 import { getValidAttributes, SpanContext } from './utils/attributes'
-import { isAgentLoadedViaLatestTag } from './utils/detect-latest'
+import { isAgentLoadedViaLatestTag, isAgentLoadedViaNextTag } from './utils/detect-latest'
 import { isBot } from './utils/is-bot'
 import { parseVersion } from './utils/parse-version'
 import { createPicker, isPickerWindow } from './utils/picker'
@@ -89,6 +89,8 @@ import { PrivacyManager, SessionManager, SessionState, StorageManager, UserManag
 import { ExternalSessionMetadata, isValidExternalSessionMetadata } from './types/external-session-metadata'
 import { getElementXPath, getTextFromNode } from './utils/index'
 import { isDebugMode } from './utils/is-debug-mode'
+
+declare const __COMMIT_HASH__: string
 
 interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
 	bufferSize?: number
@@ -266,6 +268,7 @@ let _postDocLoadInstrumentation: SplunkPostDocLoadResourceInstrumentation | unde
 let eventTarget: InternalEventTarget | undefined
 let _sessionStateUnsubscribe: undefined | (() => void)
 const isLatestTagUsed = isAgentLoadedViaLatestTag()
+const isNextTagUsed = isAgentLoadedViaNextTag()
 
 export const SplunkRum: SplunkOtelWebType = {
 	_internalInit: function (options: Partial<SplunkOtelWebConfigInternal>) {
@@ -550,6 +553,10 @@ export const SplunkRum: SplunkOtelWebType = {
 			const syntheticsRunId = getSyntheticsRunId()
 			if (syntheticsRunId) {
 				resourceAttrs[SYNTHETICS_RUN_ID_ATTRIBUTE] = syntheticsRunId
+			}
+
+			if (isNextTagUsed && typeof __COMMIT_HASH__ === 'string' && __COMMIT_HASH__) {
+				resourceAttrs['splunk.rumVersionFull'] = __COMMIT_HASH__
 			}
 
 			const storageManager = new StorageManager({
