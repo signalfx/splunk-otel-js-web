@@ -97,15 +97,30 @@ export class UserManager {
 		}
 	}
 
-	private persistAnonymousId(id: string): boolean {
-		try {
-			return this.storageManager.persistAnonymousUserId(id)
-		} catch (error) {
-			diag.warn('Failed to persist anonymous user ID', {
-				error: error instanceof Error ? error.message : 'Unknown error',
-				id,
-			})
-			return false
+	private persistAnonymousId(id: string, maxRetries = 3): boolean {
+		for (let attempt = 1; attempt <= maxRetries; attempt++) {
+			try {
+				this.storageManager.persistAnonymousUserId(id)
+
+				const storedId = this.storageManager.getAnonymousUserId()
+				if (storedId) {
+					// We only verify that some ID is persisted, not that it matches ours.
+					// Another tab may have persisted a different ID simultaneously — that's fine, we reuse it.
+					return true
+				}
+
+				diag.debug(`Anonymous user ID persistence verification failed (attempt ${attempt}/${maxRetries})`, {
+					id,
+				})
+			} catch (error) {
+				diag.warn(`Failed to persist anonymous user ID (attempt ${attempt}/${maxRetries})`, {
+					error: error instanceof Error ? error.message : 'Unknown error',
+					id,
+				})
+			}
 		}
+
+		diag.warn('Failed to persist anonymous user ID after all retries', { id, maxRetries })
+		return false
 	}
 }
