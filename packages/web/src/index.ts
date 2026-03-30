@@ -72,9 +72,9 @@ import {
 	SplunkOtelWebOptionsInstrumentations,
 	UserTrackingMode,
 } from './types'
-import { generateId, getPluginConfig } from './utils'
+import { generateId, getPluginConfig, setUseCryptoForIds } from './utils'
 import { getValidAttributes, SpanContext } from './utils/attributes'
-import { isAgentLoadedViaLatestTag } from './utils/detect-latest'
+import { isAgentLoadedViaLatestTag, isAgentLoadedViaNextTag } from './utils/detect-latest'
 import { isBot } from './utils/is-bot'
 import { parseVersion } from './utils/parse-version'
 import { createPicker, isPickerWindow } from './utils/picker'
@@ -89,6 +89,8 @@ import { PrivacyManager, SessionManager, SessionState, StorageManager, UserManag
 import { ExternalSessionMetadata, isValidExternalSessionMetadata } from './types/external-session-metadata'
 import { getElementXPath, getTextFromNode } from './utils/index'
 import { isDebugMode } from './utils/is-debug-mode'
+
+declare const __COMMIT_HASH__: string
 
 interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
 	bufferSize?: number
@@ -266,6 +268,7 @@ let _postDocLoadInstrumentation: SplunkPostDocLoadResourceInstrumentation | unde
 let eventTarget: InternalEventTarget | undefined
 let _sessionStateUnsubscribe: undefined | (() => void)
 const isLatestTagUsed = isAgentLoadedViaLatestTag()
+const isNextTagUsed = isAgentLoadedViaNextTag()
 
 export const SplunkRum: SplunkOtelWebType = {
 	_internalInit: function (options: Partial<SplunkOtelWebConfigInternal>) {
@@ -467,6 +470,10 @@ export const SplunkRum: SplunkOtelWebType = {
 
 			this._processedOptions = processedOptions
 
+			if (processedOptions._experimental_useCryptoForIds) {
+				setUseCryptoForIds(true)
+			}
+
 			// Initialize picker if this is a picker window
 			if (isPickerWindow()) {
 				const initializePicker = () => {
@@ -548,6 +555,10 @@ export const SplunkRum: SplunkOtelWebType = {
 				resourceAttrs[SYNTHETICS_RUN_ID_ATTRIBUTE] = syntheticsRunId
 			}
 
+			if (isNextTagUsed && typeof __COMMIT_HASH__ === 'string' && __COMMIT_HASH__) {
+				resourceAttrs['splunk.rumVersionFull'] = __COMMIT_HASH__
+			}
+
 			const storageManager = new StorageManager({
 				domain: processedOptions.cookieDomain,
 				persistence: processedOptions.persistence,
@@ -627,11 +638,8 @@ export const SplunkRum: SplunkOtelWebType = {
 			const instrumentations = INSTRUMENTATIONS.map(({ confKey, disable, Instrument }) => {
 				const pluginConf = getPluginConfig(processedOptions.instrumentations[confKey], pluginDefaults, disable)
 				if (pluginConf) {
-					const instrumentation =
-						Instrument === SplunkLongTaskInstrumentation
-							? new Instrument(pluginConf, processedOptions)
-							: // @ts-expect-error Can't mark in any way that processedOptions.instrumentations[confKey] is of specifc config type
-								new Instrument(pluginConf, processedOptions)
+					// @ts-expect-error Can't mark in any way that processedOptions.instrumentations[confKey] is of specifc config type
+					const instrumentation = new Instrument(pluginConf, processedOptions, this.sessionManager)
 
 					if (
 						confKey === ERROR_INSTRUMENTATION_NAME &&

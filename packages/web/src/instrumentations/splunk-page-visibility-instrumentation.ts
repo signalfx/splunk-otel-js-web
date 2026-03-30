@@ -18,6 +18,7 @@
 
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 
+import { SessionManager } from '../managers'
 import { SplunkOtelWebConfig } from '../types'
 import { VERSION } from '../version'
 
@@ -33,6 +34,7 @@ export class SplunkPageVisibilityInstrumentation extends InstrumentationBase {
 	constructor(
 		config: InstrumentationConfig = {},
 		protected otelConfig: SplunkOtelWebConfig,
+		public sessionManager?: SessionManager,
 	) {
 		super(MODULE_NAME, VERSION, Object.assign({}, config))
 		this.unloading = false

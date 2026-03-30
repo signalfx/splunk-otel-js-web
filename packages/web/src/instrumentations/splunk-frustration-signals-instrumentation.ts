@@ -22,6 +22,7 @@ import {
 	InstrumentationModuleDefinition,
 } from '@opentelemetry/instrumentation'
 
+import { SessionManager } from '../managers'
 import { SplunkOtelWebConfig } from '../types'
 import { VERSION } from '../version'
 import { DeadClickDetector, DeadClickOptions } from './frustration-signals/dead-click-detector'
@@ -52,6 +53,7 @@ export class SplunkFrustrationSignalsInstrumentation extends InstrumentationBase
 	constructor(
 		config: SplunkFrustrationSignalsInstrumentationConfig = {},
 		private otelConfig: SplunkOtelWebConfig,
+		public sessionManager?: SessionManager,
 	) {
 		super(MODULE_NAME, VERSION, config)
 	}

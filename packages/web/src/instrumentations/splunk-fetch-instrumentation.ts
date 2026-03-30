@@ -19,6 +19,7 @@
 import { diag } from '@opentelemetry/api'
 import { FetchInstrumentation, FetchInstrumentationConfig } from '@opentelemetry/instrumentation-fetch'
 
+import { SessionManager } from '../managers'
 import { captureTraceParent } from '../servertiming'
 import { SplunkOtelWebConfig } from '../types'
 
@@ -29,7 +30,11 @@ type ExposedSuper = {
 export class SplunkFetchInstrumentation extends FetchInstrumentation {
 	protected otelConfig: SplunkOtelWebConfig
 
-	constructor(config: FetchInstrumentationConfig = {}, otelConfig: SplunkOtelWebConfig) {
+	constructor(
+		config: FetchInstrumentationConfig = {},
+		otelConfig: SplunkOtelWebConfig,
+		public sessionManager?: SessionManager,
+	) {
 		const origCustomAttrs = config.applyCustomAttributesOnSpan
 
 		config.applyCustomAttributesOnSpan = function (span, request, result) {

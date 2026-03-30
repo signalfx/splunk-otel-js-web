@@ -15,10 +15,20 @@
  * limitations under the License.
  *
  */
+const { execSync } = require('node:child_process')
 const path = require('node:path')
 
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin')
 const TerserPlugin = require('terser-webpack-plugin')
+const webpack = require('webpack')
+
+const getCommitHash = () => {
+	try {
+		return execSync('git describe --tags --always --long', { encoding: 'utf8' }).trim()
+	} catch {
+		return ''
+	}
+}
 
 const artifactsPath = path.resolve(__dirname, './dist/artifacts')
 
@@ -158,7 +168,12 @@ const browserConfig = (env, argv) => {
 				type: 'window',
 			},
 		},
-		plugins: [makeTsCheckerPlugin('tsconfig.base.json')],
+		plugins: [
+			makeTsCheckerPlugin('tsconfig.base.json'),
+			new webpack.DefinePlugin({
+				__COMMIT_HASH__: JSON.stringify(getCommitHash()),
+			}),
+		],
 	}
 }
 

@@ -24,6 +24,7 @@ import {
 	SemanticAttributes,
 } from '@opentelemetry/semantic-conventions'
 
+import { SessionManager } from '../managers'
 import { SplunkOtelWebConfig } from '../types'
 import { waitForGlobal } from '../utils'
 import { VERSION } from '../version'
@@ -97,6 +98,7 @@ export class SplunkSocketIoClientInstrumentation extends InstrumentationBase {
 	constructor(
 		config: SocketIoClientInstrumentationConfig = {},
 		protected otelConfig: SplunkOtelWebConfig,
+		public sessionManager?: SessionManager,
 	) {
 		super(MODULE_NAME, VERSION, Object.assign({ target: 'io' }, config))
 	}

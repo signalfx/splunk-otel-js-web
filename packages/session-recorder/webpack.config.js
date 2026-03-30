@@ -15,11 +15,21 @@
  * limitations under the License.
  *
  */
+const { execSync } = require('node:child_process')
 const path = require('node:path')
 
 const CopyWebpackPlugin = require('copy-webpack-plugin')
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin')
 const TerserPlugin = require('terser-webpack-plugin')
+const webpack = require('webpack')
+
+const getCommitHash = () => {
+	try {
+		return execSync('git describe --tags --always --long', { encoding: 'utf8' }).trim()
+	} catch {
+		return ''
+	}
+}
 
 const swcEnv = {
 	coreJs: '3.45.1',
@@ -131,6 +141,9 @@ const browserConfig = (env, argv) => {
 					configFile: 'tsconfig.base.json',
 					diagnosticOptions: { semantic: true, syntactic: true },
 				},
+			}),
+			new webpack.DefinePlugin({
+				__COMMIT_HASH__: JSON.stringify(getCommitHash()),
 			}),
 		],
 	}
