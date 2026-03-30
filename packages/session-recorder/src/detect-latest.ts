@@ -31,3 +31,18 @@ export const isRecorderLoadedViaLatestTag = () => {
 
 	return isLatestTagUsed
 }
+
+export const isRecorderLoadedViaNextTag = () => {
+	let isNextTagUsed = false
+	try {
+		if (document.currentScript && isScriptElement(document.currentScript)) {
+			const src = document.currentScript.src
+			// Check for "next" version in CDN URL (pre-release builds from main branch)
+			isNextTagUsed = /\/o11y-gdi-rum\/next\//i.test(src)
+		}
+	} catch {
+		// ignore
+	}
+
+	return isNextTagUsed
+}

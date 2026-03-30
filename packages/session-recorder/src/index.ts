@@ -21,12 +21,14 @@ import type { SplunkOtelWebType } from '@splunk/otel-web'
 import { JsonObject } from 'type-fest'
 
 import { BatchLogProcessor } from './batch-log-processor'
-import { isRecorderLoadedViaLatestTag } from './detect-latest'
+import { isRecorderLoadedViaLatestTag, isRecorderLoadedViaNextTag } from './detect-latest'
 import { log } from './log'
 import OTLPLogExporter from './otlp-log-exporter'
 import { Recorder, RecorderPublicConfig } from './session-replay'
 import { getGlobal, getSplunkRumVersion, isDebugMode, parseVersion } from './utils'
 import { VERSION } from './version'
+
+declare const __COMMIT_HASH__: string
 
 export type SplunkRumRecorderConfig = {
 	/** Destination for the captured data */
@@ -78,6 +80,7 @@ let paused = false
 let recorder: Recorder | undefined
 let sessionStateUnsubscribe: undefined | (() => void)
 const isLatestTagUsed = isRecorderLoadedViaLatestTag()
+const isNextTagUsed = isRecorderLoadedViaNextTag()
 
 enum SpanName {
 	IS_RECORDING = 'splunk.sessionReplay.isRecording',
@@ -243,6 +246,10 @@ const SplunkRumRecorder = {
 			// Mark recorded session as splunk
 			if (SplunkRum.provider) {
 				SplunkRum.provider.resource.attributes['splunk.sessionReplay'] = 'splunk'
+
+				if (isNextTagUsed && typeof __COMMIT_HASH__ === 'string' && __COMMIT_HASH__) {
+					SplunkRum.provider.resource.attributes['splunk.rumVersionFull'] = __COMMIT_HASH__
+				}
 			}
 
 			let exportUrl = beaconEndpoint
