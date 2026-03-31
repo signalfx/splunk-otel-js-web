@@ -69,6 +69,7 @@ export class SessionManager {
 	constructor(
 		private readonly storageManager: StorageManager,
 		externalSessionMetadata?: NonNullable<ExternalSessionMetadata>,
+		private readonly adjustSessionStartToTimeOrigin = false,
 	) {
 		if (externalSessionMetadata) {
 			const externalSessionInit: SessionState = {
@@ -99,6 +100,10 @@ export class SessionManager {
 				this._session = sessionState
 			} else {
 				const newSession = SessionManager.generateNewSession('active')
+				if (this.adjustSessionStartToTimeOrigin) {
+					newSession.startTime = Math.trunc(newSession.startTime - performance.now())
+				}
+
 				this.newSessionsPendingToReport.add(newSession.id)
 				this._session = newSession
 			}
