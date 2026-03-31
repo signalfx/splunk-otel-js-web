@@ -84,6 +84,14 @@ type SensitivityRule = {
 
 export interface SplunkOtelWebConfig {
 	/**
+	 * Experimental: If true, adjusts the session start time of newly created sessions to the page's
+	 * time origin (performance.timeOrigin) instead of using the current wall clock time.
+	 * This ensures the session start aligns with when the tab was actually opened.
+	 * @default false
+	 */
+	_experimental_adjustSessionStartToTimeOrigin?: boolean
+
+	/**
 	 * Experimental: Data attribute names to capture from elements during user interactions.
 	 *
 	 * When specified, these data attributes will be collected from interacted elements and attached
