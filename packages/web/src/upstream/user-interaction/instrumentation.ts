@@ -188,7 +188,7 @@ export class UserInteractionInstrumentation<
 	 * returns Zone
 	 */
 	getZoneWithPrototype(): undefined {
-		return undefined
+		return
 	}
 
 	init() {}

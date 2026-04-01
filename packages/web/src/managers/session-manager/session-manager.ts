@@ -273,7 +273,6 @@ export class SessionManager {
 	}
 
 	private attachExternalSessionWatcher() {
-		// eslint-disable-next-line unicorn/consistent-function-scoping
 		const externalSessionWatcher = () => {
 			const externalSession = SessionManager.getExternalSession()
 			const session = this.session
