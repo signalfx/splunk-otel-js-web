@@ -56,7 +56,7 @@
 	},
 	"devDependencies": {
 		"@splunk/otel-web": "workspace:*",
-		"@swc/core": "^1.15.18",
+		"@swc/core": "^1.15.21",
 		"@swc/helpers": "^0.5.20",
 		"copy-webpack-plugin": "^13.0.1",
 		"fork-ts-checker-webpack-plugin": "^9.1.0",
