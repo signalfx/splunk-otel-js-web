@@ -62,7 +62,7 @@
 		"typescript": "^5.9.3",
 		"typescript-eslint": "^8.58.0",
 		"vitest": "^4.1.2",
-		"ws": "^8.18.3"
+		"ws": "^8.20.0"
 	},
 	"packageManager": "pnpm@10.26.1"
 }
