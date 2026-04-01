@@ -27,7 +27,7 @@
 		"@types/express": "^5.0.6",
 		"@types/node": "^25.3.3",
 		"cors": "^2.8.6",
-		"ejs": "^4.0.1",
+		"ejs": "^5.0.1",
 		"nodemon": "^3.1.14",
 		"playwright": "^1.58.1"
 	},
