@@ -34,7 +34,8 @@ type SessionStateChange = { currentState: SessionState & { isNew?: true }; previ
 export class SessionManager {
 	sessionHistory: Map<string, SessionState> = new Map()
 
-	private _session: SessionState
+	// Guaranteed to be initialized in the constructor via the `session` setter
+	private _session!: SessionState
 
 	private isStarted = false
 
@@ -44,14 +45,14 @@ export class SessionManager {
 
 	private previousSessionState: SessionState | null = null
 
-	private get session(): SessionState {
+	private get session() {
 		return this._session
 	}
 
 	private set session(state: SessionState) {
 		const previousState = this._session
 		this._session = state
-		this.previousSessionState = previousState
+		this.previousSessionState = previousState ?? null
 		this.sessionHistory.set(state.id, state)
 
 		diag.debug('SessionManager: Updating session', { currentState: state, previousState })
@@ -59,7 +60,9 @@ export class SessionManager {
 			this.storageManager.persistSessionState(this._session)
 		}
 
-		this.notifySessionStateChange()
+		if (this.isStarted) {
+			this.notifySessionStateChange()
+		}
 	}
 
 	private readonly sessionStateChange = new Observable<SessionStateChange>()
@@ -68,7 +71,7 @@ export class SessionManager {
 
 	constructor(
 		private readonly storageManager: StorageManager,
-		externalSessionMetadata?: NonNullable<ExternalSessionMetadata>,
+		private readonly externalSessionMetadata?: NonNullable<ExternalSessionMetadata>,
 		private readonly adjustSessionStartToTimeOrigin = false,
 	) {
 		if (externalSessionMetadata) {
@@ -81,7 +84,7 @@ export class SessionManager {
 			}
 
 			if (SessionManager.canContinueUsingSession(externalSessionInit)) {
-				this._session = externalSessionInit
+				this.session = externalSessionInit
 				diag.debug('SessionManager: Initialized with provided external session metadata.', {
 					state: this._session,
 				})
@@ -91,24 +94,22 @@ export class SessionManager {
 
 		const externalSession = SessionManager.getExternalSession()
 		if (externalSession) {
-			this._session = {
+			this.session = {
 				...externalSession,
 			}
 		} else {
 			const sessionState = this.getSessionStateFromStorageAndValidate()
 			if (sessionState) {
-				this._session = sessionState
+				this.session = sessionState
 			} else {
 				const newSession = SessionManager.generateNewSession('active')
-				if (this.adjustSessionStartToTimeOrigin) {
+				if (adjustSessionStartToTimeOrigin) {
 					newSession.startTime = Math.trunc(newSession.startTime - performance.now())
 				}
 
 				this.newSessionsPendingToReport.add(newSession.id)
-				this._session = newSession
+				this.session = newSession
 			}
-
-			this.storageManager.persistSessionState(this._session)
 		}
 
 		diag.debug('SessionManager: Initialized. Current session state', { state: this._session })
@@ -204,6 +205,8 @@ export class SessionManager {
 		}
 
 		this.isStarted = true
+		this.notifySessionStateChange()
+
 		if (SessionManager.hasExternalSession()) {
 			this.attachExternalSessionWatcher()
 		} else {
@@ -212,8 +215,6 @@ export class SessionManager {
 			this.attachVisibilityListener()
 			this.attachWatchSessionState()
 		}
-
-		this.notifySessionStateChange()
 	}
 
 	stop() {
@@ -413,8 +414,8 @@ export class SessionManager {
 	}
 
 	private getUpdatedSessionStateIfExpired = (): SessionState | undefined => {
-		if (!SessionManager.canContinueUsingSession(this._session)) {
-			const newState = SessionManager.isSessionMaxDurationReached(this._session)
+		if (!SessionManager.canContinueUsingSession(this.session)) {
+			const newState = SessionManager.isSessionMaxDurationReached(this.session)
 				? 'expired-duration'
 				: 'expired-inactivity'
 

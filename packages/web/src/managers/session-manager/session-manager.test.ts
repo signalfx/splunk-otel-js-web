@@ -139,6 +139,7 @@ describe('SessionManager', () => {
 			storageManager.persistSessionState = vi.fn().mockReturnValue(true)
 
 			sessionManager = new SessionManager(storageManager)
+			sessionManager.start()
 
 			expect(sessionManager.getSessionId()).toBe('external-session-id')
 		})
