@@ -12,8 +12,8 @@ importers:
         specifier: ^3.1021.0
         version: 3.1021.0
       '@aws-sdk/client-s3':
-        specifier: ^3.1021.0
-        version: 3.1021.0
+        specifier: ^3.1022.0
+        version: 3.1022.0
       '@eslint/js':
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.1.0(jiti@2.6.1))
@@ -566,8 +566,8 @@ packages:
     resolution: {integrity: sha512-SPWPiw31bJn75y8emSsmeW7oCNB3CdzhL/T0HbIhGKIUNsHt/74v5kmB+RhLXhguaHgcS3xHKtQs35BEqo54PQ==}
     engines: {node: '>=20.0.0'}
 
-  '@aws-sdk/client-s3@3.1021.0':
-    resolution: {integrity: sha512-BCfggq8gYSjlKOZlMSVApix3cgKAQIWGeoJFX/AU5HMvqz1BZBEw83jJFL9LYrqTPCocH8NGl++1Xr70ro+jcg==}
+  '@aws-sdk/client-s3@3.1022.0':
+    resolution: {integrity: sha512-PhdIW0LxjzcMlBiCldRefnyZk84wtYGnEV0sNGOD55DZTvZsibG2XHvQiL1aFliKugfAhuIpNmFkctI2n2I3Dg==}
     engines: {node: '>=20.0.0'}
 
   '@aws-sdk/core@3.973.26':
@@ -7860,7 +7860,7 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-s3@3.1021.0':
+  '@aws-sdk/client-s3@3.1022.0':
     dependencies:
       '@aws-crypto/sha1-browser': 5.2.0
       '@aws-crypto/sha256-browser': 5.2.0
