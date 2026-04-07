@@ -37,7 +37,7 @@ export class SpanEmitterProcessor implements SpanProcessor {
 	}
 
 	emitSpan(span: ReadableSpan, phase: 'start' | 'end'): void {
-		const component = span.attributes['component'] as string | undefined
+		const component = span.attributes?.['component'] as string | undefined
 		if (!component) {
 			return
 		}
@@ -46,7 +46,7 @@ export class SpanEmitterProcessor implements SpanProcessor {
 		const listeners = this.listeners.get(eventType) ?? []
 		for (const listener of listeners) {
 			try {
-				listener(span as unknown as ReadableSpan)
+				listener(span)
 			} catch {
 				// Avoid breaking the pipeline if a listener throws
 			}
