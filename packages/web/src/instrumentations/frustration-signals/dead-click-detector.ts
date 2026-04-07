@@ -60,6 +60,8 @@ const NETWORK_LOOKBACK_MS = 100
 export class DeadClickDetector {
 	private clickSpanEmitterListener?: (span: ReadableSpan) => void
 
+	private domContentLoadedListener?: () => void
+
 	private fetchSpanEmitterListener?: (span: ReadableSpan) => void
 
 	private lastMutationTime = -Infinity
@@ -91,6 +93,11 @@ export class DeadClickDetector {
 	}
 
 	disable(): void {
+		if (this.domContentLoadedListener) {
+			document.removeEventListener('DOMContentLoaded', this.domContentLoadedListener)
+			this.domContentLoadedListener = undefined
+		}
+
 		if (this.clickSpanEmitterListener) {
 			this.otelConfig.spanEmitter?.removeEventListener('user-interaction', this.clickSpanEmitterListener)
 			this.clickSpanEmitterListener = undefined
@@ -143,6 +150,7 @@ export class DeadClickDetector {
 		if (document.body) {
 			observeMutations()
 		} else {
+			this.domContentLoadedListener = observeMutations
 			document.addEventListener('DOMContentLoaded', observeMutations, { once: true })
 		}
 
