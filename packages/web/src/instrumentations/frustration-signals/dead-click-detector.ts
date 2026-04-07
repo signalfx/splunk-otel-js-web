@@ -128,15 +128,22 @@ export class DeadClickDetector {
 			this.lastMutationTime = performance.now()
 		})
 
-		const mutationTarget = document.body ?? document.documentElement
+		const observeMutations = () => {
+			const mutationTarget = document.body ?? document.documentElement
+			if (mutationTarget) {
+				this.mutationObserver?.observe(mutationTarget, {
+					attributes: true,
+					characterData: true,
+					childList: true,
+					subtree: true,
+				})
+			}
+		}
 
-		if (mutationTarget) {
-			this.mutationObserver.observe(mutationTarget, {
-				attributes: true,
-				characterData: true,
-				childList: true,
-				subtree: true,
-			})
+		if (document.body) {
+			observeMutations()
+		} else {
+			document.addEventListener('DOMContentLoaded', observeMutations, { once: true })
 		}
 
 		this.clickSpanEmitterListener = (span: ReadableSpan) => {
