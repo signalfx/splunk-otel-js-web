@@ -16,7 +16,8 @@
  *
  */
 
-import { Attributes } from '@opentelemetry/api'
+import { Attributes, diag } from '@opentelemetry/api'
+import { hrTimeToMilliseconds } from '@opentelemetry/core'
 import { Span, SpanProcessor } from '@opentelemetry/sdk-trace-base'
 
 import { SESSION_DURATION_MS, SessionManager, UserManager } from '../managers'
@@ -29,6 +30,7 @@ export class SpanAttributesProcessor implements SpanProcessor {
 		private userManager: UserManager,
 		globalAttributes: Attributes,
 		private readonly _experimental_discardDataAfterInactivity: boolean = false,
+		private readonly _experimental_adjustSessionStartToTimeOrigin: boolean = false,
 	) {
 		this._globalAttributes = globalAttributes ?? {}
 	}
@@ -70,6 +72,16 @@ export class SpanAttributesProcessor implements SpanProcessor {
 			(sessionState.state === 'expired-inactivity' && this._experimental_discardDataAfterInactivity)
 		) {
 			// Do not attach session ID to the span
+		} else if (
+			this._experimental_adjustSessionStartToTimeOrigin &&
+			hrTimeToMilliseconds(span.startTime) < sessionState.startTime
+		) {
+			diag.warn('Dropping span that started before the session', {
+				diffMs: sessionState.startTime - hrTimeToMilliseconds(span.startTime),
+				sessionStartTime: sessionState.startTime,
+				spanName: span.name,
+				spanStartTime: hrTimeToMilliseconds(span.startTime),
+			})
 		} else {
 			span.setAttribute('splunk.rumSessionId', sessionState.id)
 		}

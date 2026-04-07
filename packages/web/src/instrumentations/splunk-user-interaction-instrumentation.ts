@@ -189,7 +189,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 
 	getZoneWithPrototype(): undefined {
 		// FIXME work out ngZone issues with Angular  PENDING
-		return undefined
+		return
 	}
 
 	setTracerProvider(tracerProvider: TracerProvider): void {

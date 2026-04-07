@@ -571,7 +571,11 @@ export const SplunkRum: SplunkOtelWebType = {
 				sessionMetadataFromOptions = processedOptions.sessionMetadata
 			}
 
-			this.sessionManager = new SessionManager(storageManager, sessionMetadataFromOptions)
+			this.sessionManager = new SessionManager(
+				storageManager,
+				sessionMetadataFromOptions,
+				processedOptions._experimental_adjustSessionStartToTimeOrigin,
+			)
 			this.userManager = new UserManager(
 				userTrackingMode,
 				storageManager,
@@ -579,7 +583,10 @@ export const SplunkRum: SplunkOtelWebType = {
 			)
 			_sessionStateUnsubscribe = this.sessionManager.subscribe(({ currentState, previousState }) => {
 				if (currentState.isNew && currentState.source !== 'external') {
-					provider.getTracer('splunk-sessions').startSpan('session.start').end()
+					provider
+						.getTracer('splunk-sessions')
+						.startSpan('session.start', { startTime: currentState.startTime })
+						.end(currentState.startTime)
 				}
 
 				if (!previousState) {
@@ -600,6 +607,7 @@ export const SplunkRum: SplunkOtelWebType = {
 					...processedOptions.globalAttributes,
 				},
 				processedOptions._experimental_discardDataAfterInactivity,
+				processedOptions._experimental_adjustSessionStartToTimeOrigin,
 			)
 
 			this._spanEmitter = new SpanEmitterProcessor()
