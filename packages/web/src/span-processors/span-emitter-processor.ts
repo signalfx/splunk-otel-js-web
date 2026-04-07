@@ -16,8 +16,7 @@
  *
  */
 
-import { ReadableSpan, Span, SpanProcessor } from '@opentelemetry/sdk-trace-base'
-
+import { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-base'
 export type SpanEventType = string
 
 type SpanEventListener = (span: ReadableSpan) => void
@@ -35,6 +34,23 @@ export class SpanEmitterProcessor implements SpanProcessor {
 		}
 
 		this.listeners.get(type)!.add(listener)
+	}
+
+	emitSpan(span: ReadableSpan, phase: 'start' | 'end'): void {
+		const component = span.attributes['component'] as string | undefined
+		if (!component) {
+			return
+		}
+
+		const eventType = phase === 'start' ? `${component}:start` : component
+		const listeners = this.listeners.get(eventType) ?? []
+		for (const listener of listeners) {
+			try {
+				listener(span as unknown as ReadableSpan)
+			} catch {
+				// Avoid breaking the pipeline if a listener throws
+			}
+		}
 	}
 
 	enable() {
@@ -60,7 +76,7 @@ export class SpanEmitterProcessor implements SpanProcessor {
 		this.emitSpan(span, 'end')
 	}
 
-	onStart(span: Span): void {
+	onStart(span: ReadableSpan): void {
 		if (!this.isEnabled) {
 			return
 		}
@@ -75,22 +91,5 @@ export class SpanEmitterProcessor implements SpanProcessor {
 	shutdown(): Promise<void> {
 		this.listeners.clear()
 		return Promise.resolve()
-	}
-
-	private emitSpan(span: ReadableSpan | Span, phase: 'start' | 'end'): void {
-		const component = span.attributes['component'] as string | undefined
-		if (!component) {
-			return
-		}
-
-		const eventType = phase === 'start' ? `${component}:start` : component
-		const listeners = this.listeners.get(eventType) ?? []
-		for (const listener of listeners) {
-			try {
-				listener(span as unknown as ReadableSpan)
-			} catch {
-				// Avoid breaking the pipeline if a listener throws
-			}
-		}
 	}
 }

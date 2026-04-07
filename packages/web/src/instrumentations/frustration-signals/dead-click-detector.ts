@@ -136,6 +136,7 @@ export class DeadClickDetector {
 		})
 
 		const observeMutations = () => {
+			this.domContentLoadedListener = undefined
 			const mutationTarget = document.body ?? document.documentElement
 			if (mutationTarget) {
 				this.mutationObserver?.observe(mutationTarget, {
