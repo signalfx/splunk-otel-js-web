@@ -36,10 +36,9 @@ import { ExternalSessionMetadata } from './external-session-metadata'
 
 export interface SplunkXhrInstrumentationConfig extends XMLHttpRequestInstrumentationConfig {
 	/**
-	 * When true, XHR requests create new root traces instead of inheriting
-	 * trace context from parent spans (e.g., user interactions).
-	 * The parent span reference is preserved as parent.traceId and parent.spanId attributes.
-	 * link.traceId and link.spanId remain available for Server-Timing (backend span reference).
+	 * When true, XHR requests start a new root trace instead of inheriting the active span's
+	 * trace context. The parent span is referenced via link.interaction.traceId and
+	 * link.interaction.spanId attributes on the new root span.
 	 * @default false
 	 */
 	separateTraces?: boolean
@@ -47,10 +46,9 @@ export interface SplunkXhrInstrumentationConfig extends XMLHttpRequestInstrument
 
 export interface SplunkFetchInstrumentationConfig extends FetchInstrumentationConfig {
 	/**
-	 * When true, fetch requests create new root traces instead of inheriting
-	 * trace context from parent spans (e.g., user interactions).
-	 * The parent span reference is preserved as parent.traceId and parent.spanId attributes.
-	 * link.traceId and link.spanId remain available for Server-Timing (backend span reference).
+	 * When true, fetch requests start a new root trace instead of inheriting the active span's
+	 * trace context. The parent span is referenced via link.interaction.traceId and
+	 * link.interaction.spanId attributes on the new root span.
 	 * @default false
 	 */
 	separateTraces?: boolean

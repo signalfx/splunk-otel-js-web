@@ -63,21 +63,17 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
 		this.otelConfig = otelConfig
 
 		if (separateTraces) {
-			// Override _createSpan to create root spans with new trace IDs
 			const _superCreateSpan = (this as any as ExposedSuper)._createSpan?.bind(this)
 			;(this as any as ExposedSuper)._createSpan = (url, options) => {
-				// Capture parent context for link before creating root span
 				const activeContext = api.context.active()
 				const parentSpan = api.trace.getSpan(activeContext)
 				const parentContext = parentSpan?.spanContext()
 
-				// Create hybrid context that preserves suppressTracing from active context
+				// Use ROOT_CONTEXT for a new trace, preserving suppressTracing to avoid exporter loops
 				const hybridContext = isTracingSuppressed(activeContext) ? suppressTracing(ROOT_CONTEXT) : ROOT_CONTEXT
-
-				// Create span in hybrid context to get a new trace ID while preserving suppressTracing
 				const span = api.context.with(hybridContext, () => _superCreateSpan(url, options))
 
-				// Add parent span info as attributes
+				// Record parent span reference so the relationship is not lost
 				if (span && parentContext?.traceId) {
 					span.setAttributes({
 						'link.interaction.spanId': parentContext.spanId,

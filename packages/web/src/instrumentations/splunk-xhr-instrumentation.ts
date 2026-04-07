@@ -47,23 +47,19 @@ export class SplunkXhrInstrumentation extends XMLHttpRequestInstrumentation {
 		const _superCreateSpan = (this as unknown as ExposedSuper)._createSpan.bind(this)
 		const _superAddResourceObserver = (this as unknown as ExposedSuper)._addResourceObserver.bind(this)
 
-		// Override _createSpan to handle separateTraces (same approach as Fetch)
 		;(this as unknown as ExposedSuper)._createSpan = (xhr: XMLHttpRequest, url: string, method: string) => {
 			let span: api.Span | undefined
 
 			if (separateTraces) {
-				// Capture parent context for link before creating root span
 				const activeContext = api.context.active()
 				const parentSpan = api.trace.getSpan(activeContext)
 				const parentContext = parentSpan?.spanContext()
 
-				// Create hybrid context that preserves suppressTracing from active context
+				// Use ROOT_CONTEXT for a new trace, preserving suppressTracing to avoid exporter loops
 				const hybridContext = isTracingSuppressed(activeContext) ? suppressTracing(ROOT_CONTEXT) : ROOT_CONTEXT
-
-				// Create span in hybrid context to get a new trace ID while preserving suppressTracing
 				span = api.context.with(hybridContext, () => _superCreateSpan(xhr, url, method))
 
-				// Add parent span info as attributes
+				// Record parent span reference so the relationship is not lost
 				if (span && parentContext?.traceId) {
 					span.setAttributes({
 						'link.interaction.spanId': parentContext.spanId,
