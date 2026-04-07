@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Click triggering XHR - Default Behavior Test</title>
+  <%- renderAgent() %>
+</head>
+<body>
+  <h1>Click triggering XHR - Default Behavior (separateTraces: false)</h1>
+
+  <button type="button" id="btnTriggerXhr">Trigger XHR Requests</button>
+
+  <script>
+    function makeXHR(url) {
+      return new Promise((resolve) => {
+        const oReq = new XMLHttpRequest();
+        oReq.open("GET", url);
+        oReq.setRequestHeader('Content-Type', 'text/plain');
+        oReq.addEventListener('loadend', resolve);
+        oReq.send();
+      });
+    }
+
+    window.testing = true;
+    btnTriggerXhr.addEventListener('click', async function () {
+      // Make two XHR requests from within the click handler
+      await Promise.all([
+        makeXHR('/some-data'),
+        makeXHR('/no-server-timings')
+      ]);
+      
+      // Wait for spans to be processed
+      setTimeout(function () {
+        window.testing = false;
+      }, 500);
+    });
+  </script>
+</body>
+</html>

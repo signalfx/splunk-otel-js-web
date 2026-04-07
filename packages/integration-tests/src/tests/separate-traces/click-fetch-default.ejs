@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Click triggering Fetch - Default Behavior Test</title>
+  <%- renderAgent() %>
+</head>
+<body>
+  <h1>Click triggering Fetch - Default Behavior (separateTraces: false)</h1>
+
+  <button type="button" id="btnTriggerFetch">Trigger Fetch Requests</button>
+
+  <script>
+    window.testing = true;
+    btnTriggerFetch.addEventListener('click', async function () {
+      // Make two fetch requests from within the click handler
+      await Promise.all([
+        fetch('/some-data'),
+        fetch('/no-server-timings')
+      ]);
+      
+      // Wait for spans to be processed
+      setTimeout(function () {
+        window.testing = false;
+      }, 500);
+    });
+  </script>
+</body>
+</html>

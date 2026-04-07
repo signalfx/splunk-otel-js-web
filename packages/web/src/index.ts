@@ -532,6 +532,7 @@ export const SplunkRum: SplunkOtelWebType = {
 			const instanceId = generateId(64)
 
 			const { applicationName, deploymentEnvironment, ignoreUrls, version } = processedOptions
+
 			// enabled: false prevents registerInstrumentations from enabling instrumentations in constructor
 			// they will be enabled in registerInstrumentations
 			const pluginDefaults = { enabled: false, ignoreUrls }
@@ -646,6 +647,13 @@ export const SplunkRum: SplunkOtelWebType = {
 			const instrumentations = INSTRUMENTATIONS.map(({ confKey, disable, Instrument }) => {
 				const pluginConf = getPluginConfig(processedOptions.instrumentations[confKey], pluginDefaults, disable)
 				if (pluginConf) {
+					// Pass top-level separateTraces to XHR and Fetch instrumentations if not overridden
+					if ((confKey === 'xhr' || confKey === 'fetch') && processedOptions.separateTraces !== undefined) {
+						if ((pluginConf as Record<string, unknown>).separateTraces === undefined) {
+							;(pluginConf as Record<string, unknown>).separateTraces = processedOptions.separateTraces
+						}
+					}
+
 					// @ts-expect-error Can't mark in any way that processedOptions.instrumentations[confKey] is of specifc config type
 					const instrumentation = new Instrument(pluginConf, processedOptions, this.sessionManager)
 

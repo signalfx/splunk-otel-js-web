@@ -97,6 +97,12 @@ fastify.get('/some-data', (request, reply) => {
 	})
 })
 
+// Endpoint that echoes the traceparent header for testing trace propagation
+fastify.get('/echo-traceparent', (request, reply) => {
+	const traceparent = request.headers['traceparent'] as string | undefined
+	reply.send({ traceparent: traceparent || null })
+})
+
 fastify.get('/no-server-timings', (request, reply) => {
 	reply.removeHeader('Server-Timing')
 	reply.send()
