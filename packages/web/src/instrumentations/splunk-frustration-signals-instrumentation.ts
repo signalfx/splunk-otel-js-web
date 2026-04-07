@@ -25,6 +25,7 @@ import {
 import { SessionManager } from '../managers'
 import { SplunkOtelWebConfig } from '../types'
 import { VERSION } from '../version'
+import { DeadClickDetector, DeadClickOptions } from './frustration-signals/dead-click-detector'
 import { ErrorClickDetector, ErrorClickOptions } from './frustration-signals/error-click-detector'
 import { RageClickDetector, RageClickOptions } from './frustration-signals/rage-click-detector'
 import { ThrashedCursorDetector, ThrashedCursorOptions } from './frustration-signals/thrashed-cursor-detector'
@@ -34,12 +35,15 @@ const MODULE_NAME = 'splunk-frustration-signals'
 export const FRUSTRATION_SIGNALS_INSTRUMENTATION_NAME = 'frustrationSignals'
 
 export interface SplunkFrustrationSignalsInstrumentationConfig extends InstrumentationConfig {
+	deadClick?: false | DeadClickOptions
 	errorClick?: false | ErrorClickOptions
 	rageClick?: false | RageClickOptions
 	thrashedCursor?: false | ThrashedCursorOptions
 }
 
 export class SplunkFrustrationSignalsInstrumentation extends InstrumentationBase<SplunkFrustrationSignalsInstrumentationConfig> {
+	private deadClickDetector?: DeadClickDetector
+
 	private errorClickDetector?: ErrorClickDetector
 
 	private rageClickDetector?: RageClickDetector
@@ -55,6 +59,9 @@ export class SplunkFrustrationSignalsInstrumentation extends InstrumentationBase
 	}
 
 	disable(): void {
+		this.deadClickDetector?.disable()
+		this.deadClickDetector = undefined
+
 		this.rageClickDetector?.disable()
 		this.rageClickDetector = undefined
 
@@ -66,6 +73,12 @@ export class SplunkFrustrationSignalsInstrumentation extends InstrumentationBase
 	}
 
 	enable(): void {
+		if (!this.deadClickDetector) {
+			this.deadClickDetector = DeadClickDetector.create(this.tracer, this.otelConfig)
+		}
+
+		this.deadClickDetector?.enable()
+
 		if (!this.rageClickDetector) {
 			this.rageClickDetector = RageClickDetector.create(this.tracer, this.otelConfig)
 		}

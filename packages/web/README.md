@@ -209,7 +209,7 @@ privacy: {
 
 ### Frustration Signals
 
-The `frustrationSignals` instrumentation detects user frustration patterns and emits `frustration` spans. Rage click detection is enabled by default. Error click and thrashed cursor detection are disabled by default and must be explicitly enabled.
+The `frustrationSignals` instrumentation detects user frustration patterns and emits `frustration` spans. Rage click detection is enabled by default. Dead click, error click, and thrashed cursor detection are disabled by default and must be explicitly enabled.
 
 **Rage Clicks** detect rapid repeated clicks on the same element, indicating the user is frustrated because the UI is unresponsive.
 
@@ -219,6 +219,14 @@ The `frustrationSignals` instrumentation detects user frustration patterns and e
 | `rageClick.count`            | `number`                  | `4`     | Number of clicks to trigger detection          |
 | `rageClick.timeframeSeconds` | `number`                  | `1`     | Time window in seconds                         |
 | `rageClick.ignoreSelectors`  | `string[]`                | `[]`    | CSS selectors to exclude from detection        |
+
+**Dead Clicks** detect when a user clicks on an interactive element (link, button, or submit input) but nothing happens — no DOM mutation and no network request occur within the configured time window. Dead click detection is disabled by default and must be explicitly enabled.
+
+| Option                   | Type                      | Default | Description                                                       |
+| ------------------------ | ------------------------- | ------- | ----------------------------------------------------------------- |
+| `deadClick`              | `false \| object \| true` | `false` | Set to `true` or an options object to enable dead click detection |
+| `deadClick.timeWindowMs` | `number`                  | `1000`  | Time window in milliseconds to wait for a DOM or network response |
+| `deadClick.ignoreUrls`   | `Array<string\|RegExp>`   | `[]`    | URLs where detection is skipped                                   |
 
 **Error Clicks** detect when a user clicks on an element and a JavaScript error occurs shortly after, indicating the click triggered a broken interaction. Error click detection is disabled by default and must be explicitly enabled.
 
@@ -258,6 +266,10 @@ instrumentations: {
 			timeframeSeconds: 1,
 			ignoreSelectors: ['#interactive-canvas'],
 		},
+		deadClick: {
+			timeWindowMs: 1000,
+			ignoreUrls: [/\/expected-no-response/],
+		},
 		errorClick: {
 			timeWindowMs: 1000,
 			ignoreUrls: [/\/expected-errors/],
@@ -270,13 +282,14 @@ instrumentations: {
 }
 ```
 
-To enable error click and thrashed cursor detection while disabling rage clicks:
+To enable dead click, error click, and thrashed cursor detection while disabling rage clicks:
 
 ```typescript
 instrumentations: {
 	frustrationSignals: {
-		rageClick: false, // Disable rage click detection
-		errorClick: true, // Enable error click detection (disabled by default)
+		rageClick: false,     // Disable rage click detection
+		deadClick: true,      // Enable dead click detection (disabled by default)
+		errorClick: true,     // Enable error click detection (disabled by default)
 		thrashedCursor: true, // Enable thrashed cursor detection (disabled by default)
 	},
 }
@@ -350,6 +363,7 @@ SplunkRum.init({
 		fetch: true,
 		frustrationSignals: {
 			rageClick: { count: 4 },
+			deadClick: true, // Opt-in: disabled by default
 			errorClick: true, // Opt-in: disabled by default
 			thrashedCursor: true, // Opt-in: disabled by default
 		},

@@ -21,6 +21,7 @@ import {
 	XMLHttpRequestInstrumentation,
 	XMLHttpRequestInstrumentationConfig,
 } from '@opentelemetry/instrumentation-xml-http-request'
+import { ReadableSpan } from '@opentelemetry/sdk-trace-base'
 
 import { SessionManager } from '../managers'
 import { captureTraceParent } from '../servertiming'
@@ -61,7 +62,12 @@ export class SplunkXhrInstrumentation extends XMLHttpRequestInstrumentation {
 					}
 				})
 				// FIXME long-term answer for deprecating attributes.component?
+				// The upstream _createSpan calls tracer.startSpan() internally, which triggers SpanProcessor.onStart
+				// before this override has a chance to set the component attribute. SpanEmitterProcessor.onStart
+				// relies on component being present to route the event, so 'xml-http-request:start' would never fire.
+				// Work around this by setting component first and then emitting the start event manually.
 				span.setAttribute('component', this.moduleName)
+				this.otelConfig.spanEmitter?.emitSpan(span as unknown as ReadableSpan, 'start')
 				// Temporary return to old span name until cleared by backend
 				span.updateName(`HTTP ${method.toUpperCase()}`)
 			}

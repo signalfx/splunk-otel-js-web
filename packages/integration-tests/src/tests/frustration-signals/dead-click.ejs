@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Dead click</title>
+
+		<%- renderAgent({
+			instrumentations: {
+				frustrationSignals: {
+					deadClick: true
+				}
+			}
+		}) %>
+	</head>
+	<body>
+		<h1>Dead click</h1>
+		<button id="btn-dead">Dead Button</button>
+		<button id="btn-mutation">Mutation Button</button>
+		<button id="btn-fetch">Fetch Button</button>
+		<a id="link-dead" href="javascript:void(0)">Dead Link</a>
+		<div id="non-interactive">Non-interactive</div>
+
+		<script>
+			document.addEventListener('click', () => {});
+
+			document.getElementById('btn-mutation').addEventListener('click', function () {
+				setTimeout(function () {
+					var el = document.createElement('div');
+					el.textContent = 'mutated';
+					document.body.appendChild(el);
+				}, 100);
+			});
+
+			document.getElementById('btn-fetch').addEventListener('click', function () {
+				fetch('/api/data').catch(function () {});
+			});
+		</script>
+	</body>
+</html>
