@@ -136,7 +136,7 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 		let span
 		if (this._config.experimental_alignWebVitalsSpansWithDocumentLoad) {
 			const docLoadSpan = await this.docLoadSpanPromise
-			let startTime = Math.round(hrTimeToMilliseconds(docLoadSpan.startTime)) + 1
+			let startTime = hrTimeToMilliseconds(docLoadSpan.startTime) + 1
 			endTime = startTime
 			const sessionState = this.sessionManager?.getSessionMetadata()
 			if (sessionState && sessionState.sessionStart - startTime > 1000 * 60) {
