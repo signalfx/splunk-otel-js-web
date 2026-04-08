@@ -248,7 +248,7 @@ const SplunkRumRecorder = {
 				SplunkRum.provider.resource.attributes['splunk.sessionReplay'] = 'splunk'
 
 				if (isNextTagUsed && typeof __COMMIT_HASH__ === 'string' && __COMMIT_HASH__) {
-					SplunkRum.provider.resource.attributes['splunk.rumVersionFull'] = __COMMIT_HASH__
+					SplunkRum.provider.resource.attributes['splunk.rumVersionFullSessionRecorder'] = __COMMIT_HASH__
 				}
 			}
 
