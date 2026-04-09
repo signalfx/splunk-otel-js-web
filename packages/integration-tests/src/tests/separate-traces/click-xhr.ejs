@@ -22,15 +22,13 @@
     }
 
     window.testing = true;
-    btnTriggerXhr.addEventListener('click', function () {
+    btnTriggerXhr.addEventListener('click', async function () {
       // Make two XHR requests from within the click handler using test server endpoints
-      makeXHR('/some-data');
-      makeXHR('/no-server-timings');
-      
-      // Wait for spans to be processed
-      setTimeout(function () {
-        window.testing = false;
-      }, 500);
+      await Promise.all([
+        makeXHR('/some-data'),
+        makeXHR('/no-server-timings')
+      ]);
+      window.testing = false;
     });
   </script>
 </body>

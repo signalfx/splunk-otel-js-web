@@ -24,9 +24,7 @@
         document.getElementById('result').textContent = 'Traceparent: ' + response.traceparent;
       });
       oReq.addEventListener('loadend', function() {
-        setTimeout(function () {
-          window.testing = false;
-        }, 500);
+        window.testing = false;
       });
       oReq.send();
     });

@@ -18,11 +18,7 @@
         fetch('/some-data'),
         fetch('/no-server-timings')
       ]);
-      
-      // Wait for spans to be processed
-      setTimeout(function () {
-        window.testing = false;
-      }, 500);
+      window.testing = false;
     });
   </script>
 </body>

@@ -42,7 +42,7 @@ export class SplunkXhrInstrumentation extends XMLHttpRequestInstrumentation {
 		super(config)
 		this.otelConfig = otelConfig
 
-		const separateTraces = config.separateTraces ?? false
+		const separateTraces = config.separateTraces ?? otelConfig.separateTraces ?? false
 
 		const _superCreateSpan = (this as unknown as ExposedSuper)._createSpan.bind(this)
 		const _superAddResourceObserver = (this as unknown as ExposedSuper)._addResourceObserver.bind(this)

@@ -38,7 +38,7 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
 		otelConfig: SplunkOtelWebConfig,
 		public sessionManager?: SessionManager,
 	) {
-		const separateTraces = config.separateTraces ?? false
+		const separateTraces = config.separateTraces ?? otelConfig.separateTraces ?? false
 
 		const origCustomAttrs = config.applyCustomAttributesOnSpan
 
