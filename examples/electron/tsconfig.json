@@ -1,19 +1,15 @@
 {
 	"compilerOptions": {
-		"target": "ES6",
+		"target": "ES2020",
 		"allowJs": true,
-		"module": "commonjs",
+		"module": "NodeNext",
 		"skipLibCheck": true,
 		"esModuleInterop": true,
 		"noImplicitAny": true,
 		"sourceMap": true,
-		"baseUrl": ".",
 		"outDir": "dist",
-		"moduleResolution": "node",
-		"resolveJsonModule": true,
-		"paths": {
-			"*": ["node_modules/*"]
-		}
+		"moduleResolution": "NodeNext",
+		"resolveJsonModule": true
 	},
 	"include": ["src/**/*", "*.ts"]
 }
