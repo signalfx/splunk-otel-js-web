@@ -15,6 +15,8 @@
  * limitations under the License.
  *
  */
+declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.10.1/background-service.html' {}
+
 declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.10.1/session-replay.module.legacy.min.js' {
 	type DeepPartial<T> = {
 		[P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P]

@@ -1,7 +1,6 @@
 {
 	"$schema": "https://json.schemastore.org/tsconfig",
 	"compilerOptions": {
-		"baseUrl": ".",
 		"moduleResolution": "NodeNext",
 		"noImplicitAny": true,
 		"module": "NodeNext",
@@ -11,7 +10,6 @@
 		"strict": true,
 		"lib": ["ESNext", "DOM"],
 		"declaration": true,
-		"downlevelIteration": false,
 		"skipLibCheck": true,
 		"experimentalDecorators": true,
 		"incremental": true,
@@ -19,7 +17,7 @@
 		"allowJs": true,
 		"esModuleInterop": true,
 		"paths": {
-			"@test-utils/*": ["tests/utils/*"]
+			"@test-utils/*": ["./tests/utils/*"]
 		}
 	},
 	"include": [
