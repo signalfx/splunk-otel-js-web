@@ -20,25 +20,11 @@ import { customAlphabet } from 'nanoid'
 import { wrap } from 'shimmer'
 
 const HEX_ALPHABET = '0123456789abcdef'
-
-let nanoidHex: ((size: number) => string) | undefined
-
-export function setUseCryptoForIds(value: boolean): void {
-	nanoidHex = value ? customAlphabet(HEX_ALPHABET) : undefined
-}
+const nanoidHex = customAlphabet(HEX_ALPHABET)
 
 export function generateId(bits: number): string {
 	const length = bits / 4
-	if (nanoidHex) {
-		return nanoidHex(length)
-	}
-
-	const xes = 'x'.repeat(length)
-	// eslint-disable-next-line unicorn/prefer-string-replace-all
-	return xes.replace(/x/g, function () {
-		// eslint-disable-next-line unicorn/prefer-math-trunc
-		return ((Math.random() * 16) | 0).toString(16)
-	})
+	return nanoidHex(length)
 }
 
 export function limitLen(s: string, cap: number): string {
