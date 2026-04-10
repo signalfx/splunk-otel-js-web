@@ -127,13 +127,6 @@ export interface SplunkOtelWebConfig {
 				quietTime?: number
 		  }
 
-	/**
-	 * Experimental: If true, uses crypto.getRandomValues() instead of Math.random() for generating IDs.
-	 * This avoids deterministic ID collisions in environments with seeded Math.random() (e.g. Googlebot).
-	 * @default false
-	 */
-	_experimental_useCryptoForIds?: boolean
-
 	/** Allows http beacon urls */
 	allowInsecureBeacon?: boolean
 

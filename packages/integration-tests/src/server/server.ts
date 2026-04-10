@@ -125,7 +125,6 @@ fastify.get<{
 			? reply.viewAsync(parsedUrl.pathname, {
 					renderAgent(userOpts = {}, noInit = false, file = defaultFile, cdnVersion = null) {
 						const options: Record<string, unknown> = {
-							_experimental_useCryptoForIds: true,
 							applicationName: 'splunk-otel-js-dummy-app',
 							beaconEndpoint: beaconUrl.toString(),
 							bufferTimeout: GLOBAL_TEST_BUFFER_TIMEOUT,

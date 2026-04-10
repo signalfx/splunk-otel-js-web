@@ -15,13 +15,7 @@
  * limitations under the License.
  *
  */
-import { afterEach, beforeAll } from 'vitest'
-
-import { setUseCryptoForIds } from '../packages/web/src/utils'
-
-beforeAll(() => {
-	setUseCryptoForIds(true)
-})
+import { afterEach } from 'vitest'
 
 afterEach(() => {
 	delete localStorage['_splunk_rum_sid']
