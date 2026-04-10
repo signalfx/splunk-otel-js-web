@@ -2,6 +2,68 @@
 
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
+## 2.5.0
+
+- `@splunk/otel-web`
+    - **Frustration signals - dead clicks detection** [#1697](https://github.com/signalfx/splunk-otel-js-web/pull/1697)
+        - Detects when a user clicks an interactive element (button, link, or submit input) that produces no meaningful response — no DOM mutation and no network activity within a configurable time window
+        - Enabled via `instrumentations.frustrationSignals.deadClick: true` or with custom options (`timeWindowMs`, `ignoreUrls`)
+        - Default detection window is 1000ms
+    - **Frustration signals - error clicks detection** [#1681](https://github.com/signalfx/splunk-otel-js-web/pull/1681)
+        - Detects when a user clicks on a UI element and a JavaScript error occurs shortly afterward
+        - The frustration span captures the error message, error type, clicked element, and links to the original click and error spans
+        - Enabled via `instrumentations.frustrationSignals.errorClick: true` or with custom options (`timeWindowMs`, `ignoreUrls`)
+        ```js
+        SplunkRum.init({
+        	instrumentations: {
+        		frustrationSignals: {
+        			deadClick: true,
+        			errorClick: true,
+        		},
+        	},
+        })
+        ```
+    - **Add `_experimental_adjustSessionStartToTimeOrigin` config option** [#1705](https://github.com/signalfx/splunk-otel-js-web/pull/1705)
+        - Backdates session start time using `performance.timeOrigin` to reflect when the tab opened rather than when the SDK initialized
+        - Drops spans whose start time predates the session start time by not assigning a session ID
+        - Anchors `session.start` span to the precise session start moment
+    - **Track commit hash when loaded via next CDN tag** [#1702](https://github.com/signalfx/splunk-otel-js-web/pull/1702)
+        - When loading via the `/next/` CDN path, a `splunk.rumVersionFull` resource attribute is added containing the git describe output (e.g. `v2.4.0-11-g4a8f39d8`)
+    - **Use nanoid for IDs to prevent collisions** [#1701](https://github.com/signalfx/splunk-otel-js-web/pull/1701)
+        - Adds `_experimental_useCryptoForIds` flag that switches to cryptographically secure ID generation using nanoid, preventing duplicate session IDs from Googlebot's seeded Math.random()
+    - **Add retry strategy for anonymous user ID persistence** [#1703](https://github.com/signalfx/splunk-otel-js-web/pull/1703)
+        - Adds write-back verification with retry capability (up to 3 attempts) when persisting the anonymous user ID cookie
+    - **Fix init session missing from sessionHistory and notifications** [#1747](https://github.com/signalfx/splunk-otel-js-web/pull/1747)
+        - Session initialization now follows the same processing path as subsequent updates, ensuring the initial session is added to `sessionHistory`, persisted to storage, and triggers subscriber notifications
+    - **Fix timestamp of webvitals spans** [#1700](https://github.com/signalfx/splunk-otel-js-web/pull/1700)
+        - Fixed incorrect start times on web vitals spans when `experimental_alignWebVitalsSpansWithDocumentLoad` is enabled
+
+- `@splunk/otel-web-session-recorder`
+    - **Track commit hash separately via `splunk.rumVersionFullSessionRecorder` attribute** [#1748](https://github.com/signalfx/splunk-otel-js-web/pull/1748)
+        - When loading via the `/next/` CDN path, session recorder now reports its commit hash in a separate `splunk.rumVersionFullSessionRecorder` resource attribute
+    - **Update session replay upstream** [#1698](https://github.com/signalfx/splunk-otel-js-web/pull/1698), [#1694](https://github.com/signalfx/splunk-otel-js-web/pull/1694), [#1692](https://github.com/signalfx/splunk-otel-js-web/pull/1692), [#1691](https://github.com/signalfx/splunk-otel-js-web/pull/1691)
+
+- **Updated dependencies** [#1750](https://github.com/signalfx/splunk-otel-js-web/pull/1750), [#1744](https://github.com/signalfx/splunk-otel-js-web/pull/1744), [#1745](https://github.com/signalfx/splunk-otel-js-web/pull/1745), [#1742](https://github.com/signalfx/splunk-otel-js-web/pull/1742), [#1746](https://github.com/signalfx/splunk-otel-js-web/pull/1746), [#1738](https://github.com/signalfx/splunk-otel-js-web/pull/1738), [#1739](https://github.com/signalfx/splunk-otel-js-web/pull/1739), [#1737](https://github.com/signalfx/splunk-otel-js-web/pull/1737), [#1740](https://github.com/signalfx/splunk-otel-js-web/pull/1740), [#1741](https://github.com/signalfx/splunk-otel-js-web/pull/1741), [#1726](https://github.com/signalfx/splunk-otel-js-web/pull/1726), [#1730](https://github.com/signalfx/splunk-otel-js-web/pull/1730), [#1727](https://github.com/signalfx/splunk-otel-js-web/pull/1727), [#1731](https://github.com/signalfx/splunk-otel-js-web/pull/1731), [#1729](https://github.com/signalfx/splunk-otel-js-web/pull/1729), [#1728](https://github.com/signalfx/splunk-otel-js-web/pull/1728), [#1734](https://github.com/signalfx/splunk-otel-js-web/pull/1734), [#1732](https://github.com/signalfx/splunk-otel-js-web/pull/1732), [#1720](https://github.com/signalfx/splunk-otel-js-web/pull/1720), [#1718](https://github.com/signalfx/splunk-otel-js-web/pull/1718), [#1721](https://github.com/signalfx/splunk-otel-js-web/pull/1721), [#1723](https://github.com/signalfx/splunk-otel-js-web/pull/1723), [#1722](https://github.com/signalfx/splunk-otel-js-web/pull/1722), [#1719](https://github.com/signalfx/splunk-otel-js-web/pull/1719), [#1724](https://github.com/signalfx/splunk-otel-js-web/pull/1724), [#1717](https://github.com/signalfx/splunk-otel-js-web/pull/1717), [#1708](https://github.com/signalfx/splunk-otel-js-web/pull/1708), [#1706](https://github.com/signalfx/splunk-otel-js-web/pull/1706), [#1711](https://github.com/signalfx/splunk-otel-js-web/pull/1711), [#1712](https://github.com/signalfx/splunk-otel-js-web/pull/1712), [#1715](https://github.com/signalfx/splunk-otel-js-web/pull/1715), [#1714](https://github.com/signalfx/splunk-otel-js-web/pull/1714), [#1713](https://github.com/signalfx/splunk-otel-js-web/pull/1713), [#1709](https://github.com/signalfx/splunk-otel-js-web/pull/1709), [#1699](https://github.com/signalfx/splunk-otel-js-web/pull/1699)
+
+### ⚠️ Upcoming breaking changes in v3.0.0
+
+> **Action required before upgrading to v3.0.0:**
+
+- **CDN domain migration**: The CDN domain will change from `cdn.signalfx.com` to `cdn.observability.splunkcloud.com`. If your application uses a Content Security Policy (CSP), update your `script-src` and `connect-src` directives to allow the new domain before upgrading.
+- **`latest` CDN tag discontinued**: The `latest` CDN tag will stop being updated after v2.5.0. Users relying on the `latest` tag should migrate to a versioned URL:
+
+```diff
+- <script src="https://cdn.signalfx.com/o11y-gdi-rum/latest/splunk-otel-web.js"></script>
++ <script src="https://cdn.observability.splunkcloud.com/o11y-gdi-rum/v3/splunk-otel-web.js"></script>
+```
+
+The following experimental config options will be removed in v3.0.0 and their behavior will be enabled by default. This may affect how sessions and data are counted:
+
+- **`_experimental_adjustSessionStartToTimeOrigin`**: Session start time will be automatically backdated to `performance.timeOrigin`.
+- **`_experimental_discardDataAfterInactivity`**: Data will be automatically discarded after 15 minutes of user inactivity.
+- **`_experimental_useCryptoForIds`**: Cryptographically secure ID generation using nanoid will be used by default for all IDs.
+- **`experimental_alignWebVitalsSpansWithDocumentLoad`**: All web vitals spans (LCP, CLS, INP) will be automatically anchored to the document load span — start time will match the documentLoad span timestamp rather than the time the metric was reported, and `location.href` will reflect the original page load URL rather than the current URL after SPA navigation.
+
 ## 2.4.0
 
 - `@splunk/otel-web`

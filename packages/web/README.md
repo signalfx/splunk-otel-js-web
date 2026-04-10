@@ -77,16 +77,16 @@ Choose a versioning strategy based on your needs:
 **Minor Version Lock**
 
 ```html
-<!-- Locks to v2.4.x - gets latest patch updates only -->
-<script src="https://cdn.signalfx.com/o11y-gdi-rum/v2.4/splunk-otel-web.js" crossorigin="anonymous"></script>
+<!-- Locks to v2.5.x - gets latest patch updates only -->
+<script src="https://cdn.signalfx.com/o11y-gdi-rum/v2.5/splunk-otel-web.js" crossorigin="anonymous"></script>
 ```
 
 **Exact Version Lock**
 
 ```html
-<!-- Locks to exact version v2.4.0 - no automatic updates -->
+<!-- Locks to exact version v2.5.0 - no automatic updates -->
 <script
-	src="https://cdn.signalfx.com/o11y-gdi-rum/v2.4.0/splunk-otel-web.js"
+	src="https://cdn.signalfx.com/o11y-gdi-rum/v2.5.0/splunk-otel-web.js"
 	crossorigin="anonymous"
 	integrity="sha384-<integrity>"
 ></script>
