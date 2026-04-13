@@ -94,7 +94,7 @@ export class Recorder {
 			bindingKey: sessionId,
 			features: {
 				backgroundServiceSrc: backgroundServiceSrc,
-				cacheAssets: this.config.features?.cacheAssets ?? false,
+				cacheAssets: this.config.features?.cacheAssets ?? true,
 				canvas: this.config.features?.canvas ?? false,
 				iframes: this.config.features?.iframes ?? false,
 				packAssets: this.config.features?.packAssets ?? { styles: true },
