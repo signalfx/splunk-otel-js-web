@@ -528,6 +528,7 @@ export const SplunkRum: SplunkOtelWebType = {
 			const instanceId = generateId(64)
 
 			const { applicationName, deploymentEnvironment, ignoreUrls, version } = processedOptions
+
 			// enabled: false prevents registerInstrumentations from enabling instrumentations in constructor
 			// they will be enabled in registerInstrumentations
 			const pluginDefaults = { enabled: false, ignoreUrls }

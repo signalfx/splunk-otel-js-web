@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Click triggering Fetch - Separate Traces Test</title>
+  <%- renderAgent({ instrumentations: { fetch: { separateTraces: true } } }) %>
+</head>
+<body>
+  <h1>Click triggering Fetch - Separate Traces Enabled</h1>
+
+  <button type="button" id="btnTriggerFetch">Trigger Fetch Requests</button>
+
+  <script>
+    window.testing = true;
+    btnTriggerFetch.addEventListener('click', async function () {
+      // Make two fetch requests from within the click handler using test server endpoints
+      await Promise.all([
+        fetch('/some-data'),
+        fetch('/no-server-timings')
+      ]);
+      window.testing = false;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Click triggering XHR - Traceparent Verification Test</title>
+  <%- renderAgent({ instrumentations: { xhr: { separateTraces: true } } }) %>
+</head>
+<body>
+  <h1>Click triggering XHR - Traceparent Verification</h1>
+
+  <button type="button" id="btnTriggerXhr">Trigger XHR Request</button>
+  <pre id="result"></pre>
+
+  <script>
+    window.testing = true;
+    window.receivedTraceparent = null;
+    
+    btnTriggerXhr.addEventListener('click', function () {
+      const oReq = new XMLHttpRequest();
+      oReq.open("GET", "/echo-traceparent");
+      oReq.addEventListener('load', function() {
+        const response = JSON.parse(oReq.responseText);
+        window.receivedTraceparent = response.traceparent;
+        document.getElementById('result').textContent = 'Traceparent: ' + response.traceparent;
+      });
+      oReq.addEventListener('loadend', function() {
+        window.testing = false;
+      });
+      oReq.send();
+    });
+  </script>
+</body>
+</html>

@@ -17,15 +17,14 @@
  */
 
 import * as api from '@opentelemetry/api'
-import {
-	XMLHttpRequestInstrumentation,
-	XMLHttpRequestInstrumentationConfig,
-} from '@opentelemetry/instrumentation-xml-http-request'
+import { ROOT_CONTEXT } from '@opentelemetry/api'
+import { isTracingSuppressed, suppressTracing } from '@opentelemetry/core'
+import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request'
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base'
 
 import { SessionManager } from '../managers'
 import { captureTraceParent } from '../servertiming'
-import { SplunkOtelWebConfig } from '../types'
+import { SplunkOtelWebConfig, SplunkXhrInstrumentationConfig } from '../types'
 
 type ExposedSuper = {
 	_addResourceObserver: (xhr: XMLHttpRequest, spanUrl: string) => void
@@ -36,17 +35,40 @@ export class SplunkXhrInstrumentation extends XMLHttpRequestInstrumentation {
 	protected otelConfig: SplunkOtelWebConfig
 
 	constructor(
-		config: XMLHttpRequestInstrumentationConfig = {},
+		config: SplunkXhrInstrumentationConfig = {},
 		otelConfig: SplunkOtelWebConfig,
 		public sessionManager?: SessionManager,
 	) {
 		super(config)
 		this.otelConfig = otelConfig
 
-		// TODO: fix when upstream exposes this method
-		const _superCreateSpan = (this as any as ExposedSuper)._createSpan.bind(this)
-		;(this as any as ExposedSuper)._createSpan = (xhr, url, method) => {
-			const span = _superCreateSpan(xhr, url, method)
+		const separateTraces = config.separateTraces ?? otelConfig.separateTraces ?? false
+
+		const _superCreateSpan = (this as unknown as ExposedSuper)._createSpan.bind(this)
+		const _superAddResourceObserver = (this as unknown as ExposedSuper)._addResourceObserver.bind(this)
+
+		;(this as unknown as ExposedSuper)._createSpan = (xhr: XMLHttpRequest, url: string, method: string) => {
+			let span: api.Span | undefined
+
+			if (separateTraces) {
+				const activeContext = api.context.active()
+				const parentSpan = api.trace.getSpan(activeContext)
+				const parentContext = parentSpan?.spanContext()
+
+				// Use ROOT_CONTEXT for a new trace, preserving suppressTracing to avoid exporter loops
+				const hybridContext = isTracingSuppressed(activeContext) ? suppressTracing(ROOT_CONTEXT) : ROOT_CONTEXT
+				span = api.context.with(hybridContext, () => _superCreateSpan(xhr, url, method))
+
+				// Record parent span reference so the relationship is not lost
+				if (span && parentContext?.traceId) {
+					span.setAttributes({
+						'link.interaction.spanId': parentContext.spanId,
+						'link.interaction.traceId': parentContext.traceId,
+					})
+				}
+			} else {
+				span = _superCreateSpan(xhr, url, method)
+			}
 
 			if (span) {
 				// don't care about success/failure, just want to see response headers if they exist
@@ -61,6 +83,7 @@ export class SplunkXhrInstrumentation extends XMLHttpRequestInstrumentation {
 						}
 					}
 				})
+
 				// FIXME long-term answer for deprecating attributes.component?
 				// The upstream _createSpan calls tracer.startSpan() internally, which triggers SpanProcessor.onStart
 				// before this override has a chance to set the component attribute. SpanEmitterProcessor.onStart
@@ -74,9 +97,7 @@ export class SplunkXhrInstrumentation extends XMLHttpRequestInstrumentation {
 
 			return span
 		}
-
-		const _superAddResourceObserver = (this as unknown as ExposedSuper)._addResourceObserver.bind(this)
-		;(this as any as ExposedSuper)._addResourceObserver = (xhr: XMLHttpRequest, spanUrl: string) => {
+		;(this as unknown as ExposedSuper)._addResourceObserver = (xhr: XMLHttpRequest, spanUrl: string) => {
 			// Fix: PerformanceObserver feature detection is broken and crashes in IE
 			// Is fixed in 0.29.0 but contrib isn't updated yet
 			if (typeof PerformanceObserver !== 'function' || typeof PerformanceResourceTiming !== 'function') {

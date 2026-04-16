@@ -34,11 +34,31 @@ import {
 } from '../instrumentations'
 import { ExternalSessionMetadata } from './external-session-metadata'
 
+export interface SplunkXhrInstrumentationConfig extends XMLHttpRequestInstrumentationConfig {
+	/**
+	 * When true, XHR requests start a new root trace instead of inheriting the active span's
+	 * trace context. The parent span is referenced via link.interaction.traceId and
+	 * link.interaction.spanId attributes on the new root span.
+	 * @default false
+	 */
+	separateTraces?: boolean
+}
+
+export interface SplunkFetchInstrumentationConfig extends FetchInstrumentationConfig {
+	/**
+	 * When true, fetch requests start a new root trace instead of inheriting the active span's
+	 * trace context. The parent span is referenced via link.interaction.traceId and
+	 * link.interaction.spanId attributes on the new root span.
+	 * @default false
+	 */
+	separateTraces?: boolean
+}
+
 export interface SplunkOtelWebOptionsInstrumentations {
 	connectivity?: boolean | InstrumentationConfig
 	document?: boolean | InstrumentationConfig
 	errors?: boolean | SplunkErrorInstrumentationConfig
-	fetch?: boolean | FetchInstrumentationConfig
+	fetch?: boolean | SplunkFetchInstrumentationConfig
 	frustrationSignals?: boolean | SplunkFrustrationSignalsInstrumentationConfig
 	interactions?: boolean | SplunkUserInteractionInstrumentationConfig
 	longtask?: boolean | InstrumentationConfig
@@ -47,7 +67,7 @@ export interface SplunkOtelWebOptionsInstrumentations {
 	visibility?: boolean | InstrumentationConfig
 	websocket?: boolean | InstrumentationConfig
 	webvitals?: boolean | SplunkWebVitalsInstrumentationConfig
-	xhr?: boolean | XMLHttpRequestInstrumentationConfig
+	xhr?: boolean | SplunkXhrInstrumentationConfig
 }
 
 export interface ContextManagerConfig {
@@ -208,6 +228,17 @@ export interface SplunkOtelWebConfig {
 	 * will be visible to every user of your app
 	 */
 	rumAccessToken?: string
+
+	/**
+	 * When true, XHR and fetch requests create new root traces instead of inheriting
+	 * trace context from parent spans (e.g., user interactions).
+	 * The parent span reference is preserved as parent.traceId and parent.spanId attributes.
+	 * link.traceId and link.spanId remain available for Server-Timing (backend span reference).
+	 * This setting applies to both XHR and fetch instrumentations.
+	 * Can be overridden per-instrumentation via instrumentations.xhr.separateTraces or instrumentations.fetch.separateTraces.
+	 * @default false
+	 */
+	separateTraces?: boolean
 
 	sessionMetadata?: NonNullable<ExternalSessionMetadata>
 
