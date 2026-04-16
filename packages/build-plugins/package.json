@@ -1,6 +1,6 @@
 {
 	"name": "@splunk/rum-build-plugins",
-	"version": "2.4.0",
+	"version": "2.5.0",
 	"description": "Build plugins for users of @splunk/otel-web",
 	"keywords": [
 		"splunk",
@@ -37,7 +37,7 @@
 		"dist/esm/**/*.d.ts"
 	],
 	"dependencies": {
-		"axios": "^1.14.0",
+		"axios": "^1.15.0",
 		"form-data": "^4.0.5",
 		"unplugin": "^3.0.0"
 	},

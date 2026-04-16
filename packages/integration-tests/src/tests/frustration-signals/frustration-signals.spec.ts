@@ -229,6 +229,28 @@ test.describe('Frustration signals', () => {
 
 			expect(recordPage.receivedSpans.filter(deadClickFilter)).toHaveLength(0)
 		})
+
+		test('Dead click detects click on element with role=button', async ({ recordPage }) => {
+			await recordPage.goTo('/frustration-signals/dead-click.ejs')
+
+			await recordPage.locator('#role-button-dead').click()
+
+			await recordPage.waitForSpans((spans) => spans.some(deadClickFilter))
+
+			const deadClickSpans = recordPage.receivedSpans.filter(deadClickFilter)
+
+			expect(deadClickSpans).toHaveLength(1)
+			expect(deadClickSpans[0].tags['target_xpath']).toBeDefined()
+		})
+
+		test('Dead click does not trigger for anchor with href', async ({ recordPage }) => {
+			await recordPage.goTo('/frustration-signals/dead-click.ejs')
+
+			await recordPage.locator('#link-with-href').click()
+			await recordPage.waitForTimeoutAndFlushData(2000)
+
+			expect(recordPage.receivedSpans.filter(deadClickFilter)).toHaveLength(0)
+		})
 	})
 
 	test.describe('Thrashed cursor', () => {

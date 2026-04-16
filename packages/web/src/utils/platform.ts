@@ -16,9 +16,13 @@
  *
  */
 
+import { isBot } from './is-bot'
+
 export function getBasicPlatformInfo() {
 	const userAgentData = navigator.userAgentData
 	return {
+		'user_agent.is_automated': !!navigator.webdriver,
+		'user_agent.is_bot': isBot(navigator.userAgent),
 		'user_agent.language': navigator.language,
 		'user_agent.mobile': userAgentData?.mobile,
 		'user_agent.original': navigator.userAgent,

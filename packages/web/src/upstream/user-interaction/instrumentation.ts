@@ -284,13 +284,28 @@ export class UserInteractionInstrumentation<
 	private _isInteractiveElement(element: Element): boolean {
 		const tag = element.tagName.toUpperCase()
 
-		if (tag === 'A' || tag === 'BUTTON') {
+		if (tag === 'BUTTON') {
+			return true
+		}
+
+		if (tag === 'A') {
+			const href = element.getAttribute('href')
+			// <a> with a real href can navigate or open a new tab, so it's not a dead click candidate.
+			// Only <a> with no href or javascript:void(0) is considered interactive for dead-click purposes.
+			if (href && !href.startsWith('javascript:')) {
+				return false
+			}
+
 			return true
 		}
 
 		if (tag === 'INPUT') {
 			const type = (element.getAttribute('type') ?? '').toLowerCase()
 			return type === 'submit'
+		}
+
+		if (element.getAttribute('role') === 'button') {
+			return true
 		}
 
 		return false
