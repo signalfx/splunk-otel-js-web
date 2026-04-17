@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Iframe test content</title>
+		<style>
+			:root {
+				--bg: #0d1117;
+				--surface: #161b22;
+				--border: #30363d;
+				--text: #e6edf3;
+				--muted: #8b949e;
+				--green: #3fb950;
+				--blue: #58a6ff;
+			}
+
+			* {
+				box-sizing: border-box;
+				margin: 0;
+				padding: 0;
+			}
+
+			body {
+				font-family:
+					system-ui,
+					-apple-system,
+					sans-serif;
+				background: var(--bg);
+				color: var(--text);
+				padding: 16px;
+				font-size: 12px;
+				line-height: 1.5;
+			}
+
+			h3 {
+				font-size: 11px;
+				text-transform: uppercase;
+				letter-spacing: 0.06em;
+				color: var(--muted);
+				margin-bottom: 12px;
+				padding-bottom: 8px;
+				border-bottom: 1px solid var(--border);
+			}
+
+			.row {
+				display: flex;
+				flex-direction: column;
+				gap: 4px;
+				margin-bottom: 10px;
+			}
+
+			label {
+				font-size: 10px;
+				color: var(--muted);
+			}
+
+			input,
+			select {
+				background: var(--surface);
+				border: 1px solid var(--border);
+				color: var(--text);
+				padding: 5px 8px;
+				border-radius: 4px;
+				font-size: 12px;
+				font-family: inherit;
+				width: 100%;
+			}
+
+			input:focus,
+			select:focus {
+				outline: none;
+				border-color: var(--blue);
+			}
+
+			button {
+				background: var(--surface);
+				border: 1px solid var(--border);
+				color: var(--text);
+				padding: 6px 12px;
+				border-radius: 4px;
+				cursor: pointer;
+				font-size: 12px;
+				font-family: inherit;
+				width: 100%;
+				text-align: start;
+			}
+
+			button:hover {
+				background: var(--border);
+			}
+
+			#output {
+				margin-top: 8px;
+				color: var(--green);
+				font-family: 'SFMono-Regular', Consolas, monospace;
+				font-size: 11px;
+				min-height: 18px;
+			}
+		</style>
+	</head>
+	<body>
+		<h3>Same-origin iframe content</h3>
+		<div class="row">
+			<label>Text input</label>
+			<input type="text" id="iframe-text" placeholder="Type something inside the iframe…" />
+		</div>
+		<div class="row">
+			<label>Select</label>
+			<select id="iframe-select">
+				<option value="red">Red</option>
+				<option value="green" selected>Green</option>
+				<option value="blue">Blue</option>
+			</select>
+		</div>
+		<button id="iframe-btn">Click me (inside iframe)</button>
+		<div id="output"></div>
+
+		<script type="module" src="replay-iframe.js"></script>
+	</body>
+</html>

@@ -1,0 +1,41 @@
+/*
+ * Copyright 2020-2026 Splunk Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License").
+ * Index page (RUM sandbox) layout overrides.
+ * Design tokens and shared components are in sandbox-core.css.
+ */
+
+main {
+	flex: 1;
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+}
+
+.panel {
+	padding: var(--space-xl);
+	border-inline-end: 1px solid var(--color-border-muted);
+
+	&:last-child {
+		border-inline-end: none;
+	}
+
+	& h2 {
+		font-size: var(--text-base);
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--color-text-secondary);
+		margin-block-end: var(--space-lg);
+	}
+}
+
+.btn-group {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-sm);
+}
+
+#log {
+	block-size: 340px;
+}

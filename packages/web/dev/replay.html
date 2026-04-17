@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Splunk RUM — Session Replay Sandbox</title>
+		<link rel="stylesheet" href="sandbox-core.css" />
+		<link rel="stylesheet" href="replay.css" />
+	</head>
+	<body>
+		<header>
+			<h1>Splunk RUM Dev Sandbox</h1>
+			<span class="badge">live reload</span>
+			<nav class="page-nav">
+				<a href="/index.html" class="nav-link">RUM</a>
+				<a href="/replay.html" class="nav-link" aria-current="page">Session Replay</a>
+			</nav>
+			<button id="btn-config" class="icon-btn" aria-label="Settings" title="Settings">&#9881;</button>
+		</header>
+
+		<div id="status-bar">
+			<div class="status-item">
+				<div class="dot" id="sdk-dot"></div>
+				<span class="status-label">SDK</span>
+				<span class="status-value" id="sdk-status">loading…</span>
+			</div>
+			<div class="status-item">
+				<span class="status-label">Version</span>
+				<span class="status-value" id="sdk-version">—</span>
+			</div>
+			<div class="status-item">
+				<span class="status-label">Session ID</span>
+				<span class="status-value" id="session-id">—</span>
+			</div>
+			<div class="status-item">
+				<span class="status-label">Beacon</span>
+				<span class="status-value" id="beacon-endpoint">—</span>
+			</div>
+			<div class="status-item">
+				<div class="dot" id="recorder-dot"></div>
+				<span class="status-label">Recorder</span>
+				<span class="status-value" id="recorder-status">off</span>
+			</div>
+		</div>
+
+		<div id="replay-layout">
+			<!-- ── Left TOC rail ─────────────────────────────────────────────── -->
+			<nav id="toc" aria-label="Scenarios">
+				<span class="toc-heading">Scenarios</span>
+				<a href="#privacy" class="toc-link">1 · Privacy &amp; Masking</a>
+				<a href="#dom" class="toc-link">2 · Dynamic DOM</a>
+				<a href="#inputs" class="toc-link">3 · Form Inputs</a>
+				<a href="#media" class="toc-link">4 · Media &amp; Features</a>
+				<a href="#styling" class="toc-link">5 · Styling &amp; Assets</a>
+				<div class="toc-divider"></div>
+				<button id="btn-recorder-stop" class="toc-action-btn">Stop recording</button>
+				<button id="btn-recorder-resume" class="toc-action-btn">Resume recording</button>
+			</nav>
+
+			<!-- ── Scenario sections ─────────────────────────────────────────── -->
+			<main id="scenarios">
+				<!-- 1. Privacy & Masking -->
+				<section id="privacy" class="scenario-group">
+					<details open>
+						<summary class="scenario-heading">
+							<span class="scenario-num">1</span>
+							Privacy &amp; Masking
+							<span class="scenario-hint">maskAllInputs · sensitivityRules · rr-block/mask/ignore</span>
+						</summary>
+						<div class="scenario-content">
+							<div class="scenario-card">
+								<div class="scenario-card-header">
+									<h4>Input masking</h4>
+									<p class="scenario-desc">
+										These inputs are visible in the DOM. Enable <code>maskAllInputs</code> in
+										Settings ⚙ and Re-initialize — the recorder then masks all input values.
+									</p>
+								</div>
+								<div class="stage">
+									<form class="stage-form">
+										<div class="form-row">
+											<label>text</label>
+											<input type="text" placeholder="John Doe" autocomplete="off" />
+										</div>
+										<div class="form-row">
+											<label>email</label>
+											<input type="email" placeholder="john@example.com" />
+										</div>
+										<div class="form-row">
+											<label>password</label>
+											<input type="password" placeholder="secret" value="hunter2" />
+										</div>
+										<div class="form-row">
+											<label>phone</label>
+											<input type="tel" placeholder="+1 555-0100" />
+										</div>
+										<div class="form-row">
+											<label>card #</label>
+											<input type="text" placeholder="4111 1111 1111 1111" autocomplete="off" />
+										</div>
+										<div class="form-row">
+											<label>notes</label>
+											<textarea rows="2" placeholder="Free text…"></textarea>
+										</div>
+									</form>
+								</div>
+							</div>
+
+							<div class="scenario-card">
+								<div class="scenario-card-header">
+									<h4>Legacy privacy classes</h4>
+									<p class="scenario-desc">
+										Elements decorated with <code>rr-block</code>, <code>rr-mask</code>, or
+										<code>rr-ignore</code> — the default selector-based privacy classes from rrweb /
+										the Splunk recorder.
+									</p>
+								</div>
+								<div class="stage">
+									<div class="privacy-demo">
+										<div class="privacy-item">
+											<code class="privacy-label">.rr-block</code>
+											<div class="rr-block demo-box">
+												This element is <strong>blocked</strong> — replaced with a solid
+												placeholder rectangle in the recording.
+											</div>
+										</div>
+										<div class="privacy-item">
+											<code class="privacy-label">.rr-mask</code>
+											<p class="rr-mask demo-text">
+												This text is <strong>masked</strong> — characters replaced by &#9608; in
+												the recording.
+											</p>
+										</div>
+										<div class="privacy-item">
+											<code class="privacy-label">.rr-ignore</code>
+											<input
+												type="text"
+												class="rr-ignore stage-input"
+												placeholder="Typing here is NOT captured by the recorder"
+											/>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<div class="scenario-card">
+								<div class="scenario-card-header">
+									<h4>sensitivityRules selectors</h4>
+									<p class="scenario-desc">
+										Uses the JSON rules in Settings ⚙. The defaults mask
+										<code>[data-sensitive]</code>, unmask <code>[data-unmask]</code>, and exclude
+										<code>[data-exclude]</code> from the recording entirely.
+									</p>
+								</div>
+								<div class="stage">
+									<div class="privacy-demo">
+										<div class="privacy-item">
+											<code class="privacy-label">rule: "mask"</code>
+											<p data-sensitive class="demo-text">
+												This paragraph is masked via <code>data-sensitive</code> selector.
+											</p>
+											<input
+												type="text"
+												data-sensitive
+												class="stage-input"
+												placeholder="Input masked via sensitivityRule"
+											/>
+										</div>
+										<div class="privacy-item">
+											<code class="privacy-label">rule: "unmask"</code>
+											<input
+												type="text"
+												data-unmask
+												class="stage-input"
+												placeholder="Unmasked even when maskAllInputs is true"
+											/>
+										</div>
+										<div class="privacy-item">
+											<code class="privacy-label">rule: "exclude"</code>
+											<div data-exclude class="demo-box">
+												This element is excluded from the recording entirely.
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</details>
+				</section>
+
+				<!-- 2. Dynamic DOM -->
+				<section id="dom" class="scenario-group">
+					<details>
+						<summary class="scenario-heading">
+							<span class="scenario-num">2</span>
+							Dynamic DOM
+							<span class="scenario-hint"
+								>node add/remove · attribute mutations · contenteditable · burst</span
+							>
+						</summary>
+						<div class="scenario-content">
+							<div class="scenario-card">
+								<div class="scenario-card-header">
+									<h4>List mutations</h4>
+									<p class="scenario-desc">
+										Add, remove, shuffle, and rename list items to generate node-level mutations.
+									</p>
+								</div>
+								<div class="stage-controls">
+									<button id="btn-dom-add">Add item</button>
+									<button id="btn-dom-remove">Remove last</button>
+									<button id="btn-dom-shuffle">Shuffle</button>
+									<button id="btn-dom-rename">Rename first</button>
+								</div>
+								<div class="stage">
+									<ul id="stage-dom-list" class="demo-list">
+										<li data-id="1">Item 1</li>
+										<li data-id="2">Item 2</li>
+										<li data-id="3">Item 3</li>
+									</ul>
+								</div>
+							</div>
+
+							<div class="scenario-card">
+								<div class="scenario-card-header">
+									<h4>Attribute mutations</h4>
+									<p class="scenario-desc">
+										Toggle <code>data-state</code>, CSS classes, and <code>aria-expanded</code> on a
+										box element.
+									</p>
+								</div>
+								<div class="stage-controls">
+									<button id="btn-attr-toggle">Toggle data-state</button>
+									<button id="btn-attr-class">Toggle class</button>
+									<button id="btn-attr-aria">Toggle aria-expanded</button>
+								</div>
+								<div class="stage">
+									<div
+										id="stage-attr-box"
+										class="demo-box attr-box"
+										data-state="idle"
+										aria-expanded="false"
+									>
+										<code id="attr-display">data-state="idle" aria-expanded="false"</code>
+									</div>
+								</div>
+							</div>
+
+							<div class="scenario-card">
+								<div class="scenario-card-header">
+									<h4>contenteditable</h4>
+									<p class="scenario-desc">
+										Click and type. Character-by-character text mutations are captured by the
+										recorder.
+									</p>
+								</div>
+								<div class="stage">
+									<div
+										id="stage-editable"
+										contenteditable="true"
+										class="demo-editable"
+										spellcheck="false"
+									>
+										Click here and start typing. This is <strong>rich text</strong> that is fully
+										editable.
+									</div>
+								</div>
+							</div>
+
+							<div class="scenario-card">
+								<div class="scenario-card-header">
+									<h4>Mutation burst</h4>
+									<p class="scenario-desc">
+										Inserts 200 nodes in a single synchronous loop — stress-tests the recorder's
+										mutation batching.
+									</p>
+								</div>
+								<div class="stage-controls">
+									<button id="btn-dom-burst" class="danger">Burst 200 nodes</button>
+									<button id="btn-dom-burst-clear">Clear burst</button>
+								</div>
+								<div class="stage">
+									<div id="stage-burst" class="burst-grid"></div>
+								</div>
+							</div>
+						</div>
+					</details>
+				</section>
+
+				<!-- 3. Form Inputs -->
+				<section id="inputs" class="scenario-group">
+					<details>
+						<summary class="scenario-heading">
+							<span class="scenario-num">3</span>
+							Form Inputs
+							<span class="scenario-hint"
+								>all native input types · focus/blur · checkboxes · selects</span
+							>
+						</summary>
+						<div class="scenario-content">
+							<div class="scenario-card">
+								<div class="scenario-card-header">
+									<h4>All native input types</h4>
+									<p class="scenario-desc">
+										Interact with each control type. The recorder captures value changes and focus
+										events.
+									</p>
+								</div>
+								<div class="stage-controls">
+									<button id="btn-inputs-reset">Reset form</button>
+								</div>
+								<div class="stage">
+									<form id="stage-form" class="stage-form wide">
+										<fieldset>
+											<legend>Text</legend>
+											<div class="form-row">
+												<label>text</label
+												><input type="text" name="txt" placeholder="plain text" />
+											</div>
+											<div class="form-row">
+												<label>search</label
+												><input type="search" name="srch" placeholder="search…" />
+											</div>
+											<div class="form-row">
+												<label>email</label
+												><input type="email" name="email" placeholder="user@example.com" />
+											</div>
+											<div class="form-row">
+												<label>password</label
+												><input type="password" name="pw" placeholder="password" />
+											</div>
+											<div class="form-row">
+												<label>url</label
+												><input type="url" name="url" placeholder="https://…" />
+											</div>
+											<div class="form-row">
+												<label>tel</label
+												><input type="tel" name="tel" placeholder="+1 555-0100" />
+											</div>
+											<div class="form-row">
+												<label>number</label><input type="number" name="num" placeholder="42" />
+											</div>
+											<div class="form-row">
+												<label>textarea</label
+												><textarea name="area" rows="3" placeholder="multi-line…"></textarea>
+											</div>
+										</fieldset>
+										<fieldset>
+											<legend>Pickers</legend>
+											<div class="form-row">
+												<label>range</label
+												><input type="range" name="range" min="0" max="100" value="40" />
+											</div>
+											<div class="form-row">
+												<label>color</label><input type="color" name="color" value="#3fb950" />
+											</div>
+											<div class="form-row">
+												<label>date</label><input type="date" name="date" />
+											</div>
+											<div class="form-row">
+												<label>time</label><input type="time" name="time" />
+											</div>
+											<div class="form-row">
+												<label>file</label><input type="file" name="file" />
+											</div>
+										</fieldset>
+										<fieldset>
+											<legend>Selects &amp; toggles</legend>
+											<div class="form-row">
+												<label>select</label>
+												<select name="sel">
+													<option>Option A</option>
+													<option>Option B</option>
+													<option>Option C</option>
+												</select>
+											</div>
+											<div class="form-row">
+												<label>multi</label>
+												<select name="multi" multiple size="3">
+													<option>Alpha</option>
+													<option>Beta</option>
+													<option>Gamma</option>
+													<option>Delta</option>
+												</select>
+											</div>
+											<div class="form-row">
+												<label>checkboxes</label>
+												<div class="check-group">
+													<label class="toggle-label"
+														><input type="checkbox" name="cb1" /> Checkbox A</label
+													>
+													<label class="toggle-label"
+														><input type="checkbox" name="cb2" checked /> Checkbox B</label
+													>
+													<label class="toggle-label"
+														><input type="checkbox" name="cb3" /> Checkbox C</label
+													>
+												</div>
+											</div>
+											<div class="form-row">
+												<label>radios</label>
+												<div class="check-group">
+													<label class="toggle-label"
+														><input type="radio" name="radio" value="x" /> Option X</label
+													>
+													<label class="toggle-label"
+														><input type="radio" name="radio" value="y" checked /> Option
+														Y</label
+													>
+													<label class="toggle-label"
+														><input type="radio" name="radio" value="z" /> Option Z</label
+													>
+												</div>
+											</div>
+										</fieldset>
+									</form>
+								</div>
+							</div>
+						</div>
+					</details>
+				</section>
+
+				<!-- 4. Media & Features -->
+				<section id="media" class="scenario-group">
+					<details>
+						<summary class="scenario-heading">
+							<span class="scenario-num">4</span>
+							Media &amp; Features
+							<span class="scenario-hint"
+								>features.canvas · features.video · features.iframes · features.packAssets</span
+							>
+						</summary>
+						<div class="scenario-content">
+							<div class="scenario-card">
+								<div class="scenario-card-header">
+									<h4>Canvas animation</h4>
+									<p class="scenario-desc">
+										Requires <code>features.canvas</code> enabled in Settings ⚙. Bouncing-ball
+										animation drawn via <code>requestAnimationFrame</code>.
+									</p>
+								</div>
+								<div class="stage-controls">
+									<button id="btn-canvas-start">Start</button>
+									<button id="btn-canvas-stop">Stop</button>
+									<button id="btn-canvas-clear">Clear</button>
+								</div>
+								<div class="stage">
+									<canvas id="stage-canvas" width="480" height="200" class="demo-canvas"></canvas>
+								</div>
+							</div>
+
+							<div class="scenario-card">
+								<div class="scenario-card-header">
+									<h4>Video element</h4>
+									<p class="scenario-desc">
+										Requires <code>features.video</code> enabled in Settings ⚙. Play, pause, and
+										seek to generate video playback events in the recording.
+									</p>
+								</div>
+								<div class="stage">
+									<video
+										id="stage-video"
+										controls
+										class="demo-video"
+										src="https://www.w3schools.com/html/mov_bbb.mp4"
+										preload="metadata"
+									>
+										<p>Video element not supported in this browser.</p>
+									</video>
+								</div>
+							</div>
+
+							<div class="scenario-card">
+								<div class="scenario-card-header">
+									<h4>Iframe content</h4>
+									<p class="scenario-desc">
+										Requires <code>features.iframes</code> enabled in Settings ⚙. Same-origin iframe
+										— the recorder captures its DOM separately.
+									</p>
+								</div>
+								<div class="stage">
+									<iframe
+										src="/replay-iframe.html"
+										id="stage-iframe"
+										class="demo-iframe"
+										title="Replay iframe test page"
+									></iframe>
+								</div>
+							</div>
+
+							<div class="scenario-card">
+								<div class="scenario-card-header">
+									<h4>Image assets</h4>
+									<p class="scenario-desc">
+										Enable <code>features.packAssets</code> in Settings ⚙ to include image data
+										inline in the recording. Mix of data-URI and HTTP sources.
+									</p>
+								</div>
+								<div class="stage">
+									<div class="image-gallery">
+										<figure>
+											<img
+												src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' rx='6' fill='%233fb950'/%3E%3Ctext x='40' y='52' font-size='32' text-anchor='middle' fill='white' font-family='sans-serif'%3E%E2%9C%93%3C/text%3E%3C/svg%3E"
+												alt="data-URI SVG"
+												width="80"
+												height="80"
+											/>
+											<figcaption>data: URI</figcaption>
+										</figure>
+										<figure>
+											<img
+												src="https://picsum.photos/seed/rum1/80/80"
+												alt="Random photo 1"
+												width="80"
+												height="80"
+												loading="lazy"
+											/>
+											<figcaption>HTTP (picsum)</figcaption>
+										</figure>
+										<figure>
+											<img
+												src="https://picsum.photos/seed/rum2/80/80"
+												alt="Random photo 2"
+												width="80"
+												height="80"
+												loading="lazy"
+											/>
+											<figcaption>HTTP (picsum)</figcaption>
+										</figure>
+										<figure>
+											<img
+												src="https://picsum.photos/seed/rum3/80/80"
+												alt="Random photo 3"
+												width="80"
+												height="80"
+												loading="lazy"
+											/>
+											<figcaption>HTTP (picsum)</figcaption>
+										</figure>
+									</div>
+								</div>
+							</div>
+						</div>
+					</details>
+				</section>
+
+				<!-- 5. Styling & Assets -->
+				<section id="styling" class="scenario-group">
+					<details>
+						<summary class="scenario-heading">
+							<span class="scenario-num">5</span>
+							Styling &amp; Assets
+							<span class="scenario-hint"
+								>CSS animations · custom properties · inline SVG · Shadow DOM</span
+							>
+						</summary>
+						<div class="scenario-content">
+							<div class="scenario-card">
+								<div class="scenario-card-header">
+									<h4>CSS animations &amp; transitions</h4>
+									<p class="scenario-desc">
+										Continuously animated elements. The recorder must capture CSS animation state
+										across segments.
+									</p>
+								</div>
+								<div class="stage-controls">
+									<button id="btn-style-randomize">Randomize theme</button>
+									<button id="btn-style-reset-theme">Reset theme</button>
+								</div>
+								<div class="stage">
+									<div class="anim-demo">
+										<div class="spinner" aria-hidden="true"></div>
+										<div id="anim-box" class="anim-box" tabindex="0">Hover / focus me</div>
+										<div class="anim-bar" aria-hidden="true">
+											<div class="anim-bar-inner"></div>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<div class="scenario-card">
+								<div class="scenario-card-header">
+									<h4>Inline SVG with &lt;animate&gt;</h4>
+									<p class="scenario-desc">
+										SVG elements with declarative SMIL animations embedded in the DOM.
+									</p>
+								</div>
+								<div class="stage">
+									<svg
+										width="120"
+										height="120"
+										viewBox="0 0 120 120"
+										class="demo-svg"
+										aria-hidden="true"
+									>
+										<circle
+											cx="60"
+											cy="60"
+											r="50"
+											fill="none"
+											stroke="var(--color-accent-blue)"
+											stroke-width="3"
+										>
+											<animate
+												attributeName="r"
+												values="20;50;20"
+												dur="2.5s"
+												repeatCount="indefinite"
+											/>
+											<animate
+												attributeName="opacity"
+												values="1;0.2;1"
+												dur="2.5s"
+												repeatCount="indefinite"
+											/>
+										</circle>
+										<circle cx="60" cy="60" r="10" fill="var(--color-accent-orange)">
+											<animate
+												attributeName="r"
+												values="4;14;4"
+												dur="1.8s"
+												repeatCount="indefinite"
+											/>
+										</circle>
+									</svg>
+								</div>
+							</div>
+
+							<div class="scenario-card">
+								<div class="scenario-card-header">
+									<h4>Shadow DOM (open)</h4>
+									<p class="scenario-desc">
+										Custom element with an open shadow root. With the recorder active, shadow-DOM
+										nodes should appear in the recording alongside the host element.
+									</p>
+								</div>
+								<div class="stage">
+									<replay-shadow-widget id="shadow-widget"></replay-shadow-widget>
+								</div>
+							</div>
+						</div>
+					</details>
+				</section>
+			</main>
+		</div>
+
+		<!-- Console drawer (pinned to bottom of viewport) -->
+		<div id="console-drawer" class="drawer collapsed">
+			<div
+				class="drawer-toggle"
+				id="btn-console-toggle"
+				role="button"
+				tabindex="0"
+				aria-expanded="false"
+				aria-controls="console-drawer-body"
+			>
+				<span>Console</span>
+				<span id="console-count" class="badge">0</span>
+				<span class="drawer-chevron" aria-hidden="true">▲</span>
+			</div>
+			<div class="drawer-body" id="console-drawer-body">
+				<div id="log"></div>
+			</div>
+		</div>
+
+		<!-- Locally-built SDK served by webpack-dev-server -->
+		<script defer src="splunk-otel-web.js"></script>
+		<script defer src="splunk-otel-web-session-recorder.js"></script>
+		<script type="module" src="replay.js"></script>
+	</body>
+</html>

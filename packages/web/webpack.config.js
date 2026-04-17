@@ -110,11 +110,11 @@ const getBaseConfig = (env, argv) => ({
 		buildHttp: {
 			allowedUris: ['https://cdn.signalfx.com/'],
 			cacheLocation: false,
-			frozen: true,
+			frozen: !isDevelopmentMode(argv),
 		},
 	},
 	optimization: {
-		minimize: true,
+		minimize: !isDevelopmentMode(argv),
 		minimizer: [
 			new TerserPlugin({
 				extractComments: false,
@@ -155,6 +155,20 @@ const browserConfig = (env, argv) => {
 	return {
 		...baseConfig,
 		entry: path.resolve(__dirname, './src/index-browser.ts'),
+		...(isDevelopmentMode(argv) && {
+			devServer: {
+				devMiddleware: { writeToDisk: true },
+				headers: { 'Access-Control-Allow-Origin': '*' },
+				hot: true,
+				liveReload: true,
+				open: false,
+				port: Number(process.env.DEV_SERVE_PORT) || 3030,
+				static: [
+					{ directory: path.resolve(__dirname, 'dev') },
+					{ directory: path.resolve(__dirname, '../session-recorder/dist/artifacts') },
+				],
+			},
+		}),
 		module: {
 			rules: makeBrowserModuleRules(),
 		},

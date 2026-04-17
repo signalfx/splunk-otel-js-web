@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Splunk RUM — Dev Sandbox</title>
+		<link rel="stylesheet" href="sandbox-core.css" />
+		<link rel="stylesheet" href="styles.css" />
+	</head>
+	<body>
+		<header>
+			<h1>Splunk RUM Dev Sandbox</h1>
+			<span class="badge">live reload</span>
+			<nav class="page-nav">
+				<a href="/index.html" class="nav-link" aria-current="page">RUM</a>
+				<a href="/replay.html" class="nav-link">Session Replay</a>
+			</nav>
+			<button id="btn-config" class="icon-btn" aria-label="Settings" title="Settings">&#9881;</button>
+		</header>
+
+		<div id="status-bar">
+			<div class="status-item">
+				<div class="dot" id="sdk-dot"></div>
+				<span class="status-label">SDK</span>
+				<span class="status-value" id="sdk-status">loading…</span>
+			</div>
+			<div class="status-item">
+				<span class="status-label">Version</span>
+				<span class="status-value" id="sdk-version">—</span>
+			</div>
+			<div class="status-item">
+				<span class="status-label">Session ID</span>
+				<span class="status-value" id="session-id">—</span>
+			</div>
+			<div class="status-item">
+				<span class="status-label">Beacon</span>
+				<span class="status-value" id="beacon-endpoint">—</span>
+			</div>
+			<div class="status-item">
+				<div class="dot" id="recorder-dot"></div>
+				<span class="status-label">Recorder</span>
+				<span class="status-value" id="recorder-status">off</span>
+			</div>
+		</div>
+
+		<main>
+			<div class="panel">
+				<h2>Interactions</h2>
+				<div class="btn-group">
+					<button id="btn-fetch">Fetch /api/data (tracked XHR)</button>
+					<button id="btn-xhr">XMLHttpRequest /api/items</button>
+					<button id="btn-navigation">Update history (navigation span)</button>
+					<button id="btn-error" class="danger">Throw unhandled error</button>
+					<button id="btn-report-error" class="danger">SplunkRum.reportError()</button>
+					<button id="btn-custom-span">Create custom span</button>
+					<button id="btn-long-task">Long task (block 300ms)</button>
+					<button id="btn-set-attribute">Set global attribute</button>
+					<button id="btn-recorder-stop">Stop recording</button>
+					<button id="btn-recorder-resume">Resume recording</button>
+				</div>
+			</div>
+
+			<div class="panel">
+				<h2>Console</h2>
+				<div id="log"></div>
+			</div>
+		</main>
+
+		<!-- Locally-built SDK served by webpack-dev-server -->
+		<script defer src="splunk-otel-web.js"></script>
+		<script defer src="splunk-otel-web-session-recorder.js"></script>
+		<script type="module" src="app.js"></script>
+	</body>
+</html>

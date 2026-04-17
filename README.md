@@ -132,6 +132,7 @@ pnpm test
 
 # Start development mode
 pnpm dev
+# Sandbox available at http://localhost:3030
 ```
 
 ### Commands
@@ -145,6 +146,14 @@ pnpm dev
 | `pnpm lint`      | Run linting checks             |
 | `pnpm lint:fix`  | Fix linting issues             |
 | `pnpm dev`       | Start development watch mode   |
+
+### Local sandbox
+
+`pnpm dev` serves a local playground for `@splunk/otel-web` at `http://localhost:3030` for manual testing against your local agent or OTel collector.
+
+Session Replay is opt-in via a sandbox checkbox and requires building the recorder first (`pnpm --filter @splunk/otel-web-session-recorder build`).
+
+Sandbox config and the RUM access token persist in `localStorage` between reloads.
 
 ## 🤝 Contributing
 
