@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Click triggering XHR - Separate Traces Test</title>
+  <%- renderAgent({ instrumentations: { xhr: { separateTraces: true } } }) %>
+</head>
+<body>
+  <h1>Click triggering XHR - Separate Traces Enabled</h1>
+
+  <button type="button" id="btnTriggerXhr">Trigger XHR Requests</button>
+
+  <script>
+    function makeXHR(url) {
+      return new Promise((resolve) => {
+        const oReq = new XMLHttpRequest();
+        oReq.open("GET", url);
+        oReq.setRequestHeader('Content-Type', 'text/plain');
+        oReq.addEventListener('loadend', resolve);
+        oReq.send();
+      });
+    }
+
+    window.testing = true;
+    btnTriggerXhr.addEventListener('click', async function () {
+      // Make two XHR requests from within the click handler using test server endpoints
+      await Promise.all([
+        makeXHR('/some-data'),
+        makeXHR('/no-server-timings')
+      ]);
+      window.testing = false;
+    });
+  </script>
+</body>
+</html>

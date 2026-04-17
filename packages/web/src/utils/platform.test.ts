@@ -46,6 +46,8 @@ describe('platform utilities', () => {
 
 			const result = getBasicPlatformInfo()
 			expect(result).toEqual({
+				'user_agent.is_automated': false,
+				'user_agent.is_bot': false,
 				'user_agent.language': 'en-US',
 				'user_agent.mobile': false,
 				'user_agent.original': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -62,11 +64,38 @@ describe('platform utilities', () => {
 
 			const result = getBasicPlatformInfo()
 			expect(result).toEqual({
+				'user_agent.is_automated': false,
+				'user_agent.is_bot': false,
 				'user_agent.language': 'en-GB',
 				'user_agent.mobile': undefined,
 				'user_agent.original': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
 				'user_agent.os.name': 'MacIntel',
 			})
+		})
+
+		it('should detect bot user agents', () => {
+			mockNavigator({
+				language: 'en-US',
+				platform: 'Win32',
+				userAgent: 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+			})
+
+			const result = getBasicPlatformInfo()
+			expect(result['user_agent.is_bot']).toBe(true)
+			expect(result['user_agent.is_automated']).toBe(false)
+		})
+
+		it('should detect automated browsers via navigator.webdriver', () => {
+			mockNavigator({
+				language: 'en-US',
+				platform: 'Win32',
+				userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+				webdriver: true,
+			})
+
+			const result = getBasicPlatformInfo()
+			expect(result['user_agent.is_bot']).toBe(false)
+			expect(result['user_agent.is_automated']).toBe(true)
 		})
 	})
 
@@ -87,6 +116,8 @@ describe('platform utilities', () => {
 
 			const result = await getEnhancedPlatformInfo()
 			expect(result).toEqual({
+				'user_agent.is_automated': false,
+				'user_agent.is_bot': false,
 				'user_agent.language': 'en-US',
 				'user_agent.mobile': undefined,
 				'user_agent.original': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -112,6 +143,8 @@ describe('platform utilities', () => {
 
 			const result = await getEnhancedPlatformInfo()
 			expect(result).toEqual({
+				'user_agent.is_automated': false,
+				'user_agent.is_bot': false,
 				'user_agent.language': 'en-US',
 				'user_agent.mobile': undefined,
 				'user_agent.original': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
@@ -134,6 +167,8 @@ describe('platform utilities', () => {
 
 			const result = await getEnhancedPlatformInfo()
 			expect(result).toEqual({
+				'user_agent.is_automated': false,
+				'user_agent.is_bot': false,
 				'user_agent.language': 'en-US',
 				'user_agent.mobile': undefined,
 				'user_agent.original': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36',
@@ -154,6 +189,8 @@ describe('platform utilities', () => {
 
 			const result = await getEnhancedPlatformInfo()
 			expect(result).toEqual({
+				'user_agent.is_automated': false,
+				'user_agent.is_bot': false,
 				'user_agent.language': 'en-US',
 				'user_agent.mobile': undefined,
 				'user_agent.original': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
