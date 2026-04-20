@@ -6,6 +6,8 @@
  */
 
 :root {
+	color-scheme: dark;
+
 	/* Surface colors */
 	--color-bg-body: #0d1117;
 	--color-bg-surface: #161b22;
@@ -105,33 +107,52 @@ header {
 
 .page-nav {
 	display: flex;
-	gap: var(--space-xs);
-	margin-inline-start: auto;
+	align-items: center;
+	gap: var(--space-md);
+	margin-inline-start: var(--space-xl);
+	margin-inline-end: auto;
+	padding-inline-start: var(--space-lg);
+	border-inline-start: 1px solid var(--color-border-muted);
 }
 
 .nav-link {
-	font-size: var(--text-xs);
+	font-size: var(--text-sm);
 	text-decoration: none;
 	color: var(--color-text-secondary);
-	border: 1px solid var(--color-border-default);
-	border-radius: var(--radius-sm);
-	padding: 2px var(--space-sm);
 	transition:
 		color var(--transition-fast),
-		background var(--transition-fast),
-		border-color var(--transition-fast);
+		text-decoration-color var(--transition-fast);
+
+	& + & {
+		position: relative;
+		padding-inline-start: var(--space-lg);
+
+		&::before {
+			content: '|';
+			position: absolute;
+			inset-inline-start: 0;
+			color: var(--color-text-muted);
+			pointer-events: none;
+		}
+	}
 
 	&:hover {
 		color: var(--color-text-primary);
-		background: var(--color-bg-overlay);
-		border-color: var(--color-border-subtle);
+		text-decoration: underline;
+		text-underline-offset: 3px;
 	}
 
-	&.active,
+	&:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--color-accent-blue) 60%, white);
+		outline-offset: 2px;
+		border-radius: var(--radius-sm);
+	}
+
 	&[aria-current='page'] {
-		background: color-mix(in srgb, var(--color-accent-blue-emphasis) 20%, transparent);
 		color: var(--color-accent-blue);
-		border-color: var(--color-accent-blue-emphasis);
+		font-weight: 600;
+		text-decoration: underline;
+		text-underline-offset: 3px;
 	}
 }
 
@@ -312,7 +333,9 @@ button {
 	padding: var(--space-xl);
 	inline-size: min(560px, 90vw);
 	max-block-size: 90vh;
-	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
 }
 
 .modal-header {
@@ -343,6 +366,21 @@ button {
 	margin-block: var(--space-lg) var(--space-md);
 	padding-block-start: var(--space-lg);
 	border-block-start: 1px solid var(--color-border-muted);
+}
+
+.modal-body {
+	flex: 1 1 auto;
+	min-block-size: 0;
+	overflow-y: auto;
+	padding-inline-end: var(--space-xs);
+}
+
+.modal-footer {
+	flex-shrink: 0;
+	margin-block-start: var(--space-lg);
+	padding-block-start: var(--space-md);
+	border-block-start: 1px solid var(--color-border-muted);
+	background: var(--color-bg-surface);
 }
 
 /* ── Config grid ───────────────────────────────────────────────────────────── */
@@ -421,19 +459,31 @@ button {
 	}
 }
 
+#recorder-config-fields.hidden {
+	display: none;
+}
+
 .reinit-btn {
-	margin-block-start: var(--space-md);
-	background: color-mix(in srgb, var(--color-accent-blue-emphasis) 13%, transparent);
-	border: 1px solid var(--color-accent-blue-emphasis);
-	color: var(--color-accent-blue);
+	background: var(--color-accent-blue-emphasis);
+	border: 1px solid var(--color-accent-blue);
+	color: #ffffff;
 	border-radius: var(--radius-md);
 	padding: var(--space-sm) var(--space-lg);
 	font-size: var(--text-base);
+	font-weight: 600;
 	cursor: pointer;
+	text-align: center;
 	width: 100%;
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 
 	&:hover {
-		background: color-mix(in srgb, var(--color-accent-blue-emphasis) 27%, transparent);
+		background: color-mix(in srgb, var(--color-accent-blue-emphasis) 88%, white);
+		border-color: var(--color-accent-blue);
+	}
+
+	&:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--color-accent-blue) 60%, white);
+		outline-offset: 2px;
 	}
 }
 

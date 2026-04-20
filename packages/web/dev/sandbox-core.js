@@ -72,6 +72,8 @@ export function log(msg, level = 'msg') {
 // ── Config persistence ────────────────────────────────────────────────────
 const LS_KEY = 'splunk-rum-dev-config'
 const LS_TOKEN_KEY = 'splunk-rum-dev-token'
+const OTEL_API_SYMBOL = Symbol.for('opentelemetry.js.api.1')
+const SPLUNK_RUM_VERSION_KEY = 'splunk.rum.version'
 
 const CFG_TEXT_DEFAULTS = {
 	'cfg-app': 'splunk-otel-web-dev',
@@ -79,6 +81,7 @@ const CFG_TEXT_DEFAULTS = {
 	'cfg-env': 'dev',
 	'cfg-realm': '',
 	'cfg-recorder-beacon': 'http://localhost:9411/v1/rumreplay',
+	'cfg-recorder-pack-assets-images-quality': '',
 	'cfg-recorder-sensitivity-rules':
 		'[\n  { "rule": "mask",    "selector": "[data-sensitive]" },\n  { "rule": "unmask",  "selector": "[data-unmask]" },\n  { "rule": "exclude", "selector": "[data-exclude]" }\n]',
 }
@@ -87,10 +90,16 @@ const CFG_CHECKBOX_DEFAULTS = {
 	'cfg-recorder-enabled': false,
 	'cfg-recorder-feature-canvas': false,
 	'cfg-recorder-feature-iframes': false,
-	'cfg-recorder-feature-pack-assets': false,
 	'cfg-recorder-feature-video': false,
 	'cfg-recorder-mask-all-inputs': true,
 	'cfg-recorder-mask-all-text': false,
+	'cfg-recorder-pack-assets': false,
+	'cfg-recorder-pack-assets-fonts': false,
+	'cfg-recorder-pack-assets-hash-asset-content': false,
+	'cfg-recorder-pack-assets-images': false,
+	'cfg-recorder-pack-assets-images-only-viewport': false,
+	'cfg-recorder-pack-assets-images-pack': false,
+	'cfg-recorder-pack-assets-styles': true,
 }
 
 function loadConfig() {
@@ -136,7 +145,25 @@ function saveConfig() {
 	}
 }
 
+function syncRecorderConfigVisibility() {
+	const recorderFields = $('#recorder-config-fields')
+	const enabledInput = $input('#cfg-recorder-enabled')
+	if (!recorderFields || !enabledInput) {
+		return
+	}
+
+	recorderFields.classList.toggle('hidden', !enabledInput.checked)
+}
+
 // ── SDK Init ──────────────────────────────────────────────────────────────
+export function getRegisteredSdkVersion() {
+	const otelApi = globalThis[OTEL_API_SYMBOL]
+	const sdkVersion =
+		otelApi && typeof otelApi === 'object' ? otelApi[SPLUNK_RUM_VERSION_KEY] : undefined
+
+	return typeof sdkVersion === 'string' && sdkVersion ? sdkVersion : undefined
+}
+
 function getConfig() {
 	const realm = inputValue('#cfg-realm')
 	const base = {
@@ -184,7 +211,7 @@ function initSdk() {
 	if (typeof SplunkRum === 'undefined') {
 		log('SplunkRum not found on window — check bundle', 'error')
 		setSdkStatus('not found')
-		return
+		return false
 	}
 
 	const config = getConfig()
@@ -199,7 +226,7 @@ function initSdk() {
 
 		const sdkVersion = $('#sdk-version')
 		if (sdkVersion) {
-			sdkVersion.textContent = SplunkRum._processedOptions?.version ?? '—'
+			sdkVersion.textContent = getRegisteredSdkVersion() ?? '—'
 		}
 
 		const sessionEl = $('#session-id')
@@ -230,10 +257,11 @@ function initSdk() {
 		}
 		SplunkRum.addEventListener('session-changed', onSessionChanged)
 
-		initRecorder()
+		return initRecorder()
 	} catch (error) {
 		log(`Init error: ${error.message}`, 'error')
 		setSdkStatus('error')
+		return false
 	}
 }
 
@@ -298,29 +326,68 @@ function initRecorder() {
 	const enabled = checked('#cfg-recorder-enabled')
 	if (!enabled) {
 		setRecorderStatus('off')
-		return
+		return true
 	}
 
 	if (typeof SplunkSessionRecorder === 'undefined') {
 		log('SplunkSessionRecorder not found — build packages/session-recorder first', 'warn')
 		setRecorderStatus('unavailable')
-		return
+		return true
 	}
 
 	const { ok, rules } = parseSensitivityRules()
 	if (!ok) {
 		log('sensitivityRules JSON is invalid — fix before re-initializing', 'error')
 		setRecorderStatus('error')
-		return
+		return false
 	}
 
 	const beaconEndpoint = inputValue('#cfg-recorder-beacon')
 	const realm = inputValue('#cfg-realm')
 
+	const packAssetsEnabled = checked('#cfg-recorder-pack-assets')
+	let packAssets = undefined
+	if (packAssetsEnabled) {
+		const fonts = checked('#cfg-recorder-pack-assets-fonts')
+		const styles = checked('#cfg-recorder-pack-assets-styles')
+		const hashAssetContent = checked('#cfg-recorder-pack-assets-hash-asset-content')
+		const imagesEnabled = checked('#cfg-recorder-pack-assets-images')
+		const onlyViewportImages = checked('#cfg-recorder-pack-assets-images-only-viewport')
+		const imagePack = checked('#cfg-recorder-pack-assets-images-pack')
+		const qualityRaw = inputValue('#cfg-recorder-pack-assets-images-quality')
+		const qualityNum = Number(qualityRaw)
+		const quality = qualityRaw !== '' && Number.isFinite(qualityNum) ? Math.min(100, Math.max(1, qualityNum)) : undefined
+
+		let images = undefined
+		if (imagesEnabled) {
+			if (onlyViewportImages || imagePack || quality !== undefined) {
+				images = {
+					...(onlyViewportImages ? { onlyViewportImages: true } : {}),
+					...(imagePack ? { pack: true } : {}),
+					...(quality !== undefined ? { quality } : {}),
+				}
+			} else {
+				images = true
+			}
+		}
+
+		const hasSubFlags = fonts || styles || hashAssetContent || images !== undefined
+		if (hasSubFlags) {
+			packAssets = {
+				...(fonts ? { fonts: true } : {}),
+				...(styles ? { styles: true } : {}),
+				...(hashAssetContent ? { hashAssetContent: true } : {}),
+				...(images !== undefined ? { images } : {}),
+			}
+		} else {
+			packAssets = true
+		}
+	}
+
 	const features = {
 		canvas: checked('#cfg-recorder-feature-canvas'),
 		iframes: checked('#cfg-recorder-feature-iframes'),
-		packAssets: checked('#cfg-recorder-feature-pack-assets'),
+		...(packAssets !== undefined ? { packAssets } : {}),
 		video: checked('#cfg-recorder-feature-video'),
 	}
 	const hasFeatures = Object.values(features).some(Boolean)
@@ -340,13 +407,16 @@ function initRecorder() {
 		if (SplunkSessionRecorder.inited) {
 			log(`SplunkSessionRecorder initialized ✓ → ${beaconEndpoint || '(default)'}`, 'info')
 			setRecorderStatus('recording')
+			return true
 		} else {
 			log('SplunkSessionRecorder.init() returned without initializing — check console for details', 'warn')
 			setRecorderStatus('error')
+			return false
 		}
 	} catch (error) {
 		log(`Session recorder init error: ${error.message}`, 'error')
 		setRecorderStatus('error')
+		return false
 	}
 }
 
@@ -371,7 +441,7 @@ function reinitSdk() {
 		setSdkStatus('deinitialized')
 	}
 
-	initSdk()
+	return initSdk()
 }
 
 // ── Modal injection ───────────────────────────────────────────────────────
@@ -387,81 +457,125 @@ function injectModal() {
 				<button id="btn-config-close" class="icon-btn" aria-label="Close">&times;</button>
 			</div>
 
-			<div class="config-grid">
-				<div class="field">
-					<label>applicationName</label>
-					<input type="text" id="cfg-app" value="splunk-otel-web-dev" />
-				</div>
-				<div class="field">
-					<label>deploymentEnvironment</label>
-					<input type="text" id="cfg-env" value="dev" />
-				</div>
-				<div class="field">
-					<label>realm <span class="field-hint">(overrides beaconEndpoint)</span></label>
-					<input type="text" id="cfg-realm" placeholder="e.g. mon0, us0, eu0" />
-				</div>
-				<div class="field">
-					<label>rumAccessToken <span class="field-hint">(dev/test tokens only)</span></label>
-					<input type="password" id="cfg-token" placeholder="required when realm is set" />
-				</div>
-				<div class="field field-wide">
-					<label>beaconEndpoint <span class="field-hint">(used when realm is empty)</span></label>
-					<input type="text" id="cfg-beacon" value="http://localhost:9411/api/v2/spans" />
-				</div>
-			</div>
-
-			<button id="btn-reinit" class="reinit-btn">Re-initialize SDK</button>
-
-			<h3 class="modal-subheading">Session Recorder</h3>
-			<div class="config-grid">
-				<div class="field field-wide">
-					<label class="toggle-label">
-						<input type="checkbox" id="cfg-recorder-enabled" />
-						<span>Enable session recorder</span>
-					</label>
-				</div>
-				<div class="field field-wide">
-					<label>recorder beaconEndpoint <span class="field-hint">(replay ingest URL)</span></label>
-					<input type="text" id="cfg-recorder-beacon" placeholder="e.g. https://rum-ingest.us0.signalfx.com/v1/rumreplay" />
-				</div>
-				<div class="field">
-					<label class="toggle-label">
-						<input type="checkbox" id="cfg-recorder-mask-all-inputs" />
-						<span>maskAllInputs</span>
-					</label>
-				</div>
-				<div class="field">
-					<label class="toggle-label">
-						<input type="checkbox" id="cfg-recorder-mask-all-text" />
-						<span>maskAllText</span>
-					</label>
-				</div>
-				<div class="field field-wide">
-					<label>features</label>
-					<div class="feature-toggles">
-						<label class="toggle-label">
-							<input type="checkbox" id="cfg-recorder-feature-canvas" />
-							<span>canvas</span>
-						</label>
-						<label class="toggle-label">
-							<input type="checkbox" id="cfg-recorder-feature-video" />
-							<span>video</span>
-						</label>
-						<label class="toggle-label">
-							<input type="checkbox" id="cfg-recorder-feature-iframes" />
-							<span>iframes</span>
-						</label>
-						<label class="toggle-label">
-							<input type="checkbox" id="cfg-recorder-feature-pack-assets" />
-							<span>packAssets</span>
-						</label>
+			<div class="modal-body">
+				<div class="config-grid">
+					<div class="field">
+						<label>applicationName</label>
+						<input type="text" id="cfg-app" value="splunk-otel-web-dev" />
+					</div>
+					<div class="field">
+						<label>deploymentEnvironment</label>
+						<input type="text" id="cfg-env" value="dev" />
+					</div>
+					<div class="field">
+						<label>realm <span class="field-hint">(overrides beaconEndpoint)</span></label>
+						<input type="text" id="cfg-realm" placeholder="e.g. mon0, us0, eu0" />
+					</div>
+					<div class="field">
+						<label>rumAccessToken <span class="field-hint">(dev/test tokens only)</span></label>
+						<input type="password" id="cfg-token" placeholder="required when realm is set" />
+					</div>
+					<div class="field field-wide">
+						<label>beaconEndpoint <span class="field-hint">(used when realm is empty)</span></label>
+						<input type="text" id="cfg-beacon" value="http://localhost:9411/api/v2/spans" />
 					</div>
 				</div>
-				<div class="field field-wide">
-					<label>sensitivityRules <span class="field-hint">(JSON array — applied on Re-initialize)</span></label>
-					<textarea id="cfg-recorder-sensitivity-rules" rows="6" spellcheck="false"></textarea>
-					<span id="cfg-recorder-sensitivity-error" class="field-error hidden"></span>
+				<h3 class="modal-subheading">Session Recorder</h3>
+				<div class="config-grid">
+					<div class="field field-wide">
+						<label class="toggle-label">
+							<input type="checkbox" id="cfg-recorder-enabled" />
+							<span>Enable session recorder</span>
+						</label>
+					</div>
+					<div id="recorder-config-fields" class="field field-wide">
+						<div class="config-grid">
+							<div class="field field-wide">
+								<label>recorder beaconEndpoint <span class="field-hint">(replay ingest URL)</span></label>
+								<input type="text" id="cfg-recorder-beacon" placeholder="e.g. https://rum-ingest.us0.signalfx.com/v1/rumreplay" />
+							</div>
+							<div class="field">
+								<label class="toggle-label">
+									<input type="checkbox" id="cfg-recorder-mask-all-inputs" />
+									<span>maskAllInputs</span>
+								</label>
+							</div>
+							<div class="field">
+								<label class="toggle-label">
+									<input type="checkbox" id="cfg-recorder-mask-all-text" />
+									<span>maskAllText</span>
+								</label>
+							</div>
+							<div class="field field-wide">
+								<label>features</label>
+								<div class="feature-toggles">
+									<label class="toggle-label">
+										<input type="checkbox" id="cfg-recorder-feature-canvas" />
+										<span>canvas</span>
+									</label>
+									<label class="toggle-label">
+										<input type="checkbox" id="cfg-recorder-feature-video" />
+										<span>video</span>
+									</label>
+									<label class="toggle-label">
+										<input type="checkbox" id="cfg-recorder-feature-iframes" />
+										<span>iframes</span>
+									</label>
+								</div>
+							</div>
+							<div class="field field-wide">
+								<label>packAssets</label>
+								<div class="feature-toggles">
+									<label class="toggle-label">
+										<input type="checkbox" id="cfg-recorder-pack-assets" />
+										<span>enabled</span>
+									</label>
+								</div>
+								<div style="margin-top:6px;padding-left:16px;border-left:2px solid #30363d;display:flex;flex-direction:column;gap:6px;">
+									<label class="toggle-label">
+										<input type="checkbox" id="cfg-recorder-pack-assets-fonts" />
+										<span>fonts</span>
+									</label>
+									<label class="toggle-label">
+										<input type="checkbox" id="cfg-recorder-pack-assets-styles" />
+										<span>styles</span>
+									</label>
+									<label class="toggle-label">
+										<input type="checkbox" id="cfg-recorder-pack-assets-hash-asset-content" />
+										<span>hashAssetContent</span>
+									</label>
+									<label class="toggle-label">
+										<input type="checkbox" id="cfg-recorder-pack-assets-images" />
+										<span>images</span>
+									</label>
+									<div style="padding-left:16px;border-left:2px solid #21262d;display:flex;flex-direction:column;gap:6px;">
+										<label class="toggle-label">
+											<input type="checkbox" id="cfg-recorder-pack-assets-images-only-viewport" />
+											<span>images.onlyViewportImages</span>
+										</label>
+										<label class="toggle-label">
+											<input type="checkbox" id="cfg-recorder-pack-assets-images-pack" />
+											<span>images.pack</span>
+										</label>
+										<div class="field" style="margin:0;">
+											<label style="font-size:11px;color:#8b949e;">images.quality <span class="field-hint">(1–100, blank = omit)</span></label>
+											<input type="number" id="cfg-recorder-pack-assets-images-quality" min="1" max="100" placeholder="e.g. 80" style="width:100px;" />
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="field field-wide">
+								<label>sensitivityRules <span class="field-hint">(JSON array — applied on Apply)</span></label>
+								<textarea id="cfg-recorder-sensitivity-rules" rows="6" spellcheck="false"></textarea>
+								<span id="cfg-recorder-sensitivity-error" class="field-error hidden"></span>
+							</div>
+						</div>
+					</div>
 				</div>
+
+			</div>
+			<div class="modal-footer">
+				<button id="btn-reinit" class="reinit-btn">Apply</button>
 			</div>
 		</div>
 	`
@@ -480,7 +594,12 @@ function wireModalHandlers() {
 	const backdrop = $('#config-backdrop')
 	$('#btn-config')?.addEventListener('click', openConfig)
 	$('#btn-config-close')?.addEventListener('click', closeConfig)
-	$('#btn-reinit')?.addEventListener('click', reinitSdk)
+	$('#cfg-recorder-enabled')?.addEventListener('change', syncRecorderConfigVisibility)
+	$('#btn-reinit')?.addEventListener('click', () => {
+		if (reinitSdk()) {
+			closeConfig()
+		}
+	})
 	backdrop?.addEventListener('click', (e) => {
 		if (e.target === backdrop) {
 			closeConfig()
@@ -515,6 +634,7 @@ export function doRecorderStop() {
 export function init() {
 	injectModal()
 	loadConfig()
+	syncRecorderConfigVisibility()
 	initSdk()
 	wireModalHandlers()
 
