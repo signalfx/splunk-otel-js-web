@@ -158,8 +158,7 @@ function syncRecorderConfigVisibility() {
 // ── SDK Init ──────────────────────────────────────────────────────────────
 export function getRegisteredSdkVersion() {
 	const otelApi = globalThis[OTEL_API_SYMBOL]
-	const sdkVersion =
-		otelApi && typeof otelApi === 'object' ? otelApi[SPLUNK_RUM_VERSION_KEY] : undefined
+	const sdkVersion = otelApi && typeof otelApi === 'object' ? otelApi[SPLUNK_RUM_VERSION_KEY] : undefined
 
 	return typeof sdkVersion === 'string' && sdkVersion ? sdkVersion : undefined
 }
@@ -346,7 +345,7 @@ function initRecorder() {
 	const realm = inputValue('#cfg-realm')
 
 	const packAssetsEnabled = checked('#cfg-recorder-pack-assets')
-	let packAssets = undefined
+	let packAssets
 	if (packAssetsEnabled) {
 		const fonts = checked('#cfg-recorder-pack-assets-fonts')
 		const styles = checked('#cfg-recorder-pack-assets-styles')
@@ -356,38 +355,36 @@ function initRecorder() {
 		const imagePack = checked('#cfg-recorder-pack-assets-images-pack')
 		const qualityRaw = inputValue('#cfg-recorder-pack-assets-images-quality')
 		const qualityNum = Number(qualityRaw)
-		const quality = qualityRaw !== '' && Number.isFinite(qualityNum) ? Math.min(100, Math.max(1, qualityNum)) : undefined
+		const quality =
+			qualityRaw !== '' && Number.isFinite(qualityNum) ? Math.min(100, Math.max(1, qualityNum)) : undefined
 
-		let images = undefined
+		let images
 		if (imagesEnabled) {
-			if (onlyViewportImages || imagePack || quality !== undefined) {
-				images = {
-					...(onlyViewportImages ? { onlyViewportImages: true } : {}),
-					...(imagePack ? { pack: true } : {}),
-					...(quality !== undefined ? { quality } : {}),
-				}
-			} else {
-				images = true
-			}
+			images =
+				onlyViewportImages || imagePack || quality !== undefined
+					? {
+							...(onlyViewportImages ? { onlyViewportImages: true } : {}),
+							...(imagePack ? { pack: true } : {}),
+							...(quality === undefined ? {} : { quality }),
+						}
+					: true
 		}
 
 		const hasSubFlags = fonts || styles || hashAssetContent || images !== undefined
-		if (hasSubFlags) {
-			packAssets = {
-				...(fonts ? { fonts: true } : {}),
-				...(styles ? { styles: true } : {}),
-				...(hashAssetContent ? { hashAssetContent: true } : {}),
-				...(images !== undefined ? { images } : {}),
-			}
-		} else {
-			packAssets = true
-		}
+		packAssets = hasSubFlags
+			? {
+					...(fonts ? { fonts: true } : {}),
+					...(styles ? { styles: true } : {}),
+					...(hashAssetContent ? { hashAssetContent: true } : {}),
+					...(images === undefined ? {} : { images }),
+				}
+			: true
 	}
 
 	const features = {
 		canvas: checked('#cfg-recorder-feature-canvas'),
 		iframes: checked('#cfg-recorder-feature-iframes'),
-		...(packAssets !== undefined ? { packAssets } : {}),
+		...(packAssets === undefined ? {} : { packAssets }),
 		video: checked('#cfg-recorder-feature-video'),
 	}
 	const hasFeatures = Object.values(features).some(Boolean)
