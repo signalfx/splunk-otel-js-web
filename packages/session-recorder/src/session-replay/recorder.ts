@@ -23,7 +23,7 @@ import { SplunkRumRecorderConfig } from '../index'
 import { log } from '../log'
 import { isBoolean, isString } from '../type-guards'
 import { VERSION } from '../version'
-import { Segment, SessionReplay, SessionReplayConfig } from './cdn-module'
+import { PendingSegmentData, Segment, SessionReplay, SessionReplayConfig } from './cdn-module'
 import { getSplunkRecorderConfig } from './config'
 
 const MAX_CHUNK_SIZE = 4000 * 1024 // ~4000 KB
@@ -57,10 +57,12 @@ export class Recorder {
 
 	constructor({
 		initRecorderConfig,
+		persistSegments,
 		processor,
 		sessionId,
 	}: {
 		initRecorderConfig: Omit<SplunkRumRecorderConfig, 'realm' | 'recorder' | 'rumAccessToken' | 'beaconEndpoint'>
+		persistSegments: boolean
 		processor: BatchLogProcessor
 		sessionId: string
 	}) {
@@ -98,6 +100,7 @@ export class Recorder {
 				canvas: this.config.features?.canvas ?? false,
 				iframes: this.config.features?.iframes ?? false,
 				packAssets: this.config.features?.packAssets ?? { styles: true },
+				persistSegments,
 				video: this.config.features?.video ?? false,
 			},
 			logLevel: this.config.logLevel ?? 'error',
@@ -121,6 +124,22 @@ export class Recorder {
 		log.debug('Recorder destroy')
 		this.sessionReplay.destroy()
 		Recorder.clear()
+	}
+
+	dismissPendingSegment(segmentId: string): Promise<void> {
+		return this.sessionReplay.dismissPendingSegment(segmentId)
+	}
+
+	emitPendingSegment(plainSegment: ReturnType<Segment['toPlain']>, onSuccess: () => void) {
+		this.onEmit({
+			data: plainSegment,
+			startTime: plainSegment.metadata.startUnixMs,
+		})
+		void this.processor.forceFlush().then(onSuccess)
+	}
+
+	getPendingSegments(): Promise<PendingSegmentData[]> {
+		return this.sessionReplay.getPendingSegments()
 	}
 
 	resume() {
@@ -187,7 +206,7 @@ export class Recorder {
 		}
 	}
 
-	private onSegment = (segment: Segment) => {
+	private onSegment = (segment: Segment, acknowledge: () => void) => {
 		log.debug('Session replay segment: ', segment)
 
 		const plainSegment = segment.toPlain()
@@ -196,6 +215,7 @@ export class Recorder {
 			data: plainSegment,
 			startTime: plainSegment.metadata.startUnixMs,
 		})
+		void this.processor.forceFlush().then(() => acknowledge())
 	}
 
 	private startOnVisibilityChange = () => {

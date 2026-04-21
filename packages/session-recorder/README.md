@@ -194,24 +194,43 @@ Choose a versioning strategy based on your needs:
 
 ## ⚙️ Configuration Options
 
-| Option                       | Type                                     | Required | Default  | Description                                                |
-| ---------------------------- | ---------------------------------------- | -------- | -------- | ---------------------------------------------------------- |
-| `realm`                      | `string`                                 | ✅       | -        | Splunk realm (us0, us1, eu0, etc.)                         |
-| `rumAccessToken`             | `string`                                 | ✅       | -        | RUM access token for authentication                        |
-| `beaconEndpoint`             | `string`                                 | ❌       | -        | Custom destination URL for captured data (overrides realm) |
-| `debug`                      | `boolean`                                | ❌       | `false`  | Enable debug logging                                       |
-| `persistFailedReplayData`    | `boolean`                                | ❌       | `true`   | Store failed uploads in localStorage for retry             |
-| `maskAllInputs`              | `boolean`                                | ❌       | `true`   | Mask all form input values                                 |
-| `maskAllText`                | `boolean`                                | ❌       | `false`  | Mask all text content                                      |
-| `sensitivityRules`           | `SensitivityRule[]`                      | ❌       | `[]`     | Custom rules for masking, unmasking, or excluding elements |
-| `features.backgroundService` | `string \| boolean`                      | ❌       | `false`  | Custom URL for background service worker                   |
-| `features.canvas`            | `boolean`                                | ❌       | `false`  | Record canvas elements                                     |
-| `features.iframes`           | `boolean`                                | ❌       | `false`  | Record iframe content                                      |
-| `features.video`             | `boolean`                                | ❌       | `false`  | Record video elements                                      |
-| `features.cacheAssets`       | `boolean`                                | ❌       | `true`   | Cache assets for replay                                    |
-| `features.packAssets`        | `boolean \| PackAssetsConfig`            | ❌       | `true`   | Pack assets to reduce payload size                         |
-| `maxExportIntervalMs`        | `number`                                 | ❌       | `5000`   | Maximum interval between data exports (milliseconds)       |
-| `logLevel`                   | `'debug' \| 'info' \| 'warn' \| 'error'` | ❌       | `'warn'` | Logging level for session recorder                         |
+| Option                       | Type                                       | Required | Default  | Description                                                |
+| ---------------------------- | ------------------------------------------ | -------- | -------- | ---------------------------------------------------------- |
+| `realm`                      | `string`                                   | ✅       | -        | Splunk realm (us0, us1, eu0, etc.)                         |
+| `rumAccessToken`             | `string`                                   | ✅       | -        | RUM access token for authentication                        |
+| `beaconEndpoint`             | `string`                                   | ❌       | -        | Custom destination URL for captured data (overrides realm) |
+| `debug`                      | `boolean`                                  | ❌       | `false`  | Enable debug logging                                       |
+| `persistFailedReplayData`    | `boolean \| 'localstorage' \| 'indexeddb'` | ❌       | `true`   | Persistence strategy for failed uploads (see below)        |
+| `maskAllInputs`              | `boolean`                                  | ❌       | `true`   | Mask all form input values                                 |
+| `maskAllText`                | `boolean`                                  | ❌       | `false`  | Mask all text content                                      |
+| `sensitivityRules`           | `SensitivityRule[]`                        | ❌       | `[]`     | Custom rules for masking, unmasking, or excluding elements |
+| `features.backgroundService` | `string \| boolean`                        | ❌       | `false`  | Custom URL for background service worker                   |
+| `features.canvas`            | `boolean`                                  | ❌       | `false`  | Record canvas elements                                     |
+| `features.iframes`           | `boolean`                                  | ❌       | `false`  | Record iframe content                                      |
+| `features.video`             | `boolean`                                  | ❌       | `false`  | Record video elements                                      |
+| `features.cacheAssets`       | `boolean`                                  | ❌       | `true`   | Cache assets for replay                                    |
+| `features.packAssets`        | `boolean \| PackAssetsConfig`              | ❌       | `true`   | Pack assets to reduce payload size                         |
+| `maxExportIntervalMs`        | `number`                                   | ❌       | `5000`   | Maximum interval between data exports (milliseconds)       |
+| `logLevel`                   | `'debug' \| 'info' \| 'warn' \| 'error'`   | ❌       | `'warn'` | Logging level for session recorder                         |
+
+### Replay Data Persistence
+
+Controls how session replay data is persisted when upload requests fail:
+
+| Value            | Description                                                                                                                      |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `true`           | Default. Failed OTLP log exports are queued in localStorage (2 MB budget) and retried on next page load.                         |
+| `'localstorage'` | Same as `true`.                                                                                                                  |
+| `'indexeddb'`    | Uses the session replay script's built-in IndexedDB persistence. Segments are stored in IndexedDB and retried on next page load. |
+| `false`          | Disables persistence entirely.                                                                                                   |
+
+```typescript
+SplunkSessionRecorder.init({
+	realm: 'us1',
+	rumAccessToken: 'YOUR_RUM_ACCESS_TOKEN',
+	persistFailedReplayData: 'indexeddb',
+})
+```
 
 ### Sensitivity Rules Configuration
 
@@ -398,7 +417,7 @@ interface SessionRecorderConfig {
 	// Advanced
 	debug?: boolean
 	beaconEndpoint?: string
-	persistFailedReplayData?: boolean
+	persistFailedReplayData?: boolean | 'localstorage' | 'indexeddb'
 }
 
 interface SensitivityRule {

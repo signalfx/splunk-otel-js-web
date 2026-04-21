@@ -20,6 +20,7 @@
 export {
 	type ConfigFeatures,
 	type PackAssetsConfig,
+	type PendingSegmentData,
 	type Segment,
 	type SensitivityRule,
 	type SensitivityRuleType,

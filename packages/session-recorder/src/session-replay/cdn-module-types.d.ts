@@ -63,17 +63,27 @@ declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.12.0/ses
 		stop: () => void
 	}
 
+	export interface PendingSegmentData {
+		bindingKey: string
+		segment: Segment
+		segmentId: string
+	}
+
 	export class SessionReplay extends SessionReplayBase {
 		static loadPlainSegment: (segment: SessionReplayPlainSegment) => Segment
-
-		readonly isStarted: boolean
 
 		constructor(
 			config: Omit<SessionReplayConfig, 'features'> & {
 				features: Omit<ConfigFeatures, 'backgroundService'>
-				onSegment: (segment: Segment) => void
+				onSegment: (segment: Segment, acknowledge: () => void) => void
 			},
 		)
+
+		dismissPendingSegment: (segmentId: string) => Promise<void>
+
+		getPendingSegments: () => Promise<PendingSegmentData[]>
+
+		readonly isStarted: boolean
 	}
 
 	type LogLevel = 'debug' | 'info' | 'warn' | 'error'
@@ -107,6 +117,7 @@ declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.12.0/ses
 		canvas?: boolean
 		iframes?: boolean
 		packAssets?: boolean | PackAssetsConfig
+		persistSegments?: boolean
 		video?: boolean
 	}
 
@@ -117,7 +128,7 @@ declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.12.0/ses
 		maskAllInputs?: boolean
 		maskAllText?: boolean
 		maxExportIntervalMs?: number
-		onSegment: (segment: Segment) => void
+		onSegment: (segment: Segment, acknowledge: () => void) => void
 		originalFetch?: typeof fetch
 		sensitivityRules?: SensitivityRule[]
 	}

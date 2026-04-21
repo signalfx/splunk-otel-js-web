@@ -41,17 +41,16 @@ export type SplunkRumRecorderConfig = {
 	 * Enables persistence of session replay data when upload requests fail.
 	 *
 	 * When enabled, session replay chunks that fail to upload (due to network issues,
-	 * server errors, or browser issues) are automatically stored in local browser storage
+	 * server errors, or browser issues) are automatically stored in browser storage
 	 * and retried on subsequent page loads.
 	 *
-	 * This feature helps prevent data loss and ensures comprehensive session coverage
-	 * even in unreliable network conditions. The queue is automatically managed and
-	 * cleaned up after successful uploads.
-	 *
-	 * Storage: Currently the data is stored in localStorage.
+	 * - `true` or `'localstorage'` (default): Failed OTLP log exports are queued in localStorage (2MB budget).
+	 * - `'indexeddb'`: Uses the session replay script's built-in IndexedDB persistence.
+	 *   Segments are stored in IndexedDB and retried on next page load.
+	 * - `false`: Disables persistence entirely.
 	 * @default true
 	 */
-	persistFailedReplayData?: boolean
+	persistFailedReplayData?: boolean | 'indexeddb' | 'localstorage'
 
 	/**
 	 * The name of your organization’s realm. Automatically configures beaconUrl with correct URL
@@ -81,6 +80,25 @@ let recorder: Recorder | undefined
 let sessionStateUnsubscribe: undefined | (() => void)
 const isLatestTagUsed = isRecorderLoadedViaLatestTag()
 const isNextTagUsed = isRecorderLoadedViaNextTag()
+
+const useIndexedDBPersistence = (config: SplunkRumRecorderConfig): boolean =>
+	config.persistFailedReplayData === 'indexeddb'
+
+const retryPendingSegments = (recorderInstance: Recorder, sessionId: string) => {
+	void recorderInstance.getPendingSegments().then((pendingSegments) => {
+		for (const { bindingKey, segment, segmentId } of pendingSegments) {
+			if (bindingKey !== sessionId) {
+				void recorderInstance.dismissPendingSegment(segmentId)
+				continue
+			}
+
+			const plainSegment = segment.toPlain()
+			recorderInstance.emitPendingSegment(plainSegment, () => {
+				void recorderInstance.dismissPendingSegment(segmentId)
+			})
+		}
+	})
+}
 
 enum SpanName {
 	IS_RECORDING = 'splunk.sessionReplay.isRecording',
@@ -135,9 +153,10 @@ const SplunkRumRecorder = {
 		attributes: Attributes
 		exportQueuedLogs: boolean
 		exportUrl: string
-		persistFailedReplayData: boolean
+		persistFailedReplayData: boolean | 'indexeddb' | 'localstorage'
 		sessionId: string
 	}): BatchLogProcessor {
+		const useLocalStorageQueue = persistFailedReplayData === true || persistFailedReplayData === 'localstorage'
 		const exporter = new OTLPLogExporter({
 			beaconUrl: exportUrl,
 			exportQueuedLogs,
@@ -153,7 +172,7 @@ const SplunkRumRecorder = {
 				return newAttributes
 			},
 			sessionId,
-			usePersistentExportQueue: persistFailedReplayData,
+			usePersistentExportQueue: useLocalStorageQueue,
 		})
 		return new BatchLogProcessor(exporter)
 	},
@@ -297,8 +316,10 @@ const SplunkRumRecorder = {
 						return
 					}
 
+					const persistSegments = useIndexedDBPersistence(config)
 					recorder = new Recorder({
 						initRecorderConfig,
+						persistSegments,
 						processor: this._getProcessorForSession({
 							anonymousUserId: SplunkRum.getAnonymousId(),
 							attributes: resource.attributes,
@@ -315,8 +336,10 @@ const SplunkRumRecorder = {
 
 			const sessionId = SplunkRum.getSessionId()
 			if (sessionId && createSessionReplaySpanIfAllowed(SpanName.IS_RECORDING, sessionId)) {
+				const persistSegments = useIndexedDBPersistence(config)
 				recorder = new Recorder({
 					initRecorderConfig,
+					persistSegments,
 					processor: this._getProcessorForSession({
 						anonymousUserId: SplunkRum.getAnonymousId(),
 						attributes: resource.attributes,
@@ -328,6 +351,10 @@ const SplunkRumRecorder = {
 					sessionId,
 				})
 				recorder.start()
+
+				if (persistSegments) {
+					retryPendingSegments(recorder, sessionId)
+				}
 			}
 
 			inited = true
