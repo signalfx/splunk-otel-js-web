@@ -413,17 +413,15 @@ export const SplunkRum: SplunkOtelWebType = {
 			)
 
 			if (isLatestTagUsed) {
-				const { exactVersion, majorVersion, minorVersion } = parseVersion(VERSION)
-				const cdnBase = 'https://cdn.signalfx.com/o11y-gdi-rum'
+				const { majorVersion } = parseVersion(VERSION)
+				const newCdnBase = 'https://cdn.observability.splunkcloud.com/o11y-gdi-rum'
 
 				diag.warn(
-					'[Splunk]: You are using the "latest" version of splunk-otel-web.js. ' +
-						'This automatically pulls the newest released version, which may introduce breaking changes without notice. ' +
-						'This can cause unexpected behavior in production environments. ' +
-						'Please use a version lock strategy instead:\n' +
-						`  - Major version lock (recommended): ${cdnBase}/${majorVersion}/splunk-otel-web.js\n` +
-						`  - Minor version lock:               ${cdnBase}/${minorVersion}/splunk-otel-web.js\n` +
-						`  - Exact version lock:               ${cdnBase}/${exactVersion}/splunk-otel-web.js\n\n` +
+					'[Splunk]: The "latest" CDN tag is deprecated and will remain pinned to v2.5.x — it will not receive new features or major updates. ' +
+						'Please migrate to a versioned URL on the new CDN domain:\n' +
+						`  - Major version lock (recommended): ${newCdnBase}/${majorVersion}/splunk-otel-web.js\n\n` +
+						'The CDN domain is also changing from cdn.signalfx.com to cdn.observability.splunkcloud.com. ' +
+						'If your application uses a Content Security Policy (CSP), update your script-src directive to allow the new domain.\n\n' +
 						'See: https://quickdraw.splunk.com/redirect/?location=rum.browser.cdn&product=Observability&version=current',
 				)
 			}
@@ -528,6 +526,7 @@ export const SplunkRum: SplunkOtelWebType = {
 			const instanceId = generateId(64)
 
 			const { applicationName, deploymentEnvironment, ignoreUrls, version } = processedOptions
+
 			// enabled: false prevents registerInstrumentations from enabling instrumentations in constructor
 			// they will be enabled in registerInstrumentations
 			const pluginDefaults = { enabled: false, ignoreUrls }
@@ -600,6 +599,7 @@ export const SplunkRum: SplunkOtelWebType = {
 						? { 'deployment.environment': deploymentEnvironment, 'environment': deploymentEnvironment }
 						: {}),
 					...(version ? { 'app.version': version } : {}),
+					...(isLatestTagUsed ? { 'splunk.rum.is_latest_tag': true } : {}),
 					...processedOptions.globalAttributes,
 				},
 				processedOptions._experimental_discardDataAfterInactivity,

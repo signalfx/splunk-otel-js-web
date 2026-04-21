@@ -27,11 +27,13 @@ export function mockNavigator(config: {
 		mobile?: boolean
 		platform?: string
 	}
+	webdriver?: boolean
 }) {
 	const mockNav = {
 		language: config.language || 'en-US',
 		platform: config.platform || 'Win32',
 		userAgent: config.userAgent || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+		webdriver: config.webdriver ?? false,
 		...(config.userAgentData && {
 			userAgentData: {
 				getHighEntropyValues: config.userAgentData.getHighEntropyValues || vi.fn().mockResolvedValue({}),
