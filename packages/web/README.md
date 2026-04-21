@@ -84,9 +84,9 @@ Choose a versioning strategy based on your needs:
 **Exact Version Lock**
 
 ```html
-<!-- Locks to exact version v2.5.0 - no automatic updates -->
+<!-- Locks to exact version v2.5.1 - no automatic updates -->
 <script
-	src="https://cdn.signalfx.com/o11y-gdi-rum/v2.5.0/splunk-otel-web.js"
+	src="https://cdn.signalfx.com/o11y-gdi-rum/v2.5.1/splunk-otel-web.js"
 	crossorigin="anonymous"
 	integrity="sha384-<integrity>"
 ></script>

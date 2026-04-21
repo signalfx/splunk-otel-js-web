@@ -2,6 +2,48 @@
 
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
+## 2.5.1
+
+- `@splunk/otel-web`
+    - **Trace separation of XHR and Fetch from parent trace** [#1693](https://github.com/signalfx/splunk-otel-js-web/pull/1693)
+        - New `separateTraces` configuration option that gives XHR and Fetch requests their own trace IDs instead of inheriting the parent click event's trace ID
+        - Preserves the relationship through `parent.traceId` and `parent.spanId` attributes, enabling proper Business Transaction correlation in backend APM while maintaining RUM trace correlation
+        - Supports top-level config, per-instrumentation config, and mixed configurations with overrides
+    - **Add `user_agent.is_bot` and `user_agent.is_automated` attributes** [#1760](https://github.com/signalfx/splunk-otel-js-web/pull/1760)
+        - New global span attribute `user_agent.is_bot` that uses regex detection to flag bot/crawler user agents
+        - New global span attribute `user_agent.is_automated` that checks `navigator.webdriver` to identify browsers controlled by automation frameworks like Selenium, Puppeteer, and Playwright
+        - Enables downstream filtering and analysis of synthetic versus real user traffic
+    - **Add `splunk.rum.is_latest_tag` attribute** [#1762](https://github.com/signalfx/splunk-otel-js-web/pull/1762)
+        - Adds a global span attribute `splunk.rum.is_latest_tag: true` when the agent loads via the "latest" CDN tag
+        - Updates deprecation warnings to clarify that the "latest" tag remains pinned to v2.5.x
+    - **Improve dead click detection for `role=button` and anchor elements** [#1756](https://github.com/signalfx/splunk-otel-js-web/pull/1756)
+        - Elements with `role="button"` are now treated as interactive components for dead click detection
+        - Excludes `<a>` elements with actual href attributes from detection since they trigger navigation
+        - Keeps anchors without href or with `javascript:` hrefs as candidates for detection
+    - **Upgrade upstream to v2.11.1** [#1758](https://github.com/signalfx/splunk-otel-js-web/pull/1758)
+
+- **Updated dependencies** [#1759](https://github.com/signalfx/splunk-otel-js-web/pull/1759), [#1761](https://github.com/signalfx/splunk-otel-js-web/pull/1761)
+
+### ⚠️ Upcoming breaking changes in v3.0.0
+
+> **Action required before upgrading to v3.0.0:**
+
+- **Domain migration**: All domains are changing from `signalfx.com` to `observability.splunkcloud.com`. This includes both the CDN (`cdn.signalfx.com` → `cdn.observability.splunkcloud.com`) and the ingest endpoint (`rum-ingest.{realm}.signalfx.com` → `rum-ingest.{realm}.observability.splunkcloud.com`). If your application uses a Content Security Policy (CSP), update your `script-src` and `connect-src` directives to allow the new domains before upgrading.
+- **`latest` CDN tag discontinued**: The `latest` CDN tag will stop being updated after v2.5.0. Users relying on the `latest` tag should migrate to a versioned URL:
+
+```diff
+- <script src="https://cdn.signalfx.com/o11y-gdi-rum/latest/splunk-otel-web.js"></script>
++ <script src="https://cdn.observability.splunkcloud.com/o11y-gdi-rum/v3/splunk-otel-web.js"></script>
+```
+
+The following experimental config options will be removed in v3.0.0 and their behavior will be enabled by default. This may affect how sessions and data are counted:
+
+- **`_experimental_adjustSessionStartToTimeOrigin`**: Session start time will be automatically backdated to `performance.timeOrigin`.
+- **`_experimental_discardDataAfterInactivity`**: Will be enabled by default. Data will be automatically discarded after 15 minutes of user inactivity. Set `_experimental_discardDataAfterInactivity: false` to opt out.
+- **OTLP exporter enabled by default**: The OTLP exporter will replace Zipkin as the default export format. Set `exporter.otlp: false` to opt out.
+- **`spaMetrics`**: Will be enabled by default. Set `spaMetrics: false` to opt out.
+- **`experimental_alignWebVitalsSpansWithDocumentLoad`**: All web vitals spans (LCP, CLS, INP) will be automatically anchored to the document load span — start time will match the documentLoad span timestamp rather than the time the metric was reported, and `location.href` will reflect the original page load URL rather than the current URL after SPA navigation.
+
 ## 2.5.0
 
 - `@splunk/otel-web`
