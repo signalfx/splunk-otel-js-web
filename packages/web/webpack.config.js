@@ -22,6 +22,10 @@ const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin')
 const TerserPlugin = require('terser-webpack-plugin')
 const webpack = require('webpack')
 
+const { DevPresetsPlugin } = require('./webpack/dev-presets-plugin')
+
+// ── Build helpers ─────────────────────────────────────────────────────────
+
 const getCommitHash = () => {
 	try {
 		return execSync('git describe --tags --always --long', { encoding: 'utf8' }).trim()
@@ -187,6 +191,7 @@ const browserConfig = (env, argv) => {
 			new webpack.DefinePlugin({
 				__COMMIT_HASH__: JSON.stringify(getCommitHash()),
 			}),
+			...(isDevelopmentMode(argv) ? [new DevPresetsPlugin({ envPath: path.resolve(__dirname, '.env') })] : []),
 		],
 	}
 }

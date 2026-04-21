@@ -72,6 +72,7 @@ export function log(msg, level = 'msg') {
 // ── Config persistence ────────────────────────────────────────────────────
 const LS_KEY = 'splunk-rum-dev-config'
 const LS_TOKEN_KEY = 'splunk-rum-dev-token'
+const LS_PRESET_KEY = 'splunk-rum-dev-preset'
 const OTEL_API_SYMBOL = Symbol.for('opentelemetry.js.api.1')
 const SPLUNK_RUM_VERSION_KEY = 'splunk.rum.version'
 
@@ -143,6 +144,16 @@ function saveConfig() {
 	} else {
 		localStorage.removeItem(LS_TOKEN_KEY)
 	}
+
+	const presetEl = $input('#cfg-preset')
+	if (presetEl) {
+		const val = presetEl.value
+		if (val) {
+			localStorage.setItem(LS_PRESET_KEY, val)
+		} else {
+			localStorage.removeItem(LS_PRESET_KEY)
+		}
+	}
 }
 
 function syncRecorderConfigVisibility() {
@@ -153,6 +164,146 @@ function syncRecorderConfigVisibility() {
 	}
 
 	recorderFields.classList.toggle('hidden', !enabledInput.checked)
+}
+
+// ── Realm presets ─────────────────────────────────────────────────────────
+
+/**
+ * @typedef {{
+ *   id: string,
+ *   realm: string,
+ *   token: string,
+ *   applicationName?: string,
+ *   deploymentEnvironment?: string,
+ *   beaconEndpoint?: string,
+ *   recorderBeaconEndpoint?: string
+ * }} Preset
+ */
+
+/**
+ * Presets injected by webpack at dev-server startup from packages/web/.env.
+ * Falls back to an empty array when running outside the dev server.
+ *
+ * @type {Preset[]}
+ */
+const _presets = /** @type {Preset[]} */ (
+	Array.isArray(/** @type {any} */ (globalThis).__DEV_PRESETS__)
+		? /** @type {any} */ (globalThis).__DEV_PRESETS__
+		: []
+)
+
+/**
+ * Map input ids to the preset property that populates them.
+ *
+ * @type {Record<string, keyof Preset>}
+ */
+const PRESET_FIELD_MAP = {
+	'cfg-app': 'applicationName',
+	'cfg-beacon': 'beaconEndpoint',
+	'cfg-env': 'deploymentEnvironment',
+	'cfg-realm': 'realm',
+	'cfg-recorder-beacon': 'recorderBeaconEndpoint',
+	'cfg-token': 'token',
+}
+
+/**
+ * Lock (readonly) fields populated by the given preset, or clear the lock when preset is null.
+ *
+ * @param {Preset | null} preset
+ */
+function applyPresetLock(preset) {
+	for (const [id, prop] of Object.entries(PRESET_FIELD_MAP)) {
+		const el = $input(`#${id}`)
+		if (!el) {
+			continue
+		}
+
+		const locked = preset ? preset[prop] !== undefined : false
+		el.readOnly = locked
+		el.classList.toggle('preset-locked', locked)
+	}
+}
+
+/**
+ * Populate form fields from the preset with the given id.
+ *
+ * @param {string} id
+ */
+function applyPreset(id) {
+	const preset = _presets.find((p) => p.id === id)
+	if (!preset) {
+		applyPresetLock(null)
+		return
+	}
+
+	const realmEl = $input('#cfg-realm')
+	if (realmEl) {
+		realmEl.value = preset.realm
+	}
+
+	const tokenEl = $input('#cfg-token')
+	if (tokenEl) {
+		tokenEl.value = preset.token
+	}
+
+	if (preset.applicationName) {
+		const appEl = $input('#cfg-app')
+		if (appEl) {
+			appEl.value = preset.applicationName
+		}
+	}
+
+	if (preset.deploymentEnvironment) {
+		const envEl = $input('#cfg-env')
+		if (envEl) {
+			envEl.value = preset.deploymentEnvironment
+		}
+	}
+
+	if (preset.beaconEndpoint !== undefined) {
+		const beaconEl = $input('#cfg-beacon')
+		if (beaconEl) {
+			beaconEl.value = preset.beaconEndpoint
+		}
+	}
+
+	if (preset.recorderBeaconEndpoint !== undefined) {
+		const recBeaconEl = $input('#cfg-recorder-beacon')
+		if (recBeaconEl) {
+			recBeaconEl.value = preset.recorderBeaconEndpoint
+		}
+	}
+
+	applyPresetLock(preset)
+}
+
+/**
+ * Populate the preset dropdown with available presets and restore last selection.
+ */
+function populatePresetSelect() {
+	const sel = $input('#cfg-preset')
+	if (!sel) {
+		return
+	}
+
+	// Remove any previous option nodes beyond the placeholder
+	while (sel.options.length > 1) {
+		sel.remove(1)
+	}
+
+	for (const preset of _presets) {
+		const opt = document.createElement('option')
+		opt.value = preset.id
+		opt.textContent = preset.id === preset.realm ? preset.id : `${preset.id} (${preset.realm})`
+		sel.append(opt)
+	}
+
+	const saved = localStorage.getItem(LS_PRESET_KEY)
+	const savedPreset = saved ? _presets.find((p) => p.id === saved) : undefined
+	if (savedPreset) {
+		sel.value = saved
+		applyPresetLock(savedPreset)
+	}
 }
 
 // ── SDK Init ──────────────────────────────────────────────────────────────
@@ -180,6 +331,130 @@ function getConfig() {
 		...base,
 		allowInsecureBeacon: true,
 		beaconEndpoint: inputValue('#cfg-beacon'),
+	}
+}
+
+/**
+ * Realm → app host overrides. Most realms live on `app.{realm}.signalfx.com`,
+ * but a few (e.g. the `rc0` release candidate) use a different subdomain.
+ *
+ * @type {Record<string, string>}
+ */
+const REALM_HOST_OVERRIDES = {
+	lab0: 'sfmonitoring.lab0.signalfx.com',
+	mon0: 'mon.signalfx.com',
+	rc0: 'o11y-sfmonitoring.rc0.signalfx.com',
+}
+
+/**
+ * @param {string} realm
+ * @returns {string}
+ */
+function realmToHost(realm) {
+	return REALM_HOST_OVERRIDES[realm] ?? `app.${realm}.signalfx.com`
+}
+
+/**
+ * Build a URL pointing to the Splunk Observability Cloud RUM session detail page.
+ *
+ * Returns `null` when we cannot build a meaningful link (missing realm or session).
+ *
+ * The session-details route is a hash-based SPA route; the app will pick a
+ * sensible default time window when no query params are supplied.
+ *
+ * @param {string | undefined} realm
+ * @param {string | undefined} sessionId
+ * @returns {string | null}
+ */
+function buildSessionDetailUrl(realm, sessionId) {
+	if (!realm || !sessionId) {
+		return null
+	}
+
+	const host = realmToHost(realm)
+	const safeSessionId = encodeURIComponent(sessionId)
+	return `https://${host}/#/rum/sessions/${safeSessionId}`
+}
+
+/**
+ * Update the session-id element to reflect the current session and whether we
+ * can link out to Observability Cloud.
+ *
+ * @param {string | undefined} sessionId
+ */
+function updateSessionIdLink(sessionId) {
+	const el = /** @type {HTMLAnchorElement | null} */ ($('#session-id'))
+	if (!el) {
+		return
+	}
+
+	const display = sessionId ?? '—'
+	el.textContent = display
+
+	const realm = inputValue('#cfg-realm')
+	const href = buildSessionDetailUrl(realm, sessionId)
+	if (href) {
+		el.href = href
+		el.dataset.enabled = 'true'
+		el.title = `Open session in ${realmToHost(realm)}`
+	} else {
+		el.href = '#'
+		delete el.dataset.enabled
+		el.removeAttribute('title')
+	}
+
+	const copyBtn = /** @type {HTMLButtonElement | null} */ ($('#btn-copy-session-id'))
+	if (copyBtn) {
+		copyBtn.disabled = !sessionId
+		if (!sessionId) {
+			delete copyBtn.dataset.copied
+		}
+	}
+}
+
+/** @type {ReturnType<typeof setTimeout> | null} */
+let copyFeedbackTimer = null
+
+async function copySessionIdToClipboard() {
+	const btn = /** @type {HTMLButtonElement | null} */ ($('#btn-copy-session-id'))
+	const sessionId = typeof SplunkRum === 'undefined' ? null : SplunkRum.getSessionId()
+	if (!btn || !sessionId) {
+		return
+	}
+
+	try {
+		if (navigator.clipboard?.writeText) {
+			await navigator.clipboard.writeText(sessionId)
+		} else {
+			const ta = document.createElement('textarea')
+			ta.value = sessionId
+			ta.setAttribute('readonly', '')
+			ta.style.position = 'absolute'
+			ta.style.left = '-9999px'
+			document.body.append(ta)
+			ta.select()
+			document.execCommand('copy')
+			document.body.removeChild(ta)
+		}
+
+		btn.dataset.copied = 'true'
+		const originalTitle = 'Copy session ID'
+		btn.title = 'Copied!'
+		btn.setAttribute('aria-label', 'Copied')
+		log(`Session ID copied to clipboard`, 'info')
+
+		if (copyFeedbackTimer) {
+			clearTimeout(copyFeedbackTimer)
+		}
+
+		copyFeedbackTimer = setTimeout(() => {
+			delete btn.dataset.copied
+			btn.title = originalTitle
+			btn.setAttribute('aria-label', originalTitle)
+			copyFeedbackTimer = null
+		}, 1500)
+	} catch (error) {
+		log(`Failed to copy session ID: ${error.message}`, 'error')
 	}
 }
 
@@ -228,10 +503,7 @@ function initSdk() {
 			sdkVersion.textContent = getRegisteredSdkVersion() ?? '—'
 		}
 
-		const sessionEl = $('#session-id')
-		if (sessionEl) {
-			sessionEl.textContent = SplunkRum.getSessionId() ?? '—'
-		}
+		updateSessionIdLink(SplunkRum.getSessionId() ?? undefined)
 
 		const beaconEl = $('#beacon-endpoint')
 		if (beaconEl) {
@@ -246,13 +518,9 @@ function initSdk() {
 		}
 
 		onSessionChanged = () => {
-			const newId = SplunkRum.getSessionId() ?? '—'
-			const el = $('#session-id')
-			if (el) {
-				el.textContent = newId
-			}
-
-			log(`Session changed → ${newId}`, 'info')
+			const newId = SplunkRum.getSessionId() ?? undefined
+			updateSessionIdLink(newId)
+			log(`Session changed → ${newId ?? '—'}`, 'info')
 		}
 		SplunkRum.addEventListener('session-changed', onSessionChanged)
 
@@ -456,6 +724,14 @@ function injectModal() {
 
 			<div class="modal-body">
 				<div class="config-grid">
+					<div class="field field-wide">
+						<label>Preset <span class="field-hint">(from .env — overwrites fields below)</span></label>
+						<select id="cfg-preset">
+							<option value="">— none —</option>
+						</select>
+					</div>
+				</div>
+				<div class="config-grid">
 					<div class="field">
 						<label>applicationName</label>
 						<input type="text" id="cfg-app" value="splunk-otel-web-dev" />
@@ -592,6 +868,14 @@ function wireModalHandlers() {
 	$('#btn-config')?.addEventListener('click', openConfig)
 	$('#btn-config-close')?.addEventListener('click', closeConfig)
 	$('#cfg-recorder-enabled')?.addEventListener('change', syncRecorderConfigVisibility)
+	$('#cfg-preset')?.addEventListener('change', (e) => {
+		const id = /** @type {HTMLSelectElement} */ (e.target).value
+		if (id) {
+			applyPreset(id)
+		} else {
+			applyPresetLock(null)
+		}
+	})
 	$('#btn-reinit')?.addEventListener('click', () => {
 		if (reinitSdk()) {
 			closeConfig()
@@ -632,15 +916,20 @@ export function init() {
 	injectModal()
 	loadConfig()
 	syncRecorderConfigVisibility()
-	initSdk()
 	wireModalHandlers()
+	populatePresetSelect()
+	initSdk()
+
+	const copyBtn = $('#btn-copy-session-id')
+	if (copyBtn) {
+		copyBtn.addEventListener('click', () => {
+			void copySessionIdToClipboard()
+		})
+	}
 
 	window.addEventListener('focus', () => {
 		if (typeof SplunkRum !== 'undefined' && SplunkRum.inited) {
-			const el = $('#session-id')
-			if (el) {
-				el.textContent = SplunkRum.getSessionId() ?? '—'
-			}
+			updateSessionIdLink(SplunkRum.getSessionId() ?? undefined)
 		}
 	})
 }

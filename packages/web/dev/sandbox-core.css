@@ -183,6 +183,31 @@ header {
 	font-family: var(--font-mono);
 }
 
+.session-link {
+	text-decoration: none;
+	color: var(--color-text-primary);
+
+	&[data-enabled='true'] {
+		color: var(--color-accent-blue);
+		cursor: pointer;
+
+		&:hover {
+			text-decoration: underline;
+			text-underline-offset: 3px;
+		}
+
+		&:focus-visible {
+			outline: 2px solid color-mix(in srgb, var(--color-accent-blue) 60%, white);
+			outline-offset: 2px;
+			border-radius: var(--radius-sm);
+		}
+	}
+
+	&:not([data-enabled='true']) {
+		pointer-events: none;
+	}
+}
+
 .dot {
 	inline-size: var(--space-sm);
 	block-size: var(--space-sm);
@@ -266,6 +291,48 @@ button {
 		color: var(--color-text-primary);
 		background: var(--color-bg-overlay);
 		border-color: var(--color-border-subtle);
+	}
+
+	&:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	&:disabled:hover {
+		color: var(--color-text-secondary);
+		background: none;
+		border-color: var(--color-border-default);
+	}
+}
+
+.icon-btn-sm {
+	inline-size: 24px;
+	block-size: 24px;
+	padding: 0;
+	font-size: 14px;
+	border-radius: var(--radius-sm);
+}
+
+.icon-btn-sm svg {
+	display: block;
+}
+
+#btn-copy-session-id {
+	& .icon-check {
+		display: none;
+	}
+
+	&[data-copied='true'] {
+		color: var(--color-accent-green);
+		border-color: color-mix(in srgb, var(--color-accent-green) 40%, transparent);
+
+		& .icon-copy {
+			display: none;
+		}
+
+		& .icon-check {
+			display: inline;
+		}
 	}
 }
 
@@ -413,7 +480,8 @@ button {
 	& input[type='text'],
 	& input[type='password'],
 	& input[type='email'],
-	& input[type='url'] {
+	& input[type='url'],
+	& select {
 		background: var(--color-bg-surface);
 		border: 1px solid var(--color-border-default);
 		color: var(--color-text-primary);
@@ -426,6 +494,16 @@ button {
 			outline: none;
 			border-color: var(--color-accent-blue-emphasis);
 		}
+
+		&.preset-locked {
+			background: var(--color-bg-inset);
+			color: var(--color-text-secondary);
+			cursor: not-allowed;
+		}
+	}
+
+	& select {
+		cursor: pointer;
 	}
 
 	& textarea {

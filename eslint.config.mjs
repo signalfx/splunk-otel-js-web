@@ -266,6 +266,7 @@ const config = [
 		files: [
 			'scripts/*.{js,mjs,cjs}',
 			'packages/web/utils/**/*.{js,mjs,cjs}',
+			'packages/web/webpack/**/*.{js,mjs,cjs}',
 			'packages/web/test/plugins/**/*.{js,mjs,cjs}',
 			'packages/web/performance-tests/**/*.{js,mjs,cjs}',
 			'packages/web/integration-tests/**/*.{js,mjs,cjs}',
