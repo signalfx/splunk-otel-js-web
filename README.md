@@ -132,6 +132,7 @@ pnpm test
 
 # Start development mode
 pnpm dev
+# Sandbox available at http://localhost:3030
 ```
 
 ### Commands
@@ -145,6 +146,44 @@ pnpm dev
 | `pnpm lint`      | Run linting checks             |
 | `pnpm lint:fix`  | Fix linting issues             |
 | `pnpm dev`       | Start development watch mode   |
+
+### Local sandbox
+
+`pnpm dev` serves a local playground for `@splunk/otel-web` at `http://localhost:3030` for manual testing against a real Splunk realm or a local OTel collector. The pages live in [`packages/web/dev/`](./packages/web/dev) and are served by `webpack-dev-server` alongside the freshly-built SDK bundles.
+
+The sandbox has two pages, switchable from the header nav:
+
+- **RUM** (`index.html`) — exercise tracked fetch/XHR, history navigations, errors, custom spans, long tasks, and global attributes.
+- **Session Replay** (`replay.html`) — drive the `@splunk/otel-web-session-recorder` against a rich set of DOM/canvas/iframe/video fixtures. Replay requires building the recorder first:
+
+    ```bash
+    pnpm --filter @splunk/otel-web-session-recorder build
+    ```
+
+Both pages share a Settings modal (gear icon) for realm, access token, app name, environment, beacon endpoints, and recorder options. Values (including the RUM access token) persist in `localStorage` per origin between reloads.
+
+#### Realm presets via `.env`
+
+To avoid re-typing tokens for common realms, copy [`packages/web/.env.example`](./packages/web/.env.example) to `packages/web/.env` (git-ignored) and fill in dev/test tokens. The webpack `DevPresetsPlugin` reads the file on every compile and exposes the entries as a "Preset" dropdown in the Settings modal. Each block is keyed by a unique `<ID>`:
+
+```bash
+SPLUNK_RUM_REALM_<ID>            # realm (required; activates the preset)
+SPLUNK_RUM_TOKEN_<ID>            # rumAccessToken
+SPLUNK_RUM_APP_<ID>              # applicationName
+SPLUNK_RUM_ENV_<ID>              # deploymentEnvironment
+SPLUNK_RUM_BEACON_<ID>           # custom beaconEndpoint
+SPLUNK_RUM_RECORDER_BEACON_<ID>  # custom recorder beaconEndpoint
+```
+
+Multiple presets can target the same realm by using distinct `<ID>` suffixes (e.g. `US0`, `US0-2`). Editing `.env` triggers a rebuild automatically.
+
+#### Custom port
+
+Set `DEV_SERVE_PORT` to override the default `3030`:
+
+```bash
+DEV_SERVE_PORT=4000 pnpm dev
+```
 
 ## 🤝 Contributing
 
