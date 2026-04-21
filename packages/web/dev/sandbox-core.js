@@ -77,10 +77,10 @@ const SPLUNK_RUM_VERSION_KEY = 'splunk.rum.version'
 
 const CFG_TEXT_DEFAULTS = {
 	'cfg-app': 'splunk-otel-web-dev',
-	'cfg-beacon': 'http://localhost:9411/api/v2/spans',
+	'cfg-beacon': '',
 	'cfg-env': 'dev',
 	'cfg-realm': '',
-	'cfg-recorder-beacon': 'http://localhost:9411/v1/rumreplay',
+	'cfg-recorder-beacon': '',
 	'cfg-recorder-pack-assets-images-quality': '',
 	'cfg-recorder-sensitivity-rules':
 		'[\n  { "rule": "mask",    "selector": "[data-sensitive]" },\n  { "rule": "unmask",  "selector": "[data-unmask]" },\n  { "rule": "exclude", "selector": "[data-exclude]" }\n]',
@@ -179,7 +179,7 @@ function getConfig() {
 	return {
 		...base,
 		allowInsecureBeacon: true,
-		beaconEndpoint: inputValue('#cfg-beacon') || 'http://localhost:9411/api/v2/spans',
+		beaconEndpoint: inputValue('#cfg-beacon'),
 	}
 }
 
@@ -473,8 +473,8 @@ function injectModal() {
 						<input type="password" id="cfg-token" placeholder="required when realm is set" />
 					</div>
 					<div class="field field-wide">
-						<label>beaconEndpoint <span class="field-hint">(used when realm is empty)</span></label>
-						<input type="text" id="cfg-beacon" value="http://localhost:9411/api/v2/spans" />
+						<label>beaconEndpoint <span class="field-hint">(leave empty to use default realm endpoint)</span></label>
+						<input type="text" id="cfg-beacon" placeholder="e.g. http://localhost:9411/api/v2/spans" />
 					</div>
 				</div>
 				<h3 class="modal-subheading">Session Recorder</h3>
@@ -488,7 +488,7 @@ function injectModal() {
 					<div id="recorder-config-fields" class="field field-wide">
 						<div class="config-grid">
 							<div class="field field-wide">
-								<label>recorder beaconEndpoint <span class="field-hint">(replay ingest URL)</span></label>
+								<label>recorder beaconEndpoint <span class="field-hint">(leave empty to use default realm endpoint)</span></label>
 								<input type="text" id="cfg-recorder-beacon" placeholder="e.g. https://rum-ingest.us0.signalfx.com/v1/rumreplay" />
 							</div>
 							<div class="field">
