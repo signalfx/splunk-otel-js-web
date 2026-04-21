@@ -534,10 +534,36 @@ function initSdk() {
 
 // ── Session Recorder ──────────────────────────────────────────────────────
 
-const RECORDER_DOT_CLASS = { error: 'red', off: '', recording: 'green', unavailable: 'yellow' }
+/**
+ * UI-only status for the recorder badge.
+ *
+ *  - `off`          recorder is disabled in config, or was deinitialized.
+ *  - `recording`    recorder is inited and we have not locally paused it.
+ *  - `paused`       recorder is still inited but `.stop()` was called from the dev UI.
+ *                   Kept distinct from `off` so the user can tell "I paused it" from
+ *                   "it isn't running at all".
+ *  - `unavailable`  bundle didn't load (build packages/session-recorder first).
+ *  - `error`        runtime failure during `SplunkSessionRecorder.init()`. Not used
+ *                   for invalid dev-modal JSON – that surfaces inline in the modal.
+ *
+ * @typedef {'off' | 'recording' | 'paused' | 'error' | 'unavailable'} RecorderUiStatus
+ */
 
-/** @param {'off' | 'recording' | 'error' | 'unavailable'} status */
+/** @type {Record<RecorderUiStatus, string>} */
+const RECORDER_DOT_CLASS = {
+	error: 'red',
+	off: '',
+	paused: 'yellow',
+	recording: 'green',
+	unavailable: 'yellow',
+}
+
+/** @type {RecorderUiStatus} */
+let recorderUiStatus = 'off'
+
+/** @param {RecorderUiStatus} status */
 function setRecorderStatus(status) {
+	recorderUiStatus = status
 	const dot = $('#recorder-dot')
 	const label = $('#recorder-status')
 	if (dot) {
@@ -546,6 +572,27 @@ function setRecorderStatus(status) {
 
 	if (label) {
 		label.textContent = status
+	}
+
+	syncRecorderButtons(status)
+}
+
+/**
+ * Enable Stop only while recording, Resume only while paused. Keeps the dev UI
+ * honest about which transitions are actually actionable and stops users from
+ * spamming no-op calls that just log "Session recorder not initialized".
+ *
+ * @param {RecorderUiStatus} status
+ */
+function syncRecorderButtons(status) {
+	const stopBtn = /** @type {HTMLButtonElement | null} */ ($('#btn-recorder-stop'))
+	const resumeBtn = /** @type {HTMLButtonElement | null} */ ($('#btn-recorder-resume'))
+	if (stopBtn) {
+		stopBtn.disabled = status !== 'recording'
+	}
+
+	if (resumeBtn) {
+		resumeBtn.disabled = status !== 'paused'
 	}
 }
 
@@ -605,7 +652,6 @@ function initRecorder() {
 	const { ok, rules } = parseSensitivityRules()
 	if (!ok) {
 		log('sensitivityRules JSON is invalid — fix before re-initializing', 'error')
-		setRecorderStatus('error')
 		return false
 	}
 
@@ -909,7 +955,7 @@ export function doRecorderStop() {
 
 	SplunkSessionRecorder.stop()
 	log('SplunkSessionRecorder.stop() called', 'warn')
-	setRecorderStatus('off')
+	setRecorderStatus('paused')
 }
 
 export function init() {
@@ -918,6 +964,7 @@ export function init() {
 	syncRecorderConfigVisibility()
 	wireModalHandlers()
 	populatePresetSelect()
+	syncRecorderButtons(recorderUiStatus)
 	initSdk()
 
 	const copyBtn = $('#btn-copy-session-id')
