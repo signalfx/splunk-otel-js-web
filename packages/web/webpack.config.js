@@ -22,6 +22,10 @@ const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin')
 const TerserPlugin = require('terser-webpack-plugin')
 const webpack = require('webpack')
 
+const { DevPresetsPlugin } = require('./webpack/dev-presets-plugin')
+
+// ── Build helpers ─────────────────────────────────────────────────────────
+
 const getCommitHash = () => {
 	try {
 		return execSync('git describe --tags --always --long', { encoding: 'utf8' }).trim()
@@ -110,11 +114,11 @@ const getBaseConfig = (env, argv) => ({
 		buildHttp: {
 			allowedUris: ['https://cdn.signalfx.com/'],
 			cacheLocation: false,
-			frozen: true,
+			frozen: !isDevelopmentMode(argv),
 		},
 	},
 	optimization: {
-		minimize: true,
+		minimize: !isDevelopmentMode(argv),
 		minimizer: [
 			new TerserPlugin({
 				extractComments: false,
@@ -155,6 +159,20 @@ const browserConfig = (env, argv) => {
 	return {
 		...baseConfig,
 		entry: path.resolve(__dirname, './src/index-browser.ts'),
+		...(isDevelopmentMode(argv) && {
+			devServer: {
+				devMiddleware: { writeToDisk: true },
+				headers: { 'Access-Control-Allow-Origin': '*' },
+				hot: true,
+				liveReload: true,
+				open: false,
+				port: Number(process.env.DEV_SERVE_PORT) || 3030,
+				static: [
+					{ directory: path.resolve(__dirname, 'dev') },
+					{ directory: path.resolve(__dirname, '../session-recorder/dist/artifacts') },
+				],
+			},
+		}),
 		module: {
 			rules: makeBrowserModuleRules(),
 		},
@@ -173,6 +191,7 @@ const browserConfig = (env, argv) => {
 			new webpack.DefinePlugin({
 				__COMMIT_HASH__: JSON.stringify(getCommitHash()),
 			}),
+			...(isDevelopmentMode(argv) ? [new DevPresetsPlugin({ envPath: path.resolve(__dirname, '.env') })] : []),
 		],
 	}
 }

@@ -20,8 +20,8 @@
 		"build:browser": "webpack --mode production --color && tsx scripts/remove-jaeger-vars.ts",
 		"build:tsc": "tsc --build tsconfig.cjs.json tsconfig.esm.json",
 		"dev": "npm-run-all -s dev:tsc:init -p dev:*",
+		"dev:serve": "webpack serve --mode development --color",
 		"dev:tsc:init": "tsc --build tsconfig.cjs.json tsconfig.esm.json",
-		"dev:webpack": "webpack --mode development --watch --color",
 		"dev:tsc": "tsc --build --watch tsconfig.cjs.json tsconfig.esm.json",
 		"clean": "rm -rf dist .turbo",
 		"wait": "wait-on dist/esm/index.js  dist/cjs/index.js"
@@ -66,6 +66,7 @@
 		"@swc/core": "^1.15.21",
 		"@swc/helpers": "^0.5.20",
 		"@types/shimmer": "^1.2.0",
+		"dotenv": "^17.4.0",
 		"fork-ts-checker-webpack-plugin": "^9.1.0",
 		"npm-run-all": "^4.1.5",
 		"socket.io-client": "^4.8.3",

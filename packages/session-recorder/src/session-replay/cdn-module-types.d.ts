@@ -97,6 +97,7 @@ declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.12.0/ses
 
 	export interface PackAssetsConfig {
 		fonts?: boolean
+		hashAssetContent?: boolean
 		images?:
 			| true
 			| {
