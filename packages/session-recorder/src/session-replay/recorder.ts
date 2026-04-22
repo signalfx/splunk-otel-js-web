@@ -17,11 +17,12 @@
  */
 import { context } from '@opentelemetry/api'
 import { suppressTracing } from '@opentelemetry/core'
+import type { JsonObject, JsonValue } from 'type-fest'
 
-import { BatchLogProcessor, convert } from '../batch-log-processor'
 import { SplunkRumRecorderConfig } from '../index'
 import { log } from '../log'
 import { isBoolean, isString } from '../type-guards'
+import { Log, LogExporter } from '../types'
 import { VERSION } from '../version'
 import { PendingSegmentData, Segment, SessionReplay, SessionReplayConfig } from './cdn-module'
 import { getSplunkRecorderConfig } from './config'
@@ -30,6 +31,10 @@ const MAX_CHUNK_SIZE = 4000 * 1024 // ~4000 KB
 
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()
+
+function convert(body: JsonValue, timeUnixNano: number, attributes?: JsonObject): Log {
+	return { attributes, body, timeUnixNano } as Log
+}
 
 export interface RecorderEmitContext {
 	data: Record<string, unknown>
@@ -45,28 +50,28 @@ export class Recorder {
 
 	private eventCounter = 1
 
+	private readonly exporter: LogExporter
+
 	private isStoppedManually: boolean = true
 
 	private isVisibilityListenerAttached: boolean = false
 
 	private logCounter = 1
 
-	private readonly processor: BatchLogProcessor
-
 	private sessionReplay: SessionReplay
 
 	constructor({
+		exporter,
 		initRecorderConfig,
 		persistSegments,
-		processor,
 		sessionId,
 	}: {
+		exporter: LogExporter
 		initRecorderConfig: Omit<SplunkRumRecorderConfig, 'realm' | 'recorder' | 'rumAccessToken' | 'beaconEndpoint'>
 		persistSegments: boolean
-		processor: BatchLogProcessor
 		sessionId: string
 	}) {
-		this.processor = processor
+		this.exporter = exporter
 		this.config = {
 			originalFetch: (...args) =>
 				new Promise((resolve, reject) => {
@@ -203,9 +208,7 @@ export class Recorder {
 
 			log.debug('Emitting log', logData)
 
-			this.processor.onEmit(logData)
-
-			this.processor.flushWithCallback(i === totalC - 1 ? onSuccess : undefined)
+			this.exporter.export([logData], i === totalC - 1 ? onSuccess : undefined)
 		}
 	}
 

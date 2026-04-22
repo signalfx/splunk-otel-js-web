@@ -20,7 +20,6 @@ import { Attributes, Span, trace, Tracer } from '@opentelemetry/api'
 import type { SplunkOtelWebType } from '@splunk/otel-web'
 import { JsonObject } from 'type-fest'
 
-import { BatchLogProcessor } from './batch-log-processor'
 import { isRecorderLoadedViaLatestTag, isRecorderLoadedViaNextTag } from './detect-latest'
 import { log } from './log'
 import OTLPLogExporter from './otlp-log-exporter'
@@ -86,6 +85,7 @@ const useIndexedDBPersistence = (config: SplunkRumRecorderConfig): boolean =>
 
 const retryPendingSegments = (recorderInstance: Recorder, sessionId: string) => {
 	void recorderInstance.getPendingSegments().then((pendingSegments) => {
+		console.log('retry pending segments', pendingSegments.length, pendingSegments)
 		for (const { bindingKey, segment, segmentId } of pendingSegments) {
 			if (bindingKey !== sessionId) {
 				void recorderInstance.dismissPendingSegment(segmentId)
@@ -141,7 +141,7 @@ const createSessionReplaySpanIfAllowed = (spanName: SpanName, sessionId: string 
 }
 
 const SplunkRumRecorder = {
-	_getProcessorForSession({
+	_getExporterForSession({
 		anonymousUserId,
 		attributes,
 		exportQueuedLogs,
@@ -155,9 +155,9 @@ const SplunkRumRecorder = {
 		exportUrl: string
 		persistFailedReplayData: boolean | 'indexeddb' | 'localstorage'
 		sessionId: string
-	}): BatchLogProcessor {
+	}): OTLPLogExporter {
 		const useLocalStorageQueue = persistFailedReplayData === true || persistFailedReplayData === 'localstorage'
-		const exporter = new OTLPLogExporter({
+		return new OTLPLogExporter({
 			beaconUrl: exportUrl,
 			exportQueuedLogs,
 			getResourceAttributes() {
@@ -174,7 +174,6 @@ const SplunkRumRecorder = {
 			sessionId,
 			usePersistentExportQueue: useLocalStorageQueue,
 		})
-		return new BatchLogProcessor(exporter)
 	},
 
 	deinit(): void {
@@ -318,9 +317,7 @@ const SplunkRumRecorder = {
 
 					const persistSegments = useIndexedDBPersistence(config)
 					recorder = new Recorder({
-						initRecorderConfig,
-						persistSegments,
-						processor: this._getProcessorForSession({
+						exporter: this._getExporterForSession({
 							anonymousUserId: SplunkRum.getAnonymousId(),
 							attributes: resource.attributes,
 							exportQueuedLogs: false,
@@ -328,6 +325,8 @@ const SplunkRumRecorder = {
 							persistFailedReplayData: config.persistFailedReplayData ?? true,
 							sessionId: currentState.id,
 						}),
+						initRecorderConfig,
+						persistSegments,
 						sessionId: currentState.id,
 					})
 					recorder.start()
@@ -338,9 +337,7 @@ const SplunkRumRecorder = {
 			if (sessionId && createSessionReplaySpanIfAllowed(SpanName.IS_RECORDING, sessionId)) {
 				const persistSegments = useIndexedDBPersistence(config)
 				recorder = new Recorder({
-					initRecorderConfig,
-					persistSegments,
-					processor: this._getProcessorForSession({
+					exporter: this._getExporterForSession({
 						anonymousUserId: SplunkRum.getAnonymousId(),
 						attributes: resource.attributes,
 						exportQueuedLogs: true,
@@ -348,6 +345,8 @@ const SplunkRumRecorder = {
 						persistFailedReplayData: config.persistFailedReplayData ?? true,
 						sessionId,
 					}),
+					initRecorderConfig,
+					persistSegments,
 					sessionId,
 				})
 				recorder.start()
