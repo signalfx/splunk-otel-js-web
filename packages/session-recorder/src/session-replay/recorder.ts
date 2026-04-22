@@ -131,11 +131,13 @@ export class Recorder {
 	}
 
 	emitPendingSegment(plainSegment: ReturnType<Segment['toPlain']>, onSuccess: () => void) {
-		this.onEmit({
-			data: plainSegment,
-			startTime: plainSegment.metadata.startUnixMs,
-		})
-		void this.processor.forceFlush().then(onSuccess)
+		this.onEmit(
+			{
+				data: plainSegment,
+				startTime: plainSegment.metadata.startUnixMs,
+			},
+			onSuccess,
+		)
 	}
 
 	getPendingSegments(): Promise<PendingSegmentData[]> {
@@ -173,7 +175,7 @@ export class Recorder {
 		this.isStoppedManually = true
 	}
 
-	private onEmit = (emitContext: RecorderEmitContext) => {
+	private onEmit = (emitContext: RecorderEmitContext, onSuccess?: () => void) => {
 		const time = Math.floor(emitContext.startTime)
 		const eventI = this.eventCounter
 
@@ -202,20 +204,22 @@ export class Recorder {
 			log.debug('Emitting log', logData)
 
 			this.processor.onEmit(logData)
-			void this.processor.forceFlush()
+
+			this.processor.flushWithCallback(i === totalC - 1 ? onSuccess : undefined)
 		}
 	}
 
 	private onSegment = (segment: Segment, acknowledge: () => void) => {
 		log.debug('Session replay segment: ', segment)
-
 		const plainSegment = segment.toPlain()
 
-		this.onEmit({
-			data: plainSegment,
-			startTime: plainSegment.metadata.startUnixMs,
-		})
-		void this.processor.forceFlush().then(() => acknowledge())
+		this.onEmit(
+			{
+				data: plainSegment,
+				startTime: plainSegment.metadata.startUnixMs,
+			},
+			acknowledge,
+		)
 	}
 
 	private startOnVisibilityChange = () => {

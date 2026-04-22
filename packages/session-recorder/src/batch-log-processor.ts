@@ -50,6 +50,19 @@ export class BatchLogProcessor {
 		this.onInit()
 	}
 
+	public flushWithCallback(onSuccess?: () => void): void {
+		if (this.shutdownOnce.isCalled) {
+			return
+		}
+
+		this.clearTimer()
+		if (this.finishedLogs.length === 0) {
+			return
+		}
+
+		void this.exportLogs(this.finishedLogs.splice(0), onSuccess)
+	}
+
 	public forceFlush(): Promise<void> {
 		if (this.shutdownOnce.isCalled) {
 			return this.shutdownOnce.promise
@@ -88,8 +101,8 @@ export class BatchLogProcessor {
 		}
 	}
 
-	private exportLogs(logs: Log[]): Promise<void> {
-		this.exporter.export(logs)
+	private exportLogs(logs: Log[], onSuccess?: () => void): Promise<void> {
+		this.exporter.export(logs, onSuccess)
 		return Promise.resolve()
 	}
 
