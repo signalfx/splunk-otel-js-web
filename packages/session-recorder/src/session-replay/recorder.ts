@@ -112,7 +112,7 @@ export class Recorder {
 			logLevel: this.config.logLevel ?? 'error',
 			maskAllInputs: this.config.maskAllInputs ?? true,
 			maskAllText: this.config.maskAllText ?? true,
-			maxExportIntervalMs: this.config.maxExportIntervalMs ?? 5000,
+			maxExportIntervalMs: this.config.maxExportIntervalMs ?? (persistSegments ? 10000 : 5000),
 			onSegment: this.onSegment,
 			originalFetch: this.config.originalFetch,
 			sensitivityRules: this.config.sensitivityRules ?? [],
