@@ -106,6 +106,7 @@ export class Recorder {
 				iframes: this.config.features?.iframes ?? false,
 				packAssets: this.config.features?.packAssets ?? { styles: true },
 				persistSegments,
+				segmentFlushThresholdKb: MAX_CHUNK_SIZE / 1024,
 				video: this.config.features?.video ?? false,
 			},
 			logLevel: this.config.logLevel ?? 'error',
