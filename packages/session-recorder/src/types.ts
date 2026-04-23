@@ -25,13 +25,7 @@ export interface Log {
 }
 
 export interface LogExporter {
-	export(
-		spans: Log[],
-		// resultCallback: (result: ExportResult) => void
-	): void
-
-	/** Stops the exporter. */
-	// shutdown(): Promise<void>;
+	export(spans: Log[], onSuccess?: () => void): void
 }
 
 // OTLP Logs Interfaces

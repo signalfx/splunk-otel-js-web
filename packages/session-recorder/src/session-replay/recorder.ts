@@ -17,19 +17,24 @@
  */
 import { context } from '@opentelemetry/api'
 import { suppressTracing } from '@opentelemetry/core'
+import type { JsonObject, JsonValue } from 'type-fest'
 
-import { BatchLogProcessor, convert } from '../batch-log-processor'
 import { SplunkRumRecorderConfig } from '../index'
 import { log } from '../log'
 import { isBoolean, isString } from '../type-guards'
+import { Log, LogExporter } from '../types'
 import { VERSION } from '../version'
-import { Segment, SessionReplay, SessionReplayConfig } from './cdn-module'
+import { PendingSegmentData, Segment, SessionReplay, SessionReplayConfig } from './cdn-module'
 import { getSplunkRecorderConfig } from './config'
 
 const MAX_CHUNK_SIZE = 4000 * 1024 // ~4000 KB
 
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()
+
+function convert(body: JsonValue, timeUnixNano: number, attributes?: JsonObject): Log {
+	return { attributes, body, timeUnixNano } as Log
+}
 
 export interface RecorderEmitContext {
 	data: Record<string, unknown>
@@ -45,26 +50,28 @@ export class Recorder {
 
 	private eventCounter = 1
 
+	private readonly exporter: LogExporter
+
 	private isStoppedManually: boolean = true
 
 	private isVisibilityListenerAttached: boolean = false
 
 	private logCounter = 1
 
-	private readonly processor: BatchLogProcessor
-
 	private sessionReplay: SessionReplay
 
 	constructor({
+		exporter,
 		initRecorderConfig,
-		processor,
+		persistSegments,
 		sessionId,
 	}: {
+		exporter: LogExporter
 		initRecorderConfig: Omit<SplunkRumRecorderConfig, 'realm' | 'recorder' | 'rumAccessToken' | 'beaconEndpoint'>
-		processor: BatchLogProcessor
+		persistSegments: boolean
 		sessionId: string
 	}) {
-		this.processor = processor
+		this.exporter = exporter
 		this.config = {
 			originalFetch: (...args) =>
 				new Promise((resolve, reject) => {
@@ -98,12 +105,14 @@ export class Recorder {
 				canvas: this.config.features?.canvas ?? false,
 				iframes: this.config.features?.iframes ?? false,
 				packAssets: this.config.features?.packAssets ?? { styles: true },
+				persistSegments,
+				segmentFlushThresholdKb: MAX_CHUNK_SIZE / 1024,
 				video: this.config.features?.video ?? false,
 			},
 			logLevel: this.config.logLevel ?? 'error',
 			maskAllInputs: this.config.maskAllInputs ?? true,
 			maskAllText: this.config.maskAllText ?? true,
-			maxExportIntervalMs: this.config.maxExportIntervalMs ?? 5000,
+			maxExportIntervalMs: this.config.maxExportIntervalMs ?? (persistSegments ? 10_000 : 5000),
 			onSegment: this.onSegment,
 			originalFetch: this.config.originalFetch,
 			sensitivityRules: this.config.sensitivityRules ?? [],
@@ -121,6 +130,24 @@ export class Recorder {
 		log.debug('Recorder destroy')
 		this.sessionReplay.destroy()
 		Recorder.clear()
+	}
+
+	dismissPendingSegment(segmentId: string): Promise<void> {
+		return this.sessionReplay.dismissPendingSegment(segmentId)
+	}
+
+	emitPendingSegment(plainSegment: ReturnType<Segment['toPlain']>, onSuccess: () => void) {
+		this.onEmit(
+			{
+				data: plainSegment,
+				startTime: plainSegment.metadata.startUnixMs,
+			},
+			onSuccess,
+		)
+	}
+
+	getPendingSegments(): Promise<PendingSegmentData[]> {
+		return this.sessionReplay.getPendingSegments()
 	}
 
 	resume() {
@@ -154,7 +181,7 @@ export class Recorder {
 		this.isStoppedManually = true
 	}
 
-	private onEmit = (emitContext: RecorderEmitContext) => {
+	private onEmit = (emitContext: RecorderEmitContext, onSuccess?: () => void) => {
 		const time = Math.floor(emitContext.startTime)
 		const eventI = this.eventCounter
 
@@ -182,20 +209,21 @@ export class Recorder {
 
 			log.debug('Emitting log', logData)
 
-			this.processor.onEmit(logData)
-			void this.processor.forceFlush()
+			this.exporter.export([logData], i === totalC - 1 ? onSuccess : undefined)
 		}
 	}
 
-	private onSegment = (segment: Segment) => {
+	private onSegment = (segment: Segment, acknowledge: () => void) => {
 		log.debug('Session replay segment: ', segment)
-
 		const plainSegment = segment.toPlain()
 
-		this.onEmit({
-			data: plainSegment,
-			startTime: plainSegment.metadata.startUnixMs,
-		})
+		this.onEmit(
+			{
+				data: plainSegment,
+				startTime: plainSegment.metadata.startUnixMs,
+			},
+			acknowledge,
+		)
 	}
 
 	private startOnVisibilityChange = () => {

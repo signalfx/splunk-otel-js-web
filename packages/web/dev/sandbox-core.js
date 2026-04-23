@@ -712,6 +712,8 @@ function initRecorder() {
 			debug: true,
 			maskAllInputs: $input('#cfg-recorder-mask-all-inputs')?.checked ?? true,
 			maskAllText: checked('#cfg-recorder-mask-all-text'),
+			maxExportIntervalMs: 10_000,
+			persistFailedReplayData: 'indexeddb',
 			rumAccessToken: inputValue('#cfg-token') || undefined,
 		})
 

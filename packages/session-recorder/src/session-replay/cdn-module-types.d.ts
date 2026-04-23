@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.11.1/session-replay.module.legacy.min.js' {
+declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.13.0/session-replay.module.legacy.min.js' {
 	type DeepPartial<T> = {
 		[P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P]
 	}
@@ -63,17 +63,27 @@ declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.11.1/ses
 		stop: () => void
 	}
 
+	export interface PendingSegmentData {
+		bindingKey: string
+		segment: Segment
+		segmentId: string
+	}
+
 	export class SessionReplay extends SessionReplayBase {
 		static loadPlainSegment: (segment: SessionReplayPlainSegment) => Segment
-
-		readonly isStarted: boolean
 
 		constructor(
 			config: Omit<SessionReplayConfig, 'features'> & {
 				features: Omit<ConfigFeatures, 'backgroundService'>
-				onSegment: (segment: Segment) => void
+				onSegment: (segment: Segment, acknowledge: () => void) => void
 			},
 		)
+
+		dismissPendingSegment: (segmentId: string) => Promise<void>
+
+		getPendingSegments: () => Promise<PendingSegmentData[]>
+
+		readonly isStarted: boolean
 	}
 
 	type LogLevel = 'debug' | 'info' | 'warn' | 'error'
@@ -108,6 +118,8 @@ declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.11.1/ses
 		canvas?: boolean
 		iframes?: boolean
 		packAssets?: boolean | PackAssetsConfig
+		persistSegments?: boolean
+		segmentFlushThresholdKb?: number | null
 		video?: boolean
 	}
 
@@ -118,7 +130,7 @@ declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.11.1/ses
 		maskAllInputs?: boolean
 		maskAllText?: boolean
 		maxExportIntervalMs?: number
-		onSegment: (segment: Segment) => void
+		onSegment: (segment: Segment, acknowledge: () => void) => void
 		originalFetch?: typeof fetch
 		sensitivityRules?: SensitivityRule[]
 	}

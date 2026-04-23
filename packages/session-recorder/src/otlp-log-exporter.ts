@@ -130,7 +130,7 @@ export default class OTLPLogExporter {
 		}
 	}
 
-	export(logs: Log[]): void {
+	export(logs: Log[], onSuccess?: () => void): void {
 		if (logs.length === 0) {
 			return
 		}
@@ -164,7 +164,7 @@ export default class OTLPLogExporter {
 			}
 		}
 
-		OTLPLogExporter.sendDataToBackend(queuedLog, uint8ArrayData, endpoint, headers)
+		OTLPLogExporter.sendDataToBackend(queuedLog, uint8ArrayData, endpoint, headers, onSuccess)
 	}
 
 	exportQueuedLogs(): void {
@@ -200,14 +200,15 @@ export default class OTLPLogExporter {
 		uint8ArrayData: Uint8Array<ArrayBuffer>,
 		endpoint: string,
 		headers: Record<string, string>,
+		onExportSuccess?: () => void,
 	): void {
 		const onFetchSuccess = () => {
-			if (!queuedLog) {
-				return
+			if (queuedLog) {
+				log.debug('Removing queued log', { ...queuedLog, data: '[truncated]' })
+				removeQueuedLog(queuedLog)
 			}
 
-			log.debug('Removing queued log', { ...queuedLog, data: '[truncated]' })
-			removeQueuedLog(queuedLog)
+			onExportSuccess?.()
 		}
 
 		const onFetchError = (error: unknown) => {
