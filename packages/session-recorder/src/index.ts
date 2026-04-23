@@ -43,9 +43,8 @@ export type SplunkRumRecorderConfig = {
 	 * server errors, or browser issues) are automatically stored in browser storage
 	 * and retried on subsequent page loads.
 	 *
-	 * - `true` or `'localstorage'` (default): Failed OTLP log exports are queued in localStorage (2MB budget).
-	 * - `'indexeddb'`: Uses the session replay script's built-in IndexedDB persistence.
-	 *   Segments are stored in IndexedDB and retried on next page load.
+	 * - `true` or `'localstorage'` (default): Failed chunks are queued in localStorage (2MB budget).
+	 * - `'indexeddb'`: Failed OTLP log exports are queued in IndexedDB (100MB budget).
 	 * - `false`: Disables persistence entirely.
 	 * @default true
 	 */
@@ -77,6 +76,7 @@ let sessionSampler: InstanceType<SplunkOtelWebType['SessionBasedSampler']> | und
 let paused = false
 let recorder: Recorder | undefined
 let sessionStateUnsubscribe: undefined | (() => void)
+let pendingSegmentsRetried = false
 const isLatestTagUsed = isRecorderLoadedViaLatestTag()
 const isNextTagUsed = isRecorderLoadedViaNextTag()
 
@@ -330,6 +330,11 @@ const SplunkRumRecorder = {
 						sessionId: currentState.id,
 					})
 					recorder.start()
+
+					if (persistSegments && !pendingSegmentsRetried) {
+						pendingSegmentsRetried = true
+						retryPendingSegments(recorder, currentState.id)
+					}
 				}
 			})
 
@@ -351,7 +356,8 @@ const SplunkRumRecorder = {
 				})
 				recorder.start()
 
-				if (persistSegments) {
+				if (persistSegments && !pendingSegmentsRetried) {
+					pendingSegmentsRetried = true
 					retryPendingSegments(recorder, sessionId)
 				}
 			}
