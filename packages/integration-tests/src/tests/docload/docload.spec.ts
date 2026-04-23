@@ -93,6 +93,7 @@ test.describe('docload', () => {
 		if (browserName !== 'webkit') {
 			// Webkit does not support https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/responseStatus
 			expect(Number.parseInt(scriptFetchSpans[0].tags['http.status_code'] as string)).toBe(200)
+			expect(scriptFetchSpans[0].tags['http.cache.hit']).toBe('false')
 		}
 
 		expect(brokenImageFetchSpans.length).toBeGreaterThanOrEqual(1)

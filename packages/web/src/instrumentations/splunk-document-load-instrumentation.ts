@@ -32,6 +32,7 @@ import { SemanticAttributes, SEMATTRS_HTTP_URL } from '@opentelemetry/semantic-c
 import { SessionManager } from '../managers'
 import { captureTraceParentFromPerformanceEntries } from '../servertiming'
 import { SplunkOtelWebConfig } from '../types'
+import { isCacheHit } from '../utils/cache'
 
 export interface SplunkDocLoadInstrumentationConfig extends InstrumentationConfig {
 	ignoreUrls?: (string | RegExp)[]
@@ -146,6 +147,11 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 			const span = exposedSuper._startSpan(AttributeNames.RESOURCE_FETCH, PTN.FETCH_START, resource, parentSpan)
 			if (span) {
 				span.setAttribute(SEMATTRS_HTTP_URL, resource.name)
+				const cacheHitResult = isCacheHit(resource)
+				if (cacheHitResult !== undefined) {
+					span.setAttribute('http.cache.hit', cacheHitResult)
+				}
+
 				if (!exposedSuper.getConfig().ignoreNetworkEvents) {
 					addSpanNetworkEvents(span, resource)
 					if (typeof resource.responseStatus === 'number' && resource.responseStatus > 0) {
