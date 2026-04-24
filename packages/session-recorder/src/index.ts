@@ -85,7 +85,7 @@ const useIndexedDBPersistence = (config: SplunkRumRecorderConfig): boolean =>
 
 const retryPendingSegments = (recorderInstance: Recorder, sessionId: string) => {
 	void recorderInstance.getPendingSegments().then((pendingSegments) => {
-		console.log('retry pending segments', pendingSegments.length, pendingSegments)
+		log.debug('Retrying pending segments', pendingSegments.length, pendingSegments)
 		for (const { bindingKey, segment, segmentId } of pendingSegments) {
 			if (bindingKey !== sessionId) {
 				void recorderInstance.dismissPendingSegment(segmentId)
