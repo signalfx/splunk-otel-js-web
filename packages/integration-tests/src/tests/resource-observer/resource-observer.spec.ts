@@ -48,10 +48,12 @@ test.describe('resource observer', () => {
 		expect(imageBlackSpans[0].tags['http.url']).toBe(
 			'http://localhost:3000/resource-observer/assets/splunk-black.svg?delay=100',
 		)
+		expect(imageBlackSpans[0].tags['http.cache.hit']).toBe('false')
 
 		expect(scriptSpans).toHaveLength(1)
 		expect(scriptSpans[0].annotations.length).toBe(8)
 		expect(scriptSpans[0].tags['http.url']).toBe('http://localhost:3000/resource-observer/assets/test.js')
+		expect(scriptSpans[0].tags['http.cache.hit']).toBe('false')
 	})
 
 	test('resources can be ignored', async ({ recordPage }) => {
@@ -69,7 +71,7 @@ test.describe('resource observer', () => {
 		expect(scriptSpans).toHaveLength(0)
 	})
 
-	test('should create one span for cached resource', async ({ recordPage }) => {
+	test('should create one span for cached resource', async ({ browserName, recordPage }) => {
 		await recordPage.goTo('/resource-observer/resources-twice.ejs')
 
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'guard-span').length === 1)
@@ -79,6 +81,9 @@ test.describe('resource observer', () => {
 
 		expect(imageBlackSpans).toHaveLength(1)
 		expect(imageBlackSpans[0].tags['component']).toBe('document-load')
+		if (browserName !== 'webkit') {
+			expect(imageBlackSpans[0].tags['http.cache.hit']).toBe('false')
+		}
 	})
 
 	test('should create two spans for non cached resource', async ({ browserName, recordPage }) => {

@@ -24,6 +24,7 @@ import { SemanticAttributes } from '@opentelemetry/semantic-conventions'
 
 import { SessionManager } from '../managers'
 import { SplunkOtelWebConfig } from '../types'
+import { isCacheHit } from '../utils/cache'
 import { VERSION } from '../version'
 
 export interface SplunkPostDocLoadResourceInstrumentationConfig extends InstrumentationConfig {
@@ -116,6 +117,11 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 		span.setAttribute('component', MODULE_NAME)
 		span.setAttribute(SemanticAttributes.HTTP_URL, entry.name)
 		span.setAttribute(SemanticAttributes.HTTP_METHOD, 'GET')
+
+		const cacheHit = isCacheHit(entry)
+		if (cacheHit !== undefined) {
+			span.setAttribute('http.cache.hit', cacheHit)
+		}
 
 		addSpanNetworkEvents(span, entry)
 		//TODO look for server-timings? captureTraceParentFromPerformanceEntries(entry)
