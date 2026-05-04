@@ -104,14 +104,6 @@ type SensitivityRule = {
 
 export interface SplunkOtelWebConfig {
 	/**
-	 * Experimental: If true, adjusts the session start time of newly created sessions to the page's
-	 * time origin (performance.timeOrigin) instead of using the current wall clock time.
-	 * This ensures the session start aligns with when the tab was actually opened.
-	 * @default false
-	 */
-	_experimental_adjustSessionStartToTimeOrigin?: boolean
-
-	/**
 	 * Experimental: Data attribute names to capture from elements during user interactions.
 	 *
 	 * When specified, these data attributes will be collected from interacted elements and attached
@@ -128,24 +120,12 @@ export interface SplunkOtelWebConfig {
 	_experimental_dataAttributesToCapture?: string[]
 
 	/**
-	 * Experimental: If true, no additional span will be sent after 15 minutes of user inactivity (it will be dropped).
-	 * @default false
+	 * If true, adjusts the session start time of newly created sessions to the page's
+	 * time origin (performance.timeOrigin) instead of using the current wall clock time.
+	 * This ensures the session start aligns with when the tab was actually opened.
+	 * @default true
 	 */
-	_experimental_discardDataAfterInactivity?: boolean
-
-	/**
-	 * @deprecated Please use `spaMetrics` instead.
-	 */
-	_experimental_spaMetrics?:
-		| boolean
-		| {
-				/** URLs to exclude from PCT tracking (e.g., analytics, third-party scripts) */
-				ignoreUrls?: Array<string | RegExp>
-				/** Maximum number of concurrent resources to track. @default 100 */
-				maxResourcesToWatch?: number
-				/** Time in milliseconds to wait after last resource loads before considering page complete. @default 1000 */
-				quietTime?: number
-		  }
+	adjustSessionStartToTimeOrigin?: boolean
 
 	/** Allows http beacon urls */
 	allowInsecureBeacon?: boolean
@@ -179,6 +159,12 @@ export interface SplunkOtelWebConfig {
 	 * If true, bots like google bot, bing bot, and others will be blocked. Defaults to false.
 	 */
 	disableBots?: boolean
+
+	/**
+	 * If true, no additional span will be sent after 15 minutes of user inactivity (it will be dropped).
+	 * @default true
+	 */
+	discardDataAfterInactivity?: boolean
 
 	/** Allows configuring how telemetry data is sent to the backend */
 	exporter?: SplunkOtelWebExporterOptions
@@ -249,7 +235,7 @@ export interface SplunkOtelWebConfig {
 	 * - **Page Completion Time (PCT)**: Measures the time from a route change until all network
 	 *   requests (fetch/XHR) and media elements have finished loading
 	 *
-	 * @default false (disabled)
+	 * @default true (enabled)
 	 *
 	 * @example
 	 * ```typescript
@@ -262,6 +248,9 @@ export interface SplunkOtelWebConfig {
 	 *   quietTime: 1000,
 	 *   maxResourcesToWatch: 100
 	 * }
+	 *
+	 * // Disable SPA metrics
+	 * spaMetrics: false
 	 * ```
 	 */
 	spaMetrics?:

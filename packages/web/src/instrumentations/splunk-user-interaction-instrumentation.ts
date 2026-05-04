@@ -91,11 +91,6 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 
 		super(config, otelConfig)
 
-		// Migrate from deprecated _experimental_spaMetrics to spaMetrics if spaMetrics is not set
-		if (otelConfig._experimental_spaMetrics && !otelConfig.spaMetrics) {
-			otelConfig.spaMetrics = otelConfig._experimental_spaMetrics
-		}
-
 		if (otelConfig.spaMetrics) {
 			const spaMetricConfig = otelConfig.spaMetrics === true ? {} : otelConfig.spaMetrics
 

@@ -1,4 +1,7 @@
 http://localhost:9100/
 %3C%25=%20assetPrefix%20%25%3E/.*
+%3C%=%20assetPrefix%20%%3E/.*
 https://www.npmjs.com/*
 https://bundlephobia.com/*
+https://rum-ingest.observability.splunkcloud.com/api/v2/spans
+https://app.observability.splunkcloud.com/.*

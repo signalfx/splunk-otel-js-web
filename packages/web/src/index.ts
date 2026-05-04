@@ -93,14 +93,17 @@ import { isDebugMode } from './utils/is-debug-mode'
 declare const __COMMIT_HASH__: string
 
 interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
+	adjustSessionStartToTimeOrigin: boolean
 	bufferSize?: number
 	bufferTimeout?: number
+	discardDataAfterInactivity: boolean
 
 	exporter: SplunkOtelWebExporterOptions & {
 		factory: (config: SplunkExporterConfig & { otlp?: boolean }) => SpanExporter
 	}
 
 	instrumentations: SplunkOtelWebOptionsInstrumentations
+	spaMetrics: NonNullable<SplunkOtelWebConfig['spaMetrics']>
 
 	spanProcessor: {
 		factory: <T extends BufferConfig>(exporter: SpanExporter, config: T) => SpanProcessor
@@ -108,12 +111,14 @@ interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
 }
 
 const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
+	adjustSessionStartToTimeOrigin: true,
 	applicationName: 'unknown-browser-app',
 	beaconEndpoint: undefined,
 	bufferSize: 50, // spans, tradeoff between batching and hitting sendBeacon invididual limits
 	bufferTimeout: 4000, //millis, tradeoff between batching and loss of spans by not sending before page close
 	disableAutomationFrameworks: false,
 	disableBots: false,
+	discardDataAfterInactivity: true,
 	exporter: {
 		factory: (options) => {
 			if (options.otlp) {
@@ -127,6 +132,7 @@ const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
 	persistence: 'cookie',
 	rumAccessToken: undefined,
 	sessionMetadata: undefined,
+	spaMetrics: true,
 	spanProcessor: {
 		factory: (exporter, config) => new BatchSpanProcessor(exporter, config),
 	},
@@ -569,7 +575,7 @@ export const SplunkRum: SplunkOtelWebType = {
 			this.sessionManager = new SessionManager(
 				storageManager,
 				sessionMetadataFromOptions,
-				processedOptions._experimental_adjustSessionStartToTimeOrigin,
+				processedOptions.adjustSessionStartToTimeOrigin,
 			)
 			this.userManager = new UserManager(
 				userTrackingMode,
@@ -602,8 +608,8 @@ export const SplunkRum: SplunkOtelWebType = {
 					...(isLatestTagUsed ? { 'splunk.rum.is_latest_tag': true } : {}),
 					...processedOptions.globalAttributes,
 				},
-				processedOptions._experimental_discardDataAfterInactivity,
-				processedOptions._experimental_adjustSessionStartToTimeOrigin,
+				processedOptions.discardDataAfterInactivity,
+				processedOptions.adjustSessionStartToTimeOrigin,
 			)
 
 			this._spanEmitter = new SpanEmitterProcessor()
