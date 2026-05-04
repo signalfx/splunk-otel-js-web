@@ -32,7 +32,7 @@
 		"style-loader": "^4.0.0",
 		"ts-loader": "^9.5.4",
 		"typescript": "~5.9.3",
-		"webpack": "^5.105.4"
+		"webpack": "^5.106.2"
 	},
 	"dependencies": {
 		"@splunk/otel-web": "workspace:*",
