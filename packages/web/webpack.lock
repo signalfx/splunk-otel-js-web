@@ -1,4 +1,4 @@
 {
-  "https://cdn.observability.splunkcloud.com/o11y-gdi-rum/session-replay/v2.13.0/picker/picker.module.min.js": { "integrity": "sha512-+qbKqe80cWeGrPetRfzJBA2ObqgCg4+HT6KQLnVST56qdbVTJFlnuuBC9wcbOwXOOFrY6dHNrbxrJDTfevSqkg==", "contentType": "text/javascript" },
+  "https://cdn.observability.splunkcloud.com/o11y-gdi-rum/session-replay/v2.14.0/picker/picker.module.min.js": { "integrity": "sha512-+qbKqe80cWeGrPetRfzJBA2ObqgCg4+HT6KQLnVST56qdbVTJFlnuuBC9wcbOwXOOFrY6dHNrbxrJDTfevSqkg==", "contentType": "text/javascript" },
   "version": 1
 }
