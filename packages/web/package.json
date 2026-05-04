@@ -64,7 +64,7 @@
 	},
 	"devDependencies": {
 		"@swc/core": "^1.15.21",
-		"@swc/helpers": "^0.5.20",
+		"@swc/helpers": "^0.5.21",
 		"@types/shimmer": "^1.2.0",
 		"dotenv": "^17.4.0",
 		"fork-ts-checker-webpack-plugin": "^9.1.0",
