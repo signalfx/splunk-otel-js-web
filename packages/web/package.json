@@ -73,7 +73,7 @@
 		"source-map-loader": "^5.0.0",
 		"swc-loader": "^0.2.7",
 		"ts-loader": "^9.5.4",
-		"wait-on": "^9.0.4",
+		"wait-on": "^9.0.5",
 		"webpack": "^5.105.4",
 		"webpack-cli": "^7.0.2",
 		"webpack-dev-server": "^5.2.3"
