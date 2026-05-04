@@ -20,7 +20,6 @@ import { SpanKind } from '@opentelemetry/api'
 import { io } from 'socket.io-client'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { SplunkOtelWebConfig } from '../src/types'
 import { deinit, initWithDefaultConfig, SpanCapturer } from './utils'
 
 describe('can produce websocket events', () => {
@@ -34,7 +33,7 @@ describe('can produce websocket events', () => {
 					target: io,
 				},
 			},
-		} as Partial<SplunkOtelWebConfig>)
+		})
 	})
 
 	afterEach(() => {
@@ -126,7 +125,7 @@ describe('window global io', () => {
 			instrumentations: {
 				socketio: true,
 			},
-		} as Partial<SplunkOtelWebConfig>)
+		})
 	})
 
 	afterEach(() => {
@@ -161,7 +160,7 @@ describe('window global io (loaded after init)', () => {
 			instrumentations: {
 				socketio: true,
 			},
-		} as Partial<SplunkOtelWebConfig>)
+		})
 		// @ts-expect-error io isn't standard window prop
 		window.io = io
 	})

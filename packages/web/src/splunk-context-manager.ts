@@ -79,7 +79,7 @@ export class SplunkContextManager implements ContextManager {
 	bind<T>(context: Context, target: T): T {
 		// if no specific context to propagate is given, we use the current one
 		if (isFunction(target)) {
-			return this._bindFunction(target, context) as unknown as T
+			return this._bindFunction(target, context)
 		}
 
 		return target

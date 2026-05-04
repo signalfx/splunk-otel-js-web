@@ -33,7 +33,7 @@ const encoder = new TextEncoder()
 const decoder = new TextDecoder()
 
 function convert(body: JsonValue, timeUnixNano: number, attributes?: JsonObject): Log {
-	return { attributes, body, timeUnixNano } as Log
+	return { attributes, body, timeUnixNano }
 }
 
 export interface RecorderEmitContext {
