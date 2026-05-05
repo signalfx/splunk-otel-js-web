@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-declare module 'https://cdn.observability.splunkcloud.com/o11y-gdi-rum/session-replay/v2.14.0/picker/picker.module.min.js' {
+declare module 'https://cdn.observability.splunkcloud.com/o11y-gdi-rum/session-replay/v2.15.0/picker/picker.module.min.js' {
 	export const isPickerWindow: () => boolean
 	export const createPicker: (options: {
 		getElementText: (element: HTMLElement) => string
