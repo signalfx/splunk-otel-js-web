@@ -15,13 +15,13 @@ Add `rumAccessToken` and change `beaconEndpoint` in the instrumentation initiali
 ```js
 SplunkOtelWeb.init({
   ...
-  beaconEndpoint: 'https://rum-ingest.us0.signalfx.com/api/v2/spans',
+  beaconEndpoint: 'https://rum-ingest.us0.observability.splunkcloud.com/api/v2/spans',
   rumAccessToken: 'xxx', // TODO: describe how to get the token
   ...
 });
 ```
 
-Navigate to <https://app.signalfx.com/o11y/> to see your data.
+Navigate to <https://app.observability.splunkcloud.com/o11y/> to see your data.
 
 ## Installing via NPM in your own app
 

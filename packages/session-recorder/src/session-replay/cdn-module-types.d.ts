@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.13.0/session-replay.module.legacy.min.js' {
+declare module 'https://cdn.observability.splunkcloud.com/o11y-gdi-rum/session-replay/v2.15.0/session-replay.module.legacy.min.js' {
 	type DeepPartial<T> = {
 		[P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P]
 	}
@@ -148,14 +148,25 @@ declare module 'https://cdn.signalfx.com/o11y-gdi-rum/session-replay/v2.13.0/ses
 		metadata: SessionReplayMetadata
 	}
 
+	type SegmentContentType = 'asset' | 'dom-snapshot'
+
+	type OmittedAssets = 'images' | 'fonts' | 'css'
+
 	interface SessionReplayMetadata {
 		'browser.instance.id': string
+		'contentTypes': SegmentContentType[]
 		'endUnixMs': number
+		'endUnixMsWall': number
 		'format': 'plain' | 'binary' | 'binary-deflate'
+		'id': string
 		'lastKnownSegmentEndUnixMs': number | null
+		'lastKnownSegmentEndUnixMsWall': number | null
+		'omitted'?: OmittedAssets[]
 		'sdkVersion': string
 		'source': 'web'
 		'startUnixMs': number
+		'startUnixMsWall': number
+		'userActivity': number[]
 	}
 
 	interface ReplayEvent {

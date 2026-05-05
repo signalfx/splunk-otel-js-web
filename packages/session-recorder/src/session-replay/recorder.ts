@@ -90,7 +90,7 @@ export class Recorder {
 		if (backgroundService !== undefined) {
 			if (isBoolean(backgroundService)) {
 				backgroundServiceSrc = backgroundService
-					? `https://cdn.signalfx.com/o11y-gdi-rum/v${VERSION}/background-service.html`
+					? `https://cdn.observability.splunkcloud.com/o11y-gdi-rum/v${VERSION}/background-service.html`
 					: undefined
 			} else if (isString(backgroundService)) {
 				backgroundServiceSrc = backgroundService

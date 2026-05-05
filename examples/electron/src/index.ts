@@ -35,8 +35,8 @@ const configureSplunkCSP = () => {
 		const cspDirectives = [
 			`default-src 'self'`,
 			`style-src 'self' 'unsafe-inline'`,
-			`script-src 'self' 'unsafe-inline' https://cdn.signalfx.com`, // unsage-inline just for the demo page
-			`connect-src 'self' https://rum-ingest.${realm}.signalfx.com`,
+			`script-src 'self' 'unsafe-inline' https://cdn.observability.splunkcloud.com`, // unsage-inline just for the demo page
+			`connect-src 'self' https://rum-ingest.${realm}.observability.splunkcloud.com`,
 		]
 
 		callback({

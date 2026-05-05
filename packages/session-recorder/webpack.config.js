@@ -45,7 +45,7 @@ const getBaseConfig = (env, argv) => {
 		entry: path.resolve(__dirname, './src/index.ts'),
 		experiments: {
 			buildHttp: {
-				allowedUris: ['https://cdn.signalfx.com/'],
+				allowedUris: ['https://cdn.observability.splunkcloud.com/'],
 				cacheLocation: false,
 				frozen: true,
 			},

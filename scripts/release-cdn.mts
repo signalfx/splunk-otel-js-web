@@ -103,7 +103,7 @@ for (const asset of assets) {
 		const key = `o11y-gdi-rum/${version.name}/${asset}`
 		console.log(`\t\t\t\t- key: ${key}`)
 
-		const publicUrl = `https://cdn.signalfx.com/${key}`
+		const publicUrl = `https://cdn.observability.splunkcloud.com/${key}`
 		const contentType = getMimeType(asset)
 
 		if (isDryRun) {

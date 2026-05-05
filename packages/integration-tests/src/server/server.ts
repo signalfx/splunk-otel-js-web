@@ -162,7 +162,7 @@ fastify.get<{
 						}
 
 						if (cdnVersion) {
-							file = `https://cdn.signalfx.com/o11y-gdi-rum/${cdnVersion}/splunk-otel-web.js`
+							file = `https://cdn.observability.splunkcloud.com/o11y-gdi-rum/${cdnVersion}/splunk-otel-web.js`
 						}
 
 						return ejs.render(RENDER_AGENT_TEMPLATE, {

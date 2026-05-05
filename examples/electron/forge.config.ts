@@ -50,7 +50,7 @@ const config: ForgeConfig = {
 	plugins: [
 		new AutoUnpackNativesPlugin({}),
 		new WebpackPlugin({
-			devContentSecurityPolicy: `connect-src 'self' https://rum-ingest.mon0.signalfx.com;`,
+			devContentSecurityPolicy: `connect-src 'self' https://rum-ingest.mon0.observability.splunkcloud.com;`,
 			mainConfig,
 			renderer: {
 				config: rendererConfig,
