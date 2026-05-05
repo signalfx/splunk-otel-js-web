@@ -29,7 +29,6 @@ function* generateAllVersions(version: string): Generator<Version, void, unknown
 	const versionParts = version.split('.')
 
 	let isVersionImmutable = true
-	let isPreRelease = false
 	while (versionParts.length > 0) {
 		yield { isVersionImmutable, name: `${versionParts.join('.')}` }
 		const lastSegment = versionParts.pop()
@@ -40,15 +39,10 @@ function* generateAllVersions(version: string): Generator<Version, void, unknown
 
 		if (lastSegment.search(/[\D-]/) > -1 && versionParts.length > 0) {
 			// Pre-release version
-			isPreRelease = true
 			break
 		}
 
 		isVersionImmutable = false
-	}
-
-	if (!isPreRelease) {
-		yield { isVersionImmutable: false, name: 'latest' }
 	}
 }
 

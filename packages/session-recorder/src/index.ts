@@ -275,7 +275,7 @@ const SplunkRumRecorder = {
 						'[Splunk]: SplunkSessionRecorder.init() - Realm value ignored because beaconEndpoint is already specified.',
 					)
 				} else {
-					exportUrl = `https://rum-ingest.${realm}.signalfx.com/v1/rumreplay`
+					exportUrl = `https://rum-ingest.${realm}.observability.splunkcloud.com/v1/rumreplay`
 				}
 			}
 

@@ -877,8 +877,8 @@ While we'll keep the old keys working for near future it is recommended to chang
 
 ```diff
 SplunkRum.init({
--  beaconUrl: 'https://rum-ingest.<REALM>.signalfx.com/v1/rum',
-+  beaconEndpoint: 'https://rum-ingest.<REALM>.signalfx.com/v1/rum',
+-  beaconUrl: 'https://rum-ingest.<REALM>.observability.splunkcloud.com/v1/rum',
++  beaconEndpoint: 'https://rum-ingest.<REALM>.observability.splunkcloud.com/v1/rum',
    // Alternatively you can now use the realm option:
 +  realm: '<REALM>',
 

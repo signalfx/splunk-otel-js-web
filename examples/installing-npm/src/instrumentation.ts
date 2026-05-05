@@ -24,8 +24,8 @@ SplunkOtelWeb.init({
 	debug: true,
 
 	// uncomment to start sending to Splunk RUM backend
-	// beaconEndpoint: 'https://rum-ingest.signalfx.com/api/v2/spans',
+	// beaconEndpoint: 'https://rum-ingest.observability.splunkcloud.com/api/v2/spans',
 
-	// get the token by going to https://app.signalfx.com/#/organization/current?selectedKeyValue=sf_section:accesstokens
+	// get the token by going to https://app.observability.splunkcloud.com/#/organization/current?selectedKeyValue=sf_section:accesstokens
 	rumAccessToken: 'ABC123...789',
 })

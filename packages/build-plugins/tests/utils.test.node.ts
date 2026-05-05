@@ -64,7 +64,9 @@ describe('computeSourceMapIdFromFilePath', function () {
 describe('getSourceMapUploadUrl', function () {
 	it('uses the proper API based on the realm and id', function () {
 		const url = getSourceMapUploadUrl('us0', 'd77ec5d8-4fb5-fbc8-1897-54b54e939bcd')
-		expect(url).eq('https://api.us0.signalfx.com/v2/rum-mfm/source-maps/id/d77ec5d8-4fb5-fbc8-1897-54b54e939bcd')
+		expect(url).eq(
+			'https://api.us0.observability.splunkcloud.com/v2/rum-mfm/source-maps/id/d77ec5d8-4fb5-fbc8-1897-54b54e939bcd',
+		)
 	})
 })
 

@@ -112,7 +112,7 @@ const getBaseConfig = (env, argv) => ({
 	devtool: isDevelopmentMode(argv) ? 'inline-source-map' : 'source-map',
 	experiments: {
 		buildHttp: {
-			allowedUris: ['https://cdn.signalfx.com/'],
+			allowedUris: ['https://cdn.observability.splunkcloud.com/'],
 			cacheLocation: false,
 			frozen: !isDevelopmentMode(argv),
 		},

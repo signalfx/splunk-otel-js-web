@@ -169,10 +169,10 @@ export const INSTRUMENTATIONS_ALL_DISABLED: SplunkOtelWebOptionsInstrumentations
 
 function getBeaconEndpointForRealm(config: SplunkOtelWebConfigInternal) {
 	if (config.exporter?.otlp) {
-		return `https://rum-ingest.${config.realm}.signalfx.com/v1/rumotlp`
+		return `https://rum-ingest.${config.realm}.observability.splunkcloud.com/v1/rumotlp`
 	}
 
-	return `https://rum-ingest.${config.realm}.signalfx.com/v1/rum`
+	return `https://rum-ingest.${config.realm}.observability.splunkcloud.com/v1/rum`
 }
 
 function buildExporter(options: SplunkOtelWebConfigInternal) {
