@@ -470,7 +470,7 @@ export const SplunkRum: SplunkOtelWebType = {
 
 			if (options.beaconEndpoint !== undefined && processedOptions.exporter.otlp !== true) {
 				diag.warn(
-					'[Splunk]: SplunkRum.init() - Zipkin will be removed in the next major version in favor of OTLP. Set exporter.otlp: true and use an OTLP beacon endpoint.',
+					'[Splunk]: SplunkRum.init() - Zipkin will be removed in the next major version in favor of OTLP. Set "exporter.otlp: true" and use an OTLP beacon endpoint or use "realm" option.',
 				)
 			}
 
