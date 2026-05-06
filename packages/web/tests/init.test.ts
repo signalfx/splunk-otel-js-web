@@ -16,7 +16,7 @@
  *
  */
 
-import { context, trace } from '@opentelemetry/api'
+import { context, diag, trace } from '@opentelemetry/api'
 import * as tracing from '@opentelemetry/sdk-trace-base'
 import { expectDefined } from '@test-utils/assertions'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -137,7 +137,7 @@ describe('test init', () => {
 			SplunkRum.init({ applicationName: 'app', realm: 'test', rumAccessToken: undefined })
 
 			expect(SplunkRum.inited).toBeTruthy()
-			doesBeaconUrlEndWith('https://rum-ingest.test.observability.splunkcloud.com/v1/rum')
+			doesBeaconUrlEndWith('https://rum-ingest.test.observability.splunkcloud.com/v1/rumotlp')
 		})
 
 		it('can use realm + otlp config option', () => {
@@ -151,6 +151,20 @@ describe('test init', () => {
 			})
 			expect(SplunkRum.inited).toBeTruthy()
 			doesBeaconUrlEndWith('https://rum-ingest.test.observability.splunkcloud.com/v1/rumotlp')
+		})
+
+		it('warns when beaconEndpoint is specified and OTLP is not enabled', () => {
+			const warnMock = vi.spyOn(diag, 'warn')
+
+			SplunkRum.init({
+				applicationName: 'app',
+				beaconEndpoint: 'https://127.0.0.1:8888/zipkin',
+				rumAccessToken: undefined,
+			})
+
+			expect(warnMock).toHaveBeenCalledWith(
+				expect.stringContaining('Zipkin will be removed in the next major version in favor of OTLP'),
+			)
 		})
 	})
 

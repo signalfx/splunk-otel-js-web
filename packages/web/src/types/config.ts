@@ -88,6 +88,7 @@ export interface SplunkOtelWebExporterOptions {
 
 	/**
 	 * Switch from zipkin to otlp for exporting
+	 * Defaults to true when beaconEndpoint is omitted.
 	 */
 	otlp?: boolean
 }
