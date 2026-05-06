@@ -98,16 +98,27 @@ export class RecordPage {
 		return this.context.setOffline(false)
 	}
 
-	waitForSpans: (predicate: (spans: Span[]) => boolean) => Promise<void> = async (predicate) =>
-		new Promise<void>((resolve) => {
-			const intervalId = setInterval(async () => {
-				await this.flushData()
-				if (predicate(this.receivedSpans)) {
-					clearInterval(intervalId)
-					resolve()
-				}
-			}, 50)
-		})
+	waitForSpans: (predicate: (spans: Span[]) => boolean, timeout?: number) => Promise<void> = async (
+		predicate,
+		timeout = 25_000,
+	) => {
+		const startedAt = Date.now()
+
+		while (Date.now() - startedAt < timeout) {
+			if (this.page.isClosed()) {
+				throw new Error('Timed out waiting for spans because the page was closed.')
+			}
+
+			await this.flushData()
+			if (predicate(this.receivedSpans)) {
+				return
+			}
+
+			await this.waitForTimeout(50)
+		}
+
+		throw new Error(`Timed out waiting for spans.`)
+	}
 
 	waitForTestToFinish = async () => {
 		await this.page.evaluate(

@@ -22,6 +22,7 @@ tests_output/
 .next
 
 vitest-report
+.vitest-attachments
 __screenshots__
 
 packages/build-plugins/html

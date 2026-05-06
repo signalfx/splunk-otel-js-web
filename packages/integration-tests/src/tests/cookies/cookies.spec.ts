@@ -17,7 +17,7 @@
  */
 import { expect } from '@playwright/test'
 
-import { test } from '../../utils/test'
+import { expectDefined, test } from '../../utils/test'
 
 test.describe('cookies', () => {
 	test('Connectivity events are captured', async ({ recordPage }) => {
@@ -29,20 +29,26 @@ test.describe('cookies', () => {
 		const documentFetchSpans = recordPage.receivedSpans.filter((span) => span.name === 'documentFetch')
 		expect(documentFetchSpans).toHaveLength(2)
 
-		expect(documentFetchSpans[0].tags['location.href']).toBe('http://localhost:3000/cookies/iframe.ejs')
-		expect(documentFetchSpans[1].tags['location.href']).toBe('http://localhost:3000/cookies/cookies.ejs')
+		const iframeDocumentFetchSpan = documentFetchSpans.find(
+			(span) => span.tags['location.href'] === 'http://localhost:3000/cookies/iframe.ejs',
+		)
+		const parentDocumentFetchSpan = documentFetchSpans.find(
+			(span) => span.tags['location.href'] === 'http://localhost:3000/cookies/cookies.ejs',
+		)
+		expectDefined(iframeDocumentFetchSpan)
+		expectDefined(parentDocumentFetchSpan)
 
 		// same sessionId& instanceId
-		expect(documentFetchSpans[0].tags['splunk.rumSessionId']).toBe(
-			documentFetchSpans[1].tags['splunk.rumSessionId'],
+		expect(iframeDocumentFetchSpan.tags['splunk.rumSessionId']).toBe(
+			parentDocumentFetchSpan.tags['splunk.rumSessionId'],
 		)
-		expect(documentFetchSpans[0].tags['browser.instance.id']).toBe(
-			documentFetchSpans[1].tags['browser.instance.id'],
+		expect(iframeDocumentFetchSpan.tags['browser.instance.id']).toBe(
+			parentDocumentFetchSpan.tags['browser.instance.id'],
 		)
 
 		// different scriptInstance
-		expect(documentFetchSpans[0].tags['splunk.scriptInstance']).not.toBe(
-			documentFetchSpans[1].tags['splunk.scriptInstance'],
+		expect(iframeDocumentFetchSpan.tags['splunk.scriptInstance']).not.toBe(
+			parentDocumentFetchSpan.tags['splunk.scriptInstance'],
 		)
 
 		const cookie = await recordPage.getCookie('_splunk_rum_sid')

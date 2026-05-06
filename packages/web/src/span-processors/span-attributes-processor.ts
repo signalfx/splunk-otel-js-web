@@ -22,6 +22,10 @@ import { Span, SpanProcessor } from '@opentelemetry/sdk-trace-base'
 
 import { SESSION_DURATION_MS, SessionManager, UserManager } from '../managers'
 
+// Firefox can report navigation timings slightly before performance.timeOrigin.
+// Without this tolerance, [firefox] cookies > Connectivity events are captured can drop documentFetch spans.
+const SESSION_START_TIME_SKEW_TOLERANCE_MS = 1000
+
 export class SpanAttributesProcessor implements SpanProcessor {
 	private readonly _globalAttributes: Attributes
 
@@ -29,8 +33,8 @@ export class SpanAttributesProcessor implements SpanProcessor {
 		private sessionManager: SessionManager,
 		private userManager: UserManager,
 		globalAttributes: Attributes,
-		private readonly _experimental_discardDataAfterInactivity: boolean = false,
-		private readonly _experimental_adjustSessionStartToTimeOrigin: boolean = false,
+		private readonly discardDataAfterInactivity: boolean = true,
+		private readonly adjustSessionStartToTimeOrigin: boolean = true,
 	) {
 		this._globalAttributes = globalAttributes ?? {}
 	}
@@ -69,12 +73,12 @@ export class SpanAttributesProcessor implements SpanProcessor {
 		// Negated condition was hard to read
 		if (
 			sessionState.state === 'expired-duration' ||
-			(sessionState.state === 'expired-inactivity' && this._experimental_discardDataAfterInactivity)
+			(sessionState.state === 'expired-inactivity' && this.discardDataAfterInactivity)
 		) {
 			// Do not attach session ID to the span
 		} else if (
-			this._experimental_adjustSessionStartToTimeOrigin &&
-			hrTimeToMilliseconds(span.startTime) < sessionState.startTime
+			this.adjustSessionStartToTimeOrigin &&
+			hrTimeToMilliseconds(span.startTime) < sessionState.startTime - SESSION_START_TIME_SKEW_TOLERANCE_MS
 		) {
 			diag.warn('Dropping span that started before the session', {
 				diffMs: sessionState.startTime - hrTimeToMilliseconds(span.startTime),

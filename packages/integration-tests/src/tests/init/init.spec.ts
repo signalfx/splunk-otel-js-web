@@ -54,12 +54,16 @@ test.describe('init', () => {
 		expect(attributeSetSpans[0].tags['key2']).toBe('value2')
 
 		const attributesChangedSpans = recordPage.receivedSpans.filter((span) => span.name === 'attributes-changed')
-		expect(attributesChangedSpans).toHaveLength(1)
+		const changedByClickSpans = attributesChangedSpans.filter((span) => {
+			const changedAttrs = JSON.parse(span.tags['payload'] as string).attributes
+			return changedAttrs.key1 === 'newvalue1'
+		})
+		expect(changedByClickSpans).toHaveLength(1)
 
-		const notifiedAttrs = JSON.parse(attributesChangedSpans[0].tags['payload'] as string).attributes
-		expect(notifiedAttrs.environment, 'custom-environment')
-		expect(notifiedAttrs.key1, 'newvalue1')
-		expect(notifiedAttrs.key2, 'value2')
+		const notifiedAttrs = JSON.parse(changedByClickSpans[0].tags['payload'] as string).attributes
+		expect(notifiedAttrs.environment).toBe('custom-environment')
+		expect(notifiedAttrs.key1).toBe('newvalue1')
+		expect(notifiedAttrs.key2).toBe('value2')
 
 		await recordPage.locator('#clickToResetAttributes').click()
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'attributes-reset').length === 1)

@@ -17,7 +17,7 @@
  */
 
 import { HrTime } from '@opentelemetry/api'
-import { hrTimeToMilliseconds } from '@opentelemetry/core'
+import { addHrTimes, hrTimeToMilliseconds, millisToHrTime } from '@opentelemetry/core'
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base'
 import { Metric, onCLS, onINP, onLCP, ReportOpts } from 'web-vitals'
@@ -29,12 +29,13 @@ import { VERSION } from '../version'
 const MODULE_NAME = 'splunk-webvitals'
 
 export interface SplunkWebVitalsInstrumentationConfig extends InstrumentationConfig {
-	cls?: boolean | ReportOpts
 	/**
 	 * If true, the webvitals spans will have their start time aligned with the document load span,
 	 * and will inherit the URL attributes from the document load span if available.
+	 * @default true
 	 */
-	experimental_alignWebVitalsSpansWithDocumentLoad?: boolean
+	alignWebVitalsSpansWithDocumentLoad?: boolean
+	cls?: boolean | ReportOpts
 	inp?: boolean | ReportOpts
 	lcp?: boolean | ReportOpts
 }
@@ -134,12 +135,13 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 		const now = Date.now()
 		let endTime: HrTime | number = now
 		let span
-		if (this._config.experimental_alignWebVitalsSpansWithDocumentLoad) {
+		if (this.shouldAlignWithDocumentLoad()) {
 			const docLoadSpan = await this.docLoadSpanPromise
-			let startTime = hrTimeToMilliseconds(docLoadSpan.startTime) + 1
+			const alignedStartTime = addHrTimes(docLoadSpan.startTime, millisToHrTime(1))
+			let startTime: HrTime | number = alignedStartTime
 			endTime = startTime
 			const sessionState = this.sessionManager?.getSessionMetadata()
-			if (sessionState && sessionState.sessionStart - startTime > 1000 * 60) {
+			if (sessionState && sessionState.sessionStart - hrTimeToMilliseconds(alignedStartTime) > 1000 * 60) {
 				// If the document load started more than 1 minute before the current session began,
 				// it likely belongs to a previous session. In that case, align the span to the
 				// current session's start time. The 1-minute tolerance accounts for the fact that
@@ -160,5 +162,9 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 
 		span.setAttribute(name, value)
 		span.end(endTime)
+	}
+
+	private shouldAlignWithDocumentLoad(): boolean {
+		return this._config.alignWebVitalsSpansWithDocumentLoad ?? true
 	}
 }
