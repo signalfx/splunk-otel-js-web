@@ -60,7 +60,7 @@ export class SessionBasedSampler implements Sampler {
 		sampled = new AlwaysOnSampler(),
 	}: SessionBasedSamplerConfig = {}) {
 		this.ratio = this._normalize(ratio)
-		// eslint-disable-next-line unicorn/number-literal-case
+
 		this.upperBound = Math.floor(this.ratio * 0xff_ff_ff_ff)
 
 		this.sampled = sampled
