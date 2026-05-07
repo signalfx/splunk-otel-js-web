@@ -97,6 +97,73 @@ describe('platform utilities', () => {
 			expect(result['user_agent.is_bot']).toBe(false)
 			expect(result['user_agent.is_automated']).toBe(true)
 		})
+
+		it('should include experimental browser debug attributes only when requested', () => {
+			mockNavigator({
+				connection: {
+					downlink: 10,
+					effectiveType: '4g',
+					rtt: 50,
+					saveData: false,
+				},
+				deviceMemory: 8,
+				hardwareConcurrency: 12,
+				languages: ['en-US', 'cs-CZ'],
+				maxTouchPoints: 5,
+				userAgentData: {
+					brands: [{ brand: 'Chromium', version: '123' }],
+					mobile: false,
+					platform: 'Windows',
+				},
+				vendor: 'Google Inc.',
+			})
+
+			expect(getBasicPlatformInfo()).not.toHaveProperty('browser.debug.hardware_concurrency')
+
+			const result = getBasicPlatformInfo({ includeDebugInfo: true })
+			expect(result).toMatchObject({
+				'browser.debug.connection.downlink': 10,
+				'browser.debug.connection.effective_type': '4g',
+				'browser.debug.connection.rtt': 50,
+				'browser.debug.connection.save_data': false,
+				'browser.debug.device_memory_gb': 8,
+				'browser.debug.hardware_concurrency': 12,
+				'browser.debug.languages': '["en-US","cs-CZ"]',
+				'browser.debug.max_touch_points': 5,
+				'browser.debug.ua.brands': '["Chromium/123"]',
+				'browser.debug.vendor': 'Google Inc.',
+			})
+			expect(result).not.toHaveProperty('browser.debug.feature.local_storage')
+			expect(result).not.toHaveProperty('browser.debug.viewport.width')
+		})
+
+		it('should skip failing experimental browser debug getters', () => {
+			mockNavigator({
+				connection: {
+					effectiveType: '4g',
+				},
+				deviceMemory: 8,
+				hardwareConcurrency: 12,
+			})
+
+			Object.defineProperty(navigator, 'connection', {
+				configurable: true,
+				get() {
+					throw new Error('connection unavailable')
+				},
+			})
+			Object.defineProperty(navigator, 'deviceMemory', {
+				configurable: true,
+				get() {
+					throw new Error('device memory unavailable')
+				},
+			})
+
+			const result = getBasicPlatformInfo({ includeDebugInfo: true })
+			expect(result).toHaveProperty('browser.debug.hardware_concurrency', 12)
+			expect(result).not.toHaveProperty('browser.debug.connection.effective_type')
+			expect(result).not.toHaveProperty('browser.debug.device_memory_gb')
+		})
 	})
 
 	describe('getEnhancedPlatformInfo', () => {
@@ -196,6 +263,65 @@ describe('platform utilities', () => {
 				'user_agent.original': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
 				'user_agent.os.name': 'iPhone',
 			})
+		})
+
+		it('should include enhanced experimental browser debug attributes when requested', async () => {
+			const getHighEntropyValues = vi.fn().mockResolvedValue({
+				architecture: 'arm',
+				bitness: '64',
+				fullVersionList: [{ brand: 'Chromium', version: '123.0.1' }],
+				model: 'Pixel 8',
+				platformVersion: '15.0.0',
+				uaFullVersion: '123.0.1',
+				wow64: false,
+			})
+			const estimate = vi.fn().mockResolvedValue({
+				quota: 1000,
+				usage: 250,
+				usageDetails: {
+					caches: 150,
+					indexedDB: 100,
+				},
+			})
+
+			mockNavigator({
+				deviceMemory: 8,
+				hardwareConcurrency: 12,
+				storage: { estimate },
+				userAgentData: {
+					getHighEntropyValues,
+					mobile: false,
+					platform: 'Android',
+				},
+			})
+
+			const result = await getEnhancedPlatformInfo({ includeDebugInfo: true })
+			expect(result).toMatchObject({
+				'browser.debug.device_memory_gb': 8,
+				'browser.debug.hardware_concurrency': 12,
+				'browser.debug.storage.quota': 1000,
+				'browser.debug.storage.usage': 250,
+				'browser.debug.storage.usage_details.caches': 150,
+				'browser.debug.storage.usage_details.indexed_db': 100,
+				'browser.debug.ua.architecture': 'arm',
+				'browser.debug.ua.bitness': '64',
+				'browser.debug.ua.full_version': '123.0.1',
+				'browser.debug.ua.full_version_list': '["Chromium/123.0.1"]',
+				'browser.debug.ua.model': 'Pixel 8',
+				'browser.debug.ua.wow64': false,
+				'user_agent.os.name': 'Android',
+				'user_agent.os.version': '15.0.0',
+			})
+			expect(getHighEntropyValues).toHaveBeenCalledWith([
+				'architecture',
+				'bitness',
+				'fullVersionList',
+				'model',
+				'platformVersion',
+				'uaFullVersion',
+				'wow64',
+			])
+			expect(estimate).toHaveBeenCalled()
 		})
 	})
 })

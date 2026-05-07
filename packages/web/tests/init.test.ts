@@ -868,6 +868,42 @@ describe('platform attributes', () => {
 		expectDefined(testSpan)
 		expect(testSpan.attributes['user_agent.os.name']).toBe('Windows')
 	})
+
+	it('should add experimental browser debug attributes to spans when enabled', async () => {
+		mockNavigator({
+			connection: {
+				effectiveType: '4g',
+				rtt: 25,
+			},
+			deviceMemory: 16,
+			hardwareConcurrency: 8,
+			platform: 'Win32',
+			userAgentData: {
+				platform: 'Windows',
+			},
+		})
+
+		SplunkRum.init({
+			_experimental_captureBrowserDebugAttributes: true,
+			applicationName: 'test-app',
+			beaconEndpoint: 'https://127.0.0.1:9999/test',
+			rumAccessToken: undefined,
+			spanProcessors: [capturer],
+		})
+
+		const tracer = getTracer('test')
+		const span = tracer.startSpan('test-span')
+		span.end()
+
+		await new Promise((resolve) => setTimeout(resolve, 100))
+
+		const testSpan = capturer.spans.find((s) => s.name === 'test-span')
+		expectDefined(testSpan)
+		expect(testSpan.attributes['browser.debug.hardware_concurrency']).toBe(8)
+		expect(testSpan.attributes['browser.debug.device_memory_gb']).toBe(16)
+		expect(testSpan.attributes['browser.debug.connection.effective_type']).toBe('4g')
+		expect(testSpan.attributes['browser.debug.connection.rtt']).toBe(25)
+	})
 })
 
 describe('can produce click events', () => {

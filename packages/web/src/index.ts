@@ -609,6 +609,11 @@ export const SplunkRum: SplunkOtelWebType = {
 				}
 			})
 
+			const platformInfoOptions = {
+				includeDebugInfo: processedOptions._experimental_captureBrowserDebugAttributes,
+			}
+			const basicPlatformInfo = getBasicPlatformInfo(platformInfoOptions)
+
 			this.attributesProcessor = new SpanAttributesProcessor(
 				this.sessionManager,
 				this.userManager,
@@ -619,6 +624,7 @@ export const SplunkRum: SplunkOtelWebType = {
 					...(version ? { 'app.version': version } : {}),
 					...(isLatestTagUsed ? { 'splunk.rum.is_latest_tag': true } : {}),
 					...processedOptions.globalAttributes,
+					...basicPlatformInfo,
 				},
 				processedOptions.discardDataAfterInactivity,
 				processedOptions.adjustSessionStartToTimeOrigin,
@@ -707,15 +713,11 @@ export const SplunkRum: SplunkOtelWebType = {
 
 			this.provider = provider
 
-			// Set basic platform attributes immediately
-			const basicPlatformInfo = getBasicPlatformInfo()
-			this.setGlobalAttributes(basicPlatformInfo)
-
 			inited = true
 			diag.info('SplunkRum.init() complete')
 
 			// Automatically update platform attributes with enhanced information in the background
-			void getEnhancedPlatformInfo().then((platformInfo) => {
+			void getEnhancedPlatformInfo(platformInfoOptions).then((platformInfo) => {
 				this.setGlobalAttributes(platformInfo)
 				diag.debug('[Splunk]: Enhanced platform attributes updated')
 			})
