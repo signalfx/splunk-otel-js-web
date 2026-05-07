@@ -105,6 +105,21 @@ type SensitivityRule = {
 
 export interface SplunkOtelWebConfig {
 	/**
+	 * Experimental: Captures additional browser and device debug attributes and attaches
+	 * them to spans through global attributes.
+	 *
+	 * This includes browser-exposed navigator diagnostics such as hardware concurrency,
+	 * device memory, touch/language/vendor hints, network connection hints, storage
+	 * quota/usage, and high-entropy User-Agent Client Hints when available.
+	 *
+	 * These attributes can be high cardinality and should be enabled only while investigating
+	 * issues. The exact list of captured attributes can change without notice. No versioning
+	 * guarantees are given for this option.
+	 * @default false
+	 */
+	_experimental_captureBrowserDebugAttributes?: boolean
+
+	/**
 	 * Experimental: Data attribute names to capture from elements during user interactions.
 	 *
 	 * When specified, these data attributes will be collected from interacted elements and attached

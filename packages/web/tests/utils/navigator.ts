@@ -19,23 +19,54 @@
 import { vi } from 'vitest'
 
 export function mockNavigator(config: {
+	connection?: {
+		downlink?: number
+		effectiveType?: string
+		rtt?: number
+		saveData?: boolean
+		type?: string
+	}
+	cookieEnabled?: boolean
+	deviceMemory?: number
+	doNotTrack?: string
+	hardwareConcurrency?: number
 	language?: string
+	languages?: string[]
+	maxTouchPoints?: number
 	platform?: string
+	storage?: {
+		estimate?: () => Promise<StorageEstimate>
+	}
 	userAgent?: string
 	userAgentData?: {
+		brands?: Array<{
+			brand: string
+			version: string
+		}>
 		getHighEntropyValues?: any
 		mobile?: boolean
 		platform?: string
 	}
+	vendor?: string
 	webdriver?: boolean
 }) {
 	const mockNav = {
+		connection: config.connection,
+		cookieEnabled: config.cookieEnabled ?? true,
+		deviceMemory: config.deviceMemory,
+		doNotTrack: config.doNotTrack,
+		hardwareConcurrency: config.hardwareConcurrency,
 		language: config.language || 'en-US',
+		languages: config.languages,
+		maxTouchPoints: config.maxTouchPoints,
 		platform: config.platform || 'Win32',
+		storage: config.storage,
 		userAgent: config.userAgent || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+		vendor: config.vendor,
 		webdriver: config.webdriver ?? false,
 		...(config.userAgentData && {
 			userAgentData: {
+				brands: config.userAgentData.brands,
 				getHighEntropyValues: config.userAgentData.getHighEntropyValues || vi.fn().mockResolvedValue({}),
 				mobile: config.userAgentData.mobile,
 				platform: config.userAgentData.platform || config.platform || 'Windows',

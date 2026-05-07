@@ -32,7 +32,23 @@ declare global {
 	}
 
 	interface Navigator {
+		readonly connection?: {
+			readonly downlink?: number
+			readonly effectiveType?: string
+			readonly rtt?: number
+			readonly saveData?: boolean
+			readonly type?: string
+		}
+
+		readonly deviceMemory?: number
+
+		readonly pdfViewerEnabled?: boolean
+
 		readonly userAgentData?: {
+			brands?: Array<{
+				brand: string
+				version: string
+			}>
 			mobile?: boolean
 			platform?: string
 			getHighEntropyValues(hints: string[]): Promise<
@@ -56,6 +72,14 @@ declare global {
 				  }
 				| undefined
 			>
+		}
+	}
+
+	interface Performance {
+		readonly memory?: {
+			readonly jsHeapSizeLimit?: number
+			readonly totalJSHeapSize?: number
+			readonly usedJSHeapSize?: number
 		}
 	}
 }
