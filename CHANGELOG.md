@@ -2,6 +2,59 @@
 
 If the version of Open Telemetry is unspecified for a version, then it is the same as in the previous release.
 
+## 3.0.0
+
+### Breaking Changes
+
+- `@splunk/otel-web`
+    - **Domain migration from `signalfx.com` to `observability.splunkcloud.com`** [#1695](https://github.com/signalfx/splunk-otel-js-web/pull/1695)
+        - All endpoints have moved to new domains:
+            - CDN: `cdn.signalfx.com` → `cdn.observability.splunkcloud.com`
+            - RUM ingest: `rum-ingest.{realm}.signalfx.com` → `rum-ingest.{realm}.observability.splunkcloud.com`
+            - Source map upload API: `api.{realm}.signalfx.com` → `api.{realm}.observability.splunkcloud.com`
+            - Session Replay ingest: `rum-ingest.{realm}.signalfx.com` → `rum-ingest.{realm}.observability.splunkcloud.com`
+        - **Content Security Policy (CSP):** If your application uses a CSP, you **must** update your directives before upgrading:
+            - `script-src`: add `cdn.observability.splunkcloud.com` (for loading the agent and session replay via CDN)
+            - `connect-src`: add `rum-ingest.{realm}.observability.splunkcloud.com` (for telemetry and replay data export) and `api.{realm}.observability.splunkcloud.com` (if using source map upload via build plugins)
+            - The old `signalfx.com` domains can be removed from your CSP after all agents are upgraded
+        - **`latest` CDN tag discontinued:** The `latest` tag is permanently pinned to v2.5.1 and will **not** receive any future updates — including v3.0.0 and beyond. Users loading the agent via `cdn.signalfx.com/o11y-gdi-rum/latest/splunk-otel-web.js` will remain on v2.5.1 indefinitely. Migrate to a versioned URL on the new CDN domain:
+            ```diff
+            - <script src="https://cdn.signalfx.com/o11y-gdi-rum/latest/splunk-otel-web.js"></script>
+            + <script src="https://cdn.observability.splunkcloud.com/o11y-gdi-rum/v3/splunk-otel-web.js"></script>
+            ```
+            Available version locks:
+            - `v3` — major version lock (recommended), receives all minor and patch updates
+            - `v3.0` — minor version lock, receives patch updates only
+            - `v3.0.0` — exact version pin
+    - **OTLP exporter enabled by default** [#1791](https://github.com/signalfx/splunk-otel-js-web/pull/1791)
+        - OTLP is now the default export format when `beaconEndpoint` is not specified
+        - A deprecation warning is emitted when `beaconEndpoint` is explicitly provided without `exporter.otlp: true`, indicating Zipkin will be removed in a future version
+        - **Migration:** Set `exporter.otlp: false` to opt out.
+    - **Promoted experimental flags to stable defaults** [#1780](https://github.com/signalfx/splunk-otel-js-web/pull/1780)
+        - `_experimental_adjustSessionStartToTimeOrigin` → `adjustSessionStartToTimeOrigin` (default: `true`) — session start time is backdated to `performance.timeOrigin`
+        - `_experimental_discardDataAfterInactivity` → `discardDataAfterInactivity` (default: `true`) — telemetry is discarded after 15 minutes of user inactivity
+        - `spaMetrics` now defaults to `true` — SPA route metrics collected by default
+        - `experimental_alignWebVitalsSpansWithDocumentLoad` → `instrumentations.webvitals.alignWebVitalsSpansWithDocumentLoad` — LCP, CLS, and INP spans are anchored to the documentLoad span timestamp by default
+        - **Migration:** Set individual flags to `false` to opt out of new defaults.
+
+### New Features and Improvements
+
+- `@splunk/otel-web`
+    - **Add `http.cache.hit` attribute to resource spans** [#1768](https://github.com/signalfx/splunk-otel-js-web/pull/1768)
+        - Boolean attribute on resource fetch spans (document-load and post-document-load) indicating cache status
+        - Detects cache hits via 304 response status or zero transfer size with non-zero decoded body size
+        - Attribute is omitted for cross-origin requests without `Timing-Allow-Origin` headers
+    - **Add `_experimental_captureBrowserDebugAttributes` option** [#1793](https://github.com/signalfx/splunk-otel-js-web/pull/1793)
+        - Experimental flag that collects browser diagnostics (hardware concurrency, device memory, viewport/screen data, network hints, JS heap memory, storage quota, User-Agent Client Hints) and attaches them as global span attributes
+        - High cardinality — intended for temporary debugging only
+
+- `@splunk/otel-web-session-recorder`
+    - **Add option to store failed segments to IndexedDB** [#1766](https://github.com/signalfx/splunk-otel-js-web/pull/1766)
+        - New `persistFailedReplayData: 'indexeddb'` configuration option for storing failed replay segments in IndexedDB instead of localStorage
+        - Automatic retry on subsequent page loads
+
+- **Updated dependencies** [#1771](https://github.com/signalfx/splunk-otel-js-web/pull/1771), [#1772](https://github.com/signalfx/splunk-otel-js-web/pull/1772), [#1773](https://github.com/signalfx/splunk-otel-js-web/pull/1773), [#1774](https://github.com/signalfx/splunk-otel-js-web/pull/1774), [#1775](https://github.com/signalfx/splunk-otel-js-web/pull/1775), [#1777](https://github.com/signalfx/splunk-otel-js-web/pull/1777), [#1778](https://github.com/signalfx/splunk-otel-js-web/pull/1778), [#1779](https://github.com/signalfx/splunk-otel-js-web/pull/1779), [#1782](https://github.com/signalfx/splunk-otel-js-web/pull/1782), [#1783](https://github.com/signalfx/splunk-otel-js-web/pull/1783), [#1784](https://github.com/signalfx/splunk-otel-js-web/pull/1784), [#1785](https://github.com/signalfx/splunk-otel-js-web/pull/1785), [#1786](https://github.com/signalfx/splunk-otel-js-web/pull/1786), [#1787](https://github.com/signalfx/splunk-otel-js-web/pull/1787), [#1788](https://github.com/signalfx/splunk-otel-js-web/pull/1788), [#1789](https://github.com/signalfx/splunk-otel-js-web/pull/1789), [#1790](https://github.com/signalfx/splunk-otel-js-web/pull/1790)
+
 ## 2.5.1
 
 - `@splunk/otel-web`
