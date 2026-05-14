@@ -34,8 +34,12 @@ jobs:
                   path: packages/integration-tests/blob-report
                   retention-days: 1
 
+            - name: Run Unit Tests with Coverage
+              if: ${{ matrix.browser == 'chromium' }}
+              run: pnpm run test:unit:coverage --browser.name=${{ matrix.browser }}
+
             - name: Run Unit Tests
-              if: ${{ matrix.browser != 'edge' && matrix.browser != 'chrome' }}
+              if: ${{ matrix.browser != 'edge' && matrix.browser != 'chrome' && matrix.browser != 'chromium' }}
               run: pnpm run test:unit --browser.name=${{ matrix.browser }}
 
             - name: Upload test:unit report
@@ -44,6 +48,14 @@ jobs:
               with:
                   name: vitest-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
                   path: vitest-report/
+                  retention-days: 14
+
+            - name: Upload coverage report
+              uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+              if: ${{ !cancelled() && matrix.browser == 'chromium' }}
+              with:
+                  name: vitest-coverage-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
+                  path: coverage/
                   retention-days: 14
 
     tests-macos:
