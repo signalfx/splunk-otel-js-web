@@ -16,8 +16,8 @@
  *
  */
 
-import { InstrumentationConfig } from '@opentelemetry/instrumentation'
-import {
+import type { InstrumentationConfig } from '@opentelemetry/instrumentation'
+import type {
 	AttributionReportOpts,
 	CLSMetricWithAttribution,
 	INPAttributionReportOpts,

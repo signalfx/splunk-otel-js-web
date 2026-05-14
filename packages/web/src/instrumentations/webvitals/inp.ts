@@ -17,7 +17,7 @@
  */
 
 import { Span } from '@opentelemetry/api'
-import { INPMetricWithAttribution } from 'web-vitals/attribution'
+import type { INPMetricWithAttribution } from 'web-vitals/attribution'
 
 import { setNumberAttribute, setStringAttribute } from './span-attributes'
 import { WebVitalsAttributionOptions } from './types'

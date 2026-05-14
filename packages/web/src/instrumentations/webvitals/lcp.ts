@@ -17,7 +17,7 @@
  */
 
 import { Span } from '@opentelemetry/api'
-import { LCPMetricWithAttribution } from 'web-vitals/attribution'
+import type { LCPMetricWithAttribution } from 'web-vitals/attribution'
 
 import { getResolvedWebVitalsAttributionConfig } from './attribution-config'
 import { setAttributes, setNumberAttribute, setStringAttribute } from './span-attributes'
