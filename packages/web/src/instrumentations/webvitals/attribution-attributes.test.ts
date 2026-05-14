@@ -144,7 +144,7 @@ describe('webvitals attribution attribute setters', () => {
 
 		it('omits LCP target, URL, and invalid resource timing attributes when unavailable or disabled', () => {
 			const { attributes, span } = createSpanMock()
-			const getLCPUrl = vi.fn((): string | undefined => {})
+			const getLCPUrl = vi.fn((): string | undefined => undefined)
 
 			setLCPAttributionAttributes(
 				span,

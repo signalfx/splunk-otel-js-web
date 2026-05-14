@@ -24,7 +24,7 @@ const DEFAULT_ATTRIBUTION_CONFIG: Required<WebVitalsAttributionConfig> = {
 }
 
 export function getResolvedWebVitalsAttributionConfig(
-	config: WebVitalsAttributionConfig | undefined,
+	config?: WebVitalsAttributionConfig,
 ): Required<WebVitalsAttributionConfig> {
 	return {
 		...DEFAULT_ATTRIBUTION_CONFIG,
@@ -32,6 +32,6 @@ export function getResolvedWebVitalsAttributionConfig(
 	}
 }
 
-export function shouldExportWebVitalsTarget(config: WebVitalsAttributionConfig | undefined): boolean {
+export function shouldExportWebVitalsTarget(config?: WebVitalsAttributionConfig): boolean {
 	return getResolvedWebVitalsAttributionConfig(config).target !== 'off'
 }

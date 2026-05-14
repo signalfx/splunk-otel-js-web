@@ -175,7 +175,7 @@ describe('webvitals attribution helpers', () => {
 			id: 'v5-1',
 			navigationType: 'navigate',
 			value: 10,
-		}
+		} as const
 
 		expect(getWebVitalMetricReportKey('lcp', baseMetric)).toBe('lcp|v5-1|10|10|navigate')
 		expect(getWebVitalMetricReportKey('lcp', baseMetric)).not.toBe(getWebVitalMetricReportKey('cls', baseMetric))

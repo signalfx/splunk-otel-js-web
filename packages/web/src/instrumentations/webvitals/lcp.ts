@@ -27,7 +27,7 @@ type ResourceTimingWithResponseStatus = PerformanceResourceTiming & {
 	responseStatus?: number
 }
 
-export function sanitizeLCPUrl(url: string | undefined): string | undefined {
+export function sanitizeLCPUrl(url?: string): string | undefined {
 	if (!url) {
 		return undefined
 	}
@@ -46,7 +46,7 @@ export function sanitizeLCPUrl(url: string | undefined): string | undefined {
 
 export function getLCPUrlForAttribution(
 	url: string | undefined,
-	config: WebVitalsAttributionConfig | undefined,
+	config?: WebVitalsAttributionConfig,
 ): string | undefined {
 	const urlMode = getResolvedWebVitalsAttributionConfig(config).lcpUrl
 	switch (urlMode) {
