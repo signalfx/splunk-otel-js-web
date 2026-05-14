@@ -20,16 +20,7 @@ import { HrTime, Span } from '@opentelemetry/api'
 import { addHrTimes, hrTimeToMilliseconds, millisToHrTime } from '@opentelemetry/core'
 import { InstrumentationBase } from '@opentelemetry/instrumentation'
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base'
-import {
-	AttributionReportOpts,
-	CLSMetricWithAttribution,
-	INPAttributionReportOpts,
-	INPMetricWithAttribution,
-	LCPMetricWithAttribution,
-	onCLS,
-	onINP,
-	onLCP,
-} from 'web-vitals/attribution'
+import { AttributionReportOpts, INPAttributionReportOpts, onCLS, onINP, onLCP } from 'web-vitals/attribution'
 
 import { SessionManager } from '../managers'
 import { SplunkOtelWebConfig } from '../types'
@@ -46,20 +37,10 @@ import {
 	setStringAttribute,
 	shouldExportWebVitalsTarget,
 	SplunkWebVitalsInstrumentationConfig,
-	WebVitalMetricWithAttribution,
-	WebVitalName,
+	WebVitalReport,
 	WebVitalsAttributionOptions,
 } from './webvitals'
 
-export {
-	generateSafeWebVitalsTarget,
-	getLCPResourceTimingAttributes,
-	getLCPUrlForAttribution,
-	getResolvedWebVitalsAttributionConfig,
-	getWebVitalMetricReportKey,
-	sanitizeLCPUrl,
-	shouldExportWebVitalsTarget,
-} from './webvitals'
 export type {
 	SplunkWebVitalsInstrumentationConfig,
 	WebVitalsAttributionConfig,
@@ -71,9 +52,9 @@ const MODULE_NAME = 'splunk-webvitals'
 
 // Upper bound (in milliseconds) on how long `reportMetric` will wait for the
 // document load span before falling back to the current wall-clock time.
-// Prevents indefinite hangs when the `document` instrumentation is disabled or
-// never emits a `documentLoad` event.
-const DOC_LOAD_SPAN_WAIT_TIMEOUT_MS = 30_000
+// `documentLoad` is emitted on the page `load` event; 5 s is a generous upper
+// bound that avoids hangs when the `document` instrumentation is disabled.
+const DOC_LOAD_SPAN_WAIT_TIMEOUT_MS = 5000
 
 export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWebVitalsInstrumentationConfig> {
 	private areCallbackAttached = false
@@ -122,12 +103,20 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 		})
 	}
 
+	/**
+	 * Pauses span emission. Web-vitals callbacks remain attached (the library
+	 * provides no off-switch); metrics delivered while disabled are silently
+	 * dropped and will not be re-reported when the instrumentation is re-enabled.
+	 */
 	disable(): void {
 		this.isRecording = false
 	}
 
 	enable(): void {
 		this.isRecording = true
+		// Clear stale dedup keys on every enable so that metrics re-delivered
+		// after a disable/enable cycle are not silently dropped.
+		this.reportedMetricKeys.clear()
 		if (this.areCallbackAttached) {
 			return
 		}
@@ -136,19 +125,19 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 
 		if (this._config.cls !== false) {
 			onCLS((metric) => {
-				void this.reportMetric('cls', metric)
+				void this.reportMetric({ metric, name: 'cls' })
 			}, this.getAttributionOptions(this._config.cls))
 		}
 
 		if (this._config.lcp !== false) {
 			onLCP((metric) => {
-				void this.reportMetric('lcp', metric)
+				void this.reportMetric({ metric, name: 'lcp' })
 			}, this.getAttributionOptions(this._config.lcp))
 		}
 
 		if (this._config.inp !== false) {
 			onINP((metric) => {
-				void this.reportMetric('inp', metric)
+				void this.reportMetric({ metric, name: 'inp' })
 			}, this.getINPOptions())
 		}
 	}
@@ -174,20 +163,18 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 
 	private getINPOptions(): INPAttributionReportOpts {
 		const options = this.getAttributionOptions(this._config.inp) as INPAttributionReportOpts
-		if (typeof this._config.inp === 'object') {
-			options.includeProcessedEventEntries = this._config.inp.includeProcessedEventEntries ?? false
-			return options
-		}
-
-		options.includeProcessedEventEntries = false
+		const userValue =
+			typeof this._config.inp === 'object' ? this._config.inp.includeProcessedEventEntries : undefined
+		options.includeProcessedEventEntries = userValue ?? false
 		return options
 	}
 
-	private async reportMetric(name: WebVitalName, metric: WebVitalMetricWithAttribution): Promise<void> {
+	private async reportMetric(report: WebVitalReport): Promise<void> {
 		if (!this.isRecording) {
 			return
 		}
 
+		const { metric, name } = report
 		const value = metric.value
 		if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
 			return
@@ -232,24 +219,24 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 		setStringAttribute(span, 'webvitals.metric_id', metric.id)
 		setNumberAttribute(span, 'webvitals.delta', metric.delta)
 		setStringAttribute(span, 'webvitals.navigation_type', metric.navigationType)
-		this.setAttributionAttributes(span, name, metric)
+		this.setAttributionAttributes(span, report)
 		span.end(endTime)
 	}
 
-	private setAttributionAttributes(span: Span, name: WebVitalName, metric: WebVitalMetricWithAttribution): void {
+	private setAttributionAttributes(span: Span, report: WebVitalReport): void {
 		const attributionContext = this.getAttributionContext()
 
-		switch (name) {
+		switch (report.name) {
 			case 'cls': {
-				setCLSAttributionAttributes(span, metric as CLSMetricWithAttribution, attributionContext)
+				setCLSAttributionAttributes(span, report.metric, attributionContext)
 				return
 			}
 			case 'inp': {
-				setINPAttributionAttributes(span, metric as INPMetricWithAttribution, attributionContext)
+				setINPAttributionAttributes(span, report.metric, attributionContext)
 				return
 			}
 			case 'lcp': {
-				setLCPAttributionAttributes(span, metric as LCPMetricWithAttribution, attributionContext)
+				setLCPAttributionAttributes(span, report.metric, attributionContext)
 				return
 			}
 		}

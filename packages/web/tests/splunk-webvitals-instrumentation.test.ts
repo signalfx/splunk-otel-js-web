@@ -27,7 +27,7 @@ import {
 	getWebVitalMetricReportKey,
 	sanitizeLCPUrl,
 	shouldExportWebVitalsTarget,
-} from '../src/instrumentations/splunk-webvitals-instrumentation'
+} from '../src/instrumentations/webvitals'
 
 describe('webvitals attribution helpers', () => {
 	afterEach(() => {

@@ -28,7 +28,7 @@ export function generateSafeWebVitalsTarget(node: Node | null): string | undefin
 	let current: Element | null = node as Element
 
 	while (current && current.nodeType === Node.ELEMENT_NODE && parts.length < MAX_SAFE_TARGET_DEPTH) {
-		const part = getSafeElementSelectorPart(current)
+		const { hasRole, part } = getSafeElementSelectorPart(current)
 		// Stop appending to the chain once adding `part` would exceed the
 		// length budget; keep what we already accumulated to ensure the
 		// returned value remains a syntactically valid selector. The leaf
@@ -45,7 +45,7 @@ export function generateSafeWebVitalsTarget(node: Node | null): string | undefin
 		// Once we have reached an element bearing a (safe) ARIA role, stop
 		// walking further up the tree: the role is a stable landmark and
 		// extending the chain rarely adds diagnostic value.
-		if (part.includes('[role=')) {
+		if (hasRole) {
 			break
 		}
 
@@ -55,13 +55,14 @@ export function generateSafeWebVitalsTarget(node: Node | null): string | undefin
 	return parts.join('>')
 }
 
-function getSafeElementSelectorPart(element: Element): string {
+function getSafeElementSelectorPart(element: Element): { hasRole: boolean; part: string } {
 	const tagName = element.tagName.toLowerCase()
 	const role = element.getAttribute('role')
-	const roleSelector = role && isSafeRole(role) ? `[role=${role}]` : ''
+	const hasRole = role !== null && isSafeRole(role)
+	const roleSelector = hasRole ? `[role=${role}]` : ''
 	const nthOfType = getNthOfType(element)
 
-	return `${tagName}${roleSelector}${nthOfType}`
+	return { hasRole, part: `${tagName}${roleSelector}${nthOfType}` }
 }
 
 function isSafeRole(role: string): boolean {

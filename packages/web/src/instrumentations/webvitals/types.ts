@@ -31,6 +31,11 @@ export type WebVitalMetricWithAttribution =
 	| INPMetricWithAttribution
 	| LCPMetricWithAttribution
 
+export type WebVitalReport =
+	| { metric: CLSMetricWithAttribution; name: 'cls' }
+	| { metric: INPMetricWithAttribution; name: 'inp' }
+	| { metric: LCPMetricWithAttribution; name: 'lcp' }
+
 /**
  * Controls how element selectors are emitted on web vitals attribution attributes
  * (e.g. `cls.largest_shift_target`, `inp.interaction_target`, `lcp.target`).
