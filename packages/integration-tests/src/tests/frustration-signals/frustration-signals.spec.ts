@@ -57,16 +57,15 @@ test.describe('Frustration signals', () => {
 			await recordPage.goTo('/frustration-signals/rage-click.ejs')
 			await makeClicks(recordPage)
 
-			await recordPage.waitForSpans((spans) =>
-				spans.some(
-					(span) =>
-						span.name === 'frustration' &&
-						span.tags['frustration_type'] === 'rage' &&
-						span.tags['interaction_type'] === 'click' &&
-						span.tags['target_xpath'] === '//html/body/h1',
-				),
+			await recordPage.waitForSpans(
+				(spans) =>
+					spans.filter(
+						(span) =>
+							span.name === 'frustration' &&
+							span.tags['frustration_type'] === 'rage' &&
+							span.tags['interaction_type'] === 'click',
+					).length === 2 && spans.filter((span) => span.name === 'click').length === 8,
 			)
-			await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'click').length === 8)
 
 			const rageClickSpans = recordPage.receivedSpans.filter(
 				(span) =>

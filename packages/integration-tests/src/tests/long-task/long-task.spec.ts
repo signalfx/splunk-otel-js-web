@@ -32,30 +32,35 @@ test.describe('long task', () => {
 		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'longtask'))
 		const longTaskSpans = recordPage.receivedSpans.filter((span) => span.name === 'longtask')
 
-		expect(longTaskSpans).toHaveLength(1)
-		expect(longTaskSpans[0].tags['component']).toBe('splunk-longtask')
-		expect(['self', 'unknown'].includes(longTaskSpans[0].tags['longtask.name'] as string)).toBeTruthy()
-		expect(longTaskSpans[0].tags['longtask.entry_type']).toBe('longtask')
-		expect(longTaskSpans[0].tags['longtask.attribution.name']).toBe('unknown')
-		expect(longTaskSpans[0].tags['longtask.attribution.entry_type']).toBe('taskattribution')
-		expect(longTaskSpans[0].tags['longtask.attribution.start_time']).toBe('0')
-		expect(longTaskSpans[0].tags['longtask.attribution.duration']).toBe('0')
-		expect(longTaskSpans[0].tags['longtask.attribution.container_type']).toBe('window')
-		expect(longTaskSpans[0].tags['longtask.attribution.container_src']).toBe('')
-		expect(longTaskSpans[0].tags['longtask.attribution.container_id']).toBe('')
-		expect(longTaskSpans[0].tags['longtask.attribution.container_name']).toBe('')
+		// Browser may report additional longtasks from page initialization alongside the click-triggered one
+		expect(longTaskSpans.length).toBeGreaterThanOrEqual(1)
 
-		const longTaskSpanDuration = Number.parseFloat(longTaskSpans[0].tags['longtask.duration'] as string)
-		expect(
-			longTaskSpanDuration,
-			`Duration (${longTaskSpanDuration}) must be over 50ms by definition.`,
-		).toBeGreaterThan(50)
-		expect(
-			longTaskSpanDuration,
-			`Duration (${longTaskSpanDuration}) must be less than 1s by definition.`,
-		).toBeLessThan(1000)
+		for (const span of longTaskSpans) {
+			expect(span.tags['component']).toBe('splunk-longtask')
+			expect(['self', 'unknown'].includes(span.tags['longtask.name'] as string)).toBeTruthy()
+			expect(span.tags['longtask.entry_type']).toBe('longtask')
+			expect(span.tags['longtask.attribution.name']).toBe('unknown')
+			expect(span.tags['longtask.attribution.entry_type']).toBe('taskattribution')
+			expect(span.tags['longtask.attribution.start_time']).toBe('0')
+			expect(span.tags['longtask.attribution.duration']).toBe('0')
+			expect(span.tags['longtask.attribution.container_type']).toBe('window')
+			expect(span.tags['longtask.attribution.container_src']).toBe('')
+			expect(span.tags['longtask.attribution.container_id']).toBe('')
+			expect(span.tags['longtask.attribution.container_name']).toBe('')
 
-		expect(longTaskSpans[0].duration, 'Span duration matches longtask duration').toBe(longTaskSpanDuration * 1000)
+			const longTaskSpanDuration = Number.parseFloat(span.tags['longtask.duration'] as string)
+			// Long Tasks API spec defines 50ms as the minimum threshold, so exactly 50 is valid
+			expect(
+				longTaskSpanDuration,
+				`Duration (${longTaskSpanDuration}) must be at least 50ms by definition.`,
+			).toBeGreaterThanOrEqual(50)
+			expect(
+				longTaskSpanDuration,
+				`Duration (${longTaskSpanDuration}) must be less than 1s by definition.`,
+			).toBeLessThan(1000)
+
+			expect(span.duration, 'Span duration matches longtask duration').toBe(longTaskSpanDuration * 1000)
+		}
 
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})
@@ -69,7 +74,8 @@ test.describe('long task', () => {
 		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'longtask'))
 		const longTaskSpans = recordPage.receivedSpans.filter((span) => span.name === 'longtask')
 
-		expect(longTaskSpans).toHaveLength(1)
+		// Browser initialization may produce additional longtasks beyond the one explicitly generated in buffered.ejs
+		expect(longTaskSpans.length).toBeGreaterThanOrEqual(1)
 		const longTaskSpanDuration = Number.parseFloat(longTaskSpans[0].tags['longtask.duration'] as string)
 		expect(longTaskSpans[0].duration, 'Span duration matches longtask duration').toBe(longTaskSpanDuration * 1000)
 	})

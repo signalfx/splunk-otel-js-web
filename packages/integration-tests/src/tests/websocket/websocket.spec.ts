@@ -51,7 +51,9 @@ test.describe('websockets', () => {
 		await recordPage.locator('#connectWs').click()
 		await recordPage.locator('#sendWs').click()
 
-		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'send'))
+		await recordPage.waitForSpans(
+			(spans) => spans.some((span) => span.name === 'send') && spans.some((span) => span.name === 'onmessage'),
+		)
 		const connectSpans = recordPage.receivedSpans.filter((span) => span.name === 'connect')
 		const messageSpans = recordPage.receivedSpans.filter((span) => span.name === 'onmessage')
 		const sendSpans = recordPage.receivedSpans.filter((span) => span.name === 'send')
