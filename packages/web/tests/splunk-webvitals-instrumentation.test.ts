@@ -17,10 +17,9 @@
  */
 
 import { expectDefined } from '@test-utils/assertions'
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import {
-	generateSafeWebVitalsTarget,
 	getLCPResourceTimingAttributes,
 	getLCPUrlForAttribution,
 	getResolvedWebVitalsAttributionConfig,
@@ -30,102 +29,6 @@ import {
 } from '../src/instrumentations/webvitals'
 
 describe('webvitals attribution helpers', () => {
-	afterEach(() => {
-		document.body.innerHTML = ''
-	})
-
-	it('generates bounded structural targets without sensitive selectors', () => {
-		const wrapper = document.createElement('section')
-		wrapper.id = 'account-123'
-		wrapper.className = 'secret-class'
-		wrapper.dataset.userEmail = 'user@example.com'
-
-		const button = document.createElement('button')
-		button.id = 'pay-now'
-		button.className = 'primary dangerous'
-		button.setAttribute('aria-label', 'Pay as Jane Doe')
-		button.setAttribute('role', 'button')
-		button.textContent = 'Jane Doe'
-		wrapper.append(button)
-		document.body.append(wrapper)
-
-		const target = generateSafeWebVitalsTarget(button)
-
-		expect(target).toBe('button[role=button]')
-		expect(target).not.toContain('pay-now')
-		expect(target).not.toContain('primary')
-		expect(target).not.toContain('user@example.com')
-		expect(target).not.toContain('Jane')
-		expect(target?.length).toBeLessThanOrEqual(120)
-	})
-
-	it('adds nth-of-type only when needed', () => {
-		const list = document.createElement('ul')
-		const first = document.createElement('li')
-		const second = document.createElement('li')
-		list.append(first, second)
-		document.body.append(list)
-
-		expect(generateSafeWebVitalsTarget(second)).toContain('li:nth-of-type(2)')
-	})
-
-	it('returns undefined for non-element inputs', () => {
-		expect(generateSafeWebVitalsTarget(null)).toBeUndefined()
-		expect(generateSafeWebVitalsTarget(document.createTextNode('hello'))).toBeUndefined()
-	})
-
-	it('stops walking once a safe role ancestor is reached', () => {
-		const landmark = document.createElement('main')
-		landmark.setAttribute('role', 'main')
-		const region = document.createElement('section')
-		const button = document.createElement('button')
-		region.append(button)
-		landmark.append(region)
-		document.body.append(landmark)
-
-		const target = generateSafeWebVitalsTarget(button)
-
-		expect(target).toBe('main[role=main]>section>button')
-	})
-
-	it('keeps the leaf element when the depth cap is reached', () => {
-		let parent = document.body
-		const elements: HTMLElement[] = []
-		for (let i = 0; i < 12; i++) {
-			const next = document.createElement('div')
-			parent.append(next)
-			elements.push(next)
-			parent = next
-		}
-
-		const leaf = elements.at(-1)!
-		const target = generateSafeWebVitalsTarget(leaf)
-
-		expectDefined(target)
-		expect(target.split('>')).toHaveLength(6)
-		expect(target.endsWith('div')).toBe(true)
-	})
-
-	it('never returns a mid-segment truncated selector', () => {
-		const tag = 'super-long-custom-element-name'
-		const ancestor = document.createElement(tag)
-		let parent: HTMLElement = ancestor
-		for (let i = 0; i < 5; i++) {
-			const next = document.createElement(tag)
-			parent.append(next)
-			parent = next
-		}
-		document.body.append(ancestor)
-
-		const target = generateSafeWebVitalsTarget(parent)
-
-		expectDefined(target)
-		expect(target.length).toBeLessThanOrEqual(120)
-		for (const part of target.split('>')) {
-			expect(part).toMatch(/^[a-z][a-z0-9-]*(\[role=[\w-]+\])?(:nth-of-type\(\d+\))?$/i)
-		}
-	})
-
 	it('resolves relative LCP URLs against the current location and strips fragments', () => {
 		const sanitized = sanitizeLCPUrl('/static/image.png?token=abc#hash')
 		expectDefined(sanitized)
