@@ -16,7 +16,6 @@
  *
  */
 
-import { expectDefined } from '@test-utils/assertions'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { generateSafeWebVitalsTarget } from './safe-target'
@@ -107,7 +106,10 @@ describe('generateSafeWebVitalsTarget', () => {
 		const leaf = elements.at(-1)!
 		const target = generateSafeWebVitalsTarget(leaf)
 
-		expectDefined(target)
+		if (target === undefined) {
+			throw new Error('Expected a safe target')
+		}
+
 		expect(target.split('>')).toHaveLength(6)
 		expect(target.endsWith('div')).toBe(true)
 	})
@@ -125,7 +127,10 @@ describe('generateSafeWebVitalsTarget', () => {
 
 		const target = generateSafeWebVitalsTarget(parent)
 
-		expectDefined(target)
+		if (target === undefined) {
+			throw new Error('Expected a safe target')
+		}
+
 		expect(target.length).toBeLessThanOrEqual(120)
 		for (const part of target.split('>')) {
 			expect(part).toMatch(/^[a-z][a-z0-9-]*(\[role=[\w-]+\])?(:nth-of-type\(\d+\))?$/i)
