@@ -57,6 +57,7 @@ test.describe('docload', () => {
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'documentLoad').length === 1)
 		const docLoadSpans = recordPage.receivedSpans.filter((span) => span.name === 'documentLoad')
 		const docFetchSpans = recordPage.receivedSpans.filter((span) => span.name === 'documentFetch')
+
 		const scriptFetchSpans = recordPage.receivedSpans.filter(
 			(span) =>
 				span.name === 'resourceFetch' &&
@@ -129,10 +130,16 @@ test.describe('docload', () => {
 			'Checking sanity of screen.xy',
 		).toBeTruthy()
 
-		timesMakeSense(docLoadSpans[0].annotations, 'domContentLoadedEventStart', 'domContentLoadedEventEnd')
+		if (browserName !== 'webkit') {
+			// WebKit reports domInteractive, domContentLoadedEventStart/End, and domComplete as 0
+			// in PerformanceNavigationTiming, so the OTel SDK skips adding them as span events
+			// (they appear before fetchStart, failing the perfTime >= refTime check).
+			timesMakeSense(docLoadSpans[0].annotations, 'domContentLoadedEventStart', 'domContentLoadedEventEnd')
+			timesMakeSense(docLoadSpans[0].annotations, 'fetchStart', 'domInteractive')
+			timesMakeSense(docLoadSpans[0].annotations, 'fetchStart', 'domComplete')
+		}
+
 		timesMakeSense(docLoadSpans[0].annotations, 'loadEventStart', 'loadEventEnd')
-		timesMakeSense(docLoadSpans[0].annotations, 'fetchStart', 'domInteractive')
-		timesMakeSense(docLoadSpans[0].annotations, 'fetchStart', 'domComplete')
 
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})
