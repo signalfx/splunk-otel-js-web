@@ -16,11 +16,25 @@
  *
  */
 
-import { HrTime } from '@opentelemetry/api'
+import { Attributes, HrTime } from '@opentelemetry/api'
 import { addHrTimes, hrTimeToMilliseconds, millisToHrTime } from '@opentelemetry/core'
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base'
-import { Metric, onCLS, onINP, onLCP, ReportOpts } from 'web-vitals'
+import {
+	CLSMetricWithAttribution,
+	FCPMetricWithAttribution,
+	INPMetricWithAttribution,
+	LCPMetricWithAttribution,
+	Metric,
+	MetricWithAttribution,
+	onCLS,
+	onFCP,
+	onINP,
+	onLCP,
+	onTTFB,
+	ReportOpts,
+	TTFBMetricWithAttribution,
+} from 'web-vitals/attribution'
 
 import { SessionManager } from '../managers'
 import { SplunkOtelWebConfig } from '../types'
@@ -29,6 +43,41 @@ import { VERSION } from '../version'
 const MODULE_NAME = 'splunk-webvitals'
 
 export interface SplunkWebVitalsInstrumentationConfig extends InstrumentationConfig {
+	/**
+	 * Experimental: when enabled, web vitals spans gain attribution attributes
+	 * describing the cause of the metric value (e.g., target element selector
+	 * for LCP/CLS, timing breakdowns for INP) plus common `webvitals.*` attributes
+	 * (name, rating, navigation type) on every web vitals span.
+	 *
+	 * Expected to become the default in a future minor release; the option
+	 * will then be deprecated.
+	 *
+	 * @default false
+	 * @experimental
+	 */
+	_experimental_attribution?: boolean
+	/**
+	 * Experimental: when set, First Contentful Paint (FCP) is reported as a
+	 * `webvitals` span. Pass `true` (or a `ReportOpts` object) to enable.
+	 *
+	 * Expected to become the default in a future minor release; the option
+	 * will then be renamed to `fcp` (mirroring the `cls`/`inp`/`lcp` shape).
+	 *
+	 * @default false
+	 * @experimental
+	 */
+	_experimental_fcp?: boolean | ReportOpts
+	/**
+	 * Experimental: when set, Time to First Byte (TTFB) is reported as a
+	 * `webvitals` span. Pass `true` (or a `ReportOpts` object) to enable.
+	 *
+	 * Expected to become the default in a future minor release; the option
+	 * will then be renamed to `ttfb` (mirroring the `cls`/`inp`/`lcp` shape).
+	 *
+	 * @default false
+	 * @experimental
+	 */
+	_experimental_ttfb?: boolean | ReportOpts
 	/**
 	 * If true, the webvitals spans will have their start time aligned with the document load span,
 	 * and will inherit the URL attributes from the document load span if available.
@@ -112,11 +161,29 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 				typeof this._config.inp === 'object' ? this._config.inp : undefined,
 			)
 		}
+
+		if (this._config._experimental_fcp) {
+			onFCP(
+				(metric) => {
+					void this.reportMetric('fcp', metric)
+				},
+				typeof this._config._experimental_fcp === 'object' ? this._config._experimental_fcp : undefined,
+			)
+		}
+
+		if (this._config._experimental_ttfb) {
+			onTTFB(
+				(metric) => {
+					void this.reportMetric('ttfb', metric)
+				},
+				typeof this._config._experimental_ttfb === 'object' ? this._config._experimental_ttfb : undefined,
+			)
+		}
 	}
 
 	init(): void {}
 
-	private async reportMetric(name: string, metric: Metric): Promise<void> {
+	private async reportMetric(name: string, metric: MetricWithAttribution): Promise<void> {
 		if (!this.isRecording) {
 			return
 		}
@@ -161,10 +228,100 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 		}
 
 		span.setAttribute(name, value)
+		if (this._config._experimental_attribution) {
+			span.setAttributes(buildCommonAttributes(metric))
+			span.setAttributes(buildAttributionAttributes(name, metric))
+		}
+
 		span.end(endTime)
 	}
 
 	private shouldAlignWithDocumentLoad(): boolean {
 		return this._config.alignWebVitalsSpansWithDocumentLoad ?? true
+	}
+}
+
+function buildCommonAttributes(metric: Metric): Attributes {
+	return {
+		'webvitals.name': metric.name,
+		'webvitals.navigation_type': metric.navigationType,
+		'webvitals.rating': metric.rating,
+	}
+}
+
+function buildAttributionAttributes(name: string, metric: MetricWithAttribution): Attributes {
+	switch (name) {
+		case 'lcp': {
+			return buildLcpAttributes(metric as LCPMetricWithAttribution)
+		}
+		case 'cls': {
+			return buildClsAttributes(metric as CLSMetricWithAttribution)
+		}
+		case 'inp': {
+			return buildInpAttributes(metric as INPMetricWithAttribution)
+		}
+		case 'fcp': {
+			return buildFcpAttributes(metric as FCPMetricWithAttribution)
+		}
+		case 'ttfb': {
+			return buildTtfbAttributes(metric as TTFBMetricWithAttribution)
+		}
+		default: {
+			return {}
+		}
+	}
+}
+
+function buildLcpAttributes(metric: LCPMetricWithAttribution): Attributes {
+	const a = metric.attribution
+	return {
+		'lcp.element_render_delay': a.elementRenderDelay,
+		'lcp.resource_load_delay': a.resourceLoadDelay,
+		'lcp.resource_load_duration': a.resourceLoadDuration,
+		'lcp.target': a.target ?? '',
+		'lcp.time_to_first_byte': a.timeToFirstByte,
+		'lcp.url': a.url ?? '',
+	}
+}
+
+function buildClsAttributes(metric: CLSMetricWithAttribution): Attributes {
+	const a = metric.attribution
+	return {
+		'cls.largest_shift_target': a.largestShiftTarget ?? '',
+		'cls.largest_shift_time': a.largestShiftTime ?? 0,
+		'cls.largest_shift_value': a.largestShiftValue ?? 0,
+		'cls.load_state': a.loadState ?? '',
+	}
+}
+
+function buildInpAttributes(metric: INPMetricWithAttribution): Attributes {
+	const a = metric.attribution
+	return {
+		'inp.input_delay': a.inputDelay,
+		'inp.interaction_target': a.interactionTarget ?? '',
+		'inp.interaction_type': a.interactionType ?? '',
+		'inp.load_state': a.loadState ?? '',
+		'inp.presentation_delay': a.presentationDelay,
+		'inp.processing_duration': a.processingDuration,
+	}
+}
+
+function buildFcpAttributes(metric: FCPMetricWithAttribution): Attributes {
+	const a = metric.attribution
+	return {
+		'fcp.first_byte_to_fcp': a.firstByteToFCP,
+		'fcp.load_state': a.loadState ?? '',
+		'fcp.time_to_first_byte': a.timeToFirstByte,
+	}
+}
+
+function buildTtfbAttributes(metric: TTFBMetricWithAttribution): Attributes {
+	const a = metric.attribution
+	return {
+		'ttfb.cache_duration': a.cacheDuration,
+		'ttfb.connection_duration': a.connectionDuration,
+		'ttfb.dns_duration': a.dnsDuration,
+		'ttfb.request_duration': a.requestDuration,
+		'ttfb.waiting_duration': a.waitingDuration,
 	}
 }
