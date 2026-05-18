@@ -151,9 +151,10 @@ pnpm dev
 
 `pnpm dev` serves a local playground for `@splunk/otel-web` at `http://localhost:3030` for manual testing against a real Splunk realm or a local OTel collector. The pages live in [`packages/web/dev/`](./packages/web/dev) and are served by `webpack-dev-server` alongside the freshly-built SDK bundles.
 
-The sandbox has two pages, switchable from the header nav:
+The sandbox has three pages, switchable from the header nav:
 
 - **RUM** (`index.html`) — exercise tracked fetch/XHR, history navigations, errors, custom spans, long tasks, and global attributes.
+- **Web Vitals** (`web-vitals.html`) — reload a focused LCP fixture page and inspect default web vitals attribution.
 - **Session Replay** (`replay.html`) — drive the `@splunk/otel-web-session-recorder` against a rich set of DOM/canvas/iframe/video fixtures. Replay requires building the recorder first:
 
     ```bash

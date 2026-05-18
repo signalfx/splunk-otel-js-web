@@ -3,19 +3,21 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Splunk RUM — Dev Sandbox</title>
+		<title>Splunk RUM — Web Vitals Sandbox</title>
 		<link rel="stylesheet" href="sandbox-core.css" />
-		<link rel="stylesheet" href="styles.css" />
+		<link rel="stylesheet" href="web-vitals.css" />
 	</head>
 	<body>
 		<header>
 			<h1>Splunk RUM Dev Sandbox</h1>
 			<nav class="page-nav">
-				<a href="index.html" class="nav-link" aria-current="page">RUM</a>
-				<a href="web-vitals.html" class="nav-link">Web Vitals</a>
+				<a href="index.html" class="nav-link">RUM</a>
+				<a href="web-vitals.html" class="nav-link" aria-current="page">Web Vitals</a>
 				<a href="replay.html" class="nav-link">Session Replay</a>
 			</nav>
-			<button id="btn-config" class="icon-btn" aria-label="Settings" title="Settings">&#9881;</button>
+			<button id="btn-config" class="icon-btn" type="button" aria-label="Settings" title="Settings">
+				&#9881;
+			</button>
 		</header>
 
 		<div id="status-bar">
@@ -83,33 +85,60 @@
 			</div>
 		</div>
 
-		<main>
-			<div class="panel">
-				<h2>Interactions</h2>
-				<div class="btn-group">
-					<button id="btn-fetch">Fetch /api/data (tracked XHR)</button>
-					<button id="btn-xhr">XMLHttpRequest /api/items</button>
-					<button id="btn-navigation">Update history (navigation span)</button>
-					<button id="btn-error" class="danger">Throw unhandled error</button>
-					<button id="btn-report-error" class="danger">SplunkRum.reportError()</button>
-					<button id="btn-custom-span">Create custom span</button>
-					<button id="btn-long-task">Long task (block 300ms)</button>
-					<button id="btn-set-attribute">Set global attribute</button>
-					<button id="btn-recorder-stop">Stop recording</button>
-					<button id="btn-recorder-resume">Resume recording</button>
+		<main class="web-vitals-layout">
+			<section class="lcp-stage" aria-labelledby="lcp-heading">
+				<div class="lcp-stage-header">
+					<div>
+						<h2 id="lcp-heading">LCP Attribution</h2>
+						<p>Reload to capture a fresh LCP attribution span, then inspect it in the console.</p>
+					</div>
+					<button id="btn-reload" class="primary" type="button">Reload page</button>
 				</div>
-			</div>
+				<img
+					id="manual-lcp-candidate"
+					class="lcp-candidate"
+					src="lcp-candidate.svg"
+					alt="Large LCP candidate for web vitals attribution testing"
+					width="1200"
+					height="360"
+					fetchpriority="high"
+					loading="eager"
+					decoding="sync"
+				/>
+			</section>
 
-			<div class="panel">
-				<h2>Console</h2>
+			<section class="details-panel" aria-labelledby="expected-heading">
+				<h2 id="expected-heading">Expected Attributes</h2>
+				<dl class="attribute-list">
+					<div>
+						<dt>span name</dt>
+						<dd>webvitals</dd>
+					</div>
+					<div>
+						<dt>metric</dt>
+						<dd>lcp</dd>
+					</div>
+					<div>
+						<dt>target mode</dt>
+						<dd>safe selector</dd>
+					</div>
+					<div>
+						<dt>lcp.url</dt>
+						<dd>origin + pathname, no query string</dd>
+					</div>
+				</dl>
+			</section>
+
+			<section class="details-panel console-panel" aria-labelledby="console-heading">
+				<h2 id="console-heading">Console</h2>
 				<div id="log"></div>
-			</div>
+			</section>
 		</main>
 
 		<!-- Locally-built SDK served by webpack-dev-server -->
 		<script src="dev-presets.js"></script>
 		<script defer src="splunk-otel-web.js"></script>
 		<script defer src="splunk-otel-web-session-recorder.js"></script>
-		<script type="module" src="app.js"></script>
+		<script type="module" src="web-vitals.js"></script>
 	</body>
 </html>

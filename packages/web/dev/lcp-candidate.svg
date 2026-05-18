@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
+	<title id="title">LCP candidate</title>
+	<desc id="desc">Large same-origin image for manual web vitals attribution testing.</desc>
+	<rect width="1200" height="360" fill="#0f172a"/>
+	<rect x="32" y="32" width="1136" height="296" rx="10" fill="#16213a" stroke="#2f81f7" stroke-width="3"/>
+	<rect x="72" y="76" width="220" height="28" rx="4" fill="#58a6ff"/>
+	<rect x="72" y="128" width="640" height="34" rx="4" fill="#e6edf3"/>
+	<rect x="72" y="184" width="520" height="22" rx="4" fill="#8b949e"/>
+	<rect x="72" y="224" width="420" height="22" rx="4" fill="#8b949e"/>
+	<circle cx="980" cy="180" r="92" fill="#3fb950"/>
+	<path d="M942 181l26 26 54-62" fill="none" stroke="#ffffff" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+	<text x="72" y="294" fill="#58a6ff" font-family="Arial, sans-serif" font-size="24" font-weight="700">manual LCP attribution fixture</text>
+</svg>

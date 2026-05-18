@@ -1,0 +1,140 @@
+/*
+ * Copyright 2020-2026 Splunk Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License").
+ * Web Vitals sandbox page layout.
+ */
+
+.web-vitals-layout {
+	flex: 1;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 360px;
+	grid-template-rows: auto minmax(220px, 1fr);
+	gap: var(--space-xl);
+	padding: var(--space-xl);
+	background: var(--color-bg-body);
+}
+
+.lcp-stage,
+.details-panel {
+	border: 1px solid var(--color-border-default);
+	border-radius: var(--radius-md);
+	background: var(--color-bg-surface);
+}
+
+.lcp-stage {
+	grid-row: 1 / -1;
+	display: flex;
+	flex-direction: column;
+	min-block-size: 480px;
+	min-inline-size: 0;
+	overflow: hidden;
+}
+
+.lcp-stage-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-lg);
+	padding: var(--space-lg) var(--space-xl);
+	border-block-end: 1px solid var(--color-border-muted);
+
+	& h2 {
+		margin-block-end: var(--space-xs);
+		font-size: var(--text-base);
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--color-text-secondary);
+	}
+
+	& p {
+		color: var(--color-text-secondary);
+		font-size: var(--text-sm);
+		line-height: 1.5;
+	}
+}
+
+.lcp-candidate {
+	display: block;
+	inline-size: 100%;
+	block-size: 100%;
+	object-fit: contain;
+	background: var(--color-bg-inset);
+}
+
+.details-panel {
+	padding: var(--space-xl);
+
+	& h2 {
+		margin-block-end: var(--space-lg);
+		font-size: var(--text-base);
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--color-text-secondary);
+	}
+}
+
+.attribute-list {
+	display: grid;
+	gap: var(--space-md);
+
+	& div {
+		display: grid;
+		gap: var(--space-xs);
+		padding-block-end: var(--space-md);
+		border-block-end: 1px solid var(--color-border-muted);
+	}
+
+	& div:last-child {
+		padding-block-end: 0;
+		border-block-end: none;
+	}
+
+	& dt {
+		color: var(--color-text-secondary);
+		font-size: var(--text-xs);
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+	}
+
+	& dd {
+		color: var(--color-text-primary);
+		font-family: var(--font-mono);
+		font-size: var(--text-sm);
+	}
+}
+
+.console-panel {
+	display: flex;
+	flex-direction: column;
+	min-block-size: 0;
+}
+
+#log {
+	flex: 1;
+	min-block-size: 180px;
+}
+
+@media (max-width: 1000px) {
+	.web-vitals-layout {
+		grid-template-columns: 1fr;
+		grid-template-rows: auto;
+	}
+
+	.lcp-stage {
+		grid-row: auto;
+	}
+}
+
+@media (max-width: 640px) {
+	.web-vitals-layout {
+		padding: var(--space-md);
+	}
+
+	.lcp-stage-header {
+		align-items: stretch;
+		flex-direction: column;
+	}
+}
