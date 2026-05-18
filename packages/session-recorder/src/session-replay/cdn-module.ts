@@ -25,6 +25,7 @@ export {
 	type SensitivityRule,
 	type SensitivityRuleType,
 	SessionReplay,
+	type SessionReplayBinarySegment,
 	type SessionReplayConfig,
 	type SessionReplayPlainSegment,
 	type Stats,
