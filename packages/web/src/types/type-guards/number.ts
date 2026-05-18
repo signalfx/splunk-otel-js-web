@@ -15,5 +15,5 @@
  * limitations under the License.
  *
  */
-export const isNumber = (val: unknown): val is number => typeof val === 'number'
-export const isFiniteNumber = (val: unknown): val is number => typeof val === 'number' && Number.isFinite(val)
+export const isNumber = (val?: unknown): val is number => typeof val === 'number'
+export const isFiniteNumber = (val?: unknown): val is number => typeof val === 'number' && Number.isFinite(val)

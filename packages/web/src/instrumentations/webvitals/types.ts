@@ -118,8 +118,9 @@ export interface SplunkWebVitalsInstrumentationConfig extends InstrumentationCon
 
 	/**
 	 * Enable CLS collection. Pass an object to forward `web-vitals`
-	 * {@link AttributionReportOpts} (e.g. `reportAllChanges`). When `target: 'safe'`
-	 * is in effect, `generateTarget` is set by this instrumentation and any caller-provided
+	 * {@link AttributionReportOpts} (e.g. `reportAllChanges`). When
+	 * `_experimental_attribution` is enabled and `target: 'safe'` is in effect,
+	 * `generateTarget` is set by this instrumentation and any caller-provided
 	 * `generateTarget` is ignored.
 	 * @default true
 	 */
