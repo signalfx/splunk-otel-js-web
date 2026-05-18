@@ -18,7 +18,7 @@
 
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { generateSafeWebVitalsTarget } from './safe-target'
+import { generateSafeWebVitalsTarget, getWebVitalsTargetForAttribution } from './safe-target'
 
 describe('generateSafeWebVitalsTarget', () => {
 	afterEach(() => {
@@ -135,5 +135,22 @@ describe('generateSafeWebVitalsTarget', () => {
 		for (const part of target.split('>')) {
 			expect(part).toMatch(/^[a-z][a-z0-9-]*(\[role=[\w-]+\])?(:nth-of-type\(\d+\))?$/i)
 		}
+	})
+
+	it('drops raw fallback selectors when safe attribution is configured', () => {
+		expect(getWebVitalsTargetForAttribution('main>button')).toBe('main>button')
+		expect(getWebVitalsTargetForAttribution('button[role=button]:nth-of-type(2)')).toBe(
+			'button[role=button]:nth-of-type(2)',
+		)
+
+		expect(getWebVitalsTargetForAttribution('#account-123')).toBeUndefined()
+		expect(getWebVitalsTargetForAttribution('main>#account-123')).toBeUndefined()
+		expect(getWebVitalsTargetForAttribution('button.primary')).toBeUndefined()
+		expect(getWebVitalsTargetForAttribution('button[aria-label=Jane]')).toBeUndefined()
+	})
+
+	it('passes through or drops targets according to explicit attribution policy', () => {
+		expect(getWebVitalsTargetForAttribution('#account-123', { target: 'raw' })).toBe('#account-123')
+		expect(getWebVitalsTargetForAttribution('button', { target: 'off' })).toBeUndefined()
 	})
 })

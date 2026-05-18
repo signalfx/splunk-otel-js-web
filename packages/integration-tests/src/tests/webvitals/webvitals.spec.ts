@@ -44,9 +44,15 @@ const ATTRIBUTION_TAGS = [
 	'inp.interaction_time',
 	'inp.interaction_type',
 	'inp.load_state',
+	'inp.longest_script_intersecting_duration',
+	'inp.longest_script_subpart',
 	'inp.next_paint_time',
 	'inp.presentation_delay',
 	'inp.processing_duration',
+	'inp.total_paint_duration',
+	'inp.total_script_duration',
+	'inp.total_style_and_layout_duration',
+	'inp.total_unattributed_duration',
 	'lcp.element_render_delay',
 	'lcp.resource_load_delay',
 	'lcp.resource_load_duration',
@@ -62,6 +68,8 @@ const ATTRIBUTION_TAGS = [
 	'ttfb.request_duration',
 	'ttfb.waiting_duration',
 ] as const
+
+const SHARED_WEBVITALS_TAGS = ['webvitals.delta', 'webvitals.metric_id', 'webvitals.navigation_type'] as const
 
 const expectNumericTag = (tags: Record<string, unknown>, name: string): void => {
 	expect(tags[name]).toBeDefined()
@@ -81,6 +89,16 @@ const expectNoAttributionTags = (tags: Record<string, unknown>): void => {
 	for (const name of ATTRIBUTION_TAGS) {
 		expect(tags[name], `${name} should not be emitted`).toBeUndefined()
 	}
+
+	for (const name of SHARED_WEBVITALS_TAGS) {
+		expect(tags[name], `${name} should not be emitted`).toBeUndefined()
+	}
+}
+
+const expectSharedWebVitalsTags = (tags: Record<string, unknown>): void => {
+	expectStringTag(tags, 'webvitals.metric_id')
+	expectNumericTag(tags, 'webvitals.delta')
+	expectStringTag(tags, 'webvitals.navigation_type')
 }
 
 const expectSafeTarget = (target: unknown): void => {
@@ -127,9 +145,6 @@ function expectSingleMetricSpan(recordPage: RecordPage, name: string) {
 	expectDefined(span)
 	expect(span.name).toBe('webvitals')
 	expectNumericTag(span.tags, name)
-	expectStringTag(span.tags, 'webvitals.metric_id')
-	expectNumericTag(span.tags, 'webvitals.delta')
-	expectStringTag(span.tags, 'webvitals.navigation_type')
 	return span
 }
 
@@ -166,6 +181,7 @@ test.describe('web vitals', () => {
 
 		const lcp = expectSingleMetricSpan(recordPage, 'lcp')
 		expectNoLegacyAttributionTags(lcp.tags)
+		expectSharedWebVitalsTags(lcp.tags)
 		expectSafeTarget(lcp.tags['lcp.target'])
 		expectNumericTag(lcp.tags, 'lcp.time_to_first_byte')
 		expectNumericTag(lcp.tags, 'lcp.resource_load_delay')
@@ -174,6 +190,7 @@ test.describe('web vitals', () => {
 
 		const cls = expectSingleMetricSpan(recordPage, 'cls')
 		expectNoLegacyAttributionTags(cls.tags)
+		expectSharedWebVitalsTags(cls.tags)
 		expectSafeTarget(cls.tags['cls.largest_shift_target'])
 		expectNumericTag(cls.tags, 'cls.largest_shift_time')
 		expectNumericTag(cls.tags, 'cls.largest_shift_value')
@@ -189,6 +206,7 @@ test.describe('web vitals', () => {
 
 		const inp = expectSingleMetricSpan(recordPage, 'inp')
 		expectNoLegacyAttributionTags(inp.tags)
+		expectSharedWebVitalsTags(inp.tags)
 		expectSafeTarget(inp.tags['inp.interaction_target'])
 		expectNumericTag(inp.tags, 'inp.interaction_time')
 		expectStringTag(inp.tags, 'inp.interaction_type')
@@ -232,12 +250,14 @@ test.describe('web vitals', () => {
 
 		const fcp = expectSingleMetricSpan(recordPage, 'fcp')
 		expectNoLegacyAttributionTags(fcp.tags)
+		expectSharedWebVitalsTags(fcp.tags)
 		expectNumericTag(fcp.tags, 'fcp.time_to_first_byte')
 		expectNumericTag(fcp.tags, 'fcp.first_byte_to_fcp')
 		expectStringTag(fcp.tags, 'fcp.load_state')
 
 		const ttfb = expectSingleMetricSpan(recordPage, 'ttfb')
 		expectNoLegacyAttributionTags(ttfb.tags)
+		expectSharedWebVitalsTags(ttfb.tags)
 		expectNumericTag(ttfb.tags, 'ttfb.waiting_duration')
 		expectNumericTag(ttfb.tags, 'ttfb.cache_duration')
 		expectNumericTag(ttfb.tags, 'ttfb.dns_duration')

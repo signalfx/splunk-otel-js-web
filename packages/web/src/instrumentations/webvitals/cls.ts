@@ -29,9 +29,7 @@ export function setCLSAttributionAttributes(
 ): void {
 	const { attribution } = metric
 
-	if (options.shouldExportTarget) {
-		setStringAttribute(span, 'cls.largest_shift_target', attribution.largestShiftTarget)
-	}
+	setStringAttribute(span, 'cls.largest_shift_target', options.getTarget(attribution.largestShiftTarget))
 
 	setNumberAttribute(span, 'cls.largest_shift_time', attribution.largestShiftTime)
 	setNumberAttribute(span, 'cls.largest_shift_value', attribution.largestShiftValue)

@@ -84,9 +84,7 @@ export function setLCPAttributionAttributes(
 ): void {
 	const { attribution } = metric
 
-	if (options.shouldExportTarget) {
-		setStringAttribute(span, 'lcp.target', attribution.target)
-	}
+	setStringAttribute(span, 'lcp.target', options.getTarget(attribution.target))
 
 	setStringAttribute(span, 'lcp.url', options.getLCPUrl(attribution.url))
 	setNumberAttribute(span, 'lcp.time_to_first_byte', attribution.timeToFirstByte)

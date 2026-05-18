@@ -81,7 +81,7 @@ export type WebVitalsAttributionConfig = {
 export interface SplunkWebVitalsInstrumentationConfig extends InstrumentationConfig {
 	/**
 	 * Enable experimental web vitals attribution attributes. When disabled, webvitals spans
-	 * emit only the metric value and shared `webvitals.*` fields.
+	 * emit only the metric value.
 	 * @default false
 	 */
 	_experimental_attribution?: boolean
@@ -148,5 +148,5 @@ export type LayoutShiftRect = {
 
 export type WebVitalsAttributionOptions = {
 	getLCPUrl: (url: string | undefined) => string | undefined
-	shouldExportTarget: boolean
+	getTarget: (target: string | undefined) => string | undefined
 }

@@ -114,7 +114,7 @@ describe('webvitals attribution helpers', () => {
 		})
 	})
 
-	it('emits metric and shared webvitals fields without attribution by default', async () => {
+	it('emits only the metric value without attribution by default', async () => {
 		const { attributes, instrumentation, span } = createWebVitalsInstrumentationMock()
 
 		await reportLCPMetric(instrumentation)
@@ -122,13 +122,10 @@ describe('webvitals attribution helpers', () => {
 		expect(span.end).toHaveBeenCalled()
 		expect(attributes).toEqual({
 			'lcp': 100,
-			'webvitals.delta': 100,
-			'webvitals.metric_id': 'v5-lcp',
-			'webvitals.navigation_type': 'navigate',
 		})
 	})
 
-	it('emits attribution fields when experimental attribution is enabled', async () => {
+	it('emits shared webvitals and attribution fields when experimental attribution is enabled', async () => {
 		const { attributes, instrumentation, span } = createWebVitalsInstrumentationMock({
 			_experimental_attribution: true,
 		})
@@ -148,6 +145,18 @@ describe('webvitals attribution helpers', () => {
 			'webvitals.metric_id': 'v5-lcp',
 			'webvitals.navigation_type': 'navigate',
 		})
+	})
+
+	it('drops raw target fallback selectors when safe attribution is enabled', async () => {
+		const { attributes, instrumentation, span } = createWebVitalsInstrumentationMock({
+			_experimental_attribution: true,
+		})
+
+		await reportLCPMetric(instrumentation, { target: '#private-lcp-id' })
+
+		expect(span.end).toHaveBeenCalled()
+		expect(attributes['lcp']).toBe(100)
+		expect(attributes['lcp.target']).toBeUndefined()
 	})
 })
 
@@ -189,7 +198,10 @@ function createWebVitalsInstrumentationMock(
 	return { attributes, instrumentation, span }
 }
 
-async function reportLCPMetric(instrumentation: TestableWebVitalsInstrumentation): Promise<void> {
+async function reportLCPMetric(
+	instrumentation: TestableWebVitalsInstrumentation,
+	attributionOverrides: Partial<LCPMetricWithAttribution['attribution']> = {},
+): Promise<void> {
 	await instrumentation.reportMetric({
 		metric: {
 			attribution: {
@@ -199,6 +211,7 @@ async function reportLCPMetric(instrumentation: TestableWebVitalsInstrumentation
 				target: 'main>img',
 				timeToFirstByte: 10,
 				url: 'https://example.com/image.png',
+				...attributionOverrides,
 			},
 			delta: 100,
 			id: 'v5-lcp',

@@ -38,6 +38,7 @@ import {
 	getLCPUrlForAttribution,
 	getResolvedWebVitalsAttributionConfig,
 	getWebVitalMetricReportKey,
+	getWebVitalsTargetForAttribution,
 	setCLSAttributionAttributes,
 	setFCPAttributionAttributes,
 	setINPAttributionAttributes,
@@ -45,7 +46,6 @@ import {
 	setNumberAttribute,
 	setStringAttribute,
 	setTTFBAttributionAttributes,
-	shouldExportWebVitalsTarget,
 	SplunkWebVitalsInstrumentationConfig,
 	WebVitalReport,
 	WebVitalsAttributionOptions,
@@ -174,7 +174,7 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 	private getAttributionContext(): WebVitalsAttributionOptions {
 		return {
 			getLCPUrl: (url) => getLCPUrlForAttribution(url, this._config.attribution),
-			shouldExportTarget: shouldExportWebVitalsTarget(this._config.attribution),
+			getTarget: (target) => getWebVitalsTargetForAttribution(target, this._config.attribution),
 		}
 	}
 
@@ -251,10 +251,10 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 		}
 
 		span.setAttribute(name, value)
-		setStringAttribute(span, 'webvitals.metric_id', metric.id)
-		setNumberAttribute(span, 'webvitals.delta', metric.delta)
-		setStringAttribute(span, 'webvitals.navigation_type', metric.navigationType)
 		if (this.shouldExportAttribution()) {
+			setStringAttribute(span, 'webvitals.metric_id', metric.id)
+			setNumberAttribute(span, 'webvitals.delta', metric.delta)
+			setStringAttribute(span, 'webvitals.navigation_type', metric.navigationType)
 			this.setAttributionAttributes(span, report)
 		}
 

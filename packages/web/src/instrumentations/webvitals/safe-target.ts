@@ -16,8 +16,13 @@
  *
  */
 
+import type { WebVitalsAttributionConfig } from './types'
+
+import { getResolvedWebVitalsAttributionConfig } from './attribution-config'
+
 const MAX_SAFE_TARGET_LENGTH = 120
 const MAX_SAFE_TARGET_DEPTH = 6
+const SAFE_TARGET_PART_PATTERN = /^[a-z][a-z0-9-]*(\[role=[a-zA-Z][\w-]*\])?(:nth-of-type\([1-9]\d*\))?$/
 
 export function generateSafeWebVitalsTarget(node: Node | null): string | undefined {
 	if (!node || node.nodeType !== Node.ELEMENT_NODE) {
@@ -83,4 +88,35 @@ function getNthOfType(element: Element): string {
 	}
 
 	return `:nth-of-type(${sameTypeSiblings.indexOf(element) + 1})`
+}
+
+export function getWebVitalsTargetForAttribution(
+	target: string | undefined,
+	config?: WebVitalsAttributionConfig,
+): string | undefined {
+	const targetMode = getResolvedWebVitalsAttributionConfig(config).target
+	switch (targetMode) {
+		case 'off': {
+			return undefined
+		}
+		case 'raw': {
+			return target
+		}
+		default: {
+			return isSafeGeneratedWebVitalsTarget(target) ? target : undefined
+		}
+	}
+}
+
+export function isSafeGeneratedWebVitalsTarget(target: string | undefined): target is string {
+	if (!target || target.length > MAX_SAFE_TARGET_LENGTH) {
+		return false
+	}
+
+	const parts = target.split('>')
+	return (
+		parts.length > 0 &&
+		parts.length <= MAX_SAFE_TARGET_DEPTH &&
+		parts.every((part) => SAFE_TARGET_PART_PATTERN.test(part))
+	)
 }

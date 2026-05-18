@@ -29,9 +29,7 @@ export function setINPAttributionAttributes(
 ): void {
 	const { attribution } = metric
 
-	if (options.shouldExportTarget) {
-		setStringAttribute(span, 'inp.interaction_target', attribution.interactionTarget)
-	}
+	setStringAttribute(span, 'inp.interaction_target', options.getTarget(attribution.interactionTarget))
 
 	setNumberAttribute(span, 'inp.interaction_time', attribution.interactionTime)
 	setStringAttribute(span, 'inp.interaction_type', attribution.interactionType)

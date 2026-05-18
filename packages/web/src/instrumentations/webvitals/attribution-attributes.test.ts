@@ -64,7 +64,7 @@ describe('webvitals attribution attribute setters', () => {
 				createCLSMetric({
 					largestShiftSource: undefined,
 				}),
-				createAttributionOptions({ shouldExportTarget: false }),
+				createAttributionOptions({ getTarget: omitTarget }),
 			)
 
 			expect(attributes).toEqual({
@@ -107,7 +107,7 @@ describe('webvitals attribution attribute setters', () => {
 				createINPMetric({
 					longestScript: undefined,
 				}),
-				createAttributionOptions({ shouldExportTarget: false }),
+				createAttributionOptions({ getTarget: omitTarget }),
 			)
 
 			expect(attributes).toEqual({
@@ -180,7 +180,7 @@ describe('webvitals attribution attribute setters', () => {
 						transferSize: Number.NaN,
 					} as PerformanceResourceTiming & { responseStatus: number },
 				}),
-				createAttributionOptions({ getLCPUrl, shouldExportTarget: false }),
+				createAttributionOptions({ getLCPUrl, getTarget: omitTarget }),
 			)
 
 			expect(getLCPUrl).toHaveBeenCalledWith('https://example.com/image.png?secret=1')
@@ -213,9 +213,13 @@ describe('webvitals attribution attribute setters', () => {
 function createAttributionOptions(overrides: Partial<WebVitalsAttributionOptions> = {}): WebVitalsAttributionOptions {
 	return {
 		getLCPUrl: (url) => url,
-		shouldExportTarget: true,
+		getTarget: (target) => target,
 		...overrides,
 	}
+}
+
+function omitTarget(): string | undefined {
+	return
 }
 
 function createCLSMetric(
