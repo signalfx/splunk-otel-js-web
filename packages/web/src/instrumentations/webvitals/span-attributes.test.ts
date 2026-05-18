@@ -16,9 +16,9 @@
  *
  */
 
-import { Span } from '@opentelemetry/api'
 import { describe, expect, it } from 'vitest'
 
+import { createSpanMock } from '../../../tests/utils/span-mock'
 import { setAttributes, setNumberAttribute, setRectAttributes, setStringAttribute } from './span-attributes'
 
 describe('webvitals span attribute helpers', () => {
@@ -87,15 +87,3 @@ describe('webvitals span attribute helpers', () => {
 		})
 	})
 })
-
-function createSpanMock(): { attributes: Record<string, number | string>; span: Span } {
-	const attributes: Record<string, number | string> = {}
-	const span = {
-		setAttribute: (name: string, value: number | string) => {
-			attributes[name] = value
-			return span
-		},
-	} as Span
-
-	return { attributes, span }
-}

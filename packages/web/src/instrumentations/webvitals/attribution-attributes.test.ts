@@ -16,7 +16,6 @@
  *
  */
 
-import { Span } from '@opentelemetry/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
 	CLSMetricWithAttribution,
@@ -26,6 +25,7 @@ import {
 	TTFBMetricWithAttribution,
 } from 'web-vitals/attribution'
 
+import { createSpanMock } from '../../../tests/utils/span-mock'
 import { setCLSAttributionAttributes } from './cls'
 import { setFCPAttributionAttributes } from './fcp'
 import { setINPAttributionAttributes } from './inp'
@@ -329,16 +329,4 @@ function createTTFBMetric(
 			...attributionOverrides,
 		},
 	} as unknown as TTFBMetricWithAttribution
-}
-
-function createSpanMock(): { attributes: Record<string, number | string>; span: Span } {
-	const attributes: Record<string, number | string> = {}
-	const span = {
-		setAttribute: (name: string, value: number | string) => {
-			attributes[name] = value
-			return span
-		},
-	} as Span
-
-	return { attributes, span }
 }

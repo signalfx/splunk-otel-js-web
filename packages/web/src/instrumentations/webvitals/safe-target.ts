@@ -22,6 +22,7 @@ import { getResolvedWebVitalsAttributionConfig } from './attribution-config'
 
 const MAX_SAFE_TARGET_LENGTH = 120
 const MAX_SAFE_TARGET_DEPTH = 6
+const SAFE_ROLE_PATTERN = /^[a-zA-Z][\w-]*$/
 const SAFE_TARGET_PART_PATTERN = /^[a-z][a-z0-9-]*(\[role=[a-zA-Z][\w-]*\])?(:nth-of-type\([1-9]\d*\))?$/
 
 export function generateSafeWebVitalsTarget(node: Node | null): string | undefined {
@@ -31,6 +32,8 @@ export function generateSafeWebVitalsTarget(node: Node | null): string | undefin
 
 	const parts: string[] = []
 	let current: Element | null = node as Element
+	// Track accumulated selector length: sum of part lengths plus '>' separators.
+	let accumulatedLength = 0
 
 	while (current && current.nodeType === Node.ELEMENT_NODE && parts.length < MAX_SAFE_TARGET_DEPTH) {
 		const { hasRole, part } = getSafeElementSelectorPart(current)
@@ -40,12 +43,13 @@ export function generateSafeWebVitalsTarget(node: Node | null): string | undefin
 		// element (first iteration) is always kept even if it is itself longer
 		// than the budget, so callers always receive at least one selector
 		// fragment when given an element.
-		const tentative = parts.length === 0 ? part : `${part}>${parts.join('>')}`
-		if (parts.length > 0 && tentative.length > MAX_SAFE_TARGET_LENGTH) {
+		const tentativeLength = parts.length === 0 ? part.length : accumulatedLength + 1 + part.length
+		if (parts.length > 0 && tentativeLength > MAX_SAFE_TARGET_LENGTH) {
 			break
 		}
 
 		parts.unshift(part)
+		accumulatedLength = tentativeLength
 
 		// Once we have reached an element bearing a (safe) ARIA role, stop
 		// walking further up the tree: the role is a stable landmark and
@@ -71,7 +75,7 @@ function getSafeElementSelectorPart(element: Element): { hasRole: boolean; part:
 }
 
 function isSafeRole(role: string): boolean {
-	return /^[a-zA-Z][\w-]*$/.test(role)
+	return SAFE_ROLE_PATTERN.test(role)
 }
 
 function getNthOfType(element: Element): string {
@@ -80,14 +84,24 @@ function getNthOfType(element: Element): string {
 		return ''
 	}
 
-	const sameTypeSiblings = Array.from(parent.children).filter(
-		(child) => child.tagName.toLowerCase() === element.tagName.toLowerCase(),
-	)
-	if (sameTypeSiblings.length <= 1) {
+	const elementTag = element.tagName.toLowerCase()
+	const children = parent.children
+	let count = 0
+	let index = -1
+	for (const child of children) {
+		if (child.tagName.toLowerCase() === elementTag) {
+			count += 1
+			if (child === element) {
+				index = count
+			}
+		}
+	}
+
+	if (count <= 1) {
 		return ''
 	}
 
-	return `:nth-of-type(${sameTypeSiblings.indexOf(element) + 1})`
+	return `:nth-of-type(${index})`
 }
 
 export function getWebVitalsTargetForAttribution(
@@ -102,7 +116,12 @@ export function getWebVitalsTargetForAttribution(
 		case 'raw': {
 			return target
 		}
+		case 'safe': {
+			return isSafeGeneratedWebVitalsTarget(target) ? target : undefined
+		}
 		default: {
+			const _exhaustiveCheck: never = targetMode
+			void _exhaustiveCheck
 			return isSafeGeneratedWebVitalsTarget(target) ? target : undefined
 		}
 	}

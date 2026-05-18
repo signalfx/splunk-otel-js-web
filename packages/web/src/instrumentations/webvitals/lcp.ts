@@ -19,6 +19,7 @@
 import { Span } from '@opentelemetry/api'
 import type { LCPMetricWithAttribution } from 'web-vitals/attribution'
 
+import { isFiniteNumber } from '../../types'
 import { getResolvedWebVitalsAttributionConfig } from './attribution-config'
 import { setAttributes, setNumberAttribute, setStringAttribute } from './span-attributes'
 import { WebVitalsAttributionConfig, WebVitalsAttributionOptions } from './types'
@@ -56,8 +57,12 @@ export function getLCPUrlForAttribution(
 		case 'raw': {
 			return url
 		}
+		case 'sanitized': {
+			return sanitizeLCPUrl(url)
+		}
 		default: {
-			// Covers 'sanitized' and any future value: privacy-preserving fallback.
+			const _exhaustiveCheck: never = urlMode
+			void _exhaustiveCheck
 			return sanitizeLCPUrl(url)
 		}
 	}
@@ -102,7 +107,7 @@ function setFiniteAttribute(
 	name: string,
 	value: number | undefined,
 ): void {
-	if (typeof value === 'number' && Number.isFinite(value)) {
+	if (isFiniteNumber(value)) {
 		attributes[name] = value
 	}
 }

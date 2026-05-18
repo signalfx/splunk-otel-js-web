@@ -18,7 +18,7 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { isNumber } from './number'
+import { isFiniteNumber, isNumber } from './number'
 
 describe('isNumber', () => {
 	it('returns true for primitive numbers', () => {
@@ -31,11 +31,28 @@ describe('isNumber', () => {
 	})
 
 	it('returns false for non-number values', () => {
-		expect(isNumber(undefined)).toBe(false)
+		expect(isNumber()).toBe(false)
 		expect(isNumber(null)).toBe(false)
 		expect(isNumber('1')).toBe(false)
 		expect(isNumber(true)).toBe(false)
 		expect(isNumber({})).toBe(false)
 		expect(isNumber([])).toBe(false)
+	})
+})
+
+describe('isFiniteNumber', () => {
+	it('returns true for finite primitive numbers', () => {
+		expect(isFiniteNumber(0)).toBe(true)
+		expect(isFiniteNumber(-1)).toBe(true)
+		expect(isFiniteNumber(1.5)).toBe(true)
+	})
+
+	it('returns false for non-finite numbers and non-number values', () => {
+		expect(isFiniteNumber(Number.NaN)).toBe(false)
+		expect(isFiniteNumber(Number.POSITIVE_INFINITY)).toBe(false)
+		expect(isFiniteNumber(Number.NEGATIVE_INFINITY)).toBe(false)
+		expect(isFiniteNumber()).toBe(false)
+		expect(isFiniteNumber(null)).toBe(false)
+		expect(isFiniteNumber('1')).toBe(false)
 	})
 })

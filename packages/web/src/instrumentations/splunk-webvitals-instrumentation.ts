@@ -31,7 +31,7 @@ import {
 } from 'web-vitals/attribution'
 
 import { SessionManager } from '../managers'
-import { SplunkOtelWebConfig } from '../types'
+import { isFiniteNumber, SplunkOtelWebConfig } from '../types'
 import { VERSION } from '../version'
 import {
 	generateSafeWebVitalsTarget,
@@ -66,8 +66,18 @@ const MODULE_NAME = 'splunk-webvitals'
 // bound that avoids hangs when the `document` instrumentation is disabled.
 const DOC_LOAD_SPAN_WAIT_TIMEOUT_MS = 5000
 
+// Allow the host (Node tests, headless environments) to exit even if the
+// timer is still pending. `unref` is unavailable in the browser.
+function maybeUnref(handle: ReturnType<typeof setTimeout>): void {
+	if (typeof (handle as unknown as { unref?: () => void }).unref === 'function') {
+		;(handle as unknown as { unref: () => void }).unref()
+	}
+}
+
 export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWebVitalsInstrumentationConfig> {
 	private areCallbackAttached = false
+
+	private attributionContext: WebVitalsAttributionOptions | undefined
 
 	private docLoadSpanPromise: Promise<ReadableSpan | undefined>
 
@@ -94,11 +104,7 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 			this.docLoadSpanResolve?.()
 			this.docLoadSpanResolve = undefined
 		}, DOC_LOAD_SPAN_WAIT_TIMEOUT_MS)
-		// Allow the host (Node tests, headless environments) to exit even if
-		// the timer is still pending. `unref` is unavailable in the browser.
-		if (typeof (fallbackTimeout as unknown as { unref?: () => void }).unref === 'function') {
-			;(fallbackTimeout as unknown as { unref: () => void }).unref()
-		}
+		maybeUnref(fallbackTimeout)
 
 		this.otelConfig.spanEmitter?.addEventListener('document-load', (span) => {
 			// `document-load` component emits both documentFetch and documentLoad spans.
@@ -132,6 +138,7 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 		// Clear stale dedup keys on every enable so that metrics re-delivered
 		// after a disable/enable cycle are not silently dropped.
 		this.reportedMetricKeys.clear()
+		this.attributionContext = undefined
 		if (this.areCallbackAttached) {
 			return
 		}
@@ -172,10 +179,15 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 	init(): void {}
 
 	private getAttributionContext(): WebVitalsAttributionOptions {
-		return {
-			getLCPUrl: (url) => getLCPUrlForAttribution(url, this._config.attribution),
-			getTarget: (target) => getWebVitalsTargetForAttribution(target, this._config.attribution),
+		if (!this.attributionContext) {
+			const resolvedConfig = getResolvedWebVitalsAttributionConfig(this._config.attribution)
+			this.attributionContext = {
+				getLCPUrl: (url) => getLCPUrlForAttribution(url, resolvedConfig),
+				getTarget: (target) => getWebVitalsTargetForAttribution(target, resolvedConfig),
+			}
 		}
+
+		return this.attributionContext
 	}
 
 	private getAttributionOptions(config: boolean | AttributionReportOpts | undefined): AttributionReportOpts {
@@ -184,7 +196,7 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 			return options
 		}
 
-		const targetMode = getResolvedWebVitalsAttributionConfig(this._config.attribution).target
+		const { target: targetMode } = getResolvedWebVitalsAttributionConfig(this._config.attribution)
 		if (targetMode === 'safe') {
 			options.generateTarget = generateSafeWebVitalsTarget
 		}
@@ -193,11 +205,10 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 	}
 
 	private getINPOptions(): INPAttributionReportOpts {
-		const options = this.getAttributionOptions(this._config.inp) as INPAttributionReportOpts
-		const userValue =
-			typeof this._config.inp === 'object' ? this._config.inp.includeProcessedEventEntries : undefined
-		options.includeProcessedEventEntries = userValue ?? false
-		return options
+		const base = this.getAttributionOptions(this._config.inp)
+		const includeProcessedEventEntries =
+			typeof this._config.inp === 'object' ? (this._config.inp.includeProcessedEventEntries ?? false) : false
+		return { ...base, includeProcessedEventEntries }
 	}
 
 	private isExperimentalMetricEnabled(config: boolean | AttributionReportOpts | undefined): boolean {
@@ -211,7 +222,7 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 
 		const { metric, name } = report
 		const value = metric.value
-		if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+		if (!isFiniteNumber(value) || value < 0) {
 			return
 		}
 

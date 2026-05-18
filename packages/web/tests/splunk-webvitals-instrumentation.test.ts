@@ -28,7 +28,6 @@ import {
 	getResolvedWebVitalsAttributionConfig,
 	getWebVitalMetricReportKey,
 	sanitizeLCPUrl,
-	shouldExportWebVitalsTarget,
 } from '../src/instrumentations/webvitals'
 
 describe('webvitals attribution helpers', () => {
@@ -63,12 +62,9 @@ describe('webvitals attribution helpers', () => {
 		})
 	})
 
-	it('applies target and LCP URL attribution policy defaults and overrides', () => {
+	it('applies LCP URL attribution policy defaults and overrides', () => {
 		const fullUrl = 'https://example.com/path/image.png?token=secret#fragment'
 
-		expect(shouldExportWebVitalsTarget()).toBe(true)
-		expect(shouldExportWebVitalsTarget({ target: 'raw' })).toBe(true)
-		expect(shouldExportWebVitalsTarget({ target: 'off' })).toBe(false)
 		expect(getLCPUrlForAttribution(fullUrl)).toBe('https://example.com/path/image.png')
 		expect(getLCPUrlForAttribution(fullUrl, { lcpUrl: 'raw' })).toBe(fullUrl)
 		expect(getLCPUrlForAttribution(fullUrl, { lcpUrl: 'off' })).toBeUndefined()

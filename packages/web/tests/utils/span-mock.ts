@@ -15,19 +15,16 @@
  * limitations under the License.
  *
  */
+import { Span } from '@opentelemetry/api'
 
-import { WebVitalsAttributionConfig } from './types'
+export function createSpanMock(): { attributes: Record<string, number | string>; span: Span } {
+	const attributes: Record<string, number | string> = {}
+	const span = {
+		setAttribute: (name: string, value: number | string) => {
+			attributes[name] = value
+			return span
+		},
+	} as Span
 
-const DEFAULT_ATTRIBUTION_CONFIG: Required<WebVitalsAttributionConfig> = {
-	lcpUrl: 'sanitized',
-	target: 'safe',
-}
-
-export function getResolvedWebVitalsAttributionConfig(
-	config?: WebVitalsAttributionConfig,
-): Required<WebVitalsAttributionConfig> {
-	return {
-		...DEFAULT_ATTRIBUTION_CONFIG,
-		...config,
-	}
+	return { attributes, span }
 }
