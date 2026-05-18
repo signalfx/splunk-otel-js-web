@@ -20,9 +20,12 @@ import { Attributes, Span, trace, Tracer } from '@opentelemetry/api'
 import type { SplunkOtelWebType } from '@splunk/otel-web'
 import { JsonObject } from 'type-fest'
 
+import type { LogExporter } from './types'
+
 import { isRecorderLoadedViaLatestTag, isRecorderLoadedViaNextTag } from './detect-latest'
 import { log } from './log'
 import OTLPLogExporter from './otlp-log-exporter'
+import { OTLPProtoLogExporter } from './otlp-proto-log-exporter'
 import { Recorder, RecorderPublicConfig } from './session-replay'
 import { getGlobal, getSplunkRumVersion, isDebugMode, parseVersion } from './utils'
 import { VERSION } from './version'
@@ -92,8 +95,7 @@ const retryPendingSegments = (recorderInstance: Recorder, sessionId: string) => 
 				continue
 			}
 
-			const plainSegment = segment.toPlain()
-			recorderInstance.emitPendingSegment(plainSegment, () => {
+			recorderInstance.emitPendingSegment(segment, () => {
 				void recorderInstance.dismissPendingSegment(segmentId)
 			})
 		}
@@ -155,25 +157,34 @@ const SplunkRumRecorder = {
 		exportUrl: string
 		persistFailedReplayData: boolean | 'indexeddb' | 'localstorage'
 		sessionId: string
-	}): OTLPLogExporter {
-		const useLocalStorageQueue = persistFailedReplayData === true || persistFailedReplayData === 'localstorage'
-		return new OTLPLogExporter({
-			beaconUrl: exportUrl,
-			exportQueuedLogs,
-			getResourceAttributes() {
-				const newAttributes: JsonObject = {
-					...attributes,
-					'splunk.rumSessionId': sessionId,
-				}
-				if (anonymousUserId) {
-					newAttributes['user.anonymous_id'] = anonymousUserId
-				}
+	}): LogExporter {
+		const getResourceAttributes = () => {
+			const newAttributes: JsonObject = {
+				...attributes,
+				'splunk.rumSessionId': sessionId,
+			}
+			if (anonymousUserId) {
+				newAttributes['user.anonymous_id'] = anonymousUserId
+			}
 
-				return newAttributes
-			},
-			sessionId,
-			usePersistentExportQueue: useLocalStorageQueue,
-		})
+			return newAttributes
+		}
+
+		if (persistFailedReplayData === 'indexeddb') {
+			return new OTLPProtoLogExporter({
+				beaconUrl: exportUrl,
+				getResourceAttributes,
+			})
+		} else {
+			const useLocalStorageQueue = persistFailedReplayData === true || persistFailedReplayData === 'localstorage'
+			return new OTLPLogExporter({
+				beaconUrl: exportUrl,
+				exportQueuedLogs,
+				getResourceAttributes,
+				sessionId,
+				usePersistentExportQueue: useLocalStorageQueue,
+			})
+		}
 	},
 
 	deinit(): void {
@@ -328,6 +339,7 @@ const SplunkRumRecorder = {
 						initRecorderConfig,
 						persistSegments,
 						sessionId: currentState.id,
+						useBinarySegments: persistSegments,
 					})
 					recorder.start()
 
@@ -353,6 +365,7 @@ const SplunkRumRecorder = {
 					initRecorderConfig,
 					persistSegments,
 					sessionId,
+					useBinarySegments: persistSegments,
 				})
 				recorder.start()
 

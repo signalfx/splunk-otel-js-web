@@ -217,12 +217,12 @@ Choose a versioning strategy based on your needs:
 
 Controls how session replay data is persisted when upload requests fail:
 
-| Value            | Description                                                                                                                      |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `true`           | Default. Failed OTLP log exports are queued in localStorage (2 MB budget) and retried on next page load.                         |
-| `'localstorage'` | Same as `true`.                                                                                                                  |
-| `'indexeddb'`    | Uses the session replay script's built-in IndexedDB persistence. Segments are stored in IndexedDB and retried on next page load. |
-| `false`          | Disables persistence entirely.                                                                                                   |
+| Value            | Description                                                                                                                                                             |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `true`           | Default. Failed OTLP log exports are queued in localStorage (2 MB budget) and retried on next page load.                                                                |
+| `'localstorage'` | Same as `true`.                                                                                                                                                         |
+| `'indexeddb'`    | Uses the session replay script's built-in IndexedDB persistence and sends replay logs as OTLP/protobuf. Segments are stored in IndexedDB and retried on next page load. |
+| `false`          | Disables persistence entirely.                                                                                                                                          |
 
 ```typescript
 SplunkSessionRecorder.init({

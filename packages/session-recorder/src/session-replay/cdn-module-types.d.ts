@@ -49,7 +49,7 @@ declare module 'https://cdn.observability.splunkcloud.com/o11y-gdi-rum/session-r
 
 	export interface Segment {
 		stats(): Stats
-		toBinary(params?: DeepPartial<Modifiers>): SessionReplayBinarySegment
+		toBinary(params?: DeepPartial<Modifiers> & { tryCompress?: boolean }): Promise<SessionReplayBinarySegment>
 		toPlain(params?: DeepPartial<Modifiers>): SessionReplayPlainSegment
 	}
 
