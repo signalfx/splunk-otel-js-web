@@ -45,9 +45,9 @@ export default defineConfig({
 			provider: 'istanbul',
 			reporter: ['text', 'lcov', 'json-summary'],
 			thresholds: {
-				branches: 44,
+				branches: 45,
 				functions: 61,
-				lines: 55,
+				lines: 56,
 				statements: 56,
 			},
 		},

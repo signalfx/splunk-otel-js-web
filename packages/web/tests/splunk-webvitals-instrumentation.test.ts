@@ -121,7 +121,7 @@ describe('webvitals attribution helpers', () => {
 
 		expect(span.end).toHaveBeenCalled()
 		expect(attributes).toEqual({
-			'lcp': 100,
+			lcp: 100,
 		})
 	})
 
