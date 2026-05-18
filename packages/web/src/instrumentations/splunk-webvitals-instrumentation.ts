@@ -20,7 +20,15 @@ import { HrTime, Span } from '@opentelemetry/api'
 import { addHrTimes, hrTimeToMilliseconds, millisToHrTime } from '@opentelemetry/core'
 import { InstrumentationBase } from '@opentelemetry/instrumentation'
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base'
-import { AttributionReportOpts, INPAttributionReportOpts, onCLS, onINP, onLCP } from 'web-vitals/attribution'
+import {
+	AttributionReportOpts,
+	INPAttributionReportOpts,
+	onCLS,
+	onFCP,
+	onINP,
+	onLCP,
+	onTTFB,
+} from 'web-vitals/attribution'
 
 import { SessionManager } from '../managers'
 import { SplunkOtelWebConfig } from '../types'
@@ -31,10 +39,12 @@ import {
 	getResolvedWebVitalsAttributionConfig,
 	getWebVitalMetricReportKey,
 	setCLSAttributionAttributes,
+	setFCPAttributionAttributes,
 	setINPAttributionAttributes,
 	setLCPAttributionAttributes,
 	setNumberAttribute,
 	setStringAttribute,
+	setTTFBAttributionAttributes,
 	shouldExportWebVitalsTarget,
 	SplunkWebVitalsInstrumentationConfig,
 	WebVitalReport,
@@ -72,7 +82,7 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 		protected otelConfig: SplunkOtelWebConfig,
 		public sessionManager?: SessionManager,
 	) {
-		super(MODULE_NAME, VERSION, config)
+		super(MODULE_NAME, VERSION, { ...config, enabled: false })
 
 		this.docLoadSpanPromise = new Promise<ReadableSpan | undefined>((resolve) => {
 			this.docLoadSpanResolve = resolve
@@ -101,6 +111,11 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 			this.docLoadSpanResolve?.(span)
 			this.docLoadSpanResolve = undefined
 		})
+
+		this._config.enabled = config.enabled ?? true
+		if (this._config.enabled) {
+			this.enable()
+		}
 	}
 
 	/**
@@ -140,6 +155,18 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 				void this.reportMetric({ metric, name: 'inp' })
 			}, this.getINPOptions())
 		}
+
+		if (this.isExperimentalMetricEnabled(this._config._experimental_fcp)) {
+			onFCP((metric) => {
+				void this.reportMetric({ metric, name: 'fcp' })
+			}, this.getAttributionOptions(this._config._experimental_fcp))
+		}
+
+		if (this.isExperimentalMetricEnabled(this._config._experimental_ttfb)) {
+			onTTFB((metric) => {
+				void this.reportMetric({ metric, name: 'ttfb' })
+			}, this.getAttributionOptions(this._config._experimental_ttfb))
+		}
 	}
 
 	init(): void {}
@@ -153,6 +180,10 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 
 	private getAttributionOptions(config: boolean | AttributionReportOpts | undefined): AttributionReportOpts {
 		const options = typeof config === 'object' ? { ...config } : {}
+		if (!this.shouldExportAttribution()) {
+			return options
+		}
+
 		const targetMode = getResolvedWebVitalsAttributionConfig(this._config.attribution).target
 		if (targetMode === 'safe') {
 			options.generateTarget = generateSafeWebVitalsTarget
@@ -167,6 +198,10 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 			typeof this._config.inp === 'object' ? this._config.inp.includeProcessedEventEntries : undefined
 		options.includeProcessedEventEntries = userValue ?? false
 		return options
+	}
+
+	private isExperimentalMetricEnabled(config: boolean | AttributionReportOpts | undefined): boolean {
+		return config !== undefined && config !== false
 	}
 
 	private async reportMetric(report: WebVitalReport): Promise<void> {
@@ -219,7 +254,10 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 		setStringAttribute(span, 'webvitals.metric_id', metric.id)
 		setNumberAttribute(span, 'webvitals.delta', metric.delta)
 		setStringAttribute(span, 'webvitals.navigation_type', metric.navigationType)
-		this.setAttributionAttributes(span, report)
+		if (this.shouldExportAttribution()) {
+			this.setAttributionAttributes(span, report)
+		}
+
 		span.end(endTime)
 	}
 
@@ -231,6 +269,10 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 				setCLSAttributionAttributes(span, report.metric, attributionContext)
 				return
 			}
+			case 'fcp': {
+				setFCPAttributionAttributes(span, report.metric)
+				return
+			}
 			case 'inp': {
 				setINPAttributionAttributes(span, report.metric, attributionContext)
 				return
@@ -239,10 +281,18 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 				setLCPAttributionAttributes(span, report.metric, attributionContext)
 				return
 			}
+			case 'ttfb': {
+				setTTFBAttributionAttributes(span, report.metric)
+				return
+			}
 		}
 	}
 
 	private shouldAlignWithDocumentLoad(): boolean {
 		return this._config.alignWebVitalsSpansWithDocumentLoad ?? true
+	}
+
+	private shouldExportAttribution(): boolean {
+		return this._config._experimental_attribution === true
 	}
 }

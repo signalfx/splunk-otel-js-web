@@ -320,6 +320,9 @@ function getConfig() {
 		applicationName: inputValue('#cfg-app') || 'splunk-otel-web-dev',
 		debug: true,
 		deploymentEnvironment: inputValue('#cfg-env') || 'dev',
+		...(location.pathname.endsWith('/web-vitals.html')
+			? { instrumentations: { webvitals: { _experimental_attribution: true } } }
+			: {}),
 		rumAccessToken: inputValue('#cfg-token') || undefined,
 	}
 

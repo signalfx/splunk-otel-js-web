@@ -154,7 +154,7 @@ pnpm dev
 The sandbox has three pages, switchable from the header nav:
 
 - **RUM** (`index.html`) — exercise tracked fetch/XHR, history navigations, errors, custom spans, long tasks, and global attributes.
-- **Web Vitals** (`web-vitals.html`) — reload a focused LCP fixture page and inspect default web vitals attribution.
+- **Web Vitals** (`web-vitals.html`) — reload a focused LCP fixture page and inspect experimental web vitals attribution.
 - **Session Replay** (`replay.html`) — drive the `@splunk/otel-web-session-recorder` against a rich set of DOM/canvas/iframe/video fixtures. Replay requires building the recorder first:
 
     ```bash

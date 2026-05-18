@@ -16,9 +16,12 @@
  *
  */
 
+import { Span } from '@opentelemetry/api'
 import { expectDefined } from '@test-utils/assertions'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import { LCPMetricWithAttribution } from 'web-vitals/attribution'
 
+import { SplunkWebVitalsInstrumentation } from '../src/instrumentations/splunk-webvitals-instrumentation'
 import {
 	getLCPResourceTimingAttributes,
 	getLCPUrlForAttribution,
@@ -82,6 +85,8 @@ describe('webvitals attribution helpers', () => {
 
 		expect(getWebVitalMetricReportKey('lcp', baseMetric)).toBe('lcp|v5-1|10|10|navigate')
 		expect(getWebVitalMetricReportKey('lcp', baseMetric)).not.toBe(getWebVitalMetricReportKey('cls', baseMetric))
+		expect(getWebVitalMetricReportKey('fcp', baseMetric)).toBe('fcp|v5-1|10|10|navigate')
+		expect(getWebVitalMetricReportKey('ttfb', baseMetric)).toBe('ttfb|v5-1|10|10|navigate')
 		expect(getWebVitalMetricReportKey('lcp', baseMetric)).not.toBe(
 			getWebVitalMetricReportKey('lcp', { ...baseMetric, delta: 20, value: 30 }),
 		)
@@ -108,4 +113,98 @@ describe('webvitals attribution helpers', () => {
 			'network.protocol.name': 'h2',
 		})
 	})
+
+	it('emits metric and shared webvitals fields without attribution by default', async () => {
+		const { attributes, instrumentation, span } = createWebVitalsInstrumentationMock()
+
+		await reportLCPMetric(instrumentation)
+
+		expect(span.end).toHaveBeenCalled()
+		expect(attributes).toEqual({
+			'lcp': 100,
+			'webvitals.delta': 100,
+			'webvitals.metric_id': 'v5-lcp',
+			'webvitals.navigation_type': 'navigate',
+		})
+	})
+
+	it('emits attribution fields when experimental attribution is enabled', async () => {
+		const { attributes, instrumentation, span } = createWebVitalsInstrumentationMock({
+			_experimental_attribution: true,
+		})
+
+		await reportLCPMetric(instrumentation)
+
+		expect(span.end).toHaveBeenCalled()
+		expect(attributes).toMatchObject({
+			'lcp': 100,
+			'lcp.element_render_delay': 40,
+			'lcp.resource_load_delay': 20,
+			'lcp.resource_load_duration': 30,
+			'lcp.target': 'main>img',
+			'lcp.time_to_first_byte': 10,
+			'lcp.url': 'https://example.com/image.png',
+			'webvitals.delta': 100,
+			'webvitals.metric_id': 'v5-lcp',
+			'webvitals.navigation_type': 'navigate',
+		})
+	})
 })
+
+type TestableWebVitalsInstrumentation = {
+	_tracer: { startSpan: ReturnType<typeof vi.fn> }
+	isRecording: boolean
+	reportMetric: (report: { metric: LCPMetricWithAttribution; name: 'lcp' }) => Promise<void>
+}
+
+function createWebVitalsInstrumentationMock(
+	config: ConstructorParameters<typeof SplunkWebVitalsInstrumentation>[0] = {},
+): {
+	attributes: Record<string, number | string>
+	instrumentation: TestableWebVitalsInstrumentation
+	span: Span & { end: ReturnType<typeof vi.fn> }
+} {
+	const attributes: Record<string, number | string> = {}
+	const span = {
+		end: vi.fn(),
+		setAttribute: (name: string, value: number | string) => {
+			attributes[name] = value
+			return span
+		},
+	} as Span & { end: ReturnType<typeof vi.fn> }
+	const instrumentation = new SplunkWebVitalsInstrumentation(
+		{
+			alignWebVitalsSpansWithDocumentLoad: false,
+			enabled: false,
+			...config,
+		},
+		{},
+	) as unknown as TestableWebVitalsInstrumentation
+
+	instrumentation.isRecording = true
+	instrumentation._tracer = {
+		startSpan: vi.fn(() => span),
+	}
+
+	return { attributes, instrumentation, span }
+}
+
+async function reportLCPMetric(instrumentation: TestableWebVitalsInstrumentation): Promise<void> {
+	await instrumentation.reportMetric({
+		metric: {
+			attribution: {
+				elementRenderDelay: 40,
+				resourceLoadDelay: 20,
+				resourceLoadDuration: 30,
+				target: 'main>img',
+				timeToFirstByte: 10,
+				url: 'https://example.com/image.png',
+			},
+			delta: 100,
+			id: 'v5-lcp',
+			navigationType: 'navigate',
+			value: 100,
+		} as LCPMetricWithAttribution,
+		name: 'lcp',
+	})
+}

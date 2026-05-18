@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Webvitals</title>
+
+	<%- renderAgent({ debug: true, instrumentations: { webvitals: { _experimental_fcp: true, _experimental_ttfb: true } } }) %>
+
+	<style>
+		#container {
+			height: 200px;
+			width: 400px;
+		}
+	</style>
+</head>
+<body>
+	<h1>Webvitals</h1>
+
+	<!-- a dummy "interactive" link in order to compute INP -->
+	<a href="javascript:clicky(true)" id="clicky">Click me</a>
+
+	<div id="container">Don't shift me : (</div>
+	<script>
+		let id = 1;
+		const container = document.getElementById('container');
+		function blockMainThread(duration) {
+			const startedAt = performance.now();
+			while (performance.now() - startedAt < duration) {}
+		}
+		function clicky(shouldBlock) {
+			if (shouldBlock) {
+				blockMainThread(80);
+			}
+			const p = document.createElement('p');
+			p.setAttribute('id', 'p'+id);
+			id++;
+			p.innerText = 'Very long paragraph to force a visual change.  '.repeat(30);
+			container.insertBefore(p, container.firstChild);
+		}
+		function shiftPage() {
+			const div = document.createElement('div');
+			div.setAttribute('id', 'shift');
+			div.style.height = '60px';
+			div.innerText = 'Layout shift';
+			document.body.insertBefore(div, document.body.firstChild);
+		}
+		window.addEventListener('load', () => {
+			clicky(false);
+			setTimeout(shiftPage, 50);
+		});
+	</script>
+</body>
+</html>

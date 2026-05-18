@@ -18,11 +18,19 @@
 
 import { Span } from '@opentelemetry/api'
 import { describe, expect, it, vi } from 'vitest'
-import { CLSMetricWithAttribution, INPMetricWithAttribution, LCPMetricWithAttribution } from 'web-vitals/attribution'
+import {
+	CLSMetricWithAttribution,
+	FCPMetricWithAttribution,
+	INPMetricWithAttribution,
+	LCPMetricWithAttribution,
+	TTFBMetricWithAttribution,
+} from 'web-vitals/attribution'
 
 import { setCLSAttributionAttributes } from './cls'
+import { setFCPAttributionAttributes } from './fcp'
 import { setINPAttributionAttributes } from './inp'
 import { setLCPAttributionAttributes } from './lcp'
+import { setTTFBAttributionAttributes } from './ttfb'
 import { WebVitalsAttributionOptions } from './types'
 
 describe('webvitals attribution attribute setters', () => {
@@ -118,6 +126,20 @@ describe('webvitals attribution attribute setters', () => {
 		})
 	})
 
+	describe('setFCPAttributionAttributes', () => {
+		it('emits FCP scalar attribution attributes', () => {
+			const { attributes, span } = createSpanMock()
+
+			setFCPAttributionAttributes(span, createFCPMetric())
+
+			expect(attributes).toEqual({
+				'fcp.first_byte_to_fcp': 90,
+				'fcp.load_state': 'dom-interactive',
+				'fcp.time_to_first_byte': 10,
+			})
+		})
+	})
+
 	describe('setLCPAttributionAttributes', () => {
 		it('emits LCP attribution attributes including sanitized URL and resource timing', () => {
 			const { attributes, span } = createSpanMock()
@@ -167,6 +189,22 @@ describe('webvitals attribution attribute setters', () => {
 				'lcp.resource_load_delay': 20,
 				'lcp.resource_load_duration': 30,
 				'lcp.time_to_first_byte': 10,
+			})
+		})
+	})
+
+	describe('setTTFBAttributionAttributes', () => {
+		it('emits TTFB scalar attribution attributes', () => {
+			const { attributes, span } = createSpanMock()
+
+			setTTFBAttributionAttributes(span, createTTFBMetric())
+
+			expect(attributes).toEqual({
+				'ttfb.cache_duration': 20,
+				'ttfb.connection_duration': 40,
+				'ttfb.dns_duration': 30,
+				'ttfb.request_duration': 50,
+				'ttfb.waiting_duration': 10,
 			})
 		})
 	})
@@ -234,6 +272,21 @@ function createINPMetric(
 	} as unknown as INPMetricWithAttribution
 }
 
+function createFCPMetric(
+	attributionOverrides: Partial<FCPMetricWithAttribution['attribution']> = {},
+): FCPMetricWithAttribution {
+	return {
+		attribution: {
+			fcpEntry: {} as PerformancePaintTiming,
+			firstByteToFCP: 90,
+			loadState: 'dom-interactive',
+			navigationEntry: {} as PerformanceNavigationTiming,
+			timeToFirstByte: 10,
+			...attributionOverrides,
+		},
+	} as unknown as FCPMetricWithAttribution
+}
+
 function createLCPMetric(
 	attributionOverrides: Partial<LCPMetricWithAttribution['attribution']> = {},
 ): LCPMetricWithAttribution {
@@ -256,6 +309,22 @@ function createLCPMetric(
 			...attributionOverrides,
 		},
 	} as unknown as LCPMetricWithAttribution
+}
+
+function createTTFBMetric(
+	attributionOverrides: Partial<TTFBMetricWithAttribution['attribution']> = {},
+): TTFBMetricWithAttribution {
+	return {
+		attribution: {
+			cacheDuration: 20,
+			connectionDuration: 40,
+			dnsDuration: 30,
+			navigationEntry: {} as PerformanceNavigationTiming,
+			requestDuration: 50,
+			waitingDuration: 10,
+			...attributionOverrides,
+		},
+	} as unknown as TTFBMetricWithAttribution
 }
 
 function createSpanMock(): { attributes: Record<string, number | string>; span: Span } {

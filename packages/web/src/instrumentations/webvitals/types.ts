@@ -20,21 +20,27 @@ import type { InstrumentationConfig } from '@opentelemetry/instrumentation'
 import type {
 	AttributionReportOpts,
 	CLSMetricWithAttribution,
+	FCPMetricWithAttribution,
 	INPAttributionReportOpts,
 	INPMetricWithAttribution,
 	LCPMetricWithAttribution,
+	TTFBMetricWithAttribution,
 } from 'web-vitals/attribution'
 
-export type WebVitalName = 'cls' | 'inp' | 'lcp'
+export type WebVitalName = 'cls' | 'fcp' | 'inp' | 'lcp' | 'ttfb'
 export type WebVitalMetricWithAttribution =
 	| CLSMetricWithAttribution
+	| FCPMetricWithAttribution
 	| INPMetricWithAttribution
 	| LCPMetricWithAttribution
+	| TTFBMetricWithAttribution
 
 export type WebVitalReport =
 	| { metric: CLSMetricWithAttribution; name: 'cls' }
+	| { metric: FCPMetricWithAttribution; name: 'fcp' }
 	| { metric: INPMetricWithAttribution; name: 'inp' }
 	| { metric: LCPMetricWithAttribution; name: 'lcp' }
+	| { metric: TTFBMetricWithAttribution; name: 'ttfb' }
 
 /**
  * Controls how element selectors are emitted on web vitals attribution attributes
@@ -74,6 +80,26 @@ export type WebVitalsAttributionConfig = {
 
 export interface SplunkWebVitalsInstrumentationConfig extends InstrumentationConfig {
 	/**
+	 * Enable experimental web vitals attribution attributes. When disabled, webvitals spans
+	 * emit only the metric value and shared `webvitals.*` fields.
+	 * @default false
+	 */
+	_experimental_attribution?: boolean
+
+	/**
+	 * Enable experimental FCP collection. Pass an object to forward `web-vitals`
+	 * {@link AttributionReportOpts} (e.g. `reportAllChanges`).
+	 * @default false
+	 */
+	_experimental_fcp?: boolean | AttributionReportOpts
+
+	/**
+	 * Enable experimental TTFB collection. Same semantics as `_experimental_fcp`.
+	 * @default false
+	 */
+	_experimental_ttfb?: boolean | AttributionReportOpts
+
+	/**
 	 * If true, the webvitals spans will have their start time aligned with the document load span,
 	 * and will inherit the `location.href` attribute from the document load span if available.
 	 * When the document load span does not arrive within a bounded grace period (e.g. the document
@@ -83,7 +109,8 @@ export interface SplunkWebVitalsInstrumentationConfig extends InstrumentationCon
 	alignWebVitalsSpansWithDocumentLoad?: boolean
 
 	/**
-	 * Controls how attribution attributes are exported on `webvitals` spans.
+	 * Controls how attribution attributes are exported on `webvitals` spans when
+	 * `_experimental_attribution` is enabled.
 	 * Defaults to privacy-preserving values (`target: 'safe'`, `lcpUrl: 'sanitized'`).
 	 * @see WebVitalsAttributionConfig
 	 */

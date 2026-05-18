@@ -17,7 +17,51 @@
  */
 import { expect } from '@playwright/test'
 
+import { RecordPage } from '../../pages/record-page'
 import { expectDefined, test } from '../../utils/test'
+
+const ATTRIBUTION_TAGS = [
+	'cls.largest_shift_source.current_rect.height',
+	'cls.largest_shift_source.current_rect.width',
+	'cls.largest_shift_source.current_rect.x',
+	'cls.largest_shift_source.current_rect.y',
+	'cls.largest_shift_source.previous_rect.height',
+	'cls.largest_shift_source.previous_rect.width',
+	'cls.largest_shift_source.previous_rect.x',
+	'cls.largest_shift_source.previous_rect.y',
+	'cls.largest_shift_target',
+	'cls.largest_shift_time',
+	'cls.largest_shift_value',
+	'cls.load_state',
+	'fcp.first_byte_to_fcp',
+	'fcp.load_state',
+	'fcp.time_to_first_byte',
+	'http.response.body.size',
+	'http.response.body.uncompressed_size',
+	'http.response.status_code',
+	'inp.input_delay',
+	'inp.interaction_target',
+	'inp.interaction_time',
+	'inp.interaction_type',
+	'inp.load_state',
+	'inp.next_paint_time',
+	'inp.presentation_delay',
+	'inp.processing_duration',
+	'lcp.element_render_delay',
+	'lcp.resource_load_delay',
+	'lcp.resource_load_duration',
+	'lcp.resource.initiator_type',
+	'lcp.resource.transfer_size',
+	'lcp.target',
+	'lcp.time_to_first_byte',
+	'lcp.url',
+	'network.protocol.name',
+	'ttfb.cache_duration',
+	'ttfb.connection_duration',
+	'ttfb.dns_duration',
+	'ttfb.request_duration',
+	'ttfb.waiting_duration',
+] as const
 
 const expectNumericTag = (tags: Record<string, unknown>, name: string): void => {
 	expect(tags[name]).toBeDefined()
@@ -30,6 +74,13 @@ const expectStringTag = (tags: Record<string, unknown>, name: string): void => {
 
 const expectNoLegacyAttributionTags = (tags: Record<string, unknown>): void => {
 	expect(Object.keys(tags).some((name) => name.includes('.attribution.'))).toBeFalsy()
+}
+
+const expectNoAttributionTags = (tags: Record<string, unknown>): void => {
+	expectNoLegacyAttributionTags(tags)
+	for (const name of ATTRIBUTION_TAGS) {
+		expect(tags[name], `${name} should not be emitted`).toBeUndefined()
+	}
 }
 
 const expectSafeTarget = (target: unknown): void => {
@@ -51,6 +102,37 @@ const waitForTwoAnimationFrames = (): Promise<void> =>
 		})
 	})
 
+async function collectWebVitals(recordPage: RecordPage, url: string): Promise<void> {
+	await recordPage.goTo(url)
+	await expect(recordPage.locator('#shift')).toBeAttached()
+	await recordPage.evaluate(waitForTwoAnimationFrames)
+
+	await recordPage.locator('#clicky').click()
+	await expect(recordPage.locator('#p2')).toBeAttached()
+
+	// webvitals library won't send the cls unless a visibility change happens, so
+	// force a fake one
+	await recordPage.changeVisibilityInTab('hidden')
+	await recordPage.waitForTimeoutAndFlushData(1000)
+}
+
+function getMetricSpans(recordPage: RecordPage, name: string) {
+	return recordPage.receivedSpans.filter((span) => span.tags[name] !== undefined)
+}
+
+function expectSingleMetricSpan(recordPage: RecordPage, name: string) {
+	const spans = getMetricSpans(recordPage, name)
+	expect(spans).toHaveLength(1)
+	const span = spans[0]
+	expectDefined(span)
+	expect(span.name).toBe('webvitals')
+	expectNumericTag(span.tags, name)
+	expectStringTag(span.tags, 'webvitals.metric_id')
+	expectNumericTag(span.tags, 'webvitals.delta')
+	expectStringTag(span.tags, 'webvitals.navigation_type')
+	return span
+}
+
 test.describe('web vitals', () => {
 	test('web vitals spans', async ({ browserName, recordPage }) => {
 		// TODO: Investigate why this test is disabled on webkit and firefox
@@ -58,66 +140,109 @@ test.describe('web vitals', () => {
 			test.skip()
 		}
 
-		await recordPage.goTo('/webvitals/webvitals.ejs')
-		await expect(recordPage.locator('#shift')).toBeAttached()
-		await recordPage.evaluate(waitForTwoAnimationFrames)
+		await collectWebVitals(recordPage, '/webvitals/webvitals.ejs')
 
-		await recordPage.locator('#clicky').click()
-		await expect(recordPage.locator('#p2')).toBeAttached()
+		const lcp = expectSingleMetricSpan(recordPage, 'lcp')
+		expectNoAttributionTags(lcp.tags)
 
-		// webvitals library won't send the cls unless a visibility change happens, so
-		// force a fake one
-		await recordPage.changeVisibilityInTab('hidden')
-		await recordPage.waitForTimeoutAndFlushData(1000)
+		const cls = expectSingleMetricSpan(recordPage, 'cls')
+		expectNoAttributionTags(cls.tags)
 
-		const lcp = recordPage.receivedSpans.filter((span) => span.tags.lcp !== undefined)
-		expect(lcp).toHaveLength(1)
-		expect(lcp[0].name).toBe('webvitals')
-		expectNoLegacyAttributionTags(lcp[0].tags)
-		expectStringTag(lcp[0].tags, 'webvitals.metric_id')
-		expectNumericTag(lcp[0].tags, 'webvitals.delta')
-		expectStringTag(lcp[0].tags, 'webvitals.navigation_type')
-		expectSafeTarget(lcp[0].tags['lcp.target'])
-		expectNumericTag(lcp[0].tags, 'lcp.time_to_first_byte')
-		expectNumericTag(lcp[0].tags, 'lcp.resource_load_delay')
-		expectNumericTag(lcp[0].tags, 'lcp.resource_load_duration')
-		expectNumericTag(lcp[0].tags, 'lcp.element_render_delay')
+		const inp = expectSingleMetricSpan(recordPage, 'inp')
+		expectNoAttributionTags(inp.tags)
 
-		const cls = recordPage.receivedSpans.filter((span) => span.tags.cls !== undefined)
-		expect(cls).toHaveLength(1)
-		expect(cls[0].name).toBe('webvitals')
-		expectNoLegacyAttributionTags(cls[0].tags)
-		expectStringTag(cls[0].tags, 'webvitals.metric_id')
-		expectNumericTag(cls[0].tags, 'webvitals.delta')
-		expectStringTag(cls[0].tags, 'webvitals.navigation_type')
-		expectSafeTarget(cls[0].tags['cls.largest_shift_target'])
-		expectNumericTag(cls[0].tags, 'cls.largest_shift_time')
-		expectNumericTag(cls[0].tags, 'cls.largest_shift_value')
-		expectStringTag(cls[0].tags, 'cls.load_state')
-		expectNumericTag(cls[0].tags, 'cls.largest_shift_source.previous_rect.x')
-		expectNumericTag(cls[0].tags, 'cls.largest_shift_source.previous_rect.y')
-		expectNumericTag(cls[0].tags, 'cls.largest_shift_source.previous_rect.width')
-		expectNumericTag(cls[0].tags, 'cls.largest_shift_source.previous_rect.height')
-		expectNumericTag(cls[0].tags, 'cls.largest_shift_source.current_rect.x')
-		expectNumericTag(cls[0].tags, 'cls.largest_shift_source.current_rect.y')
-		expectNumericTag(cls[0].tags, 'cls.largest_shift_source.current_rect.width')
-		expectNumericTag(cls[0].tags, 'cls.largest_shift_source.current_rect.height')
+		expect(getMetricSpans(recordPage, 'fcp')).toHaveLength(0)
+		expect(getMetricSpans(recordPage, 'ttfb')).toHaveLength(0)
 
-		const inp = recordPage.receivedSpans.filter((span) => span.tags.inp !== undefined)
-		expect(inp).toHaveLength(1)
-		expect(inp[0].name).toBe('webvitals')
-		expectNoLegacyAttributionTags(inp[0].tags)
-		expectStringTag(inp[0].tags, 'webvitals.metric_id')
-		expectNumericTag(inp[0].tags, 'webvitals.delta')
-		expectStringTag(inp[0].tags, 'webvitals.navigation_type')
-		expectSafeTarget(inp[0].tags['inp.interaction_target'])
-		expectNumericTag(inp[0].tags, 'inp.interaction_time')
-		expectStringTag(inp[0].tags, 'inp.interaction_type')
-		expectNumericTag(inp[0].tags, 'inp.next_paint_time')
-		expectNumericTag(inp[0].tags, 'inp.input_delay')
-		expectNumericTag(inp[0].tags, 'inp.processing_duration')
-		expectNumericTag(inp[0].tags, 'inp.presentation_delay')
-		expectStringTag(inp[0].tags, 'inp.load_state')
+		expect(recordPage.receivedErrorSpans).toHaveLength(0)
+	})
+
+	test('web vitals attribution attributes require experimental attribution', async ({ browserName, recordPage }) => {
+		if (browserName === 'webkit' || browserName === 'firefox') {
+			test.skip()
+		}
+
+		await collectWebVitals(recordPage, '/webvitals/webvitals-attribution.ejs')
+
+		const lcp = expectSingleMetricSpan(recordPage, 'lcp')
+		expectNoLegacyAttributionTags(lcp.tags)
+		expectSafeTarget(lcp.tags['lcp.target'])
+		expectNumericTag(lcp.tags, 'lcp.time_to_first_byte')
+		expectNumericTag(lcp.tags, 'lcp.resource_load_delay')
+		expectNumericTag(lcp.tags, 'lcp.resource_load_duration')
+		expectNumericTag(lcp.tags, 'lcp.element_render_delay')
+
+		const cls = expectSingleMetricSpan(recordPage, 'cls')
+		expectNoLegacyAttributionTags(cls.tags)
+		expectSafeTarget(cls.tags['cls.largest_shift_target'])
+		expectNumericTag(cls.tags, 'cls.largest_shift_time')
+		expectNumericTag(cls.tags, 'cls.largest_shift_value')
+		expectStringTag(cls.tags, 'cls.load_state')
+		expectNumericTag(cls.tags, 'cls.largest_shift_source.previous_rect.x')
+		expectNumericTag(cls.tags, 'cls.largest_shift_source.previous_rect.y')
+		expectNumericTag(cls.tags, 'cls.largest_shift_source.previous_rect.width')
+		expectNumericTag(cls.tags, 'cls.largest_shift_source.previous_rect.height')
+		expectNumericTag(cls.tags, 'cls.largest_shift_source.current_rect.x')
+		expectNumericTag(cls.tags, 'cls.largest_shift_source.current_rect.y')
+		expectNumericTag(cls.tags, 'cls.largest_shift_source.current_rect.width')
+		expectNumericTag(cls.tags, 'cls.largest_shift_source.current_rect.height')
+
+		const inp = expectSingleMetricSpan(recordPage, 'inp')
+		expectNoLegacyAttributionTags(inp.tags)
+		expectSafeTarget(inp.tags['inp.interaction_target'])
+		expectNumericTag(inp.tags, 'inp.interaction_time')
+		expectStringTag(inp.tags, 'inp.interaction_type')
+		expectNumericTag(inp.tags, 'inp.next_paint_time')
+		expectNumericTag(inp.tags, 'inp.input_delay')
+		expectNumericTag(inp.tags, 'inp.processing_duration')
+		expectNumericTag(inp.tags, 'inp.presentation_delay')
+		expectStringTag(inp.tags, 'inp.load_state')
+
+		expect(recordPage.receivedErrorSpans).toHaveLength(0)
+	})
+
+	test('experimental FCP and TTFB emit only when opted in without attribution by default', async ({
+		browserName,
+		recordPage,
+	}) => {
+		if (browserName === 'webkit' || browserName === 'firefox') {
+			test.skip()
+		}
+
+		await collectWebVitals(recordPage, '/webvitals/webvitals-experimental.ejs')
+
+		const fcp = expectSingleMetricSpan(recordPage, 'fcp')
+		expectNoAttributionTags(fcp.tags)
+
+		const ttfb = expectSingleMetricSpan(recordPage, 'ttfb')
+		expectNoAttributionTags(ttfb.tags)
+
+		expect(recordPage.receivedErrorSpans).toHaveLength(0)
+	})
+
+	test('experimental FCP and TTFB attribution requires experimental attribution', async ({
+		browserName,
+		recordPage,
+	}) => {
+		if (browserName === 'webkit' || browserName === 'firefox') {
+			test.skip()
+		}
+
+		await collectWebVitals(recordPage, '/webvitals/webvitals-experimental-attribution.ejs')
+
+		const fcp = expectSingleMetricSpan(recordPage, 'fcp')
+		expectNoLegacyAttributionTags(fcp.tags)
+		expectNumericTag(fcp.tags, 'fcp.time_to_first_byte')
+		expectNumericTag(fcp.tags, 'fcp.first_byte_to_fcp')
+		expectStringTag(fcp.tags, 'fcp.load_state')
+
+		const ttfb = expectSingleMetricSpan(recordPage, 'ttfb')
+		expectNoLegacyAttributionTags(ttfb.tags)
+		expectNumericTag(ttfb.tags, 'ttfb.waiting_duration')
+		expectNumericTag(ttfb.tags, 'ttfb.cache_duration')
+		expectNumericTag(ttfb.tags, 'ttfb.dns_duration')
+		expectNumericTag(ttfb.tags, 'ttfb.connection_duration')
+		expectNumericTag(ttfb.tags, 'ttfb.request_duration')
 
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})
