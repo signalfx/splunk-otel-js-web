@@ -18,11 +18,12 @@
 
 import { Span } from '@opentelemetry/api'
 
+import { isNumber, isString } from '../../types'
 import { LayoutShiftRect } from './types'
 
 export function setAttributes(span: Span, attributes: Record<string, number | string>): void {
 	for (const [name, value] of Object.entries(attributes)) {
-		if (typeof value === 'number') {
+		if (isNumber(value)) {
 			setNumberAttribute(span, name, value)
 		} else {
 			setStringAttribute(span, name, value)
@@ -31,7 +32,7 @@ export function setAttributes(span: Span, attributes: Record<string, number | st
 }
 
 export function setNumberAttribute(span: Span, name: string, value: number | undefined): void {
-	if (typeof value === 'number' && Number.isFinite(value)) {
+	if (isNumber(value) && Number.isFinite(value)) {
 		span.setAttribute(name, value)
 	}
 }
@@ -48,7 +49,7 @@ export function setRectAttributes(span: Span, prefix: string, rect: LayoutShiftR
 }
 
 export function setStringAttribute(span: Span, name: string, value: string | undefined): void {
-	if (typeof value === 'string') {
+	if (isString(value)) {
 		span.setAttribute(name, value)
 	}
 }

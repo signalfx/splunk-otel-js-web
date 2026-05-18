@@ -15,7 +15,4 @@
  * limitations under the License.
  *
  */
-export * from './error'
-export * from './node'
-export * from './number'
-export * from './string'
+export const isNumber = (val: unknown): val is number => typeof val === 'number'
