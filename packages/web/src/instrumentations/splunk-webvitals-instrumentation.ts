@@ -100,8 +100,8 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 			this.docLoadSpanResolve = resolve
 		})
 
-		// Fall back to wall-clock alignment if `documentLoad` never arrives
-		// (e.g. `document` instrumentation is disabled).
+		// Without this fallback, `reportMetric` would wait forever when no
+		// `documentLoad` span is emitted (e.g. `document` instrumentation is disabled).
 		const fallbackTimeout = setTimeout(() => {
 			this.docLoadSpanResolve?.()
 			this.docLoadSpanResolve = undefined

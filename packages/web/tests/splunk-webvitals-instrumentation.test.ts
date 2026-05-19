@@ -138,6 +138,28 @@ describe('webvitals attribution helpers', () => {
 		})
 	})
 
+	it('falls back to wall-clock timing when documentLoad never arrives', async () => {
+		vi.useFakeTimers()
+		try {
+			vi.setSystemTime(1000)
+			const { instrumentation, span } = createWebVitalsInstrumentationMock({
+				alignWebVitalsSpansWithDocumentLoad: true,
+			})
+
+			const reportPromise = reportLCPMetric(instrumentation)
+			await vi.advanceTimersByTimeAsync(4999)
+			expect(instrumentation._tracer.startSpan).not.toHaveBeenCalled()
+
+			await vi.advanceTimersByTimeAsync(1)
+			await reportPromise
+
+			expect(instrumentation._tracer.startSpan).toHaveBeenCalledWith('webvitals', { startTime: 1000 })
+			expect(span.end).toHaveBeenCalledWith(1000)
+		} finally {
+			vi.useRealTimers()
+		}
+	})
+
 	it('emits shared webvitals and attribution fields when experimental attribution is enabled', async () => {
 		const { attributes, instrumentation, span } = createWebVitalsInstrumentationMock({
 			_experimental_attribution: true,
