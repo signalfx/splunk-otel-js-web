@@ -50,22 +50,15 @@ export function getLCPUrlForAttribution(
 	config?: WebVitalsAttributionConfig,
 ): string | undefined {
 	const urlMode = getResolvedWebVitalsAttributionConfig(config).lcpUrl
-	switch (urlMode) {
-		case 'off': {
-			return undefined
-		}
-		case 'raw': {
-			return url
-		}
-		case 'sanitized': {
-			return sanitizeLCPUrl(url)
-		}
-		default: {
-			const _exhaustiveCheck: never = urlMode
-			void _exhaustiveCheck
-			return sanitizeLCPUrl(url)
-		}
+	if (urlMode === 'off') {
+		return undefined
 	}
+
+	if (urlMode === 'raw') {
+		return url
+	}
+
+	return sanitizeLCPUrl(url)
 }
 
 export function getLCPResourceTimingAttributes(entry: PerformanceResourceTiming): Record<string, number | string> {

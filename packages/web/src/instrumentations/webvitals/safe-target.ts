@@ -112,22 +112,15 @@ export function getWebVitalsTargetForAttribution(
 	config?: WebVitalsAttributionConfig,
 ): string | undefined {
 	const targetMode = getResolvedWebVitalsAttributionConfig(config).target
-	switch (targetMode) {
-		case 'off': {
-			return undefined
-		}
-		case 'raw': {
-			return target
-		}
-		case 'safe': {
-			return isSafeGeneratedWebVitalsTarget(target) ? target : undefined
-		}
-		default: {
-			const _exhaustiveCheck: never = targetMode
-			void _exhaustiveCheck
-			return isSafeGeneratedWebVitalsTarget(target) ? target : undefined
-		}
+	if (targetMode === 'off') {
+		return undefined
 	}
+
+	if (targetMode === 'raw') {
+		return target
+	}
+
+	return isSafeGeneratedWebVitalsTarget(target) ? target : undefined
 }
 
 export function isSafeGeneratedWebVitalsTarget(target: string | undefined): target is string {

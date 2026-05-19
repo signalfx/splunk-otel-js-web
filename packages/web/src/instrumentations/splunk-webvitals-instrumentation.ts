@@ -67,12 +67,10 @@ const MODULE_NAME = 'splunk-webvitals'
 // bound that avoids hangs when the `document` instrumentation is disabled.
 const DOC_LOAD_SPAN_WAIT_TIMEOUT_MS = 5000
 
-type TimeoutWithOptionalUnref = ReturnType<typeof setTimeout> & { unref?: () => void }
-
 // Allow Node/Vitest test environments to exit even if the timer is still
 // pending. Guard the call because browser timers do not provide `unref`.
 function maybeUnref(handle: ReturnType<typeof setTimeout>): void {
-	const maybeNodeTimer = handle as TimeoutWithOptionalUnref
+	const maybeNodeTimer = handle as { unref?: () => void }
 	if (typeof maybeNodeTimer.unref === 'function') {
 		maybeNodeTimer.unref()
 	}
@@ -167,13 +165,13 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 			}, this.getINPOptions())
 		}
 
-		if (this.isExperimentalMetricEnabled(this._config._experimental_fcp)) {
+		if (this._config._experimental_fcp) {
 			onFCP((metric) => {
 				void this.reportMetric({ metric, name: 'fcp' })
 			}, this.getAttributionOptions(this._config._experimental_fcp))
 		}
 
-		if (this.isExperimentalMetricEnabled(this._config._experimental_ttfb)) {
+		if (this._config._experimental_ttfb) {
 			onTTFB((metric) => {
 				void this.reportMetric({ metric, name: 'ttfb' })
 			}, this.getAttributionOptions(this._config._experimental_ttfb))
@@ -196,7 +194,7 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 
 	private getAttributionOptions(config: boolean | AttributionReportOpts | undefined): AttributionReportOpts {
 		const options = typeof config === 'object' ? { ...config } : {}
-		if (!this.shouldExportAttribution()) {
+		if (!isWebVitalsAttributionEnabled(this._config._experimental_attribution)) {
 			return options
 		}
 
@@ -213,10 +211,6 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 		const includeProcessedEventEntries =
 			typeof this._config.inp === 'object' ? (this._config.inp.includeProcessedEventEntries ?? false) : false
 		return { ...base, includeProcessedEventEntries }
-	}
-
-	private isExperimentalMetricEnabled(config: boolean | AttributionReportOpts | undefined): boolean {
-		return config !== undefined && config !== false
 	}
 
 	private async reportMetric(report: WebVitalReport): Promise<void> {
@@ -266,7 +260,7 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 		}
 
 		setNumberAttribute(span, name, value)
-		if (this.shouldExportAttribution()) {
+		if (isWebVitalsAttributionEnabled(this._config._experimental_attribution)) {
 			setStringAttribute(span, 'webvitals.metric_id', metric.id)
 			setNumberAttribute(span, 'webvitals.delta', metric.delta)
 			setStringAttribute(span, 'webvitals.navigation_type', metric.navigationType)
@@ -305,9 +299,5 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 
 	private shouldAlignWithDocumentLoad(): boolean {
 		return this._config.alignWebVitalsSpansWithDocumentLoad ?? true
-	}
-
-	private shouldExportAttribution(): boolean {
-		return isWebVitalsAttributionEnabled(this._config._experimental_attribution)
 	}
 }
