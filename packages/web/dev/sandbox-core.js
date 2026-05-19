@@ -314,15 +314,50 @@ export function getRegisteredSdkVersion() {
 	return typeof sdkVersion === 'string' && sdkVersion ? sdkVersion : undefined
 }
 
+function getWebVitalsInstrumentationConfig() {
+	const pathname = location.pathname
+	if (!/\/web-vitals(?:-[^/]+)?\.html$/.test(pathname)) {
+		return
+	}
+
+	const webvitals = {
+		_experimental_attribution: true,
+		cls: false,
+		inp: false,
+		lcp: false,
+	}
+
+	if (pathname.endsWith('/web-vitals-cls.html')) {
+		webvitals.cls = { reportAllChanges: true }
+	}
+
+	if (pathname.endsWith('/web-vitals-fcp.html')) {
+		webvitals._experimental_fcp = true
+	}
+
+	if (pathname.endsWith('/web-vitals-inp.html')) {
+		webvitals.inp = { reportAllChanges: true }
+	}
+
+	if (pathname.endsWith('/web-vitals-lcp.html')) {
+		webvitals.lcp = { reportAllChanges: true }
+	}
+
+	if (pathname.endsWith('/web-vitals-ttfb.html')) {
+		webvitals._experimental_ttfb = true
+	}
+
+	return { webvitals }
+}
+
 function getConfig() {
+	const webVitalsInstrumentationConfig = getWebVitalsInstrumentationConfig()
 	const realm = inputValue('#cfg-realm')
 	const base = {
 		applicationName: inputValue('#cfg-app') || 'splunk-otel-web-dev',
 		debug: true,
 		deploymentEnvironment: inputValue('#cfg-env') || 'dev',
-		...(location.pathname.endsWith('/web-vitals.html')
-			? { instrumentations: { webvitals: { _experimental_attribution: true } } }
-			: {}),
+		...(webVitalsInstrumentationConfig ? { instrumentations: webVitalsInstrumentationConfig } : {}),
 		rumAccessToken: inputValue('#cfg-token') || undefined,
 	}
 

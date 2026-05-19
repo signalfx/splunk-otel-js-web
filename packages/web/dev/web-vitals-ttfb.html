@@ -3,11 +3,11 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Splunk RUM — Web Vitals Sandbox</title>
+		<title>Splunk RUM — TTFB Sandbox</title>
 		<link rel="stylesheet" href="sandbox-core.css" />
 		<link rel="stylesheet" href="web-vitals.css" />
 	</head>
-	<body data-web-vitals-metric="hub">
+	<body data-web-vitals-metric="ttfb">
 		<header>
 			<h1>Splunk RUM Dev Sandbox</h1>
 			<nav class="page-nav">
@@ -88,44 +88,50 @@
 		<div class="web-vitals-page">
 			<nav class="web-vitals-subnav" aria-label="Web Vitals metrics">
 				<span class="web-vitals-subnav-label">Metrics</span>
-				<a href="web-vitals.html" class="web-vitals-subnav-link" aria-current="page">Overview</a>
+				<a href="web-vitals.html" class="web-vitals-subnav-link">Overview</a>
 				<a href="web-vitals-lcp.html" class="web-vitals-subnav-link">LCP</a>
 				<a href="web-vitals-cls.html" class="web-vitals-subnav-link">CLS</a>
 				<a href="web-vitals-inp.html" class="web-vitals-subnav-link">INP</a>
 				<a href="web-vitals-fcp.html" class="web-vitals-subnav-link">FCP</a>
-				<a href="web-vitals-ttfb.html" class="web-vitals-subnav-link">TTFB</a>
+				<a href="web-vitals-ttfb.html" class="web-vitals-subnav-link" aria-current="page">TTFB</a>
 			</nav>
 
-			<main class="web-vitals-hub">
-				<section class="web-vitals-intro" aria-labelledby="web-vitals-heading">
-					<h2 id="web-vitals-heading">Web Vitals Fixtures</h2>
-					<p>
-						Use these focused pages to generate one Web Vitals metric at a time with experimental
-						attribution enabled. FCP and TTFB are enabled only on their dedicated pages.
-					</p>
+			<main class="metric-layout">
+				<section class="metric-stage" aria-labelledby="ttfb-heading">
+					<div class="metric-stage-header">
+						<div>
+							<h2 id="ttfb-heading">TTFB Attribution</h2>
+							<p>Reload to capture a fresh navigation response timing metric.</p>
+						</div>
+						<button id="btn-reload" class="primary" type="button">Reload page</button>
+					</div>
+					<div class="metric-stage-body">
+						<div class="timing-hero">
+							<div id="timing-value" class="timing-value">measuring</div>
+						</div>
+					</div>
 				</section>
 
-				<section class="metric-grid" aria-label="Web Vitals metric fixtures">
-					<a href="web-vitals-lcp.html" class="metric-card metric-card-lcp">
-						<h3>LCP</h3>
-						<p>Reload a page with a large same-origin image candidate and inspect LCP attribution.</p>
-					</a>
-					<a href="web-vitals-cls.html" class="metric-card metric-card-cls">
-						<h3>CLS</h3>
-						<p>Let delayed content shift the page and inspect layout shift target attribution.</p>
-					</a>
-					<a href="web-vitals-inp.html" class="metric-card metric-card-inp">
-						<h3>INP</h3>
-						<p>Click a control that intentionally blocks the main thread during interaction handling.</p>
-					</a>
-					<a href="web-vitals-fcp.html" class="metric-card metric-card-fcp">
-						<h3>FCP</h3>
-						<p>Load a visible content fixture with the experimental FCP metric enabled.</p>
-					</a>
-					<a href="web-vitals-ttfb.html" class="metric-card metric-card-ttfb">
-						<h3>TTFB</h3>
-						<p>Reload a navigation timing fixture with the experimental TTFB metric enabled.</p>
-					</a>
+				<section class="details-panel" aria-labelledby="expected-heading">
+					<h2 id="expected-heading">Expected Attributes</h2>
+					<dl class="attribute-list">
+						<div>
+							<dt>span name</dt>
+							<dd>webvitals</dd>
+						</div>
+						<div>
+							<dt>metric</dt>
+							<dd>ttfb</dd>
+						</div>
+						<div>
+							<dt>metric flag</dt>
+							<dd>_experimental_ttfb</dd>
+						</div>
+						<div>
+							<dt>timing fields</dt>
+							<dd>waiting, cache, dns, connection, request</dd>
+						</div>
+					</dl>
 				</section>
 
 				<section class="details-panel console-panel" aria-labelledby="console-heading">

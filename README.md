@@ -154,14 +154,22 @@ pnpm dev
 The sandbox has three pages, switchable from the header nav:
 
 - **RUM** (`index.html`) — exercise tracked fetch/XHR, history navigations, errors, custom spans, long tasks, and global attributes.
-- **Web Vitals** (`web-vitals.html`) — reload a focused LCP fixture page and inspect experimental web vitals attribution.
+- **Web Vitals** (`web-vitals.html`) — open focused metric fixtures for LCP, CLS, INP, FCP, and TTFB with experimental attribution enabled.
 - **Session Replay** (`replay.html`) — drive the `@splunk/otel-web-session-recorder` against a rich set of DOM/canvas/iframe/video fixtures. Replay requires building the recorder first:
 
     ```bash
     pnpm --filter @splunk/otel-web-session-recorder build
     ```
 
-Both pages share a Settings modal (gear icon) for realm, access token, app name, environment, beacon endpoints, and recorder options. Values (including the RUM access token) persist in `localStorage` per origin between reloads.
+All sandbox pages share a Settings modal (gear icon) for realm, access token, app name, environment, beacon endpoints, and recorder options. Values (including the RUM access token) persist in `localStorage` per origin between reloads.
+
+The Web Vitals page is a hub with metric-specific subpages:
+
+- `web-vitals-lcp.html` — reloads a large image candidate for LCP attribution.
+- `web-vitals-cls.html` — inserts delayed content to trigger a layout shift.
+- `web-vitals-inp.html` — blocks the main thread during a click interaction.
+- `web-vitals-fcp.html` — enables the experimental FCP metric for first paint attribution.
+- `web-vitals-ttfb.html` — enables the experimental TTFB metric for navigation response timing.
 
 #### Realm presets via `.env`
 
