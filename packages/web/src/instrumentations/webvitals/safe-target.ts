@@ -85,10 +85,9 @@ function getNthOfType(element: Element): string {
 	}
 
 	const elementTag = element.tagName.toLowerCase()
-	const children = parent.children
 	let count = 0
 	let index = -1
-	for (const child of children) {
+	for (const child of Array.from(parent.children)) {
 		if (child.tagName.toLowerCase() === elementTag) {
 			count += 1
 			if (child === element) {
