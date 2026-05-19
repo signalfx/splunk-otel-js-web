@@ -66,11 +66,14 @@ const MODULE_NAME = 'splunk-webvitals'
 // bound that avoids hangs when the `document` instrumentation is disabled.
 const DOC_LOAD_SPAN_WAIT_TIMEOUT_MS = 5000
 
-// Allow the host (Node tests, headless environments) to exit even if the
-// timer is still pending. `unref` is unavailable in the browser.
+type TimeoutWithOptionalUnref = ReturnType<typeof setTimeout> & { unref?: () => void }
+
+// Allow Node/Vitest test environments to exit even if the timer is still
+// pending. Guard the call because browser timers do not provide `unref`.
 function maybeUnref(handle: ReturnType<typeof setTimeout>): void {
-	if (typeof (handle as unknown as { unref?: () => void }).unref === 'function') {
-		;(handle as unknown as { unref: () => void }).unref()
+	const maybeNodeTimer = handle as TimeoutWithOptionalUnref
+	if (typeof maybeNodeTimer.unref === 'function') {
+		maybeNodeTimer.unref()
 	}
 }
 
