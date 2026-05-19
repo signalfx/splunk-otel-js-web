@@ -27,6 +27,7 @@ import {
 	getLCPUrlForAttribution,
 	getResolvedWebVitalsAttributionConfig,
 	getWebVitalMetricReportKey,
+	isWebVitalsAttributionEnabled,
 	sanitizeLCPUrl,
 } from '../src/instrumentations/webvitals'
 
@@ -52,6 +53,14 @@ describe('webvitals attribution helpers', () => {
 			lcpUrl: 'sanitized',
 			target: 'safe',
 		})
+		expect(getResolvedWebVitalsAttributionConfig(true)).toEqual({
+			lcpUrl: 'sanitized',
+			target: 'safe',
+		})
+		expect(getResolvedWebVitalsAttributionConfig({})).toEqual({
+			lcpUrl: 'sanitized',
+			target: 'safe',
+		})
 		expect(getResolvedWebVitalsAttributionConfig({ target: 'raw' })).toEqual({
 			lcpUrl: 'sanitized',
 			target: 'raw',
@@ -60,6 +69,14 @@ describe('webvitals attribution helpers', () => {
 			lcpUrl: 'off',
 			target: 'safe',
 		})
+	})
+
+	it('enables attribution for true or config object options only', () => {
+		expect(isWebVitalsAttributionEnabled(true)).toBe(true)
+		expect(isWebVitalsAttributionEnabled({})).toBe(true)
+		expect(isWebVitalsAttributionEnabled({ target: 'raw' })).toBe(true)
+		expect(isWebVitalsAttributionEnabled(false)).toBe(false)
+		expect(isWebVitalsAttributionEnabled()).toBe(false)
 	})
 
 	it('applies LCP URL attribution policy defaults and overrides', () => {
@@ -141,6 +158,41 @@ describe('webvitals attribution helpers', () => {
 			'webvitals.metric_id': 'v5-lcp',
 			'webvitals.navigation_type': 'navigate',
 		})
+	})
+
+	it('emits attribution with defaults when experimental attribution is an empty config object', async () => {
+		const { attributes, instrumentation, span } = createWebVitalsInstrumentationMock({
+			_experimental_attribution: {},
+		})
+
+		await reportLCPMetric(instrumentation)
+
+		expect(span.end).toHaveBeenCalled()
+		expect(attributes).toMatchObject({
+			'lcp': 100,
+			'lcp.target': 'main>img',
+			'lcp.url': 'https://example.com/image.png',
+			'webvitals.metric_id': 'v5-lcp',
+		})
+	})
+
+	it('applies policy overrides from the experimental attribution config object', async () => {
+		const { attributes, instrumentation, span } = createWebVitalsInstrumentationMock({
+			_experimental_attribution: {
+				lcpUrl: 'raw',
+				target: 'off',
+			},
+		})
+
+		await reportLCPMetric(instrumentation, {
+			url: 'https://example.com/image.png?token=secret#fragment',
+		})
+
+		expect(span.end).toHaveBeenCalled()
+		expect(attributes['lcp']).toBe(100)
+		expect(attributes['lcp.target']).toBeUndefined()
+		expect(attributes['lcp.url']).toBe('https://example.com/image.png?token=secret#fragment')
+		expect(attributes['webvitals.metric_id']).toBe('v5-lcp')
 	})
 
 	it('drops raw target fallback selectors when safe attribution is enabled', async () => {

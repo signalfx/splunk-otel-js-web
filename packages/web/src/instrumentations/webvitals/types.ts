@@ -78,13 +78,18 @@ export type WebVitalsAttributionConfig = {
 	target?: WebVitalsTargetAttribution
 }
 
+export type WebVitalsAttributionOption = boolean | WebVitalsAttributionConfig
+
 export interface SplunkWebVitalsInstrumentationConfig extends InstrumentationConfig {
 	/**
-	 * Enable experimental web vitals attribution attributes. When disabled, webvitals spans
-	 * emit only the metric value.
+	 * Enable experimental web vitals attribution attributes. Pass `true` to use
+	 * privacy-preserving defaults (`target: 'safe'`, `lcpUrl: 'sanitized'`) or pass
+	 * a config object to enable attribution and override specific attribution policies.
+	 * When disabled, webvitals spans emit only the metric value.
 	 * @default false
+	 * @see WebVitalsAttributionConfig
 	 */
-	_experimental_attribution?: boolean
+	_experimental_attribution?: WebVitalsAttributionOption
 
 	/**
 	 * Enable experimental FCP collection. Pass an object to forward `web-vitals`
@@ -107,14 +112,6 @@ export interface SplunkWebVitalsInstrumentationConfig extends InstrumentationCon
 	 * @default true
 	 */
 	alignWebVitalsSpansWithDocumentLoad?: boolean
-
-	/**
-	 * Controls how attribution attributes are exported on `webvitals` spans when
-	 * `_experimental_attribution` is enabled.
-	 * Defaults to privacy-preserving values (`target: 'safe'`, `lcpUrl: 'sanitized'`).
-	 * @see WebVitalsAttributionConfig
-	 */
-	attribution?: WebVitalsAttributionConfig
 
 	/**
 	 * Enable CLS collection. Pass an object to forward `web-vitals`

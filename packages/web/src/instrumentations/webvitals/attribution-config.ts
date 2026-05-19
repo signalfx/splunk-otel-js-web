@@ -16,7 +16,7 @@
  *
  */
 
-import { WebVitalsAttributionConfig } from './types'
+import { WebVitalsAttributionConfig, WebVitalsAttributionOption } from './types'
 
 const DEFAULT_ATTRIBUTION_CONFIG: Required<WebVitalsAttributionConfig> = {
 	lcpUrl: 'sanitized',
@@ -24,10 +24,18 @@ const DEFAULT_ATTRIBUTION_CONFIG: Required<WebVitalsAttributionConfig> = {
 }
 
 export function getResolvedWebVitalsAttributionConfig(
-	config?: WebVitalsAttributionConfig,
+	config?: WebVitalsAttributionOption,
 ): Required<WebVitalsAttributionConfig> {
 	return {
 		...DEFAULT_ATTRIBUTION_CONFIG,
-		...config,
+		...(isWebVitalsAttributionConfig(config) ? config : {}),
 	}
+}
+
+export function isWebVitalsAttributionEnabled(config?: WebVitalsAttributionOption): boolean {
+	return config === true || isWebVitalsAttributionConfig(config)
+}
+
+function isWebVitalsAttributionConfig(config?: WebVitalsAttributionOption): config is WebVitalsAttributionConfig {
+	return typeof config === 'object' && config !== null
 }

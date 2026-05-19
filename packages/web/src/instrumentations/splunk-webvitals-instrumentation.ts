@@ -31,7 +31,7 @@ import {
 } from 'web-vitals/attribution'
 
 import { SessionManager } from '../managers'
-import { isFiniteNumber, SplunkOtelWebConfig } from '../types'
+import { isFiniteNumber, isString, SplunkOtelWebConfig } from '../types'
 import { VERSION } from '../version'
 import {
 	generateSafeWebVitalsTarget,
@@ -39,6 +39,7 @@ import {
 	getResolvedWebVitalsAttributionConfig,
 	getWebVitalMetricReportKey,
 	getWebVitalsTargetForAttribution,
+	isWebVitalsAttributionEnabled,
 	setCLSAttributionAttributes,
 	setFCPAttributionAttributes,
 	setINPAttributionAttributes,
@@ -183,7 +184,7 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 
 	private getAttributionContext(): WebVitalsAttributionOptions {
 		if (!this.attributionContext) {
-			const resolvedConfig = getResolvedWebVitalsAttributionConfig(this._config.attribution)
+			const resolvedConfig = getResolvedWebVitalsAttributionConfig(this._config._experimental_attribution)
 			this.attributionContext = {
 				getLCPUrl: (url) => getLCPUrlForAttribution(url, resolvedConfig),
 				getTarget: (target) => getWebVitalsTargetForAttribution(target, resolvedConfig),
@@ -199,7 +200,7 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 			return options
 		}
 
-		const { target: targetMode } = getResolvedWebVitalsAttributionConfig(this._config.attribution)
+		const { target: targetMode } = getResolvedWebVitalsAttributionConfig(this._config._experimental_attribution)
 		if (targetMode === 'safe') {
 			options.generateTarget = generateSafeWebVitalsTarget
 		}
@@ -257,14 +258,14 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 
 			span = this.tracer.startSpan('webvitals', { startTime })
 			const docLoadLocation = docLoadSpan.attributes['location.href']
-			if (docLoadLocation) {
-				span.setAttribute('location.href', docLoadLocation)
+			if (isString(docLoadLocation)) {
+				setStringAttribute(span, 'location.href', docLoadLocation)
 			}
 		} else {
 			span = this.tracer.startSpan('webvitals', { startTime: now })
 		}
 
-		span.setAttribute(name, value)
+		setNumberAttribute(span, name, value)
 		if (this.shouldExportAttribution()) {
 			setStringAttribute(span, 'webvitals.metric_id', metric.id)
 			setNumberAttribute(span, 'webvitals.delta', metric.delta)
@@ -307,6 +308,6 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 	}
 
 	private shouldExportAttribution(): boolean {
-		return this._config._experimental_attribution === true
+		return isWebVitalsAttributionEnabled(this._config._experimental_attribution)
 	}
 }

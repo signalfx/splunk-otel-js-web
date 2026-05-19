@@ -18,6 +18,7 @@
 
 import type { WebVitalsAttributionConfig } from './types'
 
+import { isElement } from '../../types'
 import { getResolvedWebVitalsAttributionConfig } from './attribution-config'
 
 const MAX_SAFE_TARGET_LENGTH = 120
@@ -26,16 +27,16 @@ const SAFE_ROLE_PATTERN = /^[a-zA-Z][\w-]*$/
 const SAFE_TARGET_PART_PATTERN = /^[a-z][a-z0-9-]*(\[role=[a-zA-Z][\w-]*\])?(:nth-of-type\([1-9]\d*\))?$/
 
 export function generateSafeWebVitalsTarget(node: Node | null): string | undefined {
-	if (!node || node.nodeType !== Node.ELEMENT_NODE) {
+	if (!node || !isElement(node)) {
 		return undefined
 	}
 
 	const parts: string[] = []
-	let current: Element | null = node as Element
+	let current: Element | null = node
 	// Track accumulated selector length: sum of part lengths plus '>' separators.
 	let accumulatedLength = 0
 
-	while (current && current.nodeType === Node.ELEMENT_NODE && parts.length < MAX_SAFE_TARGET_DEPTH) {
+	while (current && parts.length < MAX_SAFE_TARGET_DEPTH) {
 		const { hasRole, part } = getSafeElementSelectorPart(current)
 		// Stop appending to the chain once adding `part` would exceed the
 		// length budget; keep what we already accumulated to ensure the
@@ -79,28 +80,31 @@ function isSafeRole(role: string): boolean {
 }
 
 function getNthOfType(element: Element): string {
-	const parent = element.parentElement
-	if (!parent) {
+	if (!element.parentElement) {
 		return ''
 	}
 
-	const elementTag = element.tagName.toLowerCase()
-	let count = 0
-	let index = -1
-	for (const child of Array.from(parent.children)) {
-		if (child.tagName.toLowerCase() === elementTag) {
-			count += 1
-			if (child === element) {
-				index = count
-			}
+	const elementTag = element.tagName
+	let earlierSameTag = 0
+	for (let sibling = element.previousElementSibling; sibling; sibling = sibling.previousElementSibling) {
+		if (sibling.tagName === elementTag) {
+			earlierSameTag += 1
 		}
 	}
 
-	if (count <= 1) {
+	let hasLaterSameTag = false
+	for (let sibling = element.nextElementSibling; sibling; sibling = sibling.nextElementSibling) {
+		if (sibling.tagName === elementTag) {
+			hasLaterSameTag = true
+			break
+		}
+	}
+
+	if (earlierSameTag === 0 && !hasLaterSameTag) {
 		return ''
 	}
 
-	return `:nth-of-type(${index})`
+	return `:nth-of-type(${earlierSameTag + 1})`
 }
 
 export function getWebVitalsTargetForAttribution(
