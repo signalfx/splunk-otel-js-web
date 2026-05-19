@@ -636,10 +636,6 @@ export class SplunkContextManager implements ContextManager {
 				// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 				// @ts-ignore expects __promisify__ for some reason
 				function (this: unknown, ...args: Parameters<typeof setTimeout>) {
-					const originalSetTimeout = original as (
-						...timeoutArgs: Parameters<typeof setTimeout>
-					) => ReturnType<typeof setTimeout>
-
 					// Don't copy parent context if the timeout is long enough that it isn't really
 					// expected to happen within interaction (eg polling every second).
 					// The value for that is a pretty arbitary decision so here's 1 frame at 30fps (1000/30)
@@ -647,7 +643,9 @@ export class SplunkContextManager implements ContextManager {
 						manager.bindActiveToArgument(args, 0)
 					}
 
-					return originalSetTimeout.apply(this, args)
+					// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+					// @ts-ignore setTimeout overloads include Node's __promisify__ shape in root typecheck.
+					return original.apply(this, args)
 				},
 		)
 
