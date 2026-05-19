@@ -17,7 +17,7 @@
  */
 import { expect } from '@playwright/test'
 
-import { test } from '../../utils/test'
+import { expectDefined, test } from '../../utils/test'
 
 test.describe('resource observer', () => {
 	test('should report resource loads happening after page load', async ({ recordPage }) => {
@@ -44,14 +44,18 @@ test.describe('resource observer', () => {
 		expect(imageSpans).toHaveLength(1)
 
 		expect(imageBlackSpans).toHaveLength(1)
-		expect(imageBlackSpans[0].annotations.length).toBe(8)
+		const imageBlackAnnotations = imageBlackSpans[0].annotations
+		expectDefined(imageBlackAnnotations)
+		expect(imageBlackAnnotations.length).toBe(8)
 		expect(imageBlackSpans[0].tags['http.url']).toBe(
 			'http://localhost:3000/resource-observer/assets/splunk-black.svg?delay=100',
 		)
 		expect(imageBlackSpans[0].tags['http.cache.hit']).toBe('false')
 
 		expect(scriptSpans).toHaveLength(1)
-		expect(scriptSpans[0].annotations.length).toBe(8)
+		const scriptAnnotations = scriptSpans[0].annotations
+		expectDefined(scriptAnnotations)
+		expect(scriptAnnotations.length).toBe(8)
 		expect(scriptSpans[0].tags['http.url']).toBe('http://localhost:3000/resource-observer/assets/test.js')
 		expect(scriptSpans[0].tags['http.cache.hit']).toBe('false')
 	})

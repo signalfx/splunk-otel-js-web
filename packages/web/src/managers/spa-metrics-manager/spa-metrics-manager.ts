@@ -18,44 +18,42 @@
 
 import { diag } from '@opentelemetry/api'
 
-import { FetchXhrMonitor, MediaMonitor, PerformanceMonitor, ResourceState, ResourceStateEvent } from './monitors'
-import { QuietPeriodAwaiter } from './quiet-period-awaiter'
+import { FetchXhrMonitor, MediaMonitor, PerformanceMonitor } from './monitors'
+import { PageLoadTimeTracker } from './page-load-time-tracker'
+import { VisualCompleteTracker } from './visual-complete-tracker'
+
+const DEFAULT_QUIET_MEDIA_TIME = 3000
+const DEFAULT_QUIET_TIME = 5000
 
 const SPA_METRICS_MANAGER_CONFIG_DEFAULTS = {
 	ignoreUrls: [] as (string | RegExp)[],
 	maxResourcesToWatch: 100,
-	quietTime: 5000,
+	quietMediaTime: DEFAULT_QUIET_MEDIA_TIME,
+	quietTime: DEFAULT_QUIET_TIME,
 } as const
 
 export interface SpaMetricsManagerConfig {
 	beaconEndpoint?: string
 	ignoreUrls?: (string | RegExp)[]
 	maxResourcesToWatch?: number
+	quietMediaTime?: number
 	quietTime?: number
 }
 
 export class SpaMetricsManager {
 	private readonly config: Required<Omit<SpaMetricsManagerConfig, 'beaconEndpoint'>>
 
-	private fetchXhrMonitor: FetchXhrMonitor
+	private readonly fetchXhrMonitor: FetchXhrMonitor
 
 	private isMonitoring = false
 
-	private loadingUrls = new Map<string, number>()
+	private readonly mediaMonitor: MediaMonitor
 
-	private get loadingResourcesCount(): number {
-		let count = 0
-		for (const value of this.loadingUrls.values()) {
-			count += value
-		}
-		return count
-	}
+	private readonly pageLoadTimeTracker: PageLoadTimeTracker
 
-	private mediaMonitor: MediaMonitor
+	private readonly performanceMonitor: PerformanceMonitor
 
-	private performanceMonitor: PerformanceMonitor
-
-	private quietPeriodAwaiter = new QuietPeriodAwaiter()
+	private readonly visualCompleteTracker: VisualCompleteTracker
 
 	constructor(config: SpaMetricsManagerConfig = {}) {
 		const ignoreUrls: (string | RegExp)[] = [...(config.ignoreUrls ?? [])]
@@ -72,25 +70,33 @@ export class SpaMetricsManager {
 		this.config = {
 			ignoreUrls,
 			maxResourcesToWatch: config.maxResourcesToWatch ?? SPA_METRICS_MANAGER_CONFIG_DEFAULTS.maxResourcesToWatch,
+			quietMediaTime: config.quietMediaTime ?? SPA_METRICS_MANAGER_CONFIG_DEFAULTS.quietMediaTime,
 			quietTime: config.quietTime ?? SPA_METRICS_MANAGER_CONFIG_DEFAULTS.quietTime,
 		}
 
+		this.pageLoadTimeTracker = new PageLoadTimeTracker({
+			maxResourcesToWatch: this.config.maxResourcesToWatch,
+			quietTime: this.config.quietTime,
+		})
 		this.fetchXhrMonitor = new FetchXhrMonitor({
 			ignoreUrls: this.config.ignoreUrls,
-			onResourceStateChange: this.onResourceStateChange,
+			onResourceStateChange: this.pageLoadTimeTracker.onResourceStateChange,
 		})
 		this.mediaMonitor = new MediaMonitor({
-			onResourceStateChange: this.onResourceStateChange,
+			onResourceStateChange: this.pageLoadTimeTracker.onResourceStateChange,
+		})
+		this.visualCompleteTracker = new VisualCompleteTracker({
+			mediaMonitor: this.mediaMonitor,
+			quietMediaTime: this.config.quietMediaTime,
 		})
 		this.performanceMonitor = new PerformanceMonitor({
 			ignoreUrls: this.config.ignoreUrls,
-			onResourceStateChange: this.onResourceStateChange,
+			onResourceStateChange: this.pageLoadTimeTracker.onResourceStateChange,
 		})
 	}
 
 	start(): void {
 		if (this.isMonitoring) {
-			diag.warn('SpaMetricsManager: Already monitoring.')
 			return
 		}
 
@@ -112,48 +118,22 @@ export class SpaMetricsManager {
 		this.fetchXhrMonitor.stop()
 		this.mediaMonitor.stop()
 		this.performanceMonitor.stop()
-		this.loadingUrls.clear()
+		this.pageLoadTimeTracker.stop()
+		this.visualCompleteTracker.stop()
 
 		diag.debug('SpaMetricsManager: Stopped monitoring.')
 	}
 
 	waitForPageLoad({ startTime }: { startTime: number }) {
-		this.quietPeriodAwaiter.complete({ areResourcesStillLoading: this.loadingResourcesCount > 0 })
-		this.quietPeriodAwaiter = new QuietPeriodAwaiter(this.config.quietTime, startTime)
+		const pageLoadTimePromise = this.pageLoadTimeTracker.start({ startTime })
+		const visualCompletePromise = this.visualCompleteTracker.start({ startTime })
 
-		if (this.loadingResourcesCount === 0) {
-			this.quietPeriodAwaiter.startQuietTimer({ resourceLoadedTimestamp: startTime })
-			diag.debug('No loading resources. Starting quit timer.')
-		}
-
-		return this.quietPeriodAwaiter.promise
-	}
-
-	private onResourceStateChange = (event: ResourceStateEvent): void => {
-		if (event.state === ResourceState.DISCOVERED) {
-			if (this.loadingResourcesCount >= this.config.maxResourcesToWatch) {
-				diag.debug('SpaMetricsManager: Max resources limit reached, ignoring new resource', event.url)
-				return
-			}
-
-			const count = this.loadingUrls.get(event.url) ?? 0
-			this.loadingUrls.set(event.url, count + 1)
-			diag.debug('Detected resource. Resetting quiet timer', event.url)
-			this.quietPeriodAwaiter.removeQuietTimer()
-		} else {
-			const count = this.loadingUrls.get(event.url) ?? 0
-			if (count > 0) {
-				if (count === 1) {
-					this.loadingUrls.delete(event.url)
-				} else {
-					this.loadingUrls.set(event.url, count - 1)
-				}
-
-				if (this.loadingResourcesCount === 0) {
-					diag.debug('No loading resources. Starting quit timer.')
-					this.quietPeriodAwaiter.startQuietTimer({ resourceLoadedTimestamp: event.timestamp })
-				}
-			}
-		}
+		return Promise.all([pageLoadTimePromise, visualCompletePromise]).then(
+			([{ pct, timestampOfLastLoadedResource }, { vct }]) => ({
+				pct,
+				timestampOfLastLoadedResource,
+				...(vct === undefined ? {} : { vct }),
+			}),
+		)
 	}
 }

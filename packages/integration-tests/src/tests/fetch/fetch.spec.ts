@@ -17,7 +17,7 @@
  */
 import { expect } from '@playwright/test'
 
-import { test } from '../../utils/test'
+import { expectDefined, test } from '../../utils/test'
 import { timesMakeSense } from '../../utils/time-make-sense'
 
 test.describe('fetch', () => {
@@ -41,11 +41,14 @@ test.describe('fetch', () => {
 		expect(fetchSpans[0].tags['link.traceId']).toBeTruthy()
 		expect(fetchSpans[0].tags['link.spanId']).toBeTruthy()
 
-		timesMakeSense(fetchSpans[0].annotations, 'domainLookupStart', 'domainLookupEnd')
-		timesMakeSense(fetchSpans[0].annotations, 'connectStart', 'connectEnd')
-		timesMakeSense(fetchSpans[0].annotations, 'requestStart', 'responseStart')
-		timesMakeSense(fetchSpans[0].annotations, 'responseStart', 'responseEnd')
-		timesMakeSense(fetchSpans[0].annotations, 'fetchStart', 'responseEnd')
+		const fetchAnnotations = fetchSpans[0].annotations
+		expectDefined(fetchAnnotations)
+
+		timesMakeSense(fetchAnnotations, 'domainLookupStart', 'domainLookupEnd')
+		timesMakeSense(fetchAnnotations, 'connectStart', 'connectEnd')
+		timesMakeSense(fetchAnnotations, 'requestStart', 'responseStart')
+		timesMakeSense(fetchAnnotations, 'responseStart', 'responseEnd')
+		timesMakeSense(fetchAnnotations, 'fetchStart', 'responseEnd')
 
 		// TODO: secure server is not available in our test environment
 		// timesMakeSense(fetchSpans[0].annotations, 'secureConnectionStart', 'connectEnd')

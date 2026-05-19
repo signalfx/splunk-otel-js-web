@@ -245,11 +245,13 @@ export interface SplunkOtelWebConfig {
 	sessionMetadata?: NonNullable<ExternalSessionMetadata>
 
 	/**
-	 * Enables SPA (Single Page Application) metrics.
+	 * Enables page load and SPA (Single Page Application) metrics.
 	 *
 	 * Currently supported metrics:
-	 * - **Page Completion Time (PCT)**: Measures the time from a route change until all network
-	 *   requests (fetch/XHR) and media elements have finished loading
+	 * - **Page Completion Time (PCT)**: Measures the time from document load or a route change until
+	 *   all network requests (fetch/XHR) and media elements have finished loading
+	 * - **Visual Complete Time (VCT)**: Measures the time from document load or a route change until
+	 *   visual media elements in the first viewport have finished loading
 	 *
 	 * @default true (enabled)
 	 *
@@ -261,6 +263,7 @@ export interface SplunkOtelWebConfig {
 	 * // Enable with custom configuration
 	 * spaMetrics: {
 	 *   ignoreUrls: [/analytics\.example\.com/],
+	 *   quietMediaTime: 3000,
 	 *   quietTime: 1000,
 	 *   maxResourcesToWatch: 100
 	 * }
@@ -276,7 +279,9 @@ export interface SplunkOtelWebConfig {
 				ignoreUrls?: Array<string | RegExp>
 				/** Maximum number of concurrent resources to track. @default 100 */
 				maxResourcesToWatch?: number
-				/** Time in milliseconds to wait after last resource loads before considering page complete. @default 1000 */
+				/** Time in milliseconds to keep accepting late first-viewport media for VCT. @default 3000 */
+				quietMediaTime?: number
+				/** Time in milliseconds to wait after last resource loads before considering page complete. @default 5000 */
 				quietTime?: number
 		  }
 

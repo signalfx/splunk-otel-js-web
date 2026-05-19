@@ -34,7 +34,10 @@ test.describe('web vitals', () => {
 		// webvitals library won't send the cls unless a visibility change happens, so
 		// force a fake one
 		await recordPage.changeVisibilityInTab('hidden')
-		await recordPage.waitForTimeoutAndFlushData(1000)
+		await recordPage.waitForSpans(
+			(spans) =>
+				spans.some((span) => span.tags.lcp !== undefined) && spans.some((span) => span.tags.cls !== undefined),
+		)
 
 		const lcp = recordPage.receivedSpans.filter((span) => span.tags.lcp !== undefined)
 		expect(lcp).toHaveLength(1)
@@ -76,7 +79,10 @@ test.describe('web vitals', () => {
 		await expect(recordPage.locator('#p2')).toBeAttached()
 
 		await recordPage.changeVisibilityInTab('hidden')
-		await recordPage.waitForTimeoutAndFlushData(1000)
+		await recordPage.waitForSpans(
+			(spans) =>
+				spans.some((span) => span.name === 'documentLoad') && spans.some((span) => span.tags.lcp !== undefined),
+		)
 
 		const docLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'documentLoad')
 		const webvitalsSpan = recordPage.receivedSpans.find((span) => span.tags.lcp !== undefined)

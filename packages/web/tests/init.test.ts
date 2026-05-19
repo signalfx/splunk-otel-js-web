@@ -184,11 +184,12 @@ describe('test init', () => {
 
 			expect(SplunkRum.inited).toBeTruthy()
 
-			await new Promise<void>((resolve) => {
-				setTimeout(() => {
-					resolve()
-				}, 1000)
-			})
+			await vi.waitFor(
+				() => {
+					expect(capturer.spans.some((span) => span.name === 'documentLoad')).toBeTruthy()
+				},
+				{ timeout: 6000 },
+			)
 
 			expect(capturer.spans.length >= 3).toBeTruthy()
 			const docLoadTraceId = capturer.spans.find((span) => span.name === 'documentLoad')?.spanContext().traceId

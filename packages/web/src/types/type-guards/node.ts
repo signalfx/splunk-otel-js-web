@@ -58,5 +58,11 @@ export const isScriptOrNoScriptElement = (
 
 export const isTextNode = (maybeTextNode: Node): maybeTextNode is Text => maybeTextNode.nodeType === Node.TEXT_NODE
 
-export const isMediaElement = (element: Element): element is HTMLMediaElement =>
+export const isHtmlAudioElement = (element: Element): element is HTMLAudioElement => element.nodeName === 'AUDIO'
+
+export const isHtmlImageElement = (element: Element): element is HTMLImageElement => element.nodeName === 'IMG'
+
+export const isHtmlVideoElement = (element: Element): element is HTMLVideoElement => element.nodeName === 'VIDEO'
+
+export const isMediaElement = (element: Element): element is HTMLAudioElement | HTMLImageElement | HTMLVideoElement =>
 	element.tagName === 'IMG' || element.tagName === 'VIDEO' || element.tagName === 'AUDIO'

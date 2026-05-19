@@ -17,6 +17,6 @@
  */
 
 export { FetchXhrMonitor } from './fetch-xhr-monitor'
-export { MediaMonitor } from './media-monitor'
+export { type MediaElementPosition, type MediaElementStateEvent, MediaMonitor } from './media-monitor'
 export { ResourceState, type ResourceStateEvent } from './monitor'
 export { PerformanceMonitor } from './performance-monitor'

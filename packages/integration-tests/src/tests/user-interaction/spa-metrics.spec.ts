@@ -35,6 +35,7 @@ test.describe('spa-metrics', () => {
 		const duration = routeChangeSpans[0].duration
 		// Duration should be 0 as no resources were loaded
 		expect(duration).toBe(0)
+		expect(Number(routeChangeSpans[0].tags.pct)).toBe(0)
 	})
 
 	test('routeChange span waits for fetch requests to complete', async ({ recordPage }) => {
@@ -52,6 +53,7 @@ test.describe('spa-metrics', () => {
 		// Duration should include fetch time + quiet period
 		const duration = routeChangeSpans[0].duration
 		expect(duration).toBeGreaterThan(0)
+		expect(Number(routeChangeSpans[0].tags.pct)).toBeGreaterThan(0)
 	})
 
 	test('routeChange span waits for images to load', async ({ recordPage }) => {
@@ -69,6 +71,7 @@ test.describe('spa-metrics', () => {
 		// Duration should include image load time + quiet period
 		const duration = routeChangeSpans[0].duration
 		expect(duration).toBeGreaterThan(0)
+		expect(Number(routeChangeSpans[0].tags.pct)).toBeGreaterThan(0)
 	})
 
 	test('multiple route changes each have their own duration', async ({ recordPage }) => {
