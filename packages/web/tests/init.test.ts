@@ -202,19 +202,19 @@ describe('test init', () => {
 			const processedOptions = SplunkRum._processedOptions
 			expect(processedOptions).toBeTruthy()
 			expect(initOptions.ignoreUrls[0]).toBeInstanceOf(RegExp)
-			expect(initOptions.ignoreUrls[1]).toBeInstanceOf(String)
+			expect(initOptions.ignoreUrls[1]).toBeTypeOf('string')
 			expect(initOptions.instrumentations.frustrationSignals.deadClick.ignoreUrls[0]).toBeInstanceOf(RegExp)
-			expect(initOptions.instrumentations.frustrationSignals.deadClick.ignoreUrls[1]).toBeInstanceOf(String)
+			expect(initOptions.instrumentations.frustrationSignals.deadClick.ignoreUrls[1]).toBeTypeOf('string')
 			expect(initOptions.instrumentations.frustrationSignals.errorClick.ignoreUrls[0]).toBeInstanceOf(RegExp)
-			expect(initOptions.instrumentations.frustrationSignals.errorClick.ignoreUrls[1]).toBeInstanceOf(String)
+			expect(initOptions.instrumentations.frustrationSignals.errorClick.ignoreUrls[1]).toBeTypeOf('string')
 			expect(initOptions.instrumentations.frustrationSignals.thrashedCursor.ignoreUrls[0]).toBeInstanceOf(RegExp)
-			expect(initOptions.instrumentations.frustrationSignals.thrashedCursor.ignoreUrls[1]).toBeInstanceOf(String)
+			expect(initOptions.instrumentations.frustrationSignals.thrashedCursor.ignoreUrls[1]).toBeTypeOf('string')
 			expect(initOptions.instrumentations.xhr.ignoreUrls[0]).toBeInstanceOf(RegExp)
-			expect(initOptions.instrumentations.xhr.ignoreUrls[1]).toBeInstanceOf(String)
+			expect(initOptions.instrumentations.xhr.ignoreUrls[1]).toBeTypeOf('string')
 			expect(initOptions.instrumentations.fetch.ignoreUrls[0]).toBeInstanceOf(RegExp)
-			expect(initOptions.instrumentations.fetch.ignoreUrls[1]).toBeInstanceOf(String)
+			expect(initOptions.instrumentations.fetch.ignoreUrls[1]).toBeTypeOf('string')
 			expect(initOptions.spaMetrics.ignoreUrls[0]).toBeInstanceOf(RegExp)
-			expect(initOptions.spaMetrics.ignoreUrls[1]).toBeInstanceOf(String)
+			expect(initOptions.spaMetrics.ignoreUrls[1]).toBeTypeOf('string')
 
 			const frustrationSignalsConfig = processedOptions?.instrumentations?.frustrationSignals as
 				| FrustrationSignalsConfig
