@@ -643,8 +643,6 @@ export class SplunkContextManager implements ContextManager {
 						manager.bindActiveToArgument(args, 0)
 					}
 
-					// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-					// @ts-ignore setTimeout overloads include Node's __promisify__ shape in root typecheck.
 					return original.apply(this, args)
 				},
 		)
