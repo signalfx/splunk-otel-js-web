@@ -126,4 +126,18 @@ describe('normalizeIgnoreUrlsConfig', () => {
 		expect(options.nested.ignoreUrlPatterns[0]).toBe('regex/also-unchanged/')
 		expect(options.foo).toBe(abort)
 	})
+
+	it('do not normalize ignoreUrls inside arrays of objects', () => {
+		const options: any = {
+			groups: [
+				{
+					ignoreUrls: ['regex/inside-array/'],
+				},
+			],
+		}
+
+		normalizeIgnoreUrlsConfig(options)
+
+		expect(options.groups[0].ignoreUrls[0]).toBeTypeOf('string')
+	})
 })
