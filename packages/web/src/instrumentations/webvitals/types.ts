@@ -107,8 +107,6 @@ export interface SplunkWebVitalsInstrumentationConfig extends InstrumentationCon
 	/**
 	 * If true, the webvitals spans will have their start time aligned with the document load span,
 	 * and will inherit the `location.href` attribute from the document load span if available.
-	 * When the document load span does not arrive within a bounded grace period (e.g. the document
-	 * instrumentation is disabled), metrics are reported with the current wall-clock time instead.
 	 * @default true
 	 */
 	alignWebVitalsSpansWithDocumentLoad?: boolean

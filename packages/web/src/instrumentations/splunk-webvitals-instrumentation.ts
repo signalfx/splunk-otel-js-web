@@ -61,29 +61,14 @@ export type {
 
 const MODULE_NAME = 'splunk-webvitals'
 
-// Upper bound (in milliseconds) on how long `reportMetric` will wait for the
-// document load span before falling back to the current wall-clock time.
-// `documentLoad` is emitted on the page `load` event; 5 s is a generous upper
-// bound that avoids hangs when the `document` instrumentation is disabled.
-const DOC_LOAD_SPAN_WAIT_TIMEOUT_MS = 5000
-
-// Allow Node/Vitest test environments to exit even if the timer is still
-// pending. Guard the call because browser timers do not provide `unref`.
-function maybeUnref(handle: ReturnType<typeof setTimeout>): void {
-	const maybeNodeTimer = handle as { unref?: () => void }
-	if (typeof maybeNodeTimer.unref === 'function') {
-		maybeNodeTimer.unref()
-	}
-}
-
 export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWebVitalsInstrumentationConfig> {
 	private areCallbackAttached = false
 
 	private attributionContext: WebVitalsAttributionOptions | undefined
 
-	private docLoadSpanPromise: Promise<ReadableSpan | undefined>
+	private docLoadSpanPromise: Promise<ReadableSpan>
 
-	private docLoadSpanResolve: ((span?: ReadableSpan) => void) | undefined
+	private docLoadSpanResolve: ((span: ReadableSpan) => void) | undefined
 
 	private isRecording = false
 
@@ -96,17 +81,9 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 	) {
 		super(MODULE_NAME, VERSION, { ...config, enabled: false })
 
-		this.docLoadSpanPromise = new Promise<ReadableSpan | undefined>((resolve) => {
+		this.docLoadSpanPromise = new Promise<ReadableSpan>((resolve) => {
 			this.docLoadSpanResolve = resolve
 		})
-
-		// Without this fallback, `reportMetric` would wait forever when no
-		// `documentLoad` span is emitted (e.g. `document` instrumentation is disabled).
-		const fallbackTimeout = setTimeout(() => {
-			this.docLoadSpanResolve?.()
-			this.docLoadSpanResolve = undefined
-		}, DOC_LOAD_SPAN_WAIT_TIMEOUT_MS)
-		maybeUnref(fallbackTimeout)
 
 		this.otelConfig.spanEmitter?.addEventListener('document-load', (span) => {
 			// `document-load` component emits both documentFetch and documentLoad spans.
@@ -115,7 +92,6 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 				return
 			}
 
-			clearTimeout(fallbackTimeout)
 			this.docLoadSpanResolve?.(span)
 			this.docLoadSpanResolve = undefined
 		})
