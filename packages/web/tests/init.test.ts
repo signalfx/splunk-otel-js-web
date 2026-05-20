@@ -193,7 +193,10 @@ describe('test init', () => {
 			expect(processedOptions).toBeTruthy()
 
 			expect(processedOptions?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
-			expect(processedOptions?.ignoreUrls?.[0] instanceof RegExp && processedOptions.ignoreUrls[0].test('test-top-level')).toBeTruthy()
+			expect(
+				processedOptions?.ignoreUrls?.[0] instanceof RegExp &&
+					processedOptions.ignoreUrls[0].test('test-top-level'),
+			).toBeTruthy()
 			expect(processedOptions?.ignoreUrls?.[1]).toBe('/exact-match')
 
 			const deadClickIgnoreUrls = processedOptions?.instrumentations?.frustrationSignals
