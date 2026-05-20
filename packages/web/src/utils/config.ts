@@ -32,24 +32,18 @@ function parseRegexString(value: string): RegExp | null {
 	}
 }
 
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-	return Object.prototype.toString.call(value) === '[object Object]'
-}
-
-export function normalizeIgnoreUrlsConfig<T>(value: T): T {
-	if (Array.isArray(value)) {
-		return value.map((entry) => normalizeIgnoreUrlsConfig(entry)) as T
+export function normalizeIgnoreUrlsConfig(value: any) {
+	if (value == null || typeof value !== 'object' || Object.prototype.toString.call(value) !== '[object Object]') {
+		return
 	}
 
-	if (!isPlainObject(value)) {
-		return value
+	if (Object.keys(value).length === 0) {
+		return
 	}
 
-	const normalized: Record<string, unknown> = {}
-
-	for (const [key, nestedValue] of Object.entries(value)) {
-		if (key === 'ignoreUrls' && Array.isArray(nestedValue)) {
-			normalized[key] = nestedValue.map((entry) => {
+	for (const key of Object.keys(value)) {
+		if (key === 'ignoreUrls' && Array.isArray(value[key])) {
+			value[key] = value[key].map((entry) => {
 				if (typeof entry !== 'string') {
 					return entry
 				}
@@ -59,8 +53,6 @@ export function normalizeIgnoreUrlsConfig<T>(value: T): T {
 			continue
 		}
 
-		normalized[key] = normalizeIgnoreUrlsConfig(nestedValue)
+		normalizeIgnoreUrlsConfig(value[key])
 	}
-
-	return normalized as T
 }

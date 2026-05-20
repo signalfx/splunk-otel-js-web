@@ -458,14 +458,12 @@ export const SplunkRum: SplunkOtelWebType = {
 
 			eventTarget = new InternalEventTarget()
 
-			const processedOptions: SplunkOtelWebConfigInternal = Object.assign(
-				{},
-				OPTIONS_DEFAULTS,
-				normalizeIgnoreUrlsConfig(options),
-				{
-					exporter: Object.assign({}, OPTIONS_DEFAULTS.exporter, options.exporter),
-				},
-			)
+			// Update ignoreUrls in place
+			normalizeIgnoreUrlsConfig(options)
+
+			const processedOptions: SplunkOtelWebConfigInternal = Object.assign({}, OPTIONS_DEFAULTS, options, {
+				exporter: Object.assign({}, OPTIONS_DEFAULTS.exporter, options.exporter),
+			})
 
 			// Keep custom beacon endpoints on Zipkin unless OTLP is explicitly requested.
 			// When beaconEndpoint is omitted, prefer OTLP by default.

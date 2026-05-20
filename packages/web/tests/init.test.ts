@@ -33,6 +33,12 @@ import {
 	SpanCapturer,
 } from './utils'
 
+type FrustrationSignalsConfig = {
+	deadClick?: { ignoreUrls?: Array<string | RegExp> }
+	errorClick?: { ignoreUrls?: Array<string | RegExp> }
+	thrashedCursor?: { ignoreUrls?: Array<string | RegExp> }
+}
+
 const doesBeaconUrlEndWith = (suffix: string) => {
 	const sps = (SplunkRum.provider?.getActiveSpanProcessor() as any)._spanProcessors
 	const exporterProcessor = sps.find(
@@ -170,27 +176,49 @@ describe('test init', () => {
 
 	describe('ignoreUrls normalization', () => {
 		it('converts regex strings recursively for each ignoreUrls key', () => {
-			SplunkRum.init({
+			const initOptions = {
 				applicationName: 'app',
 				beaconEndpoint: 'https://127.0.0.1:8888/foo',
 				ignoreUrls: ['regex/test-top-level/', '/exact-match'],
 				instrumentations: {
+					fetch: { ignoreUrls: ['regex/fetch-regex/', 'exact'] },
 					frustrationSignals: {
-						deadClick: { ignoreUrls: ['regex/dead-click/'] },
-						errorClick: { ignoreUrls: ['regex/error-click/'] },
-						thrashedCursor: { ignoreUrls: ['regex/thrashed-cursor/'] },
+						deadClick: { ignoreUrls: ['regex/dead-click/', 'exact'] },
+						errorClick: { ignoreUrls: ['regex/error-click/', 'exact'] },
+						thrashedCursor: { ignoreUrls: ['regex/thrashed-cursor/', 'exact'] },
 					},
+					xhr: { ignoreUrls: ['regex/xhr-regex/', 'exact'] },
 				},
 				rumAccessToken: undefined,
 				spaMetrics: {
-					ignoreUrls: ['regex/spa-metrics/'],
+					ignoreUrls: ['regex/spa-metrics/', 'exact'],
 				},
-			})
+			}
+
+			SplunkRum.init(initOptions)
 
 			expect(SplunkRum.inited).toBeTruthy()
 
 			const processedOptions = SplunkRum._processedOptions
 			expect(processedOptions).toBeTruthy()
+			expect(initOptions.ignoreUrls[0]).toBeInstanceOf(RegExp)
+			expect(initOptions.ignoreUrls[1]).toBeInstanceOf(String)
+			expect(initOptions.instrumentations.frustrationSignals.deadClick.ignoreUrls[0]).toBeInstanceOf(RegExp)
+			expect(initOptions.instrumentations.frustrationSignals.deadClick.ignoreUrls[1]).toBeInstanceOf(String)
+			expect(initOptions.instrumentations.frustrationSignals.errorClick.ignoreUrls[0]).toBeInstanceOf(RegExp)
+			expect(initOptions.instrumentations.frustrationSignals.errorClick.ignoreUrls[1]).toBeInstanceOf(String)
+			expect(initOptions.instrumentations.frustrationSignals.thrashedCursor.ignoreUrls[0]).toBeInstanceOf(RegExp)
+			expect(initOptions.instrumentations.frustrationSignals.thrashedCursor.ignoreUrls[1]).toBeInstanceOf(String)
+			expect(initOptions.instrumentations.xhr.ignoreUrls[0]).toBeInstanceOf(RegExp)
+			expect(initOptions.instrumentations.xhr.ignoreUrls[1]).toBeInstanceOf(String)
+			expect(initOptions.instrumentations.fetch.ignoreUrls[0]).toBeInstanceOf(RegExp)
+			expect(initOptions.instrumentations.fetch.ignoreUrls[1]).toBeInstanceOf(String)
+			expect(initOptions.spaMetrics.ignoreUrls[0]).toBeInstanceOf(RegExp)
+			expect(initOptions.spaMetrics.ignoreUrls[1]).toBeInstanceOf(String)
+
+			const frustrationSignalsConfig = processedOptions?.instrumentations?.frustrationSignals as
+				| FrustrationSignalsConfig
+				| undefined
 
 			expect(processedOptions?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
 			expect(
@@ -198,23 +226,12 @@ describe('test init', () => {
 					processedOptions.ignoreUrls[0].test('test-top-level'),
 			).toBeTruthy()
 			expect(processedOptions?.ignoreUrls?.[1]).toBe('/exact-match')
+			expect(frustrationSignalsConfig?.deadClick?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
+			expect(frustrationSignalsConfig?.errorClick?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
+			expect(frustrationSignalsConfig?.thrashedCursor?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
 
-			const deadClickIgnoreUrls = processedOptions?.instrumentations?.frustrationSignals
-			expect(deadClickIgnoreUrls && typeof deadClickIgnoreUrls === 'object').toBeTruthy()
-
-			const frustrationSignalsConfig = deadClickIgnoreUrls as {
-				deadClick?: { ignoreUrls?: Array<string | RegExp> }
-				errorClick?: { ignoreUrls?: Array<string | RegExp> }
-				thrashedCursor?: { ignoreUrls?: Array<string | RegExp> }
-			}
-
-			expect(frustrationSignalsConfig.deadClick?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
-			expect(frustrationSignalsConfig.errorClick?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
-			expect(frustrationSignalsConfig.thrashedCursor?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
-
-			const spaMetricsConfig = processedOptions?.spaMetrics
-			expect(spaMetricsConfig && typeof spaMetricsConfig === 'object').toBeTruthy()
-			expect((spaMetricsConfig as { ignoreUrls?: Array<string | RegExp> }).ignoreUrls?.[0]).toBeInstanceOf(RegExp)
+			const spaMetricsConfig = processedOptions?.spaMetrics as { ignoreUrls?: Array<string | RegExp> } | undefined
+			expect(spaMetricsConfig?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
 		})
 	})
 
