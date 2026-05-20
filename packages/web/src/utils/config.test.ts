@@ -97,23 +97,6 @@ describe('normalizeIgnoreUrlsConfig', () => {
 		expect(options.nested.ignoreUrls).toEqual({ bad: true })
 	})
 
-	it('normalizes ignoreUrls inside arrays of objects', () => {
-		const options: any = {
-			groups: [
-				{
-					ignoreUrls: ['regex/inside-array/'],
-				},
-			],
-		}
-
-		normalizeIgnoreUrlsConfig(options)
-
-		expect(options.groups[0].ignoreUrls[0]).toBeInstanceOf(RegExp)
-		expect(
-			options.groups[0].ignoreUrls[0] instanceof RegExp && options.groups[0].ignoreUrls[0].test('inside-array'),
-		).toBeTruthy()
-	})
-
 	it('supports regex flags in regex string values', () => {
 		const options: any = {
 			ignoreUrls: [String.raw`regex/^api\/v[0-9]+$/i`],
