@@ -87,7 +87,7 @@ export * from './session-based-sampler'
 export * from './splunk-web-tracer-provider'
 import { PrivacyManager, SessionManager, SessionState, StorageManager, UserManager } from './managers'
 import { ExternalSessionMetadata, isValidExternalSessionMetadata } from './types/external-session-metadata'
-import { getElementXPath, getTextFromNode } from './utils/index'
+import { getElementXPath, getTextFromNode, normalizeIgnoreUrlsConfig } from './utils/index'
 import { isDebugMode } from './utils/is-debug-mode'
 
 declare const __COMMIT_HASH__: string
@@ -458,9 +458,14 @@ export const SplunkRum: SplunkOtelWebType = {
 
 			eventTarget = new InternalEventTarget()
 
-			const processedOptions: SplunkOtelWebConfigInternal = Object.assign({}, OPTIONS_DEFAULTS, options, {
-				exporter: Object.assign({}, OPTIONS_DEFAULTS.exporter, options.exporter),
-			})
+			const processedOptions: SplunkOtelWebConfigInternal = Object.assign(
+				{},
+				OPTIONS_DEFAULTS,
+				normalizeIgnoreUrlsConfig(options),
+				{
+					exporter: Object.assign({}, OPTIONS_DEFAULTS.exporter, options.exporter),
+				},
+			)
 
 			// Keep custom beacon endpoints on Zipkin unless OTLP is explicitly requested.
 			// When beaconEndpoint is omitted, prefer OTLP by default.

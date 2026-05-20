@@ -168,6 +168,53 @@ describe('test init', () => {
 		})
 	})
 
+	describe('ignoreUrls normalization', () => {
+		it('converts regex strings recursively for each ignoreUrls key', () => {
+			SplunkRum.init({
+				applicationName: 'app',
+				beaconEndpoint: 'https://127.0.0.1:8888/foo',
+				ignoreUrls: ['regex/test-top-level/', '/exact-match'],
+				instrumentations: {
+					frustrationSignals: {
+						deadClick: { ignoreUrls: ['regex/dead-click/'] },
+						errorClick: { ignoreUrls: ['regex/error-click/'] },
+						thrashedCursor: { ignoreUrls: ['regex/thrashed-cursor/'] },
+					},
+				},
+				rumAccessToken: undefined,
+				spaMetrics: {
+					ignoreUrls: ['regex/spa-metrics/'],
+				},
+			})
+
+			expect(SplunkRum.inited).toBeTruthy()
+
+			const processedOptions = SplunkRum._processedOptions
+			expect(processedOptions).toBeTruthy()
+
+			expect(processedOptions?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
+			expect(processedOptions?.ignoreUrls?.[0] instanceof RegExp && processedOptions.ignoreUrls[0].test('test-top-level')).toBeTruthy()
+			expect(processedOptions?.ignoreUrls?.[1]).toBe('/exact-match')
+
+			const deadClickIgnoreUrls = processedOptions?.instrumentations?.frustrationSignals
+			expect(deadClickIgnoreUrls && typeof deadClickIgnoreUrls === 'object').toBeTruthy()
+
+			const frustrationSignalsConfig = deadClickIgnoreUrls as {
+				deadClick?: { ignoreUrls?: Array<string | RegExp> }
+				errorClick?: { ignoreUrls?: Array<string | RegExp> }
+				thrashedCursor?: { ignoreUrls?: Array<string | RegExp> }
+			}
+
+			expect(frustrationSignalsConfig.deadClick?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
+			expect(frustrationSignalsConfig.errorClick?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
+			expect(frustrationSignalsConfig.thrashedCursor?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
+
+			const spaMetricsConfig = processedOptions?.spaMetrics
+			expect(spaMetricsConfig && typeof spaMetricsConfig === 'object').toBeTruthy()
+			expect((spaMetricsConfig as { ignoreUrls?: Array<string | RegExp> }).ignoreUrls?.[0]).toBeInstanceOf(RegExp)
+		})
+	})
+
 	describe('successful', () => {
 		it('should have been inited properly with doc load spans', async () => {
 			SplunkRum.init({
