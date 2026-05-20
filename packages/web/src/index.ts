@@ -72,7 +72,7 @@ import {
 	SplunkOtelWebOptionsInstrumentations,
 	UserTrackingMode,
 } from './types'
-import { generateId, getPluginConfig } from './utils'
+import { generateId, getPluginConfig, normalizeIgnoreUrlsConfig } from './utils'
 import { getValidAttributes, SpanContext } from './utils/attributes'
 import { isAgentLoadedViaLatestTag, isAgentLoadedViaNextTag } from './utils/detect-latest'
 import { isBot } from './utils/is-bot'
@@ -457,6 +457,9 @@ export const SplunkRum: SplunkOtelWebType = {
 			}
 
 			eventTarget = new InternalEventTarget()
+
+			// Update ignoreUrls in place
+			normalizeIgnoreUrlsConfig(options)
 
 			const processedOptions: SplunkOtelWebConfigInternal = Object.assign({}, OPTIONS_DEFAULTS, options, {
 				exporter: Object.assign({}, OPTIONS_DEFAULTS.exporter, options.exporter),
