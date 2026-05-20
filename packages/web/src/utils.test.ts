@@ -17,7 +17,7 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { normalizeIgnoreUrlsConfig } from './config'
+import { normalizeIgnoreUrlsConfig } from './utils'
 
 describe('normalizeIgnoreUrlsConfig', () => {
 	it('returns undefined for nullish and primitive values', () => {

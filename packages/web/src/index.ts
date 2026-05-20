@@ -72,7 +72,7 @@ import {
 	SplunkOtelWebOptionsInstrumentations,
 	UserTrackingMode,
 } from './types'
-import { generateId, getPluginConfig } from './utils'
+import { generateId, getPluginConfig, normalizeIgnoreUrlsConfig } from './utils'
 import { getValidAttributes, SpanContext } from './utils/attributes'
 import { isAgentLoadedViaLatestTag, isAgentLoadedViaNextTag } from './utils/detect-latest'
 import { isBot } from './utils/is-bot'
@@ -87,7 +87,7 @@ export * from './session-based-sampler'
 export * from './splunk-web-tracer-provider'
 import { PrivacyManager, SessionManager, SessionState, StorageManager, UserManager } from './managers'
 import { ExternalSessionMetadata, isValidExternalSessionMetadata } from './types/external-session-metadata'
-import { getElementXPath, getTextFromNode, normalizeIgnoreUrlsConfig } from './utils/index'
+import { getElementXPath, getTextFromNode } from './utils/index'
 import { isDebugMode } from './utils/is-debug-mode'
 
 declare const __COMMIT_HASH__: string

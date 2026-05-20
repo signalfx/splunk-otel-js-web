@@ -15,7 +15,6 @@
  * limitations under the License.
  *
  */
-export * from './config'
 export * from './detect-latest'
 export * from './element-attributes'
 export * from './text'
