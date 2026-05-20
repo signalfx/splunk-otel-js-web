@@ -36,6 +36,30 @@ main {
 	gap: var(--space-sm);
 }
 
+#vct-stage {
+	min-block-size: 150px;
+	margin-block-start: var(--space-lg);
+}
+
+.vct-frame {
+	display: inline-flex;
+	flex-direction: column;
+	gap: var(--space-sm);
+	color: var(--color-text-secondary);
+	font-family: var(--font-mono);
+	font-size: var(--text-xs);
+}
+
+.vct-image {
+	display: block;
+	inline-size: 220px;
+	block-size: 124px;
+	object-fit: cover;
+	border: 1px solid var(--color-border-muted);
+	border-radius: var(--radius-md);
+	background: var(--color-bg-inset);
+}
+
 #log {
 	block-size: 340px;
 }
