@@ -24,7 +24,14 @@ import { log } from '../log'
 import { isBoolean, isString } from '../type-guards'
 import { Log, LogExporter } from '../types'
 import { VERSION } from '../version'
-import { PendingSegmentData, Segment, SessionReplay, SessionReplayConfig } from './cdn-module'
+import {
+	PendingSegmentData,
+	Segment,
+	SessionReplay,
+	SessionReplayBinarySegment,
+	SessionReplayConfig,
+	SessionReplayPlainSegment,
+} from './cdn-module'
 import { getSplunkRecorderConfig } from './config'
 
 const MAX_CHUNK_SIZE = 4000 * 1024 // ~4000 KB
@@ -32,12 +39,18 @@ const MAX_CHUNK_SIZE = 4000 * 1024 // ~4000 KB
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()
 
-function convert(body: JsonValue, timeUnixNano: number, attributes?: JsonObject): Log {
+function convert(body: JsonValue | Uint8Array, timeUnixNano: number, attributes?: JsonObject): Log {
 	return { attributes, body, timeUnixNano }
 }
 
-export interface RecorderEmitContext {
-	data: Record<string, unknown>
+type SessionReplaySegmentPayload = SessionReplayBinarySegment | SessionReplayPlainSegment
+
+function isBinarySegment(segment: SessionReplaySegmentPayload): segment is SessionReplayBinarySegment {
+	return segment.metadata.format === 'binary' || segment.metadata.format === 'binary-deflate'
+}
+
+interface SessionReplayEmitContext {
+	data: SessionReplaySegmentPayload
 	startTime: number
 }
 
@@ -60,18 +73,23 @@ export class Recorder {
 
 	private sessionReplay: SessionReplay
 
+	private readonly useBinarySegments: boolean
+
 	constructor({
 		exporter,
 		initRecorderConfig,
 		persistSegments,
 		sessionId,
+		useBinarySegments,
 	}: {
 		exporter: LogExporter
 		initRecorderConfig: Omit<SplunkRumRecorderConfig, 'realm' | 'recorder' | 'rumAccessToken' | 'beaconEndpoint'>
 		persistSegments: boolean
 		sessionId: string
+		useBinarySegments: boolean
 	}) {
 		this.exporter = exporter
+		this.useBinarySegments = useBinarySegments
 		this.config = {
 			originalFetch: (...args) =>
 				new Promise((resolve, reject) => {
@@ -136,14 +154,8 @@ export class Recorder {
 		return this.sessionReplay.dismissPendingSegment(segmentId)
 	}
 
-	emitPendingSegment(plainSegment: ReturnType<Segment['toPlain']>, onSuccess: () => void) {
-		this.onEmit(
-			{
-				data: plainSegment,
-				startTime: plainSegment.metadata.startUnixMs,
-			},
-			onSuccess,
-		)
+	emitPendingSegment(segment: Segment, onSuccess: () => void) {
+		this.emitSegmentPayload(this.getSegmentPayload(segment), onSuccess)
 	}
 
 	getPendingSegments(): Promise<PendingSegmentData[]> {
@@ -181,13 +193,31 @@ export class Recorder {
 		this.isStoppedManually = true
 	}
 
-	private onEmit = (emitContext: RecorderEmitContext, onSuccess?: () => void) => {
+	private emitSegmentPayload(segmentPayloadPromise: Promise<SessionReplaySegmentPayload>, onSuccess?: () => void) {
+		void this.resolveAndEmitSegmentPayload(segmentPayloadPromise, onSuccess).catch((error) => {
+			log.error('Could not emit session replay segment', error)
+		})
+	}
+
+	private async getSegmentPayload(segment: Segment): Promise<SessionReplaySegmentPayload> {
+		return this.useBinarySegments ? await segment.toBinary({ tryCompress: false }) : segment.toPlain()
+	}
+
+	private onEmit = async (emitContext: SessionReplayEmitContext, onSuccess?: () => void) => {
 		const time = Math.floor(emitContext.startTime)
 		const eventI = this.eventCounter
 
 		this.eventCounter += 1
 
-		const body = encoder.encode(JSON.stringify(emitContext.data.data))
+		const isBinary = isBinarySegment(emitContext.data)
+		let body: Uint8Array
+		if (isBinary) {
+			const segmentData = (emitContext.data as SessionReplayBinarySegment).data
+			body = new Uint8Array(await segmentData.arrayBuffer())
+		} else {
+			const segmentData = (emitContext.data as SessionReplayPlainSegment).data
+			body = encoder.encode(JSON.stringify(segmentData))
+		}
 
 		const totalC = Math.ceil(body.byteLength / MAX_CHUNK_SIZE)
 
@@ -203,7 +233,8 @@ export class Recorder {
 				'segmentMetadata': JSON.stringify(emitContext.data.metadata),
 			}
 
-			const logData = convert(decoder.decode(body.slice(start, end)), time, dataToConvert)
+			const bodyChunk = body.slice(start, end)
+			const logData = convert(isBinary ? bodyChunk : decoder.decode(bodyChunk), time, dataToConvert)
 
 			this.logCounter += 1
 
@@ -215,14 +246,21 @@ export class Recorder {
 
 	private onSegment = (segment: Segment, acknowledge: () => void) => {
 		log.debug('Session replay segment: ', segment)
-		const plainSegment = segment.toPlain()
+		this.emitSegmentPayload(this.getSegmentPayload(segment), acknowledge)
+	}
 
-		this.onEmit(
+	private async resolveAndEmitSegmentPayload(
+		segmentPayloadPromise: Promise<SessionReplaySegmentPayload>,
+		onSuccess?: () => void,
+	) {
+		const segmentPayload = await segmentPayloadPromise
+
+		await this.onEmit(
 			{
-				data: plainSegment,
-				startTime: plainSegment.metadata.startUnixMs,
+				data: segmentPayload,
+				startTime: segmentPayload.metadata.startUnixMs,
 			},
-			acknowledge,
+			onSuccess,
 		)
 	}
 

@@ -247,6 +247,7 @@ const config = [
 			'unicorn/no-static-only-class': 'off',
 			'unicorn/no-this-assignment': 'off',
 			'unicorn/no-unnecessary-polyfills': 'off',
+			'unicorn/number-literal-case': 'off',
 			'unicorn/prefer-dom-node-remove': 'off',
 			'unicorn/prefer-dom-node-text-content': 'off',
 			'unicorn/prefer-global-this': 'off',

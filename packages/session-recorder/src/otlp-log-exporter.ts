@@ -53,7 +53,11 @@ function isObject(value: JsonValue): value is JsonObject {
 	return !!value && typeof value === 'object' && !isArray(value)
 }
 
-function convertToAnyValue(value: JsonValue): IAnyValue {
+function convertToAnyValue(value: JsonValue | undefined): IAnyValue {
+	if (value === undefined || value === null) {
+		return {}
+	}
+
 	if (isObject(value)) {
 		return {
 			kvlistValue: {
@@ -118,8 +122,9 @@ export default class OTLPLogExporter {
 							logRecords: logs.map((logItem) => ({
 								attributes: convertToAnyValue(logItem.attributes || {}).kvlistValue
 									?.values as JsonArray,
-								// @ts-expect-error FIXME: `body` is not defined
-								body: convertToAnyValue(logItem.body) as JsonObject,
+								body: convertToAnyValue(
+									logItem.body instanceof Uint8Array ? undefined : logItem.body,
+								) as JsonObject,
 								timeUnixNano: logItem.timeUnixNano,
 							})),
 							scope: { name: 'splunk.rr-web', version: VERSION },
