@@ -85,7 +85,14 @@ export { type SplunkExporterConfig } from './exporters/common'
 export { SplunkZipkinExporter } from './exporters/zipkin'
 export * from './session-based-sampler'
 export * from './splunk-web-tracer-provider'
-import { PrivacyManager, SessionManager, SessionState, StorageManager, UserManager } from './managers'
+import {
+	PrivacyManager,
+	SessionManager,
+	SessionState,
+	SpaMetricsManager,
+	StorageManager,
+	UserManager,
+} from './managers'
 import { ExternalSessionMetadata, isValidExternalSessionMetadata } from './types/external-session-metadata'
 import { getElementXPath, getTextFromNode } from './utils/index'
 import { isDebugMode } from './utils/is-debug-mode'
@@ -141,11 +148,6 @@ const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
 const INSTRUMENTATIONS = [
 	{ confKey: 'document', disable: false, Instrument: SplunkDocumentLoadInstrumentation },
 	{ confKey: 'xhr', disable: false, Instrument: SplunkXhrInstrumentation },
-	// TODO: Fetch must be enabled before interactions instrumentation. The interactions instrumentation
-	// 	wraps fetch to track Page Completion Time (PCT), and SplunkFetchInstrumentation wrongly unwraps
-	// 	fetch during enable(). It is fixed in new versions of ``@opentelemetry/instrumentation-xml-http-request`
-	// 	once we are able to upgrade to a version that fixes this issue, we can remove this ordering/comment
-	// 	This ordering ensures our PCT fetch wrapper remains intact.
 	{ confKey: 'fetch', disable: false, Instrument: SplunkFetchInstrumentation },
 	{
 		confKey: FRUSTRATION_SIGNALS_INSTRUMENTATION_NAME,
@@ -271,6 +273,7 @@ let _deregisterInstrumentations: undefined | (() => void)
 let _deinitSessionTracking: undefined | (() => void)
 let _errorInstrumentation: SplunkErrorInstrumentation | undefined
 let _postDocLoadInstrumentation: SplunkPostDocLoadResourceInstrumentation | undefined
+let _spaMetricsManager: SpaMetricsManager | undefined
 let eventTarget: InternalEventTarget | undefined
 let _sessionStateUnsubscribe: undefined | (() => void)
 const isLatestTagUsed = isAgentLoadedViaLatestTag()
@@ -306,6 +309,9 @@ export const SplunkRum: SplunkOtelWebType = {
 		try {
 			_deregisterInstrumentations?.()
 			_deregisterInstrumentations = undefined
+
+			_spaMetricsManager?.stop()
+			_spaMetricsManager = undefined
 
 			_deinitSessionTracking?.()
 			_deinitSessionTracking = undefined
@@ -666,11 +672,25 @@ export const SplunkRum: SplunkOtelWebType = {
 
 			this.sessionManager.start()
 
+			const spaMetricsManager =
+				processedOptions.spaMetrics === false
+					? undefined
+					: new SpaMetricsManager({
+							beaconEndpoint: processedOptions.beaconEndpoint,
+							...(processedOptions.spaMetrics === true ? {} : processedOptions.spaMetrics),
+						})
+			_spaMetricsManager = spaMetricsManager
+
 			const instrumentations = INSTRUMENTATIONS.map(({ confKey, disable, Instrument }) => {
 				const pluginConf = getPluginConfig(processedOptions.instrumentations[confKey], pluginDefaults, disable)
 				if (pluginConf) {
-					// @ts-expect-error Can't mark in any way that processedOptions.instrumentations[confKey] is of specifc config type
-					const instrumentation = new Instrument(pluginConf, processedOptions, this.sessionManager)
+					const instrumentation = new Instrument(
+						// @ts-expect-error Can't mark each instrumentation's config with this dynamic constructor.
+						pluginConf,
+						processedOptions,
+						this.sessionManager,
+						spaMetricsManager,
+					)
 
 					if (
 						confKey === ERROR_INSTRUMENTATION_NAME &&
@@ -711,6 +731,7 @@ export const SplunkRum: SplunkOtelWebType = {
 				instrumentations,
 				tracerProvider: provider,
 			})
+			spaMetricsManager?.start()
 
 			this._spanEmitter?.enable()
 

@@ -22,7 +22,7 @@
 		document.querySelector('#btnNavigateWithFetch').addEventListener('click', function () {
 			location.hash = 'page2';
 			// Simulate API call after navigation
-			fetch('/some-data').then(function(response) {
+			fetch('/some-data?delay=300').then(function(response) {
 				return response.json();
 			}).then(function(data) {
 				document.getElementById('content').textContent = JSON.stringify(data);

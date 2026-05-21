@@ -28,6 +28,8 @@ import { $, doRecorderResume, doRecorderStop, init, log } from './sandbox-core.j
 
 // ── Interaction handlers ──────────────────────────────────────────────────
 
+const VCT_IMAGE_DELAY_MS = 900
+
 async function doFetch() {
 	log('fetch /api/data …')
 	try {
@@ -52,6 +54,47 @@ function doNavigation() {
 	const path = `/page-${crypto.randomUUID().slice(0, 4)}`
 	history.pushState({}, '', path)
 	log(`pushState → ${path}`)
+}
+
+function doVctNavigation() {
+	const path = `/vct-${crypto.randomUUID().slice(0, 4)}`
+	history.pushState({}, '', path)
+
+	const stage = $('#vct-stage')
+	if (!stage) {
+		return
+	}
+
+	const image = document.createElement('img')
+	image.alt = 'VCT delayed media'
+	image.className = 'vct-image'
+	image.decoding = 'async'
+	image.loading = 'eager'
+	image.src = `/__splunk-rum-dev/vct-image.svg?delay=${VCT_IMAGE_DELAY_MS}&id=${crypto.randomUUID()}`
+	image.addEventListener(
+		'load',
+		() => {
+			log(`VCT image loaded after ${VCT_IMAGE_DELAY_MS}ms; check routeChange span pct/vct`, 'info')
+		},
+		{ once: true },
+	)
+	image.addEventListener(
+		'error',
+		() => {
+			log('VCT image failed to load', 'error')
+		},
+		{ once: true },
+	)
+
+	const label = document.createElement('span')
+	label.textContent = `route ${path}`
+
+	const frame = document.createElement('div')
+	frame.className = 'vct-frame'
+	frame.append(image, label)
+	stage.replaceChildren(frame)
+
+	log(`pushState + delayed first-viewport image → ${path}`)
 }
 
 function doError() {
@@ -118,6 +161,7 @@ const actions = {
 	'btn-recorder-stop': doRecorderStop,
 	'btn-report-error': doReportError,
 	'btn-set-attribute': doSetAttribute,
+	'btn-vct-navigation': doVctNavigation,
 	'btn-xhr': doXhr,
 }
 

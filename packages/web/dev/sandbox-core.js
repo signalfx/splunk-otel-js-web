@@ -321,6 +321,10 @@ function getConfig() {
 		debug: true,
 		deploymentEnvironment: inputValue('#cfg-env') || 'dev',
 		rumAccessToken: inputValue('#cfg-token') || undefined,
+		spaMetrics: {
+			quietMediaTime: 600,
+			quietTime: 600,
+		},
 	}
 
 	if (realm) {

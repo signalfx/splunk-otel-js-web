@@ -72,12 +72,13 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 
 	private _routingTracer: Tracer
 
-	private spaMetricsManager: SpaMetricsManager | null = null
+	private readonly spaMetricsManager: SpaMetricsManager | undefined
 
 	constructor(
 		config: SplunkUserInteractionInstrumentationConfig = {},
 		otelConfig: SplunkOtelWebConfig,
 		public sessionManager?: SessionManager,
+		spaMetricsManager?: SpaMetricsManager,
 	) {
 		// Prefer otel's eventNames property
 		if (!config.eventNames) {
@@ -91,14 +92,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 
 		super(config, otelConfig)
 
-		if (otelConfig.spaMetrics) {
-			const spaMetricConfig = otelConfig.spaMetrics === true ? {} : otelConfig.spaMetrics
-
-			this.spaMetricsManager = new SpaMetricsManager({
-				beaconEndpoint: otelConfig.beaconEndpoint,
-				...spaMetricConfig,
-			})
-		}
+		this.spaMetricsManager = spaMetricsManager
 
 		this._routingTracer = trace.getTracer(ROUTING_INSTRUMENTATION_NAME, ROUTING_INSTRUMENTATION_VERSION)
 
@@ -165,13 +159,9 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 		if (this.__hashChangeHandler) {
 			window.removeEventListener('hashchange', this.__hashChangeHandler)
 		}
-
-		this.spaMetricsManager?.stop()
 	}
 
 	enable(): void {
-		this.spaMetricsManager?.start()
-
 		this.__hashChangeHandler = (event: Event) => {
 			void this._emitRouteChangeSpan((event as HashChangeEvent).oldURL)
 		}
@@ -207,12 +197,17 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 		if (this.spaMetricsManager) {
 			// Wait for all in-flight resources (XHR, fetch, media) to finish loading,
 			// then resolve after a quiet period with no new network activity.
-			const { loadTime, timestampOfLastLoadedResource } = await this.spaMetricsManager.waitForPageLoad({
+			const { pct, timestampOfLastLoadedResource, vct } = await this.spaMetricsManager.waitForPageLoad({
 				startTime: performance.now(),
 			})
 
-			span.end(now + loadTime)
-			diag.debug('Route change span ended', { loadTime, span, timestampOfLastLoadedResource })
+			span.setAttribute('pct', pct)
+			if (vct !== undefined) {
+				span.setAttribute('vct', vct)
+			}
+
+			span.end(now + pct)
+			diag.debug('Route change span ended', { pct, span, timestampOfLastLoadedResource, vct })
 		} else {
 			span.end(now)
 		}

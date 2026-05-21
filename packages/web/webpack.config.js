@@ -38,6 +38,36 @@ const artifactsPath = path.resolve(__dirname, './dist/artifacts')
 
 const isDevelopmentMode = (argv) => argv.mode === 'development'
 
+const getBoundedDelay = (value) => {
+	const rawValue = Array.isArray(value) ? value[0] : value
+	const delay = Number.parseInt(rawValue ?? '0', 10)
+	if (Number.isNaN(delay) || delay < 0) {
+		return 0
+	}
+
+	return Math.min(delay, 5000)
+}
+
+const addDevServerRoutes = (devServer) => {
+	devServer.app?.get('/__splunk-rum-dev/vct-image.svg', (req, res) => {
+		const delay = getBoundedDelay(req.query.delay)
+		setTimeout(() => {
+			res.setHeader('Cache-Control', 'no-store')
+			res.setHeader('Content-Type', 'image/svg+xml')
+			res.end(`
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="248" viewBox="0 0 440 248">
+	<rect width="440" height="248" rx="12" fill="#010409"/>
+	<rect x="18" y="18" width="404" height="212" rx="10" fill="#161b22" stroke="#30363d"/>
+	<circle cx="84" cy="124" r="42" fill="#3fb950"/>
+	<path d="M63 125l14 14 31-34" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+	<text x="150" y="112" fill="#e6edf3" font-family="system-ui, sans-serif" font-size="28" font-weight="700">VCT test image</text>
+	<text x="150" y="148" fill="#8b949e" font-family="system-ui, sans-serif" font-size="18">${delay}ms delayed response</text>
+</svg>
+`)
+		}, delay)
+	})
+}
+
 const swcEnv = {
 	coreJs: '3.45.1',
 	mode: 'usage',
@@ -167,6 +197,10 @@ const browserConfig = (env, argv) => {
 				liveReload: true,
 				open: false,
 				port: Number(process.env.DEV_SERVE_PORT) || 3030,
+				setupMiddlewares: (middlewares, devServer) => {
+					addDevServerRoutes(devServer)
+					return middlewares
+				},
 				static: [
 					{ directory: path.resolve(__dirname, 'dev') },
 					{ directory: path.resolve(__dirname, '../session-recorder/dist/artifacts') },

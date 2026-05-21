@@ -17,7 +17,7 @@
  */
 import { expect } from '@playwright/test'
 
-import { test } from '../../utils/test'
+import { expectDefined, test } from '../../utils/test'
 import { timesMakeSense } from '../../utils/time-make-sense'
 
 test.describe('docload', () => {
@@ -28,12 +28,15 @@ test.describe('docload', () => {
 		const docLoadSpans = recordPage.receivedSpans.filter((span) => span.name === 'documentLoad')
 
 		expect(docLoadSpans).toHaveLength(1)
+		expect(Number(docLoadSpans[0].tags.pct)).toBeGreaterThan(0)
+		expect(Number(docLoadSpans[0].tags.vct)).toBeGreaterThan(0)
 
 		const resources = ['css-font-img.css', 'splunk-black.png?delay=300', 'iframe.ejs', 'splunk.woff']
 		for (const urlEnd of resources) {
 			const resourceSpan = recordPage.receivedSpans.find(
 				(span) => span.tags['http.url'] && (span.tags['http.url'] as string).endsWith(urlEnd),
 			)
+			expectDefined(resourceSpan)
 
 			expect(docLoadSpans[0].traceId, `${urlEnd} has correct traceId`).toBe(resourceSpan.traceId)
 		}
@@ -108,11 +111,14 @@ test.describe('docload', () => {
 		expect(docFetchSpans[0].tags['component']).toBe('document-load')
 		expect(docLoadSpans[0].tags['location.href']).toBe('http://localhost:3000/docload/docload.ejs')
 
-		timesMakeSense(docFetchSpans[0].annotations, 'domainLookupStart', 'domainLookupEnd')
-		timesMakeSense(docFetchSpans[0].annotations, 'connectStart', 'connectEnd')
-		timesMakeSense(docFetchSpans[0].annotations, 'requestStart', 'responseStart')
-		timesMakeSense(docFetchSpans[0].annotations, 'responseStart', 'responseEnd')
-		timesMakeSense(docFetchSpans[0].annotations, 'fetchStart', 'responseEnd')
+		const docFetchAnnotations = docFetchSpans[0].annotations
+		expectDefined(docFetchAnnotations)
+
+		timesMakeSense(docFetchAnnotations, 'domainLookupStart', 'domainLookupEnd')
+		timesMakeSense(docFetchAnnotations, 'connectStart', 'connectEnd')
+		timesMakeSense(docFetchAnnotations, 'requestStart', 'responseStart')
+		timesMakeSense(docFetchAnnotations, 'responseStart', 'responseEnd')
+		timesMakeSense(docFetchAnnotations, 'fetchStart', 'responseEnd')
 
 		expect(docFetchSpans[0].tags['link.traceId']).toBeDefined()
 		expect(docFetchSpans[0].tags['link.spanId']).toBeDefined()
@@ -130,16 +136,19 @@ test.describe('docload', () => {
 			'Checking sanity of screen.xy',
 		).toBeTruthy()
 
+		const docLoadAnnotations = docLoadSpans[0].annotations
+		expectDefined(docLoadAnnotations)
+
 		if (browserName !== 'webkit') {
 			// WebKit reports domInteractive, domContentLoadedEventStart/End, and domComplete as 0
 			// in PerformanceNavigationTiming, so the OTel SDK skips adding them as span events
 			// (they appear before fetchStart, failing the perfTime >= refTime check).
-			timesMakeSense(docLoadSpans[0].annotations, 'domContentLoadedEventStart', 'domContentLoadedEventEnd')
-			timesMakeSense(docLoadSpans[0].annotations, 'fetchStart', 'domInteractive')
-			timesMakeSense(docLoadSpans[0].annotations, 'fetchStart', 'domComplete')
+			timesMakeSense(docLoadAnnotations, 'domContentLoadedEventStart', 'domContentLoadedEventEnd')
+			timesMakeSense(docLoadAnnotations, 'fetchStart', 'domInteractive')
+			timesMakeSense(docLoadAnnotations, 'fetchStart', 'domComplete')
 		}
 
-		timesMakeSense(docLoadSpans[0].annotations, 'loadEventStart', 'loadEventEnd')
+		timesMakeSense(docLoadAnnotations, 'loadEventStart', 'loadEventEnd')
 
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})
