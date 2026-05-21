@@ -1,0 +1,73 @@
+name: Unit Tests
+on:
+    workflow_call:
+
+jobs:
+    unit-tests-linux:
+        name: Unit Tests - ${{ matrix.browser }}
+        timeout-minutes: 30
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                browser: [chromium, firefox]
+        steps:
+            - name: Checkout
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #6.0.2
+
+            - name: Setup
+              uses: ./.github/actions/setup
+
+            - name: Install playwright
+              uses: ./.github/actions/install-playwright
+
+            - name: Run Unit Tests
+              run: pnpm run test:unit --browser.name=${{ matrix.browser }}
+
+            - name: Upload test:unit report
+              uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+              if: ${{ !cancelled() }}
+              with:
+                  name: vitest-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
+                  path: vitest-report/
+                  retention-days: 14
+
+    unit-tests-macos:
+        name: Unit Tests - webkit
+        timeout-minutes: 30
+        runs-on: macos-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #6.0.2
+
+            - name: Setup
+              uses: ./.github/actions/setup
+
+            - name: Install playwright
+              uses: ./.github/actions/install-playwright
+
+            - name: Run Unit Tests
+              run: pnpm run test:unit --browser.name=webkit
+
+            - name: Upload test:unit report
+              uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+              if: ${{ !cancelled() }}
+              with:
+                  name: vitest-report-webkit-attempt-${{ github.run_attempt }}
+                  path: vitest-report/
+                  retention-days: 14
+
+    check-failure:
+        name: Check if all unit tests passed
+        needs: [unit-tests-linux, unit-tests-macos]
+        runs-on: ubuntu-latest
+        if: ${{ always() }}
+        steps:
+            - name: Check if any unit tests failed
+              run: |
+                  if [ "${{ needs['unit-tests-linux'].result }}" != "success" ] || [ "${{ needs['unit-tests-macos'].result }}" != "success" ]; then
+                  echo "One or more unit tests failed."
+                  exit 1
+                  else
+                  echo "All unit tests passed."
+                  fi

@@ -1,10 +1,10 @@
-name: Unit & Integration Tests
+name: Integration Tests
 on:
     workflow_call:
 
 jobs:
-    tests-linux:
-        name: Unit & Integration Tests - ${{ matrix.browser }}
+    integration-tests-linux:
+        name: Integration Tests - ${{ matrix.browser }}
         timeout-minutes: 60
         runs-on: ubuntu-latest
         strategy:
@@ -34,26 +34,10 @@ jobs:
                   path: packages/integration-tests/blob-report
                   retention-days: 1
 
-            - name: Run Unit Tests
-              if: ${{ matrix.browser != 'edge' && matrix.browser != 'chrome' }}
-              run: pnpm run test:unit --browser.name=${{ matrix.browser }}
-
-            - name: Upload test:unit report
-              uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-              if: ${{ !cancelled() && matrix.browser != 'edge' && matrix.browser != 'chrome' }}
-              with:
-                  name: vitest-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
-                  path: vitest-report/
-                  retention-days: 14
-
-    tests-macos:
+    integration-tests-macos:
+        name: Integration Tests - webkit
         timeout-minutes: 60
         runs-on: macos-latest
-        strategy:
-            fail-fast: false
-            matrix:
-                browser: [webkit]
-        name: Unit & Integration Tests - ${{ matrix.browser }}
         steps:
             - name: Checkout
               uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #6.0.2
@@ -66,33 +50,21 @@ jobs:
 
             - name: Run Playwright tests
               run: |
-                  pnpm exec playwright test --project=${{ matrix.browser }}
+                  pnpm exec playwright test --project=webkit
               working-directory: ./packages/integration-tests
 
             - name: Upload blob report to GitHub Actions Artifacts
               if: ${{ !cancelled() }}
               uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
               with:
-                  name: blob-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
+                  name: blob-report-webkit-attempt-${{ github.run_attempt }}
                   path: packages/integration-tests/blob-report
                   retention-days: 1
-
-            - name: Run Unit Tests
-              run: pnpm run test:unit --browser.name=${{ matrix.browser }}
-
-            - name: Upload test:unit report
-              uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-              if: ${{ !cancelled() }}
-              with:
-                  name: vitest-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
-                  path: vitest-report/
-                  retention-days: 14
 
     merge-reports:
         name: Merge playwright reports
         if: ${{ !cancelled() }}
-        needs: [tests-linux, tests-macos]
-
+        needs: [integration-tests-linux, integration-tests-macos]
         runs-on: ubuntu-latest
         steps:
             - name: Checkout
@@ -120,16 +92,16 @@ jobs:
                   retention-days: 14
 
     check-failure:
-        name: Check if all tests passed
-        needs: [tests-linux, tests-macos, merge-reports]
+        name: Check if all integration tests passed
+        needs: [integration-tests-linux, integration-tests-macos, merge-reports]
         runs-on: ubuntu-latest
         if: ${{ always() }}
         steps:
-            - name: Check if any playwright tests failed
+            - name: Check if any integration tests failed
               run: |
-                  if [ "${{ needs['tests-linux'].result }}" != "success" ] || [ "${{ needs['tests-macos'].result }}" != "success" ];  then
-                  echo "One or more tests failed."
+                  if [ "${{ needs['integration-tests-linux'].result }}" != "success" ] || [ "${{ needs['integration-tests-macos'].result }}" != "success" ]; then
+                  echo "One or more integration tests failed."
                   exit 1
                   else
-                  echo "All tests passed."
+                  echo "All integration tests passed."
                   fi
