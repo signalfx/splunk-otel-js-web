@@ -18,12 +18,13 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { SYNTHETICS_RUN_ID_ATTRIBUTE } from '../src/synthetics'
+import { SYNTHETICS_RUN_ID_ATTRIBUTE, SYNTHETICS_TEST_ID_ATTRIBUTE } from '../src/synthetics'
 import { deinit, getTracer, initWithSyncPipeline } from './utils'
 
 describe('synthetics integration', () => {
 	it('uses window', async () => {
 		window.syntheticsRunId = '1234abcd'.repeat(4)
+		window.syntheticsTestId = '6789abcd'.repeat(4)
 		const { forceFlush, getFinishedSpans } = initWithSyncPipeline()
 
 		getTracer('test-tracer').startSpan('test-span').end()
@@ -32,9 +33,11 @@ describe('synthetics integration', () => {
 		const spans = getFinishedSpans()
 		expect(spans.length).toBe(1)
 		expect(spans[0].tags[SYNTHETICS_RUN_ID_ATTRIBUTE]).toBe('1234abcd'.repeat(4))
+		expect(spans[0].tags[SYNTHETICS_TEST_ID_ATTRIBUTE]).toBe('6789abcd'.repeat(4))
 		deinit()
 
 		delete window.syntheticsRunId
+		delete window.syntheticsTestId
 	})
 
 	it('does not set a tag unless synthetics is active', async () => {
@@ -44,8 +47,10 @@ describe('synthetics integration', () => {
 		await forceFlush()
 
 		const spans = getFinishedSpans()
+
 		expect(spans.length).toBe(1)
 		expect(spans[0].tags[SYNTHETICS_RUN_ID_ATTRIBUTE]).toBeUndefined()
+		expect(spans[0].tags[SYNTHETICS_TEST_ID_ATTRIBUTE]).toBeUndefined()
 		deinit()
 	})
 })

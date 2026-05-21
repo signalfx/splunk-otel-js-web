@@ -64,7 +64,12 @@ import { SpanAttributesProcessor, SpanEmitterProcessor } from './span-processors
 import { SplunkContextManager } from './splunk-context-manager'
 import { SplunkSamplerWrapper } from './splunk-sampler-wrapper'
 import { SplunkWebTracerProvider } from './splunk-web-tracer-provider'
-import { getSyntheticsRunId, SYNTHETICS_RUN_ID_ATTRIBUTE } from './synthetics'
+import {
+	getSyntheticsRunId,
+	getSyntheticsTestId,
+	SYNTHETICS_RUN_ID_ATTRIBUTE,
+	SYNTHETICS_TEST_ID_ATTRIBUTE,
+} from './synthetics'
 import {
 	isPersistenceType,
 	SplunkOtelWebConfig,
@@ -458,8 +463,12 @@ export const SplunkRum: SplunkOtelWebType = {
 
 			eventTarget = new InternalEventTarget()
 
-			// Update ignoreUrls in place
-			normalizeIgnoreUrlsConfig(options)
+			try {
+				// Update ignoreUrls in place
+				normalizeIgnoreUrlsConfig(options)
+			} catch (error) {
+				diag.error('Could not update config to process "ignoreUrls"', error)
+			}
 
 			const processedOptions: SplunkOtelWebConfigInternal = Object.assign({}, OPTIONS_DEFAULTS, options, {
 				exporter: Object.assign({}, OPTIONS_DEFAULTS.exporter, options.exporter),
@@ -569,6 +578,11 @@ export const SplunkRum: SplunkOtelWebType = {
 			const syntheticsRunId = getSyntheticsRunId()
 			if (syntheticsRunId) {
 				resourceAttrs[SYNTHETICS_RUN_ID_ATTRIBUTE] = syntheticsRunId
+			}
+
+			const syntheticsTestId = getSyntheticsTestId()
+			if (syntheticsTestId) {
+				resourceAttrs[SYNTHETICS_TEST_ID_ATTRIBUTE] = syntheticsTestId
 			}
 
 			if (isNextTagUsed && typeof __COMMIT_HASH__ === 'string' && __COMMIT_HASH__) {
