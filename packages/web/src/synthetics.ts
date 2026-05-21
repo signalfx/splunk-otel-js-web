@@ -19,6 +19,7 @@
 declare global {
 	interface Window {
 		syntheticsRunId: string | undefined
+		syntheticsTestId: string | undefined
 	}
 }
 
@@ -26,4 +27,10 @@ export const SYNTHETICS_RUN_ID_ATTRIBUTE = 'Synthetics-RunId'
 
 export function getSyntheticsRunId(): string | undefined {
 	return window.syntheticsRunId
+}
+
+export const SYNTHETICS_TEST_ID_ATTRIBUTE = 'Synthetics-TestId'
+
+export function getSyntheticsTestId(): string | undefined {
+	return window.syntheticsTestId
 }

@@ -127,7 +127,7 @@ pnpm install
 # Build all packages
 pnpm build
 
-# Run tests
+# Run tests (unit & e2e)
 pnpm test
 
 # Start development mode

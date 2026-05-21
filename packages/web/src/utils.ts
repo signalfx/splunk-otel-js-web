@@ -154,3 +154,45 @@ export function waitForGlobal<T = unknown>(identifier: string, callback: (value:
 		}
 	}
 }
+
+const REGEX_STRING_PATTERN = /^regex\/([\s\S]*)\/([dgimsuvy]*)$/
+
+function parseRegexString(value: string): RegExp | null {
+	const match = REGEX_STRING_PATTERN.exec(value)
+	if (!match) {
+		return null
+	}
+
+	const [, pattern, flags] = match
+
+	try {
+		return new RegExp(pattern, flags)
+	} catch {
+		return null
+	}
+}
+
+export function normalizeIgnoreUrlsConfig(value: any) {
+	if (value == null || typeof value !== 'object' || Object.prototype.toString.call(value) !== '[object Object]') {
+		return
+	}
+
+	if (Object.keys(value).length === 0) {
+		return
+	}
+
+	for (const key of Object.keys(value)) {
+		if (key === 'ignoreUrls' && Array.isArray(value[key])) {
+			value[key] = value[key].map((entry) => {
+				if (typeof entry !== 'string') {
+					return entry
+				}
+
+				return parseRegexString(entry) ?? entry
+			})
+			continue
+		}
+
+		normalizeIgnoreUrlsConfig(value[key])
+	}
+}
