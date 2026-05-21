@@ -16,32 +16,55 @@
  *
  */
 
-import { HrTime } from '@opentelemetry/api'
+import { HrTime, Span } from '@opentelemetry/api'
 import { addHrTimes, hrTimeToMilliseconds, millisToHrTime } from '@opentelemetry/core'
-import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
+import { InstrumentationBase } from '@opentelemetry/instrumentation'
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base'
-import { Metric, onCLS, onINP, onLCP, ReportOpts } from 'web-vitals'
+import {
+	AttributionReportOpts,
+	INPAttributionReportOpts,
+	onCLS,
+	onFCP,
+	onINP,
+	onLCP,
+	onTTFB,
+} from 'web-vitals/attribution'
 
 import { SessionManager } from '../managers'
-import { SplunkOtelWebConfig } from '../types'
+import { isFiniteNumber, isString, SplunkOtelWebConfig } from '../types'
 import { VERSION } from '../version'
+import {
+	generateSafeWebVitalsTarget,
+	getLCPUrlForAttribution,
+	getResolvedWebVitalsAttributionConfig,
+	getWebVitalMetricReportKey,
+	getWebVitalsTargetForAttribution,
+	isWebVitalsAttributionEnabled,
+	setCLSAttributionAttributes,
+	setFCPAttributionAttributes,
+	setINPAttributionAttributes,
+	setLCPAttributionAttributes,
+	setNumberAttribute,
+	setStringAttribute,
+	setTTFBAttributionAttributes,
+	SplunkWebVitalsInstrumentationConfig,
+	WebVitalReport,
+	WebVitalsAttributionOptions,
+} from './webvitals'
+
+export type {
+	SplunkWebVitalsInstrumentationConfig,
+	WebVitalsAttributionConfig,
+	WebVitalsLCPUrlAttribution,
+	WebVitalsTargetAttribution,
+} from './webvitals'
 
 const MODULE_NAME = 'splunk-webvitals'
 
-export interface SplunkWebVitalsInstrumentationConfig extends InstrumentationConfig {
-	/**
-	 * If true, the webvitals spans will have their start time aligned with the document load span,
-	 * and will inherit the URL attributes from the document load span if available.
-	 * @default true
-	 */
-	alignWebVitalsSpansWithDocumentLoad?: boolean
-	cls?: boolean | ReportOpts
-	inp?: boolean | ReportOpts
-	lcp?: boolean | ReportOpts
-}
-
 export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWebVitalsInstrumentationConfig> {
 	private areCallbackAttached = false
+
+	private attributionContext: WebVitalsAttributionOptions | undefined
 
 	private docLoadSpanPromise: Promise<ReadableSpan>
 
@@ -49,14 +72,14 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 
 	private isRecording = false
 
-	private reported: Record<string, boolean> = {}
+	private reportedMetricKeys = new Set<string>()
 
 	constructor(
 		config: SplunkWebVitalsInstrumentationConfig = {},
 		protected otelConfig: SplunkOtelWebConfig,
 		public sessionManager?: SessionManager,
 	) {
-		super(MODULE_NAME, VERSION, config)
+		super(MODULE_NAME, VERSION, { ...config, enabled: false })
 
 		this.docLoadSpanPromise = new Promise<ReadableSpan>((resolve) => {
 			this.docLoadSpanResolve = resolve
@@ -72,14 +95,28 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 			this.docLoadSpanResolve?.(span)
 			this.docLoadSpanResolve = undefined
 		})
+
+		this._config.enabled = config.enabled ?? true
+		if (this._config.enabled) {
+			this.enable()
+		}
 	}
 
+	/**
+	 * Pauses span emission. Web-vitals callbacks remain attached (the library
+	 * provides no off-switch); metrics delivered while disabled are silently
+	 * dropped and will not be re-reported when the instrumentation is re-enabled.
+	 */
 	disable(): void {
 		this.isRecording = false
 	}
 
 	enable(): void {
 		this.isRecording = true
+		// Clear stale dedup keys on every enable so that metrics re-delivered
+		// after a disable/enable cycle are not silently dropped.
+		this.reportedMetricKeys.clear()
+		this.attributionContext = undefined
 		if (this.areCallbackAttached) {
 			return
 		}
@@ -87,56 +124,94 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 		this.areCallbackAttached = true
 
 		if (this._config.cls !== false) {
-			onCLS(
-				(metric) => {
-					void this.reportMetric('cls', metric)
-				},
-				typeof this._config.cls === 'object' ? this._config.cls : undefined,
-			)
+			onCLS((metric) => {
+				void this.reportMetric({ metric, name: 'cls' })
+			}, this.getAttributionOptions(this._config.cls))
 		}
 
 		if (this._config.lcp !== false) {
-			onLCP(
-				(metric) => {
-					void this.reportMetric('lcp', metric)
-				},
-				typeof this._config.lcp === 'object' ? this._config.lcp : undefined,
-			)
+			onLCP((metric) => {
+				void this.reportMetric({ metric, name: 'lcp' })
+			}, this.getAttributionOptions(this._config.lcp))
 		}
 
 		if (this._config.inp !== false) {
-			onINP(
-				(metric) => {
-					void this.reportMetric('inp', metric)
-				},
-				typeof this._config.inp === 'object' ? this._config.inp : undefined,
-			)
+			onINP((metric) => {
+				void this.reportMetric({ metric, name: 'inp' })
+			}, this.getINPOptions())
+		}
+
+		if (this._config._experimental_fcp) {
+			onFCP((metric) => {
+				void this.reportMetric({ metric, name: 'fcp' })
+			}, this.getAttributionOptions(this._config._experimental_fcp))
+		}
+
+		if (this._config._experimental_ttfb) {
+			onTTFB((metric) => {
+				void this.reportMetric({ metric, name: 'ttfb' })
+			}, this.getAttributionOptions(this._config._experimental_ttfb))
 		}
 	}
 
 	init(): void {}
 
-	private async reportMetric(name: string, metric: Metric): Promise<void> {
+	private getAttributionContext(): WebVitalsAttributionOptions {
+		if (!this.attributionContext) {
+			const resolvedConfig = getResolvedWebVitalsAttributionConfig(this._config._experimental_attribution)
+			this.attributionContext = {
+				getLCPUrl: (url) => getLCPUrlForAttribution(url, resolvedConfig),
+				getTarget: (target) => getWebVitalsTargetForAttribution(target, resolvedConfig),
+			}
+		}
+
+		return this.attributionContext
+	}
+
+	private getAttributionOptions(config: boolean | AttributionReportOpts | undefined): AttributionReportOpts {
+		const options = typeof config === 'object' ? { ...config } : {}
+		if (!isWebVitalsAttributionEnabled(this._config._experimental_attribution)) {
+			return options
+		}
+
+		const { target: targetMode } = getResolvedWebVitalsAttributionConfig(this._config._experimental_attribution)
+		if (targetMode === 'safe') {
+			options.generateTarget = generateSafeWebVitalsTarget
+		}
+
+		return options
+	}
+
+	private getINPOptions(): INPAttributionReportOpts {
+		const base = this.getAttributionOptions(this._config.inp)
+		const includeProcessedEventEntries =
+			typeof this._config.inp === 'object' ? (this._config.inp.includeProcessedEventEntries ?? false) : false
+		return { ...base, includeProcessedEventEntries }
+	}
+
+	private async reportMetric(report: WebVitalReport): Promise<void> {
 		if (!this.isRecording) {
 			return
 		}
 
-		if (this.reported[name]) {
-			return
-		}
-
-		this.reported[name] = true
-
+		const { metric, name } = report
 		const value = metric.value
-		if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+		if (!isFiniteNumber(value) || value < 0) {
 			return
 		}
+
+		const reportKey = getWebVitalMetricReportKey(name, metric)
+		if (this.reportedMetricKeys.has(reportKey)) {
+			return
+		}
+
+		this.reportedMetricKeys.add(reportKey)
 
 		const now = Date.now()
 		let endTime: HrTime | number = now
 		let span
-		if (this.shouldAlignWithDocumentLoad()) {
-			const docLoadSpan = await this.docLoadSpanPromise
+		const docLoadSpan = this.shouldAlignWithDocumentLoad() ? await this.docLoadSpanPromise : undefined
+		if (docLoadSpan) {
 			const alignedStartTime = addHrTimes(docLoadSpan.startTime, millisToHrTime(1))
 			let startTime: HrTime | number = alignedStartTime
 			endTime = startTime
@@ -152,16 +227,50 @@ export class SplunkWebVitalsInstrumentation extends InstrumentationBase<SplunkWe
 			}
 
 			span = this.tracer.startSpan('webvitals', { startTime })
-			const docLoadLocation = docLoadSpan?.attributes['location.href']
-			if (docLoadLocation) {
-				span.setAttribute('location.href', docLoadLocation)
+			const docLoadLocation = docLoadSpan.attributes['location.href']
+			if (isString(docLoadLocation)) {
+				setStringAttribute(span, 'location.href', docLoadLocation)
 			}
 		} else {
 			span = this.tracer.startSpan('webvitals', { startTime: now })
 		}
 
-		span.setAttribute(name, value)
+		setNumberAttribute(span, name, value)
+		if (isWebVitalsAttributionEnabled(this._config._experimental_attribution)) {
+			setStringAttribute(span, 'webvitals.metric_id', metric.id)
+			setNumberAttribute(span, 'webvitals.delta', metric.delta)
+			setStringAttribute(span, 'webvitals.navigation_type', metric.navigationType)
+			this.setAttributionAttributes(span, report)
+		}
+
 		span.end(endTime)
+	}
+
+	private setAttributionAttributes(span: Span, report: WebVitalReport): void {
+		const attributionContext = this.getAttributionContext()
+
+		switch (report.name) {
+			case 'cls': {
+				setCLSAttributionAttributes(span, report.metric, attributionContext)
+				return
+			}
+			case 'fcp': {
+				setFCPAttributionAttributes(span, report.metric)
+				return
+			}
+			case 'inp': {
+				setINPAttributionAttributes(span, report.metric, attributionContext)
+				return
+			}
+			case 'lcp': {
+				setLCPAttributionAttributes(span, report.metric, attributionContext)
+				return
+			}
+			case 'ttfb': {
+				setTTFBAttributionAttributes(span, report.metric)
+				return
+			}
+		}
 	}
 
 	private shouldAlignWithDocumentLoad(): boolean {

@@ -15,12 +15,14 @@
  * limitations under the License.
  *
  */
-export * from './init'
-export * from './memory-exporter'
-export * from './navigator'
-export * from './otel-api'
-export * from './span'
-export * from './span-capturer'
-export * from './span-mock'
-export * from './tracer'
-export * from './web-tracer-provider'
+
+export * from './attribution-config'
+export * from './cls'
+export * from './fcp'
+export * from './inp'
+export * from './lcp'
+export * from './metric-key'
+export * from './safe-target'
+export * from './span-attributes'
+export * from './ttfb'
+export * from './types'

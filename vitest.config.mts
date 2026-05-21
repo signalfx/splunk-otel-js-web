@@ -29,8 +29,27 @@ export default defineConfig({
 	test: {
 		clearMocks: true,
 		coverage: {
-			exclude: ['**/node_modules'],
+			exclude: [
+				'**/*.d.ts',
+				'**/*.spec.ts',
+				'**/*.test.ts',
+				'**/*.test.node.ts',
+				'**/dist/**',
+				'**/node_modules/**',
+			],
+			include: [
+				'packages/build-plugins/src/**/*.ts',
+				'packages/session-recorder/src/**/*.ts',
+				'packages/web/src/**/*.ts',
+			],
 			provider: 'istanbul',
+			reporter: ['text', 'lcov', 'json-summary'],
+			thresholds: {
+				branches: 43,
+				functions: 58,
+				lines: 54,
+				statements: 54,
+			},
 		},
 		exclude: ['**/node_modules/**/*.test.ts', '**/node_modules/**/*.test.node.ts'],
 		include: ['**/*.test.ts'],

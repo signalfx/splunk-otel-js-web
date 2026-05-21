@@ -17,4 +17,5 @@
  */
 export * from './error'
 export * from './node'
+export * from './number'
 export * from './string'

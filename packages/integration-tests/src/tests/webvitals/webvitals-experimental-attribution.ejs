@@ -4,7 +4,7 @@
 	<meta charset="UTF-8">
 	<title>Webvitals</title>
 
-	<%- renderAgent({ debug: true }) %>
+	<%- renderAgent({ debug: true, instrumentations: { webvitals: { _experimental_attribution: true, _experimental_fcp: true, _experimental_ttfb: true } } }) %>
 
 	<style>
 		#container {

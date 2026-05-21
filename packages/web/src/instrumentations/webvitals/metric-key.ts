@@ -15,12 +15,11 @@
  * limitations under the License.
  *
  */
-export * from './init'
-export * from './memory-exporter'
-export * from './navigator'
-export * from './otel-api'
-export * from './span'
-export * from './span-capturer'
-export * from './span-mock'
-export * from './tracer'
-export * from './web-tracer-provider'
+
+import { WebVitalMetricWithAttribution, WebVitalName } from './types'
+
+type WebVitalMetricReportIdentity = Pick<WebVitalMetricWithAttribution, 'delta' | 'id' | 'navigationType' | 'value'>
+
+export function getWebVitalMetricReportKey(name: WebVitalName, metric: WebVitalMetricReportIdentity): string {
+	return [name, metric.id, metric.value, metric.delta, metric.navigationType].join('|')
+}

@@ -15,12 +15,4 @@
  * limitations under the License.
  *
  */
-export * from './init'
-export * from './memory-exporter'
-export * from './navigator'
-export * from './otel-api'
-export * from './span'
-export * from './span-capturer'
-export * from './span-mock'
-export * from './tracer'
-export * from './web-tracer-provider'
+export const isFiniteNumber = (val?: unknown): val is number => typeof val === 'number' && Number.isFinite(val)

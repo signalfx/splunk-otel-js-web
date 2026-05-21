@@ -3,19 +3,21 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Splunk RUM — Dev Sandbox</title>
+		<title>Splunk RUM — TTFB Sandbox</title>
 		<link rel="stylesheet" href="sandbox-core.css" />
-		<link rel="stylesheet" href="styles.css" />
+		<link rel="stylesheet" href="web-vitals.css" />
 	</head>
-	<body>
+	<body data-web-vitals-metric="ttfb">
 		<header>
 			<h1>Splunk RUM Dev Sandbox</h1>
 			<nav class="page-nav">
-				<a href="index.html" class="nav-link" aria-current="page">RUM</a>
-				<a href="web-vitals.html" class="nav-link">Web Vitals</a>
+				<a href="index.html" class="nav-link">RUM</a>
+				<a href="web-vitals.html" class="nav-link" aria-current="page">Web Vitals</a>
 				<a href="replay.html" class="nav-link">Session Replay</a>
 			</nav>
-			<button id="btn-config" class="icon-btn" aria-label="Settings" title="Settings">&#9881;</button>
+			<button id="btn-config" class="icon-btn" type="button" aria-label="Settings" title="Settings">
+				&#9881;
+			</button>
 		</header>
 
 		<div id="status-bar">
@@ -83,33 +85,66 @@
 			</div>
 		</div>
 
-		<main>
-			<div class="panel">
-				<h2>Interactions</h2>
-				<div class="btn-group">
-					<button id="btn-fetch">Fetch /api/data (tracked XHR)</button>
-					<button id="btn-xhr">XMLHttpRequest /api/items</button>
-					<button id="btn-navigation">Update history (navigation span)</button>
-					<button id="btn-error" class="danger">Throw unhandled error</button>
-					<button id="btn-report-error" class="danger">SplunkRum.reportError()</button>
-					<button id="btn-custom-span">Create custom span</button>
-					<button id="btn-long-task">Long task (block 300ms)</button>
-					<button id="btn-set-attribute">Set global attribute</button>
-					<button id="btn-recorder-stop">Stop recording</button>
-					<button id="btn-recorder-resume">Resume recording</button>
-				</div>
-			</div>
+		<div class="web-vitals-page">
+			<nav class="web-vitals-subnav" aria-label="Web Vitals metrics">
+				<span class="web-vitals-subnav-label">Metrics</span>
+				<a href="web-vitals.html" class="web-vitals-subnav-link">Overview</a>
+				<a href="web-vitals-lcp.html" class="web-vitals-subnav-link">LCP</a>
+				<a href="web-vitals-cls.html" class="web-vitals-subnav-link">CLS</a>
+				<a href="web-vitals-inp.html" class="web-vitals-subnav-link">INP</a>
+				<a href="web-vitals-fcp.html" class="web-vitals-subnav-link">FCP</a>
+				<a href="web-vitals-ttfb.html" class="web-vitals-subnav-link" aria-current="page">TTFB</a>
+			</nav>
 
-			<div class="panel">
-				<h2>Console</h2>
-				<div id="log"></div>
-			</div>
-		</main>
+			<main class="metric-layout">
+				<section class="metric-stage" aria-labelledby="ttfb-heading">
+					<div class="metric-stage-header">
+						<div>
+							<h2 id="ttfb-heading">TTFB Attribution</h2>
+							<p>Reload to capture a fresh navigation response timing metric.</p>
+						</div>
+						<button id="btn-reload" class="primary" type="button">Reload page</button>
+					</div>
+					<div class="metric-stage-body">
+						<div class="timing-hero">
+							<div id="timing-value" class="timing-value">measuring</div>
+						</div>
+					</div>
+				</section>
+
+				<section class="details-panel" aria-labelledby="expected-heading">
+					<h2 id="expected-heading">Expected Attributes</h2>
+					<dl class="attribute-list">
+						<div>
+							<dt>span name</dt>
+							<dd>webvitals</dd>
+						</div>
+						<div>
+							<dt>metric</dt>
+							<dd>ttfb</dd>
+						</div>
+						<div>
+							<dt>metric flag</dt>
+							<dd>_experimental_ttfb</dd>
+						</div>
+						<div>
+							<dt>timing fields</dt>
+							<dd>waiting, cache, dns, connection, request</dd>
+						</div>
+					</dl>
+				</section>
+
+				<section class="details-panel console-panel" aria-labelledby="console-heading">
+					<h2 id="console-heading">Console</h2>
+					<div id="log"></div>
+				</section>
+			</main>
+		</div>
 
 		<!-- Locally-built SDK served by webpack-dev-server -->
 		<script src="dev-presets.js"></script>
 		<script defer src="splunk-otel-web.js"></script>
 		<script defer src="splunk-otel-web-session-recorder.js"></script>
-		<script type="module" src="app.js"></script>
+		<script type="module" src="web-vitals.js"></script>
 	</body>
 </html>

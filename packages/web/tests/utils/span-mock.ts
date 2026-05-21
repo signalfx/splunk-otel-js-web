@@ -15,12 +15,16 @@
  * limitations under the License.
  *
  */
-export * from './init'
-export * from './memory-exporter'
-export * from './navigator'
-export * from './otel-api'
-export * from './span'
-export * from './span-capturer'
-export * from './span-mock'
-export * from './tracer'
-export * from './web-tracer-provider'
+import { Span } from '@opentelemetry/api'
+
+export function createSpanMock(): { attributes: Record<string, number | string>; span: Span } {
+	const attributes: Record<string, number | string> = {}
+	const span = {
+		setAttribute: (name: string, value: number | string) => {
+			attributes[name] = value
+			return span
+		},
+	} as Span
+
+	return { attributes, span }
+}

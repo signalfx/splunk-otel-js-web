@@ -15,12 +15,16 @@
  * limitations under the License.
  *
  */
-export * from './init'
-export * from './memory-exporter'
-export * from './navigator'
-export * from './otel-api'
-export * from './span'
-export * from './span-capturer'
-export * from './span-mock'
-export * from './tracer'
-export * from './web-tracer-provider'
+
+import { Span } from '@opentelemetry/api'
+import type { FCPMetricWithAttribution } from 'web-vitals/attribution'
+
+import { setNumberAttribute, setStringAttribute } from './span-attributes'
+
+export function setFCPAttributionAttributes(span: Span, metric: FCPMetricWithAttribution): void {
+	const { attribution } = metric
+
+	setNumberAttribute(span, 'fcp.time_to_first_byte', attribution.timeToFirstByte)
+	setNumberAttribute(span, 'fcp.first_byte_to_fcp', attribution.firstByteToFCP)
+	setStringAttribute(span, 'fcp.load_state', attribution.loadState)
+}

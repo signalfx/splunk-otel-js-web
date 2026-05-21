@@ -39,3 +39,14 @@ main {
 #log {
 	block-size: 340px;
 }
+
+@media (max-width: 800px) {
+	main {
+		grid-template-columns: 1fr;
+	}
+
+	.panel {
+		border-inline-end: none;
+		border-block-end: 1px solid var(--color-border-muted);
+	}
+}
