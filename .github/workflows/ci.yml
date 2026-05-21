@@ -31,7 +31,12 @@ jobs:
             - name: Lint docs
               run: pnpm run lint:markdown
 
-    tests:
-        name: Tests
-        uses: ./.github/workflows/tests.yml
+    unit-tests:
+        name: Unit Tests
+        uses: ./.github/workflows/tests-unit.yml
+        secrets: inherit
+
+    integration-tests:
+        name: Integration Tests
+        uses: ./.github/workflows/tests-integration.yml
         secrets: inherit
