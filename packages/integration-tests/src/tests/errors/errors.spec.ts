@@ -15,8 +15,8 @@
  * limitations under the License.
  *
  */
-import { Span } from '@opentelemetry/exporter-zipkin/build/src/types'
 import { expect } from '@playwright/test'
+import type { ExportedTestSpan } from '@test-utils/test-span.js'
 
 import { test } from '../../utils/test'
 
@@ -30,16 +30,12 @@ test.describe('errors', () => {
 
 		expect(errorSpans).toHaveLength(1)
 
-		expect(errorSpans[0].tags['component']).toBe('error')
-		expect(errorSpans[0].tags['error.type']).toBe('error')
-		expect(errorSpans[0].tags['target_element']).toBe('IMG')
-		expect(errorSpans[0].tags['target_xpath']).toBe('//html/body/img')
-		expect(
-			(errorSpans[0].tags['target_src'] as string).endsWith('/nonexistent.png'),
-			`Checking target_src: ${errorSpans[0]['target_src']}`,
-		).toBeTruthy()
-
-		expect(errorSpans[0].tags['error.message']).toBe('Failed to load <img src="/nonexistent.png" />')
+		expect(errorSpans[0]).toHaveSpanAttribute('component', 'error')
+		expect(errorSpans[0]).toHaveSpanAttribute('error.type', 'error')
+		expect(errorSpans[0]).toHaveSpanAttribute('target_element', 'IMG')
+		expect(errorSpans[0]).toHaveSpanAttribute('target_xpath', '//html/body/img')
+		expect(errorSpans[0]).toHaveSpanAttributeEndingWith('target_src', '/nonexistent.png')
+		expect(errorSpans[0]).toHaveSpanAttribute('error.message', 'Failed to load <img src="/nonexistent.png" />')
 	})
 
 	test('JS syntax error', async ({ browserName, recordPage }) => {
@@ -49,9 +45,9 @@ test.describe('errors', () => {
 
 		expect(errorSpans).toHaveLength(1)
 
-		expect(errorSpans[0].tags['component']).toBe('error')
-		expect(errorSpans[0].tags['error']).toBe('true')
-		expect(errorSpans[0].tags['error.object']).toBe('SyntaxError')
+		expect(errorSpans[0]).toHaveSpanAttribute('component', 'error')
+		expect(errorSpans[0]).toHaveSpanAttribute('error', true)
+		expect(errorSpans[0]).toHaveSpanAttribute('error.object', 'SyntaxError')
 
 		const errorMessageMap = {
 			chromium: "Unexpected token ';'",
@@ -59,7 +55,7 @@ test.describe('errors', () => {
 			webkit: "Unexpected token ';'",
 		}
 
-		expect(errorSpans[0].tags['error.message']).toBe(errorMessageMap[browserName])
+		expect(errorSpans[0]).toHaveSpanAttribute('error.message', errorMessageMap[browserName])
 	})
 
 	test('JS unhandled error', async ({ browserName, recordPage }) => {
@@ -69,9 +65,9 @@ test.describe('errors', () => {
 
 		expect(errorSpans).toHaveLength(1)
 
-		expect(errorSpans[0].tags['component']).toBe('error')
-		expect(errorSpans[0].tags['error']).toBe('true')
-		expect(errorSpans[0].tags['error.object']).toBe('TypeError')
+		expect(errorSpans[0]).toHaveSpanAttribute('component', 'error')
+		expect(errorSpans[0]).toHaveSpanAttribute('error', true)
+		expect(errorSpans[0]).toHaveSpanAttribute('error.object', 'TypeError')
 
 		const errorMessageMap = {
 			chromium: "Cannot set properties of null (setting 'prop1')",
@@ -79,7 +75,7 @@ test.describe('errors', () => {
 			webkit: "null is not an object (evaluating 'test.prop1 = true')",
 		}
 
-		expect(errorSpans[0].tags['error.message']).toBe(errorMessageMap[browserName])
+		expect(errorSpans[0]).toHaveSpanAttribute('error.message', errorMessageMap[browserName])
 	})
 
 	test('unhandled promise rejection', async ({ recordPage }) => {
@@ -90,10 +86,10 @@ test.describe('errors', () => {
 		const errorSpans = recordPage.receivedSpans.filter((span) => span.name === 'unhandledrejection')
 
 		expect(errorSpans).toHaveLength(1)
-		expect(errorSpans[0].tags['component']).toBe('error')
-		expect(errorSpans[0].tags['error']).toBe('true')
-		expect(errorSpans[0].tags['error.object']).toBe('String')
-		expect(errorSpans[0].tags['error.message']).toBe('rejection-value')
+		expect(errorSpans[0]).toHaveSpanAttribute('component', 'error')
+		expect(errorSpans[0]).toHaveSpanAttribute('error', true)
+		expect(errorSpans[0]).toHaveSpanAttribute('error.object', 'String')
+		expect(errorSpans[0]).toHaveSpanAttribute('error.message', 'rejection-value')
 	})
 
 	test('manual console.error', async ({ browserName, recordPage }) => {
@@ -102,12 +98,12 @@ test.describe('errors', () => {
 		const errorSpans = recordPage.receivedSpans.filter((span) => span.name === 'console.error')
 
 		expect(errorSpans).toHaveLength(1)
-		expect(errorSpans[0].tags['component']).toBe('error')
-		expect(errorSpans[0].tags['error']).toBe('true')
-		expect(errorSpans[0].tags['error.object']).toBe('TypeError')
-		expect(errorSpans[0].tags['splunkContext']).toBe(undefined)
-		expect(errorSpans[0].tags['errorValueString']).toBe('errorValue')
-		expect(errorSpans[0].tags['errorValueNumber']).toBe('123')
+		expect(errorSpans[0]).toHaveSpanAttribute('component', 'error')
+		expect(errorSpans[0]).toHaveSpanAttribute('error', true)
+		expect(errorSpans[0]).toHaveSpanAttribute('error.object', 'TypeError')
+		expect(errorSpans[0]).toNotHaveSpanAttribute('splunkContext')
+		expect(errorSpans[0]).toHaveSpanAttribute('errorValueString', 'errorValue')
+		expect(errorSpans[0]).toHaveSpanAttribute('errorValueNumber', 123)
 
 		const errorMessageMap = {
 			chromium: "Cannot set properties of null (setting 'anyField')",
@@ -115,7 +111,7 @@ test.describe('errors', () => {
 			webkit: "null is not an object (evaluating 'someNull.anyField = 'value'')",
 		}
 
-		expect(errorSpans[0].tags['error.message']).toBe(errorMessageMap[browserName])
+		expect(errorSpans[0]).toHaveSpanAttribute('error.message', errorMessageMap[browserName])
 	})
 
 	test('SplunkRum.reportError', async ({ browserName, recordPage }) => {
@@ -127,12 +123,12 @@ test.describe('errors', () => {
 		const errorSpans = recordPage.receivedSpans.filter((span) => span.name === 'SplunkRum.reportError')
 
 		expect(errorSpans).toHaveLength(1)
-		expect(errorSpans[0].tags['component']).toBe('error')
-		expect(errorSpans[0].tags['error']).toBe('true')
-		expect(errorSpans[0].tags['error.object']).toBe('TypeError')
-		expect(errorSpans[0].tags['splunkContext']).toBe(undefined)
-		expect(errorSpans[0].tags['errorValueString']).toBe('errorValueContext')
-		expect(errorSpans[0].tags['errorValueNumber']).toBe('321')
+		expect(errorSpans[0]).toHaveSpanAttribute('component', 'error')
+		expect(errorSpans[0]).toHaveSpanAttribute('error', true)
+		expect(errorSpans[0]).toHaveSpanAttribute('error.object', 'TypeError')
+		expect(errorSpans[0]).toNotHaveSpanAttribute('splunkContext')
+		expect(errorSpans[0]).toHaveSpanAttribute('errorValueString', 'errorValueContext')
+		expect(errorSpans[0]).toHaveSpanAttribute('errorValueNumber', 321)
 
 		const errorMessages = {
 			chromium: "Cannot set properties of null (setting 'anyField')",
@@ -140,7 +136,7 @@ test.describe('errors', () => {
 			webkit: "null is not an object (evaluating 'someNull.anyField = 'value'')",
 		}
 
-		expect(errorSpans[0].tags['error.message']).toBe(errorMessages[browserName])
+		expect(errorSpans[0]).toHaveSpanAttribute('error.message', errorMessages[browserName])
 
 		const errorStackMap = {
 			chromium: `TypeError: Cannot set properties of null (setting 'anyField')\n    at ${url}:78:25`,
@@ -148,7 +144,7 @@ test.describe('errors', () => {
 			webkit: `global code@${url}:78:15`,
 		}
 
-		expect(errorSpans[0].tags['error.stack']).toBe(errorStackMap[browserName])
+		expect(errorSpans[0]).toHaveSpanAttribute('error.stack', errorStackMap[browserName])
 	})
 
 	test('module can be disabled', async ({ recordPage }) => {
@@ -167,40 +163,39 @@ test.describe('errors', () => {
 		const errorSpans = recordPage.receivedSpans.filter((span) => span.name === 'onerror')
 
 		expect(errorSpans).toHaveLength(1)
-		expect(errorSpans[0].tags['error.message']).toBe('Error from script1.js')
-		expect((errorSpans[0].tags['error.source_map_ids'] as string).includes('script1.min.js')).toBeTruthy()
-		expect(
-			(errorSpans[0].tags['error.source_map_ids'] as string).includes(
-				'9663c60664c425cef3b141c167e9b324240ce10ae488726293892b7130266a6b',
-			),
-		).toBeTruthy()
+		expect(errorSpans[0]).toHaveSpanAttribute('error.message', 'Error from script1.js')
+		expect(errorSpans[0]).toHaveSpanAttributeContaining('error.source_map_ids', 'script1.min.js')
+		expect(errorSpans[0]).toHaveSpanAttributeContaining(
+			'error.source_map_ids',
+			'9663c60664c425cef3b141c167e9b324240ce10ae488726293892b7130266a6b',
+		)
 
 		await recordPage.locator('#button2').click()
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'onerror').length === 2)
 		const errorSpans2 = recordPage.receivedSpans.filter((span) => span.name === 'onerror')
 
 		expect(errorSpans2).toHaveLength(2)
-		expect(errorSpans2[1].tags['error.message']).toBe('Error from script2.js')
-		expect((errorSpans2[1].tags['error.source_map_ids'] as string).includes('script2.min.js')).toBeTruthy()
-		expect(
-			(errorSpans2[1].tags['error.source_map_ids'] as string).includes(
-				'9793573cdc2ab308a0b1996bea14253ec8832bc036210475ded0813cafa27066',
-			),
-		).toBeTruthy()
+		expect(errorSpans2[1]).toHaveSpanAttribute('error.message', 'Error from script2.js')
+		expect(errorSpans2[1]).toHaveSpanAttributeContaining('error.source_map_ids', 'script2.min.js')
+		expect(errorSpans2[1]).toHaveSpanAttributeContaining(
+			'error.source_map_ids',
+			'9793573cdc2ab308a0b1996bea14253ec8832bc036210475ded0813cafa27066',
+		)
 
 		await recordPage.locator('#button3').click()
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'onerror').length === 3)
 		const errorSpans3 = recordPage.receivedSpans.filter((span) => span.name === 'onerror')
 
 		expect(errorSpans3).toHaveLength(3)
-		expect(errorSpans3[2].tags['error.message']).toContain('thisFunctionDoesNotExist') // browsers report the exact error message differently in this scenario
-		expect(errorSpans3[2].tags['error.source_map_ids'] as string).toContain(
+		expect(errorSpans3[2]).toHaveSpanAttributeContaining('error.message', 'thisFunctionDoesNotExist')
+		expect(errorSpans3[2]).toHaveSpanAttributeContaining(
+			'error.source_map_ids',
 			'http://localhost:3000/build-plugins-test-project-artifacts/webpack-config-devtool-source-map-js/main.js',
 		)
-		expect(
-			errorSpans3[2].tags['error.source_map_ids'] as string,
-			'this expect must be kept in-sync with the sourceMapId injected into build-plugins/tests/project/dist/webpack-config-devtool-source-map-js/main.js',
-		).toContain('2899acdb-3e6b-b5bd-66c7-59949666821b')
+		expect(errorSpans3[2]).toHaveSpanAttributeContaining(
+			'error.source_map_ids',
+			'2899acdb-3e6b-b5bd-66c7-59949666821b',
+		)
 	})
 
 	test('module error', async ({ recordPage }) => {
@@ -210,17 +205,16 @@ test.describe('errors', () => {
 
 		expect(errorSpans).toHaveLength(0)
 		// As error message is generic [object Module], it is being dropped
-		// expect(errorSpans[0].tags['error.message']).toBe('[object Module]')
 	})
 
 	test('throttling error spans', async ({ recordPage }) => {
 		await recordPage.goTo('/errors/views/throttling.ejs')
 		await recordPage.waitForTimeoutAndFlushData(1500)
-		const errorSpans = recordPage.receivedSpans.filter((span) => span.tags['component'] === 'error')
-		const groupedSpans: Span[][] = Object.values(
+		const errorSpans = recordPage.receivedSpans.filter((span) => span.attributes['component'] === 'error')
+		const groupedSpans: ExportedTestSpan[][] = Object.values(
 			errorSpans.reduce(
 				(acc, span) => {
-					const key = JSON.stringify(span.tags)
+					const key = JSON.stringify(span.attributes)
 					if (!acc[key]) {
 						acc[key] = []
 					}
@@ -237,7 +231,12 @@ test.describe('errors', () => {
 		// in case the test is run on a slow machine
 		expect(Object.keys(groupedSpans).length).toBeLessThan(20)
 		for (const group of groupedSpans) {
-			const timestamps = group.map((span) => span.timestamp).toSorted((a, b) => a - b)
+			const timestamps = group
+				.map((span) => {
+					const startNanos = BigInt(span.startTime[0]) * 1_000_000_000n + BigInt(span.startTime[1])
+					return Number(startNanos / 1000n)
+				})
+				.toSorted((a, b) => a - b)
 			for (let i = 1; i < timestamps.length; i++) {
 				expect(timestamps[i] - timestamps[i - 1]).toBeGreaterThanOrEqual(1000)
 			}

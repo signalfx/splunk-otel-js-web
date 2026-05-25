@@ -15,19 +15,24 @@
  * limitations under the License.
  *
  */
-import { SplunkZipkinExporter, ZipkinSpan } from '../../src/exporters/zipkin'
+
+import { parseOtlpPayload } from '@test-utils/otlp-types'
+import type { ExportedTestSpan } from '@test-utils/test-span'
+
+import { SplunkOTLPTraceExporter } from '../../src/exporters/otlp'
 
 export const buildInMemorySplunkExporter = () => {
-	const spans: ZipkinSpan[] = []
-	const exporter = new SplunkZipkinExporter({
-		beaconSender: () => {},
+	const spans: ExportedTestSpan[] = []
+	const handleData = (data: unknown) => {
+		const text =
+			data instanceof Uint8Array ? new TextDecoder().decode(data) : typeof data === 'string' ? data : String(data)
+		const newSpans = parseOtlpPayload(text)
+		spans.push(...newSpans)
+	}
+	const exporter = new SplunkOTLPTraceExporter({
+		beaconSender: (_url, data) => handleData(data),
 		url: '',
-		xhrSender: (_, data) => {
-			if (typeof data === 'string') {
-				const newSpans = JSON.parse(data) as ZipkinSpan[]
-				spans.splice(spans.length, 0, ...newSpans)
-			}
-		},
+		xhrSender: (_url, data) => handleData(data),
 	})
 
 	return {

@@ -27,7 +27,7 @@ test.describe('synthetics', () => {
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'guard-span').length === 1)
 		const receivedSpans = recordPage.receivedSpans
 
-		expect(receivedSpans.every((span) => span.tags['Synthetics-RunId'] === syntheticsRunId)).toBeTruthy()
+		expect(receivedSpans.every((span) => span.attributes['Synthetics-RunId'] === syntheticsRunId)).toBeTruthy()
 	})
 
 	test('applies synthetics run id attribute on all spans', async ({ recordPage }) => {
@@ -36,6 +36,6 @@ test.describe('synthetics', () => {
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'guard-span').length === 1)
 		const receivedSpans = recordPage.receivedSpans
 
-		expect(receivedSpans.every((span) => span.tags['Synthetics-RunId'] === undefined)).toBeTruthy()
+		expect(receivedSpans.every((span) => span.attributes['Synthetics-RunId'] === undefined)).toBeTruthy()
 	})
 })

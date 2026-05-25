@@ -84,8 +84,8 @@ describe('Transitive API', () => {
 			})
 			span.end()
 
-			expect(spanCapturer.spans[0].attributes['attr1']).toBe('val1')
-			expect(spanCapturer.spans[0].attributes['attr2']).toBe('val2')
+			expect(spanCapturer.spans[0]).toHaveSpanAttribute('attr1', 'val1')
+			expect(spanCapturer.spans[0]).toHaveSpanAttribute('attr2', 'val2')
 		})
 
 		it('can set status', () => {

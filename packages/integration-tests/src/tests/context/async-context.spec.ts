@@ -34,9 +34,9 @@ const runTest = async (recordPage: RecordPage, urlPath: string) => {
 	const childSpans = recordPage.receivedSpans.filter((span) => span.name === 'context-child')
 
 	expect(clickSpans).toHaveLength(1)
-	expect(clickSpans[0].parentId).toBeUndefined()
+	expect(clickSpans[0].parentSpanId).toBeUndefined()
 	expect(childSpans).toHaveLength(1)
-	expect(childSpans[0].parentId).toBe(clickSpans[0].id)
+	expect(childSpans[0].parentSpanId).toBe(clickSpans[0].spanId)
 
 	expect(recordPage.receivedErrorSpans).toHaveLength(0)
 }
@@ -55,7 +55,7 @@ test.describe('context', () => {
 
 		expect(clickSpans).toHaveLength(1)
 		expect(childSpans).toHaveLength(1)
-		expect(childSpans[0].parentId, "Child span in a longer timeout doesn't have a parent").toBeUndefined()
+		expect(childSpans[0].parentSpanId, "Child span in a longer timeout doesn't have a parent").toBeUndefined()
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})
 
@@ -72,8 +72,10 @@ test.describe('context', () => {
 
 			expect(clickSpans).toHaveLength(1)
 			expect(childSpans).toHaveLength(1)
-			expect(childSpans[0].parentId).toBeDefined()
-			expect(childSpans[0].parentId, `Child span ${i} belongs to user interaction trace.`).toBe(clickSpans[0].id)
+			expect(childSpans[0].parentSpanId).toBeDefined()
+			expect(childSpans[0].parentSpanId, `Child span ${i} belongs to user interaction trace.`).toBe(
+				clickSpans[0].spanId,
+			)
 
 			expect(recordPage.receivedErrorSpans).toHaveLength(0)
 			recordPage.clearReceivedSpans()
@@ -127,6 +129,6 @@ test.describe('context', () => {
 		expect(clickSpans).toHaveLength(1)
 		expect(routeChangeSpans).toHaveLength(1)
 
-		expect(routeChangeSpans[0].parentId).toBe(clickSpans[0].id)
+		expect(routeChangeSpans[0].parentSpanId).toBe(clickSpans[0].spanId)
 	})
 })

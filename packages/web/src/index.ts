@@ -209,7 +209,7 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	/**
 	 * Allows experimental options to be passed. No versioning guarantees are given for this method.
 	 */
-	_internalInit: (options: Partial<SplunkOtelWebConfigInternal>) => void
+	_internalInit: (options: SplunkOtelWebConfig | Partial<SplunkOtelWebConfigInternal>) => void
 
 	_processedOptions: SplunkOtelWebConfigInternal | null
 
@@ -282,7 +282,7 @@ const isLatestTagUsed = isAgentLoadedViaLatestTag()
 const isNextTagUsed = isAgentLoadedViaNextTag()
 
 export const SplunkRum: SplunkOtelWebType = {
-	_internalInit: function (options: Partial<SplunkOtelWebConfigInternal>) {
+	_internalInit: function (options: SplunkOtelWebConfig | Partial<SplunkOtelWebConfigInternal>) {
 		SplunkRum.init({
 			...OPTIONS_DEFAULTS,
 			...options,

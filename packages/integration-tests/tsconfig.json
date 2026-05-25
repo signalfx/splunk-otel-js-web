@@ -1,11 +1,15 @@
 {
-	"include": ["**/*.ts"],
+	"include": ["src/**/*.ts", "playwright.config.ts"],
 	"compilerOptions": {
 		"allowSyntheticDefaultImports": true,
 		"target": "esnext",
 		"moduleResolution": "nodenext",
 		"module": "NodeNext",
 		"strict": true,
-		"noImplicitAny": true
+		"noImplicitAny": true,
+		"skipLibCheck": true,
+		"paths": {
+			"@test-utils/*": ["../../tests/utils/*"]
+		}
 	}
 }

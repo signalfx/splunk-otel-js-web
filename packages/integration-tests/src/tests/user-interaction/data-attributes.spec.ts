@@ -27,19 +27,19 @@ test.describe('data attributes capture', () => {
 		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'click'))
 		const clickSpan = recordPage.receivedSpans.find((span) => span.name === 'click')
 
-		expect(clickSpan?.tags['component']).toBe('user-interaction')
-		expect(clickSpan?.tags['event_type']).toBe('click')
+		expect(clickSpan).toHaveSpanAttribute('component', 'user-interaction')
+		expect(clickSpan).toHaveSpanAttribute('event_type', 'click')
 
 		// Verify configured data attributes are captured (normalized to element.dataset.camelCase format)
 		// 'data-testid' (hyphenated config) -> element.dataset.testid
-		expect(clickSpan?.tags['element.dataset.testid']).toBe('submit-button')
+		expect(clickSpan).toHaveSpanAttribute('element.dataset.testid', 'submit-button')
 		// 'track' (camelCase config) -> looks up data-track -> element.dataset.track
-		expect(clickSpan?.tags['element.dataset.track']).toBe('purchase')
+		expect(clickSpan).toHaveSpanAttribute('element.dataset.track', 'purchase')
 		// 'userName' (camelCase config) -> looks up data-user-name -> element.dataset.userName
-		expect(clickSpan?.tags['element.dataset.userName']).toBe('john-doe')
+		expect(clickSpan).toHaveSpanAttribute('element.dataset.userName', 'john-doe')
 
 		// Non-data attributes should not be captured
-		expect(clickSpan?.tags['aria-label']).toBeUndefined()
+		expect(clickSpan).toNotHaveSpanAttribute('aria-label')
 
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})

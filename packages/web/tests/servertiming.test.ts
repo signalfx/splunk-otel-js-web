@@ -28,8 +28,8 @@ describe('server timing', () => {
 
 		captureTraceParent('traceparent;desc="00-000000000000000078499d3266d75d5f-7e1c10b3c482edbe-01"', span)
 
-		expect(span.attributes['link.traceId']).toBe('000000000000000078499d3266d75d5f')
-		expect(span.attributes['link.spanId']).toBe('7e1c10b3c482edbe')
+		expect(span).toHaveSpanAttribute('link.traceId', '000000000000000078499d3266d75d5f')
+		expect(span).toHaveSpanAttribute('link.spanId', '7e1c10b3c482edbe')
 	})
 
 	it('captureTraceParent() - should deal with multiple values', () => {
@@ -39,16 +39,16 @@ describe('server timing', () => {
 			'other;dur=1234, traceparent;desc="00-000000000000000078499d3266d75d5f-7e1c10b3c482edbe-01",misc;desc="stuff"',
 			span,
 		)
-		expect(span.attributes['link.traceId']).toBe('000000000000000078499d3266d75d5f')
-		expect(span.attributes['link.spanId']).toBe('7e1c10b3c482edbe')
+		expect(span).toHaveSpanAttribute('link.traceId', '000000000000000078499d3266d75d5f')
+		expect(span).toHaveSpanAttribute('link.spanId', '7e1c10b3c482edbe')
 	})
 
 	it('should deal with single quotes', () => {
 		const span = createSpan('test')
 
 		captureTraceParent("traceparent;desc='00-000000000000000078499d3266d75d5f-7e1c10b3c482edbe-01'", span)
-		expect(span.attributes['link.traceId']).toBe('000000000000000078499d3266d75d5f')
-		expect(span.attributes['link.spanId']).toBe('7e1c10b3c482edbe')
+		expect(span).toHaveSpanAttribute('link.traceId', '000000000000000078499d3266d75d5f')
+		expect(span).toHaveSpanAttribute('link.spanId', '7e1c10b3c482edbe')
 	})
 
 	it('captureTraceParentFromPerformanceEntries() - should handle absence of serverTiming', () => {
@@ -56,7 +56,7 @@ describe('server timing', () => {
 		const span = createSpan('test')
 
 		captureTraceParentFromPerformanceEntries(entries, span)
-		expect(span.attributes['link.traceId']).toBeUndefined()
+		expect(span).toNotHaveSpanAttribute('link.traceId')
 	})
 
 	it('should deal with multiple entries', () => {
@@ -69,7 +69,7 @@ describe('server timing', () => {
 		const span = createSpan('test')
 
 		captureTraceParentFromPerformanceEntries(entries as PerformanceEntries, span)
-		expect(span.attributes['link.traceId']).toBe('000000000000000078499d3266d75d5f')
-		expect(span.attributes['link.spanId']).toBe('7e1c10b3c482edbe')
+		expect(span).toHaveSpanAttribute('link.traceId', '000000000000000078499d3266d75d5f')
+		expect(span).toHaveSpanAttribute('link.spanId', '7e1c10b3c482edbe')
 	})
 })

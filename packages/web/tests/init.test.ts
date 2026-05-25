@@ -271,7 +271,7 @@ describe('test init', () => {
 
 			const documentLoadSpan = capturer.spans.find((span) => span.name === 'documentLoad')
 			expectDefined(documentLoadSpan, 'documentLoad span presence.')
-			expect(/^[0-9]+x[0-9]+$/.test(documentLoadSpan.attributes['screen.xy'] as string)).toBeTruthy()
+			expect(documentLoadSpan).toHaveSpanAttributeMatching('screen.xy', /^[0-9]+x[0-9]+$/)
 
 			const resourceFetchSpan = capturer.spans.find((span) => span.name === 'resourceFetch')
 			expectDefined(resourceFetchSpan, 'resourceFetch span presence.')
@@ -381,11 +381,11 @@ describe('creating spans is possible', () => {
 		span.end()
 
 		const exposedSpan = span as tracing.Span
-		expect(exposedSpan.attributes['location.href'], 'Checking location.href').toBeTruthy()
-		expect(exposedSpan.attributes['environment']).toBe('my-env')
-		expect(exposedSpan.attributes['app.version']).toBe('1.2-test.3')
-		expect(exposedSpan.attributes.customerType).toBe('GOLD')
-		expect(exposedSpan.attributes['splunk.rumSessionId'], 'Checking splunk.rumSessionId').toBeTruthy()
+		expect(exposedSpan).toHaveSpanAttribute('location.href')
+		expect(exposedSpan).toHaveSpanAttribute('environment', 'my-env')
+		expect(exposedSpan).toHaveSpanAttribute('app.version', '1.2-test.3')
+		expect(exposedSpan).toHaveSpanAttribute('customerType', 'GOLD')
+		expect(exposedSpan).toHaveSpanAttribute('splunk.rumSessionId')
 
 		// Attributes set on resource that zipkin exporter merges to span tags
 		expect(exposedSpan.resource.attributes['telemetry.sdk.name'], 'Checking telemetry.sdk.name').toBeTruthy()
@@ -458,10 +458,10 @@ describe('test xhr', () => {
 		)
 		expectDefined(span)
 		expect(span.name).toBe('HTTP GET')
-		expect(span.attributes.component).toBe('xml-http-request')
+		expect(span).toHaveSpanAttribute('component', 'xml-http-request')
 		expect((span.attributes['http.response_content_length'] as number) > 0).toBeTruthy()
 		// expect(span.attributes['link.spanId']).toBe('0000000000000002')
-		expect(span.attributes['http.url']).toBe(location.href)
+		expect(span).toHaveSpanAttribute('http.url', location.href)
 
 		capturer.clear()
 	})
@@ -497,7 +497,7 @@ describe('test fetch', () => {
 		// assert.ok(fetchSpan.attributes['http.response_content_length'] > 0, 'Checking response_content_length.');
 
 		// expect(fetchSpan.attributes['link.spanId']).toBe('0000000000000002')
-		expect(fetchSpan.attributes['http.url']).toBe(location.href)
+		expect(fetchSpan).toHaveSpanAttribute('http.url', location.href)
 	})
 })
 
@@ -546,11 +546,11 @@ describe('test error', () => {
 
 		const span = capturer.spans.at(-1)
 		expectDefined(span)
-		expect(span.attributes.component).toBe('error')
+		expect(span).toHaveSpanAttribute('component', 'error')
 		expect(span.name).toBe('onerror')
-		expect((span.attributes['error.stack'] as string).includes('callChain')).toBeTruthy()
-		expect((span.attributes['error.stack'] as string).includes('reportError')).toBeTruthy()
-		expect((span.attributes['error.message'] as string).includes('war room')).toBeTruthy()
+		expect(span).toHaveSpanAttributeContaining('error.stack', 'callChain')
+		expect(span).toHaveSpanAttributeContaining('error.stack', 'reportError')
+		expect(span).toHaveSpanAttributeContaining('error.message', 'war room')
 	})
 })
 
@@ -593,9 +593,9 @@ describe('test stack length', () => {
 
 		const errorSpan = capturer.spans.find((span) => span.attributes.component === 'error')
 		expectDefined(errorSpan)
-		expect((errorSpan.attributes['error.stack'] as string).includes('recurAndThrow')).toBeTruthy()
+		expect(errorSpan).toHaveSpanAttributeContaining('error.stack', 'recurAndThrow')
 		expect((errorSpan.attributes['error.stack'] as string).length <= 4096).toBeTruthy()
-		expect((errorSpan.attributes['error.message'] as string).includes('bad thing')).toBeTruthy()
+		expect(errorSpan).toHaveSpanAttributeContaining('error.message', 'bad thing')
 	})
 })
 
@@ -632,12 +632,12 @@ describe('test unhandled promise rejection', () => {
 
 		// first one is PromiseRejection, second one is from the throw
 		expect(errorSpans[0]).toBeTruthy()
-		expect(errorSpans[0].attributes.error).toBeUndefined()
-		expect(errorSpans[0].attributes['error.type']).toBe('unhandledrejection')
+		expect(errorSpans[0]).toNotHaveSpanAttribute('error')
+		expect(errorSpans[0]).toHaveSpanAttribute('error.type', 'unhandledrejection')
 		expect(errorSpans[1]).toBeTruthy()
-		expect(errorSpans[1].attributes.error).toBeTruthy()
-		expect((errorSpans[1].attributes['error.stack'] as string).includes('throwBacon')).toBeTruthy()
-		expect((errorSpans[1].attributes['error.message'] as string).includes('bacon')).toBeTruthy()
+		expect(errorSpans[1]).toHaveSpanAttribute('error')
+		expect(errorSpans[1]).toHaveSpanAttributeContaining('error.stack', 'throwBacon')
+		expect(errorSpans[1]).toHaveSpanAttributeContaining('error.message', 'bacon')
 	})
 })
 
@@ -664,7 +664,7 @@ describe('test console.error', () => {
 
 		const errorSpan = capturer.spans.find((span) => span.attributes.component === 'error')
 		expectDefined(errorSpan)
-		expect(errorSpan.attributes['error.message']).toBe('has some args')
+		expect(errorSpan).toHaveSpanAttribute('error.message', 'has some args')
 	})
 })
 
@@ -696,7 +696,7 @@ describe('test unloaded img', () => {
 		const span = capturer.spans.find((s) => s.attributes.component === 'error')
 		expectDefined(span)
 		expect(span.name).toBe('eventListener.error')
-		expect((span.attributes.target_src as string).endsWith('DoesNotExist.jpg')).toBeTruthy()
+		expect(span).toHaveSpanAttributeContaining('target_src', 'DoesNotExist.jpg')
 	})
 })
 
@@ -744,8 +744,8 @@ describe('test route change', () => {
 		const span = capturer.spans.find((s) => s.attributes.component === 'user-interaction')
 		expectDefined(span, 'Check if user-interaction span is present.')
 		expect(span.name).toBe('routeChange')
-		expect((span.attributes['location.href'] as string).includes('/thisIsAChange#WithAHash')).toBeTruthy()
-		expect(oldUrl).toBe(span.attributes['prev.href'])
+		expect(span).toHaveSpanAttributeContaining('location.href', '/thisIsAChange#WithAHash')
+		expect(span).toHaveSpanAttribute('prev.href', oldUrl)
 		history.pushState({}, 'title', '/')
 	})
 
@@ -762,8 +762,8 @@ describe('test route change', () => {
 		const span = capturer.spans.find((s) => s.attributes.component === 'user-interaction')
 		expectDefined(span, 'Check if user-interaction span is present.')
 		expect(span.name).toBe('routeChange')
-		expect((span.attributes['location.href'] as string).includes('#hashChange')).toBeTruthy()
-		expect(oldUrl).toBe(span.attributes['prev.href'])
+		expect(span).toHaveSpanAttributeContaining('location.href', '#hashChange')
+		expect(span).toHaveSpanAttribute('prev.href', oldUrl)
 		history.pushState({}, 'title', '/')
 	})
 })
@@ -933,7 +933,7 @@ describe('platform attributes', () => {
 		expect(capturer.spans.length).toBeGreaterThan(0)
 		const testSpan = capturer.spans.find((s) => s.name === 'test-span')
 		expectDefined(testSpan)
-		expect(testSpan.attributes['user_agent.os.name']).toBe('Windows')
+		expect(testSpan).toHaveSpanAttribute('user_agent.os.name', 'Windows')
 	})
 
 	it('should add experimental browser debug attributes to spans when enabled', async () => {
@@ -966,10 +966,10 @@ describe('platform attributes', () => {
 
 		const testSpan = capturer.spans.find((s) => s.name === 'test-span')
 		expectDefined(testSpan)
-		expect(testSpan.attributes['browser.debug.hardware_concurrency']).toBe(8)
-		expect(testSpan.attributes['browser.debug.device_memory_gb']).toBe(16)
-		expect(testSpan.attributes['browser.debug.connection.effective_type']).toBe('4g')
-		expect(testSpan.attributes['browser.debug.connection.rtt']).toBe(25)
+		expect(testSpan).toHaveSpanAttribute('browser.debug.hardware_concurrency', 8)
+		expect(testSpan).toHaveSpanAttribute('browser.debug.device_memory_gb', 16)
+		expect(testSpan).toHaveSpanAttribute('browser.debug.connection.effective_type', '4g')
+		expect(testSpan).toHaveSpanAttribute('browser.debug.connection.rtt', 25)
 	})
 })
 

@@ -28,11 +28,11 @@ test.describe('websockets', () => {
 		const connectSpans = recordPage.receivedSpans.filter((span) => span.name === 'connect')
 
 		expect(connectSpans).toHaveLength(1)
-		expect(connectSpans[0].kind).toBe('CLIENT')
-		expect(connectSpans[0].tags['app']).toBe('splunk-otel-js-dummy-app')
-		expect(connectSpans[0].tags['component']).toBe('websocket')
-		expect(connectSpans[0].tags['error']).toBeUndefined()
-		expect(connectSpans[0].tags['location.href']).toBe('http://localhost:3000/websocket/websocket.ejs')
+		expect(connectSpans[0].kind).toBe(3)
+		expect(connectSpans[0]).toHaveSpanAttribute('app', 'splunk-otel-js-dummy-app')
+		expect(connectSpans[0]).toHaveSpanAttribute('component', 'websocket')
+		expect(connectSpans[0]).toNotHaveSpanAttribute('error')
+		expect(connectSpans[0]).toHaveSpanAttribute('location.href', 'http://localhost:3000/websocket/websocket.ejs')
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})
 
@@ -61,18 +61,18 @@ test.describe('websockets', () => {
 		expect(connectSpans).toHaveLength(1)
 
 		expect(messageSpans).toHaveLength(1)
-		expect(messageSpans[0].kind).toBe('CONSUMER')
-		expect(messageSpans[0].tags['component']).toBe('websocket')
-		expect(messageSpans[0].tags['protocol']).toBe('')
-		expect(messageSpans[0].tags['http.url']).toBe('ws://localhost:3000/ws')
-		expect(messageSpans[0].tags['http.response_content_length']).toBe('14')
+		expect(messageSpans[0].kind).toBe(5)
+		expect(messageSpans[0]).toHaveSpanAttribute('component', 'websocket')
+		expect(messageSpans[0]).toHaveSpanAttribute('protocol', '')
+		expect(messageSpans[0]).toHaveSpanAttribute('http.url', 'ws://localhost:3000/ws')
+		expect(messageSpans[0]).toHaveSpanAttribute('http.response_content_length', 14)
 
 		expect(sendSpans).toHaveLength(1)
-		expect(sendSpans[0].kind).toBe('PRODUCER')
-		expect(sendSpans[0].tags['component']).toBe('websocket')
-		expect(sendSpans[0].tags['protocol']).toBe('')
-		expect(sendSpans[0].tags['http.url']).toBe('ws://localhost:3000/ws')
-		expect(sendSpans[0].tags['http.request_content_length']).toBe('12')
+		expect(sendSpans[0].kind).toBe(4)
+		expect(sendSpans[0]).toHaveSpanAttribute('component', 'websocket')
+		expect(sendSpans[0]).toHaveSpanAttribute('protocol', '')
+		expect(sendSpans[0]).toHaveSpanAttribute('http.url', 'ws://localhost:3000/ws')
+		expect(sendSpans[0]).toHaveSpanAttribute('http.request_content_length', 12)
 	})
 
 	test('websocket constructor errors are captured', async ({ recordPage }) => {
@@ -84,7 +84,7 @@ test.describe('websockets', () => {
 		const connectSpans = recordPage.receivedSpans.filter((span) => span.name === 'connect')
 
 		expect(connectSpans).toHaveLength(1)
-		expect(connectSpans[0].tags['error']).toBe('true')
+		expect(connectSpans[0]).toHaveSpanAttribute('error', true)
 	})
 
 	test('websocket send errors are captured', async ({ recordPage }) => {
@@ -96,9 +96,9 @@ test.describe('websockets', () => {
 		const sendSpans = recordPage.receivedSpans.filter((span) => span.name === 'send')
 
 		expect(sendSpans).toHaveLength(1)
-		expect(sendSpans[0].tags['error']).toBe('true')
-		expect(sendSpans[0].tags['error.message']).toBeDefined()
-		expect(sendSpans[0].tags['error.object']).toBeDefined()
+		expect(sendSpans[0]).toHaveSpanAttribute('error', true)
+		expect(sendSpans[0]).toHaveSpanAttribute('error.message')
+		expect(sendSpans[0]).toHaveSpanAttribute('error.object')
 	})
 
 	test('specifying sub-protocols does not break anything', async ({ recordPage }) => {
@@ -109,8 +109,11 @@ test.describe('websockets', () => {
 		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'connect'))
 		const connectSpans = recordPage.receivedSpans.filter((span) => span.name === 'connect')
 		expect(connectSpans).toHaveLength(1)
-		expect(connectSpans[0].tags['location.href']).toBe('http://localhost:3000/websocket/websocket-sub-protocol.ejs')
-		expect(connectSpans[0].tags['protocols']).toBe('["soap"]')
+		expect(connectSpans[0]).toHaveSpanAttribute(
+			'location.href',
+			'http://localhost:3000/websocket/websocket-sub-protocol.ejs',
+		)
+		expect(connectSpans[0]).toHaveSpanAttribute('protocols', '["soap"]')
 
 		await recordPage.locator('#sendWs').click()
 
@@ -118,20 +121,20 @@ test.describe('websockets', () => {
 		const messageSpans = recordPage.receivedSpans.filter((span) => span.name === 'onmessage')
 
 		expect(messageSpans).toHaveLength(1)
-		expect(messageSpans[0].kind).toBe('CONSUMER')
-		expect(messageSpans[0].tags['component']).toBe('websocket')
-		expect(messageSpans[0].tags['protocol']).toBe('soap')
-		expect(messageSpans[0].tags['http.url']).toBe('ws://localhost:3000/ws')
-		expect(messageSpans[0].tags['http.response_content_length']).toBe('14')
+		expect(messageSpans[0].kind).toBe(5)
+		expect(messageSpans[0]).toHaveSpanAttribute('component', 'websocket')
+		expect(messageSpans[0]).toHaveSpanAttribute('protocol', 'soap')
+		expect(messageSpans[0]).toHaveSpanAttribute('http.url', 'ws://localhost:3000/ws')
+		expect(messageSpans[0]).toHaveSpanAttribute('http.response_content_length', 14)
 
 		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'send'))
 		const sendSpans = recordPage.receivedSpans.filter((span) => span.name === 'send')
 
 		expect(sendSpans).toHaveLength(1)
-		expect(sendSpans[0].kind).toBe('PRODUCER')
-		expect(sendSpans[0].tags['component']).toBe('websocket')
-		expect(sendSpans[0].tags['protocol']).toBe('soap')
-		expect(sendSpans[0].tags['http.url']).toBe('ws://localhost:3000/ws')
-		expect(sendSpans[0].tags['http.request_content_length']).toBe('12')
+		expect(sendSpans[0].kind).toBe(4)
+		expect(sendSpans[0]).toHaveSpanAttribute('component', 'websocket')
+		expect(sendSpans[0]).toHaveSpanAttribute('protocol', 'soap')
+		expect(sendSpans[0]).toHaveSpanAttribute('http.url', 'ws://localhost:3000/ws')
+		expect(sendSpans[0]).toHaveSpanAttribute('http.request_content_length', 12)
 	})
 })

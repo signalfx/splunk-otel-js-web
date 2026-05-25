@@ -27,7 +27,9 @@ test.describe('socketio', () => {
 		await recordPage.locator('#sendPing').click()
 
 		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'pong receive'))
-		const socketioSpans = recordPage.receivedSpans.filter((span) => span.tags['messaging.system'] === 'socket.io')
+		const socketioSpans = recordPage.receivedSpans.filter(
+			(span) => span.attributes['messaging.system'] === 'socket.io',
+		)
 
 		expect(socketioSpans).toHaveLength(3)
 		expect(socketioSpans[0].name).toBe('hello send')
@@ -42,7 +44,9 @@ test.describe('socketio', () => {
 		await recordPage.locator('#sendPing').click()
 
 		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'pong receive'))
-		const socketioSpans = recordPage.receivedSpans.filter((span) => span.tags['messaging.system'] === 'socket.io')
+		const socketioSpans = recordPage.receivedSpans.filter(
+			(span) => span.attributes['messaging.system'] === 'socket.io',
+		)
 
 		expect(socketioSpans).toHaveLength(3)
 		expect(socketioSpans[0].name).toBe('hello send')

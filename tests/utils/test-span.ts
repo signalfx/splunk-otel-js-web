@@ -15,20 +15,20 @@
  * limitations under the License.
  *
  */
-import { expect } from '@playwright/test'
 
-import { test } from '../../utils/test'
+import type { Attributes, HrTime, SpanKind, SpanStatusCode } from '@opentelemetry/api'
+import type { TimedEvent } from '@opentelemetry/sdk-trace-base'
 
-test.describe('redacting-attributes', () => {
-	test('with custom exporter', async ({ recordPage }) => {
-		await recordPage.goTo('/redacting-attributes/index.ejs')
-
-		await recordPage.locator('#btnClick').click()
-
-		await recordPage.waitForSpans((spans) => spans.some((s) => s.name === 'click'))
-		const receivedSpans = recordPage.receivedSpans
-		const clickSpans = receivedSpans.filter((span) => span.name === 'click')
-
-		expect(clickSpans.every((s) => s.attributes['http.url'] === '[redacted]'))
-	})
-})
+export interface ExportedTestSpan {
+	readonly attributes: Attributes
+	readonly duration: HrTime
+	readonly endTime: HrTime
+	readonly events: TimedEvent[]
+	readonly kind: SpanKind
+	readonly name: string
+	readonly parentSpanId?: string
+	readonly spanId: string
+	readonly startTime: HrTime
+	readonly status: { code: SpanStatusCode }
+	readonly traceId: string
+}

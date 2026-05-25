@@ -28,15 +28,17 @@ import {
 } from './common'
 
 export class SplunkOTLPTraceExporter extends OTLPTraceExporter {
-	protected readonly _beaconSender: SplunkExporterConfig['beaconSender'] = NATIVE_BEACON_SENDER
+	protected readonly _beaconSender: SplunkExporterConfig['beaconSender']
 
 	protected readonly _onAttributesSerializing: SplunkExporterConfig['onAttributesSerializing']
 
-	protected readonly _xhrSender: SplunkExporterConfig['xhrSender'] = NATIVE_XHR_SENDER
+	protected readonly _xhrSender: SplunkExporterConfig['xhrSender']
 
 	constructor(options: SplunkExporterConfig) {
 		super(options)
+		this._beaconSender = options.beaconSender ?? NATIVE_BEACON_SENDER
 		this._onAttributesSerializing = options.onAttributesSerializing || NOOP_ATTRIBUTES_TRANSFORMER
+		this._xhrSender = options.xhrSender ?? NATIVE_XHR_SENDER
 	}
 
 	send(items: ReadableSpan[], onSuccess: () => void): void {

@@ -32,11 +32,12 @@ test.describe('history', () => {
 		const navigationSpans = recordPage.receivedSpans.filter((span) => span.name === 'routeChange')
 
 		expect(navigationSpans).toHaveLength(1)
-		expect(navigationSpans[0].tags['component']).toBe('user-interaction')
-		expect(navigationSpans[0].tags['prev.href']).toBe(
+		expect(navigationSpans[0]).toHaveSpanAttribute('component', 'user-interaction')
+		expect(navigationSpans[0]).toHaveSpanAttribute(
+			'prev.href',
 			'http://localhost:3000/user-interaction/history-ignore.ejs#another-page',
 		)
-		expect(navigationSpans[0].tags['location.href']).toBe('http://localhost:3000/user-interaction/page-2')
+		expect(navigationSpans[0]).toHaveSpanAttribute('location.href', 'http://localhost:3000/user-interaction/page-2')
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})
 })

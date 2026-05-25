@@ -31,11 +31,12 @@ const createTestFn: (params: { expectedTargetText: string; path: string }) => Te
 
 		await recordPage.locator('h1').click()
 
-		await recordPage.waitForSpans((spans) => spans.some((span) => span.tags['event_type'] === 'click'))
+		await recordPage.waitForSpans((spans) => spans.some((span) => span.attributes['event_type'] === 'click'))
 
-		const clickSpan = recordPage.receivedSpans.find((span) => span.tags['event_type'] === 'click')
+		const clickSpan = recordPage.receivedSpans.find((span) => span.attributes['event_type'] === 'click')
 
-		expect(clickSpan?.tags['target_text']).toBe(expectedTargetText)
+		expect(clickSpan).toBeDefined()
+		expect(clickSpan).toHaveSpanAttribute('target_text', expectedTargetText)
 	}
 
 test.describe('Privacy', () => {

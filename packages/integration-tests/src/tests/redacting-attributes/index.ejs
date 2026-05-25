@@ -5,13 +5,11 @@
   <title>Redacting attributes with exporter.onAttributesSerializing</title>
   <%- renderAgent({}, true) %>
   <script>
-    SplunkRumOptions.exporter = {
-      onAttributesSerializing: function (attributes) {
-        return Object.keys(attributes).reduce(function (acc, key) {
-          acc[key] = /https?\:\/\//.test(attributes[key]) ? '[redacted]' : attributes[key];
-          return acc;
-        }, {});
-      },
+    SplunkRumOptions.exporter.onAttributesSerializing = function (attributes) {
+      return Object.keys(attributes).reduce(function (acc, key) {
+        acc[key] = /https?\:\/\//.test(attributes[key]) ? '[redacted]' : attributes[key];
+        return acc;
+      }, {});
     };
     SplunkRum.init(SplunkRumOptions);
   </script>

@@ -34,7 +34,11 @@ Code is TypeScript-first. Follow `eslint.config.mjs` and `.prettierrc.cjs`.
 
 ## Testing Guidelines
 
-Vitest is used for unit tests. Name unit tests `*.test.ts` and keep them near code under `src` or package `tests`. Playwright specs live under `packages/integration-tests/src/tests` and use `*.spec.ts`.
+Vitest is used for unit tests. Unit tests run in a real browser environment (via `@vitest/browser-playwright`), so DOM APIs, `fetch`, `XMLHttpRequest`, `localStorage`, etc. are all available natively — no mocking or patching is needed. Name browser unit tests `*.test.ts`. For tests that must run in Node.js (e.g. testing Node-specific behavior), use `*.test.node.ts`.
+
+Playwright specs live under `packages/integration-tests/src/tests` and use `*.spec.ts`.
+
+Shared test utilities live in `tests/utils/` at the repo root and are imported via the `@test-utils/*` path alias (e.g. `import type { ExportedTestSpan } from '@test-utils/test-span'`).
 
 Run the smallest relevant test first, then `pnpm run test:unit` or `pnpm run test:e2e` before opening a PR.
 

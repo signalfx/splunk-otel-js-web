@@ -15,11 +15,12 @@
  * limitations under the License.
  *
  */
-import { Span } from '@opentelemetry/exporter-zipkin/build/src/types'
+import { parseOtlpPayload } from '@test-utils/otlp-types.js'
+import type { ExportedTestSpan } from '@test-utils/test-span.js'
 import { BrowserContext, Page } from 'playwright'
 
 export class RecordPage {
-	receivedSpans: Span[] = []
+	receivedSpans: ExportedTestSpan[] = []
 
 	get receivedErrorSpans() {
 		return this.receivedSpans.filter((span) => span.name === 'onerror')
@@ -79,8 +80,11 @@ export class RecordPage {
 
 	async mockNetwork() {
 		await this.page.route('*/**/api/v2/spans', async (route, request) => {
-			const spans = JSON.parse(request.postData())
-			this.receivedSpans.push(...spans)
+			const postData = request.postData()
+			if (postData) {
+				const spans = parseOtlpPayload(postData)
+				this.receivedSpans.push(...spans)
+			}
 
 			await route.fulfill({
 				body: '',
@@ -98,7 +102,7 @@ export class RecordPage {
 		return this.context.setOffline(false)
 	}
 
-	waitForSpans: (predicate: (spans: Span[]) => boolean, timeout?: number) => Promise<void> = async (
+	waitForSpans: (predicate: (spans: ExportedTestSpan[]) => boolean, timeout?: number) => Promise<void> = async (
 		predicate,
 		timeout = 25_000,
 	) => {

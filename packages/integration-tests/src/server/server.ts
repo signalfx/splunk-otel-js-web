@@ -135,6 +135,7 @@ fastify.get<{
 							beaconEndpoint: beaconUrl.toString(),
 							bufferTimeout: GLOBAL_TEST_BUFFER_TIMEOUT,
 							debug: true,
+							exporter: { otlp: true },
 							...userOpts,
 						}
 
@@ -148,13 +149,11 @@ fastify.get<{
 						}
 
 						if (typeof request.query.disableInstrumentation === 'string') {
-							if (!options.instrumentations) {
-								options.instrumentations = {}
-							}
-
+							const instrumentations: Record<string, boolean> = {}
 							request.query.disableInstrumentation.split(',').forEach((instrumentation) => {
-								options.instrumentations[instrumentation] = false
+								instrumentations[instrumentation] = false
 							})
+							options.instrumentations = instrumentations
 						}
 
 						if (typeof request.query.beaconEndpoint === 'string') {

@@ -15,16 +15,17 @@
  * limitations under the License.
  *
  */
+
 import { hrTimeToMicroseconds } from '@opentelemetry/core'
-import { afterEach, expect } from 'vitest'
+import { expect } from '@playwright/test'
+import type { ExportedTestSpan } from '@test-utils/test-span.js'
 
-import type { ExportedTestSpan } from './utils/test-span'
-
+// See https://playwright.dev/docs/test-assertions#add-custom-matchers-using-expectextend
 expect.extend({
-	toHaveSpanAttribute(received: ExportedTestSpan, key: string, expected?: string | number | boolean) {
+	toHaveSpanAttribute(received: ExportedTestSpan, key: string, expectedValue?: string | number | boolean) {
 		const actual = received.attributes[key]
 
-		if (expected === undefined) {
+		if (expectedValue === undefined) {
 			return {
 				message: () => `expected span "${received.name}" to have attribute "${key}"`,
 				pass: actual !== undefined,
@@ -34,9 +35,9 @@ expect.extend({
 		return {
 			message: () =>
 				this.isNot
-					? `expected span "${received.name}" attribute "${key}" not to be ${JSON.stringify(expected)}`
-					: `expected span "${received.name}" attribute "${key}" to be ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`,
-			pass: actual === expected,
+					? `expected span "${received.name}" attribute "${key}" not to be ${JSON.stringify(expectedValue)}`
+					: `expected span "${received.name}" attribute "${key}" to be ${JSON.stringify(expectedValue)}, got ${JSON.stringify(actual)}`,
+			pass: actual === expectedValue,
 		}
 	},
 
@@ -52,6 +53,18 @@ expect.extend({
 		}
 	},
 
+	toHaveSpanAttributeEndingWith(received: ExportedTestSpan, key: string, suffix: string) {
+		const actual = received.attributes[key]
+		const pass = actual !== undefined && String(actual).endsWith(suffix)
+		return {
+			message: () =>
+				this.isNot
+					? `expected span "${received.name}" attribute "${key}" not to end with "${suffix}"`
+					: `expected span "${received.name}" attribute "${key}" to end with "${suffix}", got ${JSON.stringify(actual)}`,
+			pass,
+		}
+	},
+
 	toHaveSpanAttributeMatching(received: ExportedTestSpan, key: string, pattern: RegExp) {
 		const actual = received.attributes[key]
 		const pass = actual !== undefined && pattern.test(String(actual))
@@ -60,6 +73,18 @@ expect.extend({
 				this.isNot
 					? `expected span "${received.name}" attribute "${key}" not to match ${pattern}`
 					: `expected span "${received.name}" attribute "${key}" to match ${pattern}, got ${JSON.stringify(actual)}`,
+			pass,
+		}
+	},
+
+	toHaveSpanAttributeStartingWith(received: ExportedTestSpan, key: string, prefix: string) {
+		const actual = received.attributes[key]
+		const pass = actual !== undefined && String(actual).startsWith(prefix)
+		return {
+			message: () =>
+				this.isNot
+					? `expected span "${received.name}" attribute "${key}" not to start with "${prefix}"`
+					: `expected span "${received.name}" attribute "${key}" to start with "${prefix}", got ${JSON.stringify(actual)}`,
 			pass,
 		}
 	},
@@ -107,9 +132,22 @@ expect.extend({
 	},
 })
 
-afterEach(() => {
-	delete localStorage['_splunk_rum_sid']
-	delete localStorage['_splunk_rum_user_anonymousId']
-	document.cookie = '_splunk_rum_sid=;expires=Thu, 01 Jan 1970 00:00:00 GMT'
-	document.cookie = '_splunk_rum_user_anonymousId=;expires=Thu, 01 Jan 1970 00:00:00 GMT'
-})
+export interface SpanMatchers {
+	toHaveSpanAttribute: (key: string, expectedValue?: string | number | boolean) => void
+	toHaveSpanAttributeContaining: (key: string, substring: string) => void
+	toHaveSpanAttributeEndingWith: (key: string, suffix: string) => void
+	toHaveSpanAttributeMatching: (key: string, pattern: RegExp) => void
+	toHaveSpanAttributeStartingWith: (key: string, prefix: string) => void
+	toHaveSpanDuration: (expectedMicros: number) => void
+	toHaveSpanDurationGreaterThan: (minMicros: number) => void
+	toHaveSpanDurationGreaterThanOrEqual: (minMicros: number) => void
+	toNotHaveSpanAttribute: (key: string) => void
+}
+
+declare global {
+	// eslint-disable-next-line @typescript-eslint/no-namespace
+	export namespace PlaywrightTest {
+		// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-unused-vars
+		export interface Matchers<R, T = unknown> extends SpanMatchers {}
+	}
+}

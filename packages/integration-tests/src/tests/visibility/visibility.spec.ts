@@ -33,7 +33,7 @@ test.describe('visibility', () => {
 		const visibilitySpans = receivedSpans.filter((span) => span.name === 'visibility')
 
 		expect(visibilitySpans).toHaveLength(2)
-		expect(visibilitySpans[0].tags['hidden']).toBe('true')
-		expect(visibilitySpans[1].tags['hidden']).toBe('false')
+		expect(visibilitySpans[0]).toHaveSpanAttribute('hidden', true)
+		expect(visibilitySpans[1]).toHaveSpanAttribute('hidden', false)
 	})
 })
