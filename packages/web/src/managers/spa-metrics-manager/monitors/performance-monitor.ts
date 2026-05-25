@@ -82,6 +82,11 @@ export class PerformanceMonitor extends Monitor {
 		const loadTime = entry.responseEnd - entry.startTime
 
 		this.config.onResourceStateChange({
+			state: ResourceState.DISCOVERED,
+			url,
+		})
+
+		this.config.onResourceStateChange({
 			loadTime,
 			state: ResourceState.LOADED,
 			timestamp: entry.responseEnd,
