@@ -98,8 +98,24 @@ describe('SpaMetricsManager', () => {
 		await fetch('data:text/plain,hello')
 
 		const result = await promise
-		expect(result).toHaveProperty('loadTime')
+		expect(result).toHaveProperty('pct')
 		expect(result).toHaveProperty('timestampOfLastLoadedResource')
+
+		manager.stop()
+	})
+
+	it('waitForPageLoad with startTime 0 returns pct at least document load time', async () => {
+		const manager = new SpaMetricsManager({ quietTime: 100 })
+		manager.start()
+
+		const promise = manager.waitForPageLoad({ startTime: 0 })
+		const result = await promise
+
+		const navEntry = performance.getEntriesByType('navigation')[0]
+		const documentLoadTime = navEntry?.loadEventEnd ?? 0
+
+		expect(result.pct).toBeGreaterThanOrEqual(documentLoadTime)
+		expect(result.pct).toBeGreaterThan(0)
 
 		manager.stop()
 	})

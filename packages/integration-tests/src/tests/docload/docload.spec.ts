@@ -15,9 +15,10 @@
  * limitations under the License.
  *
  */
+import { hrTimeToMilliseconds } from '@opentelemetry/core'
 import { expect } from '@playwright/test'
 
-import { test } from '../../utils/test'
+import { expectDefined, test } from '../../utils/test'
 import { timesMakeSense } from '../../utils/time-make-sense'
 
 test.describe('docload', () => {
@@ -153,6 +154,23 @@ test.describe('docload', () => {
 		)
 
 		expect(ignoredResourceFetchSpans).toHaveLength(0)
+	})
+
+	test('documentLoad span has docLoad duration on empty page', async ({ recordPage }) => {
+		await recordPage.goTo('/docload/docload-empty.ejs')
+
+		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'documentLoad'))
+
+		const docLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'documentLoad')
+		expectDefined(docLoadSpan)
+
+		const pct = Number(docLoadSpan.attributes['page_completion_time'])
+		expect(pct).toBeGreaterThan(0)
+
+		// pct is relative to timeOrigin (startTime=0) while span duration starts at fetchStart,
+		// so pct >= duration by the fetchStart offset
+		const durationMs = hrTimeToMilliseconds(docLoadSpan.duration)
+		expect(pct).toBeGreaterThanOrEqual(durationMs)
 	})
 
 	test('module can be disabled', async ({ recordPage }) => {
