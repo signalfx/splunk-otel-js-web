@@ -4,7 +4,13 @@
 		<meta charset="UTF-8" />
 		<title>Thrashed cursor disabled</title>
 
-		<%- renderAgent() %>
+		<%- renderAgent({
+			instrumentations: {
+				frustrationSignals: {
+					thrashedCursor: false
+				}
+			}
+		}) %>
 	</head>
 	<body>
 		<h1>Thrashed cursor</h1>

@@ -191,14 +191,14 @@ export class DeadClickDetector {
 		const frustrationSignals = otelConfig.instrumentations?.frustrationSignals
 
 		if (frustrationSignals && typeof frustrationSignals === 'object') {
-			const deadClick = frustrationSignals.deadClick
-
-			if (typeof deadClick === 'object' || deadClick === true) {
-				return DeadClickDetector.normalizeConfig(deadClick)
+			if (frustrationSignals.deadClick === false) {
+				return undefined
 			}
+
+			return DeadClickDetector.normalizeConfig(frustrationSignals.deadClick ?? true)
 		}
 
-		return undefined
+		return DeadClickDetector.normalizeConfig(true)
 	}
 
 	private emitFrustrationSpan(pending: PendingClick): void {

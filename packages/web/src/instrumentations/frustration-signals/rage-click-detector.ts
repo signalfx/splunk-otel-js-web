@@ -115,19 +115,17 @@ export class RageClickDetector {
 	}
 
 	private static resolveConfig(otelConfig: SplunkOtelWebConfig): ResolvedRageClickConfig | undefined {
-		const frustrationSignals = otelConfig.instrumentations?.frustrationSignals ?? {
-			rageClick: true,
-		}
+		const frustrationSignals = otelConfig.instrumentations?.frustrationSignals
 
 		if (frustrationSignals && typeof frustrationSignals === 'object') {
-			const rageClick = frustrationSignals.rageClick
-
-			if (typeof rageClick === 'object' || rageClick === true) {
-				return RageClickDetector.normalizeConfig(rageClick)
+			if (frustrationSignals.rageClick === false) {
+				return undefined
 			}
+
+			return RageClickDetector.normalizeConfig(frustrationSignals.rageClick ?? true)
 		}
 
-		return undefined
+		return RageClickDetector.normalizeConfig(true)
 	}
 
 	private processRageClick(target: Node): void {
