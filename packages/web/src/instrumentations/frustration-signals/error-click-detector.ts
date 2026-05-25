@@ -126,14 +126,14 @@ export class ErrorClickDetector {
 		const frustrationSignals = otelConfig.instrumentations?.frustrationSignals
 
 		if (frustrationSignals && typeof frustrationSignals === 'object') {
-			const errorClick = frustrationSignals.errorClick
-
-			if (typeof errorClick === 'object' || errorClick === true) {
-				return ErrorClickDetector.normalizeConfig(errorClick)
+			if (frustrationSignals.errorClick === false) {
+				return undefined
 			}
+
+			return ErrorClickDetector.normalizeConfig(frustrationSignals.errorClick ?? true)
 		}
 
-		return undefined
+		return ErrorClickDetector.normalizeConfig(true)
 	}
 
 	private emitFrustrationSpan(click: RecentClick, errorSpan: ReadableSpan): void {

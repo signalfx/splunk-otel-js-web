@@ -258,14 +258,14 @@ export class ThrashedCursorDetector {
 		const frustrationSignals = otelConfig.instrumentations?.frustrationSignals
 
 		if (frustrationSignals && typeof frustrationSignals === 'object') {
-			const thrashedCursor = frustrationSignals.thrashedCursor
-
-			if (typeof thrashedCursor === 'object' || thrashedCursor === true) {
-				return ThrashedCursorDetector.normalizeConfig(thrashedCursor)
+			if (frustrationSignals.thrashedCursor === false) {
+				return undefined
 			}
+
+			return ThrashedCursorDetector.normalizeConfig(frustrationSignals.thrashedCursor ?? true)
 		}
 
-		return undefined
+		return ThrashedCursorDetector.normalizeConfig(true)
 	}
 
 	// ============================================================================

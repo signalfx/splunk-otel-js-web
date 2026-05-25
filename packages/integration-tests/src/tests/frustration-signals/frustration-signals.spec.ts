@@ -267,7 +267,7 @@ test.describe('Frustration signals', () => {
 			expect(thrashSpans[0].tags['thrashing_score']).toBeDefined()
 		})
 
-		test('does not emit spans by default (disabled unless explicitly enabled)', async ({ recordPage }) => {
+		test('does not emit spans when explicitly disabled', async ({ recordPage }) => {
 			await recordPage.goTo('/frustration-signals/thrashed-cursor-disabled.ejs')
 			await simulateThrashedCursor(recordPage)
 			await recordPage.waitForTimeoutAndFlushData(2000)
