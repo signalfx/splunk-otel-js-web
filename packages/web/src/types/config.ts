@@ -62,6 +62,10 @@ export interface SplunkOtelWebOptionsInstrumentations {
 	frustrationSignals?: boolean | SplunkFrustrationSignalsInstrumentationConfig
 	interactions?: boolean | SplunkUserInteractionInstrumentationConfig
 	loaf?: boolean | InstrumentationConfig
+	/**
+	 * @deprecated Prefer `loaf` for Long Animation Frames. Keep `longtask` enabled only as fallback coverage for
+	 * browsers without LoAF support.
+	 */
 	longtask?: boolean | InstrumentationConfig
 	postload?: boolean | SplunkPostDocLoadResourceInstrumentationConfig
 	socketio?: boolean | SocketIoClientInstrumentationConfig

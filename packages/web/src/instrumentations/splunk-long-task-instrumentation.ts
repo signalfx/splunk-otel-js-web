@@ -29,6 +29,10 @@ import {
 const LONGTASK_PERFORMANCE_TYPE = 'longtask'
 const MODULE_NAME = 'splunk-longtask'
 
+/**
+ * @deprecated Prefer SplunkLongAnimationFrameInstrumentation via `instrumentations.loaf`.
+ * Keep longtask enabled only as fallback coverage for browsers without LoAF support.
+ */
 export class SplunkLongTaskInstrumentation extends InstrumentationBase {
 	private _longtaskObserver: PerformanceObserver | undefined
 
