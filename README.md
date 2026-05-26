@@ -153,7 +153,7 @@ pnpm dev
 
 The sandbox has three pages, switchable from the header nav:
 
-- **RUM** (`index.html`) — exercise tracked fetch/XHR, history navigations, errors, custom spans, long tasks, and global attributes.
+- **RUM** (`index.html`) — exercise tracked fetch/XHR, history navigations, errors, custom spans, long tasks, LoAF frames, and global attributes.
 - **Web Vitals** (`web-vitals.html`) — open focused metric fixtures for LCP, CLS, INP, FCP, and TTFB with experimental attribution enabled.
 - **Session Replay** (`replay.html`) — drive the `@splunk/otel-web-session-recorder` against a rich set of DOM/canvas/iframe/video fixtures. Replay requires building the recorder first:
 
@@ -161,7 +161,9 @@ The sandbox has three pages, switchable from the header nav:
     pnpm --filter @splunk/otel-web-session-recorder build
     ```
 
-All sandbox pages share a Settings modal (gear icon) for realm, access token, app name, environment, beacon endpoints, and recorder options. Values (including the RUM access token) persist in `localStorage` per origin between reloads.
+All sandbox pages share a Settings modal (gear icon) for realm, access token, app name, environment, beacon endpoints, instrumentation options, and recorder options. Values (including the RUM access token) persist in `localStorage` per origin between reloads.
+
+To manually test Long Animation Frames (LoAF), open the RUM page, enable **LoAF instrumentation** in Settings, apply the config, then click **Produce LoAF frame**. Supported Chromium browsers should emit `long-animation-frame` spans with `component: splunk-loaf`.
 
 The Web Vitals page is a hub with metric-specific subpages:
 
