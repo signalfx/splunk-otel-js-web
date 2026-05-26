@@ -16,15 +16,18 @@
  *
  */
 import { expect } from '@playwright/test'
+import type { ExportedTestSpan } from '@test-utils/test-span.js'
 
 import { test } from '../../utils/test'
 
-const isTestXhrSpan = (span: { tags: Record<string, string> }) =>
-	span.tags['component'] === 'xml-http-request' &&
-	(span.tags['http.url']?.includes('/some-data') || span.tags['http.url']?.includes('/no-server-timings'))
+const isTestXhrSpan = (span: ExportedTestSpan) =>
+	span.attributes['component'] === 'xml-http-request' &&
+	(String(span.attributes['http.url']).includes('/some-data') ||
+		String(span.attributes['http.url']).includes('/no-server-timings'))
 
-const isTraceparentXhrSpan = (span: { tags: Record<string, string> }) =>
-	span.tags['component'] === 'xml-http-request' && span.tags['http.url']?.includes('/echo-traceparent')
+const isTraceparentXhrSpan = (span: ExportedTestSpan) =>
+	span.attributes['component'] === 'xml-http-request' &&
+	String(span.attributes['http.url']).includes('/echo-traceparent')
 
 test.describe('separateTraces configuration', () => {
 	test.describe('XHR with separateTraces: true', () => {
@@ -47,11 +50,11 @@ test.describe('separateTraces configuration', () => {
 				expect(xhrSpan.traceId).not.toBe(clickSpan!.traceId)
 
 				// XHR span should be a root span (no parentId)
-				expect(xhrSpan.parentId).toBeUndefined()
+				expect(xhrSpan.parentSpanId).toBeUndefined()
 
 				// Verify parent span info is stored as attributes
-				expect(xhrSpan.tags['link.interaction.spanId']).toBeDefined()
-				expect(xhrSpan.tags['link.interaction.traceId']).toBeDefined()
+				expect(xhrSpan).toHaveSpanAttribute('link.interaction.spanId')
+				expect(xhrSpan).toHaveSpanAttribute('link.interaction.traceId')
 			}
 
 			// Each XHR span should have a unique trace ID
@@ -83,7 +86,7 @@ test.describe('separateTraces configuration', () => {
 				expect(xhrSpan.traceId).toBe(clickSpan!.traceId)
 
 				// XHR span should have click span as parent
-				expect(xhrSpan.parentId).toBe(clickSpan!.id)
+				expect(xhrSpan.parentSpanId).toBe(clickSpan!.spanId)
 			}
 
 			expect(recordPage.receivedErrorSpans).toHaveLength(0)
@@ -99,28 +102,28 @@ test.describe('separateTraces configuration', () => {
 			await recordPage.waitForSpans(
 				(spans) =>
 					spans.some((span) => span.name === 'click') &&
-					spans.filter((span) => span.tags['component'] === 'fetch').length >= 2,
+					spans.filter((span) => span.attributes['component'] === 'fetch').length >= 2,
 			)
 
 			const clickSpan = recordPage.receivedSpans.find((span) => span.name === 'click')
-			const fetchSpans = recordPage.receivedSpans.filter((span) => span.tags['component'] === 'fetch')
+			const fetchSpans = recordPage.receivedSpans.filter((span) => span.attributes['component'] === 'fetch')
 
 			expect(clickSpan).toBeDefined()
 			expect(fetchSpans.length).toBeGreaterThanOrEqual(2)
 
 			// Click span should exist with user-interaction component
-			expect(clickSpan!.tags['component']).toBe('user-interaction')
+			expect(clickSpan).toHaveSpanAttribute('component', 'user-interaction')
 
 			// Each fetch span should have a DIFFERENT trace ID than the click span
 			for (const fetchSpan of fetchSpans) {
 				expect(fetchSpan.traceId).not.toBe(clickSpan!.traceId)
 
 				// Fetch span should be a root span (no parentId)
-				expect(fetchSpan.parentId).toBeUndefined()
+				expect(fetchSpan.parentSpanId).toBeUndefined()
 
 				// Verify parent span info is stored as attributes
-				expect(fetchSpan.tags['link.interaction.spanId']).toBeDefined()
-				expect(fetchSpan.tags['link.interaction.traceId']).toBeDefined()
+				expect(fetchSpan).toHaveSpanAttribute('link.interaction.spanId')
+				expect(fetchSpan).toHaveSpanAttribute('link.interaction.traceId')
 			}
 
 			// Each fetch span should have a unique trace ID
@@ -141,11 +144,11 @@ test.describe('separateTraces configuration', () => {
 			await recordPage.waitForSpans(
 				(spans) =>
 					spans.some((span) => span.name === 'click') &&
-					spans.filter((span) => span.tags['component'] === 'fetch').length >= 2,
+					spans.filter((span) => span.attributes['component'] === 'fetch').length >= 2,
 			)
 
 			const clickSpan = recordPage.receivedSpans.find((span) => span.name === 'click')
-			const fetchSpans = recordPage.receivedSpans.filter((span) => span.tags['component'] === 'fetch')
+			const fetchSpans = recordPage.receivedSpans.filter((span) => span.attributes['component'] === 'fetch')
 
 			expect(clickSpan).toBeDefined()
 			expect(fetchSpans.length).toBeGreaterThanOrEqual(2)
@@ -155,7 +158,7 @@ test.describe('separateTraces configuration', () => {
 				expect(fetchSpan.traceId).toBe(clickSpan!.traceId)
 
 				// Fetch span should have click span as parent
-				expect(fetchSpan.parentId).toBe(clickSpan!.id)
+				expect(fetchSpan.parentSpanId).toBe(clickSpan!.spanId)
 			}
 
 			expect(recordPage.receivedErrorSpans).toHaveLength(0)
@@ -182,11 +185,11 @@ test.describe('separateTraces configuration', () => {
 				expect(xhrSpan.traceId).not.toBe(clickSpan!.traceId)
 
 				// XHR span should be a root span (no parentId)
-				expect(xhrSpan.parentId).toBeUndefined()
+				expect(xhrSpan.parentSpanId).toBeUndefined()
 
 				// Verify parent span info is stored as attributes
-				expect(xhrSpan.tags['link.interaction.spanId']).toBeDefined()
-				expect(xhrSpan.tags['link.interaction.traceId']).toBeDefined()
+				expect(xhrSpan).toHaveSpanAttribute('link.interaction.spanId')
+				expect(xhrSpan).toHaveSpanAttribute('link.interaction.traceId')
 			}
 
 			expect(recordPage.receivedErrorSpans).toHaveLength(0)

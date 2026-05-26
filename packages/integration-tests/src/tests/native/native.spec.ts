@@ -27,7 +27,9 @@ test.describe('external', () => {
 		const receivedSpans = recordPage.receivedSpans
 
 		expect(
-			receivedSpans.every((span) => span.tags['splunk.rumSessionId'] === '12341234123412341234123412341234'),
+			receivedSpans.every(
+				(span) => span.attributes['splunk.rumSessionId'] === '12341234123412341234123412341234',
+			),
 		).toBe(true)
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})

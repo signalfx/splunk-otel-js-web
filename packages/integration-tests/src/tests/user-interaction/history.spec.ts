@@ -29,9 +29,13 @@ test.describe('history', () => {
 		const navigationSpans = recordPage.receivedSpans.filter((span) => span.name === 'routeChange')
 
 		expect(navigationSpans).toHaveLength(1)
-		expect(navigationSpans[0].tags['component']).toBe('user-interaction')
-		expect(navigationSpans[0].tags['prev.href']).toBe('http://localhost:3000/user-interaction/history.ejs')
-		expect(navigationSpans[0].tags['location.href']).toBe(
+		expect(navigationSpans[0]).toHaveSpanAttribute('component', 'user-interaction')
+		expect(navigationSpans[0]).toHaveSpanAttribute(
+			'prev.href',
+			'http://localhost:3000/user-interaction/history.ejs',
+		)
+		expect(navigationSpans[0]).toHaveSpanAttribute(
+			'location.href',
 			'http://localhost:3000/user-interaction/history.ejs#another-page',
 		)
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
@@ -48,14 +52,22 @@ test.describe('history', () => {
 		const navigationSpans = recordPage.receivedSpans.filter((span) => span.name === 'routeChange')
 
 		expect(navigationSpans).toHaveLength(3)
-		expect(navigationSpans[1].tags['component']).toBe('user-interaction')
-		expect(navigationSpans[1].tags['prev.href']).toBe(
+		expect(navigationSpans[1]).toHaveSpanAttribute('component', 'user-interaction')
+		expect(navigationSpans[1]).toHaveSpanAttribute(
+			'prev.href',
 			'http://localhost:3000/user-interaction/history.ejs#another-page',
 		)
-		expect(navigationSpans[1].tags['location.href']).toBe('http://localhost:3000/user-interaction/history.ejs')
-		expect(navigationSpans[2].tags['component']).toBe('user-interaction')
-		expect(navigationSpans[2].tags['prev.href']).toBe('http://localhost:3000/user-interaction/history.ejs')
-		expect(navigationSpans[2].tags['location.href']).toBe(
+		expect(navigationSpans[1]).toHaveSpanAttribute(
+			'location.href',
+			'http://localhost:3000/user-interaction/history.ejs',
+		)
+		expect(navigationSpans[2]).toHaveSpanAttribute('component', 'user-interaction')
+		expect(navigationSpans[2]).toHaveSpanAttribute(
+			'prev.href',
+			'http://localhost:3000/user-interaction/history.ejs',
+		)
+		expect(navigationSpans[2]).toHaveSpanAttribute(
+			'location.href',
 			'http://localhost:3000/user-interaction/history.ejs#another-page',
 		)
 	})

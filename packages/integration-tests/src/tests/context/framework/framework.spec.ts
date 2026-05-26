@@ -34,8 +34,8 @@ const runTest = async (recordPage: RecordPage, urlPath: string) => {
 	expect(clickSpans).toHaveLength(1)
 	expect(customSpans).toHaveLength(1)
 
-	expect(clickSpans[0].parentId).toBeUndefined()
-	expect(customSpans[0].parentId).toBe(clickSpans[0].id)
+	expect(clickSpans[0].parentSpanId).toBeUndefined()
+	expect(customSpans[0].parentSpanId).toBe(clickSpans[0].spanId)
 	expect(customSpans[0].traceId).toBe(clickSpans[0].traceId)
 
 	expect(recordPage.receivedErrorSpans).toHaveLength(0)

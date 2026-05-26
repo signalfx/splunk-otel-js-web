@@ -54,11 +54,11 @@ describe('can produce websocket events', () => {
 
 		expect(sioSpans[0].name).toBe('hello send')
 		expect(sioSpans[0].kind).toBe(SpanKind.PRODUCER)
-		expect(sioSpans[0].attributes['messaging.destination']).toBe('/')
+		expect(sioSpans[0]).toHaveSpanAttribute('messaging.destination', '/')
 
-		expect(sioSpans[0].attributes['messaging.socket.io.namespace']).toBe('/')
+		expect(sioSpans[0]).toHaveSpanAttribute('messaging.socket.io.namespace', '/')
 
-		expect(sioSpans[0].attributes['messaging.socket.io.event_name']).toBe('hello')
+		expect(sioSpans[0]).toHaveSpanAttribute('messaging.socket.io.event_name', 'hello')
 
 		socket.disconnect()
 	})
@@ -83,10 +83,10 @@ describe('can produce websocket events', () => {
 		expect(sioSpans[0].name).toBe('ping send')
 		expect(sioSpans[1].name).toBe('pong receive')
 		expect(sioSpans[1].kind).toBe(SpanKind.CONSUMER)
-		expect(sioSpans[1].attributes['messaging.destination']).toBe('/')
+		expect(sioSpans[1]).toHaveSpanAttribute('messaging.destination', '/')
 
-		expect(sioSpans[1].attributes['messaging.socket.io.namespace']).toBe('/')
-		expect(sioSpans[1].attributes['messaging.socket.io.event_name']).toBe('pong')
+		expect(sioSpans[1]).toHaveSpanAttribute('messaging.socket.io.namespace', '/')
+		expect(sioSpans[1]).toHaveSpanAttribute('messaging.socket.io.event_name', 'pong')
 
 		socket.disconnect()
 	})

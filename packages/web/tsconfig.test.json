@@ -2,8 +2,12 @@
 	"extends": "./tsconfig.base.json",
 	"compilerOptions": {
 		"noEmit": true,
-		"allowJs": true
+		"allowJs": true,
+		"types": ["vitest/globals"],
+		"paths": {
+			"@test-utils/*": ["../../tests/utils/*"]
+		}
 	},
-	"include": ["src/**/*.test.ts"],
+	"include": ["src/**/*.ts", "tests/**/*.ts", "../../tests/matchers.d.ts"],
 	"exclude": []
 }

@@ -32,8 +32,8 @@ describe('synthetics integration', () => {
 
 		const spans = getFinishedSpans()
 		expect(spans.length).toBe(1)
-		expect(spans[0].tags[SYNTHETICS_RUN_ID_ATTRIBUTE]).toBe('1234abcd'.repeat(4))
-		expect(spans[0].tags[SYNTHETICS_TEST_ID_ATTRIBUTE]).toBe('6789abcd'.repeat(4))
+		expect(spans[0]).toHaveSpanAttribute(SYNTHETICS_RUN_ID_ATTRIBUTE, '1234abcd'.repeat(4))
+		expect(spans[0]).toHaveSpanAttribute(SYNTHETICS_TEST_ID_ATTRIBUTE, '6789abcd'.repeat(4))
 		deinit()
 
 		delete window.syntheticsRunId
@@ -49,8 +49,8 @@ describe('synthetics integration', () => {
 		const spans = getFinishedSpans()
 
 		expect(spans.length).toBe(1)
-		expect(spans[0].tags[SYNTHETICS_RUN_ID_ATTRIBUTE]).toBeUndefined()
-		expect(spans[0].tags[SYNTHETICS_TEST_ID_ATTRIBUTE]).toBeUndefined()
+		expect(spans[0]).toNotHaveSpanAttribute(SYNTHETICS_RUN_ID_ATTRIBUTE)
+		expect(spans[0]).toNotHaveSpanAttribute(SYNTHETICS_TEST_ID_ATTRIBUTE)
 		deinit()
 	})
 })

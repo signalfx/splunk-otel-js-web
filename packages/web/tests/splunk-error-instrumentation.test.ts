@@ -298,7 +298,7 @@ describe('SplunkErrorInstrumentation', () => {
 			expect(errorsTransformed[0]).toBe(e1)
 			let errorSpans = capturer.spans.filter((span) => span.name === 'SplunkRum.reportError')
 			expect(errorSpans).toHaveLength(1)
-			expect(errorSpans[0].attributes['error.message']).toEqual('Modified message')
+			expect(errorSpans[0]).toHaveSpanAttribute('error.message', 'Modified message')
 
 			const e2 = new Error('test error 2')
 			console.error(e2)
@@ -309,7 +309,7 @@ describe('SplunkErrorInstrumentation', () => {
 				(span) => span.name === 'SplunkRum.reportError' || span.name === 'console.error',
 			)
 			expect(errorSpans).toHaveLength(2)
-			expect(errorSpans[1].attributes['error.message']).toEqual('Modified message')
+			expect(errorSpans[1]).toHaveSpanAttribute('error.message', 'Modified message')
 		})
 
 		it('cancels error reporting', async () => {
@@ -328,7 +328,7 @@ describe('SplunkErrorInstrumentation', () => {
 			const e1 = new Error('test error 1')
 			await SplunkRum.reportError(e1)
 			let errorSpans = capturer.spans.filter((span) => span.name === 'SplunkRum.reportError')
-			expect(errorSpans[0].attributes['error.message']).toEqual('Modified message')
+			expect(errorSpans[0]).toHaveSpanAttribute('error.message', 'Modified message')
 
 			const e2 = new Error('test error 2')
 			await SplunkRum.reportError(e2)
@@ -339,7 +339,7 @@ describe('SplunkErrorInstrumentation', () => {
 			await SplunkRum.reportError(e3)
 			errorSpans = capturer.spans.filter((span) => span.name === 'SplunkRum.reportError')
 			expect(errorSpans).toHaveLength(2)
-			expect(errorSpans[1].attributes['error.message']).toEqual('test error 3')
+			expect(errorSpans[1]).toHaveSpanAttribute('error.message', 'test error 3')
 		})
 
 		it('reports original error if transformation failed', async () => {
@@ -350,7 +350,7 @@ describe('SplunkErrorInstrumentation', () => {
 			const e1 = new Error('test error')
 			await SplunkRum.reportError(e1)
 			const errorSpan = capturer.spans.find((span) => span.name === 'SplunkRum.reportError')
-			expect(errorSpan?.attributes['error.message']).toEqual('test error')
+			expect(errorSpan).toHaveSpanAttribute('error.message', 'test error')
 		})
 	})
 })

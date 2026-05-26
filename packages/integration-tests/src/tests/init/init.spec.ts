@@ -37,10 +37,10 @@ test.describe('init', () => {
 
 		expect(documentLoadSpans).toHaveLength(1)
 
-		expect(documentLoadSpans[0].tags['app']).toBe('custom-app')
-		expect(documentLoadSpans[0].tags['environment']).toBe('custom-environment')
-		expect(documentLoadSpans[0].tags['key1']).toBe('value1')
-		expect(documentLoadSpans[0].tags['key2']).toBe('value2')
+		expect(documentLoadSpans[0]).toHaveSpanAttribute('app', 'custom-app')
+		expect(documentLoadSpans[0]).toHaveSpanAttribute('environment', 'custom-environment')
+		expect(documentLoadSpans[0]).toHaveSpanAttribute('key1', 'value1')
+		expect(documentLoadSpans[0]).toHaveSpanAttribute('key2', 'value2')
 
 		await recordPage.locator('#clickToChangeAttributes').click()
 
@@ -49,18 +49,18 @@ test.describe('init', () => {
 
 		expect(attributeSetSpans).toHaveLength(1)
 
-		expect(attributeSetSpans[0].tags['environment']).toBe('custom-environment')
-		expect(attributeSetSpans[0].tags['key1']).toBe('newvalue1')
-		expect(attributeSetSpans[0].tags['key2']).toBe('value2')
+		expect(attributeSetSpans[0]).toHaveSpanAttribute('environment', 'custom-environment')
+		expect(attributeSetSpans[0]).toHaveSpanAttribute('key1', 'newvalue1')
+		expect(attributeSetSpans[0]).toHaveSpanAttribute('key2', 'value2')
 
 		const attributesChangedSpans = recordPage.receivedSpans.filter((span) => span.name === 'attributes-changed')
 		const changedByClickSpans = attributesChangedSpans.filter((span) => {
-			const changedAttrs = JSON.parse(span.tags['payload'] as string).attributes
+			const changedAttrs = JSON.parse(String(span.attributes['payload'])).attributes
 			return changedAttrs.key1 === 'newvalue1'
 		})
 		expect(changedByClickSpans).toHaveLength(1)
 
-		const notifiedAttrs = JSON.parse(changedByClickSpans[0].tags['payload'] as string).attributes
+		const notifiedAttrs = JSON.parse(String(changedByClickSpans[0].attributes['payload'])).attributes
 		expect(notifiedAttrs.environment).toBe('custom-environment')
 		expect(notifiedAttrs.key1).toBe('newvalue1')
 		expect(notifiedAttrs.key2).toBe('value2')
@@ -71,9 +71,9 @@ test.describe('init', () => {
 
 		expect(attributeResetSpans).toHaveLength(1)
 
-		expect(attributeResetSpans[0].tags['environment']).toBe(undefined)
-		expect(attributeResetSpans[0].tags['key1']).toBe(undefined)
-		expect(attributeResetSpans[0].tags['key1']).toBe(undefined)
+		expect(attributeResetSpans[0]).toNotHaveSpanAttribute('environment')
+		expect(attributeResetSpans[0]).toNotHaveSpanAttribute('key1')
+		expect(attributeResetSpans[0]).toNotHaveSpanAttribute('key1')
 
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})
@@ -95,14 +95,12 @@ test.describe('init', () => {
 		const documentLoadSpans = recordPage.receivedSpans.filter((span) => span.name === 'documentLoad')
 		expect(documentLoadSpans).toHaveLength(1)
 
-		expect(documentLoadSpans[0].tags['app']).toBe('custom-app')
-		expect(documentLoadSpans[0].tags['environment']).toBe('custom-environment')
-
-		// Set as a resource, zipkin exporter should merge into tags
-		expect(documentLoadSpans[0].tags['telemetry.sdk.name']).toBe('@splunk/otel-web')
-		expect(documentLoadSpans[0].tags['telemetry.sdk.language']).toBe('webjs')
-		expect(documentLoadSpans[0].tags['telemetry.sdk.version']).toBe(VERSION)
-		expect(documentLoadSpans[0].tags['splunk.rumVersion']).toBe(VERSION)
+		expect(documentLoadSpans[0]).toHaveSpanAttribute('app', 'custom-app')
+		expect(documentLoadSpans[0]).toHaveSpanAttribute('environment', 'custom-environment')
+		expect(documentLoadSpans[0]).toHaveSpanAttribute('telemetry.sdk.name', '@splunk/otel-web')
+		expect(documentLoadSpans[0]).toHaveSpanAttribute('telemetry.sdk.language', 'webjs')
+		expect(documentLoadSpans[0]).toHaveSpanAttribute('telemetry.sdk.version', VERSION)
+		expect(documentLoadSpans[0]).toHaveSpanAttribute('splunk.rumVersion', VERSION)
 	})
 
 	test('session.start span is emitted for new sessions', async ({ recordPage }) => {
@@ -115,8 +113,7 @@ test.describe('init', () => {
 		expect(sessionStartSpans).toHaveLength(1)
 
 		// Verify the span has a session ID
-		const initialSessionId = sessionStartSpans[0].tags['splunk.rumSessionId']
-		expect(initialSessionId).toBeDefined()
+		expect(sessionStartSpans[0]).toHaveSpanAttribute('splunk.rumSessionId')
 
 		// Clear received spans
 		recordPage.clearReceivedSpans()

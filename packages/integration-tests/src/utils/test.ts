@@ -20,6 +20,8 @@ import { test as base, expect } from '@playwright/test'
 
 import { RecordPage } from '../pages/record-page'
 
+import './expect-span'
+
 type TestFixtures = {
 	recordPage: RecordPage
 }

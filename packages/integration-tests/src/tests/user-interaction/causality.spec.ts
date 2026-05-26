@@ -28,21 +28,21 @@ test.describe('causality', () => {
 
 		await recordPage.waitForSpans(
 			(spans) =>
-				spans.filter((span) => span.name === 'click' && span.tags['target_xpath'] === '//*[@id="btn1"]')
+				spans.filter((span) => span.name === 'click' && span.attributes['target_xpath'] === '//*[@id="btn1"]')
 					.length === 1 &&
-				spans.filter((span) => span.tags['http.url'] === 'http://localhost:3000/some-data').length === 1,
+				spans.filter((span) => span.attributes['http.url'] === 'http://localhost:3000/some-data').length === 1,
 		)
 
 		const clickSpans = recordPage.receivedSpans.filter(
-			(span) => span.name === 'click' && span.tags['target_xpath'] === '//*[@id="btn1"]',
+			(span) => span.name === 'click' && span.attributes['target_xpath'] === '//*[@id="btn1"]',
 		)
 		const fetchSpans = recordPage.receivedSpans.filter(
-			(span) => span.tags['http.url'] === 'http://localhost:3000/some-data',
+			(span) => span.attributes['http.url'] === 'http://localhost:3000/some-data',
 		)
 
 		expect(clickSpans).toHaveLength(1)
 		expect(fetchSpans).toHaveLength(1)
-		expect(fetchSpans[0].parentId).toBe(clickSpans[0].id)
+		expect(fetchSpans[0].parentSpanId).toBe(clickSpans[0].spanId)
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})
 

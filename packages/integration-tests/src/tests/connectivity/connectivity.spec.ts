@@ -48,8 +48,8 @@ test.describe('connectivity', () => {
 		const connectivitySpansAfterOnline = recordPage.receivedSpans.filter((span) => span.name === 'connectivity')
 
 		expect(connectivitySpansAfterOnline).toHaveLength(2)
-		expect(connectivitySpansAfterOnline[0].tags['online']).toBe('false')
-		expect(connectivitySpansAfterOnline[1].tags['online']).toBe('true')
+		expect(connectivitySpansAfterOnline[0]).toHaveSpanAttribute('online', false)
+		expect(connectivitySpansAfterOnline[1]).toHaveSpanAttribute('online', true)
 
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 
@@ -60,8 +60,8 @@ test.describe('connectivity', () => {
 		const allConnectivitySpans = recordPage.receivedSpans.filter((span) => span.name === 'connectivity')
 
 		expect(allConnectivitySpans).toHaveLength(4)
-		expect(allConnectivitySpans[2].tags['online']).toBe('false')
-		expect(allConnectivitySpans[3].tags['online']).toBe('true')
+		expect(allConnectivitySpans[2]).toHaveSpanAttribute('online', false)
+		expect(allConnectivitySpans[3]).toHaveSpanAttribute('online', true)
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})
 })

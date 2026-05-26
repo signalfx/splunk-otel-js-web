@@ -15,6 +15,7 @@
  * limitations under the License.
  *
  */
+import { hrTimeToMicroseconds } from '@opentelemetry/core'
 import { expect } from '@playwright/test'
 
 import { test } from '../../utils/test'
@@ -32,9 +33,8 @@ test.describe('spa-metrics', () => {
 		expect(routeChangeSpans).toHaveLength(1)
 		expect(routeChangeSpans[0].name).toBe('routeChange')
 
-		const duration = routeChangeSpans[0].duration
 		// Duration should be 0 as no resources were loaded
-		expect(duration).toBe(0)
+		expect(routeChangeSpans[0]).toHaveSpanDuration(0)
 	})
 
 	test('routeChange span waits for fetch requests to complete', async ({ recordPage }) => {
@@ -50,8 +50,7 @@ test.describe('spa-metrics', () => {
 		expect(routeChangeSpans).toHaveLength(1)
 
 		// Duration should include fetch time + quiet period
-		const duration = routeChangeSpans[0].duration
-		expect(duration).toBeGreaterThan(0)
+		expect(routeChangeSpans[0]).toHaveSpanDurationGreaterThan(0)
 	})
 
 	test('routeChange span waits for images to load', async ({ recordPage }) => {
@@ -67,8 +66,7 @@ test.describe('spa-metrics', () => {
 		expect(routeChangeSpans).toHaveLength(1)
 
 		// Duration should include image load time + quiet period
-		const duration = routeChangeSpans[0].duration
-		expect(duration).toBeGreaterThan(0)
+		expect(routeChangeSpans[0]).toHaveSpanDurationGreaterThan(0)
 	})
 
 	test('multiple route changes each have their own duration', async ({ recordPage }) => {
@@ -91,14 +89,16 @@ test.describe('spa-metrics', () => {
 		expect(routeChangeSpans).toHaveLength(3)
 
 		// Both spans should have meaningful duration
-		expect(routeChangeSpans[0].duration).toBe(0)
-		expect(routeChangeSpans[1].duration).toBeGreaterThanOrEqual(0)
-		expect(routeChangeSpans[2].duration).toBeGreaterThanOrEqual(0)
-		expect(routeChangeSpans[1].duration !== routeChangeSpans[2].duration).toBeTruthy()
+		expect(routeChangeSpans[0]).toHaveSpanDuration(0)
+		expect(routeChangeSpans[1]).toHaveSpanDurationGreaterThanOrEqual(0)
+		expect(routeChangeSpans[2]).toHaveSpanDurationGreaterThanOrEqual(0)
+		expect(
+			hrTimeToMicroseconds(routeChangeSpans[1].duration) !== hrTimeToMicroseconds(routeChangeSpans[2].duration),
+		).toBeTruthy()
 
 		// Verify they have different location.href
-		expect(routeChangeSpans[0].tags['location.href']).toContain('#page1')
-		expect(routeChangeSpans[1].tags['location.href']).toContain('#page2')
-		expect(routeChangeSpans[2].tags['location.href']).toContain('#page3')
+		expect(routeChangeSpans[0]).toHaveSpanAttributeContaining('location.href', '#page1')
+		expect(routeChangeSpans[1]).toHaveSpanAttributeContaining('location.href', '#page2')
+		expect(routeChangeSpans[2]).toHaveSpanAttributeContaining('location.href', '#page3')
 	})
 })

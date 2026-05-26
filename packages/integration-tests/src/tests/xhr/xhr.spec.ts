@@ -23,21 +23,22 @@ test.describe('xhr', () => {
 	test('XHR request is registered', async ({ recordPage }) => {
 		await recordPage.goTo('/xhr/xhr-basic.ejs')
 		await recordPage.waitForSpans(
-			(spans) => spans.filter((span) => span.tags['http.url'] === 'http://localhost:3000/some-data').length === 1,
+			(spans) =>
+				spans.filter((span) => span.attributes['http.url'] === 'http://localhost:3000/some-data').length === 1,
 		)
 		const xhrSpans = recordPage.receivedSpans.filter(
-			(span) => span.tags['http.url'] === 'http://localhost:3000/some-data',
+			(span) => span.attributes['http.url'] === 'http://localhost:3000/some-data',
 		)
 
 		expect(xhrSpans).toHaveLength(1)
-		expect(xhrSpans[0].tags['component']).toBe('xml-http-request')
-		expect(xhrSpans[0].tags['http.status_code']).toBe('200')
-		expect(xhrSpans[0].tags['http.status_text']).toBe('OK')
-		expect(xhrSpans[0].tags['http.method']).toBe('GET')
-		expect(xhrSpans[0].tags['http.url']).toBe('http://localhost:3000/some-data')
-		expect(xhrSpans[0].tags['http.response_content_length']).toBe('49')
-		expect(xhrSpans[0].tags['link.traceId']).toBeTruthy()
-		expect(xhrSpans[0].tags['link.spanId']).toBeTruthy()
+		expect(xhrSpans[0]).toHaveSpanAttribute('component', 'xml-http-request')
+		expect(xhrSpans[0]).toHaveSpanAttribute('http.status_code', 200)
+		expect(xhrSpans[0]).toHaveSpanAttribute('http.status_text', 'OK')
+		expect(xhrSpans[0]).toHaveSpanAttribute('http.method', 'GET')
+		expect(xhrSpans[0]).toHaveSpanAttribute('http.url', 'http://localhost:3000/some-data')
+		expect(xhrSpans[0]).toHaveSpanAttribute('http.response_content_length', 49)
+		expect(xhrSpans[0]).toHaveSpanAttribute('link.traceId')
+		expect(xhrSpans[0]).toHaveSpanAttribute('link.spanId')
 	})
 
 	test('module can be disabled', async ({ recordPage }) => {
@@ -45,7 +46,7 @@ test.describe('xhr', () => {
 		await recordPage.waitForTimeout(1000)
 
 		const xhrSpans = recordPage.receivedSpans.filter(
-			(span) => span.tags['http.url'] === 'http://localhost:3000/some-data',
+			(span) => span.attributes['http.url'] === 'http://localhost:3000/some-data',
 		)
 
 		expect(xhrSpans).toHaveLength(0)
@@ -58,7 +59,7 @@ test.describe('xhr', () => {
 
 		const xhrSpans = recordPage.receivedSpans.filter((span) =>
 			['http://localhost:3000/some-data', 'http://localhost:3000/no-server-timings'].includes(
-				span.tags['http.url'] as string,
+				String(span.attributes['http.url']),
 			),
 		)
 		const guardSpans = recordPage.receivedSpans.filter((span) => span.name === 'guard-span')

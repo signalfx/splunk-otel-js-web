@@ -15,9 +15,9 @@
  * limitations under the License.
  *
  */
-import { defineConfig, devices } from '@playwright/test'
+import { defineConfig, devices, ReporterDescription } from '@playwright/test'
 
-const REPORTERS = []
+const REPORTERS: ReporterDescription[] = []
 if (process.env.CI) {
 	REPORTERS.push(['blob'], ['list'])
 } else {

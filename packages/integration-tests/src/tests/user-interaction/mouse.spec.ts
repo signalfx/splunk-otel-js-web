@@ -35,10 +35,10 @@ test.describe('mouse', () => {
 			{ name: 'mousedown', span: mouseDownSpan },
 			{ name: 'mouseup', span: mouseUpSpan },
 		]) {
-			expect(spanData.span.tags['component']).toBe('user-interaction')
-			expect(spanData.span.tags['event_type']).toBe(spanData.name)
-			expect(spanData.span.tags['target_element']).toBe('BUTTON')
-			expect(spanData.span.tags['target_xpath']).toBe('//*[@id="btn1"]')
+			expect(spanData.span).toHaveSpanAttribute('component', 'user-interaction')
+			expect(spanData.span).toHaveSpanAttribute('event_type', spanData.name)
+			expect(spanData.span).toHaveSpanAttribute('target_element', 'BUTTON')
+			expect(spanData.span).toHaveSpanAttribute('target_xpath', '//*[@id="btn1"]')
 		}
 
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
@@ -66,10 +66,10 @@ test.describe('mouse', () => {
 		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'click'))
 		const clickSpan = recordPage.receivedSpans.find((span) => span.name === 'click')
 
-		expect(clickSpan.tags['component']).toBe('user-interaction')
-		expect(clickSpan.tags['event_type']).toBe('click')
-		expect(clickSpan.tags['target_element']).toBe('BUTTON')
-		expect(clickSpan.tags['target_xpath']).toBe('//*[@id="btn1"]')
+		expect(clickSpan).toHaveSpanAttribute('component', 'user-interaction')
+		expect(clickSpan).toHaveSpanAttribute('event_type', 'click')
+		expect(clickSpan).toHaveSpanAttribute('target_element', 'BUTTON')
+		expect(clickSpan).toHaveSpanAttribute('target_xpath', '//*[@id="btn1"]')
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})
 
@@ -98,10 +98,10 @@ test.describe('mouse', () => {
 			{ name: 'mousedown', span: mouseDownSpan },
 			{ name: 'mouseup', span: mouseUpSpan },
 		]) {
-			expect(spanData.span.tags['component']).toBe('user-interaction')
-			expect(spanData.span.tags['event_type']).toBe(spanData.name)
-			expect(spanData.span.tags['target_element']).toBe('rect')
-			expect(spanData.span.tags['target_xpath']).toBe('//*[@id="btn-svg-target"]')
+			expect(spanData.span).toHaveSpanAttribute('component', 'user-interaction')
+			expect(spanData.span).toHaveSpanAttribute('event_type', spanData.name)
+			expect(spanData.span).toHaveSpanAttribute('target_element', 'rect')
+			expect(spanData.span).toHaveSpanAttribute('target_xpath', '//*[@id="btn-svg-target"]')
 		}
 
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)

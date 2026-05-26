@@ -16,6 +16,7 @@
  *
  */
 import { expect } from '@playwright/test'
+import type { ExportedTestSpan } from '@test-utils/test-span.js'
 
 import { RecordPage } from '../../pages/record-page'
 import { expectDefined, test } from '../../utils/test'
@@ -71,34 +72,36 @@ const ATTRIBUTION_TAGS = [
 
 const SHARED_WEBVITALS_TAGS = ['webvitals.delta', 'webvitals.metric_id', 'webvitals.navigation_type'] as const
 
-const expectNumericTag = (tags: Record<string, unknown>, name: string): void => {
-	expect(tags[name]).toBeDefined()
-	expect(Number.isFinite(Number.parseFloat(String(tags[name])))).toBeTruthy()
+const expectNumericTag = (span: ExportedTestSpan, name: string): void => {
+	const value = span.attributes[name]
+	expect(value, `expected attribute "${name}" to be defined`).toBeDefined()
+	expect(Number.isFinite(Number.parseFloat(String(value))), `expected attribute "${name}" to be numeric`).toBeTruthy()
 }
 
-const expectStringTag = (tags: Record<string, unknown>, name: string): void => {
-	expect(typeof tags[name]).toBe('string')
+const expectStringTag = (span: ExportedTestSpan, name: string): void => {
+	expect(typeof span.attributes[name], `expected attribute "${name}" to be a string`).toBe('string')
 }
 
-const expectNoLegacyAttributionTags = (tags: Record<string, unknown>): void => {
-	expect(Object.keys(tags).some((name) => name.includes('.attribution.'))).toBeFalsy()
+const expectNoLegacyAttributionTags = (span: ExportedTestSpan): void => {
+	const hasLegacy = Object.keys(span.attributes).some((key) => key.includes('.attribution.'))
+	expect(hasLegacy).toBeFalsy()
 }
 
-const expectNoAttributionTags = (tags: Record<string, unknown>): void => {
-	expectNoLegacyAttributionTags(tags)
+const expectNoAttributionTags = (span: ExportedTestSpan): void => {
+	expectNoLegacyAttributionTags(span)
 	for (const name of ATTRIBUTION_TAGS) {
-		expect(tags[name], `${name} should not be emitted`).toBeUndefined()
+		expect(span.attributes[name], `${name} should not be emitted`).toBeUndefined()
 	}
 
 	for (const name of SHARED_WEBVITALS_TAGS) {
-		expect(tags[name], `${name} should not be emitted`).toBeUndefined()
+		expect(span.attributes[name], `${name} should not be emitted`).toBeUndefined()
 	}
 }
 
-const expectSharedWebVitalsTags = (tags: Record<string, unknown>): void => {
-	expectStringTag(tags, 'webvitals.metric_id')
-	expectNumericTag(tags, 'webvitals.delta')
-	expectStringTag(tags, 'webvitals.navigation_type')
+const expectSharedWebVitalsTags = (span: ExportedTestSpan): void => {
+	expectStringTag(span, 'webvitals.metric_id')
+	expectNumericTag(span, 'webvitals.delta')
+	expectStringTag(span, 'webvitals.navigation_type')
 }
 
 const expectSafeTarget = (target: unknown): void => {
@@ -134,8 +137,12 @@ async function collectWebVitals(recordPage: RecordPage, url: string): Promise<vo
 	await recordPage.waitForTimeoutAndFlushData(1000)
 }
 
+function hrTimeToNanos(span: ExportedTestSpan): bigint {
+	return BigInt(span.startTime[0]) * 1_000_000_000n + BigInt(span.startTime[1])
+}
+
 function getMetricSpans(recordPage: RecordPage, name: string) {
-	return recordPage.receivedSpans.filter((span) => span.tags[name] !== undefined)
+	return recordPage.receivedSpans.filter((span) => span.attributes[name] !== undefined)
 }
 
 function expectSingleMetricSpan(recordPage: RecordPage, name: string) {
@@ -144,7 +151,7 @@ function expectSingleMetricSpan(recordPage: RecordPage, name: string) {
 	const span = spans[0]
 	expectDefined(span)
 	expect(span.name).toBe('webvitals')
-	expectNumericTag(span.tags, name)
+	expectNumericTag(span, name)
 	return span
 }
 
@@ -158,13 +165,13 @@ test.describe('web vitals', () => {
 		await collectWebVitals(recordPage, '/webvitals/webvitals.ejs')
 
 		const lcp = expectSingleMetricSpan(recordPage, 'lcp')
-		expectNoAttributionTags(lcp.tags)
+		expectNoAttributionTags(lcp)
 
 		const cls = expectSingleMetricSpan(recordPage, 'cls')
-		expectNoAttributionTags(cls.tags)
+		expectNoAttributionTags(cls)
 
 		const inp = expectSingleMetricSpan(recordPage, 'inp')
-		expectNoAttributionTags(inp.tags)
+		expectNoAttributionTags(inp)
 
 		expect(getMetricSpans(recordPage, 'fcp')).toHaveLength(0)
 		expect(getMetricSpans(recordPage, 'ttfb')).toHaveLength(0)
@@ -180,41 +187,41 @@ test.describe('web vitals', () => {
 		await collectWebVitals(recordPage, '/webvitals/webvitals-attribution.ejs')
 
 		const lcp = expectSingleMetricSpan(recordPage, 'lcp')
-		expectNoLegacyAttributionTags(lcp.tags)
-		expectSharedWebVitalsTags(lcp.tags)
-		expectSafeTarget(lcp.tags['lcp.target'])
-		expectNumericTag(lcp.tags, 'lcp.time_to_first_byte')
-		expectNumericTag(lcp.tags, 'lcp.resource_load_delay')
-		expectNumericTag(lcp.tags, 'lcp.resource_load_duration')
-		expectNumericTag(lcp.tags, 'lcp.element_render_delay')
+		expectNoLegacyAttributionTags(lcp)
+		expectSharedWebVitalsTags(lcp)
+		expectSafeTarget(lcp.attributes['lcp.target'])
+		expectNumericTag(lcp, 'lcp.time_to_first_byte')
+		expectNumericTag(lcp, 'lcp.resource_load_delay')
+		expectNumericTag(lcp, 'lcp.resource_load_duration')
+		expectNumericTag(lcp, 'lcp.element_render_delay')
 
 		const cls = expectSingleMetricSpan(recordPage, 'cls')
-		expectNoLegacyAttributionTags(cls.tags)
-		expectSharedWebVitalsTags(cls.tags)
-		expectSafeTarget(cls.tags['cls.largest_shift_target'])
-		expectNumericTag(cls.tags, 'cls.largest_shift_time')
-		expectNumericTag(cls.tags, 'cls.largest_shift_value')
-		expectStringTag(cls.tags, 'cls.load_state')
-		expectNumericTag(cls.tags, 'cls.largest_shift_source.previous_rect.x')
-		expectNumericTag(cls.tags, 'cls.largest_shift_source.previous_rect.y')
-		expectNumericTag(cls.tags, 'cls.largest_shift_source.previous_rect.width')
-		expectNumericTag(cls.tags, 'cls.largest_shift_source.previous_rect.height')
-		expectNumericTag(cls.tags, 'cls.largest_shift_source.current_rect.x')
-		expectNumericTag(cls.tags, 'cls.largest_shift_source.current_rect.y')
-		expectNumericTag(cls.tags, 'cls.largest_shift_source.current_rect.width')
-		expectNumericTag(cls.tags, 'cls.largest_shift_source.current_rect.height')
+		expectNoLegacyAttributionTags(cls)
+		expectSharedWebVitalsTags(cls)
+		expectSafeTarget(cls.attributes['cls.largest_shift_target'])
+		expectNumericTag(cls, 'cls.largest_shift_time')
+		expectNumericTag(cls, 'cls.largest_shift_value')
+		expectStringTag(cls, 'cls.load_state')
+		expectNumericTag(cls, 'cls.largest_shift_source.previous_rect.x')
+		expectNumericTag(cls, 'cls.largest_shift_source.previous_rect.y')
+		expectNumericTag(cls, 'cls.largest_shift_source.previous_rect.width')
+		expectNumericTag(cls, 'cls.largest_shift_source.previous_rect.height')
+		expectNumericTag(cls, 'cls.largest_shift_source.current_rect.x')
+		expectNumericTag(cls, 'cls.largest_shift_source.current_rect.y')
+		expectNumericTag(cls, 'cls.largest_shift_source.current_rect.width')
+		expectNumericTag(cls, 'cls.largest_shift_source.current_rect.height')
 
 		const inp = expectSingleMetricSpan(recordPage, 'inp')
-		expectNoLegacyAttributionTags(inp.tags)
-		expectSharedWebVitalsTags(inp.tags)
-		expectSafeTarget(inp.tags['inp.interaction_target'])
-		expectNumericTag(inp.tags, 'inp.interaction_time')
-		expectStringTag(inp.tags, 'inp.interaction_type')
-		expectNumericTag(inp.tags, 'inp.next_paint_time')
-		expectNumericTag(inp.tags, 'inp.input_delay')
-		expectNumericTag(inp.tags, 'inp.processing_duration')
-		expectNumericTag(inp.tags, 'inp.presentation_delay')
-		expectStringTag(inp.tags, 'inp.load_state')
+		expectNoLegacyAttributionTags(inp)
+		expectSharedWebVitalsTags(inp)
+		expectSafeTarget(inp.attributes['inp.interaction_target'])
+		expectNumericTag(inp, 'inp.interaction_time')
+		expectStringTag(inp, 'inp.interaction_type')
+		expectNumericTag(inp, 'inp.next_paint_time')
+		expectNumericTag(inp, 'inp.input_delay')
+		expectNumericTag(inp, 'inp.processing_duration')
+		expectNumericTag(inp, 'inp.presentation_delay')
+		expectStringTag(inp, 'inp.load_state')
 
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})
@@ -230,10 +237,10 @@ test.describe('web vitals', () => {
 		await collectWebVitals(recordPage, '/webvitals/webvitals-experimental.ejs')
 
 		const fcp = expectSingleMetricSpan(recordPage, 'fcp')
-		expectNoAttributionTags(fcp.tags)
+		expectNoAttributionTags(fcp)
 
 		const ttfb = expectSingleMetricSpan(recordPage, 'ttfb')
-		expectNoAttributionTags(ttfb.tags)
+		expectNoAttributionTags(ttfb)
 
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})
@@ -249,20 +256,20 @@ test.describe('web vitals', () => {
 		await collectWebVitals(recordPage, '/webvitals/webvitals-experimental-attribution.ejs')
 
 		const fcp = expectSingleMetricSpan(recordPage, 'fcp')
-		expectNoLegacyAttributionTags(fcp.tags)
-		expectSharedWebVitalsTags(fcp.tags)
-		expectNumericTag(fcp.tags, 'fcp.time_to_first_byte')
-		expectNumericTag(fcp.tags, 'fcp.first_byte_to_fcp')
-		expectStringTag(fcp.tags, 'fcp.load_state')
+		expectNoLegacyAttributionTags(fcp)
+		expectSharedWebVitalsTags(fcp)
+		expectNumericTag(fcp, 'fcp.time_to_first_byte')
+		expectNumericTag(fcp, 'fcp.first_byte_to_fcp')
+		expectStringTag(fcp, 'fcp.load_state')
 
 		const ttfb = expectSingleMetricSpan(recordPage, 'ttfb')
-		expectNoLegacyAttributionTags(ttfb.tags)
-		expectSharedWebVitalsTags(ttfb.tags)
-		expectNumericTag(ttfb.tags, 'ttfb.waiting_duration')
-		expectNumericTag(ttfb.tags, 'ttfb.cache_duration')
-		expectNumericTag(ttfb.tags, 'ttfb.dns_duration')
-		expectNumericTag(ttfb.tags, 'ttfb.connection_duration')
-		expectNumericTag(ttfb.tags, 'ttfb.request_duration')
+		expectNoLegacyAttributionTags(ttfb)
+		expectSharedWebVitalsTags(ttfb)
+		expectNumericTag(ttfb, 'ttfb.waiting_duration')
+		expectNumericTag(ttfb, 'ttfb.cache_duration')
+		expectNumericTag(ttfb, 'ttfb.dns_duration')
+		expectNumericTag(ttfb, 'ttfb.connection_duration')
+		expectNumericTag(ttfb, 'ttfb.request_duration')
 
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})
@@ -292,13 +299,13 @@ test.describe('web vitals', () => {
 		await recordPage.waitForTimeoutAndFlushData(1000)
 
 		const docLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'documentLoad')
-		const webvitalsSpan = recordPage.receivedSpans.find((span) => span.tags.lcp !== undefined)
+		const webvitalsSpan = recordPage.receivedSpans.find((span) => span.attributes['lcp'] !== undefined)
 
 		expectDefined(docLoadSpan)
 		expectDefined(webvitalsSpan)
 
-		expect(webvitalsSpan.timestamp).toBe(docLoadSpan?.timestamp + 1000)
-		expect(webvitalsSpan.tags['location.href']).toBe(docLoadUrl)
+		expect(hrTimeToNanos(webvitalsSpan)).toBe(hrTimeToNanos(docLoadSpan) + 1_000_000n)
+		expect(webvitalsSpan.attributes['location.href']).toBe(docLoadUrl)
 	})
 
 	test('webvitals - specific metrics disabled', async ({ browserName, recordPage }) => {
@@ -316,17 +323,17 @@ test.describe('web vitals', () => {
 		await recordPage.changeVisibilityInTab('hidden')
 		await recordPage.waitForTimeoutAndFlushData(1000)
 
-		const lcp = recordPage.receivedSpans.filter((span) => span.tags.lcp !== undefined)
-		const cls = recordPage.receivedSpans.filter((span) => span.tags.cls !== undefined)
+		const lcp = recordPage.receivedSpans.filter((span) => span.attributes['lcp'] !== undefined)
+		const cls = recordPage.receivedSpans.filter((span) => span.attributes['cls'] !== undefined)
 
 		expect(lcp).toHaveLength(0)
 		expect(cls).toHaveLength(0)
 		expect(
 			recordPage.receivedSpans.some(
 				(span) =>
-					span.tags['lcp.target'] !== undefined ||
-					span.tags['cls.largest_shift_target'] !== undefined ||
-					Object.keys(span.tags).some((name) => name.includes('.attribution.')),
+					span.attributes['lcp.target'] !== undefined ||
+					span.attributes['cls.largest_shift_target'] !== undefined ||
+					Object.keys(span.attributes).some((key) => key.includes('.attribution.')),
 			),
 		).toBeFalsy()
 

@@ -30,25 +30,25 @@ test.describe('cookies', () => {
 		expect(documentFetchSpans).toHaveLength(2)
 
 		const iframeDocumentFetchSpan = documentFetchSpans.find(
-			(span) => span.tags['location.href'] === 'http://localhost:3000/cookies/iframe.ejs',
+			(span) => span.attributes['location.href'] === 'http://localhost:3000/cookies/iframe.ejs',
 		)
 		const parentDocumentFetchSpan = documentFetchSpans.find(
-			(span) => span.tags['location.href'] === 'http://localhost:3000/cookies/cookies.ejs',
+			(span) => span.attributes['location.href'] === 'http://localhost:3000/cookies/cookies.ejs',
 		)
 		expectDefined(iframeDocumentFetchSpan)
 		expectDefined(parentDocumentFetchSpan)
 
 		// same sessionId& instanceId
-		expect(iframeDocumentFetchSpan.tags['splunk.rumSessionId']).toBe(
-			parentDocumentFetchSpan.tags['splunk.rumSessionId'],
+		expect(iframeDocumentFetchSpan.attributes['splunk.rumSessionId']).toBe(
+			parentDocumentFetchSpan.attributes['splunk.rumSessionId'],
 		)
-		expect(iframeDocumentFetchSpan.tags['browser.instance.id']).toBe(
-			parentDocumentFetchSpan.tags['browser.instance.id'],
+		expect(iframeDocumentFetchSpan.attributes['browser.instance.id']).toBe(
+			parentDocumentFetchSpan.attributes['browser.instance.id'],
 		)
 
 		// different scriptInstance
-		expect(iframeDocumentFetchSpan.tags['splunk.scriptInstance']).not.toBe(
-			parentDocumentFetchSpan.tags['splunk.scriptInstance'],
+		expect(iframeDocumentFetchSpan.attributes['splunk.scriptInstance']).not.toBe(
+			parentDocumentFetchSpan.attributes['splunk.scriptInstance'],
 		)
 
 		const cookie = await recordPage.getCookie('_splunk_rum_sid')
@@ -65,14 +65,14 @@ test.describe('cookies', () => {
 		}
 
 		await recordPage.waitForSpans((spans) =>
-			spans.some((s) => s.name === 'documentFetch' && s.tags.app === 'iframe'),
+			spans.some((s) => s.name === 'documentFetch' && s.attributes['app'] === 'iframe'),
 		)
 		const documentFetchSpans = recordPage.receivedSpans.filter((span) => span.name === 'documentFetch')
 		expect(documentFetchSpans).toHaveLength(1)
-		expect(documentFetchSpans[0].tags['splunk.rumSessionId']).toBeTruthy()
+		expect(documentFetchSpans[0].attributes['splunk.rumSessionId']).toBeTruthy()
 
 		const cookie = await recordPage.getCookie('_splunk_rum_sid')
-		expect(cookie).toBeTruthy()
+		expectDefined(cookie)
 		expect(cookie.secure).toBe(true)
 		expect(cookie.sameSite).toBe('None')
 	})
@@ -80,15 +80,14 @@ test.describe('cookies', () => {
 	test('setting cookieDomain via config sets it on subdomains also', async ({ recordPage }) => {
 		await recordPage.goTo(`http://127.0.0.1.nip.io:3000/cookies/cookies-domain.ejs`)
 		const cookie1 = await recordPage.getCookie('_splunk_rum_sid')
-		const cookie1Decoded = decodeURIComponent(cookie1?.value ?? '')
-
-		expect(cookie1).toBeTruthy()
+		expectDefined(cookie1)
+		const cookie1Decoded = JSON.parse(decodeURIComponent(cookie1.value)) as Record<string, unknown>
 
 		await recordPage.goTo(`http://test.127.0.0.1.nip.io:3000/cookies/cookies-domain.ejs`)
 		const cookie2 = await recordPage.getCookie('_splunk_rum_sid')
-		const cookie2Decoded = decodeURIComponent(cookie2?.value ?? '')
+		expectDefined(cookie2)
+		const cookie2Decoded = JSON.parse(decodeURIComponent(cookie2.value)) as Record<string, unknown>
 
-		expect(cookie2).toBeTruthy()
 		expect(cookie1Decoded['startTime']).toBe(cookie2Decoded['startTime'])
 		expect(cookie1Decoded['id']).toBe(cookie2Decoded['id'])
 		expect(cookie1.domain).toBe(cookie2.domain)

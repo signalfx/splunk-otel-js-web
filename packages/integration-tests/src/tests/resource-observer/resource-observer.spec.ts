@@ -25,35 +25,41 @@ test.describe('resource observer', () => {
 
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'guard-span').length === 1)
 		const agentSpans = recordPage.receivedSpans.filter(
-			(span) => typeof span.tags['http.url'] === 'string' && span.tags['http.url'].endsWith('splunk-otel-web.js'),
+			(span) =>
+				typeof span.attributes['http.url'] === 'string' &&
+				String(span.attributes['http.url']).endsWith('splunk-otel-web.js'),
 		)
 		const imageSpans = recordPage.receivedSpans.filter(
 			(span) =>
-				typeof span.tags['http.url'] === 'string' && span.tags['http.url'].endsWith('image.png?noCache=true'),
+				typeof span.attributes['http.url'] === 'string' &&
+				String(span.attributes['http.url']).endsWith('image.png?noCache=true'),
 		)
 		const imageBlackSpans = recordPage.receivedSpans.filter(
 			(span) =>
-				typeof span.tags['http.url'] === 'string' &&
-				span.tags['http.url'].endsWith('splunk-black.svg?delay=100'),
+				typeof span.attributes['http.url'] === 'string' &&
+				String(span.attributes['http.url']).endsWith('splunk-black.svg?delay=100'),
 		)
 		const scriptSpans = recordPage.receivedSpans.filter(
-			(span) => typeof span.tags['http.url'] === 'string' && span.tags['http.url'].endsWith('test.js'),
+			(span) =>
+				typeof span.attributes['http.url'] === 'string' &&
+				String(span.attributes['http.url']).endsWith('test.js'),
 		)
 
 		expect(agentSpans).toHaveLength(1)
 		expect(imageSpans).toHaveLength(1)
 
 		expect(imageBlackSpans).toHaveLength(1)
-		expect(imageBlackSpans[0].annotations.length).toBe(8)
-		expect(imageBlackSpans[0].tags['http.url']).toBe(
+		expect(imageBlackSpans[0].events.length).toBe(8)
+		expect(imageBlackSpans[0]).toHaveSpanAttribute(
+			'http.url',
 			'http://localhost:3000/resource-observer/assets/splunk-black.svg?delay=100',
 		)
-		expect(imageBlackSpans[0].tags['http.cache.hit']).toBe('false')
+		expect(imageBlackSpans[0]).toHaveSpanAttribute('http.cache.hit', false)
 
 		expect(scriptSpans).toHaveLength(1)
-		expect(scriptSpans[0].annotations.length).toBe(8)
-		expect(scriptSpans[0].tags['http.url']).toBe('http://localhost:3000/resource-observer/assets/test.js')
-		expect(scriptSpans[0].tags['http.cache.hit']).toBe('false')
+		expect(scriptSpans[0].events.length).toBe(8)
+		expect(scriptSpans[0]).toHaveSpanAttribute('http.url', 'http://localhost:3000/resource-observer/assets/test.js')
+		expect(scriptSpans[0]).toHaveSpanAttribute('http.cache.hit', false)
 	})
 
 	test('resources can be ignored', async ({ recordPage }) => {
@@ -61,10 +67,14 @@ test.describe('resource observer', () => {
 
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'guard-span').length === 1)
 		const imageBlackSpans = recordPage.receivedSpans.filter(
-			(span) => typeof span.tags['http.url'] === 'string' && span.tags['http.url'].endsWith('splunk-black.svg'),
+			(span) =>
+				typeof span.attributes['http.url'] === 'string' &&
+				String(span.attributes['http.url']).endsWith('splunk-black.svg'),
 		)
 		const scriptSpans = recordPage.receivedSpans.filter(
-			(span) => typeof span.tags['http.url'] === 'string' && span.tags['http.url'].endsWith('test.js'),
+			(span) =>
+				typeof span.attributes['http.url'] === 'string' &&
+				String(span.attributes['http.url']).endsWith('test.js'),
 		)
 
 		expect(imageBlackSpans).toHaveLength(0)
@@ -76,13 +86,15 @@ test.describe('resource observer', () => {
 
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'guard-span').length === 1)
 		const imageBlackSpans = recordPage.receivedSpans.filter(
-			(span) => typeof span.tags['http.url'] === 'string' && span.tags['http.url'].endsWith('splunk-black.svg'),
+			(span) =>
+				typeof span.attributes['http.url'] === 'string' &&
+				String(span.attributes['http.url']).endsWith('splunk-black.svg'),
 		)
 
 		expect(imageBlackSpans).toHaveLength(1)
-		expect(imageBlackSpans[0].tags['component']).toBe('document-load')
+		expect(imageBlackSpans[0]).toHaveSpanAttribute('component', 'document-load')
 		if (browserName !== 'webkit') {
-			expect(imageBlackSpans[0].tags['http.cache.hit']).toBe('false')
+			expect(imageBlackSpans[0]).toHaveSpanAttribute('http.cache.hit', false)
 		}
 	})
 
@@ -97,12 +109,13 @@ test.describe('resource observer', () => {
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'guard-span').length === 1)
 		const imageSpans = recordPage.receivedSpans.filter(
 			(span) =>
-				typeof span.tags['http.url'] === 'string' && span.tags['http.url'].endsWith('image.png?noCache=true'),
+				typeof span.attributes['http.url'] === 'string' &&
+				String(span.attributes['http.url']).endsWith('image.png?noCache=true'),
 		)
 
 		expect(imageSpans).toHaveLength(2)
-		expect(imageSpans[0].tags['component']).toBe('document-load')
-		expect(imageSpans[1].tags['component']).toBe('splunk-post-doc-load-resource')
+		expect(imageSpans[0]).toHaveSpanAttribute('component', 'document-load')
+		expect(imageSpans[1]).toHaveSpanAttribute('component', 'splunk-post-doc-load-resource')
 		expect(imageSpans[0].traceId).not.toBe(imageSpans[1].traceId)
 	})
 
@@ -113,16 +126,16 @@ test.describe('resource observer', () => {
 
 		const imageRootSpans = recordPage.receivedSpans.filter(
 			(span) =>
-				typeof span.tags['http.url'] === 'string' &&
-				span.tags['http.url'].endsWith('splunk-black.png') &&
-				span.tags['component'] === 'splunk-post-doc-load-resource',
+				typeof span.attributes['http.url'] === 'string' &&
+				String(span.attributes['http.url']).endsWith('splunk-black.png') &&
+				span.attributes['component'] === 'splunk-post-doc-load-resource',
 		)
 		const imageParentSpans = recordPage.receivedSpans.filter((span) => span.name === 'image-parent')
 		const imageChildSpans = recordPage.receivedSpans.filter(
 			(span) =>
-				typeof span.tags['http.url'] === 'string' &&
-				span.tags['http.url'].endsWith('splunk-black.svg') &&
-				span.tags['component'] === 'splunk-post-doc-load-resource',
+				typeof span.attributes['http.url'] === 'string' &&
+				String(span.attributes['http.url']).endsWith('splunk-black.svg') &&
+				span.attributes['component'] === 'splunk-post-doc-load-resource',
 		)
 
 		expect(imageRootSpans).toHaveLength(1)
@@ -130,24 +143,24 @@ test.describe('resource observer', () => {
 		expect(imageChildSpans).toHaveLength(1)
 
 		expect(imageRootSpans[0].traceId).not.toBe(imageParentSpans[0].traceId)
-		expect(imageRootSpans[0].parentId).toBeUndefined()
+		expect(imageRootSpans[0].parentSpanId).toBeUndefined()
 		expect(imageChildSpans[0].traceId).toBe(imageChildSpans[0].traceId)
 
 		// TODO: Investigate why this assertion is failing. Just copied from the original test
-		// expect(imageChildSpans[0].parentId).toBe(imageParentSpans[0].id)
+		// expect(imageChildSpans[0].parentSpanId).toBe(imageParentSpans[0].spanId)
 
 		const scriptRootSpans = recordPage.receivedSpans.filter(
 			(span) =>
-				typeof span.tags['http.url'] === 'string' &&
-				span.tags['http.url'].endsWith('test.js') &&
-				span.tags['component'] === 'splunk-post-doc-load-resource',
+				typeof span.attributes['http.url'] === 'string' &&
+				String(span.attributes['http.url']).endsWith('test.js') &&
+				span.attributes['component'] === 'splunk-post-doc-load-resource',
 		)
 		const scriptParentSpans = recordPage.receivedSpans.filter((span) => span.name === 'script-parent')
 		const scriptChildSpans = recordPage.receivedSpans.filter(
 			(span) =>
-				typeof span.tags['http.url'] === 'string' &&
-				span.tags['http.url'].endsWith('test-alt.js') &&
-				span.tags['component'] === 'splunk-post-doc-load-resource',
+				typeof span.attributes['http.url'] === 'string' &&
+				String(span.attributes['http.url']).endsWith('test-alt.js') &&
+				span.attributes['component'] === 'splunk-post-doc-load-resource',
 		)
 
 		expect(scriptRootSpans).toHaveLength(1)
@@ -155,11 +168,11 @@ test.describe('resource observer', () => {
 		expect(scriptChildSpans).toHaveLength(1)
 
 		expect(scriptRootSpans[0].traceId).not.toBe(scriptParentSpans[0].traceId)
-		expect(scriptRootSpans[0].parentId).toBeUndefined()
+		expect(scriptRootSpans[0].parentSpanId).toBeUndefined()
 
 		// TODO: Investigate why this assertion is failing. Just copied from the original test
 		// expect(scriptParentSpans[0].traceId).toBe(scriptChildSpans[0].traceId)
-		// expect(scriptChildSpans[0].parentId).toBe(scriptParentSpans[0].id)
+		// expect(scriptChildSpans[0].parentSpanId).toBe(scriptParentSpans[0].spanId)
 	})
 
 	test("doesn't crash when postload instrumentation is disabled", async ({ recordPage }) => {

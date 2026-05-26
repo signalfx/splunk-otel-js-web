@@ -19,6 +19,7 @@
 		"build": "npm-run-all -s build:*",
 		"build:browser": "webpack --mode production --color && tsx scripts/remove-jaeger-vars.ts",
 		"build:tsc": "tsc --build tsconfig.cjs.json tsconfig.esm.json",
+		"typecheck:tests": "tsc --noEmit --project tsconfig.test.json",
 		"dev": "npm-run-all -s dev:tsc:init -p dev:*",
 		"dev:serve": "webpack serve --mode development --color",
 		"dev:tsc:init": "tsc --build tsconfig.cjs.json tsconfig.esm.json",

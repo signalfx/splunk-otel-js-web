@@ -32,19 +32,20 @@ test.describe('docload', () => {
 		const resources = ['css-font-img.css', 'splunk-black.png?delay=300', 'iframe.ejs', 'splunk.woff']
 		for (const urlEnd of resources) {
 			const resourceSpan = recordPage.receivedSpans.find(
-				(span) => span.tags['http.url'] && (span.tags['http.url'] as string).endsWith(urlEnd),
+				(span) => span.attributes['http.url'] && String(span.attributes['http.url']).endsWith(urlEnd),
 			)
 
-			expect(docLoadSpans[0].traceId, `${urlEnd} has correct traceId`).toBe(resourceSpan.traceId)
+			expect(resourceSpan, `${urlEnd} span should exist`).toBeDefined()
+			expect(docLoadSpans[0].traceId, `${urlEnd} has correct traceId`).toBe(resourceSpan!.traceId)
 		}
 
 		const ignoredResources = ['/some-data', '/some-data?delay=1', '/api/v2/spans']
 		for (const urlEnd of ignoredResources) {
 			const resourceSpans = recordPage.receivedSpans.filter(
 				(span) =>
-					span.tags['component'] === 'document-load' &&
-					typeof span.tags['http.url'] === 'string' &&
-					span.tags['http.url'].endsWith(urlEnd),
+					span.attributes['component'] === 'document-load' &&
+					typeof span.attributes['http.url'] === 'string' &&
+					String(span.attributes['http.url']).endsWith(urlEnd),
 			)
 
 			expect(resourceSpans, `${urlEnd} is not captured`).toHaveLength(0)
@@ -61,14 +62,14 @@ test.describe('docload', () => {
 		const scriptFetchSpans = recordPage.receivedSpans.filter(
 			(span) =>
 				span.name === 'resourceFetch' &&
-				typeof span.tags['http.url'] === 'string' &&
-				span.tags['http.url'].includes('splunk-otel-web.js'),
+				typeof span.attributes['http.url'] === 'string' &&
+				String(span.attributes['http.url']).includes('splunk-otel-web.js'),
 		)
 		const brokenImageFetchSpans = recordPage.receivedSpans.filter(
 			(span) =>
 				span.name === 'resourceFetch' &&
-				typeof span.tags['http.url'] === 'string' &&
-				span.tags['http.url'].includes('/nosuchimage.jpg'),
+				typeof span.attributes['http.url'] === 'string' &&
+				String(span.attributes['http.url']).includes('/nosuchimage.jpg'),
 		)
 
 		expect(scriptFetchSpans).toHaveLength(1)
@@ -83,63 +84,62 @@ test.describe('docload', () => {
 		expect(docFetchSpans).toHaveLength(1)
 		expect(docLoadSpans).toHaveLength(1)
 		expect(docLoadSpans[0].traceId.match(/[a-f0-9]+/), 'Checking sanity of traceId').toBeTruthy()
-		expect(docLoadSpans[0].id.match(/[a-f0-9]+/), 'Checking sanity of id').toBeTruthy()
+		expect(docLoadSpans[0].spanId.match(/[a-f0-9]+/), 'Checking sanity of spanId').toBeTruthy()
 		expect(docFetchSpans[0].traceId).toBe(docLoadSpans[0].traceId)
-		expect(docFetchSpans[0].parentId).toBe(docLoadSpans[0].id)
+		expect(docFetchSpans[0].parentSpanId).toBe(docLoadSpans[0].spanId)
 
 		expect(scriptFetchSpans).toHaveLength(1)
 		expect(scriptFetchSpans[0].traceId).toBe(docLoadSpans[0].traceId)
-		expect(scriptFetchSpans[0].parentId).toBe(docLoadSpans[0].id)
-		expect(scriptFetchSpans[0].tags['component']).toBe('document-load')
+		expect(scriptFetchSpans[0].parentSpanId).toBe(docLoadSpans[0].spanId)
+		expect(scriptFetchSpans[0]).toHaveSpanAttribute('component', 'document-load')
 		if (browserName !== 'webkit') {
 			// Webkit does not support https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/responseStatus
-			expect(Number.parseInt(scriptFetchSpans[0].tags['http.status_code'] as string)).toBe(200)
-			expect(scriptFetchSpans[0].tags['http.cache.hit']).toBe('false')
+			expect(Number.parseInt(String(scriptFetchSpans[0].attributes['http.status_code']))).toBe(200)
+			expect(scriptFetchSpans[0]).toHaveSpanAttribute('http.cache.hit', false)
 		}
 
 		expect(brokenImageFetchSpans.length).toBeGreaterThanOrEqual(1)
 		expect(brokenImageFetchSpans[0].traceId).toBe(docLoadSpans[0].traceId)
-		expect(brokenImageFetchSpans[0].parentId).toBe(docLoadSpans[0].id)
+		expect(brokenImageFetchSpans[0].parentSpanId).toBe(docLoadSpans[0].spanId)
 		if (browserName !== 'webkit') {
 			// Webkit does not support https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/responseStatus
-			expect(Number.parseInt(brokenImageFetchSpans[0].tags['http.status_code'] as string)).toBe(404)
+			expect(Number.parseInt(String(brokenImageFetchSpans[0].attributes['http.status_code']))).toBe(404)
 		}
 
-		expect(docFetchSpans[0].tags['component']).toBe('document-load')
-		expect(docLoadSpans[0].tags['location.href']).toBe('http://localhost:3000/docload/docload.ejs')
+		expect(docFetchSpans[0]).toHaveSpanAttribute('component', 'document-load')
+		expect(docLoadSpans[0]).toHaveSpanAttribute('location.href', 'http://localhost:3000/docload/docload.ejs')
 
-		timesMakeSense(docFetchSpans[0].annotations, 'domainLookupStart', 'domainLookupEnd')
-		timesMakeSense(docFetchSpans[0].annotations, 'connectStart', 'connectEnd')
-		timesMakeSense(docFetchSpans[0].annotations, 'requestStart', 'responseStart')
-		timesMakeSense(docFetchSpans[0].annotations, 'responseStart', 'responseEnd')
-		timesMakeSense(docFetchSpans[0].annotations, 'fetchStart', 'responseEnd')
+		timesMakeSense(docFetchSpans[0].events, 'domainLookupStart', 'domainLookupEnd')
+		timesMakeSense(docFetchSpans[0].events, 'connectStart', 'connectEnd')
+		timesMakeSense(docFetchSpans[0].events, 'requestStart', 'responseStart')
+		timesMakeSense(docFetchSpans[0].events, 'responseStart', 'responseEnd')
+		timesMakeSense(docFetchSpans[0].events, 'fetchStart', 'responseEnd')
 
-		expect(docFetchSpans[0].tags['link.traceId']).toBeDefined()
-		expect(docFetchSpans[0].tags['link.spanId']).toBeDefined()
+		expect(docFetchSpans[0]).toHaveSpanAttribute('link.traceId')
+		expect(docFetchSpans[0]).toHaveSpanAttribute('link.spanId')
 		if (browserName !== 'webkit') {
 			// Webkit does not support https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/responseStatus
-			expect(Number.parseInt(docFetchSpans[0].tags['http.status_code'] as string)).toBe(200)
+			expect(Number.parseInt(String(docFetchSpans[0].attributes['http.status_code']))).toBe(200)
 		}
 
-		expect(Number.parseInt(scriptFetchSpans[0].tags['http.response_content_length'] as string)).toBeGreaterThan(0)
+		expect(Number.parseInt(String(scriptFetchSpans[0].attributes['http.response_content_length']))).toBeGreaterThan(
+			0,
+		)
 
-		expect(docLoadSpans[0].tags['component']).toBe('document-load')
-		expect(docLoadSpans[0].tags['location.href']).toBe('http://localhost:3000/docload/docload.ejs')
-		expect(
-			(docLoadSpans[0].tags['screen.xy'] as string).match(/[0-9]+x[0-9]+/),
-			'Checking sanity of screen.xy',
-		).toBeTruthy()
+		expect(docLoadSpans[0]).toHaveSpanAttribute('component', 'document-load')
+		expect(docLoadSpans[0]).toHaveSpanAttribute('location.href', 'http://localhost:3000/docload/docload.ejs')
+		expect(docLoadSpans[0]).toHaveSpanAttributeMatching('screen.xy', /[0-9]+x[0-9]+/)
 
 		if (browserName !== 'webkit') {
 			// WebKit reports domInteractive, domContentLoadedEventStart/End, and domComplete as 0
 			// in PerformanceNavigationTiming, so the OTel SDK skips adding them as span events
 			// (they appear before fetchStart, failing the perfTime >= refTime check).
-			timesMakeSense(docLoadSpans[0].annotations, 'domContentLoadedEventStart', 'domContentLoadedEventEnd')
-			timesMakeSense(docLoadSpans[0].annotations, 'fetchStart', 'domInteractive')
-			timesMakeSense(docLoadSpans[0].annotations, 'fetchStart', 'domComplete')
+			timesMakeSense(docLoadSpans[0].events, 'domContentLoadedEventStart', 'domContentLoadedEventEnd')
+			timesMakeSense(docLoadSpans[0].events, 'fetchStart', 'domInteractive')
+			timesMakeSense(docLoadSpans[0].events, 'fetchStart', 'domComplete')
 		}
 
-		timesMakeSense(docLoadSpans[0].annotations, 'loadEventStart', 'loadEventEnd')
+		timesMakeSense(docLoadSpans[0].events, 'loadEventStart', 'loadEventEnd')
 
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})
@@ -149,7 +149,7 @@ test.describe('docload', () => {
 
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'documentFetch').length === 1)
 		const ignoredResourceFetchSpans = recordPage.receivedSpans.filter(
-			(span) => span.tags['http.url'] === 'http://localhost:3000/non-impactful-resource.jpg',
+			(span) => span.attributes['http.url'] === 'http://localhost:3000/non-impactful-resource.jpg',
 		)
 
 		expect(ignoredResourceFetchSpans).toHaveLength(0)

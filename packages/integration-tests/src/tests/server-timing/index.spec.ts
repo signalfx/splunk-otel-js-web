@@ -33,8 +33,8 @@ test.describe('server-timing', () => {
 		const documentFetchSpans = recordPage.receivedSpans.filter((span) => span.name === 'documentFetch')
 
 		expect(documentFetchSpans).toHaveLength(1)
-		expect(documentFetchSpans[0].tags['link.traceId']).toBe(serverTiming.traceId)
-		expect(documentFetchSpans[0].tags['location.href']).toBe(url.toString())
+		expect(documentFetchSpans[0]).toHaveSpanAttribute('link.traceId', serverTiming.traceId)
+		expect(documentFetchSpans[0]).toHaveSpanAttribute('location.href', url.toString())
 
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})

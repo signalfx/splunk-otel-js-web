@@ -15,24 +15,26 @@
  * limitations under the License.
  *
  */
-import { Span } from '@opentelemetry/exporter-zipkin/build/src/types'
 import { expect } from '@playwright/test'
+import type { ExportedTestSpan } from '@test-utils/test-span.js'
 
 import { RecordPage } from '../../pages/record-page'
 import { test } from '../../utils/test'
 
-const errorClickFilter = (span: Span) =>
+const errorClickFilter = (span: ExportedTestSpan) =>
 	span.name === 'frustration' &&
-	span.tags['frustration_type'] === 'error' &&
-	span.tags['interaction_type'] === 'click'
+	span.attributes['frustration_type'] === 'error' &&
+	span.attributes['interaction_type'] === 'click'
 
-const deadClickFilter = (span: Span) =>
-	span.name === 'frustration' && span.tags['frustration_type'] === 'dead' && span.tags['interaction_type'] === 'click'
-
-const thrashedCursorFilter = (span: Span) =>
+const deadClickFilter = (span: ExportedTestSpan) =>
 	span.name === 'frustration' &&
-	span.tags['frustration_type'] === 'thrash' &&
-	span.tags['interaction_type'] === 'cursor'
+	span.attributes['frustration_type'] === 'dead' &&
+	span.attributes['interaction_type'] === 'click'
+
+const thrashedCursorFilter = (span: ExportedTestSpan) =>
+	span.name === 'frustration' &&
+	span.attributes['frustration_type'] === 'thrash' &&
+	span.attributes['interaction_type'] === 'cursor'
 
 test.describe('Frustration signals', () => {
 	test.describe('Rage clicks', () => {
@@ -46,8 +48,8 @@ test.describe('Frustration signals', () => {
 				recordPage.receivedSpans.filter(
 					(span) =>
 						span.name === 'frustration' &&
-						span.tags['frustration_type'] === 'rage' &&
-						span.tags['interaction_type'] === 'click',
+						span.attributes['frustration_type'] === 'rage' &&
+						span.attributes['interaction_type'] === 'click',
 				),
 			).toHaveLength(0)
 			expect(recordPage.receivedSpans.filter(({ name }) => name === 'click')).toHaveLength(8)
@@ -62,20 +64,20 @@ test.describe('Frustration signals', () => {
 					spans.filter(
 						(span) =>
 							span.name === 'frustration' &&
-							span.tags['frustration_type'] === 'rage' &&
-							span.tags['interaction_type'] === 'click',
+							span.attributes['frustration_type'] === 'rage' &&
+							span.attributes['interaction_type'] === 'click',
 					).length === 2 && spans.filter((span) => span.name === 'click').length === 8,
 			)
 
 			const rageClickSpans = recordPage.receivedSpans.filter(
 				(span) =>
 					span.name === 'frustration' &&
-					span.tags['frustration_type'] === 'rage' &&
-					span.tags['interaction_type'] === 'click',
+					span.attributes['frustration_type'] === 'rage' &&
+					span.attributes['interaction_type'] === 'click',
 			)
 
 			expect(rageClickSpans).toHaveLength(2) // h1 and #no-rage
-			expect(rageClickSpans[0].duration).toBe(0)
+			expect(rageClickSpans[0]).toHaveSpanDuration(0)
 
 			expect(recordPage.receivedSpans.filter(({ name }) => name === 'click')).toHaveLength(8)
 		})
@@ -88,9 +90,9 @@ test.describe('Frustration signals', () => {
 				spans.some(
 					(span) =>
 						span.name === 'frustration' &&
-						span.tags['frustration_type'] === 'rage' &&
-						span.tags['interaction_type'] === 'click' &&
-						span.tags['target_xpath'] === '//html/body/h1',
+						span.attributes['frustration_type'] === 'rage' &&
+						span.attributes['interaction_type'] === 'click' &&
+						span.attributes['target_xpath'] === '//html/body/h1',
 				),
 			)
 			await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'click').length === 8)
@@ -98,12 +100,12 @@ test.describe('Frustration signals', () => {
 			const rageClickSpans = recordPage.receivedSpans.filter(
 				(span) =>
 					span.name === 'frustration' &&
-					span.tags['frustration_type'] === 'rage' &&
-					span.tags['interaction_type'] === 'click',
+					span.attributes['frustration_type'] === 'rage' &&
+					span.attributes['interaction_type'] === 'click',
 			)
 
 			expect(rageClickSpans).toHaveLength(1) // just h1
-			expect(rageClickSpans[0].duration).toBe(0)
+			expect(rageClickSpans[0]).toHaveSpanDuration(0)
 
 			expect(recordPage.receivedSpans.filter(({ name }) => name === 'click')).toHaveLength(8)
 		})
@@ -129,14 +131,14 @@ test.describe('Frustration signals', () => {
 			const errorClickSpans = recordPage.receivedSpans.filter(errorClickFilter)
 
 			expect(errorClickSpans).toHaveLength(1)
-			expect(errorClickSpans[0].duration).toBeGreaterThanOrEqual(0)
-			expect(errorClickSpans[0].tags['component']).toBe('user-interaction')
-			expect(errorClickSpans[0].tags['error.message']).toBe('async error from click')
-			expect(errorClickSpans[0].tags['error.object']).toBe('ReferenceError')
-			expect(errorClickSpans[0].tags['error.source']).toBe('onerror')
-			expect(errorClickSpans[0].tags['target_xpath']).toBeDefined()
-			expect(errorClickSpans[0].tags['error.span_id']).toBeDefined()
-			expect(errorClickSpans[0].tags['error.trace_id']).toBeUndefined()
+			expect(errorClickSpans[0]).toHaveSpanDurationGreaterThanOrEqual(0)
+			expect(errorClickSpans[0]).toHaveSpanAttribute('component', 'user-interaction')
+			expect(errorClickSpans[0]).toHaveSpanAttribute('error.message', 'async error from click')
+			expect(errorClickSpans[0]).toHaveSpanAttribute('error.object', 'ReferenceError')
+			expect(errorClickSpans[0]).toHaveSpanAttribute('error.source', 'onerror')
+			expect(errorClickSpans[0]).toHaveSpanAttribute('target_xpath')
+			expect(errorClickSpans[0]).toHaveSpanAttribute('error.span_id')
+			expect(errorClickSpans[0]).toNotHaveSpanAttribute('error.trace_id')
 		})
 
 		test('Error click does not trigger for clicks without errors', async ({ recordPage }) => {
@@ -158,8 +160,8 @@ test.describe('Frustration signals', () => {
 			const errorClickSpans = recordPage.receivedSpans.filter(errorClickFilter)
 
 			expect(errorClickSpans).toHaveLength(1)
-			expect(errorClickSpans[0].tags['error.message']).toBe('console error from click')
-			expect(errorClickSpans[0].tags['error.source']).toBe('console.error')
+			expect(errorClickSpans[0]).toHaveSpanAttribute('error.message', 'console error from click')
+			expect(errorClickSpans[0]).toHaveSpanAttribute('error.source', 'console.error')
 		})
 	})
 
@@ -183,10 +185,10 @@ test.describe('Frustration signals', () => {
 			const deadClickSpans = recordPage.receivedSpans.filter(deadClickFilter)
 
 			expect(deadClickSpans).toHaveLength(1)
-			expect(deadClickSpans[0].duration).toBeGreaterThanOrEqual(0)
-			expect(deadClickSpans[0].tags['component']).toBe('user-interaction')
-			expect(deadClickSpans[0].tags['target_xpath']).toBeDefined()
-			expect(deadClickSpans[0].tags['click.span_id']).toBeDefined()
+			expect(deadClickSpans[0]).toHaveSpanDurationGreaterThanOrEqual(0)
+			expect(deadClickSpans[0]).toHaveSpanAttribute('component', 'user-interaction')
+			expect(deadClickSpans[0]).toHaveSpanAttribute('target_xpath')
+			expect(deadClickSpans[0]).toHaveSpanAttribute('click.span_id')
 		})
 
 		test('Dead click detects click on link with no response', async ({ recordPage }) => {
@@ -199,7 +201,7 @@ test.describe('Frustration signals', () => {
 			const deadClickSpans = recordPage.receivedSpans.filter(deadClickFilter)
 
 			expect(deadClickSpans).toHaveLength(1)
-			expect(deadClickSpans[0].tags['target_xpath']).toBeDefined()
+			expect(deadClickSpans[0]).toHaveSpanAttribute('target_xpath')
 		})
 
 		test('Dead click does not trigger when DOM mutation occurs', async ({ recordPage }) => {
@@ -239,7 +241,7 @@ test.describe('Frustration signals', () => {
 			const deadClickSpans = recordPage.receivedSpans.filter(deadClickFilter)
 
 			expect(deadClickSpans).toHaveLength(1)
-			expect(deadClickSpans[0].tags['target_xpath']).toBeDefined()
+			expect(deadClickSpans[0]).toHaveSpanAttribute('target_xpath')
 		})
 
 		test('Dead click does not trigger for anchor with href', async ({ recordPage }) => {
@@ -262,9 +264,9 @@ test.describe('Frustration signals', () => {
 			const thrashSpans = recordPage.receivedSpans.filter(thrashedCursorFilter)
 
 			expect(thrashSpans.length).toBeGreaterThanOrEqual(1)
-			expect(thrashSpans[0].duration).toBeGreaterThan(0)
-			expect(thrashSpans[0].tags['component']).toBe('user-interaction')
-			expect(thrashSpans[0].tags['thrashing_score']).toBeDefined()
+			expect(thrashSpans[0]).toHaveSpanDurationGreaterThan(0)
+			expect(thrashSpans[0]).toHaveSpanAttribute('component', 'user-interaction')
+			expect(thrashSpans[0]).toHaveSpanAttribute('thrashing_score')
 		})
 
 		test('does not emit spans when explicitly disabled', async ({ recordPage }) => {

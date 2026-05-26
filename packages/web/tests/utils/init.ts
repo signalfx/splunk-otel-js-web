@@ -16,9 +16,9 @@
  *
  */
 import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base'
+import type { ExportedTestSpan } from '@test-utils/test-span'
 
 import SplunkRum from '../../src'
-import { ZipkinSpan } from '../../src/exporters/zipkin'
 import { SESSION_STORAGE_KEY } from '../../src/managers'
 import { buildInMemorySplunkExporter } from './memory-exporter'
 import { SpanCapturer } from './span-capturer'
@@ -30,6 +30,7 @@ export const initWithDefaultConfig = (capturer: SpanCapturer, additionalOptions 
 		beaconEndpoint: 'http://127.0.0.1:8888/v1/trace',
 		bufferTimeout: 0,
 		deploymentEnvironment: 'my-env',
+		exporter: { otlp: true },
 		globalAttributes: { customerType: 'GOLD' },
 		rumAccessToken: '123-no-warn-spam-in-console',
 		spaMetrics: false,
@@ -48,7 +49,7 @@ export const initWithDefaultConfig = (capturer: SpanCapturer, additionalOptions 
 
 export function initWithSyncPipeline(additionalOptions = {}): {
 	forceFlush: () => Promise<void>
-	getFinishedSpans: () => ZipkinSpan[]
+	getFinishedSpans: () => ExportedTestSpan[]
 } {
 	const { clearSpans, exporter, getFinishedSpans } = buildInMemorySplunkExporter()
 	const processor = new SimpleSpanProcessor(exporter)
@@ -59,7 +60,7 @@ export function initWithSyncPipeline(additionalOptions = {}): {
 		beaconEndpoint: 'http://127.0.0.1:8888/v1/trace',
 		bufferTimeout: 0,
 		deploymentEnvironment: 'my-env',
-		exporter: { factory: () => exporter },
+		exporter: { factory: () => exporter, otlp: true },
 		rumAccessToken: '123-no-warn-spam-in-console',
 		spaMetrics: false,
 		spanProcessor: { factory: () => processor },

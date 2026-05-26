@@ -28,9 +28,9 @@ test.describe('keyboard', () => {
 		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'keydown'))
 		const keydownSpan = recordPage.receivedSpans.find((span) => span.name === 'keydown')
 
-		expect(keydownSpan.tags['component']).toBe('user-interaction')
-		expect(keydownSpan.tags['event_type']).toBe('keydown')
-		expect(keydownSpan.tags['target_element']).toBe('BODY')
-		expect(keydownSpan.tags['target_xpath']).toBe('//html/body')
+		expect(keydownSpan).toHaveSpanAttribute('component', 'user-interaction')
+		expect(keydownSpan).toHaveSpanAttribute('event_type', 'keydown')
+		expect(keydownSpan).toHaveSpanAttribute('target_element', 'BODY')
+		expect(keydownSpan).toHaveSpanAttribute('target_xpath', '//html/body')
 	})
 })

@@ -36,19 +36,20 @@ test.describe('long task', () => {
 		expect(longTaskSpans.length).toBeGreaterThanOrEqual(1)
 
 		for (const span of longTaskSpans) {
-			expect(span.tags['component']).toBe('splunk-longtask')
-			expect(['self', 'unknown'].includes(span.tags['longtask.name'] as string)).toBeTruthy()
-			expect(span.tags['longtask.entry_type']).toBe('longtask')
-			expect(span.tags['longtask.attribution.name']).toBe('unknown')
-			expect(span.tags['longtask.attribution.entry_type']).toBe('taskattribution')
-			expect(span.tags['longtask.attribution.start_time']).toBe('0')
-			expect(span.tags['longtask.attribution.duration']).toBe('0')
-			expect(span.tags['longtask.attribution.container_type']).toBe('window')
-			expect(span.tags['longtask.attribution.container_src']).toBe('')
-			expect(span.tags['longtask.attribution.container_id']).toBe('')
-			expect(span.tags['longtask.attribution.container_name']).toBe('')
+			expect(span).toHaveSpanAttribute('component', 'splunk-longtask')
+			expect(span).toHaveSpanAttribute('longtask.entry_type', 'longtask')
+			expect(span).toHaveSpanAttribute('longtask.attribution.name', 'unknown')
+			expect(span).toHaveSpanAttribute('longtask.attribution.entry_type', 'taskattribution')
+			expect(span).toHaveSpanAttribute('longtask.attribution.start_time', 0)
+			expect(span).toHaveSpanAttribute('longtask.attribution.duration', 0)
+			expect(span).toHaveSpanAttribute('longtask.attribution.container_type', 'window')
+			expect(span).toHaveSpanAttribute('longtask.attribution.container_src', '')
+			expect(span).toHaveSpanAttribute('longtask.attribution.container_id', '')
+			expect(span).toHaveSpanAttribute('longtask.attribution.container_name', '')
 
-			const longTaskSpanDuration = Number.parseFloat(span.tags['longtask.duration'] as string)
+			expect(['self', 'unknown'].includes(String(span.attributes['longtask.name']))).toBeTruthy()
+
+			const longTaskSpanDuration = Number.parseFloat(String(span.attributes['longtask.duration']))
 			// Long Tasks API spec defines 50ms as the minimum threshold, so exactly 50 is valid
 			expect(
 				longTaskSpanDuration,
@@ -59,7 +60,7 @@ test.describe('long task', () => {
 				`Duration (${longTaskSpanDuration}) must be less than 1s by definition.`,
 			).toBeLessThan(1000)
 
-			expect(span.duration, 'Span duration matches longtask duration').toBe(longTaskSpanDuration * 1000)
+			expect(span).toHaveSpanDuration(longTaskSpanDuration * 1000)
 		}
 
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
@@ -76,8 +77,8 @@ test.describe('long task', () => {
 
 		// Browser initialization may produce additional longtasks beyond the one explicitly generated in buffered.ejs
 		expect(longTaskSpans.length).toBeGreaterThanOrEqual(1)
-		const longTaskSpanDuration = Number.parseFloat(longTaskSpans[0].tags['longtask.duration'] as string)
-		expect(longTaskSpans[0].duration, 'Span duration matches longtask duration').toBe(longTaskSpanDuration * 1000)
+		const longTaskSpanDuration = Number.parseFloat(String(longTaskSpans[0].attributes['longtask.duration']))
+		expect(longTaskSpans[0]).toHaveSpanDuration(longTaskSpanDuration * 1000)
 	})
 
 	test('can be disabled', async ({ browserName, recordPage }) => {
