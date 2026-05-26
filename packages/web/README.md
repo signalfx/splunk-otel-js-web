@@ -177,6 +177,7 @@ Choose a versioning strategy based on your needs:
 | `instrumentations.fetch`              | `boolean\|Config`                                     | ❌       | `true`                                         | Fetch API monitoring                                                                                                                                                                                                                                                                                                                                                    |
 | `instrumentations.frustrationSignals` | `boolean\|Config`                                     | ❌       | `true`                                         | User frustration detection (rage clicks enabled by default, error clicks and thrashed cursor opt-in). See [Frustration Signals](#frustration-signals) below                                                                                                                                                                                                             |
 | `instrumentations.interactions`       | `boolean\|Config`                                     | ❌       | `true`                                         | User interaction tracking                                                                                                                                                                                                                                                                                                                                               |
+| `instrumentations.loaf`               | `boolean\|Config`                                     | ❌       | `false`                                        | Long Animation Frames tracking in supported Chromium browsers. When enabled and supported, this suppresses longtask spans for the page session.                                                                                                                                                                                                                         |
 | `instrumentations.longtask`           | `boolean\|Config`                                     | ❌       | `true`                                         | Long task detection (>50ms)                                                                                                                                                                                                                                                                                                                                             |
 | `instrumentations.postload`           | `boolean\|Config`                                     | ❌       | `true`                                         | Post-load resource timing                                                                                                                                                                                                                                                                                                                                               |
 | `instrumentations.socketio`           | `boolean\|Config`                                     | ❌       | `false`                                        | Socket.IO client monitoring                                                                                                                                                                                                                                                                                                                                             |
@@ -184,6 +185,26 @@ Choose a versioning strategy based on your needs:
 | `instrumentations.webvitals`          | `boolean\|Config`                                     | ❌       | `true`                                         | Web Vitals collection                                                                                                                                                                                                                                                                                                                                                   |
 | `instrumentations.websocket`          | `boolean\|Config`                                     | ❌       | `false`                                        | WebSocket monitoring                                                                                                                                                                                                                                                                                                                                                    |
 | `instrumentations.xhr`                | `boolean\|Config`                                     | ❌       | `true`                                         | XMLHttpRequest monitoring                                                                                                                                                                                                                                                                                                                                               |
+
+### Long Animation Frames
+
+The `loaf` instrumentation reports browser Long Animation Frames as `long-animation-frame` spans. It is opt-in because browser support is currently Chromium-only.
+
+```typescript
+SplunkRum.init({
+	beaconEndpoint: 'https://rum-ingest.example.com/v1/rum',
+	rumAccessToken: '<token>',
+	instrumentations: {
+		loaf: true,
+	},
+})
+```
+
+When `instrumentations.loaf` is enabled and the browser supports `long-animation-frame`, the default `longtask` instrumentation is suppressed for that page session to avoid double-reporting overlapping main-thread work. In browsers without LoAF support, longtask behavior is unchanged unless `instrumentations.longtask` is explicitly disabled.
+
+LoAF spans include frame timing attributes such as `loaf.duration`, `loaf.blocking_duration`, `loaf.render_start`, `loaf.style_and_layout_start`, and `loaf.first_ui_event_timestamp`. They also include bounded script attribution: `loaf.script_count` reports the original number of scripts, while only the top three scripts by duration are exported as `loaf.script[0..2].*` attributes. Script source URLs have query strings and fragments stripped for HTTP(S) URLs; non-HTTP values such as `blob:`, `data:`, empty strings, and `<anonymous>` are preserved as reported by the browser.
+
+To bound payload volume, the SDK emits at most 100 LoAF spans per page session. Additional LoAF entries are dropped silently.
 
 ### Privacy Configuration
 
@@ -372,6 +393,7 @@ SplunkRum.init({
 			thrashedCursor: true, // Opt-in: disabled by default
 		},
 		interactions: true,
+		loaf: false, // Opt-in: disabled by default
 		longtask: true,
 		postload: true,
 		webvitals: true,

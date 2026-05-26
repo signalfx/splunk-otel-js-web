@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Buffered LoAF tracking test</title>
+	<script id="scenario">
+		const LOAF_DURATION = 80;
+
+		function generateBufferedLoaf() {
+			const startingTimestamp = performance.now();
+			while (performance.now() - startingTimestamp < LOAF_DURATION) {}
+		}
+
+		generateBufferedLoaf();
+	</script>
+	<%- renderAgent({ instrumentations: { loaf: true } }) %>
+</head>
+<body>
+	<h1>Buffered LoAF tracking test</h1>
+
+	<pre id="scenarioDisplay"></pre>
+	<script>scenarioDisplay.innerHTML = scenario.innerHTML;</script>
+</body>
+</html>

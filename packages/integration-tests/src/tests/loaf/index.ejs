@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>LoAF tracking test</title>
+	<%- renderAgent({ instrumentations: { loaf: true } }) %>
+</head>
+<body>
+	<h1>LoAF tracking test</h1>
+
+	<button type="button" id="btnLoaf">Produce a LoAF event</button>
+
+	<pre id="scenarioDisplay"></pre>
+	<script id="scenario">
+		const SCRIPT_COUNT = 5;
+		const SCRIPT_DURATION = 15;
+
+		function burn(duration) {
+			const startingTimestamp = performance.now();
+			while (performance.now() - startingTimestamp < duration) {}
+		}
+
+		function generateLoaf() {
+			window.testing = true;
+			let remainingCallbacks = SCRIPT_COUNT;
+
+			for (let index = 0; index < SCRIPT_COUNT; index += 1) {
+				requestAnimationFrame(() => {
+					burn(SCRIPT_DURATION + index);
+					remainingCallbacks -= 1;
+
+					if (remainingCallbacks === 0) {
+						setTimeout(() => {
+							window.testing = false;
+						}, 0);
+					}
+				});
+			}
+		}
+
+		document.querySelector('#btnLoaf').addEventListener('click', generateLoaf);
+	</script>
+	<script>scenarioDisplay.innerHTML = scenario.innerHTML;</script>
+</body>
+</html>

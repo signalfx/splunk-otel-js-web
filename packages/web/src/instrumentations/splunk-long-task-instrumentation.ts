@@ -21,6 +21,10 @@ import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instr
 import { SessionManager } from '../managers'
 import { SplunkOtelWebConfig } from '../types'
 import { VERSION } from '../version'
+import {
+	isLoafInstrumentationEnabled,
+	isLongAnimationFrameSupported,
+} from './splunk-long-animation-frame-instrumentation'
 
 const LONGTASK_PERFORMANCE_TYPE = 'longtask'
 const MODULE_NAME = 'splunk-longtask'
@@ -50,6 +54,10 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
 
 	enable(): void {
 		if (!this.isSupported()) {
+			return
+		}
+
+		if (this.shouldSuppressForLoaf()) {
 			return
 		}
 
@@ -90,10 +98,12 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
 	}
 
 	// TODO: change name, _isSupported is taken by parent
-	private isSupported() {
+	private isSupported(): boolean {
 		// note: PerformanceObserver.supportedEntryTypes has better browser support than LongTask
-		const supportedEntryTypes = window.PerformanceObserver && PerformanceObserver.supportedEntryTypes
-		const effectiveEntryTypes = supportedEntryTypes || []
-		return effectiveEntryTypes.includes(LONGTASK_PERFORMANCE_TYPE)
+		return (window.PerformanceObserver?.supportedEntryTypes ?? []).includes(LONGTASK_PERFORMANCE_TYPE)
+	}
+
+	private shouldSuppressForLoaf(): boolean {
+		return isLoafInstrumentationEnabled(this.initOptions.instrumentations?.loaf) && isLongAnimationFrameSupported()
 	}
 }

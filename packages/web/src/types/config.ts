@@ -61,6 +61,7 @@ export interface SplunkOtelWebOptionsInstrumentations {
 	fetch?: boolean | SplunkFetchInstrumentationConfig
 	frustrationSignals?: boolean | SplunkFrustrationSignalsInstrumentationConfig
 	interactions?: boolean | SplunkUserInteractionInstrumentationConfig
+	loaf?: boolean | InstrumentationConfig
 	longtask?: boolean | InstrumentationConfig
 	postload?: boolean | SplunkPostDocLoadResourceInstrumentationConfig
 	socketio?: boolean | SocketIoClientInstrumentationConfig
