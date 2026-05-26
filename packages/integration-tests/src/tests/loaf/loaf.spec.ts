@@ -32,29 +32,29 @@ test.describe('long animation frame', () => {
 		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === LOAF_SPAN_NAME))
 
 		const loafSpan = getLoafSpans(recordPage)[0]
-		const tags = loafSpan.tags
-		expect(tags['component']).toBe('splunk-loaf')
-		expect(tags['loaf.name']).toBe(LOAF_SPAN_NAME)
-		expect(tags['loaf.entry_type']).toBe(LOAF_SPAN_NAME)
-		expectNumericTag(tags, 'loaf.duration')
-		expectNumericTag(tags, 'loaf.blocking_duration')
-		expectNumericTag(tags, 'loaf.render_start')
-		expectNumericTag(tags, 'loaf.style_and_layout_start')
-		expectNumericTag(tags, 'loaf.first_ui_event_timestamp')
-		expectNumericTag(tags, 'loaf.script_count')
+		const attributes = loafSpan.attributes
+		expect(attributes['component']).toBe('splunk-loaf')
+		expect(attributes['loaf.name']).toBe(LOAF_SPAN_NAME)
+		expect(attributes['loaf.entry_type']).toBe(LOAF_SPAN_NAME)
+		expectNumericAttribute(attributes, 'loaf.duration')
+		expectNumericAttribute(attributes, 'loaf.blocking_duration')
+		expectNumericAttribute(attributes, 'loaf.render_start')
+		expectNumericAttribute(attributes, 'loaf.style_and_layout_start')
+		expectNumericAttribute(attributes, 'loaf.first_ui_event_timestamp')
+		expectNumericAttribute(attributes, 'loaf.script_count')
 
-		const scriptCount = Number.parseFloat(String(tags['loaf.script_count']))
+		const scriptCount = Number.parseFloat(String(attributes['loaf.script_count']))
 		expect(scriptCount).toBeGreaterThan(0)
 		for (let index = 0; index < Math.min(scriptCount, 3); index += 1) {
-			expectNumericTag(tags, `loaf.script[${index}].duration`)
-			expectStringTag(tags, `loaf.script[${index}].invoker`)
-			expectStringTag(tags, `loaf.script[${index}].invoker_type`)
-			expectStringTag(tags, `loaf.script[${index}].source_url`)
-			expectStringTag(tags, `loaf.script[${index}].source_function_name`)
-			expectNumericTag(tags, `loaf.script[${index}].forced_style_and_layout_duration`)
+			expectNumericAttribute(attributes, `loaf.script[${index}].duration`)
+			expectStringAttribute(attributes, `loaf.script[${index}].invoker`)
+			expectStringAttribute(attributes, `loaf.script[${index}].invoker_type`)
+			expectStringAttribute(attributes, `loaf.script[${index}].source_url`)
+			expectStringAttribute(attributes, `loaf.script[${index}].source_function_name`)
+			expectNumericAttribute(attributes, `loaf.script[${index}].forced_style_and_layout_duration`)
 		}
 
-		expect(tags['loaf.script[3].duration']).toBeUndefined()
+		expect(attributes['loaf.script[3].duration']).toBeUndefined()
 	})
 
 	test('reports buffered LoAF entries', async ({ browserName, recordPage }) => {
@@ -64,7 +64,7 @@ test.describe('long animation frame', () => {
 		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === LOAF_SPAN_NAME))
 
 		const loafSpan = getLoafSpans(recordPage)[0]
-		const duration = Number.parseFloat(String(loafSpan.tags['loaf.duration']))
+		const duration = Number.parseFloat(String(loafSpan.attributes['loaf.duration']))
 		expect(duration).toBeGreaterThanOrEqual(50)
 		expect(loafSpan.duration).toBeCloseTo(duration * 1000, 0)
 	})
@@ -111,11 +111,11 @@ function getLoafSpans(recordPage: RecordPage) {
 	return recordPage.receivedSpans.filter((span) => span.name === LOAF_SPAN_NAME)
 }
 
-function expectNumericTag(tags: Record<string, unknown>, name: string): void {
-	expect(tags[name]).toBeDefined()
-	expect(Number.isFinite(Number.parseFloat(String(tags[name])))).toBeTruthy()
+function expectNumericAttribute(attributes: Record<string, unknown>, name: string): void {
+	expect(attributes[name]).toBeDefined()
+	expect(Number.isFinite(Number.parseFloat(String(attributes[name])))).toBeTruthy()
 }
 
-function expectStringTag(tags: Record<string, unknown>, name: string): void {
-	expect(typeof tags[name]).toBe('string')
+function expectStringAttribute(attributes: Record<string, unknown>, name: string): void {
+	expect(typeof attributes[name]).toBe('string')
 }
