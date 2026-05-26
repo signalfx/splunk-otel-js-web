@@ -21,10 +21,7 @@ import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instr
 import { SessionManager } from '../managers'
 import { SplunkOtelWebConfig } from '../types'
 import { VERSION } from '../version'
-import {
-	isLoafInstrumentationEnabled,
-	isLongAnimationFrameSupported,
-} from './splunk-long-animation-frame-instrumentation'
+import { isLoafInstrumentationEnabled, isLongAnimationFrameSupported } from './loaf'
 
 const LONGTASK_PERFORMANCE_TYPE = 'longtask'
 const MODULE_NAME = 'splunk-longtask'

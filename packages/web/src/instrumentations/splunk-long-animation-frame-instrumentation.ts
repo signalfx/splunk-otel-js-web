@@ -16,118 +16,31 @@
  *
  */
 
-import { diag, Span } from '@opentelemetry/api'
+import { diag } from '@opentelemetry/api'
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 
 import { SessionManager } from '../managers'
 import { SplunkOtelWebConfig } from '../types'
 import { VERSION } from '../version'
+import {
+	isLongAnimationFrameSupported,
+	LOAF_MODULE_NAME,
+	LONG_ANIMATION_FRAME_PERFORMANCE_TYPE,
+	MAX_LOAF_SPANS_PER_SESSION,
+	type PerformanceLongAnimationFrameTimingStable,
+	setLoafEntryAttributes,
+} from './loaf'
 
-export const LONG_ANIMATION_FRAME_PERFORMANCE_TYPE = 'long-animation-frame'
-export const MAX_LOAF_SCRIPT_SUMMARIES = 3
-export const MAX_LOAF_SPANS_PER_SESSION = 100
-
-const MODULE_NAME = 'splunk-loaf'
-const SCHEME_PATTERN = /^[a-z][a-z\d+.-]*:/i
-
-export type PerformanceScriptTimingStable = PerformanceEntry & {
-	forcedStyleAndLayoutDuration: number
-	invoker: string
-	invokerType: string
-	sourceFunctionName: string
-	sourceURL: string
-}
-
-type PerformanceLongAnimationFrameTimingStable = PerformanceEntry & {
-	blockingDuration: number
-	firstUIEventTimestamp: number
-	renderStart: number
-	scripts: readonly PerformanceScriptTimingStable[]
-	styleAndLayoutStart: number
-}
-
-type ScriptSummary = {
-	duration: number
-	forcedStyleAndLayoutDuration: number
-	invoker: string
-	invokerType: string
-	sourceFunctionName: string
-	sourceURL: string
-}
-
-export function isLongAnimationFrameSupported(): boolean {
-	return (window.PerformanceObserver?.supportedEntryTypes ?? []).includes(LONG_ANIMATION_FRAME_PERFORMANCE_TYPE)
-}
-
-export function isLoafInstrumentationEnabled(config: boolean | InstrumentationConfig | undefined): boolean {
-	if (config === undefined || config === false) {
-		return false
-	}
-
-	if (typeof config === 'object' && config.enabled === false) {
-		return false
-	}
-
-	return true
-}
-
-export function normalizeLoafSourceUrl(sourceUrl: string): string {
-	if (!sourceUrl || sourceUrl.startsWith('<') || /\s/.test(sourceUrl)) {
-		return sourceUrl
-	}
-
-	const lowercaseSourceUrl = sourceUrl.toLowerCase()
-	if (
-		SCHEME_PATTERN.test(sourceUrl) &&
-		!lowercaseSourceUrl.startsWith('http:') &&
-		!lowercaseSourceUrl.startsWith('https:')
-	) {
-		return sourceUrl
-	}
-
-	try {
-		const url = new URL(sourceUrl, location.origin)
-		if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-			return sourceUrl
-		}
-
-		url.search = ''
-		url.hash = ''
-		return url.href
-	} catch {
-		return sourceUrl
-	}
-}
-
-export function getLoafScriptSummaries(scripts: readonly PerformanceScriptTimingStable[]): ScriptSummary[] {
-	return scripts
-		.map((script, index) => ({ index, script }))
-		.toSorted((left, right) => {
-			const durationDelta = right.script.duration - left.script.duration
-			return durationDelta || left.index - right.index
-		})
-		.slice(0, MAX_LOAF_SCRIPT_SUMMARIES)
-		.map(({ script }) => ({
-			duration: script.duration,
-			forcedStyleAndLayoutDuration: script.forcedStyleAndLayoutDuration,
-			invoker: script.invoker,
-			invokerType: script.invokerType,
-			sourceFunctionName: script.sourceFunctionName,
-			sourceURL: normalizeLoafSourceUrl(script.sourceURL),
-		}))
-}
-
-function setNumberAttribute(span: Span, name: string, value: number): void {
-	if (Number.isFinite(value)) {
-		span.setAttribute(name, value)
-	}
-}
-
-function setStringAttribute(span: Span, name: string, value: string): void {
-	if (typeof value === 'string') {
-		span.setAttribute(name, value)
-	}
-}
+export {
+	getLoafScriptSummaries,
+	isLoafInstrumentationEnabled,
+	isLongAnimationFrameSupported,
+	LONG_ANIMATION_FRAME_PERFORMANCE_TYPE,
+	MAX_LOAF_SCRIPT_SUMMARIES,
+	MAX_LOAF_SPANS_PER_SESSION,
+	normalizeLoafSourceUrl,
+} from './loaf'
+export type { PerformanceScriptTimingStable } from './loaf'
 
 export class SplunkLongAnimationFrameInstrumentation extends InstrumentationBase {
 	private createdSpanCount = 0
@@ -139,7 +52,7 @@ export class SplunkLongAnimationFrameInstrumentation extends InstrumentationBase
 		_otelConfig: SplunkOtelWebConfig,
 		public sessionManager?: SessionManager,
 	) {
-		super(MODULE_NAME, VERSION, Object.assign({}, config))
+		super(LOAF_MODULE_NAME, VERSION, Object.assign({}, config))
 	}
 
 	disable(): void {
@@ -180,28 +93,7 @@ export class SplunkLongAnimationFrameInstrumentation extends InstrumentationBase
 			startTime: entry.startTime,
 		})
 
-		span.setAttribute('component', MODULE_NAME)
-		setStringAttribute(span, 'loaf.name', entry.name)
-		setStringAttribute(span, 'loaf.entry_type', entry.entryType)
-		setNumberAttribute(span, 'loaf.duration', entry.duration)
-		setNumberAttribute(span, 'loaf.blocking_duration', entry.blockingDuration)
-		setNumberAttribute(span, 'loaf.render_start', entry.renderStart)
-		setNumberAttribute(span, 'loaf.style_and_layout_start', entry.styleAndLayoutStart)
-		setNumberAttribute(span, 'loaf.first_ui_event_timestamp', entry.firstUIEventTimestamp)
-
-		const scripts = Array.isArray(entry.scripts) ? entry.scripts : []
-		setNumberAttribute(span, 'loaf.script_count', scripts.length)
-
-		getLoafScriptSummaries(scripts).forEach((script, index) => {
-			const prefix = `loaf.script[${index}]`
-			setNumberAttribute(span, `${prefix}.duration`, script.duration)
-			setStringAttribute(span, `${prefix}.invoker`, script.invoker)
-			setStringAttribute(span, `${prefix}.invoker_type`, script.invokerType)
-			setStringAttribute(span, `${prefix}.source_url`, script.sourceURL)
-			setStringAttribute(span, `${prefix}.source_function_name`, script.sourceFunctionName)
-			setNumberAttribute(span, `${prefix}.forced_style_and_layout_duration`, script.forcedStyleAndLayoutDuration)
-		})
-
+		setLoafEntryAttributes(span, entry)
 		span.end(entry.startTime + entry.duration)
 	}
 }
