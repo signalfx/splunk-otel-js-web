@@ -101,4 +101,28 @@ test.describe('spa-metrics', () => {
 		expect(routeChangeSpans[1]).toHaveSpanAttributeContaining('location.href', '#page2')
 		expect(routeChangeSpans[2]).toHaveSpanAttributeContaining('location.href', '#page3')
 	})
+
+	test('routeChange span is marked as interrupted when new navigation occurs during loading', async ({
+		recordPage,
+	}) => {
+		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+
+		// Start navigation with a slow fetch (2s delay)
+		await recordPage.locator('#btnNavigateWithSlowFetch').click()
+
+		// Wait for the fetch to be in-flight before interrupting
+		await recordPage.waitForTimeout(200)
+
+		// Trigger another navigation while fetch is still in-flight
+		await recordPage.locator('#btnNavigateInterrupt').click()
+
+		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'routeChange').length === 2)
+
+		const routeChangeSpans = recordPage.receivedSpans.filter((span) => span.name === 'routeChange')
+
+		expect(routeChangeSpans).toHaveLength(2)
+		expect(routeChangeSpans[0]).toHaveSpanAttributeContaining('location.href', '#slow-fetch')
+		expect(routeChangeSpans[0]).toHaveSpanAttribute('navigation.interrupted', true)
+		expect(routeChangeSpans[1]).toHaveSpanAttributeContaining('location.href', '#interrupted')
+	})
 })

@@ -11,6 +11,8 @@
 	<button type="button" id="btnNavigate">Navigate</button>
 	<button type="button" id="btnNavigateWithFetch">Navigate with fetch</button>
 	<button type="button" id="btnNavigateWithImage">Navigate with image</button>
+	<button type="button" id="btnNavigateWithSlowFetch">Navigate with slow fetch</button>
+	<button type="button" id="btnNavigateInterrupt">Interrupt navigation</button>
 
 	<div id="content"></div>
 
@@ -35,6 +37,15 @@
 			const img = document.createElement('img');
 			img.src = 'assets/splunk-black.png?delay=300';
 			document.getElementById('content').appendChild(img);
+		});
+
+		document.querySelector('#btnNavigateWithSlowFetch').addEventListener('click', function () {
+			fetch('/some-data?delay=2000');
+			location.hash = 'slow-fetch';
+		});
+
+		document.querySelector('#btnNavigateInterrupt').addEventListener('click', function () {
+			location.hash = 'interrupted';
 		});
 	</script>
 </body>

@@ -211,4 +211,37 @@ describe('SpaMetricsManager', () => {
 
 		manager.stop()
 	})
+
+	it('returns interrupted=true when new navigation occurs while resources are loading', async () => {
+		const manager = new SpaMetricsManager({ quietTime: 100 })
+		manager.start()
+
+		// @ts-expect-error onResourceStateChange is private. We use it for testing.
+		const onResourceStateChange = manager.onResourceStateChange
+
+		const firstPromise = manager.waitForPageLoad({ startTime: performance.now() })
+
+		// Simulate a resource still loading
+		onResourceStateChange({ state: ResourceState.DISCOVERED, url: 'https://example.com/api' })
+
+		// Trigger a new navigation while resource is still loading
+		manager.waitForPageLoad({ startTime: performance.now() })
+
+		const firstResult = await firstPromise
+		expect(firstResult.interrupted).toBe(true)
+
+		manager.stop()
+	})
+
+	it('returns interrupted=false when quiet period expires naturally', async () => {
+		const manager = new SpaMetricsManager({ quietTime: 100 })
+		manager.start()
+
+		const promise = manager.waitForPageLoad({ startTime: performance.now() })
+		const result = await promise
+
+		expect(result.interrupted).toBe(false)
+
+		manager.stop()
+	})
 })

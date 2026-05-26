@@ -42,6 +42,8 @@ Shared test utilities live in `tests/utils/` at the repo root and are imported v
 
 Run the smallest relevant test first, then `pnpm run test:unit` or `pnpm run test:e2e` before opening a PR.
 
+**Important:** Integration tests load the compiled webpack bundle (`packages/web/dist/artifacts/splunk-otel-web.js`), not TypeScript source. After changing code in `packages/web/src`, you must rebuild (`pnpm --filter @splunk/otel-web run build`) before running integration tests, otherwise the tests will use stale code.
+
 ## Commit & Pull Request Guidelines
 
 Recent history uses Conventional Commits, for example `feat: enable otlp by default`, `chore(deps): bump next from 16.2.3 to 16.2.6`, and `chore(release): v3.0.0`.

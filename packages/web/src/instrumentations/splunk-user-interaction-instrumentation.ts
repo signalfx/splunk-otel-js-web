@@ -197,11 +197,14 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 		if (this.spaMetricsManager) {
 			// Wait for all in-flight resources (XHR, fetch, media) to finish loading,
 			// then resolve after a quiet period with no new network activity.
-			const { pct, timestampOfLastLoadedResource } = await this.spaMetricsManager.waitForPageLoad({
+			const { interrupted, pct, timestampOfLastLoadedResource } = await this.spaMetricsManager.waitForPageLoad({
 				startTime: performance.now(),
 			})
 
 			span.setAttribute('page_completion_time', pct)
+			if (interrupted) {
+				span.setAttribute('navigation.interrupted', true)
+			}
 			span.end(now + pct)
 			diag.debug('Route change span ended', { pct, span, timestampOfLastLoadedResource })
 		} else {

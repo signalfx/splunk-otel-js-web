@@ -20,7 +20,7 @@ import { diag } from '@opentelemetry/api'
 
 const DEFAULT_QUIET_TIME = 1000
 
-type ResolveValue = { pct: number; timestampOfLastLoadedResource: number }
+type ResolveValue = { interrupted: boolean; pct: number; timestampOfLastLoadedResource: number }
 
 export class QuietPeriodAwaiter {
 	readonly promise: Promise<ResolveValue>
@@ -61,6 +61,7 @@ export class QuietPeriodAwaiter {
 		const pct = endTimestamp - this.startTime
 		diag.debug('QuietPeriodAwaiter: Complete', { pct })
 		this.resolve({
+			interrupted: areResourcesStillLoading,
 			pct,
 			timestampOfLastLoadedResource: endTimestamp,
 		})
@@ -84,6 +85,7 @@ export class QuietPeriodAwaiter {
 			if (!this.isResolved) {
 				this.isResolved = true
 				this.resolve({
+					interrupted: false,
 					pct: Math.max(resourceLoadedTimestamp - this.startTime, 0),
 					timestampOfLastLoadedResource: resourceLoadedTimestamp,
 				})

@@ -158,8 +158,11 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 
 				if (this.documentLoadMetricsPromise) {
 					void this.documentLoadMetricsPromise
-						.then(({ pct }) => {
+						.then(({ interrupted, pct }) => {
 							span.setAttribute('page_completion_time', pct)
+							if (interrupted) {
+								span.setAttribute('navigation.interrupted', true)
+							}
 							_superEndSpan(span, performanceName, entries)
 						})
 						.catch((error) => {
