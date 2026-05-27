@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-import { initSocketIo, initWebSocketServer } from './servers'
+import { initHttpServer, initSocketIo, initWebSocketServer } from './servers'
 
 let teardown = false
 let isRunning = false
@@ -25,6 +25,7 @@ export default function globalSetup() {
 		return
 	}
 
+	const closeHttpServer = initHttpServer()
 	const closeSocketIoServer = initSocketIo()
 	const closeWebSocketServer = initWebSocketServer()
 
@@ -37,6 +38,6 @@ export default function globalSetup() {
 
 		teardown = true
 
-		await Promise.all([closeSocketIoServer(), closeWebSocketServer()])
+		await Promise.all([closeHttpServer(), closeSocketIoServer(), closeWebSocketServer()])
 	}
 }
