@@ -16,19 +16,8 @@
  *
  */
 
-const SCHEME_PATTERN = /^[a-z][a-z\d+.-]*:/i
-
 export function normalizeLoafSourceUrl(sourceUrl: string): string {
 	if (!sourceUrl || sourceUrl.startsWith('<') || /\s/.test(sourceUrl)) {
-		return sourceUrl
-	}
-
-	const lowercaseSourceUrl = sourceUrl.toLowerCase()
-	if (
-		SCHEME_PATTERN.test(sourceUrl) &&
-		!lowercaseSourceUrl.startsWith('http:') &&
-		!lowercaseSourceUrl.startsWith('https:')
-	) {
 		return sourceUrl
 	}
 
