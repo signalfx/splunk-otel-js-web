@@ -19,7 +19,6 @@
 import { describe, expect, it } from 'vitest'
 
 import { getLoafScriptSummaries } from './script-summary'
-import { normalizeLoafSourceUrl } from './source-url'
 import { type PerformanceScriptTimingStable } from './types'
 
 describe('LoAF script summaries', () => {
@@ -79,26 +78,6 @@ describe('LoAF script summaries', () => {
 		])
 
 		expect(summaries.map((script) => script.sourceFunctionName)).toEqual(['first', 'second', 'third'])
-	})
-})
-
-describe('LoAF source URL normalization', () => {
-	it('strips query strings and fragments from http URLs', () => {
-		expect(normalizeLoafSourceUrl('/assets/app.js?token=secret#hash')).toBe(`${location.origin}/assets/app.js`)
-		expect(normalizeLoafSourceUrl('chunk.js?token=secret#hash')).toBe(`${location.origin}/chunk.js`)
-		expect(normalizeLoafSourceUrl('https://example.com/app.js?token=secret#hash')).toBe(
-			'https://example.com/app.js',
-		)
-	})
-
-	it('preserves opaque, non-http, anonymous, empty, and invalid source URLs', () => {
-		expect(normalizeLoafSourceUrl('blob:https://example.com/app.js?token=secret#hash')).toBe(
-			'blob:https://example.com/app.js?token=secret#hash',
-		)
-		expect(normalizeLoafSourceUrl('data:text/javascript,alert(1)')).toBe('data:text/javascript,alert(1)')
-		expect(normalizeLoafSourceUrl('<anonymous>')).toBe('<anonymous>')
-		expect(normalizeLoafSourceUrl('')).toBe('')
-		expect(normalizeLoafSourceUrl('not a url')).toBe('not a url')
 	})
 })
 

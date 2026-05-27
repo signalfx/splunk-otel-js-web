@@ -24,8 +24,6 @@ import { getLoafScriptSummaries } from './script-summary'
 import { type PerformanceLongAnimationFrameTimingStable } from './types'
 
 export function setLoafEntryAttributes(span: Span, entry: PerformanceLongAnimationFrameTimingStable): void {
-	console.log('😅 dbg: LOAF entry', entry)
-
 	span.setAttribute('component', LOAF_MODULE_NAME)
 	setStringAttribute(span, 'loaf.name', entry.name)
 	setStringAttribute(span, 'loaf.entry_type', entry.entryType)

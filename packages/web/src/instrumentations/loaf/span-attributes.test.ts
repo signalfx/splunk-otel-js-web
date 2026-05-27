@@ -127,6 +127,29 @@ describe('LoAF span attributes', () => {
 			'loaf.style_and_layout_start': 0,
 		})
 	})
+
+	it('falls back for malformed runtime entry shapes', () => {
+		const { attributes, span } = createSpanMock()
+
+		setLoafEntryAttributes(span, {
+			...createLoafEntry(),
+			entryType: 1,
+			name: 2,
+			scripts: 'not scripts',
+		} as unknown as PerformanceLongAnimationFrameTimingStable)
+
+		expect(attributes).toEqual({
+			'component': 'splunk-loaf',
+			'loaf.blocking_duration': 111.4,
+			'loaf.duration': 161.38,
+			'loaf.first_ui_event_timestamp': 0,
+			'loaf.paint_time': 0,
+			'loaf.presentation_time': 0,
+			'loaf.render_start': 0,
+			'loaf.script_count': 0,
+			'loaf.style_and_layout_start': 0,
+		})
+	})
 })
 
 function createLoafEntry({
