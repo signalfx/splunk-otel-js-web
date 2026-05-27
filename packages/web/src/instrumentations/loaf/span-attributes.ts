@@ -53,7 +53,7 @@ export function setLoafEntryAttributes(span: Span, entry: PerformanceLongAnimati
 
 function setNumberAttribute(span: Span, name: string, value: number): void {
 	if (isFiniteNumber(value)) {
-		span.setAttribute(name, value)
+		span.setAttribute(name, Math.round(value * 100) / 100)
 	}
 }
 

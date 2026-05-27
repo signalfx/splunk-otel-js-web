@@ -95,19 +95,19 @@ describe('long animation frame instrumentation', () => {
 		instrumentation.enable()
 		mockObservers[0].emit([createLoafEntry({ scripts: [] })])
 
-		expect(span.end).toHaveBeenCalledWith(130)
+		expect(span.end).toHaveBeenCalledWith(688.6810000119209)
 		expect(attributes).toEqual({
 			'component': 'splunk-loaf',
-			'loaf.blocking_duration': 70,
-			'loaf.duration': 120,
+			'loaf.blocking_duration': 111.4,
+			'loaf.duration': 161.38,
 			'loaf.entry_type': 'long-animation-frame',
 			'loaf.first_ui_event_timestamp': 0,
 			'loaf.name': 'long-animation-frame',
-			'loaf.paint_time': 90,
-			'loaf.presentation_time': 100,
-			'loaf.render_start': 30,
+			'loaf.paint_time': 0,
+			'loaf.presentation_time': 0,
+			'loaf.render_start': 0,
 			'loaf.script_count': 0,
-			'loaf.style_and_layout_start': 60,
+			'loaf.style_and_layout_start': 0,
 		})
 	})
 
@@ -121,9 +121,9 @@ describe('long animation frame instrumentation', () => {
 				scripts: [
 					createScript({ duration: 5, sourceURL: '/small.js?token=secret#hash' }),
 					createScript({
-						duration: 40,
-						invoker: 'setTimeout',
-						sourceURL: 'https://example.com/large.js?a=1',
+						duration: 161.30000001192093,
+						invoker: 'http://localhost:3030/splunk-otel-web.js',
+						sourceURL: 'http://localhost:3030/splunk-otel-web.js',
 					}),
 					createScript({ duration: 20, sourceURL: 'blob:https://example.com/id?kept=true#kept' }),
 					createScript({ duration: 30, sourceURL: '<anonymous>' }),
@@ -133,9 +133,9 @@ describe('long animation frame instrumentation', () => {
 
 		expect(attributes).toMatchObject({
 			'loaf.script_count': 4,
-			'loaf.script[0].duration': 40,
-			'loaf.script[0].invoker': 'setTimeout',
-			'loaf.script[0].source_url': 'https://example.com/large.js',
+			'loaf.script[0].duration': 161.3,
+			'loaf.script[0].invoker': 'http://localhost:3030/splunk-otel-web.js',
+			'loaf.script[0].source_url': 'http://localhost:3030/splunk-otel-web.js',
 			'loaf.script[1].duration': 30,
 			'loaf.script[1].source_url': '<anonymous>',
 			'loaf.script[2].duration': 20,
@@ -281,24 +281,24 @@ function createLongTaskInstrumentationMock(config: SplunkOtelWebConfig): SplunkL
 }
 
 function createLoafEntry({
-	duration = 120,
+	duration = 161.381,
 	scripts = [createScript()],
 }: {
 	duration?: number
 	scripts?: PerformanceScriptTimingStable[]
 } = {}): PerformanceEntry {
 	return {
-		blockingDuration: 70,
+		blockingDuration: 111.4,
 		duration,
 		entryType: 'long-animation-frame',
 		firstUIEventTimestamp: 0,
 		name: 'long-animation-frame',
-		paintTime: 90,
-		presentationTime: 100,
-		renderStart: 30,
+		paintTime: 0,
+		presentationTime: 0,
+		renderStart: 0,
 		scripts,
-		startTime: 10,
-		styleAndLayoutStart: 60,
+		startTime: 527.3000000119209,
+		styleAndLayoutStart: 0,
 		toJSON: () => ({}),
 	} as unknown as PerformanceEntry
 }
