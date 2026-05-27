@@ -128,6 +128,7 @@ describe('long animation frame instrumentation', () => {
 						sourceCharPosition: 234,
 						sourceURL: 'http://localhost:3030/splunk-otel-web.js',
 						startTime: 160.111,
+						windowAttribution: 'self',
 					}),
 					createScript({ duration: 20, sourceURL: 'blob:https://example.com/id?kept=true#kept' }),
 					createScript({ duration: 30, sourceURL: '<anonymous>' }),
@@ -144,6 +145,7 @@ describe('long animation frame instrumentation', () => {
 			'loaf.script[0].source_char_position': 234,
 			'loaf.script[0].source_url': 'http://localhost:3030/splunk-otel-web.js',
 			'loaf.script[0].start_time': 160.11,
+			'loaf.script[0].window_attribution': 'self',
 			'loaf.script[1].duration': 30,
 			'loaf.script[1].source_url': '<anonymous>',
 			'loaf.script[2].duration': 20,
@@ -322,6 +324,7 @@ function createScript({
 	sourceFunctionName = 'handler',
 	sourceURL = 'https://example.com/app.js',
 	startTime = 0,
+	windowAttribution = 'self',
 }: Partial<{
 	duration: number
 	executionStart: number
@@ -333,6 +336,7 @@ function createScript({
 	sourceFunctionName: string
 	sourceURL: string
 	startTime: number
+	windowAttribution: string
 }> = {}): PerformanceScriptTimingStable {
 	return {
 		duration,
@@ -348,5 +352,6 @@ function createScript({
 		sourceURL,
 		startTime,
 		toJSON: () => ({}),
+		windowAttribution,
 	}
 }

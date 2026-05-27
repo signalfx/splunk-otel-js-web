@@ -45,8 +45,18 @@ const ATTRIBUTION_TAGS = [
 	'inp.interaction_time',
 	'inp.interaction_type',
 	'inp.load_state',
+	'inp.longest_script.duration',
+	'inp.longest_script.execution_start',
+	'inp.longest_script.invoker',
+	'inp.longest_script.invoker_type',
 	'inp.longest_script_intersecting_duration',
+	'inp.longest_script.pause_duration',
+	'inp.longest_script.source_char_position',
+	'inp.longest_script.source_function_name',
+	'inp.longest_script.source_url',
+	'inp.longest_script.start_time',
 	'inp.longest_script_subpart',
+	'inp.longest_script.window_attribution',
 	'inp.next_paint_time',
 	'inp.presentation_delay',
 	'inp.processing_duration',
@@ -222,6 +232,17 @@ test.describe('web vitals', () => {
 		expectNumericTag(inp, 'inp.processing_duration')
 		expectNumericTag(inp, 'inp.presentation_delay')
 		expectStringTag(inp, 'inp.load_state')
+		if (inp.attributes['inp.longest_script.source_url'] !== undefined) {
+			expectNumericTag(inp, 'inp.longest_script.duration')
+			expectNumericTag(inp, 'inp.longest_script.execution_start')
+			expectStringTag(inp, 'inp.longest_script.invoker')
+			expectStringTag(inp, 'inp.longest_script.invoker_type')
+			expectNumericTag(inp, 'inp.longest_script.pause_duration')
+			expectNumericTag(inp, 'inp.longest_script.source_char_position')
+			expectStringTag(inp, 'inp.longest_script.source_function_name')
+			expectStringTag(inp, 'inp.longest_script.source_url')
+			expectNumericTag(inp, 'inp.longest_script.start_time')
+		}
 
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})

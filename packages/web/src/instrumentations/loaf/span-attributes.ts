@@ -50,6 +50,7 @@ export function setLoafEntryAttributes(span: Span, entry: PerformanceLongAnimati
 		setStringAttribute(span, `${prefix}.source_function_name`, script.sourceFunctionName)
 		setNumberAttribute(span, `${prefix}.forced_style_and_layout_duration`, script.forcedStyleAndLayoutDuration)
 		setNumberAttribute(span, `${prefix}.start_time`, script.startTime)
+		setStringAttribute(span, `${prefix}.window_attribution`, script.windowAttribution)
 	})
 }
 
@@ -59,7 +60,7 @@ function setNumberAttribute(span: Span, name: string, value: number): void {
 	}
 }
 
-function setStringAttribute(span: Span, name: string, value: string): void {
+function setStringAttribute(span: Span, name: string, value: string | undefined): void {
 	if (isString(value)) {
 		span.setAttribute(name, value)
 	}

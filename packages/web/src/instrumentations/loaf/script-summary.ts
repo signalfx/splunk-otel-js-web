@@ -39,5 +39,6 @@ export function getLoafScriptSummaries(scripts: readonly PerformanceScriptTiming
 			sourceFunctionName: script.sourceFunctionName,
 			sourceURL: normalizeLoafSourceUrl(script.sourceURL),
 			startTime: script.startTime,
+			windowAttribution: script.windowAttribution,
 		}))
 }

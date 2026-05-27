@@ -165,6 +165,8 @@ All sandbox pages share a Settings modal (gear icon) for realm, access token, ap
 
 To manually test Long Animation Frames (LoAF), open the RUM page, enable **LoAF instrumentation** in Settings, apply the config, then click **Produce LoAF frame**. Supported Chromium browsers should emit `long-animation-frame` spans with `component: splunk-loaf`.
 
+LoAF script attribution depends on browser and script visibility. If a script summary has an empty `loaf.script[n].source_url`, the browser could not expose the source URL, often because the work came from an opaque cross-origin script. For third-party scripts that permit CORS, loading them with `crossorigin="anonymous"` can improve source attribution.
+
 The Web Vitals page is a hub with metric-specific subpages:
 
 - `web-vitals-lcp.html` — reloads a large image candidate for LCP attribution.

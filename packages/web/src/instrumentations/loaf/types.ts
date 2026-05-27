@@ -26,6 +26,7 @@ export type PerformanceScriptTimingStable = PerformanceEntry & {
 	sourceFunctionName: string
 	sourceURL: string
 	startTime: number
+	windowAttribution?: string
 }
 
 export type PerformanceLongAnimationFrameTimingStable = PerformanceEntry & {
@@ -49,4 +50,5 @@ export type LoafScriptSummary = {
 	sourceFunctionName: string
 	sourceURL: string
 	startTime: number
+	windowAttribution?: string
 }

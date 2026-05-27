@@ -19,8 +19,13 @@
 import { Span } from '@opentelemetry/api'
 import type { INPMetricWithAttribution } from 'web-vitals/attribution'
 
+import { normalizeLoafInvoker, normalizeLoafSourceUrl } from '../loaf'
 import { setNumberAttribute, setStringAttribute } from './span-attributes'
 import { WebVitalsAttributionOptions } from './types'
+
+type INPLongestScriptEntry = NonNullable<INPMetricWithAttribution['attribution']['longestScript']>['entry']
+
+const LONGEST_SCRIPT_ATTRIBUTE_PREFIX = 'inp.longest_script'
 
 export function setINPAttributionAttributes(
 	span: Span,
@@ -48,4 +53,24 @@ export function setINPAttributionAttributes(
 		'inp.longest_script_intersecting_duration',
 		attribution.longestScript?.intersectingDuration,
 	)
+
+	const longestScript = attribution.longestScript?.entry
+	if (!longestScript) {
+		return
+	}
+
+	setINPLongestScriptAttributes(span, longestScript)
+}
+
+function setINPLongestScriptAttributes(span: Span, script: INPLongestScriptEntry): void {
+	setNumberAttribute(span, `${LONGEST_SCRIPT_ATTRIBUTE_PREFIX}.duration`, script.duration)
+	setNumberAttribute(span, `${LONGEST_SCRIPT_ATTRIBUTE_PREFIX}.execution_start`, script.executionStart)
+	setStringAttribute(span, `${LONGEST_SCRIPT_ATTRIBUTE_PREFIX}.invoker`, normalizeLoafInvoker(script.invoker))
+	setStringAttribute(span, `${LONGEST_SCRIPT_ATTRIBUTE_PREFIX}.invoker_type`, script.invokerType)
+	setNumberAttribute(span, `${LONGEST_SCRIPT_ATTRIBUTE_PREFIX}.pause_duration`, script.pauseDuration)
+	setNumberAttribute(span, `${LONGEST_SCRIPT_ATTRIBUTE_PREFIX}.source_char_position`, script.sourceCharPosition)
+	setStringAttribute(span, `${LONGEST_SCRIPT_ATTRIBUTE_PREFIX}.source_function_name`, script.sourceFunctionName)
+	setStringAttribute(span, `${LONGEST_SCRIPT_ATTRIBUTE_PREFIX}.source_url`, normalizeLoafSourceUrl(script.sourceURL))
+	setNumberAttribute(span, `${LONGEST_SCRIPT_ATTRIBUTE_PREFIX}.start_time`, script.startTime)
+	setStringAttribute(span, `${LONGEST_SCRIPT_ATTRIBUTE_PREFIX}.window_attribution`, script.windowAttribution)
 }
