@@ -48,11 +48,15 @@ test.describe('long animation frame', () => {
 		expect(scriptCount).toBeGreaterThan(0)
 		for (let index = 0; index < Math.min(scriptCount, 3); index += 1) {
 			expectNumericAttribute(attributes, `loaf.script[${index}].duration`)
+			expectNumericAttribute(attributes, `loaf.script[${index}].execution_start`)
+			expectNumericAttribute(attributes, `loaf.script[${index}].forced_style_and_layout_duration`)
 			expectStringAttribute(attributes, `loaf.script[${index}].invoker`)
 			expectStringAttribute(attributes, `loaf.script[${index}].invoker_type`)
+			expectNumericAttribute(attributes, `loaf.script[${index}].pause_duration`)
+			expectNumericAttribute(attributes, `loaf.script[${index}].source_char_position`)
 			expectStringAttribute(attributes, `loaf.script[${index}].source_url`)
 			expectStringAttribute(attributes, `loaf.script[${index}].source_function_name`)
-			expectNumericAttribute(attributes, `loaf.script[${index}].forced_style_and_layout_duration`)
+			expectNumericAttribute(attributes, `loaf.script[${index}].start_time`)
 		}
 
 		expect(attributes['loaf.script[3].duration']).toBeUndefined()

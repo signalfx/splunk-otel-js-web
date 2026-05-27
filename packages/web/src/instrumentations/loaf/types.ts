@@ -17,11 +17,15 @@
  */
 
 export type PerformanceScriptTimingStable = PerformanceEntry & {
+	executionStart: number
 	forcedStyleAndLayoutDuration: number
 	invoker: string
 	invokerType: string
+	pauseDuration: number
+	sourceCharPosition: number
 	sourceFunctionName: string
 	sourceURL: string
+	startTime: number
 }
 
 export type PerformanceLongAnimationFrameTimingStable = PerformanceEntry & {
@@ -36,9 +40,13 @@ export type PerformanceLongAnimationFrameTimingStable = PerformanceEntry & {
 
 export type LoafScriptSummary = {
 	duration: number
+	executionStart: number
 	forcedStyleAndLayoutDuration: number
 	invoker: string
 	invokerType: string
+	pauseDuration: number
+	sourceCharPosition: number
 	sourceFunctionName: string
 	sourceURL: string
+	startTime: number
 }

@@ -43,11 +43,15 @@ export function setLoafEntryAttributes(span: Span, entry: PerformanceLongAnimati
 	getLoafScriptSummaries(scripts).forEach((script, index) => {
 		const prefix = `loaf.script[${index}]`
 		setNumberAttribute(span, `${prefix}.duration`, script.duration)
+		setNumberAttribute(span, `${prefix}.execution_start`, script.executionStart)
 		setStringAttribute(span, `${prefix}.invoker`, script.invoker)
 		setStringAttribute(span, `${prefix}.invoker_type`, script.invokerType)
+		setNumberAttribute(span, `${prefix}.pause_duration`, script.pauseDuration)
+		setNumberAttribute(span, `${prefix}.source_char_position`, script.sourceCharPosition)
 		setStringAttribute(span, `${prefix}.source_url`, script.sourceURL)
 		setStringAttribute(span, `${prefix}.source_function_name`, script.sourceFunctionName)
 		setNumberAttribute(span, `${prefix}.forced_style_and_layout_duration`, script.forcedStyleAndLayoutDuration)
+		setNumberAttribute(span, `${prefix}.start_time`, script.startTime)
 	})
 }
 

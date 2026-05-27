@@ -34,27 +34,39 @@ describe('LoAF script summaries', () => {
 		expect(summaries).toEqual([
 			{
 				duration: 40,
+				executionStart: 0,
 				forcedStyleAndLayoutDuration: 0,
 				invoker: 'setTimeout',
 				invokerType: 'event-listener',
+				pauseDuration: 0,
+				sourceCharPosition: 0,
 				sourceFunctionName: 'handler',
 				sourceURL: 'https://example.com/large.js',
+				startTime: 0,
 			},
 			{
 				duration: 30,
+				executionStart: 0,
 				forcedStyleAndLayoutDuration: 0,
 				invoker: 'event-listener',
 				invokerType: 'event-listener',
+				pauseDuration: 0,
+				sourceCharPosition: 0,
 				sourceFunctionName: 'handler',
 				sourceURL: '<anonymous>',
+				startTime: 0,
 			},
 			{
 				duration: 20,
+				executionStart: 0,
 				forcedStyleAndLayoutDuration: 0,
 				invoker: 'event-listener',
 				invokerType: 'event-listener',
+				pauseDuration: 0,
+				sourceCharPosition: 0,
 				sourceFunctionName: 'handler',
 				sourceURL: 'blob:https://example.com/id?kept=true#kept',
+				startTime: 0,
 			},
 		])
 	})
@@ -92,29 +104,40 @@ describe('LoAF source URL normalization', () => {
 
 function createScript({
 	duration = 10,
+	executionStart = 0,
 	forcedStyleAndLayoutDuration = 0,
 	invoker = 'event-listener',
 	invokerType = 'event-listener',
+	pauseDuration = 0,
+	sourceCharPosition = 0,
 	sourceFunctionName = 'handler',
 	sourceURL = 'https://example.com/app.js',
+	startTime = 0,
 }: Partial<{
 	duration: number
+	executionStart: number
 	forcedStyleAndLayoutDuration: number
 	invoker: string
 	invokerType: string
+	pauseDuration: number
+	sourceCharPosition: number
 	sourceFunctionName: string
 	sourceURL: string
+	startTime: number
 }> = {}): PerformanceScriptTimingStable {
 	return {
 		duration,
 		entryType: 'script',
+		executionStart,
 		forcedStyleAndLayoutDuration,
 		invoker,
 		invokerType,
 		name: 'script',
+		pauseDuration,
+		sourceCharPosition,
 		sourceFunctionName,
 		sourceURL,
-		startTime: 0,
+		startTime,
 		toJSON: () => ({}),
 	}
 }

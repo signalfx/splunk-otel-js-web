@@ -95,7 +95,7 @@ describe('long animation frame instrumentation', () => {
 		instrumentation.enable()
 		mockObservers[0].emit([createLoafEntry({ scripts: [] })])
 
-		expect(span.end).toHaveBeenCalledWith(688.6810000119209)
+		expect(span.end).toHaveBeenCalledWith(688.681_000_011_920_9)
 		expect(attributes).toEqual({
 			'component': 'splunk-loaf',
 			'loaf.blocking_duration': 111.4,
@@ -121,9 +121,13 @@ describe('long animation frame instrumentation', () => {
 				scripts: [
 					createScript({ duration: 5, sourceURL: '/small.js?token=secret#hash' }),
 					createScript({
-						duration: 161.30000001192093,
+						duration: 161.3,
+						executionStart: 162.455,
 						invoker: 'http://localhost:3030/splunk-otel-web.js',
+						pauseDuration: 1.234,
+						sourceCharPosition: 234,
 						sourceURL: 'http://localhost:3030/splunk-otel-web.js',
+						startTime: 160.111,
 					}),
 					createScript({ duration: 20, sourceURL: 'blob:https://example.com/id?kept=true#kept' }),
 					createScript({ duration: 30, sourceURL: '<anonymous>' }),
@@ -134,8 +138,12 @@ describe('long animation frame instrumentation', () => {
 		expect(attributes).toMatchObject({
 			'loaf.script_count': 4,
 			'loaf.script[0].duration': 161.3,
+			'loaf.script[0].execution_start': 162.46,
 			'loaf.script[0].invoker': 'http://localhost:3030/splunk-otel-web.js',
+			'loaf.script[0].pause_duration': 1.23,
+			'loaf.script[0].source_char_position': 234,
 			'loaf.script[0].source_url': 'http://localhost:3030/splunk-otel-web.js',
+			'loaf.script[0].start_time': 160.11,
 			'loaf.script[1].duration': 30,
 			'loaf.script[1].source_url': '<anonymous>',
 			'loaf.script[2].duration': 20,
@@ -297,7 +305,7 @@ function createLoafEntry({
 		presentationTime: 0,
 		renderStart: 0,
 		scripts,
-		startTime: 527.3000000119209,
+		startTime: 527.300_000_011_920_9,
 		styleAndLayoutStart: 0,
 		toJSON: () => ({}),
 	} as unknown as PerformanceEntry
@@ -305,29 +313,40 @@ function createLoafEntry({
 
 function createScript({
 	duration = 10,
+	executionStart = 0,
 	forcedStyleAndLayoutDuration = 0,
 	invoker = 'event-listener',
 	invokerType = 'event-listener',
+	pauseDuration = 0,
+	sourceCharPosition = 0,
 	sourceFunctionName = 'handler',
 	sourceURL = 'https://example.com/app.js',
+	startTime = 0,
 }: Partial<{
 	duration: number
+	executionStart: number
 	forcedStyleAndLayoutDuration: number
 	invoker: string
 	invokerType: string
+	pauseDuration: number
+	sourceCharPosition: number
 	sourceFunctionName: string
 	sourceURL: string
+	startTime: number
 }> = {}): PerformanceScriptTimingStable {
 	return {
 		duration,
 		entryType: 'script',
+		executionStart,
 		forcedStyleAndLayoutDuration,
 		invoker,
 		invokerType,
 		name: 'script',
+		pauseDuration,
+		sourceCharPosition,
 		sourceFunctionName,
 		sourceURL,
-		startTime: 0,
+		startTime,
 		toJSON: () => ({}),
 	}
 }

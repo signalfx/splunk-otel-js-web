@@ -52,11 +52,15 @@ describe('LoAF span attributes', () => {
 				scripts: [
 					createScript({ duration: 5, sourceURL: '/small.js?token=secret#hash' }),
 					createScript({
-						duration: 161.30000001192093,
+						duration: 161.3,
+						executionStart: 162.455,
 						invoker: 'http://localhost:3030/splunk-otel-web.js',
 						invokerType: 'classic-script',
+						pauseDuration: 1.234,
+						sourceCharPosition: 234,
 						sourceFunctionName: '',
 						sourceURL: 'http://localhost:3030/splunk-otel-web.js',
+						startTime: 160.111,
 					}),
 					createScript({ duration: 20, sourceURL: 'blob:https://example.com/id?kept=true#kept' }),
 					createScript({ duration: 30, sourceURL: '<anonymous>' }),
@@ -67,11 +71,15 @@ describe('LoAF span attributes', () => {
 		expect(attributes).toMatchObject({
 			'loaf.script_count': 4,
 			'loaf.script[0].duration': 161.3,
+			'loaf.script[0].execution_start': 162.46,
 			'loaf.script[0].forced_style_and_layout_duration': 0,
 			'loaf.script[0].invoker': 'http://localhost:3030/splunk-otel-web.js',
 			'loaf.script[0].invoker_type': 'classic-script',
+			'loaf.script[0].pause_duration': 1.23,
+			'loaf.script[0].source_char_position': 234,
 			'loaf.script[0].source_function_name': '',
 			'loaf.script[0].source_url': 'http://localhost:3030/splunk-otel-web.js',
+			'loaf.script[0].start_time': 160.11,
 			'loaf.script[1].duration': 30,
 			'loaf.script[1].source_url': '<anonymous>',
 			'loaf.script[2].duration': 20,
@@ -91,7 +99,17 @@ describe('LoAF span attributes', () => {
 				paintTime: Number.POSITIVE_INFINITY,
 				presentationTime: Number.NaN,
 				renderStart: Number.NEGATIVE_INFINITY,
-				scripts: [createScript({ duration: Number.NaN, sourceFunctionName: '', sourceURL: '' })],
+				scripts: [
+					createScript({
+						duration: Number.NaN,
+						executionStart: Number.NaN,
+						pauseDuration: Number.POSITIVE_INFINITY,
+						sourceCharPosition: Number.NaN,
+						sourceFunctionName: '',
+						sourceURL: '',
+						startTime: Number.NEGATIVE_INFINITY,
+					}),
+				],
 			}),
 		)
 
@@ -148,29 +166,40 @@ function createLoafEntry({
 
 function createScript({
 	duration = 10,
+	executionStart = 0,
 	forcedStyleAndLayoutDuration = 0,
 	invoker = 'event-listener',
 	invokerType = 'event-listener',
+	pauseDuration = 0,
+	sourceCharPosition = 0,
 	sourceFunctionName = 'handler',
 	sourceURL = 'https://example.com/app.js',
+	startTime = 0,
 }: Partial<{
 	duration: number
+	executionStart: number
 	forcedStyleAndLayoutDuration: number
 	invoker: string
 	invokerType: string
+	pauseDuration: number
+	sourceCharPosition: number
 	sourceFunctionName: string
 	sourceURL: string
+	startTime: number
 }> = {}): PerformanceScriptTimingStable {
 	return {
 		duration,
 		entryType: 'script',
+		executionStart,
 		forcedStyleAndLayoutDuration,
 		invoker,
 		invokerType,
 		name: 'script',
+		pauseDuration,
+		sourceCharPosition,
 		sourceFunctionName,
 		sourceURL,
-		startTime: 0,
+		startTime,
 		toJSON: () => ({}),
 	}
 }

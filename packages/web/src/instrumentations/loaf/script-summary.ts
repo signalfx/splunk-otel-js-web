@@ -30,10 +30,14 @@ export function getLoafScriptSummaries(scripts: readonly PerformanceScriptTiming
 		.slice(0, MAX_LOAF_SCRIPT_SUMMARIES)
 		.map(({ script }) => ({
 			duration: script.duration,
+			executionStart: script.executionStart,
 			forcedStyleAndLayoutDuration: script.forcedStyleAndLayoutDuration,
 			invoker: script.invoker,
 			invokerType: script.invokerType,
+			pauseDuration: script.pauseDuration,
+			sourceCharPosition: script.sourceCharPosition,
 			sourceFunctionName: script.sourceFunctionName,
 			sourceURL: normalizeLoafSourceUrl(script.sourceURL),
+			startTime: script.startTime,
 		}))
 }
