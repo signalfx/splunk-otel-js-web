@@ -15,6 +15,7 @@
  * limitations under the License.
  *
  */
+import { hrTimeToMicroseconds } from '@opentelemetry/core'
 import { expect } from '@playwright/test'
 
 import { RecordPage } from '../../pages/record-page'
@@ -66,7 +67,7 @@ test.describe('long animation frame', () => {
 		const loafSpan = getLoafSpans(recordPage)[0]
 		const duration = Number.parseFloat(String(loafSpan.attributes['loaf.duration']))
 		expect(duration).toBeGreaterThanOrEqual(50)
-		expect(loafSpan.duration).toBeCloseTo(duration * 1000, 0)
+		expect(hrTimeToMicroseconds(loafSpan.duration)).toBeCloseTo(duration * 1000, 0)
 	})
 
 	test('does not report longtask when LoAF is enabled and supported', async ({ browserName, recordPage }) => {
