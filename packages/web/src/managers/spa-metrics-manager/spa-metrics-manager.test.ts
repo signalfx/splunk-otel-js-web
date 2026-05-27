@@ -28,7 +28,7 @@ describe('SpaMetricsManager', () => {
 		// @ts-expect-error Config is private. We use it for testing.
 		const config = manager.config
 
-		expect(config.quietTime).toBe(5000)
+		expect(config.quietTime).toBe(1000)
 		expect(config.maxResourcesToWatch).toBe(100)
 		expect(config.ignoreUrls).toEqual([])
 	})

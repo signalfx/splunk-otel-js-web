@@ -24,7 +24,7 @@ import { QuietPeriodAwaiter } from './quiet-period-awaiter'
 const SPA_METRICS_MANAGER_CONFIG_DEFAULTS = {
 	ignoreUrls: [] as (string | RegExp)[],
 	maxResourcesToWatch: 100,
-	quietTime: 5000,
+	quietTime: 1000,
 } as const
 
 export interface SpaMetricsManagerConfig {
@@ -123,7 +123,7 @@ export class SpaMetricsManager {
 
 		if (this.loadingResourcesCount === 0) {
 			this.quietPeriodAwaiter.startQuietTimer({ resourceLoadedTimestamp: startTime })
-			diag.debug('No loading resources. Starting quit timer.')
+			diag.debug('No loading resources. Starting quiet timer.')
 		}
 
 		return this.quietPeriodAwaiter.promise
@@ -150,7 +150,7 @@ export class SpaMetricsManager {
 				}
 
 				if (this.loadingResourcesCount === 0) {
-					diag.debug('No loading resources. Starting quit timer.')
+					diag.debug('No loading resources. Starting quiet timer.')
 					this.quietPeriodAwaiter.startQuietTimer({ resourceLoadedTimestamp: event.timestamp })
 				}
 			}
