@@ -18,7 +18,7 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { normalizeLoafSourceUrl } from './source-url'
+import { normalizeLoafInvoker, normalizeLoafSourceUrl } from './source-url'
 
 describe('LoAF source URL normalization', () => {
 	it('strips query strings and fragments from http URLs', () => {
@@ -38,5 +38,20 @@ describe('LoAF source URL normalization', () => {
 		expect(normalizeLoafSourceUrl('')).toBe('')
 		expect(normalizeLoafSourceUrl('not a url')).toBe('not a url')
 		expect(normalizeLoafSourceUrl('http://[::1')).toBe('http://[::1')
+	})
+})
+
+describe('LoAF invoker normalization', () => {
+	it('strips query strings and fragments from URL-like invokers', () => {
+		expect(normalizeLoafInvoker('https://example.com/app.js?token=secret#hash')).toBe('https://example.com/app.js')
+		expect(normalizeLoafInvoker('/assets/app.js?token=secret#hash')).toBe(`${location.origin}/assets/app.js`)
+		expect(normalizeLoafInvoker('chunk.js?token=secret#hash')).toBe(`${location.origin}/chunk.js`)
+	})
+
+	it('preserves non-URL invokers', () => {
+		expect(normalizeLoafInvoker('event-listener')).toBe('event-listener')
+		expect(normalizeLoafInvoker('setTimeout')).toBe('setTimeout')
+		expect(normalizeLoafInvoker('<anonymous>')).toBe('<anonymous>')
+		expect(normalizeLoafInvoker('not a url')).toBe('not a url')
 	})
 })

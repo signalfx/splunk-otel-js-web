@@ -54,7 +54,7 @@ describe('LoAF span attributes', () => {
 					createScript({
 						duration: 161.3,
 						executionStart: 162.455,
-						invoker: 'http://localhost:3030/splunk-otel-web.js',
+						invoker: 'http://localhost:3030/splunk-otel-web.js?token=secret#hash',
 						invokerType: 'classic-script',
 						pauseDuration: 1.234,
 						sourceCharPosition: 234,

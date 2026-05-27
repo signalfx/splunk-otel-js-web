@@ -17,7 +17,7 @@
  */
 
 import { MAX_LOAF_SCRIPT_SUMMARIES } from './constants'
-import { normalizeLoafSourceUrl } from './source-url'
+import { normalizeLoafInvoker, normalizeLoafSourceUrl } from './source-url'
 import { type LoafScriptSummary, type PerformanceScriptTimingStable } from './types'
 
 export function getLoafScriptSummaries(scripts: readonly PerformanceScriptTimingStable[]): LoafScriptSummary[] {
@@ -32,7 +32,7 @@ export function getLoafScriptSummaries(scripts: readonly PerformanceScriptTiming
 			duration: script.duration,
 			executionStart: script.executionStart,
 			forcedStyleAndLayoutDuration: script.forcedStyleAndLayoutDuration,
-			invoker: script.invoker,
+			invoker: normalizeLoafInvoker(script.invoker),
 			invokerType: script.invokerType,
 			pauseDuration: script.pauseDuration,
 			sourceCharPosition: script.sourceCharPosition,

@@ -34,3 +34,21 @@ export function normalizeLoafSourceUrl(sourceUrl: string): string {
 		return sourceUrl
 	}
 }
+
+export function normalizeLoafInvoker(invoker: string): string {
+	if (!isHttpUrlLike(invoker)) {
+		return invoker
+	}
+
+	return normalizeLoafSourceUrl(invoker)
+}
+
+function isHttpUrlLike(value: string): boolean {
+	return (
+		/^(?:https?:)?\/\//i.test(value) ||
+		value.startsWith('/') ||
+		value.startsWith('./') ||
+		value.startsWith('../') ||
+		/^[^:/?#]+\.[^/\\?#]+(?:[/?#]|$)/.test(value)
+	)
+}

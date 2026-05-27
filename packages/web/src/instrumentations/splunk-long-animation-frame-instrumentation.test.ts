@@ -123,7 +123,7 @@ describe('long animation frame instrumentation', () => {
 					createScript({
 						duration: 161.3,
 						executionStart: 162.455,
-						invoker: 'http://localhost:3030/splunk-otel-web.js',
+						invoker: 'http://localhost:3030/splunk-otel-web.js?token=secret#hash',
 						pauseDuration: 1.234,
 						sourceCharPosition: 234,
 						sourceURL: 'http://localhost:3030/splunk-otel-web.js',

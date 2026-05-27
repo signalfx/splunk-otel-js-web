@@ -25,7 +25,11 @@ describe('LoAF script summaries', () => {
 	it('exports the three longest scripts with normalized source URLs', () => {
 		const summaries = getLoafScriptSummaries([
 			createScript({ duration: 5, sourceURL: '/small.js?token=secret#hash' }),
-			createScript({ duration: 40, invoker: 'setTimeout', sourceURL: 'https://example.com/large.js?a=1' }),
+			createScript({
+				duration: 40,
+				invoker: 'https://example.com/large.js?token=secret#hash',
+				sourceURL: 'https://example.com/large.js?a=1',
+			}),
 			createScript({ duration: 20, sourceURL: 'blob:https://example.com/id?kept=true#kept' }),
 			createScript({ duration: 30, sourceURL: '<anonymous>' }),
 		])
@@ -35,7 +39,7 @@ describe('LoAF script summaries', () => {
 				duration: 40,
 				executionStart: 0,
 				forcedStyleAndLayoutDuration: 0,
-				invoker: 'setTimeout',
+				invoker: 'https://example.com/large.js',
 				invokerType: 'event-listener',
 				pauseDuration: 0,
 				sourceCharPosition: 0,
