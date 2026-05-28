@@ -26,6 +26,7 @@ import {
 	isLongAnimationFrameSupported,
 	LONG_ANIMATION_FRAME_PERFORMANCE_TYPE,
 	MAX_LOAF_SPANS_PER_SESSION,
+	MAX_LOAF_SPANS_PER_SOURCE_WINDOW,
 	normalizeLoafSourceUrl,
 	PerformanceScriptTimingStable,
 	SplunkLongAnimationFrameInstrumentation,
@@ -203,14 +204,53 @@ describe('long animation frame instrumentation', () => {
 		expect(mockObservers[0].disconnect).toHaveBeenCalledTimes(1)
 	})
 
-	it('caps LoAF spans per instrumentation instance', () => {
+	it('caps LoAF spans per session', () => {
 		installPerformanceObserver([LONG_ANIMATION_FRAME_PERFORMANCE_TYPE])
 		const { instrumentation } = createLoafInstrumentationMock()
 
 		instrumentation.enable()
-		mockObservers[0].emit(Array.from({ length: MAX_LOAF_SPANS_PER_SESSION + 1 }, () => createLoafEntry()))
+		mockObservers[0].emit(
+			Array.from({ length: MAX_LOAF_SPANS_PER_SESSION + 1 }, (_, index) =>
+				createLoafEntry({
+					scripts: [createScript({ sourceFunctionName: `handler${index}` })],
+					startTime: index,
+				}),
+			),
+		)
 
 		expect(instrumentation._tracer.startSpan).toHaveBeenCalledTimes(MAX_LOAF_SPANS_PER_SESSION)
+	})
+
+	it('caps repeated LoAF spans per source window', () => {
+		installPerformanceObserver([LONG_ANIMATION_FRAME_PERFORMANCE_TYPE])
+		const { instrumentation } = createLoafInstrumentationMock()
+
+		instrumentation.enable()
+		mockObservers[0].emit(
+			Array.from({ length: MAX_LOAF_SPANS_PER_SOURCE_WINDOW + 1 }, (_, index) =>
+				createLoafEntry({ startTime: index }),
+			),
+		)
+
+		expect(instrumentation._tracer.startSpan).toHaveBeenCalledTimes(MAX_LOAF_SPANS_PER_SOURCE_WINDOW)
+	})
+
+	it('limits distinct LoAF sources independently', () => {
+		installPerformanceObserver([LONG_ANIMATION_FRAME_PERFORMANCE_TYPE])
+		const { instrumentation } = createLoafInstrumentationMock()
+
+		instrumentation.enable()
+		mockObservers[0].emit([
+			...Array.from({ length: MAX_LOAF_SPANS_PER_SOURCE_WINDOW + 1 }, (_, index) =>
+				createLoafEntry({ startTime: index }),
+			),
+			createLoafEntry({
+				scripts: [createScript({ sourceFunctionName: 'otherHandler' })],
+				startTime: MAX_LOAF_SPANS_PER_SOURCE_WINDOW,
+			}),
+		])
+
+		expect(instrumentation._tracer.startSpan).toHaveBeenCalledTimes(MAX_LOAF_SPANS_PER_SOURCE_WINDOW + 1)
 	})
 })
 
@@ -293,9 +333,11 @@ function createLongTaskInstrumentationMock(config: SplunkOtelWebConfig): SplunkL
 function createLoafEntry({
 	duration = 161.381,
 	scripts = [createScript()],
+	startTime = 527.300_000_011_920_9,
 }: {
 	duration?: number
 	scripts?: PerformanceScriptTimingStable[]
+	startTime?: number
 } = {}): PerformanceEntry {
 	return {
 		blockingDuration: 111.4,
@@ -307,7 +349,7 @@ function createLoafEntry({
 		presentationTime: 0,
 		renderStart: 0,
 		scripts,
-		startTime: 527.300_000_011_920_9,
+		startTime,
 		styleAndLayoutStart: 0,
 		toJSON: () => ({}),
 	} as unknown as PerformanceEntry

@@ -30,6 +30,7 @@ import {
 	type PerformanceLongAnimationFrameTimingStable,
 	setLoafEntryAttributes,
 } from './loaf'
+import { LoafSpanRateLimiter } from './loaf/rate-limit'
 
 export {
 	getLoafScriptSummaries,
@@ -38,6 +39,7 @@ export {
 	LONG_ANIMATION_FRAME_PERFORMANCE_TYPE,
 	MAX_LOAF_SCRIPT_SUMMARIES,
 	MAX_LOAF_SPANS_PER_SESSION,
+	MAX_LOAF_SPANS_PER_SOURCE_WINDOW,
 	normalizeLoafSourceUrl,
 } from './loaf'
 export type { PerformanceScriptTimingStable } from './loaf'
@@ -46,6 +48,8 @@ export class SplunkLongAnimationFrameInstrumentation extends InstrumentationBase
 	private createdSpanCount = 0
 
 	private loafObserver: PerformanceObserver | undefined
+
+	private spanRateLimiter = new LoafSpanRateLimiter()
 
 	constructor(
 		config: InstrumentationConfig = {},
@@ -84,6 +88,10 @@ export class SplunkLongAnimationFrameInstrumentation extends InstrumentationBase
 
 	private createSpanFromEntry(entry: PerformanceLongAnimationFrameTimingStable): void {
 		if (this.createdSpanCount >= MAX_LOAF_SPANS_PER_SESSION) {
+			return
+		}
+
+		if (!this.spanRateLimiter.shouldEmit(entry)) {
 			return
 		}
 

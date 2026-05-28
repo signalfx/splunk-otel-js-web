@@ -204,7 +204,8 @@ When `instrumentations.loaf` is enabled and the browser supports `long-animation
 
 LoAF spans include frame timing attributes such as `loaf.duration`, `loaf.blocking_duration`, `loaf.paint_time`, `loaf.presentation_time`, `loaf.render_start`, `loaf.style_and_layout_start`, and `loaf.first_ui_event_timestamp`. They also include bounded script attribution: `loaf.script_count` reports the original number of scripts, while only the top three scripts by duration are exported as `loaf.script[0..2].*` attributes, including script timing fields such as `duration`, `start_time`, `execution_start`, `pause_duration`, `forced_style_and_layout_duration`, and `source_char_position`. Script source URLs have query strings and fragments stripped for HTTP(S) URLs; non-HTTP values such as `blob:`, `data:`, empty strings, and `<anonymous>` are preserved as reported by the browser.
 
-To bound payload volume, the SDK emits at most 100 LoAF spans per page session. Additional LoAF entries are dropped silently.
+To bound payload volume, the SDK emits at most 1000 LoAF spans per page session, with up to 50 spans per
+source in any rolling minute. Additional LoAF entries are dropped silently.
 
 ### Privacy Configuration
 
