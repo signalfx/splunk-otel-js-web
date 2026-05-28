@@ -39,7 +39,6 @@ export {
 	LONG_ANIMATION_FRAME_PERFORMANCE_TYPE,
 	MAX_LOAF_SCRIPT_SUMMARIES,
 	MAX_LOAF_SPANS_PER_SESSION,
-	MAX_LOAF_SPANS_PER_SOURCE_WINDOW,
 	normalizeLoafSourceUrl,
 } from './loaf'
 export type { PerformanceScriptTimingStable } from './loaf'

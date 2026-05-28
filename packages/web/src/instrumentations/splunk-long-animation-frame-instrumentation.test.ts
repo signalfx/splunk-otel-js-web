@@ -21,12 +21,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { createSpanMock } from '../../tests/utils/span-mock'
 import { SplunkOtelWebConfig } from '../types'
+import { MAX_LOAF_SPANS_PER_SOURCE_WINDOW } from './loaf/constants'
 import {
 	getLoafScriptSummaries,
 	isLongAnimationFrameSupported,
 	LONG_ANIMATION_FRAME_PERFORMANCE_TYPE,
 	MAX_LOAF_SPANS_PER_SESSION,
-	MAX_LOAF_SPANS_PER_SOURCE_WINDOW,
 	normalizeLoafSourceUrl,
 	PerformanceScriptTimingStable,
 	SplunkLongAnimationFrameInstrumentation,
