@@ -24,6 +24,7 @@ import { RecordPage } from '../../pages/record-page'
 import { test } from '../../utils/test'
 
 const LOAF_SPAN_NAME = 'long-animation-frame'
+const LONGTASK_SPAN_NAME = 'longtask'
 
 test.describe('long animation frame', () => {
 	test('reports a LoAF span with bounded script attribution', async ({ recordPage }) => {
@@ -93,17 +94,28 @@ test.describe('long animation frame', () => {
 	})
 
 	test('preserves longtask behavior when LoAF is disabled', async ({ recordPage }) => {
+		await skipIfLongtaskUnsupported(recordPage)
+
 		await recordPage.goTo('/long-task/index.ejs')
 		await recordPage.locator('#btnLongtask').click()
-		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'longtask'))
+		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === LONGTASK_SPAN_NAME))
 
-		expect(recordPage.receivedSpans.filter((span) => span.name === 'longtask').length).toBeGreaterThanOrEqual(1)
+		expect(
+			recordPage.receivedSpans.filter((span) => span.name === LONGTASK_SPAN_NAME).length,
+		).toBeGreaterThanOrEqual(1)
 	})
 })
 
 async function skipIfLoafUnsupported(recordPage: RecordPage): Promise<void> {
 	const supportedEntryTypes = await recordPage.evaluate(() => window.PerformanceObserver?.supportedEntryTypes ?? [])
 	if (!isLongAnimationFrameSupported(supportedEntryTypes)) {
+		test.skip()
+	}
+}
+
+async function skipIfLongtaskUnsupported(recordPage: RecordPage): Promise<void> {
+	const supportedEntryTypes = await recordPage.evaluate(() => window.PerformanceObserver?.supportedEntryTypes ?? [])
+	if (!supportedEntryTypes.includes(LONGTASK_SPAN_NAME)) {
 		test.skip()
 	}
 }
