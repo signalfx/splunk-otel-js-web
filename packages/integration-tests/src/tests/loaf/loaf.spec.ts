@@ -26,8 +26,8 @@ import { test } from '../../utils/test'
 const LOAF_SPAN_NAME = 'long-animation-frame'
 
 test.describe('long animation frame', () => {
-	test('reports a LoAF span with bounded script attribution', async ({ browserName, recordPage }) => {
-		await skipIfLoafUnsupported(browserName, recordPage)
+	test('reports a LoAF span with bounded script attribution', async ({ recordPage }) => {
+		await skipIfLoafUnsupported(recordPage)
 
 		await recordPage.goTo('/loaf/index.ejs')
 		await recordPage.locator('#btnLoaf').click()
@@ -68,8 +68,8 @@ test.describe('long animation frame', () => {
 		expect(attributes[`loaf.script[${MAX_LOAF_SCRIPT_SUMMARIES}].duration`]).toBeUndefined()
 	})
 
-	test('reports buffered LoAF entries', async ({ browserName, recordPage }) => {
-		await skipIfLoafUnsupported(browserName, recordPage)
+	test('reports buffered LoAF entries', async ({ recordPage }) => {
+		await skipIfLoafUnsupported(recordPage)
 
 		await recordPage.goTo('/loaf/buffered.ejs')
 		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === LOAF_SPAN_NAME))
@@ -80,8 +80,8 @@ test.describe('long animation frame', () => {
 		expect(hrTimeToMicroseconds(loafSpan.duration)).toBeCloseTo(duration * 1000, 0)
 	})
 
-	test('does not report longtask when LoAF is enabled and supported', async ({ browserName, recordPage }) => {
-		await skipIfLoafUnsupported(browserName, recordPage)
+	test('does not report longtask when LoAF is enabled and supported', async ({ recordPage }) => {
+		await skipIfLoafUnsupported(recordPage)
 
 		await recordPage.goTo('/loaf/index.ejs')
 		await recordPage.locator('#btnLoaf').click()
@@ -92,11 +92,7 @@ test.describe('long animation frame', () => {
 		expect(recordPage.receivedSpans.filter((span) => span.name === 'longtask')).toHaveLength(0)
 	})
 
-	test('preserves longtask behavior when LoAF is disabled', async ({ browserName, recordPage }) => {
-		if (browserName === 'webkit' || browserName === 'firefox') {
-			test.skip()
-		}
-
+	test('preserves longtask behavior when LoAF is disabled', async ({ recordPage }) => {
 		await recordPage.goTo('/long-task/index.ejs')
 		await recordPage.locator('#btnLongtask').click()
 		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'longtask'))
@@ -105,11 +101,7 @@ test.describe('long animation frame', () => {
 	})
 })
 
-async function skipIfLoafUnsupported(browserName: string, recordPage: RecordPage): Promise<void> {
-	if (browserName === 'webkit' || browserName === 'firefox') {
-		test.skip()
-	}
-
+async function skipIfLoafUnsupported(recordPage: RecordPage): Promise<void> {
 	const supportedEntryTypes = await recordPage.evaluate(() => window.PerformanceObserver?.supportedEntryTypes ?? [])
 	if (!isLongAnimationFrameSupported(supportedEntryTypes)) {
 		test.skip()
