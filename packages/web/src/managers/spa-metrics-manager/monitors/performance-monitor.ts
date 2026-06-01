@@ -19,7 +19,7 @@
 import { diag } from '@opentelemetry/api'
 import { isUrlIgnored } from '@opentelemetry/core'
 
-import { Monitor, ResourceState } from './monitor'
+import { Monitor } from './monitor'
 
 const RESOURCE_TYPES_TO_MONITOR = new Set(['css', 'font', 'img', 'link', 'other'])
 
@@ -81,12 +81,9 @@ export class PerformanceMonitor extends Monitor {
 
 		const loadTime = entry.responseEnd - entry.startTime
 
-		this.config.onResourceStateChange({
-			loadTime,
-			state: ResourceState.LOADED,
-			timestamp: entry.responseEnd,
-			url,
-		})
+		const event = Monitor.createDiscoveredEvent(url)
+		this.emitResourceStateChange(event)
+		this.emitResourceStateChange(Monitor.createLoadedEvent(event.id, url, loadTime))
 
 		diag.debug('PageLoadingManager.PerformanceMonitor: Resource loaded', {
 			initiatorType: entry.initiatorType,

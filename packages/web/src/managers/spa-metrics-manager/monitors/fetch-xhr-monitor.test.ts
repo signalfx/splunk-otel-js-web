@@ -47,6 +47,7 @@ describe('FetchXhrMonitor', () => {
 			expect(events[0].state).toBe(ResourceState.DISCOVERED)
 			expect(events[1].state).toBe(ResourceState.LOADED)
 			expect(events[1]).toHaveProperty('loadTime')
+			expect(events[0].id).toBe(events[1].id)
 		})
 
 		it('ignores URLs matching pattern', async () => {
@@ -85,6 +86,44 @@ describe('FetchXhrMonitor', () => {
 			})
 
 			expect(events.length).toBe(0)
+		})
+	})
+
+	describe('maxResourceWaitingTime', () => {
+		const HTTP_SERVER = 'http://127.0.0.1:8981'
+
+		it('emits TIMEOUT for resource that exceeds maxResourceWaitingTime', async () => {
+			monitor.stop()
+			events = []
+			monitor = new FetchXhrMonitor({
+				maxResourceWaitingTime: 100,
+				onResourceStateChange: (event) => events.push(event),
+			})
+			monitor.start()
+
+			fetch(`${HTTP_SERVER}/delay?delay=5000`).catch(() => {})
+
+			await new Promise((resolve) => setTimeout(resolve, 150))
+
+			expect(events.some((e) => e.state === ResourceState.TIMEOUT)).toBe(true)
+			const timeoutEvent = events.find((e) => e.state === ResourceState.TIMEOUT)
+			expect(timeoutEvent?.url).toBe(`${HTTP_SERVER}/delay?delay=5000`)
+		})
+
+		it('does not emit TIMEOUT if resource completes in time', async () => {
+			monitor.stop()
+			events = []
+			monitor = new FetchXhrMonitor({
+				maxResourceWaitingTime: 500,
+				onResourceStateChange: (event) => events.push(event),
+			})
+			monitor.start()
+
+			await fetch(`${HTTP_SERVER}/delay?delay=10`)
+
+			await new Promise((resolve) => setTimeout(resolve, 50))
+
+			expect(events.some((e) => e.state === ResourceState.TIMEOUT)).toBe(false)
 		})
 	})
 

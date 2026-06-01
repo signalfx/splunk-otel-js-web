@@ -15,6 +15,28 @@
  * limitations under the License.
  *
  */
-export * from './http'
-export * from './socket-io'
-export * from './websocket'
+import cors from '@fastify/cors'
+import Fastify from 'fastify'
+
+export const HTTP_SERVER_PORT = 8981
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+export const initHttpServer = () => {
+	const fastify = Fastify()
+
+	fastify.register(cors)
+
+	fastify.get<{ Querystring: { delay?: string } }>('/delay', async (request, reply) => {
+		const delay = Number.parseInt(request.query.delay ?? '0', 10)
+		if (!Number.isNaN(delay) && delay > 0) {
+			await sleep(delay)
+		}
+
+		reply.send('ok')
+	})
+
+	void fastify.listen({ port: HTTP_SERVER_PORT })
+
+	return () => fastify.close()
+}

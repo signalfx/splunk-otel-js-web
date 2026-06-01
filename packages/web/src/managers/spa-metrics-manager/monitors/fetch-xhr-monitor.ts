@@ -20,7 +20,7 @@ import { diag } from '@opentelemetry/api'
 import { isUrlIgnored } from '@opentelemetry/core'
 import * as shimmer from 'shimmer'
 
-import { Monitor, ResourceState } from './monitor'
+import { Monitor } from './monitor'
 
 declare global {
 	interface XMLHttpRequest {
@@ -52,6 +52,7 @@ export class FetchXhrMonitor extends Monitor {
 
 		this.restoreFetch()
 		this.restoreXhr()
+		this.stopTimeouts()
 
 		this.isMonitoring = false
 
@@ -76,27 +77,20 @@ export class FetchXhrMonitor extends Monitor {
 						return original(input, init)
 					}
 
+					const event = Monitor.createDiscoveredEvent(url)
 					const startTime = performance.now()
 
-					self.config.onResourceStateChange({ state: ResourceState.DISCOVERED, url })
+					self.emitResourceStateChange(event)
 
 					return original(input, init)
 						.then((response) => {
-							const loadTime = performance.now() - startTime
-							self.config.onResourceStateChange({
-								loadTime,
-								state: ResourceState.LOADED,
-								timestamp: performance.now(),
-								url,
-							})
+							self.emitResourceStateChange(
+								Monitor.createLoadedEvent(event.id, url, performance.now() - startTime),
+							)
 							return response
 						})
 						.catch((error) => {
-							self.config.onResourceStateChange({
-								state: ResourceState.ERROR,
-								timestamp: performance.now(),
-								url,
-							})
+							self.emitResourceStateChange(Monitor.createErrorEvent(event.id, url))
 							throw error
 						})
 				},
@@ -130,27 +124,20 @@ export class FetchXhrMonitor extends Monitor {
 				function wrappedSend(this: XMLHttpRequest, body?: Document | XMLHttpRequestBodyInit | null): void {
 					const url = this._splunkMonitorUrl
 					if (url && !isUrlIgnored(url, self.config.ignoreUrls)) {
+						const event = Monitor.createDiscoveredEvent(url)
 						const startTime = performance.now()
 
-						self.config.onResourceStateChange({ state: ResourceState.DISCOVERED, url })
+						self.emitResourceStateChange(event)
 
 						const loadHandler = () => {
-							const loadTime = performance.now() - startTime
-							self.config.onResourceStateChange({
-								loadTime,
-								state: ResourceState.LOADED,
-								timestamp: performance.now(),
-								url,
-							})
+							self.emitResourceStateChange(
+								Monitor.createLoadedEvent(event.id, url, performance.now() - startTime),
+							)
 							cleanup()
 						}
 
 						const errorHandler = () => {
-							self.config.onResourceStateChange({
-								state: ResourceState.ERROR,
-								timestamp: performance.now(),
-								url,
-							})
+							self.emitResourceStateChange(Monitor.createErrorEvent(event.id, url))
 							cleanup()
 						}
 

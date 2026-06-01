@@ -20,7 +20,7 @@ import { diag } from '@opentelemetry/api'
 import { isUrlIgnored } from '@opentelemetry/core'
 
 import { isElement, isMediaElement } from '../../../types'
-import { Monitor, ResourceState } from './monitor'
+import { Monitor } from './monitor'
 
 export class MediaMonitor extends Monitor {
 	private isMonitoring = false
@@ -50,6 +50,7 @@ export class MediaMonitor extends Monitor {
 
 		this.observer?.disconnect()
 		this.observer = null
+		this.stopTimeouts()
 
 		this.isMonitoring = false
 
@@ -70,31 +71,26 @@ export class MediaMonitor extends Monitor {
 		}
 
 		this.monitoredMediaElements.add(element)
+		const event = Monitor.createDiscoveredEvent(element.src)
+
 		if (this.isElementAlreadyLoaded(element)) {
-			this.config.onResourceStateChange({
-				loadTime: 0,
-				state: ResourceState.LOADED,
-				timestamp: performance.now(),
-				url: element.src,
-			})
+			this.emitResourceStateChange(Monitor.createLoadedEvent(event.id, element.src, 0))
 			return
 		} else {
-			this.config.onResourceStateChange({ state: ResourceState.DISCOVERED, url: element.src })
+			this.emitResourceStateChange(event)
 		}
 
 		const startTime = performance.now()
 		const listener = () => {
-			this.config.onResourceStateChange({
-				loadTime: performance.now() - startTime,
-				state: ResourceState.LOADED,
-				timestamp: performance.now(),
-				url: element.src,
-			})
+			this.emitResourceStateChange(
+				Monitor.createLoadedEvent(event.id, element.src, performance.now() - startTime),
+			)
 			element.removeEventListener('load', listener)
 			element.removeEventListener('error', errorListener)
 		}
 
 		const errorListener = () => {
+			this.emitResourceStateChange(Monitor.createErrorEvent(event.id, element.src))
 			element.removeEventListener('load', listener)
 			element.removeEventListener('error', errorListener)
 		}

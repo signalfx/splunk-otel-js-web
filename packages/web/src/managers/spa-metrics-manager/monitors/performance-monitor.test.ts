@@ -76,10 +76,12 @@ describe('PerformanceMonitor', () => {
 		// Clean up
 		link.remove()
 
-		// Should have detected the CSS file
+		// Should have detected the CSS file (DISCOVERED + LOADED)
 		const cssEvents = events.filter((e) => e.url.includes('bootstrap'))
-		expect(cssEvents.length).toBeGreaterThan(0)
-		expect(cssEvents[0].state).toBe(ResourceState.LOADED)
+		expect(cssEvents.length).toBeGreaterThanOrEqual(2)
+		expect(cssEvents[0].state).toBe(ResourceState.DISCOVERED)
+		expect(cssEvents[1].state).toBe(ResourceState.LOADED)
+		expect(cssEvents[0].id).toBe(cssEvents[1].id)
 	})
 
 	it('ignores URLs matching ignore pattern', async () => {
