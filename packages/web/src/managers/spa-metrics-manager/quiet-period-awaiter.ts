@@ -18,10 +18,21 @@
 
 import { diag } from '@opentelemetry/api'
 
+import { PAGE_LOAD_METRICS_STATUS_INTERRUPTED, PAGE_LOAD_METRICS_STATUS_TIMEOUT } from './constants'
+
 const DEFAULT_MAX_PAGE_LOAD_WAIT_TIME = 180_000
 const DEFAULT_QUIET_TIME = 1000
+const INTERRUPT_LISTENER_OPTIONS: AddEventListenerOptions = { capture: true, once: true }
+const INTERRUPT_LISTENER_REMOVE_OPTIONS: EventListenerOptions = { capture: true }
 
-export type PageLoadMetricsResult = { pct: number; timeout: boolean }
+export type PageLoadMetricsStatus =
+	| typeof PAGE_LOAD_METRICS_STATUS_INTERRUPTED
+	| typeof PAGE_LOAD_METRICS_STATUS_TIMEOUT
+
+export type PageLoadMetricsResult = {
+	pct: number
+	status?: PageLoadMetricsStatus
+}
 
 type QuietPeriodAwaiterConfig = {
 	maxPageLoadWaitTime?: number
@@ -78,9 +89,10 @@ export class QuietPeriodAwaiter {
 			diag.debug('QuietPeriodAwaiter: Max page load wait time expired', { pct })
 			this.resolveOnce({
 				pct,
-				timeout: true,
+				status: PAGE_LOAD_METRICS_STATUS_TIMEOUT,
 			})
 		}, maxPageLoadWaitTime)
+		window.addEventListener('pagehide', this.interruptListener, INTERRUPT_LISTENER_OPTIONS)
 	}
 
 	complete({ areResourcesStillLoading }: { areResourcesStillLoading: boolean }): void {
@@ -98,7 +110,20 @@ export class QuietPeriodAwaiter {
 		diag.debug('QuietPeriodAwaiter: Complete', { pct })
 		this.resolveOnce({
 			pct,
-			timeout: false,
+		})
+	}
+
+	interrupt(): void {
+		if (this.isResolved) {
+			return
+		}
+
+		const endTimestamp = performance.now()
+		const pct = Math.max(endTimestamp - this.startTime, 0)
+		diag.debug('QuietPeriodAwaiter: Interrupted', { pct })
+		this.resolveOnce({
+			pct,
+			status: PAGE_LOAD_METRICS_STATUS_INTERRUPTED,
 		})
 	}
 
@@ -120,12 +145,15 @@ export class QuietPeriodAwaiter {
 		clearTimeout(this.timeoutId)
 
 		this.timeoutId = setTimeout(() => {
-			diag.debug('QuietPeriodAwaiter: Quiet period expired')
+			diag.debug('QuietPeriodAwaiter: Quiet period expired', this.quietTime)
 			this.resolveOnce({
 				pct: Math.max(resourceLoadedTimestamp - this.startTime, 0),
-				timeout: false,
 			})
 		}, this.quietTime)
+	}
+
+	private readonly interruptListener = (): void => {
+		this.interrupt()
 	}
 
 	private readonly resolve: (resolveValue: PageLoadMetricsResult) => void = () => {}
@@ -140,6 +168,7 @@ export class QuietPeriodAwaiter {
 		clearTimeout(this.maxWaitTimeoutId)
 		this.timeoutId = undefined
 		this.maxWaitTimeoutId = undefined
+		window.removeEventListener('pagehide', this.interruptListener, INTERRUPT_LISTENER_REMOVE_OPTIONS)
 		this.resolve(resolveValue)
 	}
 }

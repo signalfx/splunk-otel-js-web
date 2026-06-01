@@ -17,6 +17,7 @@
  */
 import { describe, expect, it } from 'vitest'
 
+import { PAGE_LOAD_METRICS_STATUS_INTERRUPTED, PAGE_LOAD_METRICS_STATUS_TIMEOUT } from './constants'
 import { QuietPeriodAwaiter } from './quiet-period-awaiter'
 
 describe('QuietPeriodAwaiter', () => {
@@ -29,7 +30,7 @@ describe('QuietPeriodAwaiter', () => {
 
 		expect(result).toHaveProperty('pct')
 		expect(result.pct).toBe(10)
-		expect(result.timeout).toBe(false)
+		expect(result.status).toBeUndefined()
 	})
 
 	it('resets timer when removeQuietTimer is called', async () => {
@@ -44,7 +45,7 @@ describe('QuietPeriodAwaiter', () => {
 		const result = await awaiter.promise
 		expect(result.pct).toBeGreaterThanOrEqual(250)
 		expect(result.pct).toBeLessThan(300)
-		expect(result.timeout).toBe(false)
+		expect(result.status).toBeUndefined()
 	})
 
 	it('complete() resolves immediately', async () => {
@@ -53,17 +54,48 @@ describe('QuietPeriodAwaiter', () => {
 		awaiter.complete({ areResourcesStillLoading: false })
 		const result = await awaiter.promise
 		expect(result.pct).toBe(0)
-		expect(result.timeout).toBe(false)
+		expect(result.status).toBeUndefined()
 	})
 
-	it('resolves with timeout true when max page load wait time expires before quiet timer starts', async () => {
+	it('interrupt() resolves immediately with interrupted status', async () => {
+		const awaiter = new QuietPeriodAwaiter({ maxPageLoadWaitTime: 5000, quietTime: 1000 })
+		awaiter.startQuietTimer({ resourceLoadedTimestamp: performance.now() + 100 })
+
+		awaiter.interrupt()
+		const result = await awaiter.promise
+
+		expect(result.pct).toBeGreaterThanOrEqual(0)
+		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_INTERRUPTED)
+	})
+
+	it('resolves with interrupted status when persisted pagehide fires', async () => {
+		const awaiter = new QuietPeriodAwaiter({ maxPageLoadWaitTime: 5000, quietTime: 1000 })
+		const event = new Event('pagehide') as PageTransitionEvent
+		Object.defineProperty(event, 'persisted', { value: true })
+
+		window.dispatchEvent(event)
+
+		const result = await awaiter.promise
+		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_INTERRUPTED)
+	})
+
+	it('does not resolve with interrupted status when beforeunload fires', async () => {
+		const awaiter = new QuietPeriodAwaiter({ maxPageLoadWaitTime: 10, quietTime: 5 })
+
+		window.dispatchEvent(new Event('beforeunload'))
+
+		const result = await awaiter.promise
+		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_TIMEOUT)
+	})
+
+	it('resolves with timeout status when max page load wait time expires before quiet timer starts', async () => {
 		const startTime = performance.now()
 		const awaiter = new QuietPeriodAwaiter({ maxPageLoadWaitTime: 10, quietTime: 5, startTime })
 
 		const result = await awaiter.promise
 
 		expect(result.pct).toBe(10)
-		expect(result.timeout).toBe(true)
+		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_TIMEOUT)
 	})
 
 	it('resolves only once when quiet period would expire after max page load wait time', async () => {
@@ -78,7 +110,7 @@ describe('QuietPeriodAwaiter', () => {
 
 		await new Promise((resolve) => setTimeout(resolve, 50))
 		expect(result.pct).toBe(30)
-		expect(result.timeout).toBe(true)
+		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_TIMEOUT)
 		expect(results).toHaveLength(1)
 	})
 })

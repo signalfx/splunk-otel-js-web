@@ -16,5 +16,8 @@
  *
  */
 
-export * from './constants'
-export * from './spa-metrics-manager'
+export const BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE = 'browser.navigation.page_completion_time'
+export const BROWSER_NAVIGATION_STATUS_ATTRIBUTE = 'browser.navigation.status'
+
+export const PAGE_LOAD_METRICS_STATUS_INTERRUPTED = 'interrupted'
+export const PAGE_LOAD_METRICS_STATUS_TIMEOUT = 'timeout'
