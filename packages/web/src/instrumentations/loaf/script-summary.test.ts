@@ -18,11 +18,11 @@
 
 import { describe, expect, it } from 'vitest'
 
+import { createScript } from '../../../tests/utils/loaf'
 import { getLoafScriptSummaries } from './script-summary'
-import { type PerformanceScriptTimingStable } from './types'
 
 describe('LoAF script summaries', () => {
-	it('exports the three longest scripts with normalized source URLs', () => {
+	it('exports the three longest scripts with raw browser source attribution', () => {
 		const summaries = getLoafScriptSummaries([
 			createScript({ duration: 5, sourceURL: '/small.js?token=secret#hash' }),
 			createScript({
@@ -39,13 +39,14 @@ describe('LoAF script summaries', () => {
 				duration: 40,
 				executionStart: 0,
 				forcedStyleAndLayoutDuration: 0,
-				invoker: 'https://example.com/large.js',
+				invoker: 'https://example.com/large.js?token=secret#hash',
 				invokerType: 'event-listener',
 				pauseDuration: 0,
 				sourceCharPosition: 0,
 				sourceFunctionName: 'handler',
-				sourceURL: 'https://example.com/large.js',
+				sourceURL: 'https://example.com/large.js?a=1',
 				startTime: 0,
+				windowAttribution: 'self',
 			},
 			{
 				duration: 30,
@@ -58,6 +59,7 @@ describe('LoAF script summaries', () => {
 				sourceFunctionName: 'handler',
 				sourceURL: '<anonymous>',
 				startTime: 0,
+				windowAttribution: 'self',
 			},
 			{
 				duration: 20,
@@ -70,6 +72,7 @@ describe('LoAF script summaries', () => {
 				sourceFunctionName: 'handler',
 				sourceURL: 'blob:https://example.com/id?kept=true#kept',
 				startTime: 0,
+				windowAttribution: 'self',
 			},
 		])
 	})
@@ -84,43 +87,3 @@ describe('LoAF script summaries', () => {
 		expect(summaries.map((script) => script.sourceFunctionName)).toEqual(['first', 'second', 'third'])
 	})
 })
-
-function createScript({
-	duration = 10,
-	executionStart = 0,
-	forcedStyleAndLayoutDuration = 0,
-	invoker = 'event-listener',
-	invokerType = 'event-listener',
-	pauseDuration = 0,
-	sourceCharPosition = 0,
-	sourceFunctionName = 'handler',
-	sourceURL = 'https://example.com/app.js',
-	startTime = 0,
-}: Partial<{
-	duration: number
-	executionStart: number
-	forcedStyleAndLayoutDuration: number
-	invoker: string
-	invokerType: string
-	pauseDuration: number
-	sourceCharPosition: number
-	sourceFunctionName: string
-	sourceURL: string
-	startTime: number
-}> = {}): PerformanceScriptTimingStable {
-	return {
-		duration,
-		entryType: 'script',
-		executionStart,
-		forcedStyleAndLayoutDuration,
-		invoker,
-		invokerType,
-		name: 'script',
-		pauseDuration,
-		sourceCharPosition,
-		sourceFunctionName,
-		sourceURL,
-		startTime,
-		toJSON: () => ({}),
-	}
-}

@@ -18,9 +18,9 @@
 
 import { describe, expect, it } from 'vitest'
 
+import { createLoafEntry, createScript } from '../../../tests/utils/loaf'
 import { createSpanMock } from '../../../tests/utils/span-mock'
 import { setLoafEntryAttributes } from './span-attributes'
-import { type PerformanceLongAnimationFrameTimingStable, type PerformanceScriptTimingStable } from './types'
 
 describe('LoAF span attributes', () => {
 	it('sets frame attributes and script count when no scripts are present', () => {
@@ -74,7 +74,7 @@ describe('LoAF span attributes', () => {
 			'loaf.script[0].duration': 161.3,
 			'loaf.script[0].execution_start': 162.46,
 			'loaf.script[0].forced_style_and_layout_duration': 0,
-			'loaf.script[0].invoker': 'http://localhost:3030/splunk-otel-web.js',
+			'loaf.script[0].invoker': 'http://localhost:3030/splunk-otel-web.js?token=secret#hash',
 			'loaf.script[0].invoker_type': 'classic-script',
 			'loaf.script[0].pause_duration': 1.23,
 			'loaf.script[0].source_char_position': 234,
@@ -134,12 +134,16 @@ describe('LoAF span attributes', () => {
 	it('falls back for malformed runtime entry shapes', () => {
 		const { attributes, span } = createSpanMock()
 
+		// This test intentionally bypasses the stable type to exercise malformed browser/runtime data.
 		setLoafEntryAttributes(span, {
 			...createLoafEntry(),
+			// @ts-expect-error Wrong type
 			entryType: 1,
+			// @ts-expect-error Wrong type
 			name: 2,
+			// @ts-expect-error Wrong type
 			scripts: 'not scripts',
-		} as unknown as PerformanceLongAnimationFrameTimingStable)
+		})
 
 		expect(attributes).toEqual({
 			'component': 'splunk-loaf',
@@ -154,81 +158,3 @@ describe('LoAF span attributes', () => {
 		})
 	})
 })
-
-function createLoafEntry({
-	blockingDuration = 111.4,
-	duration = 161.381,
-	firstUIEventTimestamp = 0,
-	paintTime = 0,
-	presentationTime = 0,
-	renderStart = 0,
-	scripts = [createScript()],
-	styleAndLayoutStart = 0,
-}: Partial<{
-	blockingDuration: number
-	duration: number
-	firstUIEventTimestamp: number
-	paintTime: number
-	presentationTime: number
-	renderStart: number
-	scripts: PerformanceScriptTimingStable[]
-	styleAndLayoutStart: number
-}> = {}): PerformanceLongAnimationFrameTimingStable {
-	return {
-		blockingDuration,
-		duration,
-		entryType: 'long-animation-frame',
-		firstUIEventTimestamp,
-		name: 'long-animation-frame',
-		paintTime,
-		presentationTime,
-		renderStart,
-		scripts,
-		startTime: 10,
-		styleAndLayoutStart,
-		toJSON: () => ({}),
-	}
-}
-
-function createScript({
-	duration = 10,
-	executionStart = 0,
-	forcedStyleAndLayoutDuration = 0,
-	invoker = 'event-listener',
-	invokerType = 'event-listener',
-	pauseDuration = 0,
-	sourceCharPosition = 0,
-	sourceFunctionName = 'handler',
-	sourceURL = 'https://example.com/app.js',
-	startTime = 0,
-	windowAttribution = 'self',
-}: Partial<{
-	duration: number
-	executionStart: number
-	forcedStyleAndLayoutDuration: number
-	invoker: string
-	invokerType: string
-	pauseDuration: number
-	sourceCharPosition: number
-	sourceFunctionName: string
-	sourceURL: string
-	startTime: number
-	windowAttribution: string
-}> = {}): PerformanceScriptTimingStable {
-	return {
-		duration,
-		entryType: 'script',
-		executionStart,
-		forcedStyleAndLayoutDuration,
-		invoker,
-		invokerType,
-		name: 'script',
-		pauseDuration,
-		sourceCharPosition,
-		sourceFunctionName,
-		sourceURL,
-		startTime,
-		toJSON: () => ({}),
-		windowAttribution,
-	}
-}

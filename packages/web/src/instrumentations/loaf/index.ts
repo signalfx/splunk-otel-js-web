@@ -16,14 +16,8 @@
  *
  */
 
-export {
-	LOAF_MODULE_NAME,
-	LONG_ANIMATION_FRAME_PERFORMANCE_TYPE,
-	MAX_LOAF_SCRIPT_SUMMARIES,
-	MAX_LOAF_SPANS_PER_SESSION,
-} from './constants'
+export { LOAF_MODULE_NAME, LONG_ANIMATION_FRAME_PERFORMANCE_TYPE, MAX_LOAF_SCRIPT_SUMMARIES } from './constants'
 export * from './script-summary'
-export * from './source-url'
 export * from './span-attributes'
 export * from './support'
 export * from './types'

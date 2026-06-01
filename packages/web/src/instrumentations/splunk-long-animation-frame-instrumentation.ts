@@ -26,8 +26,7 @@ import {
 	isLongAnimationFrameSupported,
 	LOAF_MODULE_NAME,
 	LONG_ANIMATION_FRAME_PERFORMANCE_TYPE,
-	MAX_LOAF_SPANS_PER_SESSION,
-	type PerformanceLongAnimationFrameTimingStable,
+	PerformanceLongAnimationFrameTiming,
 	setLoafEntryAttributes,
 } from './loaf'
 import { LoafSpanRateLimiter } from './loaf/rate-limit'
@@ -38,14 +37,10 @@ export {
 	isLongAnimationFrameSupported,
 	LONG_ANIMATION_FRAME_PERFORMANCE_TYPE,
 	MAX_LOAF_SCRIPT_SUMMARIES,
-	MAX_LOAF_SPANS_PER_SESSION,
-	normalizeLoafSourceUrl,
 } from './loaf'
-export type { PerformanceScriptTimingStable } from './loaf'
+export type { PerformanceLongAnimationFrameTiming } from './loaf'
 
 export class SplunkLongAnimationFrameInstrumentation extends InstrumentationBase {
-	private createdSpanCount = 0
-
 	private loafObserver: PerformanceObserver | undefined
 
 	private spanRateLimiter = new LoafSpanRateLimiter()
@@ -69,9 +64,7 @@ export class SplunkLongAnimationFrameInstrumentation extends InstrumentationBase
 		}
 
 		this.loafObserver = new PerformanceObserver((list) => {
-			list.getEntries().forEach((entry) =>
-				this.createSpanFromEntry(entry as PerformanceLongAnimationFrameTimingStable),
-			)
+			list.getEntries().forEach((entry) => this.createSpanFromEntry(entry as PerformanceLongAnimationFrameTiming))
 		})
 
 		try {
@@ -85,16 +78,10 @@ export class SplunkLongAnimationFrameInstrumentation extends InstrumentationBase
 
 	init(): void {}
 
-	private createSpanFromEntry(entry: PerformanceLongAnimationFrameTimingStable): void {
-		if (this.createdSpanCount >= MAX_LOAF_SPANS_PER_SESSION) {
-			return
-		}
-
+	private createSpanFromEntry(entry: PerformanceLongAnimationFrameTiming): void {
 		if (!this.spanRateLimiter.shouldEmit(entry)) {
 			return
 		}
-
-		this.createdSpanCount += 1
 
 		const span = this.tracer.startSpan(LONG_ANIMATION_FRAME_PERFORMANCE_TYPE, {
 			startTime: entry.startTime,

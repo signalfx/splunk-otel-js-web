@@ -20,5 +20,4 @@ export const LOAF_MODULE_NAME = 'splunk-loaf'
 export const LOAF_SOURCE_WINDOW_MS = 60_000
 export const LONG_ANIMATION_FRAME_PERFORMANCE_TYPE = 'long-animation-frame'
 export const MAX_LOAF_SCRIPT_SUMMARIES = 3
-export const MAX_LOAF_SPANS_PER_SESSION = 1000
 export const MAX_LOAF_SPANS_PER_SOURCE_WINDOW = 50

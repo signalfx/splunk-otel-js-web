@@ -19,38 +19,9 @@
 import { describe, expect, it } from 'vitest'
 
 import { createSpanMock } from '../../../tests/utils/span-mock'
-import { setAttributes, setNumberAttribute, setRectAttributes, setStringAttribute } from './span-attributes'
+import { setRectAttributes } from './span-attributes'
 
 describe('webvitals span attribute helpers', () => {
-	it('sets string attributes including empty strings', () => {
-		const { attributes, span } = createSpanMock()
-
-		setStringAttribute(span, 'filled', 'value')
-		setStringAttribute(span, 'empty', '')
-		setStringAttribute(span, 'missing', undefined)
-
-		expect(attributes).toEqual({
-			empty: '',
-			filled: 'value',
-		})
-	})
-
-	it('sets only finite number attributes', () => {
-		const { attributes, span } = createSpanMock()
-
-		setNumberAttribute(span, 'zero', 0)
-		setNumberAttribute(span, 'negative', -1)
-		setNumberAttribute(span, 'missing', undefined)
-		setNumberAttribute(span, 'nan', Number.NaN)
-		setNumberAttribute(span, 'positive_infinity', Number.POSITIVE_INFINITY)
-		setNumberAttribute(span, 'negative_infinity', Number.NEGATIVE_INFINITY)
-
-		expect(attributes).toEqual({
-			negative: -1,
-			zero: 0,
-		})
-	})
-
 	it('expands layout shift rectangles into prefixed attributes', () => {
 		const { attributes, span } = createSpanMock()
 
@@ -67,23 +38,6 @@ describe('webvitals span attribute helpers', () => {
 			'cls.largest_shift_source.current_rect.width': 30,
 			'cls.largest_shift_source.current_rect.x': 10,
 			'cls.largest_shift_source.current_rect.y': 20,
-		})
-	})
-
-	it('routes mixed record attributes through string and number setters', () => {
-		const { attributes, span } = createSpanMock()
-
-		setAttributes(span, {
-			empty_string: '',
-			finite_number: 42,
-			invalid_number: Number.NaN,
-			string_value: 'value',
-		})
-
-		expect(attributes).toEqual({
-			empty_string: '',
-			finite_number: 42,
-			string_value: 'value',
 		})
 	})
 })

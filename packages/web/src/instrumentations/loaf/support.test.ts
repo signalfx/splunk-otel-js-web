@@ -17,6 +17,7 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { server } from 'vitest/browser'
 
 import { LONG_ANIMATION_FRAME_PERFORMANCE_TYPE } from './constants'
 import { isLoafInstrumentationEnabled, isLongAnimationFrameSupported } from './support'
@@ -26,6 +27,18 @@ afterEach(() => {
 })
 
 describe('LoAF support detection', () => {
+	it('reports real browser support in the unit browser matrix', () => {
+		const expectedSupportByBrowser: Record<string, boolean> = {
+			chrome: true,
+			chromium: true,
+			edge: true,
+			firefox: false,
+			webkit: false,
+		}
+
+		expect(isLongAnimationFrameSupported()).toBe(expectedSupportByBrowser[server.browser])
+	})
+
 	it('detects support from PerformanceObserver.supportedEntryTypes', () => {
 		stubPerformanceObserver([LONG_ANIMATION_FRAME_PERFORMANCE_TYPE])
 

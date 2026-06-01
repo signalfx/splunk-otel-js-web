@@ -19,7 +19,8 @@
 import { Span } from '@opentelemetry/api'
 import type { CLSMetricWithAttribution } from 'web-vitals/attribution'
 
-import { setNumberAttribute, setRectAttributes, setStringAttribute } from './span-attributes'
+import { setNumberAttribute, setStringAttribute } from '../../utils/span-attributes'
+import { setRectAttributes } from './span-attributes'
 import { WebVitalsAttributionOptions } from './types'
 
 export function setCLSAttributionAttributes(

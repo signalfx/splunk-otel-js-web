@@ -19,7 +19,7 @@
 import { Span } from '@opentelemetry/api'
 import type { FCPMetricWithAttribution } from 'web-vitals/attribution'
 
-import { setNumberAttribute, setStringAttribute } from './span-attributes'
+import { setNumberAttribute, setStringAttribute } from '../../utils/span-attributes'
 
 export function setFCPAttributionAttributes(span: Span, metric: FCPMetricWithAttribution): void {
 	const { attribution } = metric

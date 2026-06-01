@@ -17,13 +17,12 @@
  */
 
 import { LOAF_SOURCE_WINDOW_MS, MAX_LOAF_SPANS_PER_SOURCE_WINDOW } from './constants'
-import { normalizeLoafInvoker, normalizeLoafSourceUrl } from './source-url'
-import { type PerformanceLongAnimationFrameTimingStable, type PerformanceScriptTimingStable } from './types'
+import { type PerformanceLongAnimationFrameTiming, type PerformanceScriptTiming } from './types'
 
 export class LoafSpanRateLimiter {
 	private emittedTimestampsBySourceKey = new Map<string, number[]>()
 
-	shouldEmit(entry: PerformanceLongAnimationFrameTimingStable): boolean {
+	shouldEmit(entry: PerformanceLongAnimationFrameTiming): boolean {
 		const sourceKey = getLoafSourceRateLimitKey(entry)
 		const emittedTimestamps = this.emittedTimestampsBySourceKey.get(sourceKey) ?? []
 		const windowStart = entry.startTime - LOAF_SOURCE_WINDOW_MS
@@ -43,7 +42,7 @@ export class LoafSpanRateLimiter {
 	}
 }
 
-export function getLoafSourceRateLimitKey(entry: PerformanceLongAnimationFrameTimingStable): string {
+export function getLoafSourceRateLimitKey(entry: PerformanceLongAnimationFrameTiming): string {
 	const longestScript = getLongestScript(entry.scripts)
 	if (!longestScript) {
 		return JSON.stringify(['frame', entry.entryType, entry.name])
@@ -51,8 +50,8 @@ export function getLoafSourceRateLimitKey(entry: PerformanceLongAnimationFrameTi
 
 	return JSON.stringify([
 		'script',
-		normalizeLoafSourceUrl(longestScript.sourceURL),
-		normalizeLoafInvoker(longestScript.invoker),
+		longestScript.sourceURL,
+		longestScript.invoker,
 		longestScript.invokerType,
 		longestScript.sourceFunctionName,
 		longestScript.sourceCharPosition,
@@ -60,8 +59,8 @@ export function getLoafSourceRateLimitKey(entry: PerformanceLongAnimationFrameTi
 }
 
 function getLongestScript(
-	scripts: readonly PerformanceScriptTimingStable[] | undefined,
-): PerformanceScriptTimingStable | undefined {
+	scripts: readonly PerformanceScriptTiming[] | undefined,
+): PerformanceScriptTiming | undefined {
 	if (!scripts || scripts.length === 0) {
 		return undefined
 	}

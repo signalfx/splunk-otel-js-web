@@ -16,39 +16,33 @@
  *
  */
 
-export type PerformanceScriptTimingStable = PerformanceEntry & {
-	executionStart: number
-	forcedStyleAndLayoutDuration: number
-	invoker: string
-	invokerType: string
-	pauseDuration: number
-	sourceCharPosition: number
-	sourceFunctionName: string
-	sourceURL: string
-	startTime: number
-	windowAttribution?: string
+import type { INPMetricWithAttribution } from 'web-vitals/attribution'
+
+type WebVitalsPerformanceLongAnimationFrameTiming =
+	INPMetricWithAttribution['attribution']['longAnimationFrameEntries'][number]
+
+export type ScriptInvokerType = PerformanceScriptTiming['invokerType']
+export type ScriptWindowAttribution = PerformanceScriptTiming['windowAttribution']
+
+export type PerformanceScriptTiming = NonNullable<INPMetricWithAttribution['attribution']['longestScript']>['entry']
+
+export type PerformanceLongAnimationFrameTiming = Omit<WebVitalsPerformanceLongAnimationFrameTiming, 'scripts'> & {
+	paintTime?: number
+	presentationTime?: number
+	scripts: readonly PerformanceScriptTiming[]
 }
 
-export type PerformanceLongAnimationFrameTimingStable = PerformanceEntry & {
-	blockingDuration: number
-	firstUIEventTimestamp: number
-	paintTime: number
-	presentationTime: number
-	renderStart: number
-	scripts: readonly PerformanceScriptTimingStable[]
-	styleAndLayoutStart: number
-}
-
-export type LoafScriptSummary = {
-	duration: number
-	executionStart: number
-	forcedStyleAndLayoutDuration: number
-	invoker: string
-	invokerType: string
-	pauseDuration: number
-	sourceCharPosition: number
-	sourceFunctionName: string
-	sourceURL: string
-	startTime: number
-	windowAttribution?: string
-}
+export type LoafScriptSummary = Pick<
+	PerformanceScriptTiming,
+	| 'duration'
+	| 'executionStart'
+	| 'forcedStyleAndLayoutDuration'
+	| 'invoker'
+	| 'invokerType'
+	| 'pauseDuration'
+	| 'sourceCharPosition'
+	| 'sourceFunctionName'
+	| 'sourceURL'
+	| 'startTime'
+	| 'windowAttribution'
+>

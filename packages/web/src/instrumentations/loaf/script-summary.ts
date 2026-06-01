@@ -17,10 +17,9 @@
  */
 
 import { MAX_LOAF_SCRIPT_SUMMARIES } from './constants'
-import { normalizeLoafInvoker, normalizeLoafSourceUrl } from './source-url'
-import { type LoafScriptSummary, type PerformanceScriptTimingStable } from './types'
+import { type LoafScriptSummary, type PerformanceScriptTiming } from './types'
 
-export function getLoafScriptSummaries(scripts: readonly PerformanceScriptTimingStable[]): LoafScriptSummary[] {
+export function getLoafScriptSummaries(scripts: readonly PerformanceScriptTiming[]): LoafScriptSummary[] {
 	return scripts
 		.map((script, index) => ({ index, script }))
 		.toSorted((left, right) => {
@@ -32,12 +31,12 @@ export function getLoafScriptSummaries(scripts: readonly PerformanceScriptTiming
 			duration: script.duration,
 			executionStart: script.executionStart,
 			forcedStyleAndLayoutDuration: script.forcedStyleAndLayoutDuration,
-			invoker: normalizeLoafInvoker(script.invoker),
+			invoker: script.invoker,
 			invokerType: script.invokerType,
 			pauseDuration: script.pauseDuration,
 			sourceCharPosition: script.sourceCharPosition,
 			sourceFunctionName: script.sourceFunctionName,
-			sourceURL: normalizeLoafSourceUrl(script.sourceURL),
+			sourceURL: script.sourceURL,
 			startTime: script.startTime,
 			windowAttribution: script.windowAttribution,
 		}))

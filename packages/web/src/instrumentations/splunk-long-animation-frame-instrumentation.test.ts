@@ -19,6 +19,7 @@
 import { Span } from '@opentelemetry/api'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { createLoafEntry, createScript } from '../../tests/utils/loaf'
 import { createSpanMock } from '../../tests/utils/span-mock'
 import { SplunkOtelWebConfig } from '../types'
 import { MAX_LOAF_SPANS_PER_SOURCE_WINDOW } from './loaf/constants'
@@ -26,9 +27,6 @@ import {
 	getLoafScriptSummaries,
 	isLongAnimationFrameSupported,
 	LONG_ANIMATION_FRAME_PERFORMANCE_TYPE,
-	MAX_LOAF_SPANS_PER_SESSION,
-	normalizeLoafSourceUrl,
-	PerformanceScriptTimingStable,
 	SplunkLongAnimationFrameInstrumentation,
 } from './splunk-long-animation-frame-instrumentation'
 import { SplunkLongTaskInstrumentation } from './splunk-long-task-instrumentation'
@@ -141,7 +139,7 @@ describe('long animation frame instrumentation', () => {
 			'loaf.script_count': 4,
 			'loaf.script[0].duration': 161.3,
 			'loaf.script[0].execution_start': 162.46,
-			'loaf.script[0].invoker': 'http://localhost:3030/splunk-otel-web.js',
+			'loaf.script[0].invoker': 'http://localhost:3030/splunk-otel-web.js?token=secret#hash',
 			'loaf.script[0].pause_duration': 1.23,
 			'loaf.script[0].source_char_position': 234,
 			'loaf.script[0].source_url': 'http://localhost:3030/splunk-otel-web.js',
@@ -164,21 +162,6 @@ describe('long animation frame instrumentation', () => {
 
 		expect(summaries).toHaveLength(3)
 		expect(summaries.map((script) => script.duration)).toEqual([3, 2, 1])
-	})
-
-	it('normalizes source URLs using the v1 URL policy', () => {
-		expect(normalizeLoafSourceUrl('/assets/app.js?token=secret#hash')).toBe(`${location.origin}/assets/app.js`)
-		expect(normalizeLoafSourceUrl('chunk.js?token=secret#hash')).toBe(`${location.origin}/chunk.js`)
-		expect(normalizeLoafSourceUrl('https://example.com/app.js?token=secret#hash')).toBe(
-			'https://example.com/app.js',
-		)
-		expect(normalizeLoafSourceUrl('blob:https://example.com/app.js?token=secret#hash')).toBe(
-			'blob:https://example.com/app.js?token=secret#hash',
-		)
-		expect(normalizeLoafSourceUrl('data:text/javascript,alert(1)')).toBe('data:text/javascript,alert(1)')
-		expect(normalizeLoafSourceUrl('<anonymous>')).toBe('<anonymous>')
-		expect(normalizeLoafSourceUrl('')).toBe('')
-		expect(normalizeLoafSourceUrl('not a url')).toBe('not a url')
 	})
 
 	it('emits empty source_url for opaque cross-origin scripts', () => {
@@ -204,13 +187,14 @@ describe('long animation frame instrumentation', () => {
 		expect(mockObservers[0].disconnect).toHaveBeenCalledTimes(1)
 	})
 
-	it('caps LoAF spans per session', () => {
+	it('does not cap LoAF spans per session', () => {
 		installPerformanceObserver([LONG_ANIMATION_FRAME_PERFORMANCE_TYPE])
 		const { instrumentation } = createLoafInstrumentationMock()
+		const spanCount = 1001
 
 		instrumentation.enable()
 		mockObservers[0].emit(
-			Array.from({ length: MAX_LOAF_SPANS_PER_SESSION + 1 }, (_, index) =>
+			Array.from({ length: spanCount }, (_, index) =>
 				createLoafEntry({
 					scripts: [createScript({ sourceFunctionName: `handler${index}` })],
 					startTime: index,
@@ -218,7 +202,7 @@ describe('long animation frame instrumentation', () => {
 			),
 		)
 
-		expect(instrumentation._tracer.startSpan).toHaveBeenCalledTimes(MAX_LOAF_SPANS_PER_SESSION)
+		expect(instrumentation._tracer.startSpan).toHaveBeenCalledTimes(spanCount)
 	})
 
 	it('caps repeated LoAF spans per source window', () => {
@@ -328,72 +312,4 @@ function createLoafInstrumentationMock(): {
 
 function createLongTaskInstrumentationMock(config: SplunkOtelWebConfig): SplunkLongTaskInstrumentation {
 	return new SplunkLongTaskInstrumentation({ enabled: false }, config)
-}
-
-function createLoafEntry({
-	duration = 161.381,
-	scripts = [createScript()],
-	startTime = 527.300_000_011_920_9,
-}: {
-	duration?: number
-	scripts?: PerformanceScriptTimingStable[]
-	startTime?: number
-} = {}): PerformanceEntry {
-	return {
-		blockingDuration: 111.4,
-		duration,
-		entryType: 'long-animation-frame',
-		firstUIEventTimestamp: 0,
-		name: 'long-animation-frame',
-		paintTime: 0,
-		presentationTime: 0,
-		renderStart: 0,
-		scripts,
-		startTime,
-		styleAndLayoutStart: 0,
-		toJSON: () => ({}),
-	} as unknown as PerformanceEntry
-}
-
-function createScript({
-	duration = 10,
-	executionStart = 0,
-	forcedStyleAndLayoutDuration = 0,
-	invoker = 'event-listener',
-	invokerType = 'event-listener',
-	pauseDuration = 0,
-	sourceCharPosition = 0,
-	sourceFunctionName = 'handler',
-	sourceURL = 'https://example.com/app.js',
-	startTime = 0,
-	windowAttribution = 'self',
-}: Partial<{
-	duration: number
-	executionStart: number
-	forcedStyleAndLayoutDuration: number
-	invoker: string
-	invokerType: string
-	pauseDuration: number
-	sourceCharPosition: number
-	sourceFunctionName: string
-	sourceURL: string
-	startTime: number
-	windowAttribution: string
-}> = {}): PerformanceScriptTimingStable {
-	return {
-		duration,
-		entryType: 'script',
-		executionStart,
-		forcedStyleAndLayoutDuration,
-		invoker,
-		invokerType,
-		name: 'script',
-		pauseDuration,
-		sourceCharPosition,
-		sourceFunctionName,
-		sourceURL,
-		startTime,
-		toJSON: () => ({}),
-		windowAttribution,
-	}
 }

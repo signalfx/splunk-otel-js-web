@@ -18,6 +18,8 @@
 import { hrTimeToMicroseconds } from '@opentelemetry/core'
 import { expect } from '@playwright/test'
 
+import { MAX_LOAF_SCRIPT_SUMMARIES } from '../../../../web/src/instrumentations/loaf/constants'
+import { isLongAnimationFrameSupported } from '../../../../web/src/instrumentations/loaf/support'
 import { RecordPage } from '../../pages/record-page'
 import { test } from '../../utils/test'
 
@@ -34,32 +36,36 @@ test.describe('long animation frame', () => {
 
 		const loafSpan = getLoafSpans(recordPage)[0]
 		const attributes = loafSpan.attributes
-		expect(attributes['component']).toBe('splunk-loaf')
-		expect(attributes['loaf.name']).toBe(LOAF_SPAN_NAME)
-		expect(attributes['loaf.entry_type']).toBe(LOAF_SPAN_NAME)
-		expectNumericAttribute(attributes, 'loaf.duration')
-		expectNumericAttribute(attributes, 'loaf.blocking_duration')
-		expectNumericAttribute(attributes, 'loaf.render_start')
-		expectNumericAttribute(attributes, 'loaf.style_and_layout_start')
-		expectNumericAttribute(attributes, 'loaf.first_ui_event_timestamp')
-		expectNumericAttribute(attributes, 'loaf.script_count')
+		expect(loafSpan).toHaveSpanAttribute('component', 'splunk-loaf')
+		expect(loafSpan).toHaveSpanAttribute('loaf.name', LOAF_SPAN_NAME)
+		expect(loafSpan).toHaveSpanAttribute('loaf.entry_type', LOAF_SPAN_NAME)
+		expect(loafSpan).toHaveNumericAttribute('loaf.duration')
+		expect(loafSpan).toHaveNumericAttribute('loaf.blocking_duration')
+		expect(loafSpan).toHaveNumericAttribute('loaf.render_start')
+		expect(loafSpan).toHaveNumericAttribute('loaf.style_and_layout_start')
+		expect(loafSpan).toHaveNumericAttribute('loaf.first_ui_event_timestamp')
+		expect(loafSpan).toHaveNumericAttribute('loaf.script_count')
 
 		const scriptCount = Number.parseFloat(String(attributes['loaf.script_count']))
 		expect(scriptCount).toBeGreaterThan(0)
-		for (let index = 0; index < Math.min(scriptCount, 3); index += 1) {
-			expectNumericAttribute(attributes, `loaf.script[${index}].duration`)
-			expectNumericAttribute(attributes, `loaf.script[${index}].execution_start`)
-			expectNumericAttribute(attributes, `loaf.script[${index}].forced_style_and_layout_duration`)
-			expectStringAttribute(attributes, `loaf.script[${index}].invoker`)
-			expectStringAttribute(attributes, `loaf.script[${index}].invoker_type`)
-			expectNumericAttribute(attributes, `loaf.script[${index}].pause_duration`)
-			expectNumericAttribute(attributes, `loaf.script[${index}].source_char_position`)
-			expectStringAttribute(attributes, `loaf.script[${index}].source_url`)
-			expectStringAttribute(attributes, `loaf.script[${index}].source_function_name`)
-			expectNumericAttribute(attributes, `loaf.script[${index}].start_time`)
+		const exportedScriptIndexes = getExportedScriptIndexes(attributes, scriptCount)
+		expect(exportedScriptIndexes.length).toBeGreaterThan(0)
+		expect(exportedScriptIndexes.length).toBeLessThanOrEqual(MAX_LOAF_SCRIPT_SUMMARIES)
+
+		for (const index of exportedScriptIndexes) {
+			expect(loafSpan).toHaveNumericAttribute(`loaf.script[${index}].duration`)
+			expect(loafSpan).toHaveNumericAttribute(`loaf.script[${index}].execution_start`)
+			expect(loafSpan).toHaveNumericAttribute(`loaf.script[${index}].forced_style_and_layout_duration`)
+			expect(loafSpan).toHaveStringAttribute(`loaf.script[${index}].invoker`)
+			expect(loafSpan).toHaveStringAttribute(`loaf.script[${index}].invoker_type`)
+			expect(loafSpan).toHaveNumericAttribute(`loaf.script[${index}].pause_duration`)
+			expect(loafSpan).toHaveNumericAttribute(`loaf.script[${index}].source_char_position`)
+			expect(loafSpan).toHaveStringAttribute(`loaf.script[${index}].source_url`)
+			expect(loafSpan).toHaveStringAttribute(`loaf.script[${index}].source_function_name`)
+			expect(loafSpan).toHaveNumericAttribute(`loaf.script[${index}].start_time`)
 		}
 
-		expect(attributes['loaf.script[3].duration']).toBeUndefined()
+		expect(attributes[`loaf.script[${MAX_LOAF_SCRIPT_SUMMARIES}].duration`]).toBeUndefined()
 	})
 
 	test('reports buffered LoAF entries', async ({ browserName, recordPage }) => {
@@ -104,10 +110,8 @@ async function skipIfLoafUnsupported(browserName: string, recordPage: RecordPage
 		test.skip()
 	}
 
-	const isSupported = await recordPage.evaluate(
-		() => window.PerformanceObserver?.supportedEntryTypes?.includes('long-animation-frame') ?? false,
-	)
-	if (!isSupported) {
+	const supportedEntryTypes = await recordPage.evaluate(() => window.PerformanceObserver?.supportedEntryTypes ?? [])
+	if (!isLongAnimationFrameSupported(supportedEntryTypes)) {
 		test.skip()
 	}
 }
@@ -116,11 +120,8 @@ function getLoafSpans(recordPage: RecordPage) {
 	return recordPage.receivedSpans.filter((span) => span.name === LOAF_SPAN_NAME)
 }
 
-function expectNumericAttribute(attributes: Record<string, unknown>, name: string): void {
-	expect(attributes[name]).toBeDefined()
-	expect(Number.isFinite(Number.parseFloat(String(attributes[name])))).toBeTruthy()
-}
-
-function expectStringAttribute(attributes: Record<string, unknown>, name: string): void {
-	expect(typeof attributes[name]).toBe('string')
+function getExportedScriptIndexes(attributes: Record<string, unknown>, scriptCount: number): number[] {
+	return Array.from({ length: scriptCount }, (_, index) => index).filter(
+		(index) => attributes[`loaf.script[${index}].duration`] !== undefined,
+	)
 }

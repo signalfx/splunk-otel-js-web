@@ -20,8 +20,10 @@ import { type InstrumentationConfig } from '@opentelemetry/instrumentation'
 
 import { LONG_ANIMATION_FRAME_PERFORMANCE_TYPE } from './constants'
 
-export function isLongAnimationFrameSupported(): boolean {
-	return (window.PerformanceObserver?.supportedEntryTypes ?? []).includes(LONG_ANIMATION_FRAME_PERFORMANCE_TYPE)
+export function isLongAnimationFrameSupported(
+	supportedEntryTypes: readonly string[] = window.PerformanceObserver?.supportedEntryTypes ?? [],
+): boolean {
+	return supportedEntryTypes.includes(LONG_ANIMATION_FRAME_PERFORMANCE_TYPE)
 }
 
 export function isLoafInstrumentationEnabled(config?: boolean | InstrumentationConfig): boolean {

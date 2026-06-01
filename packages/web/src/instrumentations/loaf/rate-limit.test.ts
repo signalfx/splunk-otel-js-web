@@ -18,9 +18,9 @@
 
 import { describe, expect, it } from 'vitest'
 
+import { createLoafEntry, createScript } from '../../../tests/utils/loaf'
 import { LOAF_SOURCE_WINDOW_MS, MAX_LOAF_SPANS_PER_SOURCE_WINDOW } from './constants'
 import { getLoafSourceRateLimitKey, LoafSpanRateLimiter } from './rate-limit'
-import { type PerformanceLongAnimationFrameTimingStable, type PerformanceScriptTimingStable } from './types'
 
 describe('LoAF span rate limiter', () => {
 	it('allows spans for the same source up to the rolling window limit', () => {
@@ -81,8 +81,8 @@ describe('LoAF span rate limiter', () => {
 
 		expect(JSON.parse(key)).toEqual([
 			'script',
-			'https://example.com/app.js',
-			'https://example.com/app.js',
+			'https://example.com/app.js?token=secret#hash',
+			'https://example.com/app.js?token=secret#hash',
 			'event-listener',
 			'largeHandler',
 			234,
@@ -117,7 +117,7 @@ describe('LoAF span rate limiter', () => {
 
 		expect(JSON.parse(key)).toEqual([
 			'script',
-			'https://example.com/first.js',
+			'https://example.com/first.js?token=secret#hash',
 			'event-listener',
 			'event-listener',
 			'firstHandler',
@@ -180,71 +180,3 @@ describe('LoAF span rate limiter', () => {
 		).toBe(false)
 	})
 })
-
-function createLoafEntry({
-	name = 'long-animation-frame',
-	scripts = [createScript()],
-	startTime = 0,
-}: {
-	name?: string
-	scripts?: PerformanceScriptTimingStable[]
-	startTime?: number
-} = {}): PerformanceLongAnimationFrameTimingStable {
-	return {
-		blockingDuration: 111.4,
-		duration: 161.381,
-		entryType: 'long-animation-frame',
-		firstUIEventTimestamp: 0,
-		name,
-		paintTime: 0,
-		presentationTime: 0,
-		renderStart: 0,
-		scripts,
-		startTime,
-		styleAndLayoutStart: 0,
-		toJSON: () => ({}),
-	}
-}
-
-function createScript({
-	duration = 10,
-	executionStart = 0,
-	forcedStyleAndLayoutDuration = 0,
-	invoker = 'event-listener',
-	invokerType = 'event-listener',
-	pauseDuration = 0,
-	sourceCharPosition = 0,
-	sourceFunctionName = 'handler',
-	sourceURL = 'https://example.com/app.js',
-	startTime = 0,
-	windowAttribution = 'self',
-}: Partial<{
-	duration: number
-	executionStart: number
-	forcedStyleAndLayoutDuration: number
-	invoker: string
-	invokerType: string
-	pauseDuration: number
-	sourceCharPosition: number
-	sourceFunctionName: string
-	sourceURL: string
-	startTime: number
-	windowAttribution: string
-}> = {}): PerformanceScriptTimingStable {
-	return {
-		duration,
-		entryType: 'script',
-		executionStart,
-		forcedStyleAndLayoutDuration,
-		invoker,
-		invokerType,
-		name: 'script',
-		pauseDuration,
-		sourceCharPosition,
-		sourceFunctionName,
-		sourceURL,
-		startTime,
-		toJSON: () => ({}),
-		windowAttribution,
-	}
-}
