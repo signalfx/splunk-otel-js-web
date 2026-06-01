@@ -88,6 +88,7 @@ const CFG_TEXT_DEFAULTS = {
 }
 
 const CFG_CHECKBOX_DEFAULTS = {
+	'cfg-loaf-enabled': false,
 	'cfg-recorder-enabled': false,
 	'cfg-recorder-feature-canvas': false,
 	'cfg-recorder-feature-iframes': false,
@@ -317,7 +318,7 @@ export function getRegisteredSdkVersion() {
 function getWebVitalsInstrumentationConfig() {
 	const pathname = location.pathname
 	if (!/\/web-vitals(?:-[^/]+)?\.html$/.test(pathname)) {
-		return
+		return {}
 	}
 
 	const webvitals = {
@@ -350,14 +351,21 @@ function getWebVitalsInstrumentationConfig() {
 	return { webvitals }
 }
 
+function getInstrumentationConfig() {
+	return {
+		...getWebVitalsInstrumentationConfig(),
+		...(checked('#cfg-loaf-enabled') ? { loaf: true } : {}),
+	}
+}
+
 function getConfig() {
-	const webVitalsInstrumentationConfig = getWebVitalsInstrumentationConfig()
+	const instrumentations = getInstrumentationConfig()
 	const realm = inputValue('#cfg-realm')
 	const base = {
 		applicationName: inputValue('#cfg-app') || 'splunk-otel-web-dev',
 		debug: true,
 		deploymentEnvironment: inputValue('#cfg-env') || 'dev',
-		...(webVitalsInstrumentationConfig ? { instrumentations: webVitalsInstrumentationConfig } : {}),
+		...(Object.keys(instrumentations).length > 0 ? { instrumentations } : {}),
 		rumAccessToken: inputValue('#cfg-token') || undefined,
 	}
 
@@ -837,6 +845,15 @@ function injectModal() {
 					<div class="field field-wide">
 						<label>beaconEndpoint <span class="field-hint">(leave empty to use default realm endpoint)</span></label>
 						<input type="text" id="cfg-beacon" placeholder="e.g. http://localhost:9411/api/v2/spans" />
+					</div>
+				</div>
+				<h3 class="modal-subheading">Instrumentation</h3>
+				<div class="config-grid">
+					<div class="field field-wide">
+						<label class="toggle-label">
+							<input type="checkbox" id="cfg-loaf-enabled" />
+							<span>Enable LoAF instrumentation</span>
+						</label>
 					</div>
 				</div>
 				<h3 class="modal-subheading">Session Recorder</h3>

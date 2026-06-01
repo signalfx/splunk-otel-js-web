@@ -22,6 +22,18 @@ import type { ExportedTestSpan } from '@test-utils/test-span.js'
 
 // See https://playwright.dev/docs/test-assertions#add-custom-matchers-using-expectextend
 expect.extend({
+	toHaveNumericAttribute(received: ExportedTestSpan, key: string) {
+		const actual = received.attributes[key]
+		const pass = isFiniteNumericAttribute(actual)
+		return {
+			message: () =>
+				this.isNot
+					? `expected span "${received.name}" attribute "${key}" not to be numeric`
+					: `expected span "${received.name}" attribute "${key}" to be numeric, got ${JSON.stringify(actual)}`,
+			pass,
+		}
+	},
+
 	toHaveSpanAttribute(received: ExportedTestSpan, key: string, expectedValue?: string | number | boolean) {
 		const actual = received.attributes[key]
 
@@ -122,6 +134,18 @@ expect.extend({
 		}
 	},
 
+	toHaveStringAttribute(received: ExportedTestSpan, key: string) {
+		const actual = received.attributes[key]
+		const pass = typeof actual === 'string'
+		return {
+			message: () =>
+				this.isNot
+					? `expected span "${received.name}" attribute "${key}" not to be a string`
+					: `expected span "${received.name}" attribute "${key}" to be a string, got ${JSON.stringify(actual)}`,
+			pass,
+		}
+	},
+
 	toNotHaveSpanAttribute(received: ExportedTestSpan, key: string) {
 		const actual = received.attributes[key]
 		return {
@@ -133,6 +157,7 @@ expect.extend({
 })
 
 export interface SpanMatchers {
+	toHaveNumericAttribute: (key: string) => void
 	toHaveSpanAttribute: (key: string, expectedValue?: string | number | boolean) => void
 	toHaveSpanAttributeContaining: (key: string, substring: string) => void
 	toHaveSpanAttributeEndingWith: (key: string, suffix: string) => void
@@ -141,6 +166,7 @@ export interface SpanMatchers {
 	toHaveSpanDuration: (expectedMicros: number) => void
 	toHaveSpanDurationGreaterThan: (minMicros: number) => void
 	toHaveSpanDurationGreaterThanOrEqual: (minMicros: number) => void
+	toHaveStringAttribute: (key: string) => void
 	toNotHaveSpanAttribute: (key: string) => void
 }
 
@@ -150,4 +176,16 @@ declare global {
 		// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-unused-vars
 		export interface Matchers<R, T = unknown> extends SpanMatchers {}
 	}
+}
+
+function isFiniteNumericAttribute(value: unknown): boolean {
+	if (typeof value === 'number') {
+		return Number.isFinite(value)
+	}
+
+	if (typeof value !== 'string' || value.trim() === '') {
+		return false
+	}
+
+	return Number.isFinite(Number(value))
 }

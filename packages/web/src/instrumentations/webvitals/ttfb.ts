@@ -19,7 +19,7 @@
 import { Span } from '@opentelemetry/api'
 import type { TTFBMetricWithAttribution } from 'web-vitals/attribution'
 
-import { setNumberAttribute } from './span-attributes'
+import { setNumberAttribute } from '../../utils/span-attributes'
 
 export function setTTFBAttributionAttributes(span: Span, metric: TTFBMetricWithAttribution): void {
 	const { attribution } = metric

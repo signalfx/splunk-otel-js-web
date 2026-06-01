@@ -16,15 +16,8 @@
  *
  */
 
-import { Span } from '@opentelemetry/api'
-import type { FCPMetricWithAttribution } from 'web-vitals/attribution'
-
-import { setNumberAttribute, setStringAttribute } from '../../utils/span-attributes'
-
-export function setFCPAttributionAttributes(span: Span, metric: FCPMetricWithAttribution): void {
-	const { attribution } = metric
-
-	setNumberAttribute(span, 'fcp.time_to_first_byte', attribution.timeToFirstByte)
-	setNumberAttribute(span, 'fcp.first_byte_to_fcp', attribution.firstByteToFCP)
-	setStringAttribute(span, 'fcp.load_state', attribution.loadState)
-}
+export const LOAF_MODULE_NAME = 'splunk-loaf'
+export const LOAF_SOURCE_WINDOW_MS = 60_000
+export const LONG_ANIMATION_FRAME_PERFORMANCE_TYPE = 'long-animation-frame'
+export const MAX_LOAF_SCRIPT_SUMMARIES = 3
+export const MAX_LOAF_SPANS_PER_SOURCE_WINDOW = 50

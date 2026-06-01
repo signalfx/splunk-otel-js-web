@@ -20,8 +20,8 @@ import { Span } from '@opentelemetry/api'
 import type { LCPMetricWithAttribution } from 'web-vitals/attribution'
 
 import { isFiniteNumber } from '../../types'
+import { setAttributes, setNumberAttribute, setStringAttribute } from '../../utils/span-attributes'
 import { getResolvedWebVitalsAttributionConfig } from './attribution-config'
-import { setAttributes, setNumberAttribute, setStringAttribute } from './span-attributes'
 import { WebVitalsAttributionConfig, WebVitalsAttributionOptions } from './types'
 
 type ResourceTimingWithResponseStatus = PerformanceResourceTiming & {

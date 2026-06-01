@@ -32,6 +32,7 @@ import {
 
 import { SessionManager } from '../managers'
 import { isFiniteNumber, isString, SplunkOtelWebConfig } from '../types'
+import { setNumberAttribute, setStringAttribute } from '../utils/span-attributes'
 import { VERSION } from '../version'
 import {
 	generateSafeWebVitalsTarget,
@@ -44,8 +45,6 @@ import {
 	setFCPAttributionAttributes,
 	setINPAttributionAttributes,
 	setLCPAttributionAttributes,
-	setNumberAttribute,
-	setStringAttribute,
 	setTTFBAttributionAttributes,
 	SplunkWebVitalsInstrumentationConfig,
 	WebVitalReport,

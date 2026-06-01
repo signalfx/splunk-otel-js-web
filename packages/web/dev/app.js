@@ -93,6 +93,38 @@ function doLongTask() {
 	log('Long task complete')
 }
 
+function burn(duration) {
+	const startedAt = performance.now()
+	while (performance.now() - startedAt < duration) {
+		/* busy wait */
+	}
+}
+
+function doLoaf() {
+	const scriptCount = 5
+	const scriptDuration = 15
+	let remainingCallbacks = scriptCount
+
+	log('Scheduling LoAF frame work. Enable LoAF in Settings first.', 'warn')
+
+	for (let index = 0; index < scriptCount; index += 1) {
+		requestAnimationFrame(() => {
+			burn(scriptDuration + index)
+			remainingCallbacks -= 1
+
+			if (remainingCallbacks === 0) {
+				log('LoAF frame work complete. Check for long-animation-frame spans.', 'info')
+			}
+		})
+	}
+}
+
+function doLoafNamedHandler() {
+	log('Running LoAF named-handler work. Enable LoAF in Settings first.', 'warn')
+	burn(180)
+	log('LoAF named-handler work complete. Check for long-animation-frame spans.', 'info')
+}
+
 function doSetAttribute() {
 	if (typeof SplunkRum === 'undefined' || !SplunkRum.inited) {
 		log('SDK not initialized', 'error')
@@ -112,6 +144,8 @@ const actions = {
 	'btn-custom-span': doCustomSpan,
 	'btn-error': doError,
 	'btn-fetch': doFetch,
+	'btn-loaf': doLoaf,
+	'btn-loaf-named-handler': doLoafNamedHandler,
 	'btn-long-task': doLongTask,
 	'btn-navigation': doNavigation,
 	'btn-recorder-resume': doRecorderResume,
@@ -127,4 +161,10 @@ window.addEventListener('DOMContentLoaded', () => {
 	for (const [id, handler] of Object.entries(actions)) {
 		$(`#${id}`)?.addEventListener('click', handler)
 	}
+
+	$('#btn-loaf-event-handler')?.addEventListener('click', () => {
+		log('Running LoAF event-handler work. Enable LoAF in Settings first.', 'warn')
+		burn(180)
+		log('LoAF event-handler work complete. Check for long-animation-frame spans.', 'info')
+	})
 })

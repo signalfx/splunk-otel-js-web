@@ -16,15 +16,8 @@
  *
  */
 
-import { Span } from '@opentelemetry/api'
-import type { FCPMetricWithAttribution } from 'web-vitals/attribution'
-
-import { setNumberAttribute, setStringAttribute } from '../../utils/span-attributes'
-
-export function setFCPAttributionAttributes(span: Span, metric: FCPMetricWithAttribution): void {
-	const { attribution } = metric
-
-	setNumberAttribute(span, 'fcp.time_to_first_byte', attribution.timeToFirstByte)
-	setNumberAttribute(span, 'fcp.first_byte_to_fcp', attribution.firstByteToFCP)
-	setStringAttribute(span, 'fcp.load_state', attribution.loadState)
-}
+export { LOAF_MODULE_NAME, LONG_ANIMATION_FRAME_PERFORMANCE_TYPE, MAX_LOAF_SCRIPT_SUMMARIES } from './constants'
+export * from './script-summary'
+export * from './span-attributes'
+export * from './support'
+export * from './types'
