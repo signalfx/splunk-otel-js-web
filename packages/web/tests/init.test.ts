@@ -21,6 +21,7 @@ import * as tracing from '@opentelemetry/sdk-trace-base'
 import { expectDefined } from '@test-utils/assertions'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { HTTP_TEST_SERVER_URL } from '../../../tests/servers/http-constants'
 import SplunkRum from '../src'
 import { VERSION } from '../src/version'
 import {
@@ -276,6 +277,40 @@ describe('test init', () => {
 
 			const resourceFetchSpan = capturer.spans.find((span) => span.name === 'resourceFetch')
 			expectDefined(resourceFetchSpan, 'resourceFetch span presence.')
+		})
+
+		it('sets timeout status on documentLoad span when PCT computation times out', async () => {
+			SplunkRum.init({
+				applicationName: 'my-app',
+				beaconEndpoint: 'https://127.0.0.1:9999/foo',
+				deploymentEnvironment: 'my-env',
+				globalAttributes: { customerType: 'GOLD' },
+				rumAccessToken: undefined,
+				spaMetrics: {
+					maxPageLoadWaitTime: 3000,
+					quietTime: 1000,
+				},
+				spanProcessors: [capturer],
+			})
+
+			const slowResourceAbortController = new AbortController()
+			void fetch(`${HTTP_TEST_SERVER_URL}/some-data?delay=5000`, {
+				signal: slowResourceAbortController.signal,
+			}).catch(() => {})
+
+			try {
+				await vi.waitFor(
+					() => {
+						const documentLoadSpan = capturer.spans.find((span) => span.name === 'documentLoad')
+						expectDefined(documentLoadSpan, 'documentLoad span presence.')
+						expect(documentLoadSpan).toHaveSpanAttribute('browser.navigation.page_completion_time', 3000)
+						expect(documentLoadSpan).toHaveSpanAttribute('browser.navigation.status', 'timeout')
+					},
+					{ timeout: 6000 },
+				)
+			} finally {
+				slowResourceAbortController.abort()
+			}
 		})
 	})
 	describe('double-init has no effect', () => {
@@ -766,6 +801,50 @@ describe('test route change', () => {
 		expect(span).toHaveSpanAttributeContaining('location.href', '#hashChange')
 		expect(span).toHaveSpanAttribute('prev.href', oldUrl)
 		history.pushState({}, 'title', '/')
+	})
+})
+
+describe('test route change spa metrics timeout', () => {
+	let capturer: SpanCapturer
+
+	beforeEach(() => {
+		capturer = new SpanCapturer()
+		initWithDefaultConfig(capturer, {
+			spaMetrics: {
+				maxPageLoadWaitTime: 3000,
+				quietTime: 1000,
+			},
+		})
+	})
+
+	afterEach(() => {
+		deinit()
+		history.pushState({}, 'title', '/')
+	})
+
+	it('sets timeout status on routeChange span when PCT computation times out', async () => {
+		const oldUrl = location.href
+		const slowResourceAbortController = new AbortController()
+		void fetch(`${HTTP_TEST_SERVER_URL}/some-data?delay=5000`, {
+			signal: slowResourceAbortController.signal,
+		}).catch(() => {})
+
+		try {
+			history.pushState({}, 'title', '/pctTimeout#WithAHash')
+
+			await vi.waitFor(
+				() => {
+					const span = capturer.spans.find((s) => s.name === 'routeChange')
+					expectDefined(span, 'Check if routeChange span is present.')
+					expect(span).toHaveSpanAttribute('browser.nabigation.page_completion_time', 3000)
+					expect(span).toHaveSpanAttribute('browser.navigation.status', 'timeout')
+					expect(span).toHaveSpanAttribute('prev.href', oldUrl)
+				},
+				{ timeout: 6000 },
+			)
+		} finally {
+			slowResourceAbortController.abort()
+		}
 	})
 })
 

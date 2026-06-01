@@ -16,8 +16,10 @@
  *
  */
 
-import { describe, expect, it } from 'vitest'
+import { diag } from '@opentelemetry/api'
+import { describe, expect, it, vi } from 'vitest'
 
+import { HTTP_TEST_SERVER_URL } from '../../../../../tests/servers/http-constants'
 import { ResourceState } from './monitors'
 import { getDocumentLoadTime, SpaMetricsManager } from './spa-metrics-manager'
 
@@ -29,6 +31,7 @@ describe('SpaMetricsManager', () => {
 		const config = manager.config
 
 		expect(config.quietTime).toBe(1000)
+		expect(config.maxPageLoadWaitTime).toBe(180_000)
 		expect(config.maxResourcesToWatch).toBe(100)
 		expect(config.ignoreUrls).toEqual([])
 	})
@@ -36,6 +39,7 @@ describe('SpaMetricsManager', () => {
 	it('applies custom config', () => {
 		const manager = new SpaMetricsManager({
 			ignoreUrls: [/test/],
+			maxPageLoadWaitTime: 5000,
 			quietTime: 2000,
 		})
 
@@ -43,8 +47,26 @@ describe('SpaMetricsManager', () => {
 		const config = manager.config
 
 		expect(config.quietTime).toBe(2000)
+		expect(config.maxPageLoadWaitTime).toBe(5000)
 		expect(config.maxResourcesToWatch).toBe(100)
 		expect(config.ignoreUrls).toHaveLength(1)
+	})
+
+	it('uses quiet time as max page load wait time and warns once when configured max is lower', () => {
+		const diagWarnSpy = vi.spyOn(diag, 'warn')
+		const manager = new SpaMetricsManager({ maxPageLoadWaitTime: 5, quietTime: 30 })
+
+		// @ts-expect-error Config is private. We use it for testing.
+		const config = manager.config
+
+		expect(config.maxPageLoadWaitTime).toBe(30)
+		expect(diagWarnSpy).toHaveBeenCalledTimes(1)
+		expect(diagWarnSpy).toHaveBeenCalledWith(
+			'spa.maxPageLoadWaitTime cannot be lower than quietTime. Using quietTime as maxPageLoadWaitTime.',
+			{ maxPageLoadWaitTime: 5, quietTime: 30 },
+		)
+
+		diagWarnSpy.mockRestore()
 	})
 
 	it('adds beacon endpoint origin to ignoreUrls', () => {
@@ -99,7 +121,7 @@ describe('SpaMetricsManager', () => {
 
 		const result = await promise
 		expect(result).toHaveProperty('pct')
-		expect(result).toHaveProperty('timestampOfLastLoadedResource')
+		expect(result.timeout).toBe(false)
 
 		manager.stop()
 	})
@@ -116,8 +138,29 @@ describe('SpaMetricsManager', () => {
 
 		expect(result.pct).toBeGreaterThanOrEqual(documentLoadTime)
 		expect(result.pct).toBeGreaterThan(0)
+		expect(result.timeout).toBe(false)
 
 		manager.stop()
+	})
+
+	it('waitForPageLoad resolves with timeout true when max page load wait time expires', async () => {
+		const manager = new SpaMetricsManager({ maxPageLoadWaitTime: 3000, quietTime: 1000 })
+		manager.start()
+		const slowResourceAbortController = new AbortController()
+
+		try {
+			const startTime = performance.now()
+			void fetch(`${HTTP_TEST_SERVER_URL}/some-data?delay=5000`, {
+				signal: slowResourceAbortController.signal,
+			}).catch(() => {})
+			const result = await manager.waitForPageLoad({ startTime })
+
+			expect(result.pct).toBe(3000)
+			expect(result.timeout).toBe(true)
+		} finally {
+			slowResourceAbortController.abort()
+			manager.stop()
+		}
 	})
 
 	it('tracks loading resources and manages quiet timer', () => {
