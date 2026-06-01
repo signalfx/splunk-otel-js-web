@@ -15,6 +15,7 @@
  * limitations under the License.
  *
  */
+import { addHrTimes, millisToHrTime } from '@opentelemetry/core'
 import { expect } from '@playwright/test'
 import type { ExportedTestSpan } from '@test-utils/test-span.js'
 
@@ -82,6 +83,10 @@ const ATTRIBUTION_TAGS = [
 
 const SHARED_WEBVITALS_TAGS = ['webvitals.delta', 'webvitals.metric_id', 'webvitals.navigation_type'] as const
 
+type WebVitalsMetricName = 'cls' | 'fcp' | 'inp' | 'lcp' | 'ttfb'
+
+const DEFAULT_WEB_VITALS: WebVitalsMetricName[] = ['cls', 'inp', 'lcp']
+
 const expectNumericTag = (span: ExportedTestSpan, name: string): void => {
 	const value = span.attributes[name]
 	expect(value, `expected attribute "${name}" to be defined`).toBeDefined()
@@ -133,22 +138,33 @@ const waitForTwoAnimationFrames = (): Promise<void> =>
 		})
 	})
 
-async function collectWebVitals(recordPage: RecordPage, url: string): Promise<void> {
+async function collectWebVitals(
+	recordPage: RecordPage,
+	url: string,
+	expectedMetrics: WebVitalsMetricName[] = DEFAULT_WEB_VITALS,
+): Promise<void> {
 	await recordPage.goTo(url)
 	await expect(recordPage.locator('#shift')).toBeAttached()
 	await recordPage.evaluate(waitForTwoAnimationFrames)
 
 	await recordPage.locator('#clicky').click()
 	await expect(recordPage.locator('#p2')).toBeAttached()
+	await recordPage.evaluate(waitForTwoAnimationFrames)
 
 	// webvitals library won't send the cls unless a visibility change happens, so
 	// force a fake one
 	await recordPage.changeVisibilityInTab('hidden')
-	await recordPage.waitForTimeoutAndFlushData(1000)
-}
+	try {
+		await recordPage.waitForSpans((spans) =>
+			expectedMetrics.every((name) => spans.some((span) => span.attributes[name] !== undefined)),
+		)
+	} catch {
+		const receivedMetrics = recordPage.receivedSpans.flatMap((span) =>
+			expectedMetrics.filter((name) => span.attributes[name] !== undefined),
+		)
 
-function hrTimeToNanos(span: ExportedTestSpan): bigint {
-	return BigInt(span.startTime[0]) * 1_000_000_000n + BigInt(span.startTime[1])
+		throw new Error(`Timed out waiting for webvitals metrics. Received: ${receivedMetrics.join(', ')}`)
+	}
 }
 
 function getMetricSpans(recordPage: RecordPage, name: string) {
@@ -255,7 +271,11 @@ test.describe('web vitals', () => {
 			test.skip()
 		}
 
-		await collectWebVitals(recordPage, '/webvitals/webvitals-experimental.ejs')
+		await collectWebVitals(recordPage, '/webvitals/webvitals-experimental.ejs', [
+			...DEFAULT_WEB_VITALS,
+			'fcp',
+			'ttfb',
+		])
 
 		const fcp = expectSingleMetricSpan(recordPage, 'fcp')
 		expectNoAttributionTags(fcp)
@@ -274,7 +294,11 @@ test.describe('web vitals', () => {
 			test.skip()
 		}
 
-		await collectWebVitals(recordPage, '/webvitals/webvitals-experimental-attribution.ejs')
+		await collectWebVitals(recordPage, '/webvitals/webvitals-experimental-attribution.ejs', [
+			...DEFAULT_WEB_VITALS,
+			'fcp',
+			'ttfb',
+		])
 
 		const fcp = expectSingleMetricSpan(recordPage, 'fcp')
 		expectNoLegacyAttributionTags(fcp)
@@ -295,7 +319,7 @@ test.describe('web vitals', () => {
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})
 
-	test('webvitals span inherits documentLoad startTime and URL even after SPA navigation', async ({
+	test('webvitals span inherits documentLoad startTime and URL before documentLoad span ends', async ({
 		browserName,
 		recordPage,
 	}) => {
@@ -317,15 +341,16 @@ test.describe('web vitals', () => {
 		await expect(recordPage.locator('#p2')).toBeAttached()
 
 		await recordPage.changeVisibilityInTab('hidden')
-		await recordPage.waitForTimeoutAndFlushData(1000)
+		await recordPage.waitForSpans((spans) => spans.some((span) => span.attributes['lcp'] !== undefined))
 
-		const docLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'documentLoad')
 		const webvitalsSpan = recordPage.receivedSpans.find((span) => span.attributes['lcp'] !== undefined)
+		const docLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'documentLoad')
 
-		expectDefined(docLoadSpan)
 		expectDefined(webvitalsSpan)
+		expectDefined(docLoadSpan)
 
-		expect(hrTimeToNanos(webvitalsSpan)).toBe(hrTimeToNanos(docLoadSpan) + 1_000_000n)
+		const expectedStartTime = addHrTimes(docLoadSpan.startTime, millisToHrTime(1))
+		expect(webvitalsSpan.startTime).toEqual(expectedStartTime)
 		expect(webvitalsSpan.attributes['location.href']).toBe(docLoadUrl)
 	})
 

@@ -15,6 +15,6 @@
  * limitations under the License.
  *
  */
-export * from './delay-middleware'
+export * from '../../../../../tests/servers/delay-middleware'
 export * from './no-cache-middleware'
 export * from './server-timing-middleware'
