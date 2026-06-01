@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-export * from './http'
-export * from './http-constants'
-export * from './socket-io'
-export * from './websocket'
+
+export const HTTP_TEST_SERVER_HOST = '127.0.0.1'
+export const HTTP_TEST_SERVER_PORT = 8981
+export const HTTP_TEST_SERVER_URL = `http://${HTTP_TEST_SERVER_HOST}:${HTTP_TEST_SERVER_PORT}`

@@ -21,20 +21,19 @@ import { QuietPeriodAwaiter } from './quiet-period-awaiter'
 
 describe('QuietPeriodAwaiter', () => {
 	it('resolves after quiet period expires', async () => {
-		const awaiter = new QuietPeriodAwaiter(100)
+		const awaiter = new QuietPeriodAwaiter({ quietTime: 100 })
 		const resourceLoadedTimestamp = performance.now() + 10
 		awaiter.startQuietTimer({ resourceLoadedTimestamp })
 
 		const result = await awaiter.promise
 
 		expect(result).toHaveProperty('pct')
-		expect(result).toHaveProperty('timestampOfLastLoadedResource')
 		expect(result.pct).toBe(10)
-		expect(result.timestampOfLastLoadedResource).toBe(resourceLoadedTimestamp)
+		expect(result.timeout).toBe(false)
 	})
 
 	it('resets timer when removeQuietTimer is called', async () => {
-		const awaiter = new QuietPeriodAwaiter(500)
+		const awaiter = new QuietPeriodAwaiter({ quietTime: 500 })
 		awaiter.startQuietTimer({ resourceLoadedTimestamp: performance.now() })
 
 		await new Promise((resolve) => setTimeout(resolve, 250))
@@ -45,13 +44,41 @@ describe('QuietPeriodAwaiter', () => {
 		const result = await awaiter.promise
 		expect(result.pct).toBeGreaterThanOrEqual(250)
 		expect(result.pct).toBeLessThan(300)
+		expect(result.timeout).toBe(false)
 	})
 
 	it('complete() resolves immediately', async () => {
-		const awaiter = new QuietPeriodAwaiter(1000)
+		const awaiter = new QuietPeriodAwaiter({ quietTime: 1000 })
 
 		awaiter.complete({ areResourcesStillLoading: false })
 		const result = await awaiter.promise
 		expect(result.pct).toBe(0)
+		expect(result.timeout).toBe(false)
+	})
+
+	it('resolves with timeout true when max page load wait time expires before quiet timer starts', async () => {
+		const startTime = performance.now()
+		const awaiter = new QuietPeriodAwaiter({ maxPageLoadWaitTime: 10, quietTime: 5, startTime })
+
+		const result = await awaiter.promise
+
+		expect(result.pct).toBe(10)
+		expect(result.timeout).toBe(true)
+	})
+
+	it('resolves only once when quiet period would expire after max page load wait time', async () => {
+		const results: unknown[] = []
+		const startTime = performance.now()
+		const awaiter = new QuietPeriodAwaiter({ maxPageLoadWaitTime: 30, quietTime: 20, startTime })
+		void awaiter.promise.then((promiseResult) => results.push(promiseResult))
+
+		await new Promise((resolve) => setTimeout(resolve, 20))
+		awaiter.startQuietTimer({ resourceLoadedTimestamp: performance.now() })
+		const result = await awaiter.promise
+
+		await new Promise((resolve) => setTimeout(resolve, 50))
+		expect(result.pct).toBe(30)
+		expect(result.timeout).toBe(true)
+		expect(results).toHaveLength(1)
 	})
 })
