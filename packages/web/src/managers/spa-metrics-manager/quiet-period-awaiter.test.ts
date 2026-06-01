@@ -27,9 +27,9 @@ describe('QuietPeriodAwaiter', () => {
 
 		const result = await awaiter.promise
 
-		expect(result).toHaveProperty('loadTime')
+		expect(result).toHaveProperty('pct')
 		expect(result).toHaveProperty('timestampOfLastLoadedResource')
-		expect(result.loadTime).toBe(10)
+		expect(result.pct).toBe(10)
 		expect(result.timestampOfLastLoadedResource).toBe(resourceLoadedTimestamp)
 	})
 
@@ -43,8 +43,8 @@ describe('QuietPeriodAwaiter', () => {
 		awaiter.startQuietTimer({ resourceLoadedTimestamp })
 
 		const result = await awaiter.promise
-		expect(result.loadTime).toBeGreaterThanOrEqual(250)
-		expect(result.loadTime).toBeLessThan(300)
+		expect(result.pct).toBeGreaterThanOrEqual(250)
+		expect(result.pct).toBeLessThan(300)
 	})
 
 	it('complete() resolves immediately', async () => {
@@ -52,6 +52,6 @@ describe('QuietPeriodAwaiter', () => {
 
 		awaiter.complete({ areResourcesStillLoading: false })
 		const result = await awaiter.promise
-		expect(result.loadTime).toBe(0)
+		expect(result.pct).toBe(0)
 	})
 })

@@ -27,6 +27,15 @@ const SPA_METRICS_MANAGER_CONFIG_DEFAULTS = {
 	quietTime: 1000,
 } as const
 
+type DocumentLoadTiming = Pick<PerformanceNavigationTiming, 'fetchStart' | 'loadEventEnd'>
+
+export function getDocumentLoadTime(navEntry: DocumentLoadTiming): number {
+	// Calculates document load duration same as OTel
+	// Firefox can report cached navigation fetchStart before time origin.
+	// See https://github.com/w3c-cg/rum/issues/1.
+	return navEntry.loadEventEnd - navEntry.fetchStart
+}
+
 export interface SpaMetricsManagerConfig {
 	beaconEndpoint?: string
 	ignoreUrls?: (string | RegExp)[]
@@ -55,7 +64,7 @@ export class SpaMetricsManager {
 
 	private performanceMonitor: PerformanceMonitor
 
-	private quietPeriodAwaiter = new QuietPeriodAwaiter()
+	private quietPeriodAwaiter: QuietPeriodAwaiter | undefined
 
 	constructor(config: SpaMetricsManagerConfig = {}) {
 		const ignoreUrls: (string | RegExp)[] = [...(config.ignoreUrls ?? [])]
@@ -118,12 +127,23 @@ export class SpaMetricsManager {
 	}
 
 	waitForPageLoad({ startTime }: { startTime: number }) {
-		this.quietPeriodAwaiter.complete({ areResourcesStillLoading: this.loadingResourcesCount > 0 })
+		this.quietPeriodAwaiter?.complete({ areResourcesStillLoading: this.loadingResourcesCount > 0 })
 		this.quietPeriodAwaiter = new QuietPeriodAwaiter(this.config.quietTime, startTime)
 
 		if (this.loadingResourcesCount === 0) {
 			this.quietPeriodAwaiter.startQuietTimer({ resourceLoadedTimestamp: startTime })
 			diag.debug('No loading resources. Starting quiet timer.')
+		}
+
+		// startTime === 0 means this is a documentLoad pct — ensure it's at least the document load time
+		if (startTime === 0) {
+			return this.quietPeriodAwaiter.promise.then((result) => {
+				const navEntry = performance.getEntriesByType('navigation')[0] as
+					| PerformanceNavigationTiming
+					| undefined
+				const documentLoadTime = navEntry ? getDocumentLoadTime(navEntry) : 0
+				return { ...result, pct: Math.max(result.pct, documentLoadTime) }
+			})
 		}
 
 		return this.quietPeriodAwaiter.promise
@@ -139,7 +159,7 @@ export class SpaMetricsManager {
 			const count = this.loadingUrls.get(event.url) ?? 0
 			this.loadingUrls.set(event.url, count + 1)
 			diag.debug('Detected resource. Resetting quiet timer', event.url)
-			this.quietPeriodAwaiter.removeQuietTimer()
+			this.quietPeriodAwaiter?.removeQuietTimer()
 		} else {
 			const count = this.loadingUrls.get(event.url) ?? 0
 			if (count > 0) {
@@ -151,7 +171,7 @@ export class SpaMetricsManager {
 
 				if (this.loadingResourcesCount === 0) {
 					diag.debug('No loading resources. Starting quiet timer.')
-					this.quietPeriodAwaiter.startQuietTimer({ resourceLoadedTimestamp: event.timestamp })
+					this.quietPeriodAwaiter?.startQuietTimer({ resourceLoadedTimestamp: event.timestamp })
 				}
 			}
 		}
