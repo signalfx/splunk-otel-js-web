@@ -19,11 +19,10 @@
 import { diag } from '@opentelemetry/api'
 
 import { FetchXhrMonitor, MediaMonitor, PerformanceMonitor, ResourceState, ResourceStateEvent } from './monitors'
-import { normalizeMaxPageLoadWaitTime, type PageLoadMetricsResult, QuietPeriodAwaiter } from './quiet-period-awaiter'
+import { type PageLoadMetricsResult, QuietPeriodAwaiter } from './quiet-period-awaiter'
 
 const SPA_METRICS_MANAGER_CONFIG_DEFAULTS = {
 	ignoreUrls: [] as (string | RegExp)[],
-	maxPageLoadWaitTime: 180_000,
 	maxResourcesToWatch: 100,
 	quietTime: 1000,
 } as const
@@ -40,7 +39,6 @@ export function getDocumentLoadTime(navEntry: DocumentLoadTiming): number {
 export interface SpaMetricsManagerConfig {
 	beaconEndpoint?: string
 	ignoreUrls?: (string | RegExp)[]
-	maxPageLoadWaitTime?: number
 	maxResourcesToWatch?: number
 	quietTime?: number
 }
@@ -80,13 +78,10 @@ export class SpaMetricsManager {
 			}
 		}
 
-		const maxPageLoadWaitTime =
-			config.maxPageLoadWaitTime ?? SPA_METRICS_MANAGER_CONFIG_DEFAULTS.maxPageLoadWaitTime
 		const quietTime = config.quietTime ?? SPA_METRICS_MANAGER_CONFIG_DEFAULTS.quietTime
 
 		this.config = {
 			ignoreUrls,
-			maxPageLoadWaitTime: normalizeMaxPageLoadWaitTime({ maxPageLoadWaitTime, quietTime }),
 			maxResourcesToWatch: config.maxResourcesToWatch ?? SPA_METRICS_MANAGER_CONFIG_DEFAULTS.maxResourcesToWatch,
 			quietTime,
 		}
@@ -136,7 +131,6 @@ export class SpaMetricsManager {
 	waitForPageLoad({ startTime }: { startTime: number }): Promise<PageLoadMetricsResult> {
 		this.quietPeriodAwaiter?.complete({ areResourcesStillLoading: this.loadingResourcesCount > 0 })
 		this.quietPeriodAwaiter = new QuietPeriodAwaiter({
-			maxPageLoadWaitTime: this.config.maxPageLoadWaitTime,
 			quietTime: this.config.quietTime,
 			startTime,
 		})

@@ -371,17 +371,13 @@ test.describe('web vitals', () => {
 
 		const lcp = recordPage.receivedSpans.filter((span) => span.attributes['lcp'] !== undefined)
 		const cls = recordPage.receivedSpans.filter((span) => span.attributes['cls'] !== undefined)
+		const webVitalsSpans = recordPage.receivedSpans.filter((span) => span.name === 'webvitals')
 
 		expect(lcp).toHaveLength(0)
 		expect(cls).toHaveLength(0)
-		expect(
-			recordPage.receivedSpans.some(
-				(span) =>
-					span.attributes['lcp.target'] !== undefined ||
-					span.attributes['cls.largest_shift_target'] !== undefined ||
-					Object.keys(span.attributes).some((key) => key.includes('.attribution.')),
-			),
-		).toBeFalsy()
+		for (const span of webVitalsSpans) {
+			expectNoAttributionTags(span)
+		}
 
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})
