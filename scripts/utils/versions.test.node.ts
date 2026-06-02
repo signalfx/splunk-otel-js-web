@@ -20,7 +20,7 @@ import { describe, expect, it } from 'vitest'
 import { createCdnSnapshotVersion } from './cdn-snapshot-version.mjs'
 import { getAllVersions } from './versions.mjs'
 
-const snapshotVersionNameRegex = /^v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?-[0-9a-f]+$/
+const snapshotVersionNameRegex = /^v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?-[0-9a-f]{40}$/
 
 describe('getAllVersions', () => {
 	it('returns exact, minor, and major aliases for stable versions', async () => {
@@ -57,26 +57,41 @@ describe('getAllVersions', () => {
 	})
 
 	it('creates an upload-only commit hash version', () => {
-		expect(createCdnSnapshotVersion({ commitHash: 'abc123', packageVersion: '3.0.0' })).toEqual({
+		expect(
+			createCdnSnapshotVersion({
+				commitHash: 'abc123def456abc123def456abc123def456abcd',
+				packageVersion: '3.0.0',
+			}),
+		).toEqual({
 			includeInGithubRelease: false,
 			isVersionImmutable: true,
-			name: 'v3.0.0-abc123',
+			name: 'v3.0.0-abc123def456abc123def456abc123def456abcd',
 		})
 	})
 
 	it('creates an upload-only commit hash version for beta packages', () => {
-		expect(createCdnSnapshotVersion({ commitHash: 'abc123', packageVersion: '3.1.0-beta.1' })).toEqual({
+		expect(
+			createCdnSnapshotVersion({
+				commitHash: 'abc123def456abc123def456abc123def456abcd',
+				packageVersion: '3.1.0-beta.1',
+			}),
+		).toEqual({
 			includeInGithubRelease: false,
 			isVersionImmutable: true,
-			name: 'v3.1.0-beta.1-abc123',
+			name: 'v3.1.0-beta.1-abc123def456abc123def456abc123def456abcd',
 		})
 	})
 
 	it('creates an upload-only commit hash version for alpha packages', () => {
-		expect(createCdnSnapshotVersion({ commitHash: 'abc123', packageVersion: '3.1.0-alpha.1' })).toEqual({
+		expect(
+			createCdnSnapshotVersion({
+				commitHash: 'abc123def456abc123def456abc123def456abcd',
+				packageVersion: '3.1.0-alpha.1',
+			}),
+		).toEqual({
 			includeInGithubRelease: false,
 			isVersionImmutable: true,
-			name: 'v3.1.0-alpha.1-abc123',
+			name: 'v3.1.0-alpha.1-abc123def456abc123def456abc123def456abcd',
 		})
 	})
 

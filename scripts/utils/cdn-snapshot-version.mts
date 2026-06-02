@@ -22,7 +22,7 @@ import type { Version } from './versions.mjs'
 
 export const getCommitHash = () => {
 	try {
-		const commitHash = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim()
+		const commitHash = execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim()
 		if (!commitHash) {
 			throw new Error('Command returned an empty commit hash.')
 		}
