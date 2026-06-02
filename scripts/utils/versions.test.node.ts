@@ -20,6 +20,8 @@ import { describe, expect, it } from 'vitest'
 import { createCdnSnapshotVersion } from './cdn-snapshot-version.mjs'
 import { getAllVersions } from './versions.mjs'
 
+const snapshotVersionNameRegex = /^v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?-[0-9a-f]+$/
+
 describe('getAllVersions', () => {
 	it('returns exact, minor, and major aliases for stable versions', async () => {
 		expect(await getAllVersions('v3.0.0')).toEqual([
@@ -34,9 +36,23 @@ describe('getAllVersions', () => {
 			{
 				includeInGithubRelease: false,
 				isVersionImmutable: true,
-				name: expect.stringMatching(/^v[0-9]+\.[0-9]+\.[0-9]+-[0-9a-f]+$/),
+				name: expect.stringMatching(snapshotVersionNameRegex),
 			},
 			{ includeInGithubRelease: false, isVersionImmutable: false, name: 'next' },
+		])
+	})
+
+	it('returns exact and beta aliases for beta versions', async () => {
+		expect(await getAllVersions('v3.1.0-beta.1')).toEqual([
+			{ includeInGithubRelease: true, isVersionImmutable: true, name: 'v3.1.0-beta.1' },
+			{ includeInGithubRelease: true, isVersionImmutable: false, name: 'v3.1.0-beta' },
+		])
+	})
+
+	it('returns exact and alpha aliases for alpha versions', async () => {
+		expect(await getAllVersions('v3.1.0-alpha.1')).toEqual([
+			{ includeInGithubRelease: true, isVersionImmutable: true, name: 'v3.1.0-alpha.1' },
+			{ includeInGithubRelease: true, isVersionImmutable: false, name: 'v3.1.0-alpha' },
 		])
 	})
 
@@ -45,6 +61,22 @@ describe('getAllVersions', () => {
 			includeInGithubRelease: false,
 			isVersionImmutable: true,
 			name: 'v3.0.0-abc123',
+		})
+	})
+
+	it('creates an upload-only commit hash version for beta packages', () => {
+		expect(createCdnSnapshotVersion({ commitHash: 'abc123', packageVersion: '3.1.0-beta.1' })).toEqual({
+			includeInGithubRelease: false,
+			isVersionImmutable: true,
+			name: 'v3.1.0-beta.1-abc123',
+		})
+	})
+
+	it('creates an upload-only commit hash version for alpha packages', () => {
+		expect(createCdnSnapshotVersion({ commitHash: 'abc123', packageVersion: '3.1.0-alpha.1' })).toEqual({
+			includeInGithubRelease: false,
+			isVersionImmutable: true,
+			name: 'v3.1.0-alpha.1-abc123',
 		})
 	})
 
