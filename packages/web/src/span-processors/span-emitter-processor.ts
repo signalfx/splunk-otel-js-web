@@ -21,8 +21,13 @@ export type SpanEventType = string
 
 type SpanEventListener = (span: ReadableSpan) => void
 
+type BufferedSpanEvent = {
+	phase: 'end' | 'start'
+	span: ReadableSpan
+}
+
 export class SpanEmitterProcessor implements SpanProcessor {
-	private buffer: ReadableSpan[] = []
+	private buffer: BufferedSpanEvent[] = []
 
 	private isEnabled = false
 
@@ -56,8 +61,8 @@ export class SpanEmitterProcessor implements SpanProcessor {
 	enable() {
 		this.isEnabled = true
 
-		for (const span of this.buffer) {
-			this.emitSpan(span, 'end')
+		for (const { phase, span } of this.buffer) {
+			this.emitSpan(span, phase)
 		}
 
 		this.buffer = []
@@ -69,7 +74,7 @@ export class SpanEmitterProcessor implements SpanProcessor {
 
 	onEnd(span: ReadableSpan): void {
 		if (!this.isEnabled) {
-			this.buffer.push(span)
+			this.buffer.push({ phase: 'end', span })
 			return
 		}
 
@@ -78,6 +83,7 @@ export class SpanEmitterProcessor implements SpanProcessor {
 
 	onStart(span: ReadableSpan): void {
 		if (!this.isEnabled) {
+			this.buffer.push({ phase: 'start', span })
 			return
 		}
 

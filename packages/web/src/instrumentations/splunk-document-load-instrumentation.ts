@@ -29,7 +29,7 @@ import { Span } from '@opentelemetry/sdk-trace-base'
 import { addSpanNetworkEvents, PerformanceEntries, PerformanceTimingNames as PTN } from '@opentelemetry/sdk-trace-web'
 import { SemanticAttributes, SEMATTRS_HTTP_URL } from '@opentelemetry/semantic-conventions'
 
-import { SessionManager, SpaMetricsManager } from '../managers'
+import { SessionManager } from '../managers'
 import { captureTraceParentFromPerformanceEntries } from '../servertiming'
 import { SplunkOtelWebConfig } from '../types'
 import { isCacheHit } from '../utils/cache'
@@ -74,34 +74,24 @@ type ExposedSuper = {
 }
 
 export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentation {
-	private readonly documentLoadMetricsPromise: ReturnType<SpaMetricsManager['waitForPageLoad']> | undefined
-
-	private readonly spaMetricsManager: SpaMetricsManager | undefined
-
 	constructor(
 		config: SplunkDocLoadInstrumentationConfig = {},
 		protected otelConfig: SplunkOtelWebConfig,
 		public sessionManager?: SessionManager,
-		spaMetricsManager?: SpaMetricsManager,
 	) {
 		super(config)
-		this.spaMetricsManager = spaMetricsManager
-		this.documentLoadMetricsPromise = this.spaMetricsManager?.waitForPageLoad({ startTime: 0 })
 
 		const exposedSuper = this as any as ExposedSuper
 
-		const _superStartSpan: ExposedSuper['_startSpan'] = exposedSuper._startSpan.bind(this)
 		const _superEndSpan: ExposedSuper['_endSpan'] = exposedSuper._endSpan.bind(this)
+		const _superStartSpan: ExposedSuper['_startSpan'] = exposedSuper._startSpan.bind(this)
 
 		exposedSuper._startSpan = (spanName, performanceName, entries, parentSpan) => {
 			const span = _superStartSpan(spanName, performanceName, entries, parentSpan)
-
-			if (span && spanName === AttributeNames.DOCUMENT_LOAD) {
+			if (span) {
+				// Upstream starts the span before this wrapper can set `component`, so SpanEmitterProcessor.onStart
+				// cannot route document-load start events. Emit manually once the component is present.
 				span.setAttribute('component', this.component)
-				addExtraDocLoadTags(span)
-				// The span processor's automatic onStart event already ran before
-				// `component` was set, so emit manually now that SpanEmitter can
-				// route this as `document-load:start`.
 				this.otelConfig.spanEmitter?.emitSpan(span, 'start')
 			}
 
@@ -155,26 +145,6 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 
 			if (span && exposedSpan.name === AttributeNames.DOCUMENT_LOAD) {
 				addExtraDocLoadTags(span)
-
-				if (this.documentLoadMetricsPromise) {
-					void this.documentLoadMetricsPromise
-						.then(({ pct, timeout }) => {
-							span.setAttribute('browser.navigation.page_completion_time', pct)
-							if (timeout) {
-								span.setAttribute('browser.navigation.status', 'timeout')
-							}
-
-							_superEndSpan(span, performanceName, entries)
-						})
-						.catch((error) => {
-							api.diag.warn('SplunkDocumentLoadInstrumentation: Failed to resolve page load metrics.', {
-								error,
-							})
-							_superEndSpan(span, performanceName, entries)
-						})
-
-					return
-				}
 			}
 
 			const result = _superEndSpan(span, performanceName, entries)
