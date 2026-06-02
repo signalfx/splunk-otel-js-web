@@ -16,6 +16,7 @@
  *
  */
 export * from './arguments.mjs'
+export * from './cdn-snapshot-version.mjs'
 export * from './cf-invalidation.mjs'
 export * from './generate-release-links.mjs'
 export * from './generate-script-snippet.mjs'
