@@ -154,6 +154,11 @@ const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
 const INSTRUMENTATIONS = [
 	{ confKey: 'document', disable: false, Instrument: SplunkDocumentLoadInstrumentation },
 	{ confKey: 'xhr', disable: false, Instrument: SplunkXhrInstrumentation },
+	// TODO: Fetch must be enabled before interactions instrumentation. The interactions instrumentation
+	// 	wraps fetch to track Page Completion Time (PCT), and SplunkFetchInstrumentation wrongly unwraps
+	// 	fetch during enable(). It is fixed in new versions of ``@opentelemetry/instrumentation-xml-http-request`
+	// 	once we are able to upgrade to a version that fixes this issue, we can remove this ordering/comment
+	// 	This ordering ensures our PCT fetch wrapper remains intact.
 	{ confKey: 'fetch', disable: false, Instrument: SplunkFetchInstrumentation },
 	{
 		confKey: FRUSTRATION_SIGNALS_INSTRUMENTATION_NAME,

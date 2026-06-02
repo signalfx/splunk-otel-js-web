@@ -18,42 +18,16 @@
 
 import { diag } from '@opentelemetry/api'
 
-const DEFAULT_MAX_PAGE_LOAD_WAIT_TIME = 180_000
 const DEFAULT_QUIET_TIME = 1000
 
-export type PageLoadMetricsResult = { pct: number; timeout: boolean }
-
-type QuietPeriodAwaiterConfig = {
-	maxPageLoadWaitTime?: number
-	quietTime?: number
-	startTime?: number
-}
-
-type MaxPageLoadWaitTimeConfig = Required<Pick<QuietPeriodAwaiterConfig, 'maxPageLoadWaitTime' | 'quietTime'>>
-
-export function normalizeMaxPageLoadWaitTime({ maxPageLoadWaitTime, quietTime }: MaxPageLoadWaitTimeConfig): number {
-	if (maxPageLoadWaitTime >= quietTime) {
-		return maxPageLoadWaitTime
-	}
-
-	diag.warn('spa.maxPageLoadWaitTime cannot be lower than quietTime. Using quietTime as maxPageLoadWaitTime.', {
-		maxPageLoadWaitTime,
-		quietTime,
-	})
-
-	return quietTime
-}
+type ResolveValue = { loadTime: number; timestampOfLastLoadedResource: number }
 
 export class QuietPeriodAwaiter {
-	readonly promise: Promise<PageLoadMetricsResult>
+	readonly promise: Promise<ResolveValue>
 
 	private isResolved = false
 
 	private lastResourceTimestamp: number | undefined
-
-	private maxPageLoadWaitTime: number
-
-	private maxWaitTimeoutId: ReturnType<typeof setTimeout> | undefined
 
 	private quietTime: number
 
@@ -61,26 +35,13 @@ export class QuietPeriodAwaiter {
 
 	private timeoutId: ReturnType<typeof setTimeout> | undefined
 
-	constructor({
-		maxPageLoadWaitTime = DEFAULT_MAX_PAGE_LOAD_WAIT_TIME,
-		quietTime = DEFAULT_QUIET_TIME,
-		startTime = performance.now(),
-	}: QuietPeriodAwaiterConfig = {}) {
+	constructor(quietTime: number = DEFAULT_QUIET_TIME, startTime: number = performance.now()) {
 		this.startTime = startTime
 		this.quietTime = quietTime
-		this.maxPageLoadWaitTime = maxPageLoadWaitTime
-		this.promise = new Promise<PageLoadMetricsResult>((r) => {
+		this.promise = new Promise<ResolveValue>((r) => {
 			// @ts-expect-error Readonly property for resolve
 			this.resolve = r
 		})
-		this.maxWaitTimeoutId = setTimeout(() => {
-			const pct = Math.max(this.maxPageLoadWaitTime, 0)
-			diag.debug('QuietPeriodAwaiter: Max page load wait time expired', { pct })
-			this.resolveOnce({
-				pct,
-				timeout: true,
-			})
-		}, maxPageLoadWaitTime)
 	}
 
 	complete({ areResourcesStillLoading }: { areResourcesStillLoading: boolean }): void {
@@ -88,17 +49,20 @@ export class QuietPeriodAwaiter {
 			return
 		}
 
+		this.isResolved = true
+		clearTimeout(this.timeoutId)
+
 		let endTimestamp = performance.now()
 		if (!areResourcesStillLoading && this.lastResourceTimestamp) {
 			diag.debug('No resources loading. Using last resource timestamp.')
 			endTimestamp = this.lastResourceTimestamp
 		}
 
-		const pct = endTimestamp - this.startTime
-		diag.debug('QuietPeriodAwaiter: Complete', { pct })
-		this.resolveOnce({
-			pct,
-			timeout: false,
+		const loadTime = endTimestamp - this.startTime
+		diag.debug('QuietPeriodAwaiter: Complete', { loadTime })
+		this.resolve({
+			loadTime,
+			timestampOfLastLoadedResource: endTimestamp,
 		})
 	}
 
@@ -112,34 +76,20 @@ export class QuietPeriodAwaiter {
 	}
 
 	startQuietTimer({ resourceLoadedTimestamp }: { resourceLoadedTimestamp: number }): void {
-		if (this.isResolved) {
-			return
-		}
-
 		this.lastResourceTimestamp = resourceLoadedTimestamp
 		clearTimeout(this.timeoutId)
 
 		this.timeoutId = setTimeout(() => {
 			diag.debug('QuietPeriodAwaiter: Quiet period expired')
-			this.resolveOnce({
-				pct: Math.max(resourceLoadedTimestamp - this.startTime, 0),
-				timeout: false,
-			})
+			if (!this.isResolved) {
+				this.isResolved = true
+				this.resolve({
+					loadTime: Math.max(resourceLoadedTimestamp - this.startTime, 0),
+					timestampOfLastLoadedResource: resourceLoadedTimestamp,
+				})
+			}
 		}, this.quietTime)
 	}
 
-	private readonly resolve: (resolveValue: PageLoadMetricsResult) => void = () => {}
-
-	private resolveOnce(resolveValue: PageLoadMetricsResult): void {
-		if (this.isResolved) {
-			return
-		}
-
-		this.isResolved = true
-		clearTimeout(this.timeoutId)
-		clearTimeout(this.maxWaitTimeoutId)
-		this.timeoutId = undefined
-		this.maxWaitTimeoutId = undefined
-		this.resolve(resolveValue)
-	}
+	private readonly resolve: (resolveValue: ResolveValue) => void = () => {}
 }

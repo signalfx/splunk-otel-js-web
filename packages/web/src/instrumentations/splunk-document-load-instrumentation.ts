@@ -74,10 +74,6 @@ type ExposedSuper = {
 }
 
 export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentation {
-	private readonly documentLoadMetricsPromise: ReturnType<SpaMetricsManager['waitForPageLoad']> | undefined
-
-	private readonly spaMetricsManager: SpaMetricsManager | undefined
-
 	constructor(
 		config: SplunkDocLoadInstrumentationConfig = {},
 		protected otelConfig: SplunkOtelWebConfig,
@@ -85,28 +81,11 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 		spaMetricsManager?: SpaMetricsManager,
 	) {
 		super(config)
-		this.spaMetricsManager = spaMetricsManager
-		this.documentLoadMetricsPromise = this.spaMetricsManager?.waitForPageLoad({ startTime: 0 })
+		void spaMetricsManager
 
 		const exposedSuper = this as any as ExposedSuper
 
-		const _superStartSpan: ExposedSuper['_startSpan'] = exposedSuper._startSpan.bind(this)
 		const _superEndSpan: ExposedSuper['_endSpan'] = exposedSuper._endSpan.bind(this)
-
-		exposedSuper._startSpan = (spanName, performanceName, entries, parentSpan) => {
-			const span = _superStartSpan(spanName, performanceName, entries, parentSpan)
-
-			if (span && spanName === AttributeNames.DOCUMENT_LOAD) {
-				span.setAttribute('component', this.component)
-				addExtraDocLoadTags(span)
-				// The span processor's automatic onStart event already ran before
-				// `component` was set, so emit manually now that SpanEmitter can
-				// route this as `document-load:start`.
-				this.otelConfig.spanEmitter?.emitSpan(span, 'start')
-			}
-
-			return span
-		}
 
 		exposedSuper._onDocumentLoaded = (event?: Event) => {
 			if (event && !event.isTrusted) {
@@ -155,26 +134,6 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 
 			if (span && exposedSpan.name === AttributeNames.DOCUMENT_LOAD) {
 				addExtraDocLoadTags(span)
-
-				if (this.documentLoadMetricsPromise) {
-					void this.documentLoadMetricsPromise
-						.then(({ pct, timeout }) => {
-							span.setAttribute('browser.navigation.page_completion_time', pct)
-							if (timeout) {
-								span.setAttribute('browser.navigation.status', 'timeout')
-							}
-
-							_superEndSpan(span, performanceName, entries)
-						})
-						.catch((error) => {
-							api.diag.warn('SplunkDocumentLoadInstrumentation: Failed to resolve page load metrics.', {
-								error,
-							})
-							_superEndSpan(span, performanceName, entries)
-						})
-
-					return
-				}
 			}
 
 			const result = _superEndSpan(span, performanceName, entries)
