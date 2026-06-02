@@ -17,7 +17,10 @@
  */
 import { describe, expect, it } from 'vitest'
 
+import { HTTP_TEST_SERVER_URL } from '../../../../tests/servers/http-constants'
 import { isCacheHit } from './cache'
+
+const TEST_IMAGE_URL = `${HTTP_TEST_SERVER_URL}/test-image.png`
 
 function makeEntry(overrides: Partial<PerformanceResourceTiming> = {}): PerformanceResourceTiming {
 	return {
@@ -34,7 +37,7 @@ function makeEntry(overrides: Partial<PerformanceResourceTiming> = {}): Performa
 		fetchStart: 0,
 		firstInterimResponseStart: 0,
 		initiatorType: 'img',
-		name: 'https://example.com/image.png',
+		name: TEST_IMAGE_URL,
 		nextHopProtocol: 'h2',
 		redirectEnd: 0,
 		redirectStart: 0,

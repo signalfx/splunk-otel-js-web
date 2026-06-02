@@ -21,8 +21,11 @@ import { timeInputToHrTime } from '@opentelemetry/core'
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base'
 import { afterEach, assert, beforeEach, describe, expect, it, Mock, vi } from 'vitest'
 
+import { HTTP_TEST_SERVER_URL } from '../../../tests/servers/http-constants'
 import { RateLimitProcessor } from '../src/exporters/rate-limit'
 import { SplunkZipkinExporter } from '../src/exporters/zipkin'
+
+const TEST_IMAGE_URL = `${HTTP_TEST_SERVER_URL}/test-image.png`
 
 const buildDummySpan = ({ attributes = {}, name = '<name>' } = {}) =>
 	({
@@ -147,7 +150,7 @@ describe('SplunkZipkinExporter', () => {
 
 		const dummySpan = buildDummySpan({
 			attributes: {
-				'http.url': 'https://example.com/resource.png',
+				'http.url': TEST_IMAGE_URL,
 			},
 			name: 'asd',
 		})
@@ -184,7 +187,7 @@ describe('SplunkZipkinExporter', () => {
 
 		const dummySpan = buildDummySpan({
 			attributes: {
-				'http.url': 'https://example.com/resource.png',
+				'http.url': TEST_IMAGE_URL,
 			},
 			name: 'asd',
 		})
@@ -205,7 +208,7 @@ describe('SplunkZipkinExporter', () => {
 
 		const dummySpan = buildDummySpan({
 			attributes: {
-				'http.url': 'https://example.com/resource.png',
+				'http.url': TEST_IMAGE_URL,
 				'service.name': 'my-service',
 			},
 			name: 'asd',

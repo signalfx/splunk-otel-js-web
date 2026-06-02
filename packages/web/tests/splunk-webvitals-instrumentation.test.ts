@@ -21,6 +21,7 @@ import { expectDefined } from '@test-utils/assertions'
 import { describe, expect, it, vi } from 'vitest'
 import { LCPMetricWithAttribution } from 'web-vitals/attribution'
 
+import { HTTP_TEST_SERVER_URL } from '../../../tests/servers/http-constants'
 import { SplunkWebVitalsInstrumentation } from '../src/instrumentations/splunk-webvitals-instrumentation'
 import {
 	getLCPResourceTimingAttributes,
@@ -30,6 +31,8 @@ import {
 	isWebVitalsAttributionEnabled,
 	sanitizeLCPUrl,
 } from '../src/instrumentations/webvitals'
+
+const TEST_IMAGE_URL = `${HTTP_TEST_SERVER_URL}/test-image.png`
 
 describe('webvitals attribution helpers', () => {
 	it('resolves relative LCP URLs against the current location and strips fragments', () => {
@@ -80,9 +83,9 @@ describe('webvitals attribution helpers', () => {
 	})
 
 	it('applies LCP URL attribution policy defaults and overrides', () => {
-		const fullUrl = 'https://example.com/path/image.png?token=secret#fragment'
+		const fullUrl = `${TEST_IMAGE_URL}?token=secret#fragment`
 
-		expect(getLCPUrlForAttribution(fullUrl)).toBe('https://example.com/path/image.png')
+		expect(getLCPUrlForAttribution(fullUrl)).toBe(TEST_IMAGE_URL)
 		expect(getLCPUrlForAttribution(fullUrl, { lcpUrl: 'raw' })).toBe(fullUrl)
 		expect(getLCPUrlForAttribution(fullUrl, { lcpUrl: 'off' })).toBeUndefined()
 		expect(getLCPUrlForAttribution('data:image/png;base64,secret')).toBeUndefined()
@@ -153,7 +156,7 @@ describe('webvitals attribution helpers', () => {
 			'lcp.resource_load_duration': 30,
 			'lcp.target': 'main>img',
 			'lcp.time_to_first_byte': 10,
-			'lcp.url': 'https://example.com/image.png',
+			'lcp.url': TEST_IMAGE_URL,
 			'webvitals.delta': 100,
 			'webvitals.metric_id': 'v5-lcp',
 			'webvitals.navigation_type': 'navigate',
@@ -171,7 +174,7 @@ describe('webvitals attribution helpers', () => {
 		expect(attributes).toMatchObject({
 			'lcp': 100,
 			'lcp.target': 'main>img',
-			'lcp.url': 'https://example.com/image.png',
+			'lcp.url': TEST_IMAGE_URL,
 			'webvitals.metric_id': 'v5-lcp',
 		})
 	})
@@ -185,13 +188,13 @@ describe('webvitals attribution helpers', () => {
 		})
 
 		await reportLCPMetric(instrumentation, {
-			url: 'https://example.com/image.png?token=secret#fragment',
+			url: `${TEST_IMAGE_URL}?token=secret#fragment`,
 		})
 
 		expect(span.end).toHaveBeenCalled()
 		expect(attributes['lcp']).toBe(100)
 		expect(attributes['lcp.target']).toBeUndefined()
-		expect(attributes['lcp.url']).toBe('https://example.com/image.png?token=secret#fragment')
+		expect(attributes['lcp.url']).toBe(`${TEST_IMAGE_URL}?token=secret#fragment`)
 		expect(attributes['webvitals.metric_id']).toBe('v5-lcp')
 	})
 
@@ -258,7 +261,7 @@ async function reportLCPMetric(
 				resourceLoadDuration: 30,
 				target: 'main>img',
 				timeToFirstByte: 10,
-				url: 'https://example.com/image.png',
+				url: TEST_IMAGE_URL,
 				...attributionOverrides,
 			},
 			delta: 100,

@@ -16,10 +16,31 @@
  *
  */
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { HTTP_TEST_SERVER_URL } from '../../../../../../tests/servers/http-constants'
 import { MediaMonitor } from './media-monitor'
 import { ResourceState, ResourceStateEvent } from './monitor'
+
+const DATA_IMAGE_URL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+const getFailedImageUrl = (resource: string, delay = 20) =>
+	`${HTTP_TEST_SERVER_URL}/test-image-error.png?delay=${delay}&resource=${resource}`
+const getTestImageUrl = (resource: string, delay = 20) =>
+	`${HTTP_TEST_SERVER_URL}/test-image.png?delay=${delay}&resource=${resource}`
+const expectEventStatesWithMatchingIds = (actualEvents: ResourceStateEvent[], expectedStates: ResourceState[]) => {
+	expect(actualEvents.map((event) => event.state)).toEqual(expectedStates)
+
+	const [firstEvent, ...remainingEvents] = actualEvents
+	remainingEvents.forEach((event) => {
+		expect(event.id).toBe(firstEvent.id)
+	})
+}
+const waitForImageLoad = (img: HTMLImageElement) =>
+	new Promise<void>((resolve, reject) => {
+		img.addEventListener('load', () => resolve(), { once: true })
+		img.addEventListener('error', () => reject(new Error(`Image failed to load: ${img.src}`)), { once: true })
+	})
+const waitForMutationObserver = () => new Promise((resolve) => setTimeout(resolve, 0))
 
 describe('MediaMonitor', () => {
 	let monitor: MediaMonitor
@@ -44,30 +65,118 @@ describe('MediaMonitor', () => {
 			monitor.start()
 
 			const img = document.createElement('img')
-			img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+			img.src = getTestImageUrl('dynamic-image')
 			document.body.append(img)
 
-			// Wait for MutationObserver and load event
-			await new Promise<void>((resolve) => {
-				img.addEventListener('load', () => resolve())
-				img.addEventListener('error', () => resolve())
+			await vi.waitFor(() => {
+				expectEventStatesWithMatchingIds(events, [ResourceState.DISCOVERED, ResourceState.LOADED])
+			})
+		})
+
+		it('marks failed images as errored', async () => {
+			monitor.start()
+
+			const img = document.createElement('img')
+			img.src = getFailedImageUrl('failing-image')
+			document.body.append(img)
+
+			await vi.waitFor(() => {
+				expectEventStatesWithMatchingIds(events, [ResourceState.DISCOVERED, ResourceState.ERROR])
+			})
+		})
+
+		it('marks removed loading images as errored', async () => {
+			monitor.start()
+
+			const img = document.createElement('img')
+			img.src = getTestImageUrl('removed-image', 250)
+			document.body.append(img)
+
+			await vi.waitFor(() => {
+				expect(events.map((event) => event.state)).toEqual([ResourceState.DISCOVERED])
+			})
+			img.remove()
+
+			await vi.waitFor(() => {
+				expectEventStatesWithMatchingIds(events, [ResourceState.DISCOVERED, ResourceState.ERROR])
+			})
+		})
+
+		it('skips images without a source', async () => {
+			monitor.start()
+
+			const img = document.createElement('img')
+			document.body.append(img)
+
+			await waitForMutationObserver()
+
+			expect(events).toHaveLength(0)
+		})
+
+		it('skips data URL images', async () => {
+			monitor.start()
+
+			const img = document.createElement('img')
+			img.src = DATA_IMAGE_URL
+			document.body.append(img)
+
+			await new Promise((resolve) => setTimeout(resolve, 50))
+
+			expect(events).toHaveLength(0)
+		})
+
+		it('tracks images when the source is set after insertion', async () => {
+			monitor.start()
+
+			const img = document.createElement('img')
+			document.body.append(img)
+			await waitForMutationObserver()
+
+			img.src = getTestImageUrl('late-source-image')
+
+			await vi.waitFor(() => {
+				expectEventStatesWithMatchingIds(events, [ResourceState.DISCOVERED, ResourceState.LOADED])
+			})
+		})
+
+		it('releases the previous image resource when the source changes during load', async () => {
+			monitor.start()
+
+			const firstUrl = getTestImageUrl('first-image', 250)
+			const secondUrl = getTestImageUrl('second-image', 20)
+			const img = document.createElement('img')
+
+			img.src = firstUrl
+			document.body.append(img)
+
+			await vi.waitFor(() => {
+				expect(events.map((event) => event.state)).toEqual([ResourceState.DISCOVERED])
 			})
 
-			await new Promise((resolve) => setTimeout(resolve, 0))
+			img.src = secondUrl
 
-			// Data URLs load very fast - may be already loaded when MutationObserver runs
-			// If already loaded: single LOADED event; otherwise: DISCOVERED + LOADED
-			expect(events.length).toBeGreaterThanOrEqual(1)
-			const lastEvent = events.at(-1)
-			expect(lastEvent?.state).toBe(ResourceState.LOADED)
-			expect(lastEvent).toHaveProperty('loadTime')
+			await vi.waitFor(() => {
+				expect(events.some((event) => event.state === ResourceState.ERROR && event.url === firstUrl)).toBe(true)
+				expect(
+					events.some((event) => event.state === ResourceState.DISCOVERED && event.url === secondUrl),
+				).toBe(true)
+				expect(events.some((event) => event.state === ResourceState.LOADED && event.url === secondUrl)).toBe(
+					true,
+				)
+			})
+
+			const firstEvents = events.filter((event) => event.url === firstUrl)
+			const secondEvents = events.filter((event) => event.url === secondUrl)
+			expectEventStatesWithMatchingIds(firstEvents, [ResourceState.DISCOVERED, ResourceState.ERROR])
+			expectEventStatesWithMatchingIds(secondEvents, [ResourceState.DISCOVERED, ResourceState.LOADED])
+			expect(firstEvents[0].id).not.toBe(secondEvents[0].id)
 		})
 
 		it('ignores URLs matching pattern', async () => {
 			monitor.start()
 
 			const img = document.createElement('img')
-			img.src = 'https://example.com/ignore-me/image.gif'
+			img.src = getTestImageUrl('ignore-me-image')
 			document.body.append(img)
 
 			await new Promise((resolve) => setTimeout(resolve, 50))
@@ -78,13 +187,10 @@ describe('MediaMonitor', () => {
 		it('detects already loaded images', async () => {
 			// Create and load image before starting monitor
 			const img = document.createElement('img')
-			img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+			const imageLoaded = waitForImageLoad(img)
+			img.src = getTestImageUrl('already-loaded-image')
 			document.body.append(img)
-
-			await new Promise<void>((resolve) => {
-				img.addEventListener('load', () => resolve())
-				img.addEventListener('error', () => resolve())
-			})
+			await imageLoaded
 
 			// Start monitor after image is loaded
 			monitor.start()
@@ -101,7 +207,7 @@ describe('MediaMonitor', () => {
 
 			const img = document.createElement('img')
 			img.loading = 'lazy'
-			img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+			img.src = getTestImageUrl('lazy-image')
 			document.body.append(img)
 
 			await new Promise((resolve) => setTimeout(resolve, 50))
@@ -114,18 +220,12 @@ describe('MediaMonitor', () => {
 
 			const img = document.createElement('img')
 			img.loading = 'eager'
-			img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+			img.src = getTestImageUrl('eager-image')
 			document.body.append(img)
 
-			await new Promise<void>((resolve) => {
-				img.addEventListener('load', () => resolve())
-				img.addEventListener('error', () => resolve())
+			await vi.waitFor(() => {
+				expectEventStatesWithMatchingIds(events, [ResourceState.DISCOVERED, ResourceState.LOADED])
 			})
-			await new Promise((resolve) => setTimeout(resolve, 0))
-
-			expect(events.length).toBeGreaterThanOrEqual(1)
-			const lastEvent = events.at(-1)
-			expect(lastEvent?.state).toBe(ResourceState.LOADED)
 		})
 
 		it('tracks images without loading attribute', async () => {
@@ -133,25 +233,19 @@ describe('MediaMonitor', () => {
 
 			const img = document.createElement('img')
 			// No loading attribute set (default behavior)
-			img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+			img.src = getTestImageUrl('no-loading-attribute-image')
 			document.body.append(img)
 
-			await new Promise<void>((resolve) => {
-				img.addEventListener('load', () => resolve())
-				img.addEventListener('error', () => resolve())
+			await vi.waitFor(() => {
+				expectEventStatesWithMatchingIds(events, [ResourceState.DISCOVERED, ResourceState.LOADED])
 			})
-			await new Promise((resolve) => setTimeout(resolve, 0))
-
-			expect(events.length).toBeGreaterThanOrEqual(1)
-			const lastEvent = events.at(-1)
-			expect(lastEvent?.state).toBe(ResourceState.LOADED)
 		})
 
 		it('skips existing lazy-loaded images when monitor starts', async () => {
 			// Create lazy image before starting monitor
 			const img = document.createElement('img')
 			img.loading = 'lazy'
-			img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+			img.src = getTestImageUrl('existing-lazy-image')
 			document.body.append(img)
 
 			await new Promise((resolve) => setTimeout(resolve, 50))
@@ -171,21 +265,13 @@ describe('MediaMonitor', () => {
 
 			const container = document.createElement('div')
 			const img = document.createElement('img')
-			img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+			img.src = getTestImageUrl('nested-image')
 			container.append(img)
 			document.body.append(container)
 
-			// Wait for MutationObserver and load event
-			await new Promise<void>((resolve) => {
-				img.addEventListener('load', () => resolve())
-				img.addEventListener('error', () => resolve())
+			await vi.waitFor(() => {
+				expectEventStatesWithMatchingIds(events, [ResourceState.DISCOVERED, ResourceState.LOADED])
 			})
-			await new Promise((resolve) => setTimeout(resolve, 0))
-
-			// Data URLs load very fast - may be already loaded when MutationObserver runs
-			expect(events.length).toBeGreaterThanOrEqual(1)
-			const lastEvent = events.at(-1)
-			expect(lastEvent?.state).toBe(ResourceState.LOADED)
 		})
 	})
 
@@ -195,7 +281,7 @@ describe('MediaMonitor', () => {
 			monitor.stop()
 
 			const img = document.createElement('img')
-			img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+			img.src = getTestImageUrl('after-stop-image')
 			document.body.append(img)
 
 			await new Promise((resolve) => setTimeout(resolve, 50))

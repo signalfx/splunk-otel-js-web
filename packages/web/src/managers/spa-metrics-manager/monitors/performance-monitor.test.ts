@@ -18,8 +18,13 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
+import { HTTP_TEST_SERVER_URL } from '../../../../../../tests/servers/http-constants'
 import { ResourceState, ResourceStateEvent } from './monitor'
 import { PerformanceMonitor } from './performance-monitor'
+
+const TEST_IMAGE_URL = `${HTTP_TEST_SERVER_URL}/test-image.png`
+const TEST_IGNORED_IMAGE_URL = `${TEST_IMAGE_URL}?resource=ignore-me-image`
+const TEST_STYLE_URL = `${HTTP_TEST_SERVER_URL}/style.css`
 
 describe('PerformanceMonitor', () => {
 	let monitor: PerformanceMonitor
@@ -59,8 +64,7 @@ describe('PerformanceMonitor', () => {
 
 		const link = document.createElement('link')
 		link.rel = 'stylesheet'
-		// TODO: Replace with a local file once we have a test server
-		link.href = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css'
+		link.href = TEST_STYLE_URL
 
 		const loadPromise = new Promise<void>((resolve) => {
 			link.addEventListener('load', () => resolve())
@@ -76,11 +80,12 @@ describe('PerformanceMonitor', () => {
 		// Clean up
 		link.remove()
 
-		// Should have detected the CSS file (DISCOVERED then LOADED)
-		const cssEvents = events.filter((e) => e.url.includes('bootstrap'))
+		// Should have detected the CSS file (DISCOVERED + LOADED)
+		const cssEvents = events.filter((e) => e.url === TEST_STYLE_URL)
 		expect(cssEvents.length).toBeGreaterThanOrEqual(2)
 		expect(cssEvents[0].state).toBe(ResourceState.DISCOVERED)
 		expect(cssEvents[1].state).toBe(ResourceState.LOADED)
+		expect(cssEvents[0].id).toBe(cssEvents[1].id)
 	})
 
 	it('ignores URLs matching ignore pattern', async () => {
@@ -90,7 +95,7 @@ describe('PerformanceMonitor', () => {
 		const style = document.createElement('style')
 		style.textContent = `
 			.ignored-bg {
-				background-image: url('https://example.com/ignore-me/image.png');
+				background-image: url('${TEST_IGNORED_IMAGE_URL}');
 			}
 		`
 		document.head.append(style)
@@ -102,5 +107,36 @@ describe('PerformanceMonitor', () => {
 		// Should not have any events for ignored URLs
 		const ignoredEvents = events.filter((e) => e.url.includes('ignore-me'))
 		expect(ignoredEvents.length).toBe(0)
+	})
+
+	it('ignores data URL resource entries', () => {
+		// @ts-expect-error handleResourceEntry is private. We use it for focused monitor testing.
+		monitor.handleResourceEntry({
+			initiatorType: 'img',
+			name: 'data:image/png;base64,abc',
+			responseEnd: 1,
+			startTime: 0,
+		})
+
+		expect(events).toHaveLength(0)
+	})
+
+	it('uses the resource timing responseEnd as the loaded timestamp', () => {
+		// @ts-expect-error handleResourceEntry is private. We use it for focused monitor testing.
+		monitor.handleResourceEntry({
+			initiatorType: 'img',
+			name: TEST_IMAGE_URL,
+			responseEnd: 1234,
+			startTime: 1000,
+		})
+
+		expect(events).toHaveLength(2)
+		expect(events[0].id).toBe(events[1].id)
+		expect(events[1]).toMatchObject({
+			loadTime: 234,
+			state: ResourceState.LOADED,
+			timestamp: 1234,
+			url: TEST_IMAGE_URL,
+		})
 	})
 })

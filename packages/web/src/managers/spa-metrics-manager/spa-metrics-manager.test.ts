@@ -24,6 +24,9 @@ import { PAGE_LOAD_METRICS_STATUS_INTERRUPTED, PAGE_LOAD_METRICS_STATUS_TIMEOUT 
 import { ResourceState } from './monitors'
 import { getDocumentLoadTime, SpaMetricsManager } from './spa-metrics-manager'
 
+const TEST_API_URL = `${HTTP_TEST_SERVER_URL}/some-data`
+const TEST_BEACON_ENDPOINT = `${HTTP_TEST_SERVER_URL}/v1/rum`
+
 describe('SpaMetricsManager', () => {
 	it('uses default config values', () => {
 		const manager = new SpaMetricsManager()
@@ -72,7 +75,7 @@ describe('SpaMetricsManager', () => {
 
 	it('adds beacon endpoint origin to ignoreUrls', () => {
 		const manager = new SpaMetricsManager({
-			beaconEndpoint: 'https://rum-ingest.example.com/v1/rum',
+			beaconEndpoint: TEST_BEACON_ENDPOINT,
 		})
 
 		// @ts-expect-error Config is private. We use it for testing.
@@ -80,8 +83,7 @@ describe('SpaMetricsManager', () => {
 
 		expect(config.ignoreUrls).toHaveLength(1)
 		expect(
-			config.ignoreUrls[0] instanceof RegExp &&
-				config.ignoreUrls[0].test('https://rum-ingest.example.com/anything'),
+			config.ignoreUrls[0] instanceof RegExp && config.ignoreUrls[0].test(`${HTTP_TEST_SERVER_URL}/anything`),
 		).toBe(true)
 		expect(config.ignoreUrls[0] instanceof RegExp && config.ignoreUrls[0].test('https://other.com/path')).toBe(
 			false,
@@ -172,7 +174,7 @@ describe('SpaMetricsManager', () => {
 			const promise = manager.waitForPageLoad({ startTime: performance.now() })
 
 			// @ts-expect-error onResourceStateChange is private. We use it for testing.
-			manager.onResourceStateChange({ state: ResourceState.DISCOVERED, url: 'https://example.com/api' })
+			manager.onResourceStateChange({ state: ResourceState.DISCOVERED, url: TEST_API_URL })
 			window.dispatchEvent(new Event('pagehide'))
 
 			const result = await promise
@@ -201,20 +203,21 @@ describe('SpaMetricsManager', () => {
 		const onResourceStateChange = manager.onResourceStateChange
 
 		// Simulate resource discovery
-		onResourceStateChange({ state: ResourceState.DISCOVERED, url: 'https://example.com/api' })
-		// @ts-expect-error loadingUrls is private. We use it for testing.
-		expect(manager.loadingUrls.size).toBe(1)
+		onResourceStateChange({ id: 'r_1', state: ResourceState.DISCOVERED, url: TEST_API_URL })
+		// @ts-expect-error loadingResources is private. We use it for testing.
+		expect(manager.loadingResources.size).toBe(1)
 
 		// Simulate resource loaded
 		onResourceStateChange({
+			id: 'r_1',
 			loadTime: 50,
 			state: ResourceState.LOADED,
 			timestamp: performance.now(),
-			url: 'https://example.com/api',
+			url: TEST_API_URL,
 		})
 
-		// @ts-expect-error loadingUrls is private. We use it for testing.
-		expect(manager.loadingUrls.size).toBe(0)
+		// @ts-expect-error loadingResources is private. We use it for testing.
+		expect(manager.loadingResources.size).toBe(0)
 
 		manager.stop()
 	})
@@ -225,23 +228,23 @@ describe('SpaMetricsManager', () => {
 
 		// @ts-expect-error onResourceStateChange is private. We use it for testing.
 		const onResourceStateChange = manager.onResourceStateChange
-		const url = 'https://example.com/api'
+		const url = TEST_API_URL
 
-		// Two requests to same URL
-		onResourceStateChange({ state: ResourceState.DISCOVERED, url })
-		onResourceStateChange({ state: ResourceState.DISCOVERED, url })
-		// @ts-expect-error loadingUrls is private. We use it for testing.
-		expect(manager.loadingUrls.get(url)).toBe(2)
+		// Two requests to same URL with different IDs
+		onResourceStateChange({ id: 'r_1', state: ResourceState.DISCOVERED, url })
+		onResourceStateChange({ id: 'r_2', state: ResourceState.DISCOVERED, url })
+		// @ts-expect-error loadingResources is private. We use it for testing.
+		expect(manager.loadingResources.size).toBe(2)
 
 		// First completes
-		onResourceStateChange({ loadTime: 50, state: ResourceState.LOADED, timestamp: 0, url })
-		// @ts-expect-error loadingUrls is private. We use it for testing.
-		expect(manager.loadingUrls.get(url)).toBe(1)
+		onResourceStateChange({ id: 'r_1', loadTime: 50, state: ResourceState.LOADED, timestamp: 0, url })
+		// @ts-expect-error loadingResources is private. We use it for testing.
+		expect(manager.loadingResources.size).toBe(1)
 
 		// Second completes
-		onResourceStateChange({ loadTime: 50, state: ResourceState.LOADED, timestamp: 0, url })
-		// @ts-expect-error loadingUrls is private. We use it for testing.
-		expect(manager.loadingUrls.has(url)).toBe(false)
+		onResourceStateChange({ id: 'r_2', loadTime: 50, state: ResourceState.LOADED, timestamp: 0, url })
+		// @ts-expect-error loadingResources is private. We use it for testing.
+		expect(manager.loadingResources.size).toBe(0)
 
 		manager.stop()
 	})
@@ -254,33 +257,39 @@ describe('SpaMetricsManager', () => {
 		const onResourceStateChange = manager.onResourceStateChange
 
 		// Add resources up to limit
-		onResourceStateChange({ state: ResourceState.DISCOVERED, url: 'https://example.com/1' })
-		onResourceStateChange({ state: ResourceState.DISCOVERED, url: 'https://example.com/2' })
+		onResourceStateChange({ id: 'r_1', state: ResourceState.DISCOVERED, url: `${TEST_API_URL}?resource=1` })
+		onResourceStateChange({ id: 'r_2', state: ResourceState.DISCOVERED, url: `${TEST_API_URL}?resource=2` })
 
 		// @ts-expect-error loadingResourcesCount is private. We use it for testing.
 		expect(manager.loadingResourcesCount).toBe(2)
 
 		// Try to add beyond limit - should be ignored
-		onResourceStateChange({ state: ResourceState.DISCOVERED, url: 'https://example.com/3' })
+		onResourceStateChange({ id: 'r_3', state: ResourceState.DISCOVERED, url: `${TEST_API_URL}?resource=3` })
 
 		// @ts-expect-error loadingResourcesCount is private. We use it for testing.
 		expect(manager.loadingResourcesCount).toBe(2)
-		// @ts-expect-error loadingUrls is private. We use it for testing.
-		expect(manager.loadingUrls.has('https://example.com/3')).toBe(false)
+		// @ts-expect-error loadingResources is private. We use it for testing.
+		expect(manager.loadingResources.has('r_3')).toBe(false)
 
 		// Complete one resource
-		onResourceStateChange({ loadTime: 50, state: ResourceState.LOADED, timestamp: 0, url: 'https://example.com/1' })
+		onResourceStateChange({
+			id: 'r_1',
+			loadTime: 50,
+			state: ResourceState.LOADED,
+			timestamp: 0,
+			url: `${TEST_API_URL}?resource=1`,
+		})
 
 		// @ts-expect-error loadingResourcesCount is private. We use it for testing.
 		expect(manager.loadingResourcesCount).toBe(1)
 
 		// Now new resource can be added
-		onResourceStateChange({ state: ResourceState.DISCOVERED, url: 'https://example.com/3' })
+		onResourceStateChange({ id: 'r_4', state: ResourceState.DISCOVERED, url: `${TEST_API_URL}?resource=3` })
 
 		// @ts-expect-error loadingResourcesCount is private. We use it for testing.
 		expect(manager.loadingResourcesCount).toBe(2)
-		// @ts-expect-error loadingUrls is private. We use it for testing.
-		expect(manager.loadingUrls.has('https://example.com/3')).toBe(true)
+		// @ts-expect-error loadingResources is private. We use it for testing.
+		expect(manager.loadingResources.has('r_4')).toBe(true)
 
 		manager.stop()
 	})

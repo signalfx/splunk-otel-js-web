@@ -15,10 +15,15 @@
  * limitations under the License.
  *
  */
+import { createReadStream } from 'node:fs'
+import path from 'node:path'
+
 import Fastify from 'fastify'
 
 import { delayMiddleware } from './delay-middleware'
 import { HTTP_TEST_SERVER_HOST, HTTP_TEST_SERVER_PORT } from './http-constants'
+
+const TEST_IMAGE_PNG = path.join(__dirname, 'assets/smpte-color-bars.png')
 
 export const initHttpServer = async () => {
 	const fastify = Fastify()
@@ -37,6 +42,26 @@ export const initHttpServer = async () => {
 			key2: 'value2',
 			key3: 'value3',
 		})
+	})
+
+	fastify.get('/delay', (_request, reply) => {
+		reply.send('ok')
+	})
+
+	fastify.get('/style.css', (_request, reply) => {
+		reply.type('text/css')
+		reply.send('body { --splunk-test-style-loaded: 1; }')
+	})
+
+	fastify.get('/test-image.png', (_request, reply) => {
+		reply.header('Cache-Control', 'no-store')
+		reply.type('image/png')
+		reply.send(createReadStream(TEST_IMAGE_PNG))
+	})
+
+	fastify.get('/test-image-error.png', (_request, reply) => {
+		reply.status(404)
+		reply.send('not found')
 	})
 
 	await fastify.listen({ host: HTTP_TEST_SERVER_HOST, port: HTTP_TEST_SERVER_PORT })

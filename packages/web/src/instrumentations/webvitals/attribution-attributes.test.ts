@@ -25,6 +25,7 @@ import {
 	TTFBMetricWithAttribution,
 } from 'web-vitals/attribution'
 
+import { HTTP_TEST_SERVER_URL } from '../../../../../tests/servers/http-constants'
 import { createSpanMock } from '../../../tests/utils/span-mock'
 import { setCLSAttributionAttributes } from './cls'
 import { setFCPAttributionAttributes } from './fcp'
@@ -32,6 +33,8 @@ import { setINPAttributionAttributes } from './inp'
 import { setLCPAttributionAttributes } from './lcp'
 import { setTTFBAttributionAttributes } from './ttfb'
 import { WebVitalsAttributionOptions } from './types'
+
+const TEST_IMAGE_URL = `${HTTP_TEST_SERVER_URL}/test-image.png`
 
 describe('webvitals attribution attribute setters', () => {
 	describe('setCLSAttributionAttributes', () => {
@@ -157,7 +160,7 @@ describe('webvitals attribution attribute setters', () => {
 
 			setLCPAttributionAttributes(span, createLCPMetric(), createAttributionOptions({ getLCPUrl }))
 
-			expect(getLCPUrl).toHaveBeenCalledWith('https://example.com/image.png?secret=1')
+			expect(getLCPUrl).toHaveBeenCalledWith(`${TEST_IMAGE_URL}?secret=1`)
 			expect(attributes).toEqual({
 				'http.response.body.size': 2000,
 				'http.response.body.uncompressed_size': 3000,
@@ -169,7 +172,7 @@ describe('webvitals attribution attribute setters', () => {
 				'lcp.resource.transfer_size': 1000,
 				'lcp.target': 'main>img',
 				'lcp.time_to_first_byte': 10,
-				'lcp.url': 'sanitized:https://example.com/image.png?secret=1',
+				'lcp.url': `sanitized:${TEST_IMAGE_URL}?secret=1`,
 				'network.protocol.name': 'h2',
 			})
 		})
@@ -193,7 +196,7 @@ describe('webvitals attribution attribute setters', () => {
 				createAttributionOptions({ getLCPUrl, getTarget: omitTarget }),
 			)
 
-			expect(getLCPUrl).toHaveBeenCalledWith('https://example.com/image.png?secret=1')
+			expect(getLCPUrl).toHaveBeenCalledWith(`${TEST_IMAGE_URL}?secret=1`)
 			expect(attributes).toEqual({
 				'lcp.element_render_delay': 40,
 				'lcp.resource_load_delay': 20,
@@ -335,7 +338,7 @@ function createLCPMetric(
 			resourceLoadDuration: 30,
 			target: 'main>img',
 			timeToFirstByte: 10,
-			url: 'https://example.com/image.png?secret=1',
+			url: `${TEST_IMAGE_URL}?secret=1`,
 			...attributionOverrides,
 		},
 	} as unknown as LCPMetricWithAttribution

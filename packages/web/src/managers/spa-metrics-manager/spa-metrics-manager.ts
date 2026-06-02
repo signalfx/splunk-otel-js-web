@@ -52,14 +52,10 @@ export class SpaMetricsManager {
 
 	private isMonitoring = false
 
-	private loadingUrls = new Map<string, number>()
+	private loadingResources = new Set<string>()
 
 	private get loadingResourcesCount(): number {
-		let count = 0
-		for (const value of this.loadingUrls.values()) {
-			count += value
-		}
-		return count
+		return this.loadingResources.size
 	}
 
 	private mediaMonitor: MediaMonitor
@@ -131,7 +127,7 @@ export class SpaMetricsManager {
 		this.fetchXhrMonitor.stop()
 		this.mediaMonitor.stop()
 		this.performanceMonitor.stop()
-		this.loadingUrls.clear()
+		this.loadingResources.clear()
 
 		diag.debug('SpaMetricsManager: Stopped monitoring.')
 	}
@@ -171,19 +167,11 @@ export class SpaMetricsManager {
 				return
 			}
 
-			const count = this.loadingUrls.get(event.url) ?? 0
-			this.loadingUrls.set(event.url, count + 1)
+			this.loadingResources.add(event.id)
 			diag.debug('Detected resource. Resetting quiet timer', event.url)
 			this.quietPeriodAwaiter?.removeQuietTimer()
 		} else {
-			const count = this.loadingUrls.get(event.url) ?? 0
-			if (count > 0) {
-				if (count === 1) {
-					this.loadingUrls.delete(event.url)
-				} else {
-					this.loadingUrls.set(event.url, count - 1)
-				}
-
+			if (this.loadingResources.delete(event.id)) {
 				if (this.loadingResourcesCount === 0) {
 					diag.debug('No loading resources. Starting quiet timer.')
 					this.quietPeriodAwaiter?.startQuietTimer({ resourceLoadedTimestamp: event.timestamp })

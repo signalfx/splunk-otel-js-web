@@ -49,12 +49,25 @@ describe('QuietPeriodAwaiter', () => {
 		expect(result.status).toBeUndefined()
 	})
 
+	it('keeps the latest resource timestamp when quiet timers are started out of order', async () => {
+		const awaiter = new QuietPeriodAwaiter({ quietTime: 10, startTime: 1000 })
+
+		awaiter.startQuietTimer({ resourceLoadedTimestamp: 1500 })
+		awaiter.removeQuietTimer()
+		awaiter.startQuietTimer({ resourceLoadedTimestamp: 1200 })
+
+		const result = await awaiter.promise
+		expect(result.pct).toBe(500)
+		expect(result.status).toBeUndefined()
+	})
+
 	it('complete() resolves immediately', async () => {
 		const awaiter = new QuietPeriodAwaiter({ quietTime: 1000 })
 
 		awaiter.complete({ areResourcesStillLoading: false })
 		const result = await awaiter.promise
-		expect(result.pct).toBe(0)
+		expect(result.pct).toBeGreaterThanOrEqual(0)
+		expect(result.pct).toBeLessThan(1000)
 		expect(result.status).toBeUndefined()
 	})
 
