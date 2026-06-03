@@ -77,8 +77,9 @@ const cdnLinksByVersion: Record<string, string[]> = {}
 
 // Avoid accidental assets upload
 const allowedExtensions = ['.tgz', '.js', '.js.map', '.txt', '.html']
+const versions = await getAllVersions(targetVersion)
+const githubReleaseVersions = versions.filter(({ includeInGithubRelease }) => includeInGithubRelease !== false)
 const assets = await fs.readdir(ARTIFACTS_DIR)
-const versions = getAllVersions(targetVersion)
 versions.forEach((version) => {
 	cdnLinksByVersion[version.name] = []
 })
@@ -134,7 +135,7 @@ for (const asset of assets) {
 	}
 }
 
-const cdnLinks = generateCDNLinks(versions, cdnLinksByVersion)
+const cdnLinks = generateCDNLinks(githubReleaseVersions, cdnLinksByVersion)
 
 if (!isDryRun) {
 	console.log('Creating an invalidation to refresh shared versions.')

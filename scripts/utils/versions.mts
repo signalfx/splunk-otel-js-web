@@ -15,14 +15,18 @@
  * limitations under the License.
  *
  */
+import { getCdnSnapshotVersion } from './cdn-snapshot-version.mjs'
+
 export interface Version {
+	includeInGithubRelease: boolean
 	isVersionImmutable: boolean
 	name: string
 }
 
-function* generateAllVersions(version: string): Generator<Version, void, unknown> {
+async function* generateAllVersions(version: string): AsyncGenerator<Version, void, unknown> {
 	if (version === 'main') {
-		yield { isVersionImmutable: false, name: 'next' }
+		yield await getCdnSnapshotVersion()
+		yield { includeInGithubRelease: false, isVersionImmutable: false, name: 'next' }
 		return
 	}
 
@@ -30,7 +34,7 @@ function* generateAllVersions(version: string): Generator<Version, void, unknown
 
 	let isVersionImmutable = true
 	while (versionParts.length > 0) {
-		yield { isVersionImmutable, name: `${versionParts.join('.')}` }
+		yield { includeInGithubRelease: true, isVersionImmutable, name: `${versionParts.join('.')}` }
 		const lastSegment = versionParts.pop()
 
 		if (lastSegment === undefined) {
@@ -46,4 +50,11 @@ function* generateAllVersions(version: string): Generator<Version, void, unknown
 	}
 }
 
-export const getAllVersions = (version: string) => Array.from(generateAllVersions(version))
+export const getAllVersions = async (version: string) => {
+	const versions: Version[] = []
+	for await (const generatedVersion of generateAllVersions(version)) {
+		versions.push(generatedVersion)
+	}
+
+	return versions
+}
