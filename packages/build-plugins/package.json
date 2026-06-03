@@ -44,7 +44,7 @@
 	"devDependencies": {
 		"@types/node": "^25.5.0",
 		"ts-node": "^10.9.1",
-		"wait-on": "^9.0.5",
+		"wait-on": "^9.0.10",
 		"webpack": "^5.106.2",
 		"webpack-cli": "^7.0.2"
 	},
