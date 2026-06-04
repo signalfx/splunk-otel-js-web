@@ -36,7 +36,7 @@
 		"@opentelemetry/core": "catalog:",
 		"@opentelemetry/sdk-trace-base": "catalog:",
 		"@eslint/js": "^10.0.1",
-		"@octokit/request": "^10.0.8",
+		"@octokit/request": "^10.0.10",
 		"@size-limit/file": "^12.1.0",
 		"@stylistic/eslint-plugin": "^5.10.0",
 		"@types/ws": "^8.18.0",
