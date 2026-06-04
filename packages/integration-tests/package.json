@@ -30,7 +30,7 @@
 		"@types/express": "^5.0.6",
 		"@types/node": "^25.9.1",
 		"cors": "^2.8.6",
-		"ejs": "^5.0.1",
+		"ejs": "^6.0.1",
 		"nodemon": "^3.1.14",
 		"playwright": "^1.60.0"
 	},
