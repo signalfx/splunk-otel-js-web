@@ -232,8 +232,8 @@ importers:
         specifier: ^4.0.0
         version: 4.0.0(webpack@5.106.2)
       ts-loader:
-        specifier: ^9.5.4
-        version: 9.5.4(typescript@5.9.3)(webpack@5.106.2)
+        specifier: ^9.6.0
+        version: 9.6.0(loader-utils@2.0.4)(typescript@5.9.3)(webpack@5.106.2)
       typescript:
         specifier: ~5.9.3
         version: 5.9.3
@@ -326,8 +326,8 @@ importers:
         specifier: ^17.4.2
         version: 17.4.2
       ts-loader:
-        specifier: ^9.5.4
-        version: 9.5.4(typescript@5.9.3)(webpack@5.106.2)
+        specifier: ^9.6.0
+        version: 9.6.0(loader-utils@2.0.4)(typescript@5.9.3)(webpack@5.106.2)
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -488,8 +488,8 @@ importers:
         specifier: ^5.5.0
         version: 5.5.0(@swc/core@1.15.33(@swc/helpers@0.5.21))(webpack@5.106.2)
       ts-loader:
-        specifier: ^9.5.4
-        version: 9.5.4(typescript@5.9.3)(webpack@5.106.2)
+        specifier: ^9.6.0
+        version: 9.6.0(loader-utils@2.0.4)(typescript@5.9.3)(webpack@5.106.2)
       wait-on:
         specifier: ^9.0.10
         version: 9.0.10
@@ -582,8 +582,8 @@ importers:
         specifier: ^0.2.7
         version: 0.2.7(@swc/core@1.15.33(@swc/helpers@0.5.21))(webpack@5.106.2)
       ts-loader:
-        specifier: ^9.5.4
-        version: 9.5.4(typescript@5.9.3)(webpack@5.106.2)
+        specifier: ^9.6.0
+        version: 9.6.0(loader-utils@2.0.4)(typescript@5.9.3)(webpack@5.106.2)
       wait-on:
         specifier: ^9.0.10
         version: 9.0.10
@@ -4531,12 +4531,12 @@ packages:
     resolution: {integrity: sha512-2RZdgEbXmp5+dVbRm0P7HQUImZpICccJy7rN7Tv+SFa55pH+lxnuw6/K1ZxxBfHoYpSkHLAO92oa8O4SwFXA2A==}
     engines: {node: '>=10.2.0'}
 
-  enhanced-resolve@5.19.0:
-    resolution: {integrity: sha512-phv3E1Xl4tQOShqSte26C7Fl84EwUdZsyOuSSk9qtAGyyQs2s3jJzComh+Abf4g187lUUAvH+H26omrqia2aGg==}
-    engines: {node: '>=10.13.0'}
-
   enhanced-resolve@5.21.0:
     resolution: {integrity: sha512-otxSQPw4lkOZWkHpB3zaEQs6gWYEsmX4xQF68ElXC/TWvGxGMSGOvoNbaLXm6/cS/fSfHtsEdw90y20PCd+sCA==}
+    engines: {node: '>=10.13.0'}
+
+  enhanced-resolve@5.22.2:
+    resolution: {integrity: sha512-0rxICaFZ7NQho/sHely2bvOPRP0Eu2B0NZ9zM54YvRvWMn7jfz3DmnOZDR9LlXDdDcqntAVc6Hfy4gr/tdH/Ag==}
     engines: {node: '>=10.13.0'}
 
   entities@2.2.0:
@@ -7527,12 +7527,16 @@ packages:
     peerDependencies:
       typescript: '>=4.8.4'
 
-  ts-loader@9.5.4:
-    resolution: {integrity: sha512-nCz0rEwunlTZiy6rXFByQU1kVVpCIgUpc/psFiKVrUwrizdnIbRFu8w7bxhUF0X613DYwT4XzrZHpVyMe758hQ==}
+  ts-loader@9.6.0:
+    resolution: {integrity: sha512-dsJO0S+T7grTDWTc4a0nTygXGjKncVUpx8Y+af8EvI/D5WgTJby5UEk5eoMCB9EcLQmnvitqh99MqtjtHgAwFQ==}
     engines: {node: '>=12.0.0'}
     peerDependencies:
+      loader-utils: '*'
       typescript: '*'
-      webpack: ^5.0.0
+      webpack: ^4.0.0 || ^5.0.0
+    peerDependenciesMeta:
+      loader-utils:
+        optional: true
 
   ts-node@10.9.2:
     resolution: {integrity: sha512-f0FFpIdcHgn8zcPSbf1dRevwt047YMnaiJM3u2w2RewrB+fob/zePZcrOyQoLMMO7aBIddLcQIEK5dYjkLnGrQ==}
@@ -13088,12 +13092,12 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  enhanced-resolve@5.19.0:
+  enhanced-resolve@5.21.0:
     dependencies:
       graceful-fs: 4.2.11
       tapable: 2.3.3
 
-  enhanced-resolve@5.21.0:
+  enhanced-resolve@5.22.2:
     dependencies:
       graceful-fs: 4.2.11
       tapable: 2.3.3
@@ -16622,15 +16626,17 @@ snapshots:
     dependencies:
       typescript: 5.9.3
 
-  ts-loader@9.5.4(typescript@5.9.3)(webpack@5.106.2):
+  ts-loader@9.6.0(loader-utils@2.0.4)(typescript@5.9.3)(webpack@5.106.2):
     dependencies:
       chalk: 4.1.2
-      enhanced-resolve: 5.19.0
+      enhanced-resolve: 5.22.2
       micromatch: 4.0.8
-      semver: 7.7.4
+      semver: 7.8.1
       source-map: 0.7.6
       typescript: 5.9.3
       webpack: 5.106.2(webpack-cli@7.0.3)
+    optionalDependencies:
+      loader-utils: 2.0.4
 
   ts-node@10.9.2(@swc/core@1.15.33(@swc/helpers@0.5.23))(@types/node@25.9.1)(typescript@5.9.3):
     dependencies:
