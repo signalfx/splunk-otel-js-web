@@ -31,7 +31,7 @@
 	},
 	"devDependencies": {
 		"@aws-sdk/client-cloudfront": "^3.1022.0",
-		"@aws-sdk/client-s3": "^3.1022.0",
+		"@aws-sdk/client-s3": "^3.1061.0",
 		"@opentelemetry/api": "catalog:",
 		"@opentelemetry/core": "catalog:",
 		"@opentelemetry/sdk-trace-base": "catalog:",
