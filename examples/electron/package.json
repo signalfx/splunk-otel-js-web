@@ -30,7 +30,7 @@
 		"fork-ts-checker-webpack-plugin": "^9.1.0",
 		"node-loader": "^2.1.0",
 		"style-loader": "^4.0.0",
-		"ts-loader": "^9.5.4",
+		"ts-loader": "^9.6.0",
 		"typescript": "~5.9.3",
 		"webpack": "^5.106.2"
 	},

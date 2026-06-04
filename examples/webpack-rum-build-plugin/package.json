@@ -10,7 +10,7 @@
 	"devDependencies": {
 		"@splunk/rum-build-plugins": "workspace:*",
 		"dotenv": "^17.4.2",
-		"ts-loader": "^9.5.4",
+		"ts-loader": "^9.6.0",
 		"typescript": "^5.9.3",
 		"webpack": "^5.106.2",
 		"webpack-cli": "^7.0.3"
