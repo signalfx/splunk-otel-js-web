@@ -266,6 +266,7 @@ export interface SplunkOtelWebConfig {
 	 * // Enable with custom configuration
 	 * spaMetrics: {
 	 *   ignoreUrls: [/analytics\.example\.com/],
+	 *   maxPageLoadWaitTime: 180000,
 	 *   maxResourcesToWatch: 100,
 	 *   quietTime: 1000
 	 * }
@@ -279,6 +280,8 @@ export interface SplunkOtelWebConfig {
 		| {
 				/** URLs to exclude from PCT tracking (e.g., analytics, third-party scripts) */
 				ignoreUrls?: Array<string | RegExp>
+				/** Maximum time in milliseconds to wait for PCT computation before marking it as timed out. @default 180000 */
+				maxPageLoadWaitTime?: number
 				/** Maximum number of concurrent resources to track. @default 100 */
 				maxResourcesToWatch?: number
 				/** Time in milliseconds to wait after last resource loads before considering page complete. @default 1000 */

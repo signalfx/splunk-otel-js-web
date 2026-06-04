@@ -81,11 +81,10 @@ export class PerformanceMonitor extends Monitor {
 
 		const loadTime = entry.responseEnd - entry.startTime
 
-		// We do not call DISCOVERED for now as it resets quiet timer
-		// this.config.onResourceStateChange({
-		// 	state: ResourceState.DISCOVERED,
-		// 	url,
-		// })
+		this.config.onResourceStateChange({
+			state: ResourceState.DISCOVERED,
+			url,
+		})
 
 		this.config.onResourceStateChange({
 			loadTime,
