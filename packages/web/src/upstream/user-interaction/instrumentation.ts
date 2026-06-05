@@ -21,7 +21,12 @@ import { InstrumentationBase, isWrapped } from '@opentelemetry/instrumentation'
 
 import { PrivacyManager } from '../../managers/privacy/privacy-manager'
 import { isNode, SplunkOtelWebConfig } from '../../types'
-import { captureElementDataAttributes, getElementXPath, getTextFromNode } from '../../utils/index'
+import {
+	captureElementDataAttributes,
+	getElementXPath,
+	getTextFromNode,
+	resolveDataAttributesToCapture,
+} from '../../utils/index'
 import { AttributeNames } from './enums/attribute-names'
 import { SpanData } from './internal-types'
 import { EventName, ShouldPreventSpanCreation, UserInteractionInstrumentationConfig } from './types'
@@ -365,7 +370,7 @@ export class UserInteractionInstrumentation<
 						captureElementDataAttributes(
 							span,
 							event.target,
-							instrumentation.otelConfig._experimental_dataAttributesToCapture,
+							resolveDataAttributesToCapture(instrumentation.otelConfig),
 						)
 					}
 
