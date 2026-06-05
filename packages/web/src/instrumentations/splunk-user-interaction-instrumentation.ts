@@ -19,7 +19,12 @@
 import { diag, Span, trace, Tracer, TracerProvider } from '@opentelemetry/api'
 import { isUrlIgnored } from '@opentelemetry/core'
 
-import { SessionManager, SpaMetricsManager } from '../managers'
+import {
+	BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE,
+	BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
+	SessionManager,
+	SpaMetricsManager,
+} from '../managers'
 import { SplunkOtelWebConfig } from '../types'
 import { UserInteractionInstrumentation } from '../upstream/user-interaction/instrumentation'
 import { UserInteractionInstrumentationConfig } from '../upstream/user-interaction/types'
@@ -197,15 +202,19 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 		if (this.spaMetricsManager) {
 			// Wait for all in-flight resources (XHR, fetch, media) to finish loading,
 			// then resolve after a quiet period with no new network activity.
-			const { pct, timeout } = await this.spaMetricsManager.waitForPageLoad({
+			const { pct, status } = await this.spaMetricsManager.waitForPageLoad({
 				startTime: performance.now(),
 			})
 
-			span.setAttribute('browser.navigation.page_completion_time', pct)
-			if (timeout) {
-				span.setAttribute('browser.navigation.status', 'timeout')
+			span.setAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE, pct)
+			if (status) {
+				span.setAttribute(BROWSER_NAVIGATION_STATUS_ATTRIBUTE, status)
 			}
 
+			diag.debug('Sending routeChange span with PCT result', {
+				pct,
+				status,
+			})
 			span.end(now + pct)
 			diag.debug('Route change span ended', { pct, span })
 		} else {

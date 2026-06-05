@@ -20,6 +20,7 @@ import { diag } from '@opentelemetry/api'
 import { describe, expect, it, vi } from 'vitest'
 
 import { HTTP_TEST_SERVER_URL } from '../../../../../tests/servers/http-constants'
+import { PAGE_LOAD_METRICS_STATUS_INTERRUPTED, PAGE_LOAD_METRICS_STATUS_TIMEOUT } from './constants'
 import { ResourceState } from './monitors'
 import { getDocumentLoadTime, SpaMetricsManager } from './spa-metrics-manager'
 
@@ -121,7 +122,7 @@ describe('SpaMetricsManager', () => {
 
 		const result = await promise
 		expect(result).toHaveProperty('pct')
-		expect(result.timeout).toBe(false)
+		expect(result.status).toBeUndefined()
 
 		manager.stop()
 	})
@@ -138,12 +139,12 @@ describe('SpaMetricsManager', () => {
 
 		expect(result.pct).toBeGreaterThanOrEqual(documentLoadTime)
 		expect(result.pct).toBeGreaterThan(0)
-		expect(result.timeout).toBe(false)
+		expect(result.status).toBeUndefined()
 
 		manager.stop()
 	})
 
-	it('waitForPageLoad resolves with timeout true when max page load wait time expires', async () => {
+	it('waitForPageLoad resolves with timeout status when max page load wait time expires', async () => {
 		const manager = new SpaMetricsManager({ maxPageLoadWaitTime: 3000, quietTime: 1000 })
 		manager.start()
 		const slowResourceAbortController = new AbortController()
@@ -156,11 +157,40 @@ describe('SpaMetricsManager', () => {
 			const result = await manager.waitForPageLoad({ startTime })
 
 			expect(result.pct).toBe(3000)
-			expect(result.timeout).toBe(true)
+			expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_TIMEOUT)
 		} finally {
 			slowResourceAbortController.abort()
 			manager.stop()
 		}
+	})
+
+	it('waitForPageLoad resolves with interrupted status when page hides', async () => {
+		const manager = new SpaMetricsManager({ maxPageLoadWaitTime: 5000, quietTime: 1000 })
+		manager.start()
+
+		try {
+			const promise = manager.waitForPageLoad({ startTime: performance.now() })
+
+			// @ts-expect-error onResourceStateChange is private. We use it for testing.
+			manager.onResourceStateChange({ state: ResourceState.DISCOVERED, url: 'https://example.com/api' })
+			window.dispatchEvent(new Event('pagehide'))
+
+			const result = await promise
+			expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_INTERRUPTED)
+		} finally {
+			manager.stop()
+		}
+	})
+
+	it('waitForPageLoad resolves with interrupted status when stopped', async () => {
+		const manager = new SpaMetricsManager({ maxPageLoadWaitTime: 5000, quietTime: 1000 })
+		manager.start()
+
+		const promise = manager.waitForPageLoad({ startTime: performance.now() })
+		manager.stop()
+
+		const result = await promise
+		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_INTERRUPTED)
 	})
 
 	it('tracks loading resources and manages quiet timer', () => {

@@ -120,6 +120,9 @@ export class SpaMetricsManager {
 	}
 
 	stop(): void {
+		this.quietPeriodAwaiter?.interrupt()
+		this.quietPeriodAwaiter = undefined
+
 		if (!this.isMonitoring) {
 			return
 		}
@@ -135,20 +138,21 @@ export class SpaMetricsManager {
 
 	waitForPageLoad({ startTime }: { startTime: number }): Promise<PageLoadMetricsResult> {
 		this.quietPeriodAwaiter?.complete({ areResourcesStillLoading: this.loadingResourcesCount > 0 })
-		this.quietPeriodAwaiter = new QuietPeriodAwaiter({
+		const quietPeriodAwaiter = new QuietPeriodAwaiter({
 			maxPageLoadWaitTime: this.config.maxPageLoadWaitTime,
 			quietTime: this.config.quietTime,
 			startTime,
 		})
+		this.quietPeriodAwaiter = quietPeriodAwaiter
 
 		if (this.loadingResourcesCount === 0) {
-			this.quietPeriodAwaiter.startQuietTimer({ resourceLoadedTimestamp: startTime })
+			quietPeriodAwaiter.startQuietTimer({ resourceLoadedTimestamp: startTime })
 			diag.debug('No loading resources. Starting quiet timer.')
 		}
 
 		// startTime === 0 means this is a documentLoad pct — ensure it's at least the document load time
 		if (startTime === 0) {
-			return this.quietPeriodAwaiter.promise.then((result) => {
+			return quietPeriodAwaiter.promise.then((result) => {
 				const navEntry = performance.getEntriesByType('navigation')[0] as
 					| PerformanceNavigationTiming
 					| undefined
@@ -157,7 +161,7 @@ export class SpaMetricsManager {
 			})
 		}
 
-		return this.quietPeriodAwaiter.promise
+		return quietPeriodAwaiter.promise
 	}
 
 	private onResourceStateChange = (event: ResourceStateEvent): void => {

@@ -169,9 +169,9 @@ test.describe('docload', () => {
 
 		// pct uses the same loadEventEnd - fetchStart calculation as the exported documentLoad span.
 		const durationMs = hrTimeToMilliseconds(docLoadSpan.duration)
-		// The span duration is serialized through OTLP HrTime and converted back to milliseconds,
-		// so equal browser timings can differ by a tiny floating-point rounding error.
-		expect(pct).toBeGreaterThanOrEqual(durationMs - 0.001)
+		// The span duration is serialized through OTLP HrTime and converted back to milliseconds.
+		// WebKit can report an equivalent integer PCT while durationMs lands just below the next millisecond.
+		expect(pct).toBeGreaterThanOrEqual(Math.floor(durationMs))
 	})
 
 	test('module can be disabled', async ({ recordPage }) => {

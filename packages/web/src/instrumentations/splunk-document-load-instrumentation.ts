@@ -29,7 +29,12 @@ import { Span } from '@opentelemetry/sdk-trace-base'
 import { addSpanNetworkEvents, PerformanceEntries, PerformanceTimingNames as PTN } from '@opentelemetry/sdk-trace-web'
 import { SemanticAttributes, SEMATTRS_HTTP_URL } from '@opentelemetry/semantic-conventions'
 
-import { SessionManager, SpaMetricsManager } from '../managers'
+import {
+	BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE,
+	BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
+	SessionManager,
+	SpaMetricsManager,
+} from '../managers'
 import { captureTraceParentFromPerformanceEntries } from '../servertiming'
 import { SplunkOtelWebConfig } from '../types'
 import { isCacheHit } from '../utils/cache'
@@ -158,12 +163,16 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 
 				if (this.documentLoadMetricsPromise) {
 					void this.documentLoadMetricsPromise
-						.then(({ pct, timeout }) => {
-							span.setAttribute('browser.navigation.page_completion_time', pct)
-							if (timeout) {
-								span.setAttribute('browser.navigation.status', 'timeout')
+						.then(({ pct, status }) => {
+							span.setAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE, pct)
+							if (status) {
+								span.setAttribute(BROWSER_NAVIGATION_STATUS_ATTRIBUTE, status)
 							}
 
+							api.diag.debug('Sending documentLoad span with PCT result', {
+								pct,
+								status,
+							})
 							_superEndSpan(span, performanceName, entries)
 						})
 						.catch((error) => {

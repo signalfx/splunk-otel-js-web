@@ -23,6 +23,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { HTTP_TEST_SERVER_URL } from '../../../tests/servers/http-constants'
 import SplunkRum from '../src'
+import {
+	BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE,
+	BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
+	PAGE_LOAD_METRICS_STATUS_INTERRUPTED,
+	PAGE_LOAD_METRICS_STATUS_TIMEOUT,
+} from '../src/managers'
 import { VERSION } from '../src/version'
 import {
 	deinit,
@@ -303,8 +309,52 @@ describe('test init', () => {
 					() => {
 						const documentLoadSpan = capturer.spans.find((span) => span.name === 'documentLoad')
 						expectDefined(documentLoadSpan, 'documentLoad span presence.')
-						expect(documentLoadSpan).toHaveSpanAttribute('browser.navigation.page_completion_time', 3000)
-						expect(documentLoadSpan).toHaveSpanAttribute('browser.navigation.status', 'timeout')
+						expect(documentLoadSpan).toHaveSpanAttribute(
+							BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE,
+							3000,
+						)
+						expect(documentLoadSpan).toHaveSpanAttribute(
+							BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
+							PAGE_LOAD_METRICS_STATUS_TIMEOUT,
+						)
+					},
+					{ timeout: 6000 },
+				)
+			} finally {
+				slowResourceAbortController.abort()
+			}
+		})
+
+		it('sets interrupted status on documentLoad span when page hides during PCT computation', async () => {
+			SplunkRum.init({
+				applicationName: 'my-app',
+				beaconEndpoint: 'https://127.0.0.1:9999/foo',
+				deploymentEnvironment: 'my-env',
+				globalAttributes: { customerType: 'GOLD' },
+				rumAccessToken: undefined,
+				spaMetrics: {
+					maxPageLoadWaitTime: 3000,
+					quietTime: 1000,
+				},
+				spanProcessors: [capturer],
+			})
+
+			const slowResourceAbortController = new AbortController()
+			void fetch(`${HTTP_TEST_SERVER_URL}/some-data?delay=5000`, {
+				signal: slowResourceAbortController.signal,
+			}).catch(() => {})
+
+			try {
+				window.dispatchEvent(new Event('pagehide'))
+
+				await vi.waitFor(
+					() => {
+						const documentLoadSpan = capturer.spans.find((span) => span.name === 'documentLoad')
+						expectDefined(documentLoadSpan, 'documentLoad span presence.')
+						expect(documentLoadSpan).toHaveSpanAttribute(
+							BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
+							PAGE_LOAD_METRICS_STATUS_INTERRUPTED,
+						)
 					},
 					{ timeout: 6000 },
 				)
@@ -836,8 +886,40 @@ describe('test route change spa metrics timeout', () => {
 				() => {
 					const span = capturer.spans.find((s) => s.name === 'routeChange')
 					expectDefined(span, 'Check if routeChange span is present.')
-					expect(span).toHaveSpanAttribute('browser.navigation.page_completion_time', 3000)
-					expect(span).toHaveSpanAttribute('browser.navigation.status', 'timeout')
+					expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE, 3000)
+					expect(span).toHaveSpanAttribute(
+						BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
+						PAGE_LOAD_METRICS_STATUS_TIMEOUT,
+					)
+					expect(span).toHaveSpanAttribute('prev.href', oldUrl)
+				},
+				{ timeout: 6000 },
+			)
+		} finally {
+			slowResourceAbortController.abort()
+		}
+	})
+
+	it('sets interrupted status on routeChange span when page hides during PCT computation', async () => {
+		const oldUrl = location.href
+		const slowResourceAbortController = new AbortController()
+		void fetch(`${HTTP_TEST_SERVER_URL}/some-data?delay=5000`, {
+			signal: slowResourceAbortController.signal,
+		}).catch(() => {})
+
+		try {
+			history.pushState({}, 'title', '/pctInterrupted#WithAHash')
+			window.dispatchEvent(new Event('pagehide'))
+
+			await vi.waitFor(
+				() => {
+					const span = capturer.spans.find((s) => s.name === 'routeChange')
+					expectDefined(span, 'Check if routeChange span is present.')
+					expect(span).toHaveSpanAttribute(
+						BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
+						PAGE_LOAD_METRICS_STATUS_INTERRUPTED,
+					)
+					expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE)
 					expect(span).toHaveSpanAttribute('prev.href', oldUrl)
 				},
 				{ timeout: 6000 },
