@@ -18,6 +18,7 @@
 declare module 'https://cdn.observability.splunkcloud.com/o11y-gdi-rum/session-replay/v2.15.0/picker/picker.module.min.js' {
 	export const isPickerWindow: () => boolean
 	export const createPicker: (options: {
+		getElementDataAttributes: (element: HTMLElement) => Record<`data-${string}`, string>
 		getElementText: (element: HTMLElement) => string
 		getElementXPath: (element: HTMLElement) => string
 	}) => void
