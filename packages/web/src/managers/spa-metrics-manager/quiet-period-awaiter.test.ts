@@ -22,8 +22,9 @@ import { QuietPeriodAwaiter } from './quiet-period-awaiter'
 
 describe('QuietPeriodAwaiter', () => {
 	it('resolves after quiet period expires', async () => {
-		const awaiter = new QuietPeriodAwaiter({ quietTime: 100 })
-		const resourceLoadedTimestamp = performance.now() + 10
+		const startTime = performance.now()
+		const awaiter = new QuietPeriodAwaiter({ quietTime: 100, startTime })
+		const resourceLoadedTimestamp = startTime + 10
 		awaiter.startQuietTimer({ resourceLoadedTimestamp })
 
 		const result = await awaiter.promise

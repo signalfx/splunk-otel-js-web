@@ -16,6 +16,7 @@
  *
  */
 
+import type { Span } from '@opentelemetry/sdk-trace-base'
 import { describe, expect, it } from 'vitest'
 
 import { SessionManager, StorageManager, UserManager } from '../src/managers'
@@ -55,6 +56,27 @@ describe('SplunkSpanAttributesProcessor', () => {
 				key2: 'value2-updated',
 				key3: 'value3',
 			})
+		})
+
+		it('does not overwrite an existing location.href attribute on span start', () => {
+			const processor = new SpanAttributesProcessor(sessionManager, userManager, {}, true, false)
+			const attributes: Record<string, unknown> = {
+				'location.href': 'https://example.com/captured-route',
+			}
+			const span = {
+				attributes,
+				resource: { attributes: {} },
+				setAttribute: (key: string, value: unknown) => {
+					attributes[key] = value
+				},
+				setAttributes: (values: Record<string, unknown>) => {
+					Object.assign(attributes, values)
+				},
+			}
+
+			processor.onStart(span as unknown as Span)
+
+			expect(attributes['location.href']).toBe('https://example.com/captured-route')
 		})
 	})
 })

@@ -41,6 +41,28 @@ test.describe('history', () => {
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})
 
+	test('handles quick hash changes', async ({ recordPage }) => {
+		const url = 'http://localhost:3000/user-interaction/history.ejs'
+		await recordPage.goTo('/user-interaction/history.ejs')
+
+		await recordPage.evaluate(() => {
+			location.hash = '#a'
+			location.hash = '#b'
+		})
+
+		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'routeChange').length === 2)
+		const navigationSpans = recordPage.receivedSpans.filter((span) => span.name === 'routeChange')
+
+		expect(navigationSpans).toHaveLength(2)
+		expect(navigationSpans[0]).toHaveSpanAttribute('component', 'user-interaction')
+		expect(navigationSpans[0]).toHaveSpanAttribute('prev.href', url)
+		expect(navigationSpans[0]).toHaveSpanAttribute('location.href', `${url}#a`)
+		expect(navigationSpans[1]).toHaveSpanAttribute('component', 'user-interaction')
+		expect(navigationSpans[1]).toHaveSpanAttribute('prev.href', `${url}#a`)
+		expect(navigationSpans[1]).toHaveSpanAttribute('location.href', `${url}#b`)
+		expect(recordPage.receivedErrorSpans).toHaveLength(0)
+	})
+
 	test('handles history navigation', async ({ recordPage }) => {
 		await recordPage.goTo('/user-interaction/history.ejs')
 

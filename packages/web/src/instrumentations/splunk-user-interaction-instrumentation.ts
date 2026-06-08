@@ -152,7 +152,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 				const result = original.apply(this, args)
 				const newHref = location.href
 				if (oldHref !== newHref) {
-					void that._emitRouteChangeSpan(oldHref)
+					void that._emitRouteChangeSpan(oldHref, newHref)
 				}
 
 				return result
@@ -168,7 +168,8 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 
 	enable(): void {
 		this.__hashChangeHandler = (event: Event) => {
-			void this._emitRouteChangeSpan((event as HashChangeEvent).oldURL)
+			const hashChangeEvent = event as HashChangeEvent
+			void this._emitRouteChangeSpan(hashChangeEvent.oldURL, hashChangeEvent.newURL)
 		}
 
 		// Hash can be changed with location.hash = '#newThing', no way to hook that directly...
@@ -187,17 +188,17 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 		this._routingTracer = tracerProvider.getTracer(ROUTING_INSTRUMENTATION_NAME, ROUTING_INSTRUMENTATION_VERSION)
 	}
 
-	private async _emitRouteChangeSpan(oldHref: string) {
+	private async _emitRouteChangeSpan(oldHref: string, newHref: string) {
 		const config = this.getConfig()
-		if (isUrlIgnored(location.href, config.ignoreUrls)) {
+		if (isUrlIgnored(newHref, config.ignoreUrls)) {
 			return
 		}
 
 		const now = Date.now()
 		const span = this._routingTracer.startSpan('routeChange', { startTime: now })
 		span.setAttribute('component', this.moduleName)
+		span.setAttribute('location.href', newHref)
 		span.setAttribute('prev.href', oldHref)
-		// location.href set with new value by default
 
 		if (this.spaMetricsManager) {
 			// Wait for all in-flight resources (XHR, fetch, media) to finish loading,
