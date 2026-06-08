@@ -852,6 +852,28 @@ describe('test route change', () => {
 		expect(span).toHaveSpanAttribute('prev.href', oldUrl)
 		history.pushState({}, 'title', '/')
 	})
+
+	it('should capture consecutive location.hash changes with correct previous and current URLs', async () => {
+		history.replaceState({}, 'title', '/')
+		const oldUrl = location.href
+		capturer.clear()
+
+		location.hash = '#a'
+		location.hash = '#b'
+
+		await vi.waitFor(() => {
+			const spans_ = capturer.spans.filter((s) => s.name === 'routeChange')
+			expect(spans_).toHaveLength(2)
+		})
+
+		const spans = capturer.spans.filter((s) => s.name === 'routeChange')
+		expect(spans[0]).toHaveSpanAttribute('prev.href', oldUrl)
+		expect(spans[0]).toHaveSpanAttribute('location.href', `${oldUrl}#a`)
+		expect(spans[1]).toHaveSpanAttribute('prev.href', `${oldUrl}#a`)
+		expect(spans[1]).toHaveSpanAttribute('location.href', `${oldUrl}#b`)
+
+		history.replaceState({}, 'title', '/')
+	})
 })
 
 describe('test route change spa metrics timeout', () => {
@@ -1173,13 +1195,14 @@ describe('external session handling', () => {
 
 	it('should not create session.start span for external sessions', async () => {
 		const now = Date.now()
+		const sessionStart = now - performance.now()
 
 		window.SplunkRumExternal = {
 			getSessionMetadata: vi.fn().mockReturnValue({
 				anonymousUserId: 'external-anon-id-123',
 				sessionId: 'external-session-id-123',
 				sessionLastActivity: now,
-				sessionStart: now - 1000,
+				sessionStart,
 			}),
 		}
 

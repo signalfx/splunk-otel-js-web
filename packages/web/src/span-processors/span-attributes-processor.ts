@@ -65,7 +65,10 @@ export class SpanAttributesProcessor implements SpanProcessor {
 	}
 
 	onStart(span: Span): void {
-		span.setAttribute('location.href', location.href)
+		if (span.attributes['location.href'] === undefined) {
+			span.setAttribute('location.href', location.href)
+		}
+
 		span.setAttributes(this._globalAttributes)
 
 		const sessionState = this.sessionManager.getSessionState()
