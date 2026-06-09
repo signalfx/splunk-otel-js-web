@@ -33,7 +33,6 @@ describe('PerformanceMonitor', () => {
 	beforeEach(() => {
 		events = []
 		monitor = new PerformanceMonitor({
-			ignoreUrls: [/ignore-me/],
 			onResourceStateChange: (event) => events.push(event),
 		})
 	})
@@ -88,28 +87,23 @@ describe('PerformanceMonitor', () => {
 		expect(cssEvents[0].id).toBe(cssEvents[1].id)
 	})
 
-	it('ignores URLs matching ignore pattern', async () => {
-		monitor.start()
+	it('emits URLs matching ignore patterns because SpaMetricsManager applies ignoreUrls', () => {
+		// @ts-expect-error handleResourceEntry is private. We use it for focused monitor testing.
+		monitor.handleResourceEntry({
+			initiatorType: 'img',
+			name: TEST_IGNORED_IMAGE_URL,
+			responseEnd: 1,
+			startTime: 0,
+		})
 
-		// Create a style that would load an ignored URL
-		const style = document.createElement('style')
-		style.textContent = `
-			.ignored-bg {
-				background-image: url('${TEST_IGNORED_IMAGE_URL}');
-			}
-		`
-		document.head.append(style)
-
-		await new Promise((resolve) => setTimeout(resolve, 50))
-
-		style.remove()
-
-		// Should not have any events for ignored URLs
 		const ignoredEvents = events.filter((e) => e.url.includes('ignore-me'))
-		expect(ignoredEvents.length).toBe(0)
+		expect(ignoredEvents).toHaveLength(2)
+		expect(ignoredEvents[0].state).toBe(ResourceState.DISCOVERED)
+		expect(ignoredEvents[1].state).toBe(ResourceState.LOADED)
+		expect(ignoredEvents[0].id).toBe(ignoredEvents[1].id)
 	})
 
-	it('ignores data URL resource entries', () => {
+	it('tracks data URL resource entries', () => {
 		// @ts-expect-error handleResourceEntry is private. We use it for focused monitor testing.
 		monitor.handleResourceEntry({
 			initiatorType: 'img',
@@ -118,7 +112,10 @@ describe('PerformanceMonitor', () => {
 			startTime: 0,
 		})
 
-		expect(events).toHaveLength(0)
+		expect(events).toHaveLength(2)
+		expect(events[0].state).toBe(ResourceState.DISCOVERED)
+		expect(events[1].state).toBe(ResourceState.LOADED)
+		expect(events[0].id).toBe(events[1].id)
 	})
 
 	it('uses the resource timing responseEnd as the loaded timestamp', () => {

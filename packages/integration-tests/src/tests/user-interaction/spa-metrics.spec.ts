@@ -101,4 +101,26 @@ test.describe('spa-metrics', () => {
 		expect(routeChangeSpans[1]).toHaveSpanAttributeContaining('location.href', '#page2')
 		expect(routeChangeSpans[2]).toHaveSpanAttributeContaining('location.href', '#page3')
 	})
+
+	test('URL override can disable network monitoring for a matched route', async ({ recordPage }) => {
+		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+
+		await recordPage.locator('#btnNavigateWithSlowFetch').click()
+		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'routeChange').length === 1)
+
+		await recordPage.locator('#btnNavigateWithNetworkDisabled').click()
+		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'routeChange').length === 2)
+
+		const routeChangeSpans = recordPage.receivedSpans.filter((span) => span.name === 'routeChange')
+		const globalConfigSpan = routeChangeSpans[0]
+		const overrideConfigSpan = routeChangeSpans[1]
+
+		expect(globalConfigSpan).toHaveSpanAttributeContaining('location.href', '#slow-fetch')
+		expect(globalConfigSpan).toHaveSpanAttribute('browser.navigation.page_completion_time', 1000)
+		expect(globalConfigSpan).toHaveSpanAttribute('browser.navigation.status', 'timeout')
+
+		expect(overrideConfigSpan).toHaveSpanAttributeContaining('location.href', '#network-disabled')
+		expect(overrideConfigSpan).toHaveSpanAttribute('browser.navigation.page_completion_time', 0)
+		expect(overrideConfigSpan).toNotHaveSpanAttribute('browser.navigation.status')
+	})
 })

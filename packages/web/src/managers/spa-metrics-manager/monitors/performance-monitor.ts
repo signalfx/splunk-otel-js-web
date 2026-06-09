@@ -18,11 +18,15 @@
 
 import { diag } from '@opentelemetry/api'
 
+import type { SpaMetricsMonitor } from '../../../types'
+
 import { Monitor } from './monitor'
 
 const RESOURCE_TYPES_TO_MONITOR = new Set(['css', 'font', 'img', 'link', 'other'])
 
 export class PerformanceMonitor extends Monitor {
+	protected readonly monitorType: SpaMetricsMonitor = 'performance'
+
 	private isMonitoring = false
 
 	private observer: PerformanceObserver | null = null
@@ -71,10 +75,6 @@ export class PerformanceMonitor extends Monitor {
 		const url = entry.name
 
 		if (!RESOURCE_TYPES_TO_MONITOR.has(entry.initiatorType)) {
-			return
-		}
-
-		if (this.isIgnoredUrl(url)) {
 			return
 		}
 

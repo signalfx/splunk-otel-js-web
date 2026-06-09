@@ -29,7 +29,6 @@ describe('FetchXhrMonitor', () => {
 	beforeEach(() => {
 		events = []
 		monitor = new FetchXhrMonitor({
-			ignoreUrls: [/ignore-me/],
 			onResourceStateChange: (event) => events.push(event),
 		})
 		monitor.start()
@@ -50,16 +49,22 @@ describe('FetchXhrMonitor', () => {
 			expect(events[0].id).toBe(events[1].id)
 		})
 
-		it('ignores URLs matching pattern', async () => {
+		it('emits URLs matching ignore patterns because SpaMetricsManager applies ignoreUrls', async () => {
 			await fetch(`${HTTP_TEST_SERVER_URL}/delay?delay=0&resource=ignore-me-test`)
 
-			expect(events.length).toBe(0)
+			expect(events.length).toBe(2)
+			expect(events[0].state).toBe(ResourceState.DISCOVERED)
+			expect(events[1].state).toBe(ResourceState.LOADED)
+			expect(events[0].id).toBe(events[1].id)
 		})
 
-		it('ignores data URL requests', async () => {
+		it('tracks data URL requests', async () => {
 			await fetch('data:text/plain,hello')
 
-			expect(events.length).toBe(0)
+			expect(events.length).toBe(2)
+			expect(events[0].state).toBe(ResourceState.DISCOVERED)
+			expect(events[1].state).toBe(ResourceState.LOADED)
+			expect(events[0].id).toBe(events[1].id)
 		})
 	})
 
@@ -83,7 +88,7 @@ describe('FetchXhrMonitor', () => {
 			expect(events[0].id).toBe(events[1].id)
 		})
 
-		it('ignores URLs matching pattern', async () => {
+		it('emits URLs matching ignore patterns because SpaMetricsManager applies ignoreUrls', async () => {
 			await new Promise<void>((resolve) => {
 				const xhr = new XMLHttpRequest()
 				xhr.open('GET', `${HTTP_TEST_SERVER_URL}/delay?delay=0&resource=ignore-me-test`)
@@ -92,19 +97,13 @@ describe('FetchXhrMonitor', () => {
 				xhr.send()
 			})
 
-			expect(events.length).toBe(0)
-		})
+			// Allow microtasks to complete so monitor's event handlers are processed
+			await new Promise((resolve) => setTimeout(resolve, 0))
 
-		it('ignores data URL requests', async () => {
-			await new Promise<void>((resolve) => {
-				const xhr = new XMLHttpRequest()
-				xhr.open('GET', 'data:text/plain,hello')
-				xhr.addEventListener('load', () => resolve())
-				xhr.addEventListener('error', () => resolve())
-				xhr.send()
-			})
-
-			expect(events.length).toBe(0)
+			expect(events.length).toBe(2)
+			expect(events[0].state).toBe(ResourceState.DISCOVERED)
+			expect(events[1].state).toBe(ResourceState.LOADED)
+			expect(events[0].id).toBe(events[1].id)
 		})
 	})
 

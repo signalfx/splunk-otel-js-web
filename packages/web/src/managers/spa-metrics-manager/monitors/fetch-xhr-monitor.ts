@@ -19,6 +19,8 @@
 import { diag } from '@opentelemetry/api'
 import * as shimmer from 'shimmer'
 
+import type { SpaMetricsMonitor } from '../../../types'
+
 import { Monitor } from './monitor'
 
 declare global {
@@ -28,6 +30,8 @@ declare global {
 }
 
 export class FetchXhrMonitor extends Monitor {
+	protected readonly monitorType: SpaMetricsMonitor = 'network'
+
 	private isMonitoring = false
 
 	start(): void {
@@ -70,10 +74,6 @@ export class FetchXhrMonitor extends Monitor {
 			(original) =>
 				function wrappedFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
 					const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-
-					if (self.isIgnoredUrl(url)) {
-						return original(input, init)
-					}
 
 					const event = Monitor.createDiscoveredEvent(url)
 					const startTime = performance.now()
@@ -121,7 +121,7 @@ export class FetchXhrMonitor extends Monitor {
 			(original) =>
 				function wrappedSend(this: XMLHttpRequest, body?: Document | XMLHttpRequestBodyInit | null): void {
 					const url = this._splunkMonitorUrl
-					if (url && !self.isIgnoredUrl(url)) {
+					if (url) {
 						const event = Monitor.createDiscoveredEvent(url)
 						const startTime = performance.now()
 

@@ -160,6 +160,7 @@ Choose a versioning strategy based on your needs:
 | `debug`                               | `boolean`                                             | ❌       | `false`                                        | Enable internal debug logging                                                                                                                                                                                                                                                                                                                                           |
 | `cookieDomain`                        | `string`                                              | ❌       | `window.location.hostname`                     | Domain for session cookies                                                                                                                                                                                                                                                                                                                                              |
 | `ignoreUrls`                          | `Array<string\|RegExp>`                               | ❌       | `[]`                                           | URLs to exclude from tracing                                                                                                                                                                                                                                                                                                                                            |
+| `spaMetrics`                          | `boolean\|Config`                                     | ❌       | `true`                                         | SPA page completion metrics. Supports global settings and ordered `urlOverrides` for page-specific `quietTime`, `ignoreUrls`, `maxPageLoadWaitTime`, `maxResourcesToWatch`, and `monitors`.                                                                                                                                                                             |
 | `globalAttributes`                    | `Attributes`                                          | ❌       | `{}`                                           | Attributes added to every span                                                                                                                                                                                                                                                                                                                                          |
 | `persistence`                         | `'cookie'\|'localStorage'`                            | ❌       | `'cookie'`                                     | Where to store session data                                                                                                                                                                                                                                                                                                                                             |
 | `disableAutomationFrameworks`         | `boolean`                                             | ❌       | `false`                                        | Block automation frameworks                                                                                                                                                                                                                                                                                                                                             |
@@ -185,6 +186,18 @@ Choose a versioning strategy based on your needs:
 | `instrumentations.webvitals`          | `boolean\|Config`                                     | ❌       | `true`                                         | Web Vitals collection                                                                                                                                                                                                                                                                                                                                                   |
 | `instrumentations.websocket`          | `boolean\|Config`                                     | ❌       | `false`                                        | WebSocket monitoring                                                                                                                                                                                                                                                                                                                                                    |
 | `instrumentations.xhr`                | `boolean\|Config`                                     | ❌       | `true`                                         | XMLHttpRequest monitoring                                                                                                                                                                                                                                                                                                                                               |
+
+### SPA Metrics
+
+The `spaMetrics` option controls page completion time (PCT) calculation for document loads and SPA route changes. When `spaMetrics` is `true`, all monitor types are enabled with the default timing settings. Use `spaMetrics.monitors` globally, or inside `spaMetrics.urlOverrides`, to control which resource sources can keep PCT waiting for a specific page.
+
+| Monitor       | Tracks                                                                                                                                            | Typical use                                                                                                                                         |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `network`     | `fetch` and `XMLHttpRequest` lifecycle events. Requests discovered before they settle keep PCT waiting until they finish, error, or hit max wait. | Keep enabled for pages whose useful content depends on API calls. Disable for polling, analytics, or background requests that should not delay PCT. |
+| `media`       | Image, audio, and video elements observed in the DOM. Pending media loads keep PCT waiting until they load, error, or hit max wait.               | Keep enabled when above-the-fold media is part of page readiness. Disable for lazy media, autoplay, or decorative assets that can load later.       |
+| `performance` | Resource Timing entries reported through `PerformanceObserver`, including browser-loaded resources that do not flow through fetch/XHR events.     | Keep enabled to include CSS, script, and other resource timing entries. Disable when resource timing noise makes PCT too broad.                     |
+
+Array fields in URL overrides replace the inherited arrays for matched URLs. For example, `monitors: ['network']` waits only for fetch/XHR activity on that page, while `monitors: ['media', 'performance']` ignores fetch/XHR activity but still watches media and resource timing entries. If an override specifies `ignoreUrls`, include any global `spaMetrics.ignoreUrls` entries that should still apply on that page.
 
 ### Long Animation Frames
 
@@ -340,6 +353,29 @@ SplunkRum.init({
 	cookieDomain: window.location.hostname,
 	persistence: 'cookie',
 	ignoreUrls: [/\/health-check/, '/analytics/track', 'https://third-party-ads.com'],
+	spaMetrics: {
+		quietTime: 1000,
+		ignoreUrls: ['/analytics/track'],
+		maxResourcesToWatch: 100,
+		monitors: ['media', 'network', 'performance'],
+		urlOverrides: [
+			{
+				// Plain strings match by substring.
+				match: '/cart/',
+				quietTime: 1000,
+				// Override arrays replace inherited arrays, so repeat global SPA metric ignores if needed.
+				ignoreUrls: ['/analytics/track', '/cart/poll'],
+				maxResourcesToWatch: 50,
+			},
+			{
+				// Use RegExp, or the regex string convention, for pattern matching.
+				match: /\/checkout\/.*/,
+				maxPageLoadWaitTime: 5000,
+				quietTime: 2000,
+				monitors: ['network'],
+			},
+		],
+	},
 
 	// Global attributes for all spans
 	globalAttributes: {

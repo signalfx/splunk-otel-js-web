@@ -17,7 +17,12 @@
  */
 
 import { diag } from '@opentelemetry/api'
+import { isUrlIgnored } from '@opentelemetry/core'
 
+import type { SpaMetricsMonitor, SpaMetricsUrlOverride } from '../../types'
+import type { Monitor } from './monitors/monitor'
+
+import { PAGE_LOAD_METRICS_STATUS_TIMEOUT } from './constants'
 import { FetchXhrMonitor, MediaMonitor, PerformanceMonitor, ResourceState, ResourceStateEvent } from './monitors'
 import { normalizeMaxPageLoadWaitTime, type PageLoadMetricsResult, QuietPeriodAwaiter } from './quiet-period-awaiter'
 
@@ -25,6 +30,7 @@ const SPA_METRICS_MANAGER_CONFIG_DEFAULTS = {
 	ignoreUrls: [] as (string | RegExp)[],
 	maxPageLoadWaitTime: 180_000,
 	maxResourcesToWatch: 100,
+	monitors: ['media', 'network', 'performance'] as SpaMetricsMonitor[],
 	quietTime: 1000,
 } as const
 
@@ -37,67 +43,73 @@ export function getDocumentLoadTime(navEntry: DocumentLoadTiming): number {
 	return navEntry.loadEventEnd - navEntry.fetchStart
 }
 
-export interface SpaMetricsManagerConfig {
-	beaconEndpoint?: string
+type SpaMetricsManagerConfigValues = {
 	ignoreUrls?: (string | RegExp)[]
 	maxPageLoadWaitTime?: number
 	maxResourcesToWatch?: number
+	monitors?: SpaMetricsMonitor[]
 	quietTime?: number
 }
 
-export class SpaMetricsManager {
-	private readonly config: Required<Omit<SpaMetricsManagerConfig, 'beaconEndpoint'>>
+type ResolvedSpaMetricsManagerConfig = Required<SpaMetricsManagerConfigValues>
 
-	private fetchXhrMonitor: FetchXhrMonitor
+type ResolvedSpaMetricsUrlOverride = {
+	config: ResolvedSpaMetricsManagerConfig
+	match: string | RegExp
+}
+
+type LoadingResource = {
+	monitorType: SpaMetricsMonitor
+	url: string
+}
+
+export interface SpaMetricsManagerConfig extends SpaMetricsManagerConfigValues {
+	beaconEndpoint?: string
+	urlOverrides?: SpaMetricsUrlOverride[]
+}
+
+export class SpaMetricsManager {
+	private readonly config: ResolvedSpaMetricsManagerConfig
 
 	private isMonitoring = false
 
-	private loadingResources = new Set<string>()
+	private loadingResources = new Map<string, LoadingResource>()
 
 	private get loadingResourcesCount(): number {
 		return this.loadingResources.size
 	}
 
-	private mediaMonitor: MediaMonitor
-
-	private performanceMonitor: PerformanceMonitor
+	private readonly monitors: Record<SpaMetricsMonitor, Monitor>
 
 	private quietPeriodAwaiter: QuietPeriodAwaiter | undefined
 
+	private readonly urlOverrides: ResolvedSpaMetricsUrlOverride[]
+
 	constructor(config: SpaMetricsManagerConfig = {}) {
-		const ignoreUrls: (string | RegExp)[] = [...(config.ignoreUrls ?? [])]
+		const beaconEndpointIgnoreUrls = this.getBeaconEndpointIgnoreUrls(config.beaconEndpoint)
+		this.config = this.resolveConfig(config, beaconEndpointIgnoreUrls)
+		this.urlOverrides = (config.urlOverrides ?? []).map(({ match, ...overrideConfig }) => ({
+			config: this.resolveConfig(overrideConfig, beaconEndpointIgnoreUrls, this.config),
+			match,
+		}))
 
-		if (config.beaconEndpoint) {
-			try {
-				const beaconOrigin = new URL(config.beaconEndpoint).origin
-				ignoreUrls.push(new RegExp(`^${beaconOrigin}`))
-			} catch {
-				ignoreUrls.push(config.beaconEndpoint)
-			}
+		const monitorConfig = {
+			onResourceStateChange: this.onResourceStateChange,
 		}
 
-		const maxPageLoadWaitTime =
-			config.maxPageLoadWaitTime ?? SPA_METRICS_MANAGER_CONFIG_DEFAULTS.maxPageLoadWaitTime
-		const quietTime = config.quietTime ?? SPA_METRICS_MANAGER_CONFIG_DEFAULTS.quietTime
-
-		this.config = {
-			ignoreUrls,
-			maxPageLoadWaitTime: normalizeMaxPageLoadWaitTime({ maxPageLoadWaitTime, quietTime }),
-			maxResourcesToWatch: config.maxResourcesToWatch ?? SPA_METRICS_MANAGER_CONFIG_DEFAULTS.maxResourcesToWatch,
-			quietTime,
+		this.monitors = {
+			media: new MediaMonitor(monitorConfig),
+			network: new FetchXhrMonitor(monitorConfig),
+			performance: new PerformanceMonitor(monitorConfig),
 		}
+	}
 
-		this.fetchXhrMonitor = new FetchXhrMonitor({
-			ignoreUrls: this.config.ignoreUrls,
-			onResourceStateChange: this.onResourceStateChange,
-		})
-		this.mediaMonitor = new MediaMonitor({
-			onResourceStateChange: this.onResourceStateChange,
-		})
-		this.performanceMonitor = new PerformanceMonitor({
-			ignoreUrls: this.config.ignoreUrls,
-			onResourceStateChange: this.onResourceStateChange,
-		})
+	getConfigForUrl(url: string): ResolvedSpaMetricsManagerConfig {
+		return this.urlOverrides.find((override) => this.isUrlOverrideMatch(override.match, url))?.config ?? this.config
+	}
+
+	private get activeConfig(): ResolvedSpaMetricsManagerConfig {
+		return this.getConfigForUrl(location.href)
 	}
 
 	start(): void {
@@ -108,9 +120,9 @@ export class SpaMetricsManager {
 
 		this.isMonitoring = true
 
-		this.fetchXhrMonitor.start()
-		this.mediaMonitor.start()
-		this.performanceMonitor.start()
+		for (const monitor of Object.values(this.monitors)) {
+			monitor.start()
+		}
 
 		diag.debug('SpaMetricsManager: Started monitoring.')
 	}
@@ -124,9 +136,9 @@ export class SpaMetricsManager {
 		}
 
 		this.isMonitoring = false
-		this.fetchXhrMonitor.stop()
-		this.mediaMonitor.stop()
-		this.performanceMonitor.stop()
+		for (const monitor of Object.values(this.monitors)) {
+			monitor.stop()
+		}
 		this.loadingResources.clear()
 
 		diag.debug('SpaMetricsManager: Stopped monitoring.')
@@ -134,9 +146,12 @@ export class SpaMetricsManager {
 
 	waitForPageLoad({ startTime }: { startTime: number }): Promise<PageLoadMetricsResult> {
 		this.quietPeriodAwaiter?.complete({ areResourcesStillLoading: this.loadingResourcesCount > 0 })
+		const activeConfig = this.activeConfig
+		this.dropLoadingResourcesIgnoredByActiveConfig(activeConfig)
+
 		const quietPeriodAwaiter = new QuietPeriodAwaiter({
-			maxPageLoadWaitTime: this.config.maxPageLoadWaitTime,
-			quietTime: this.config.quietTime,
+			maxPageLoadWaitTime: activeConfig.maxPageLoadWaitTime,
+			quietTime: activeConfig.quietTime,
 			startTime,
 		})
 		this.quietPeriodAwaiter = quietPeriodAwaiter
@@ -149,6 +164,11 @@ export class SpaMetricsManager {
 		// startTime === 0 means this is a documentLoad pct — ensure it's at least the document load time
 		if (startTime === 0) {
 			return quietPeriodAwaiter.promise.then((result) => {
+				// Timeout results must stay capped at maxPageLoadWaitTime, even if document load took longer.
+				if (result.status === PAGE_LOAD_METRICS_STATUS_TIMEOUT) {
+					return result
+				}
+
 				const navEntry = performance.getEntriesByType('navigation')[0] as
 					| PerformanceNavigationTiming
 					| undefined
@@ -160,14 +180,72 @@ export class SpaMetricsManager {
 		return quietPeriodAwaiter.promise
 	}
 
+	private dropLoadingResourcesIgnoredByActiveConfig(activeConfig: ResolvedSpaMetricsManagerConfig): void {
+		for (const [resourceId, resource] of this.loadingResources) {
+			if (
+				!activeConfig.monitors.includes(resource.monitorType) ||
+				this.isIgnoredUrl(resource.url, activeConfig.ignoreUrls)
+			) {
+				this.loadingResources.delete(resourceId)
+			}
+		}
+	}
+
+	private getBeaconEndpointIgnoreUrls(beaconEndpoint: string | undefined): (string | RegExp)[] {
+		if (!beaconEndpoint) {
+			return []
+		}
+
+		try {
+			const beaconOrigin = new URL(beaconEndpoint).origin
+			return [new RegExp(`^${beaconOrigin}`)]
+		} catch {
+			return [beaconEndpoint]
+		}
+	}
+
+	private getResolvedIgnoreUrls(
+		ignoreUrls: (string | RegExp)[],
+		beaconEndpointIgnoreUrls: (string | RegExp)[],
+	): (string | RegExp)[] {
+		return [...new Set([...ignoreUrls, ...beaconEndpointIgnoreUrls])]
+	}
+
+	private isIgnoredUrl(url: string, ignoreUrls: (string | RegExp)[]): boolean {
+		return url.toLowerCase().startsWith('data:') || isUrlIgnored(url, ignoreUrls)
+	}
+
+	private isUrlOverrideMatch(match: string | RegExp, url: string): boolean {
+		if (typeof match === 'string') {
+			return url.includes(match)
+		}
+
+		// Regexes with global/sticky flags keep state between test() calls:
+		// const regex = /checkout/g
+		// regex.test('/checkout') // true
+		// regex.test('/checkout') // false without resetting lastIndex
+		match.lastIndex = 0
+		return match.test(url)
+	}
+
 	private onResourceStateChange = (event: ResourceStateEvent): void => {
 		if (event.state === ResourceState.DISCOVERED) {
-			if (this.loadingResourcesCount >= this.config.maxResourcesToWatch) {
+			const activeConfig = this.activeConfig
+
+			if (!activeConfig.monitors.includes(event.monitorType)) {
+				return
+			}
+
+			if (this.isIgnoredUrl(event.url, activeConfig.ignoreUrls)) {
+				return
+			}
+
+			if (this.loadingResourcesCount >= activeConfig.maxResourcesToWatch) {
 				diag.debug('SpaMetricsManager: Max resources limit reached, ignoring new resource', event.url)
 				return
 			}
 
-			this.loadingResources.add(event.id)
+			this.loadingResources.set(event.id, { monitorType: event.monitorType, url: event.url })
 			diag.debug('Detected resource. Resetting quiet timer', event.url)
 			this.quietPeriodAwaiter?.removeQuietTimer()
 		} else {
@@ -179,6 +257,24 @@ export class SpaMetricsManager {
 			}
 		}
 	}
-}
 
-export { type PageLoadMetricsResult } from './quiet-period-awaiter'
+	private resolveConfig(
+		config: SpaMetricsManagerConfigValues,
+		beaconEndpointIgnoreUrls: (string | RegExp)[],
+		defaultConfig: ResolvedSpaMetricsManagerConfig = SPA_METRICS_MANAGER_CONFIG_DEFAULTS,
+	): ResolvedSpaMetricsManagerConfig {
+		const quietTime = config.quietTime ?? defaultConfig.quietTime
+		const maxPageLoadWaitTime = config.maxPageLoadWaitTime ?? defaultConfig.maxPageLoadWaitTime
+
+		return {
+			ignoreUrls: this.getResolvedIgnoreUrls(
+				config.ignoreUrls ?? defaultConfig.ignoreUrls,
+				beaconEndpointIgnoreUrls,
+			),
+			maxPageLoadWaitTime: normalizeMaxPageLoadWaitTime({ maxPageLoadWaitTime, quietTime }),
+			maxResourcesToWatch: config.maxResourcesToWatch ?? defaultConfig.maxResourcesToWatch,
+			monitors: [...(config.monitors ?? defaultConfig.monitors)],
+			quietTime,
+		}
+	}
+}

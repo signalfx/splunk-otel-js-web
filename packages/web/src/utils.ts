@@ -193,6 +193,17 @@ export function normalizeIgnoreUrlsConfig(value: any) {
 			continue
 		}
 
+		if (key === 'urlOverrides' && Array.isArray(value[key])) {
+			for (const entry of value[key]) {
+				if (entry != null && typeof entry === 'object' && typeof entry.match === 'string') {
+					entry.match = parseRegexString(entry.match) ?? entry.match
+				}
+
+				normalizeIgnoreUrlsConfig(entry)
+			}
+			continue
+		}
+
 		normalizeIgnoreUrlsConfig(value[key])
 	}
 }

@@ -91,7 +91,9 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 	) {
 		super(config)
 		this.spaMetricsManager = spaMetricsManager
-		this.documentLoadMetricsPromise = this.spaMetricsManager?.waitForPageLoad({ startTime: 0 })
+		this.documentLoadMetricsPromise = this.spaMetricsManager?.waitForPageLoad({
+			startTime: 0,
+		})
 
 		const exposedSuper = this as any as ExposedSuper
 
