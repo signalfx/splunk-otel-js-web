@@ -18,6 +18,7 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
+import { HTTP_TEST_SERVER_URL } from '../../../../../../tests/servers/http-constants'
 import { FetchXhrMonitor } from './fetch-xhr-monitor'
 import { ResourceState, ResourceStateEvent } from './monitor'
 
@@ -40,17 +41,23 @@ describe('FetchXhrMonitor', () => {
 
 	describe('fetch', () => {
 		it('tracks fetch requests', async () => {
-			// Use data URL for reliable test
-			await fetch('data:text/plain,hello')
+			await fetch(`${HTTP_TEST_SERVER_URL}/delay?delay=0&resource=fetch-track`)
 
 			expect(events.length).toBe(2)
 			expect(events[0].state).toBe(ResourceState.DISCOVERED)
 			expect(events[1].state).toBe(ResourceState.LOADED)
 			expect(events[1]).toHaveProperty('loadTime')
+			expect(events[0].id).toBe(events[1].id)
 		})
 
 		it('ignores URLs matching pattern', async () => {
-			await fetch('data:text/plain,ignore-me-test')
+			await fetch(`${HTTP_TEST_SERVER_URL}/delay?delay=0&resource=ignore-me-test`)
+
+			expect(events.length).toBe(0)
+		})
+
+		it('ignores data URL requests', async () => {
+			await fetch('data:text/plain,hello')
 
 			expect(events.length).toBe(0)
 		})
@@ -60,7 +67,7 @@ describe('FetchXhrMonitor', () => {
 		it('tracks XHR requests', async () => {
 			await new Promise<void>((resolve) => {
 				const xhr = new XMLHttpRequest()
-				xhr.open('GET', 'data:text/plain,hello')
+				xhr.open('GET', `${HTTP_TEST_SERVER_URL}/delay?delay=0&resource=xhr-track`)
 				xhr.addEventListener('load', () => resolve())
 				xhr.addEventListener('error', () => resolve())
 				xhr.send()
@@ -73,12 +80,25 @@ describe('FetchXhrMonitor', () => {
 			expect(events[0].state).toBe(ResourceState.DISCOVERED)
 			expect(events[1].state).toBe(ResourceState.LOADED)
 			expect(events[1]).toHaveProperty('loadTime')
+			expect(events[0].id).toBe(events[1].id)
 		})
 
 		it('ignores URLs matching pattern', async () => {
 			await new Promise<void>((resolve) => {
 				const xhr = new XMLHttpRequest()
-				xhr.open('GET', 'data:text/plain,ignore-me-test')
+				xhr.open('GET', `${HTTP_TEST_SERVER_URL}/delay?delay=0&resource=ignore-me-test`)
+				xhr.addEventListener('load', () => resolve())
+				xhr.addEventListener('error', () => resolve())
+				xhr.send()
+			})
+
+			expect(events.length).toBe(0)
+		})
+
+		it('ignores data URL requests', async () => {
+			await new Promise<void>((resolve) => {
+				const xhr = new XMLHttpRequest()
+				xhr.open('GET', 'data:text/plain,hello')
 				xhr.addEventListener('load', () => resolve())
 				xhr.addEventListener('error', () => resolve())
 				xhr.send()
@@ -92,7 +112,7 @@ describe('FetchXhrMonitor', () => {
 		it('stops tracking after stop()', async () => {
 			monitor.stop()
 
-			await fetch('data:text/plain,hello')
+			await fetch(`${HTTP_TEST_SERVER_URL}/delay?delay=0&resource=after-stop`)
 
 			expect(events.length).toBe(0)
 		})
@@ -101,9 +121,12 @@ describe('FetchXhrMonitor', () => {
 			monitor.stop()
 			monitor.start()
 
-			await fetch('data:text/plain,hello')
+			await fetch(`${HTTP_TEST_SERVER_URL}/delay?delay=0&resource=after-restart`)
 
 			expect(events.length).toBe(2)
+			expect(events[0].state).toBe(ResourceState.DISCOVERED)
+			expect(events[1].state).toBe(ResourceState.LOADED)
+			expect(events[0].id).toBe(events[1].id)
 		})
 	})
 })

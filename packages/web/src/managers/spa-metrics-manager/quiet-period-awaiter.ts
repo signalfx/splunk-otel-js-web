@@ -141,13 +141,17 @@ export class QuietPeriodAwaiter {
 			return
 		}
 
-		this.lastResourceTimestamp = resourceLoadedTimestamp
+		const quietPeriodTimestamp = Math.max(
+			this.lastResourceTimestamp ?? resourceLoadedTimestamp,
+			resourceLoadedTimestamp,
+		)
+		this.lastResourceTimestamp = quietPeriodTimestamp
 		clearTimeout(this.timeoutId)
 
 		this.timeoutId = setTimeout(() => {
 			diag.debug('QuietPeriodAwaiter: Quiet period expired', this.quietTime)
 			this.resolveOnce({
-				pct: Math.max(resourceLoadedTimestamp - this.startTime, 0),
+				pct: Math.max(quietPeriodTimestamp - this.startTime, 0),
 			})
 		}, this.quietTime)
 	}

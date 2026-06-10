@@ -16,6 +16,10 @@
  *
  */
 
+import { isUrlIgnored } from '@opentelemetry/core'
+
+import { generateId } from '../../../utils'
+
 export enum ResourceState {
 	DISCOVERED = 'discovered',
 	ERROR = 'error',
@@ -23,9 +27,9 @@ export enum ResourceState {
 }
 
 export type ResourceStateEvent =
-	| { state: ResourceState.DISCOVERED; url: string }
-	| { state: ResourceState.ERROR; timestamp: number; url: string }
-	| { loadTime: number; state: ResourceState.LOADED; timestamp: number; url: string }
+	| { id: string; state: ResourceState.DISCOVERED; url: string }
+	| { id: string; state: ResourceState.ERROR; timestamp: number; url: string }
+	| { id: string; loadTime: number; state: ResourceState.LOADED; timestamp: number; url: string }
 
 export interface MonitorConfig {
 	ignoreUrls?: (string | RegExp)[]
@@ -37,6 +41,31 @@ export abstract class Monitor {
 
 	constructor(config: MonitorConfig) {
 		this.config = config
+	}
+
+	static createDiscoveredEvent(url: string): ResourceStateEvent & { state: ResourceState.DISCOVERED } {
+		return { id: generateId(64), state: ResourceState.DISCOVERED, url }
+	}
+
+	static createErrorEvent(id: string, url: string): ResourceStateEvent & { state: ResourceState.ERROR } {
+		return { id, state: ResourceState.ERROR, timestamp: performance.now(), url }
+	}
+
+	static createLoadedEvent(
+		id: string,
+		url: string,
+		loadTime: number,
+		timestamp = performance.now(),
+	): ResourceStateEvent & { state: ResourceState.LOADED } {
+		return { id, loadTime, state: ResourceState.LOADED, timestamp, url }
+	}
+
+	protected emitResourceStateChange(event: ResourceStateEvent): void {
+		this.config.onResourceStateChange(event)
+	}
+
+	protected isIgnoredUrl(url: string): boolean {
+		return url.toLowerCase().startsWith('data:') || isUrlIgnored(url, this.config.ignoreUrls)
 	}
 
 	abstract start(): void
