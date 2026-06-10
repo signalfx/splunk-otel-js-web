@@ -18,7 +18,7 @@
 
 import { diag } from '@opentelemetry/api'
 
-import { isElement, isMediaElement } from '../../../types'
+import { isElement, isMediaElement, type SpaMetricsMonitor } from '../../../types'
 import { Monitor } from './monitor'
 
 type MonitoredMediaElement = {
@@ -28,6 +28,8 @@ type MonitoredMediaElement = {
 }
 
 export class MediaMonitor extends Monitor {
+	protected readonly monitorType: SpaMetricsMonitor = 'media'
+
 	private isMonitoring = false
 
 	private monitoredMediaElementControllers = new Set<AbortController>()
@@ -79,10 +81,6 @@ export class MediaMonitor extends Monitor {
 		}
 
 		this.untrackMediaElement(element)
-
-		if (this.isIgnoredUrl(url)) {
-			return
-		}
 
 		if (element instanceof HTMLImageElement && element.loading === 'lazy') {
 			return

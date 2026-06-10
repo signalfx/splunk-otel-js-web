@@ -3,7 +3,18 @@
 <head>
 	<meta charset="UTF-8">
 	<title>SPA Metrics test</title>
-	<%- renderAgent({ spaMetrics: { quietTime: 500 } }) %>
+	<%- renderAgent({
+		spaMetrics: {
+			maxPageLoadWaitTime: 1000,
+			quietTime: 500,
+			urlOverrides: [
+				{
+					match: '#network-disabled',
+					monitors: ['media', 'performance'],
+				},
+			],
+		},
+	}) %>
 </head>
 <body>
 	<h1>SPA Metrics test</h1>
@@ -11,6 +22,8 @@
 	<button type="button" id="btnNavigate">Navigate</button>
 	<button type="button" id="btnNavigateWithFetch">Navigate with fetch</button>
 	<button type="button" id="btnNavigateWithImage">Navigate with image</button>
+	<button type="button" id="btnNavigateWithSlowFetch">Navigate with slow fetch</button>
+	<button type="button" id="btnNavigateWithNetworkDisabled">Navigate with network disabled</button>
 
 	<div id="content"></div>
 
@@ -33,8 +46,20 @@
 			location.hash = 'page3';
 			// Add image after navigation
 			const img = document.createElement('img');
-			img.src = 'assets/splunk-black.png?delay=300';
+			img.src =
+				'http://localhost:3001/user-interaction/assets/splunk-black.png?delay=300&noCache&resource=' +
+				Date.now();
 			document.getElementById('content').appendChild(img);
+		});
+
+		document.querySelector('#btnNavigateWithSlowFetch').addEventListener('click', function () {
+			location.hash = 'slow-fetch';
+			fetch('/some-data?delay=1500&resource=global-slow-fetch').catch(function () {});
+		});
+
+		document.querySelector('#btnNavigateWithNetworkDisabled').addEventListener('click', function () {
+			location.hash = 'network-disabled';
+			fetch('/some-data?delay=1500&resource=override-slow-fetch').catch(function () {});
 		});
 	</script>
 </body>

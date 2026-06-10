@@ -182,7 +182,7 @@ describe('test init', () => {
 	})
 
 	describe('ignoreUrls normalization', () => {
-		it('converts regex strings recursively for each ignoreUrls key', () => {
+		it('converts regex strings recursively for each ignoreUrls key and URL override match', () => {
 			const initOptions = {
 				applicationName: 'app',
 				beaconEndpoint: 'https://127.0.0.1:8888/foo',
@@ -199,6 +199,12 @@ describe('test init', () => {
 				rumAccessToken: undefined,
 				spaMetrics: {
 					ignoreUrls: ['regex/spa-metrics/', 'exact'],
+					urlOverrides: [
+						{
+							ignoreUrls: ['regex/spa-metrics-override/', 'exact-override'],
+							match: 'regex/checkout/',
+						},
+					],
 				},
 			}
 
@@ -222,6 +228,9 @@ describe('test init', () => {
 			expect(initOptions.instrumentations.fetch.ignoreUrls[1]).toBeTypeOf('string')
 			expect(initOptions.spaMetrics.ignoreUrls[0]).toBeInstanceOf(RegExp)
 			expect(initOptions.spaMetrics.ignoreUrls[1]).toBeTypeOf('string')
+			expect(initOptions.spaMetrics.urlOverrides[0].ignoreUrls[0]).toBeInstanceOf(RegExp)
+			expect(initOptions.spaMetrics.urlOverrides[0].ignoreUrls[1]).toBeTypeOf('string')
+			expect(initOptions.spaMetrics.urlOverrides[0].match).toBeInstanceOf(RegExp)
 
 			const frustrationSignalsConfig = processedOptions?.instrumentations?.frustrationSignals as
 				| FrustrationSignalsConfig
@@ -237,8 +246,15 @@ describe('test init', () => {
 			expect(frustrationSignalsConfig?.errorClick?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
 			expect(frustrationSignalsConfig?.thrashedCursor?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
 
-			const spaMetricsConfig = processedOptions?.spaMetrics as { ignoreUrls?: Array<string | RegExp> } | undefined
+			const spaMetricsConfig = processedOptions?.spaMetrics as
+				| {
+						ignoreUrls?: Array<string | RegExp>
+						urlOverrides?: Array<{ ignoreUrls?: Array<string | RegExp>; match?: string | RegExp }>
+				  }
+				| undefined
 			expect(spaMetricsConfig?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
+			expect(spaMetricsConfig?.urlOverrides?.[0]?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
+			expect(spaMetricsConfig?.urlOverrides?.[0]?.match).toBeInstanceOf(RegExp)
 		})
 	})
 

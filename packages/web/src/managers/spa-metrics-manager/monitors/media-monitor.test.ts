@@ -49,7 +49,6 @@ describe('MediaMonitor', () => {
 	beforeEach(() => {
 		events = []
 		monitor = new MediaMonitor({
-			ignoreUrls: [/ignore-me/],
 			onResourceStateChange: (event) => events.push(event),
 		})
 	})
@@ -113,16 +112,17 @@ describe('MediaMonitor', () => {
 			expect(events).toHaveLength(0)
 		})
 
-		it('skips data URL images', async () => {
+		it('tracks data URL images', async () => {
 			monitor.start()
 
 			const img = document.createElement('img')
 			img.src = DATA_IMAGE_URL
 			document.body.append(img)
 
-			await new Promise((resolve) => setTimeout(resolve, 50))
-
-			expect(events).toHaveLength(0)
+			await vi.waitFor(() => {
+				expect(events.length).toBeGreaterThan(0)
+			})
+			expect(events.every((event) => event.url === DATA_IMAGE_URL)).toBe(true)
 		})
 
 		it('tracks images when the source is set after insertion', async () => {
@@ -172,16 +172,16 @@ describe('MediaMonitor', () => {
 			expect(firstEvents[0].id).not.toBe(secondEvents[0].id)
 		})
 
-		it('ignores URLs matching pattern', async () => {
+		it('emits URLs matching ignore patterns because SpaMetricsManager applies ignoreUrls', async () => {
 			monitor.start()
 
 			const img = document.createElement('img')
 			img.src = getTestImageUrl('ignore-me-image')
 			document.body.append(img)
 
-			await new Promise((resolve) => setTimeout(resolve, 50))
-
-			expect(events.length).toBe(0)
+			await vi.waitFor(() => {
+				expectEventStatesWithMatchingIds(events, [ResourceState.DISCOVERED, ResourceState.LOADED])
+			})
 		})
 
 		it('detects already loaded images', async () => {

@@ -103,6 +103,31 @@ export function isPersistenceType(value: string): value is PersistenceType {
 	return ['cookie', 'localStorage'].includes(value)
 }
 
+export type SpaMetricsMonitor = 'media' | 'network' | 'performance'
+
+type SpaMetricsOptionsBase = {
+	/** URLs to exclude from PCT tracking (e.g., analytics, third-party scripts) */
+	ignoreUrls?: Array<string | RegExp>
+	/** Maximum time in milliseconds to wait for PCT computation before marking it as timed out. @default 180000 */
+	maxPageLoadWaitTime?: number
+	/** Maximum number of concurrent resources to track. @default 100 */
+	maxResourcesToWatch?: number
+	/** Resource monitor types to use for matched URLs. @default ['media', 'network', 'performance'] */
+	monitors?: SpaMetricsMonitor[]
+	/** Time in milliseconds to wait after last resource loads before considering page complete. @default 1000 */
+	quietTime?: number
+}
+
+export type SpaMetricsUrlOverride = SpaMetricsOptionsBase & {
+	/** URL matcher for this override. Strings match by substring, regex strings and RegExp values use RegExp.test(). */
+	match: string | RegExp
+}
+
+export type SpaMetricsOptions = SpaMetricsOptionsBase & {
+	/** Ordered per-URL overrides. The first matching override wins. */
+	urlOverrides?: SpaMetricsUrlOverride[]
+}
+
 type SensitivityRule = {
 	rule: 'mask' | 'unmask' | 'exclude'
 	selector: string
@@ -268,6 +293,7 @@ export interface SplunkOtelWebConfig {
 	 *   ignoreUrls: [/analytics\.example\.com/],
 	 *   maxPageLoadWaitTime: 180000,
 	 *   maxResourcesToWatch: 100,
+	 *   monitors: ['media', 'network', 'performance'],
 	 *   quietTime: 1000
 	 * }
 	 *
@@ -275,18 +301,7 @@ export interface SplunkOtelWebConfig {
 	 * spaMetrics: false
 	 * ```
 	 */
-	spaMetrics?:
-		| boolean
-		| {
-				/** URLs to exclude from PCT tracking (e.g., analytics, third-party scripts) */
-				ignoreUrls?: Array<string | RegExp>
-				/** Maximum time in milliseconds to wait for PCT computation before marking it as timed out. @default 180000 */
-				maxPageLoadWaitTime?: number
-				/** Maximum number of concurrent resources to track. @default 100 */
-				maxResourcesToWatch?: number
-				/** Time in milliseconds to wait after last resource loads before considering page complete. @default 1000 */
-				quietTime?: number
-		  }
+	spaMetrics?: boolean | SpaMetricsOptions
 
 	spanEmitter?: SpanEmitterProcessor
 

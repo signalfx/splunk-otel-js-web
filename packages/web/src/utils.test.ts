@@ -33,7 +33,7 @@ describe('normalizeIgnoreUrlsConfig', () => {
 		expect(normalizeIgnoreUrlsConfig({})).toBeUndefined()
 	})
 
-	it('converts regex strings recursively for each ignoreUrls key', () => {
+	it('converts regex strings recursively for each ignoreUrls key and URL override match', () => {
 		const options: any = {
 			ignoreUrls: ['regex/test-top-level/', '/exact-match'],
 			instrumentations: {
@@ -45,6 +45,12 @@ describe('normalizeIgnoreUrlsConfig', () => {
 			},
 			spaMetrics: {
 				ignoreUrls: ['regex/spa-metrics/'],
+				urlOverrides: [
+					{
+						ignoreUrls: ['regex/spa-metrics-override/'],
+						match: 'regex/checkout/',
+					},
+				],
 			},
 		}
 
@@ -56,6 +62,11 @@ describe('normalizeIgnoreUrlsConfig', () => {
 		expect(options.instrumentations.frustrationSignals.errorClick.ignoreUrls[0]).toBeInstanceOf(RegExp)
 		expect(options.instrumentations.frustrationSignals.thrashedCursor.ignoreUrls[0]).toBeInstanceOf(RegExp)
 		expect(options.spaMetrics.ignoreUrls[0]).toBeInstanceOf(RegExp)
+		expect(options.spaMetrics.urlOverrides[0].ignoreUrls[0]).toBeInstanceOf(RegExp)
+		expect(
+			options.spaMetrics.urlOverrides[0].match instanceof RegExp &&
+				options.spaMetrics.urlOverrides[0].match.test('https://example.com/checkout/'),
+		).toBeTruthy()
 	})
 
 	it('preserves non-string ignoreUrls entries', () => {
@@ -75,12 +86,20 @@ describe('normalizeIgnoreUrlsConfig', () => {
 	it('keeps invalid regex strings as plain strings', () => {
 		const options = {
 			ignoreUrls: ['regex/[invalid/', 'regex/abc/z'],
+			spaMetrics: {
+				urlOverrides: [
+					{
+						match: 'regex/[invalid/',
+					},
+				],
+			},
 		}
 
 		normalizeIgnoreUrlsConfig(options)
 
 		expect(options.ignoreUrls[0]).toBe('regex/[invalid/')
 		expect(options.ignoreUrls[1]).toBe('regex/abc/z')
+		expect(options.spaMetrics.urlOverrides[0].match).toBe('regex/[invalid/')
 	})
 
 	it('ignores non-array ignoreUrls values', () => {
