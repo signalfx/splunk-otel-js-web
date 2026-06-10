@@ -106,6 +106,8 @@ export function isPersistenceType(value: string): value is PersistenceType {
 export type SpaMetricsMonitor = 'media' | 'network' | 'performance'
 
 type SpaMetricsOptionsBase = {
+	/** Clear resources triggered on previous pages before calculating PCT for a new page. @default true */
+	clearLoadingResourcesOnNewPage?: boolean
 	/** URLs to exclude from PCT tracking (e.g., analytics, third-party scripts) */
 	ignoreUrls?: Array<string | RegExp>
 	/** Maximum time in milliseconds to wait for PCT computation before marking it as timed out. @default 180000 */
@@ -290,6 +292,7 @@ export interface SplunkOtelWebConfig {
 	 *
 	 * // Enable with custom configuration
 	 * spaMetrics: {
+	 *   clearLoadingResourcesOnNewPage: true,
 	 *   ignoreUrls: [/analytics\.example\.com/],
 	 *   maxPageLoadWaitTime: 180000,
 	 *   maxResourcesToWatch: 100,
