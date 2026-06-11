@@ -24,6 +24,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { HTTP_TEST_SERVER_URL } from '../../../tests/servers/http-constants'
 import SplunkRum from '../src'
 import {
+	BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE,
+	BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
 	BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE,
 	BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
 	PAGE_LOAD_METRICS_STATUS_COMPLETED,
@@ -322,7 +324,8 @@ describe('test init', () => {
 			})
 
 			const slowResourceAbortController = new AbortController()
-			void fetch(`${HTTP_TEST_SERVER_URL}/some-data?delay=5000`, {
+			const slowResourceUrl = `${HTTP_TEST_SERVER_URL}/some-data?delay=5000`
+			void fetch(slowResourceUrl, {
 				signal: slowResourceAbortController.signal,
 			}).catch(() => {})
 
@@ -338,6 +341,14 @@ describe('test init', () => {
 						expect(documentLoadSpan).toHaveSpanAttribute(
 							BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
 							PAGE_LOAD_METRICS_STATUS_TIMEOUT,
+						)
+						expect(documentLoadSpan).toHaveSpanAttribute(
+							BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE,
+							1,
+						)
+						expect(documentLoadSpan).toHaveSpanAttribute(
+							BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
+							JSON.stringify([slowResourceUrl]),
 						)
 					},
 					{ timeout: 6000 },
@@ -362,7 +373,8 @@ describe('test init', () => {
 			})
 
 			const slowResourceAbortController = new AbortController()
-			void fetch(`${HTTP_TEST_SERVER_URL}/some-data?delay=5000`, {
+			const slowResourceUrl = `${HTTP_TEST_SERVER_URL}/some-data?delay=5000`
+			void fetch(slowResourceUrl, {
 				signal: slowResourceAbortController.signal,
 			}).catch(() => {})
 
@@ -376,6 +388,14 @@ describe('test init', () => {
 						expect(documentLoadSpan).toHaveSpanAttribute(
 							BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
 							PAGE_LOAD_METRICS_STATUS_INTERRUPTED,
+						)
+						expect(documentLoadSpan).toHaveSpanAttribute(
+							BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE,
+							1,
+						)
+						expect(documentLoadSpan).toHaveSpanAttribute(
+							BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
+							JSON.stringify([slowResourceUrl]),
 						)
 					},
 					{ timeout: 6000 },
@@ -939,10 +959,11 @@ describe('test route change spa metrics timeout', () => {
 	it('sets timeout status on routeChange span when PCT computation times out', async () => {
 		const oldUrl = location.href
 		const slowResourceAbortController = new AbortController()
+		const slowResourceUrl = `${HTTP_TEST_SERVER_URL}/some-data?delay=5000`
 
 		try {
 			history.pushState({}, 'title', '/pctTimeout#WithAHash')
-			void fetch(`${HTTP_TEST_SERVER_URL}/some-data?delay=5000`, {
+			void fetch(slowResourceUrl, {
 				signal: slowResourceAbortController.signal,
 			}).catch(() => {})
 
@@ -954,6 +975,11 @@ describe('test route change spa metrics timeout', () => {
 					expect(span).toHaveSpanAttribute(
 						BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
 						PAGE_LOAD_METRICS_STATUS_TIMEOUT,
+					)
+					expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE, 1)
+					expect(span).toHaveSpanAttribute(
+						BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
+						JSON.stringify([slowResourceUrl]),
 					)
 					expect(span).toHaveSpanAttribute('prev.href', oldUrl)
 				},
@@ -967,12 +993,13 @@ describe('test route change spa metrics timeout', () => {
 	it('sets interrupted status on routeChange span when page hides during PCT computation', async () => {
 		const oldUrl = location.href
 		const slowResourceAbortController = new AbortController()
-		void fetch(`${HTTP_TEST_SERVER_URL}/some-data?delay=5000`, {
-			signal: slowResourceAbortController.signal,
-		}).catch(() => {})
+		const slowResourceUrl = `${HTTP_TEST_SERVER_URL}/some-data?delay=5000`
 
 		try {
 			history.pushState({}, 'title', '/pctInterrupted#WithAHash')
+			void fetch(slowResourceUrl, {
+				signal: slowResourceAbortController.signal,
+			}).catch(() => {})
 			window.dispatchEvent(new Event('pagehide'))
 
 			await vi.waitFor(
@@ -983,6 +1010,11 @@ describe('test route change spa metrics timeout', () => {
 						BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
 						PAGE_LOAD_METRICS_STATUS_INTERRUPTED,
 					)
+					expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE, 1)
+					expect(span).toHaveSpanAttribute(
+						BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
+						JSON.stringify([slowResourceUrl]),
+					)
 					expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE)
 					expect(span).toHaveSpanAttribute('prev.href', oldUrl)
 				},
@@ -991,6 +1023,29 @@ describe('test route change spa metrics timeout', () => {
 		} finally {
 			slowResourceAbortController.abort()
 		}
+	})
+
+	it('does not set loading resource count on interrupted routeChange span when no resources are loading', async () => {
+		const oldUrl = location.href
+
+		history.pushState({}, 'title', '/pctInterruptedNoResources#WithAHash')
+		window.dispatchEvent(new Event('pagehide'))
+
+		await vi.waitFor(
+			() => {
+				const span = capturer.spans.find((s) => s.name === 'routeChange')
+				expectDefined(span, 'Check if routeChange span is present.')
+				expect(span).toHaveSpanAttribute(
+					BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
+					PAGE_LOAD_METRICS_STATUS_INTERRUPTED,
+				)
+				expect(span).toNotHaveSpanAttribute(BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE)
+				expect(span).toNotHaveSpanAttribute(BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE)
+				expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE)
+				expect(span).toHaveSpanAttribute('prev.href', oldUrl)
+			},
+			{ timeout: 6000 },
+		)
 	})
 })
 

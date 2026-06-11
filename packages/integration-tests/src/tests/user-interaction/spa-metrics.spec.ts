@@ -117,6 +117,11 @@ test.describe('spa-metrics', () => {
 
 		expect(globalConfigSpan).toHaveSpanAttributeContaining('location.href', '#slow-fetch')
 		expect(globalConfigSpan).toHaveSpanAttribute('browser.navigation.page_completion_time', 1000)
+		expect(globalConfigSpan).toHaveSpanAttribute('browser.navigation.loading_resource_count', 1)
+		expect(globalConfigSpan).toHaveSpanAttribute(
+			'browser.navigation.loading_resource_urls',
+			JSON.stringify(['/some-data?delay=1500&resource=global-slow-fetch']),
+		)
 		expect(globalConfigSpan).toHaveSpanAttribute('browser.navigation.status', 'timeout')
 
 		expect(overrideConfigSpan).toHaveSpanAttributeContaining('location.href', '#network-disabled')

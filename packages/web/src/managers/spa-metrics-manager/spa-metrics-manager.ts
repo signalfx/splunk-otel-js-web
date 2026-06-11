@@ -22,6 +22,7 @@ import { isUrlIgnored } from '@opentelemetry/core'
 import type { SpaMetricsMonitor, SpaMetricsUrlOverride } from '../../types'
 import type { Monitor } from './monitors/monitor'
 
+import { truncateString } from '../../utils/text'
 import { PAGE_LOAD_METRICS_STATUS_TIMEOUT } from './constants'
 import { FetchXhrMonitor, MediaMonitor, PerformanceMonitor, ResourceState, ResourceStateEvent } from './monitors'
 import { normalizeMaxPageLoadWaitTime, type PageLoadMetricsResult, QuietPeriodAwaiter } from './quiet-period-awaiter'
@@ -66,6 +67,9 @@ type LoadingResource = {
 	url: string
 }
 
+const MAX_LOADING_RESOURCE_URLS_TO_REPORT = 3
+const MAX_LOADING_RESOURCE_URL_LENGTH = 100
+
 export interface SpaMetricsManagerConfig extends SpaMetricsManagerConfigValues {
 	beaconEndpoint?: string
 	urlOverrides?: SpaMetricsUrlOverride[]
@@ -80,6 +84,12 @@ export class SpaMetricsManager {
 
 	private get loadingResourcesCount(): number {
 		return this.loadingResources.size
+	}
+
+	private get loadingResourceUrls(): string[] {
+		return Array.from(this.loadingResources.values())
+			.slice(-MAX_LOADING_RESOURCE_URLS_TO_REPORT)
+			.map((resource) => truncateString(resource.url, MAX_LOADING_RESOURCE_URL_LENGTH))
 	}
 
 	private readonly monitors: Record<SpaMetricsMonitor, Monitor>
@@ -153,6 +163,8 @@ export class SpaMetricsManager {
 		this.dropLoadingResourcesIgnoredByActiveConfig(activeConfig)
 
 		const quietPeriodAwaiter = new QuietPeriodAwaiter({
+			getLoadingResourcesCount: () => this.loadingResourcesCount,
+			getLoadingResourceUrls: () => this.loadingResourceUrls,
 			maxPageLoadWaitTime: activeConfig.maxPageLoadWaitTime,
 			quietTime: activeConfig.quietTime,
 			startTime,

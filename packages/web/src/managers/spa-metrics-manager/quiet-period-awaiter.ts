@@ -35,11 +35,17 @@ export type PageLoadMetricsStatus =
 	| typeof PAGE_LOAD_METRICS_STATUS_TIMEOUT
 
 export type PageLoadMetricsResult = {
+	loadingResourceUrls: string[]
+	loadingResourcesCount: number
 	pct: number
 	status: PageLoadMetricsStatus
 }
 
+type PageLoadMetricsResolveValue = Omit<PageLoadMetricsResult, 'loadingResourcesCount' | 'loadingResourceUrls'>
+
 type QuietPeriodAwaiterConfig = {
+	getLoadingResourceUrls: () => string[]
+	getLoadingResourcesCount: () => number
 	maxPageLoadWaitTime?: number
 	quietTime?: number
 	startTime?: number
@@ -63,6 +69,10 @@ export function normalizeMaxPageLoadWaitTime({ maxPageLoadWaitTime, quietTime }:
 export class QuietPeriodAwaiter {
 	readonly promise: Promise<PageLoadMetricsResult>
 
+	private readonly getLoadingResourceUrls: () => string[]
+
+	private readonly getLoadingResourcesCount: () => number
+
 	private isResolved = false
 
 	private lastResourceTimestamp: number | undefined
@@ -78,10 +88,14 @@ export class QuietPeriodAwaiter {
 	private timeoutId: ReturnType<typeof setTimeout> | undefined
 
 	constructor({
+		getLoadingResourcesCount,
+		getLoadingResourceUrls,
 		maxPageLoadWaitTime = DEFAULT_MAX_PAGE_LOAD_WAIT_TIME,
 		quietTime = DEFAULT_QUIET_TIME,
 		startTime = performance.now(),
-	}: QuietPeriodAwaiterConfig = {}) {
+	}: QuietPeriodAwaiterConfig) {
+		this.getLoadingResourceUrls = getLoadingResourceUrls
+		this.getLoadingResourcesCount = getLoadingResourcesCount
 		this.startTime = startTime
 		this.quietTime = quietTime
 		this.maxPageLoadWaitTime = maxPageLoadWaitTime
@@ -169,7 +183,7 @@ export class QuietPeriodAwaiter {
 
 	private readonly resolve: (resolveValue: PageLoadMetricsResult) => void = () => {}
 
-	private resolveOnce(resolveValue: PageLoadMetricsResult): void {
+	private resolveOnce(resolveValue: PageLoadMetricsResolveValue): void {
 		if (this.isResolved) {
 			return
 		}
@@ -180,6 +194,24 @@ export class QuietPeriodAwaiter {
 		this.timeoutId = undefined
 		this.maxWaitTimeoutId = undefined
 		window.removeEventListener('pagehide', this.interruptListener, INTERRUPT_LISTENER_REMOVE_OPTIONS)
-		this.resolve(resolveValue)
+		this.resolve(this.withLoadingResourcesDetails(resolveValue))
+	}
+
+	private withLoadingResourcesDetails(resolveValue: PageLoadMetricsResolveValue): PageLoadMetricsResult {
+		if (resolveValue.status === PAGE_LOAD_METRICS_STATUS_COMPLETED) {
+			return {
+				...resolveValue,
+				loadingResourcesCount: 0,
+				loadingResourceUrls: [],
+			}
+		}
+
+		const loadingResourcesCount = this.getLoadingResourcesCount()
+
+		return {
+			...resolveValue,
+			loadingResourcesCount,
+			loadingResourceUrls: loadingResourcesCount > 0 ? this.getLoadingResourceUrls() : [],
+		}
 	}
 }

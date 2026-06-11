@@ -20,6 +20,8 @@ import { diag, Span, trace, Tracer, TracerProvider } from '@opentelemetry/api'
 import { isUrlIgnored } from '@opentelemetry/core'
 
 import {
+	BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE,
+	BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
 	BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE,
 	BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
 	SessionManager,
@@ -203,14 +205,26 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 		if (this.spaMetricsManager) {
 			// Wait for all in-flight resources (XHR, fetch, media) to finish loading,
 			// then resolve after a quiet period with no new network activity.
-			const { pct, status } = await this.spaMetricsManager.waitForPageLoad({
-				startTime: performance.now(),
-			})
+			const { loadingResourcesCount, loadingResourceUrls, pct, status } =
+				await this.spaMetricsManager.waitForPageLoad({
+					startTime: performance.now(),
+				})
 
 			span.setAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE, pct)
 			span.setAttribute(BROWSER_NAVIGATION_STATUS_ATTRIBUTE, status)
+			if (loadingResourcesCount > 0) {
+				span.setAttribute(BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE, loadingResourcesCount)
+				if (loadingResourceUrls.length > 0) {
+					span.setAttribute(
+						BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
+						JSON.stringify(loadingResourceUrls),
+					)
+				}
+			}
 
 			diag.debug('Sending routeChange span with PCT result', {
+				loadingResourcesCount,
+				loadingResourceUrls,
 				pct,
 				status,
 			})

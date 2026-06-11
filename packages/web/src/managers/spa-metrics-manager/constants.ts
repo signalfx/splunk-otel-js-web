@@ -16,6 +16,8 @@
  *
  */
 
+export const BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE = 'browser.navigation.loading_resource_count'
+export const BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE = 'browser.navigation.loading_resource_urls'
 export const BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE = 'browser.navigation.page_completion_time'
 export const BROWSER_NAVIGATION_STATUS_ATTRIBUTE = 'browser.navigation.status'
 
