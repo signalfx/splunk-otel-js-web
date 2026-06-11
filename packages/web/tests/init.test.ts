@@ -913,12 +913,12 @@ describe('test route change spa metrics timeout', () => {
 	it('sets timeout status on routeChange span when PCT computation times out', async () => {
 		const oldUrl = location.href
 		const slowResourceAbortController = new AbortController()
-		void fetch(`${HTTP_TEST_SERVER_URL}/some-data?delay=5000`, {
-			signal: slowResourceAbortController.signal,
-		}).catch(() => {})
 
 		try {
 			history.pushState({}, 'title', '/pctTimeout#WithAHash')
+			void fetch(`${HTTP_TEST_SERVER_URL}/some-data?delay=5000`, {
+				signal: slowResourceAbortController.signal,
+			}).catch(() => {})
 
 			await vi.waitFor(
 				() => {

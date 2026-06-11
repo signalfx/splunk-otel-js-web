@@ -27,6 +27,7 @@ import { FetchXhrMonitor, MediaMonitor, PerformanceMonitor, ResourceState, Resou
 import { normalizeMaxPageLoadWaitTime, type PageLoadMetricsResult, QuietPeriodAwaiter } from './quiet-period-awaiter'
 
 const SPA_METRICS_MANAGER_CONFIG_DEFAULTS = {
+	clearLoadingResourcesOnNewPage: true,
 	ignoreUrls: [] as (string | RegExp)[],
 	maxPageLoadWaitTime: 180_000,
 	maxResourcesToWatch: 100,
@@ -44,6 +45,7 @@ export function getDocumentLoadTime(navEntry: DocumentLoadTiming): number {
 }
 
 type SpaMetricsManagerConfigValues = {
+	clearLoadingResourcesOnNewPage?: boolean
 	ignoreUrls?: (string | RegExp)[]
 	maxPageLoadWaitTime?: number
 	maxResourcesToWatch?: number
@@ -60,6 +62,7 @@ type ResolvedSpaMetricsUrlOverride = {
 
 type LoadingResource = {
 	monitorType: SpaMetricsMonitor
+	pageUrl: string
 	url: string
 }
 
@@ -181,8 +184,10 @@ export class SpaMetricsManager {
 	}
 
 	private dropLoadingResourcesIgnoredByActiveConfig(activeConfig: ResolvedSpaMetricsManagerConfig): void {
+		const pageUrl = location.href
 		for (const [resourceId, resource] of this.loadingResources) {
 			if (
+				(activeConfig.clearLoadingResourcesOnNewPage && resource.pageUrl !== pageUrl) ||
 				!activeConfig.monitors.includes(resource.monitorType) ||
 				this.isIgnoredUrl(resource.url, activeConfig.ignoreUrls)
 			) {
@@ -245,7 +250,11 @@ export class SpaMetricsManager {
 				return
 			}
 
-			this.loadingResources.set(event.id, { monitorType: event.monitorType, url: event.url })
+			this.loadingResources.set(event.id, {
+				monitorType: event.monitorType,
+				pageUrl: location.href,
+				url: event.url,
+			})
 			diag.debug('Detected resource. Resetting quiet timer', event.url)
 			this.quietPeriodAwaiter?.removeQuietTimer()
 		} else {
@@ -267,6 +276,8 @@ export class SpaMetricsManager {
 		const maxPageLoadWaitTime = config.maxPageLoadWaitTime ?? defaultConfig.maxPageLoadWaitTime
 
 		return {
+			clearLoadingResourcesOnNewPage:
+				config.clearLoadingResourcesOnNewPage ?? defaultConfig.clearLoadingResourcesOnNewPage,
 			ignoreUrls: this.getResolvedIgnoreUrls(
 				config.ignoreUrls ?? defaultConfig.ignoreUrls,
 				beaconEndpointIgnoreUrls,
