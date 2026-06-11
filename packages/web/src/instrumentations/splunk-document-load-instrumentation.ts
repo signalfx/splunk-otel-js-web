@@ -167,9 +167,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 					void this.documentLoadMetricsPromise
 						.then(({ pct, status }) => {
 							span.setAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE, pct)
-							if (status) {
-								span.setAttribute(BROWSER_NAVIGATION_STATUS_ATTRIBUTE, status)
-							}
+							span.setAttribute(BROWSER_NAVIGATION_STATUS_ATTRIBUTE, status)
 
 							api.diag.debug('Sending documentLoad span with PCT result', {
 								pct,

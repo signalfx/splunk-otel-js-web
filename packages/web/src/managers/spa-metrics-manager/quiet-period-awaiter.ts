@@ -18,7 +18,11 @@
 
 import { diag } from '@opentelemetry/api'
 
-import { PAGE_LOAD_METRICS_STATUS_INTERRUPTED, PAGE_LOAD_METRICS_STATUS_TIMEOUT } from './constants'
+import {
+	PAGE_LOAD_METRICS_STATUS_COMPLETED,
+	PAGE_LOAD_METRICS_STATUS_INTERRUPTED,
+	PAGE_LOAD_METRICS_STATUS_TIMEOUT,
+} from './constants'
 
 const DEFAULT_MAX_PAGE_LOAD_WAIT_TIME = 180_000
 const DEFAULT_QUIET_TIME = 1000
@@ -26,12 +30,13 @@ const INTERRUPT_LISTENER_OPTIONS: AddEventListenerOptions = { capture: true, onc
 const INTERRUPT_LISTENER_REMOVE_OPTIONS: EventListenerOptions = { capture: true }
 
 export type PageLoadMetricsStatus =
+	| typeof PAGE_LOAD_METRICS_STATUS_COMPLETED
 	| typeof PAGE_LOAD_METRICS_STATUS_INTERRUPTED
 	| typeof PAGE_LOAD_METRICS_STATUS_TIMEOUT
 
 export type PageLoadMetricsResult = {
 	pct: number
-	status?: PageLoadMetricsStatus
+	status: PageLoadMetricsStatus
 }
 
 type QuietPeriodAwaiterConfig = {
@@ -110,6 +115,7 @@ export class QuietPeriodAwaiter {
 		diag.debug('QuietPeriodAwaiter: Complete', { pct })
 		this.resolveOnce({
 			pct,
+			status: PAGE_LOAD_METRICS_STATUS_COMPLETED,
 		})
 	}
 
@@ -152,6 +158,7 @@ export class QuietPeriodAwaiter {
 			diag.debug('QuietPeriodAwaiter: Quiet period expired', this.quietTime)
 			this.resolveOnce({
 				pct: Math.max(quietPeriodTimestamp - this.startTime, 0),
+				status: PAGE_LOAD_METRICS_STATUS_COMPLETED,
 			})
 		}, this.quietTime)
 	}
