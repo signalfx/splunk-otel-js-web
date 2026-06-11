@@ -152,18 +152,7 @@ export interface SplunkOtelWebConfig {
 	_experimental_captureBrowserDebugAttributes?: boolean
 
 	/**
-	 * Experimental: Data attribute names to capture from elements during user interactions.
-	 *
-	 * When specified, these data attributes will be collected from interacted elements and attached
-	 * to interaction spans as span attributes. Only data-* attributes are captured.
-	 * Currently supported for click and rage click spans. Not yet supported for thrashed cursor spans.
-	 *
-	 * Attribute names can be specified in either format:
-	 * - Hyphenated: `'data-test-id'`, `'data-user-name'`
-	 * - CamelCase: `'testId'`, `'userName'` (without `data-` prefix)
-	 *
-	 * Both formats are normalized to `dataset.camelCase` in the span attributes.
-	 * @example ['data-test-id', 'userName'] // Both are valid
+	 * @deprecated Use `dataAttributesToCapture`.
 	 */
 	_experimental_dataAttributesToCapture?: string[]
 
@@ -189,6 +178,23 @@ export interface SplunkOtelWebConfig {
 
 	/** Sets session cookie to this domain */
 	cookieDomain?: string
+
+	/**
+	 * Data attribute names to capture from elements during user interactions.
+	 *
+	 * When specified, these data attributes will be collected from interacted elements and attached
+	 * to interaction spans as span attributes. Only data-* attributes are captured.
+	 * Currently supported for click and rage click spans, and for the element picker.
+	 * Not yet supported for thrashed cursor spans.
+	 *
+	 * Attribute names can be specified in either format:
+	 * - Hyphenated: `'data-test-id'`, `'data-user-name'`
+	 * - CamelCase: `'testId'`, `'userName'` (without `data-` prefix)
+	 *
+	 * Both formats are normalized to `dataset.camelCase` in the span attributes.
+	 * @example ['data-test-id', 'userName'] // Both are valid
+	 */
+	dataAttributesToCapture?: string[]
 
 	/** Turns on/off internal debug logging */
 	debug?: boolean

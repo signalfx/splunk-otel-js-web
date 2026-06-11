@@ -19,7 +19,12 @@
 import { Span } from '@opentelemetry/api'
 import { describe, expect, it } from 'vitest'
 
-import { captureElementDataAttributes, normalizeDataAttributeName } from './element-attributes'
+import {
+	captureElementDataAttributes,
+	getElementDataAttributes,
+	normalizeDataAttributeName,
+	resolveDataAttributesToCapture,
+} from './element-attributes'
 
 describe('normalizeDataAttributeName', () => {
 	it('should convert data-test-id to element.dataset.testId', () => {
@@ -145,5 +150,71 @@ describe('captureElementDataAttributes', () => {
 
 		expect(attributes['element.dataset.testId']).toBe('my-id')
 		expect(attributes['element.dataset.track']).toBe('click')
+	})
+})
+
+describe('getElementDataAttributes', () => {
+	it('should return data-* attributes keyed by actual attribute name', () => {
+		const button = document.createElement('button')
+		button.dataset.testId = 'submit-button'
+		button.dataset.track = 'purchase'
+
+		expect(getElementDataAttributes(button, ['data-test-id', 'data-track'])).toEqual({
+			'data-test-id': 'submit-button',
+			'data-track': 'purchase',
+		})
+	})
+
+	it('should accept camelCase names without data- prefix', () => {
+		const button = document.createElement('button')
+		button.dataset.testId = 'submit-button'
+		button.dataset.userName = 'john'
+
+		expect(getElementDataAttributes(button, ['testId', 'userName'])).toEqual({
+			'data-test-id': 'submit-button',
+			'data-user-name': 'john',
+		})
+	})
+
+	it('should omit missing and non-data attributes', () => {
+		const button = document.createElement('button')
+		button.dataset.testId = 'submit-button'
+		button.id = 'submit'
+
+		expect(getElementDataAttributes(button, ['data-test-id', 'data-track', 'id'])).toEqual({
+			'data-test-id': 'submit-button',
+		})
+	})
+
+	it('should return an empty object for empty config', () => {
+		const button = document.createElement('button')
+		button.dataset.testId = 'submit-button'
+
+		expect(getElementDataAttributes(button, [])).toEqual({})
+	})
+
+	it('should return an empty object for non-elements', () => {
+		const textNode = document.createTextNode('text')
+
+		expect(getElementDataAttributes(textNode, ['data-testid'])).toEqual({})
+	})
+})
+
+describe('resolveDataAttributesToCapture', () => {
+	it('should prefer stable dataAttributesToCapture over legacy experimental config', () => {
+		expect(
+			resolveDataAttributesToCapture({
+				_experimental_dataAttributesToCapture: ['data-legacy'],
+				dataAttributesToCapture: ['data-stable'],
+			}),
+		).toEqual(['data-stable'])
+	})
+
+	it('should fall back to legacy experimental config', () => {
+		expect(
+			resolveDataAttributesToCapture({
+				_experimental_dataAttributesToCapture: ['data-legacy'],
+			}),
+		).toEqual(['data-legacy'])
 	})
 })
