@@ -17,15 +17,27 @@
  */
 import { traverseDFS } from './traverse'
 
+const TRUNCATED_STRING_SUFFIX = '...'
+
 export const MAX_CLICK_TEXT_LENGTH = 50
 
-export const trimClickText = (text: string) => {
-	if (text.length > MAX_CLICK_TEXT_LENGTH) {
-		return `${text.slice(0, MAX_CLICK_TEXT_LENGTH - 3)}...`
+export function truncateString(text: string, maxLength: number, suffix = TRUNCATED_STRING_SUFFIX): string {
+	if (text.length <= maxLength) {
+		return text
 	}
 
-	return text
+	if (maxLength <= 0) {
+		return ''
+	}
+
+	if (suffix.length >= maxLength) {
+		return suffix.slice(0, maxLength)
+	}
+
+	return `${text.slice(0, maxLength - suffix.length)}${suffix}`
 }
+
+export const trimClickText = (text: string) => truncateString(text, MAX_CLICK_TEXT_LENGTH)
 
 export const getTextFromNode = (nodeToGetTextFrom: Node, shouldProcessNode: (node: Node) => boolean): string => {
 	let text = ''

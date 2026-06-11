@@ -332,6 +332,8 @@ describe('SpaMetricsManager', () => {
 		const result = await promise
 		expect(result).toHaveProperty('pct')
 		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_COMPLETED)
+		expect(result.loadingResourcesCount).toBe(0)
+		expect(result.loadingResourceUrls).toEqual([])
 
 		manager.stop()
 	})
@@ -349,6 +351,8 @@ describe('SpaMetricsManager', () => {
 		expect(result.pct).toBeGreaterThanOrEqual(documentLoadTime)
 		expect(result.pct).toBeGreaterThan(0)
 		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_COMPLETED)
+		expect(result.loadingResourcesCount).toBe(0)
+		expect(result.loadingResourceUrls).toEqual([])
 
 		manager.stop()
 	})
@@ -367,6 +371,8 @@ describe('SpaMetricsManager', () => {
 
 			expect(result.pct).toBe(3000)
 			expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_TIMEOUT)
+			expect(result.loadingResourcesCount).toBe(1)
+			expect(result.loadingResourceUrls).toEqual([`${HTTP_TEST_SERVER_URL}/some-data?delay=5000`])
 		} finally {
 			slowResourceAbortController.abort()
 			manager.stop()
@@ -395,6 +401,8 @@ describe('SpaMetricsManager', () => {
 
 			expect(result.pct).toBe(10)
 			expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_TIMEOUT)
+			expect(result.loadingResourcesCount).toBe(1)
+			expect(result.loadingResourceUrls).toEqual([TEST_API_URL])
 		} finally {
 			getEntriesByType.mockRestore()
 			manager.stop()
@@ -419,6 +427,8 @@ describe('SpaMetricsManager', () => {
 
 			const result = await promise
 			expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_INTERRUPTED)
+			expect(result.loadingResourcesCount).toBe(1)
+			expect(result.loadingResourceUrls).toEqual([TEST_API_URL])
 		} finally {
 			manager.stop()
 		}
@@ -429,10 +439,50 @@ describe('SpaMetricsManager', () => {
 		manager.start()
 
 		const promise = manager.waitForPageLoad({ startTime: performance.now() })
+		// @ts-expect-error onResourceStateChange is private. We use it for testing.
+		manager.onResourceStateChange({
+			id: 'r_1',
+			monitorType: 'network',
+			state: ResourceState.DISCOVERED,
+			url: TEST_API_URL,
+		})
 		manager.stop()
 
 		const result = await promise
 		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_INTERRUPTED)
+		expect(result.loadingResourcesCount).toBe(1)
+		expect(result.loadingResourceUrls).toEqual([TEST_API_URL])
+	})
+
+	it('waitForPageLoad reports the last three loading resource URLs', async () => {
+		const manager = new SpaMetricsManager({ maxPageLoadWaitTime: 10, quietTime: 5 })
+		manager.start()
+		const longResourceUrl = `${TEST_API_URL}?resource=4&${'a'.repeat(120)}`
+		const truncatedLongResourceUrl = `${longResourceUrl.slice(0, 97)}...`
+
+		try {
+			for (const resourceIndex of [1, 2, 3, 4]) {
+				// @ts-expect-error onResourceStateChange is private. We use it for testing.
+				manager.onResourceStateChange({
+					id: `r_${resourceIndex}`,
+					monitorType: 'network',
+					state: ResourceState.DISCOVERED,
+					url: resourceIndex === 4 ? longResourceUrl : `${TEST_API_URL}?resource=${resourceIndex}`,
+				})
+			}
+
+			const result = await manager.waitForPageLoad({ startTime: performance.now() })
+
+			expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_TIMEOUT)
+			expect(result.loadingResourcesCount).toBe(4)
+			expect(result.loadingResourceUrls).toEqual([
+				`${TEST_API_URL}?resource=2`,
+				`${TEST_API_URL}?resource=3`,
+				truncatedLongResourceUrl,
+			])
+		} finally {
+			manager.stop()
+		}
 	})
 
 	it('tracks loading resources and manages quiet timer', () => {
@@ -586,7 +636,9 @@ describe('SpaMetricsManager', () => {
 		// @ts-expect-error loadingResources is private. We use it for testing.
 		expect(manager.loadingResources.size).toBe(0)
 
-		await promise
+		const result = await promise
+		expect(result.loadingResourcesCount).toBe(0)
+		expect(result.loadingResourceUrls).toEqual([])
 	})
 
 	it('uses the current URL override config when handling resource events', () => {
