@@ -208,9 +208,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 			})
 
 			span.setAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE, pct)
-			if (status) {
-				span.setAttribute(BROWSER_NAVIGATION_STATUS_ATTRIBUTE, status)
-			}
+			span.setAttribute(BROWSER_NAVIGATION_STATUS_ATTRIBUTE, status)
 
 			diag.debug('Sending routeChange span with PCT result', {
 				pct,

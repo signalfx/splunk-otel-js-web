@@ -17,7 +17,11 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { PAGE_LOAD_METRICS_STATUS_INTERRUPTED, PAGE_LOAD_METRICS_STATUS_TIMEOUT } from './constants'
+import {
+	PAGE_LOAD_METRICS_STATUS_COMPLETED,
+	PAGE_LOAD_METRICS_STATUS_INTERRUPTED,
+	PAGE_LOAD_METRICS_STATUS_TIMEOUT,
+} from './constants'
 import { QuietPeriodAwaiter } from './quiet-period-awaiter'
 
 describe('QuietPeriodAwaiter', () => {
@@ -31,7 +35,7 @@ describe('QuietPeriodAwaiter', () => {
 
 		expect(result).toHaveProperty('pct')
 		expect(result.pct).toBe(10)
-		expect(result.status).toBeUndefined()
+		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_COMPLETED)
 	})
 
 	it('resets timer when removeQuietTimer is called', async () => {
@@ -46,7 +50,7 @@ describe('QuietPeriodAwaiter', () => {
 		const result = await awaiter.promise
 		expect(result.pct).toBeGreaterThanOrEqual(250)
 		expect(result.pct).toBeLessThan(300)
-		expect(result.status).toBeUndefined()
+		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_COMPLETED)
 	})
 
 	it('keeps the latest resource timestamp when quiet timers are started out of order', async () => {
@@ -58,7 +62,7 @@ describe('QuietPeriodAwaiter', () => {
 
 		const result = await awaiter.promise
 		expect(result.pct).toBe(500)
-		expect(result.status).toBeUndefined()
+		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_COMPLETED)
 	})
 
 	it('complete() resolves immediately', async () => {
@@ -68,7 +72,7 @@ describe('QuietPeriodAwaiter', () => {
 		const result = await awaiter.promise
 		expect(result.pct).toBeGreaterThanOrEqual(0)
 		expect(result.pct).toBeLessThan(1000)
-		expect(result.status).toBeUndefined()
+		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_COMPLETED)
 	})
 
 	it('interrupt() resolves immediately with interrupted status', async () => {

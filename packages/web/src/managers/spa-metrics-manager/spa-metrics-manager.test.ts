@@ -20,7 +20,11 @@ import { diag } from '@opentelemetry/api'
 import { describe, expect, it, vi } from 'vitest'
 
 import { HTTP_TEST_SERVER_URL } from '../../../../../tests/servers/http-constants'
-import { PAGE_LOAD_METRICS_STATUS_INTERRUPTED, PAGE_LOAD_METRICS_STATUS_TIMEOUT } from './constants'
+import {
+	PAGE_LOAD_METRICS_STATUS_COMPLETED,
+	PAGE_LOAD_METRICS_STATUS_INTERRUPTED,
+	PAGE_LOAD_METRICS_STATUS_TIMEOUT,
+} from './constants'
 import { ResourceState } from './monitors'
 import { getDocumentLoadTime, SpaMetricsManager } from './spa-metrics-manager'
 
@@ -327,7 +331,7 @@ describe('SpaMetricsManager', () => {
 
 		const result = await promise
 		expect(result).toHaveProperty('pct')
-		expect(result.status).toBeUndefined()
+		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_COMPLETED)
 
 		manager.stop()
 	})
@@ -344,7 +348,7 @@ describe('SpaMetricsManager', () => {
 
 		expect(result.pct).toBeGreaterThanOrEqual(documentLoadTime)
 		expect(result.pct).toBeGreaterThan(0)
-		expect(result.status).toBeUndefined()
+		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_COMPLETED)
 
 		manager.stop()
 	})
@@ -717,7 +721,7 @@ describe('SpaMetricsManager', () => {
 		expect(manager.loadingResources.size).toBe(0)
 
 		const result = await promise
-		expect(result.status).toBeUndefined()
+		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_COMPLETED)
 	})
 
 	it('keeps resources discovered on the current page before waitForPageLoad starts', async () => {
@@ -749,7 +753,7 @@ describe('SpaMetricsManager', () => {
 		})
 
 		const result = await promise
-		expect(result.status).toBeUndefined()
+		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_COMPLETED)
 
 		// @ts-expect-error loadingResources is private. We use it for testing.
 		expect(manager.loadingResources.size).toBe(0)
@@ -789,7 +793,7 @@ describe('SpaMetricsManager', () => {
 		})
 
 		const result = await promise
-		expect(result.status).toBeUndefined()
+		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_COMPLETED)
 
 		// @ts-expect-error loadingResources is private. We use it for testing.
 		expect(manager.loadingResources.size).toBe(0)

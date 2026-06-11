@@ -121,6 +121,6 @@ test.describe('spa-metrics', () => {
 
 		expect(overrideConfigSpan).toHaveSpanAttributeContaining('location.href', '#network-disabled')
 		expect(overrideConfigSpan).toHaveSpanAttribute('browser.navigation.page_completion_time', 0)
-		expect(overrideConfigSpan).toNotHaveSpanAttribute('browser.navigation.status')
+		expect(overrideConfigSpan).toHaveSpanAttribute('browser.navigation.status', 'completed')
 	})
 })

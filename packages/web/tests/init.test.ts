@@ -26,6 +26,7 @@ import SplunkRum from '../src'
 import {
 	BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE,
 	BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
+	PAGE_LOAD_METRICS_STATUS_COMPLETED,
 	PAGE_LOAD_METRICS_STATUS_INTERRUPTED,
 	PAGE_LOAD_METRICS_STATUS_TIMEOUT,
 } from '../src/managers'
@@ -295,6 +296,11 @@ describe('test init', () => {
 
 			const documentLoadSpan = capturer.spans.find((span) => span.name === 'documentLoad')
 			expectDefined(documentLoadSpan, 'documentLoad span presence.')
+			expect(documentLoadSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE)
+			expect(documentLoadSpan).toHaveSpanAttribute(
+				BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
+				PAGE_LOAD_METRICS_STATUS_COMPLETED,
+			)
 			expect(documentLoadSpan).toHaveSpanAttributeMatching('screen.xy', /^[0-9]+x[0-9]+$/)
 
 			const resourceFetchSpan = capturer.spans.find((span) => span.name === 'resourceFetch')
@@ -908,6 +914,26 @@ describe('test route change spa metrics timeout', () => {
 	afterEach(() => {
 		deinit()
 		history.pushState({}, 'title', '/')
+	})
+
+	it('sets completed status on routeChange span when PCT computation completes', async () => {
+		const oldUrl = location.href
+
+		history.pushState({}, 'title', '/pctCompleted#WithAHash')
+
+		await vi.waitFor(
+			() => {
+				const span = capturer.spans.find((s) => s.name === 'routeChange')
+				expectDefined(span, 'Check if routeChange span is present.')
+				expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE)
+				expect(span).toHaveSpanAttribute(
+					BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
+					PAGE_LOAD_METRICS_STATUS_COMPLETED,
+				)
+				expect(span).toHaveSpanAttribute('prev.href', oldUrl)
+			},
+			{ timeout: 6000 },
+		)
 	})
 
 	it('sets timeout status on routeChange span when PCT computation times out', async () => {
