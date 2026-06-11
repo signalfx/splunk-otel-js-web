@@ -203,8 +203,8 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 		span.setAttribute('prev.href', oldHref)
 
 		if (this.spaMetricsManager) {
-			// Wait for all in-flight resources (XHR, fetch, media) to finish loading,
-			// then resolve after a quiet period with no new network activity.
+			// Wait for all in-flight resources monitored by SPA metrics to finish loading,
+			// then resolve after a quiet period with no new monitored activity.
 			const { loadingResourcesCount, loadingResourceUrls, pct, status } =
 				await this.spaMetricsManager.waitForPageLoad({
 					startTime: performance.now(),

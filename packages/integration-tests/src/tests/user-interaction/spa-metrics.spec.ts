@@ -20,6 +20,9 @@ import { expect } from '@playwright/test'
 
 import { test } from '../../utils/test'
 
+const getPageCompletionTime = (span: { attributes: Record<string, unknown> }) =>
+	Number(span.attributes['browser.navigation.page_completion_time'])
+
 test.describe('spa-metrics', () => {
 	test('routeChange span has duration after quiet period', async ({ recordPage }) => {
 		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
@@ -127,5 +130,34 @@ test.describe('spa-metrics', () => {
 		expect(overrideConfigSpan).toHaveSpanAttributeContaining('location.href', '#network-disabled')
 		expect(overrideConfigSpan).toHaveSpanAttribute('browser.navigation.page_completion_time', 0)
 		expect(overrideConfigSpan).toHaveSpanAttribute('browser.navigation.status', 'completed')
+	})
+
+	test('routeChange span waits for loading element selectors to disappear', async ({ recordPage }) => {
+		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+		const loadingElementVisibleTimeMs = await recordPage.evaluate(
+			() => (window as unknown as { loadingElementVisibleTimeMs: number }).loadingElementVisibleTimeMs,
+		)
+
+		await recordPage.locator('#btnNavigateWithLoadingElement').click()
+		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'routeChange').length === 1)
+
+		await recordPage.locator('#btnNavigateWithOverrideLoadingElement').click()
+		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'routeChange').length === 2)
+
+		const routeChangeSpans = recordPage.receivedSpans.filter((span) => span.name === 'routeChange')
+		const globalSelectorSpan = routeChangeSpans[0]
+		const overrideSelectorSpan = routeChangeSpans[1]
+
+		expect(globalSelectorSpan).toHaveSpanAttributeContaining('location.href', '#loading-element')
+		expect(globalSelectorSpan).toHaveSpanAttribute('browser.navigation.status', 'completed')
+		expect(globalSelectorSpan).toHaveSpanDurationGreaterThan(loadingElementVisibleTimeMs * 1000)
+		expect(getPageCompletionTime(globalSelectorSpan)).toBeGreaterThan(loadingElementVisibleTimeMs)
+		expect(globalSelectorSpan).toNotHaveSpanAttribute('browser.navigation.loading_resource_count')
+
+		expect(overrideSelectorSpan).toHaveSpanAttributeContaining('location.href', '#override-loading-element')
+		expect(overrideSelectorSpan).toHaveSpanAttribute('browser.navigation.status', 'completed')
+		expect(overrideSelectorSpan).toHaveSpanDurationGreaterThan(loadingElementVisibleTimeMs * 1000)
+		expect(getPageCompletionTime(overrideSelectorSpan)).toBeGreaterThan(loadingElementVisibleTimeMs)
+		expect(overrideSelectorSpan).toNotHaveSpanAttribute('browser.navigation.loading_resource_count')
 	})
 })

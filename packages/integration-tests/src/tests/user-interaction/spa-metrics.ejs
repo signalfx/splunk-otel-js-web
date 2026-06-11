@@ -5,12 +5,19 @@
 	<title>SPA Metrics test</title>
 	<%- renderAgent({
 		spaMetrics: {
+			loadingElementSelectors: ['.global-loading-spinner'],
 			maxPageLoadWaitTime: 1000,
+			monitors: ['media', 'network', 'performance', 'elements'],
 			quietTime: 500,
 			urlOverrides: [
 				{
 					match: '#network-disabled',
 					monitors: ['media', 'performance'],
+				},
+				{
+					loadingElementSelectors: ['[data-override-loading]'],
+					match: '#override-loading-element',
+					monitors: ['elements'],
 				},
 			],
 		},
@@ -24,10 +31,26 @@
 	<button type="button" id="btnNavigateWithImage">Navigate with image</button>
 	<button type="button" id="btnNavigateWithSlowFetch">Navigate with slow fetch</button>
 	<button type="button" id="btnNavigateWithNetworkDisabled">Navigate with network disabled</button>
+	<button type="button" id="btnNavigateWithLoadingElement">Navigate with loading element</button>
+	<button type="button" id="btnNavigateWithOverrideLoadingElement">Navigate with override loading element</button>
 
 	<div id="content"></div>
 
 	<script>
+		const LOADING_ELEMENT_RENDER_DELAY_MS = 100;
+		const LOADING_ELEMENT_VISIBLE_MS = 300;
+		window.loadingElementVisibleTimeMs = LOADING_ELEMENT_VISIBLE_MS;
+
+		function appendTemporaryLoadingElement(createSpinner) {
+			setTimeout(function () {
+				const spinner = createSpinner();
+				document.getElementById('content').appendChild(spinner);
+				setTimeout(function () {
+					spinner.remove();
+				}, LOADING_ELEMENT_VISIBLE_MS);
+			}, LOADING_ELEMENT_RENDER_DELAY_MS);
+		}
+
 		document.querySelector('#btnNavigate').addEventListener('click', function () {
 			location.hash = 'page1';
 		});
@@ -60,6 +83,28 @@
 		document.querySelector('#btnNavigateWithNetworkDisabled').addEventListener('click', function () {
 			location.hash = 'network-disabled';
 			fetch('/some-data?delay=1500&resource=override-slow-fetch').catch(function () {});
+		});
+
+		document.querySelector('#btnNavigateWithLoadingElement').addEventListener('click', function () {
+			location.hash = 'loading-element';
+			appendTemporaryLoadingElement(function () {
+				const spinner = document.createElement('div');
+				spinner.className = 'global-loading-spinner';
+				spinner.style.height = '10px';
+				spinner.style.width = '10px';
+				return spinner;
+			});
+		});
+
+		document.querySelector('#btnNavigateWithOverrideLoadingElement').addEventListener('click', function () {
+			location.hash = 'override-loading-element';
+			appendTemporaryLoadingElement(function () {
+				const spinner = document.createElement('div');
+				spinner.setAttribute('data-override-loading', '');
+				spinner.style.height = '10px';
+				spinner.style.width = '10px';
+				return spinner;
+			});
 		});
 	</script>
 </body>

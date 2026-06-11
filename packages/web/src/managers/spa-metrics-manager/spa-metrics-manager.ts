@@ -20,16 +20,24 @@ import { diag } from '@opentelemetry/api'
 import { isUrlIgnored } from '@opentelemetry/core'
 
 import type { SpaMetricsMonitor, SpaMetricsUrlOverride } from '../../types'
-import type { Monitor } from './monitors/monitor'
+import type { Monitor, MonitorConfig } from './monitors/monitor'
 
 import { truncateString } from '../../utils/text'
 import { PAGE_LOAD_METRICS_STATUS_TIMEOUT } from './constants'
-import { FetchXhrMonitor, MediaMonitor, PerformanceMonitor, ResourceState, ResourceStateEvent } from './monitors'
+import {
+	FetchXhrMonitor,
+	LoadingElementMonitor,
+	MediaMonitor,
+	PerformanceMonitor,
+	ResourceState,
+	ResourceStateEvent,
+} from './monitors'
 import { normalizeMaxPageLoadWaitTime, type PageLoadMetricsResult, QuietPeriodAwaiter } from './quiet-period-awaiter'
 
 const SPA_METRICS_MANAGER_CONFIG_DEFAULTS = {
 	clearLoadingResourcesOnNewPage: true,
 	ignoreUrls: [] as (string | RegExp)[],
+	loadingElementSelectors: [] as string[],
 	maxPageLoadWaitTime: 180_000,
 	maxResourcesToWatch: 100,
 	monitors: ['media', 'network', 'performance'] as SpaMetricsMonitor[],
@@ -48,6 +56,7 @@ export function getDocumentLoadTime(navEntry: DocumentLoadTiming): number {
 type SpaMetricsManagerConfigValues = {
 	clearLoadingResourcesOnNewPage?: boolean
 	ignoreUrls?: (string | RegExp)[]
+	loadingElementSelectors?: string[]
 	maxPageLoadWaitTime?: number
 	maxResourcesToWatch?: number
 	monitors?: SpaMetricsMonitor[]
@@ -67,6 +76,10 @@ type LoadingResource = {
 	url: string
 }
 
+type DroppedLoadingResources = {
+	elementResourceUrls: string[]
+}
+
 const MAX_LOADING_RESOURCE_URLS_TO_REPORT = 3
 const MAX_LOADING_RESOURCE_URL_LENGTH = 100
 
@@ -82,17 +95,17 @@ export class SpaMetricsManager {
 
 	private loadingResources = new Map<string, LoadingResource>()
 
-	private get loadingResourcesCount(): number {
-		return this.loadingResources.size
-	}
-
 	private get loadingResourceUrls(): string[] {
 		return Array.from(this.loadingResources.values())
 			.slice(-MAX_LOADING_RESOURCE_URLS_TO_REPORT)
 			.map((resource) => truncateString(resource.url, MAX_LOADING_RESOURCE_URL_LENGTH))
 	}
 
-	private readonly monitors: Record<SpaMetricsMonitor, Monitor>
+	private get loadingResourcesCount(): number {
+		return this.loadingResources.size
+	}
+
+	private readonly monitors: ReturnType<typeof SpaMetricsManager.createMonitors>
 
 	private quietPeriodAwaiter: QuietPeriodAwaiter | undefined
 
@@ -110,11 +123,7 @@ export class SpaMetricsManager {
 			onResourceStateChange: this.onResourceStateChange,
 		}
 
-		this.monitors = {
-			media: new MediaMonitor(monitorConfig),
-			network: new FetchXhrMonitor(monitorConfig),
-			performance: new PerformanceMonitor(monitorConfig),
-		}
+		this.monitors = SpaMetricsManager.createMonitors(monitorConfig)
 	}
 
 	getConfigForUrl(url: string): ResolvedSpaMetricsManagerConfig {
@@ -158,9 +167,13 @@ export class SpaMetricsManager {
 	}
 
 	waitForPageLoad({ startTime }: { startTime: number }): Promise<PageLoadMetricsResult> {
-		this.quietPeriodAwaiter?.complete({ areResourcesStillLoading: this.loadingResourcesCount > 0 })
+		this.quietPeriodAwaiter?.interrupt()
 		const activeConfig = this.activeConfig
-		this.dropLoadingResourcesIgnoredByActiveConfig(activeConfig)
+		const droppedResources = this.dropLoadingResourcesIgnoredByActiveConfig(activeConfig)
+		this.monitors.elements.refresh(
+			activeConfig.monitors.includes('elements') ? activeConfig.loadingElementSelectors : [],
+			{ droppedResourceUrls: droppedResources.elementResourceUrls },
+		)
 
 		const quietPeriodAwaiter = new QuietPeriodAwaiter({
 			getLoadingResourcesCount: () => this.loadingResourcesCount,
@@ -195,7 +208,19 @@ export class SpaMetricsManager {
 		return quietPeriodAwaiter.promise
 	}
 
-	private dropLoadingResourcesIgnoredByActiveConfig(activeConfig: ResolvedSpaMetricsManagerConfig): void {
+	private static createMonitors(monitorConfig: MonitorConfig) {
+		return {
+			elements: new LoadingElementMonitor(monitorConfig),
+			media: new MediaMonitor(monitorConfig),
+			network: new FetchXhrMonitor(monitorConfig),
+			performance: new PerformanceMonitor(monitorConfig),
+		} as const satisfies Record<SpaMetricsMonitor, Monitor>
+	}
+
+	private dropLoadingResourcesIgnoredByActiveConfig(
+		activeConfig: ResolvedSpaMetricsManagerConfig,
+	): DroppedLoadingResources {
+		const droppedResources: DroppedLoadingResources = { elementResourceUrls: [] }
 		const pageUrl = location.href
 		for (const [resourceId, resource] of this.loadingResources) {
 			if (
@@ -204,8 +229,13 @@ export class SpaMetricsManager {
 				this.isIgnoredUrl(resource.url, activeConfig.ignoreUrls)
 			) {
 				this.loadingResources.delete(resourceId)
+				if (resource.monitorType === 'elements') {
+					droppedResources.elementResourceUrls.push(resource.url)
+				}
 			}
 		}
+
+		return droppedResources
 	}
 
 	private getBeaconEndpointIgnoreUrls(beaconEndpoint: string | undefined): (string | RegExp)[] {
@@ -294,6 +324,7 @@ export class SpaMetricsManager {
 				config.ignoreUrls ?? defaultConfig.ignoreUrls,
 				beaconEndpointIgnoreUrls,
 			),
+			loadingElementSelectors: [...(config.loadingElementSelectors ?? defaultConfig.loadingElementSelectors)],
 			maxPageLoadWaitTime: normalizeMaxPageLoadWaitTime({ maxPageLoadWaitTime, quietTime }),
 			maxResourcesToWatch: config.maxResourcesToWatch ?? defaultConfig.maxResourcesToWatch,
 			monitors: [...(config.monitors ?? defaultConfig.monitors)],

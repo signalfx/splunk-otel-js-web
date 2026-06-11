@@ -21,20 +21,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { HTTP_TEST_SERVER_URL } from '../../../../../../tests/servers/http-constants'
 import { MediaMonitor } from './media-monitor'
 import { ResourceState, ResourceStateEvent } from './monitor'
+import { expectEventStatesWithMatchingIds } from './monitor-test-utils'
 
 const DATA_IMAGE_URL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
 const getFailedImageUrl = (resource: string, delay = 20) =>
 	`${HTTP_TEST_SERVER_URL}/test-image-error.png?delay=${delay}&resource=${resource}`
 const getTestImageUrl = (resource: string, delay = 20) =>
 	`${HTTP_TEST_SERVER_URL}/test-image.png?delay=${delay}&resource=${resource}`
-const expectEventStatesWithMatchingIds = (actualEvents: ResourceStateEvent[], expectedStates: ResourceState[]) => {
-	expect(actualEvents.map((event) => event.state)).toEqual(expectedStates)
-
-	const [firstEvent, ...remainingEvents] = actualEvents
-	remainingEvents.forEach((event) => {
-		expect(event.id).toBe(firstEvent.id)
-	})
-}
 const waitForImageLoad = (img: HTMLImageElement) =>
 	new Promise<void>((resolve, reject) => {
 		img.addEventListener('load', () => resolve(), { once: true })

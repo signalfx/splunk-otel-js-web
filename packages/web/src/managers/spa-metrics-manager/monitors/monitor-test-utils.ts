@@ -16,8 +16,18 @@
  *
  */
 
-export { FetchXhrMonitor } from './fetch-xhr-monitor'
-export { LoadingElementMonitor } from './loading-element-monitor'
-export { MediaMonitor } from './media-monitor'
-export { ResourceState, type ResourceStateEvent } from './monitor'
-export { PerformanceMonitor } from './performance-monitor'
+import { expect } from 'vitest'
+
+import type { ResourceState, ResourceStateEvent } from './monitor'
+
+export const expectEventStatesWithMatchingIds = (
+	actualEvents: ResourceStateEvent[],
+	expectedStates: ResourceState[],
+) => {
+	expect(actualEvents.map((event) => event.state)).toEqual(expectedStates)
+
+	const [firstEvent, ...remainingEvents] = actualEvents
+	remainingEvents.forEach((event) => {
+		expect(event.id).toBe(firstEvent.id)
+	})
+}

@@ -42,6 +42,7 @@ describe('SpaMetricsManager', () => {
 		expect(config.maxPageLoadWaitTime).toBe(180_000)
 		expect(config.maxResourcesToWatch).toBe(100)
 		expect(config.ignoreUrls).toEqual([])
+		expect(config.loadingElementSelectors).toEqual([])
 		expect(config.monitors).toEqual(['media', 'network', 'performance'])
 		expect(config.clearLoadingResourcesOnNewPage).toBe(true)
 	})
@@ -50,8 +51,9 @@ describe('SpaMetricsManager', () => {
 		const manager = new SpaMetricsManager({
 			clearLoadingResourcesOnNewPage: false,
 			ignoreUrls: [/test/],
+			loadingElementSelectors: ['.loading-spinner'],
 			maxPageLoadWaitTime: 5000,
-			monitors: ['network'],
+			monitors: ['network', 'elements'],
 			quietTime: 2000,
 		})
 
@@ -62,7 +64,8 @@ describe('SpaMetricsManager', () => {
 		expect(config.maxPageLoadWaitTime).toBe(5000)
 		expect(config.maxResourcesToWatch).toBe(100)
 		expect(config.ignoreUrls).toHaveLength(1)
-		expect(config.monitors).toEqual(['network'])
+		expect(config.loadingElementSelectors).toEqual(['.loading-spinner'])
+		expect(config.monitors).toEqual(['network', 'elements'])
 		expect(config.clearLoadingResourcesOnNewPage).toBe(false)
 	})
 
@@ -123,10 +126,12 @@ describe('SpaMetricsManager', () => {
 	it('replaces inherited array fields in URL overrides', () => {
 		const manager = new SpaMetricsManager({
 			ignoreUrls: [/global/],
+			loadingElementSelectors: ['.global-loading'],
 			monitors: ['media', 'network'],
 			urlOverrides: [
 				{
 					ignoreUrls: [/override/],
+					loadingElementSelectors: ['.override-loading'],
 					match: '/checkout',
 					monitors: ['performance'],
 				},
@@ -136,7 +141,23 @@ describe('SpaMetricsManager', () => {
 		const config = manager.getConfigForUrl('https://example.test/checkout')
 
 		expect(config.ignoreUrls).toEqual([/override/])
+		expect(config.loadingElementSelectors).toEqual(['.override-loading'])
 		expect(config.monitors).toEqual(['performance'])
+	})
+
+	it('inherits loading element selectors in URL overrides', () => {
+		const manager = new SpaMetricsManager({
+			loadingElementSelectors: ['.global-loading'],
+			urlOverrides: [
+				{
+					match: '/checkout',
+				},
+			],
+		})
+
+		const config = manager.getConfigForUrl('https://example.test/checkout')
+
+		expect(config.loadingElementSelectors).toEqual(['.global-loading'])
 	})
 
 	it('inherits and overrides clear loading resources config in URL overrides', () => {
@@ -304,6 +325,7 @@ describe('SpaMetricsManager', () => {
 
 		// @ts-expect-error monitors is private. We use it for testing.
 		const monitors = manager.monitors
+		const elementsStart = vi.spyOn(monitors.elements, 'start').mockImplementation(() => {})
 		const fetchXhrStart = vi.spyOn(monitors.network, 'start').mockImplementation(() => {})
 		const mediaStart = vi.spyOn(monitors.media, 'start').mockImplementation(() => {})
 		const performanceStart = vi.spyOn(monitors.performance, 'start').mockImplementation(() => {})
@@ -311,11 +333,13 @@ describe('SpaMetricsManager', () => {
 		try {
 			manager.start()
 
+			expect(elementsStart).toHaveBeenCalledOnce()
 			expect(fetchXhrStart).toHaveBeenCalledOnce()
 			expect(mediaStart).toHaveBeenCalledOnce()
 			expect(performanceStart).toHaveBeenCalledOnce()
 		} finally {
 			manager.stop()
+			elementsStart.mockRestore()
 			fetchXhrStart.mockRestore()
 			mediaStart.mockRestore()
 			performanceStart.mockRestore()
@@ -377,6 +401,125 @@ describe('SpaMetricsManager', () => {
 			slowResourceAbortController.abort()
 			manager.stop()
 		}
+	})
+
+	it('waitForPageLoad reports visible loading elements on timeout', async () => {
+		const loadingElement = document.createElement('div')
+		loadingElement.className = 'loading-spinner'
+		loadingElement.style.height = '10px'
+		loadingElement.style.width = '10px'
+		document.body.append(loadingElement)
+
+		const manager = new SpaMetricsManager({
+			loadingElementSelectors: ['.loading-spinner'],
+			maxPageLoadWaitTime: 10,
+			monitors: ['elements'],
+			quietTime: 5,
+		})
+
+		const result = await manager.waitForPageLoad({ startTime: performance.now() })
+
+		expect(result.pct).toBe(10)
+		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_TIMEOUT)
+		expect(result.loadingResourcesCount).toBe(1)
+		expect(result.loadingResourceUrls).toEqual(['element:.loading-spinner'])
+		loadingElement.remove()
+		manager.stop()
+	})
+
+	it('re-tracks still-visible loading elements after clearing previous page resources', async () => {
+		const loadingElement = document.createElement('div')
+		loadingElement.className = 'loading-spinner'
+		loadingElement.style.height = '10px'
+		loadingElement.style.width = '10px'
+		document.body.append(loadingElement)
+
+		const manager = new SpaMetricsManager({
+			loadingElementSelectors: ['.loading-spinner'],
+			maxPageLoadWaitTime: 20,
+			monitors: ['elements'],
+			quietTime: 5,
+		})
+		manager.start()
+
+		history.pushState({}, '', '#loading-previous-page')
+		const firstPagePromise = manager.waitForPageLoad({ startTime: performance.now() })
+
+		// @ts-expect-error loadingResources is private. We use it for testing.
+		expect(manager.loadingResources.size).toBe(1)
+		// @ts-expect-error loadingResources is private. We use it for testing.
+		const firstResourceId = Array.from(manager.loadingResources.keys())[0]
+
+		history.pushState({}, '', '#loading-next-page')
+		const nextPagePromise = manager.waitForPageLoad({ startTime: performance.now() })
+		const firstPageResult = await firstPagePromise
+
+		expect(firstPageResult.status).toBe(PAGE_LOAD_METRICS_STATUS_INTERRUPTED)
+		expect(firstPageResult.loadingResourcesCount).toBe(1)
+		expect(firstPageResult.loadingResourceUrls).toEqual(['element:.loading-spinner'])
+		// @ts-expect-error loadingResources is private. We use it for testing.
+		expect(manager.loadingResources.size).toBe(1)
+		// @ts-expect-error loadingResources is private. We use it for testing.
+		const nextResourceId = Array.from(manager.loadingResources.keys())[0]
+		expect(nextResourceId).not.toBe(firstResourceId)
+
+		const nextPageResult = await nextPagePromise
+
+		expect(nextPageResult.pct).toBe(20)
+		expect(nextPageResult.status).toBe(PAGE_LOAD_METRICS_STATUS_TIMEOUT)
+		expect(nextPageResult.loadingResourcesCount).toBe(1)
+		expect(nextPageResult.loadingResourceUrls).toEqual(['element:.loading-spinner'])
+
+		loadingElement.remove()
+		manager.stop()
+	})
+
+	it('keeps still-visible loading elements when clearing previous page resources is disabled', async () => {
+		const loadingElement = document.createElement('div')
+		loadingElement.className = 'loading-spinner'
+		loadingElement.style.height = '10px'
+		loadingElement.style.width = '10px'
+		document.body.append(loadingElement)
+
+		const manager = new SpaMetricsManager({
+			clearLoadingResourcesOnNewPage: false,
+			loadingElementSelectors: ['.loading-spinner'],
+			maxPageLoadWaitTime: 100,
+			monitors: ['elements'],
+			quietTime: 5,
+		})
+		manager.start()
+
+		history.pushState({}, '', '#loading-previous-page')
+		const firstPagePromise = manager.waitForPageLoad({ startTime: performance.now() })
+
+		// @ts-expect-error loadingResources is private. We use it for testing.
+		expect(manager.loadingResources.size).toBe(1)
+		// @ts-expect-error loadingResources is private. We use it for testing.
+		const firstResourceId = Array.from(manager.loadingResources.keys())[0]
+
+		history.pushState({}, '', '#loading-next-page')
+		const nextPagePromise = manager.waitForPageLoad({ startTime: performance.now() })
+		const firstPageResult = await firstPagePromise
+
+		expect(firstPageResult.status).toBe(PAGE_LOAD_METRICS_STATUS_INTERRUPTED)
+		expect(firstPageResult.loadingResourcesCount).toBe(1)
+		expect(firstPageResult.loadingResourceUrls).toEqual(['element:.loading-spinner'])
+		// @ts-expect-error loadingResources is private. We use it for testing.
+		expect(manager.loadingResources.size).toBe(1)
+		// @ts-expect-error loadingResources is private. We use it for testing.
+		expect(Array.from(manager.loadingResources.keys())[0]).toBe(firstResourceId)
+
+		loadingElement.remove()
+
+		const nextPageResult = await nextPagePromise
+
+		expect(nextPageResult.status).toBe(PAGE_LOAD_METRICS_STATUS_COMPLETED)
+		expect(nextPageResult.loadingResourcesCount).toBe(0)
+		expect(nextPageResult.loadingResourceUrls).toEqual([])
+
+		loadingElement.remove()
+		manager.stop()
 	})
 
 	it('waitForPageLoad with startTime 0 does not exceed max page load wait time on timeout', async () => {
@@ -639,6 +782,30 @@ describe('SpaMetricsManager', () => {
 		const result = await promise
 		expect(result.loadingResourcesCount).toBe(0)
 		expect(result.loadingResourceUrls).toEqual([])
+	})
+
+	it('does not track visible loading elements when elements monitor is disabled', async () => {
+		const loadingElement = document.createElement('div')
+		loadingElement.className = 'loading-spinner'
+		loadingElement.style.height = '10px'
+		loadingElement.style.width = '10px'
+		document.body.append(loadingElement)
+
+		const manager = new SpaMetricsManager({
+			loadingElementSelectors: ['.loading-spinner'],
+			monitors: ['network'],
+			quietTime: 10,
+		})
+
+		const result = await manager.waitForPageLoad({ startTime: performance.now() })
+
+		expect(result.loadingResourcesCount).toBe(0)
+		expect(result.loadingResourceUrls).toEqual([])
+		// @ts-expect-error loadingResources is private. We use it for testing.
+		expect(manager.loadingResources.size).toBe(0)
+
+		loadingElement.remove()
+		manager.stop()
 	})
 
 	it('uses the current URL override config when handling resource events', () => {
