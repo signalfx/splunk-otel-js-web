@@ -106,12 +106,12 @@ export function isPersistenceType(value: string): value is PersistenceType {
 export type SpaMetricsMonitor = 'elements' | 'media' | 'network' | 'performance'
 
 type SpaMetricsOptionsBase = {
+	/** CSS selectors for visible elements that should keep PCT waiting when the elements monitor is enabled. */
+	blockingSelectors?: string[]
 	/** Clear resources triggered on previous pages before calculating PCT for a new page. @default true */
 	clearLoadingResourcesOnNewPage?: boolean
 	/** URLs to exclude from PCT tracking (e.g., analytics, third-party scripts) */
 	ignoreUrls?: Array<string | RegExp>
-	/** CSS selectors for visible loading elements that should keep PCT waiting when the elements monitor is enabled. */
-	loadingElementSelectors?: string[]
 	/** Maximum time in milliseconds to wait for PCT computation before marking it as timed out. @default 180000 */
 	maxPageLoadWaitTime?: number
 	/** Maximum number of concurrent resources to track. @default 100 */
@@ -294,9 +294,9 @@ export interface SplunkOtelWebConfig {
 	 *
 	 * // Enable with custom configuration
 	 * spaMetrics: {
+	 *   blockingSelectors: ['.loading-spinner'],
 	 *   clearLoadingResourcesOnNewPage: true,
 	 *   ignoreUrls: [/analytics\.example\.com/],
-	 *   loadingElementSelectors: ['.loading-spinner'],
 	 *   maxPageLoadWaitTime: 180000,
 	 *   maxResourcesToWatch: 100,
 	 *   monitors: ['media', 'network', 'performance', 'elements'],

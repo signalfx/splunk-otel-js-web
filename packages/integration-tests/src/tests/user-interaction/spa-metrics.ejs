@@ -5,7 +5,7 @@
 	<title>SPA Metrics test</title>
 	<%- renderAgent({
 		spaMetrics: {
-			loadingElementSelectors: ['.global-loading-spinner'],
+			blockingSelectors: ['.global-loading-spinner'],
 			maxPageLoadWaitTime: 1000,
 			monitors: ['media', 'network', 'performance', 'elements'],
 			quietTime: 500,
@@ -15,7 +15,7 @@
 					monitors: ['media', 'performance'],
 				},
 				{
-					loadingElementSelectors: ['[data-override-loading]'],
+					blockingSelectors: ['[data-override-loading]'],
 					match: '#override-loading-element',
 					monitors: ['elements'],
 				},

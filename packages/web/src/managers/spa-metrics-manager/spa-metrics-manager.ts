@@ -35,9 +35,9 @@ import {
 import { normalizeMaxPageLoadWaitTime, type PageLoadMetricsResult, QuietPeriodAwaiter } from './quiet-period-awaiter'
 
 const SPA_METRICS_MANAGER_CONFIG_DEFAULTS = {
+	blockingSelectors: [] as string[],
 	clearLoadingResourcesOnNewPage: true,
 	ignoreUrls: [] as (string | RegExp)[],
-	loadingElementSelectors: [] as string[],
 	maxPageLoadWaitTime: 180_000,
 	maxResourcesToWatch: 100,
 	monitors: ['media', 'network', 'performance'] as SpaMetricsMonitor[],
@@ -54,9 +54,9 @@ export function getDocumentLoadTime(navEntry: DocumentLoadTiming): number {
 }
 
 type SpaMetricsManagerConfigValues = {
+	blockingSelectors?: string[]
 	clearLoadingResourcesOnNewPage?: boolean
 	ignoreUrls?: (string | RegExp)[]
-	loadingElementSelectors?: string[]
 	maxPageLoadWaitTime?: number
 	maxResourcesToWatch?: number
 	monitors?: SpaMetricsMonitor[]
@@ -171,7 +171,7 @@ export class SpaMetricsManager {
 		const activeConfig = this.activeConfig
 		const droppedResources = this.dropLoadingResourcesIgnoredByActiveConfig(activeConfig)
 		this.monitors.elements.refresh(
-			activeConfig.monitors.includes('elements') ? activeConfig.loadingElementSelectors : [],
+			activeConfig.monitors.includes('elements') ? activeConfig.blockingSelectors : [],
 			{ droppedResourceUrls: droppedResources.elementResourceUrls },
 		)
 
@@ -318,13 +318,13 @@ export class SpaMetricsManager {
 		const maxPageLoadWaitTime = config.maxPageLoadWaitTime ?? defaultConfig.maxPageLoadWaitTime
 
 		return {
+			blockingSelectors: [...(config.blockingSelectors ?? defaultConfig.blockingSelectors)],
 			clearLoadingResourcesOnNewPage:
 				config.clearLoadingResourcesOnNewPage ?? defaultConfig.clearLoadingResourcesOnNewPage,
 			ignoreUrls: this.getResolvedIgnoreUrls(
 				config.ignoreUrls ?? defaultConfig.ignoreUrls,
 				beaconEndpointIgnoreUrls,
 			),
-			loadingElementSelectors: [...(config.loadingElementSelectors ?? defaultConfig.loadingElementSelectors)],
 			maxPageLoadWaitTime: normalizeMaxPageLoadWaitTime({ maxPageLoadWaitTime, quietTime }),
 			maxResourcesToWatch: config.maxResourcesToWatch ?? defaultConfig.maxResourcesToWatch,
 			monitors: [...(config.monitors ?? defaultConfig.monitors)],

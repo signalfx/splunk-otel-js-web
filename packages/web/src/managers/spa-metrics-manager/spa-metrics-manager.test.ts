@@ -42,16 +42,16 @@ describe('SpaMetricsManager', () => {
 		expect(config.maxPageLoadWaitTime).toBe(180_000)
 		expect(config.maxResourcesToWatch).toBe(100)
 		expect(config.ignoreUrls).toEqual([])
-		expect(config.loadingElementSelectors).toEqual([])
+		expect(config.blockingSelectors).toEqual([])
 		expect(config.monitors).toEqual(['media', 'network', 'performance'])
 		expect(config.clearLoadingResourcesOnNewPage).toBe(true)
 	})
 
 	it('applies custom config', () => {
 		const manager = new SpaMetricsManager({
+			blockingSelectors: ['.loading-spinner'],
 			clearLoadingResourcesOnNewPage: false,
 			ignoreUrls: [/test/],
-			loadingElementSelectors: ['.loading-spinner'],
 			maxPageLoadWaitTime: 5000,
 			monitors: ['network', 'elements'],
 			quietTime: 2000,
@@ -64,7 +64,7 @@ describe('SpaMetricsManager', () => {
 		expect(config.maxPageLoadWaitTime).toBe(5000)
 		expect(config.maxResourcesToWatch).toBe(100)
 		expect(config.ignoreUrls).toHaveLength(1)
-		expect(config.loadingElementSelectors).toEqual(['.loading-spinner'])
+		expect(config.blockingSelectors).toEqual(['.loading-spinner'])
 		expect(config.monitors).toEqual(['network', 'elements'])
 		expect(config.clearLoadingResourcesOnNewPage).toBe(false)
 	})
@@ -125,13 +125,13 @@ describe('SpaMetricsManager', () => {
 
 	it('replaces inherited array fields in URL overrides', () => {
 		const manager = new SpaMetricsManager({
+			blockingSelectors: ['.global-loading'],
 			ignoreUrls: [/global/],
-			loadingElementSelectors: ['.global-loading'],
 			monitors: ['media', 'network'],
 			urlOverrides: [
 				{
+					blockingSelectors: ['.override-loading'],
 					ignoreUrls: [/override/],
-					loadingElementSelectors: ['.override-loading'],
 					match: '/checkout',
 					monitors: ['performance'],
 				},
@@ -141,13 +141,13 @@ describe('SpaMetricsManager', () => {
 		const config = manager.getConfigForUrl('https://example.test/checkout')
 
 		expect(config.ignoreUrls).toEqual([/override/])
-		expect(config.loadingElementSelectors).toEqual(['.override-loading'])
+		expect(config.blockingSelectors).toEqual(['.override-loading'])
 		expect(config.monitors).toEqual(['performance'])
 	})
 
-	it('inherits loading element selectors in URL overrides', () => {
+	it('inherits blocking selectors in URL overrides', () => {
 		const manager = new SpaMetricsManager({
-			loadingElementSelectors: ['.global-loading'],
+			blockingSelectors: ['.global-loading'],
 			urlOverrides: [
 				{
 					match: '/checkout',
@@ -157,7 +157,7 @@ describe('SpaMetricsManager', () => {
 
 		const config = manager.getConfigForUrl('https://example.test/checkout')
 
-		expect(config.loadingElementSelectors).toEqual(['.global-loading'])
+		expect(config.blockingSelectors).toEqual(['.global-loading'])
 	})
 
 	it('inherits and overrides clear loading resources config in URL overrides', () => {
@@ -411,7 +411,7 @@ describe('SpaMetricsManager', () => {
 		document.body.append(loadingElement)
 
 		const manager = new SpaMetricsManager({
-			loadingElementSelectors: ['.loading-spinner'],
+			blockingSelectors: ['.loading-spinner'],
 			maxPageLoadWaitTime: 10,
 			monitors: ['elements'],
 			quietTime: 5,
@@ -435,7 +435,7 @@ describe('SpaMetricsManager', () => {
 		document.body.append(loadingElement)
 
 		const manager = new SpaMetricsManager({
-			loadingElementSelectors: ['.loading-spinner'],
+			blockingSelectors: ['.loading-spinner'],
 			maxPageLoadWaitTime: 20,
 			monitors: ['elements'],
 			quietTime: 5,
@@ -482,8 +482,8 @@ describe('SpaMetricsManager', () => {
 		document.body.append(loadingElement)
 
 		const manager = new SpaMetricsManager({
+			blockingSelectors: ['.loading-spinner'],
 			clearLoadingResourcesOnNewPage: false,
-			loadingElementSelectors: ['.loading-spinner'],
 			maxPageLoadWaitTime: 100,
 			monitors: ['elements'],
 			quietTime: 5,
@@ -792,7 +792,7 @@ describe('SpaMetricsManager', () => {
 		document.body.append(loadingElement)
 
 		const manager = new SpaMetricsManager({
-			loadingElementSelectors: ['.loading-spinner'],
+			blockingSelectors: ['.loading-spinner'],
 			monitors: ['network'],
 			quietTime: 10,
 		})
