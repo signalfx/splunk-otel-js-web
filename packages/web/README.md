@@ -160,7 +160,7 @@ Choose a versioning strategy based on your needs:
 | `debug`                               | `boolean`                                             | ❌       | `false`                                        | Enable internal debug logging                                                                                                                                                                                                                                                                                                                                           |
 | `cookieDomain`                        | `string`                                              | ❌       | `window.location.hostname`                     | Domain for session cookies                                                                                                                                                                                                                                                                                                                                              |
 | `ignoreUrls`                          | `Array<string\|RegExp>`                               | ❌       | `[]`                                           | URLs to exclude from tracing                                                                                                                                                                                                                                                                                                                                            |
-| `spaMetrics`                          | `boolean\|Config`                                     | ❌       | `true`                                         | SPA page completion metrics. Supports global settings and ordered `urlOverrides` for page-specific `clearLoadingResourcesOnNewPage`, `quietTime`, `ignoreUrls`, `maxPageLoadWaitTime`, `maxResourcesToWatch`, and `monitors`.                                                                                                                                           |
+| `spaMetrics`                          | `boolean\|Config`                                     | ❌       | `true`                                         | SPA page completion metrics. Supports global settings and ordered `urlOverrides` for page-specific `clearLoadingResourcesOnNewPage`, `quietTime`, `ignoreUrls`, `blockingSelectors`, `maxPageLoadWaitTime`, `maxResourcesToWatch`, and `monitors`.                                                                                                                      |
 | `globalAttributes`                    | `Attributes`                                          | ❌       | `{}`                                           | Attributes added to every span                                                                                                                                                                                                                                                                                                                                          |
 | `persistence`                         | `'cookie'\|'localStorage'`                            | ❌       | `'cookie'`                                     | Where to store session data                                                                                                                                                                                                                                                                                                                                             |
 | `disableAutomationFrameworks`         | `boolean`                                             | ❌       | `false`                                        | Block automation frameworks                                                                                                                                                                                                                                                                                                                                             |
@@ -189,7 +189,7 @@ Choose a versioning strategy based on your needs:
 
 ### SPA Metrics
 
-The `spaMetrics` option controls page completion time (PCT) calculation for document loads and SPA route changes. When `spaMetrics` is `true`, all monitor types are enabled with the default timing settings. Use `spaMetrics.monitors` globally, or inside `spaMetrics.urlOverrides`, to control which resource sources can keep PCT waiting for a specific page.
+The `spaMetrics` option controls page completion time (PCT) calculation for document loads and SPA route changes. When `spaMetrics` is `true`, the default monitor types are enabled with the default timing settings. Use `spaMetrics.monitors` globally, or inside `spaMetrics.urlOverrides`, to control which resource sources can keep PCT waiting for a specific page.
 
 By default, `spaMetrics.clearLoadingResourcesOnNewPage` is `true`, so pending resources discovered on a previous page are ignored when PCT calculation starts for a new page. Set it to `false` to keep carrying pending resources into the next page calculation unless they are filtered by the active `monitors` or `ignoreUrls` config.
 
@@ -198,8 +198,11 @@ By default, `spaMetrics.clearLoadingResourcesOnNewPage` is `true`, so pending re
 | `network`     | `fetch` and `XMLHttpRequest` lifecycle events. Requests discovered before they settle keep PCT waiting until they finish or error.            | Keep enabled for pages whose useful content depends on API calls. Disable for polling, analytics, or background requests that should not delay PCT. |
 | `media`       | Image, audio, and video elements observed in the DOM. Pending media loads keep PCT waiting until they load or error.                          | Keep enabled when above-the-fold media is part of page readiness. Disable for lazy media, autoplay, or decorative assets that can load later.       |
 | `performance` | Resource Timing entries reported through `PerformanceObserver`, including browser-loaded resources that do not flow through fetch/XHR events. | Keep enabled to include CSS, script, and other resource timing entries. Disable when resource timing noise makes PCT too broad.                     |
+| `elements`    | Visible elements matching `blockingSelectors`. Matching elements keep PCT waiting until they are hidden, removed, or stop matching.           | Enable for app-controlled loading indicators that mark page readiness after async rendering work.                                                   |
 
-Array fields in URL overrides replace the inherited arrays for matched URLs. For example, `monitors: ['network']` waits only for fetch/XHR activity on that page, while `monitors: ['media', 'performance']` ignores fetch/XHR activity but still watches media and resource timing entries. If an override specifies `ignoreUrls`, include any global `spaMetrics.ignoreUrls` entries that should still apply on that page.
+The `elements` monitor is opt-in. Add `'elements'` to `spaMetrics.monitors` and configure `blockingSelectors` to wait for visible loading indicators. Hidden elements, elements with `display: none`, and elements with `visibility: hidden` or `collapse` do not block PCT.
+
+Array fields in URL overrides replace the inherited arrays for matched URLs. For example, `monitors: ['network']` waits only for fetch/XHR activity on that page, while `monitors: ['media', 'performance']` ignores fetch/XHR activity but still watches media and resource timing entries. If an override specifies `ignoreUrls` or `blockingSelectors`, include any global entries that should still apply on that page.
 
 ### Long Animation Frames
 
@@ -356,11 +359,12 @@ SplunkRum.init({
 	persistence: 'cookie',
 	ignoreUrls: [/\/health-check/, '/analytics/track', 'https://third-party-ads.com'],
 	spaMetrics: {
+		blockingSelectors: ['.loading-spinner'],
 		clearLoadingResourcesOnNewPage: true,
-		quietTime: 1000,
 		ignoreUrls: ['/analytics/track'],
 		maxResourcesToWatch: 100,
-		monitors: ['media', 'network', 'performance'],
+		monitors: ['media', 'network', 'performance', 'elements'],
+		quietTime: 1000,
 		urlOverrides: [
 			{
 				// Plain strings match by substring.
@@ -371,11 +375,12 @@ SplunkRum.init({
 				maxResourcesToWatch: 50,
 			},
 			{
+				blockingSelectors: ['[data-checkout-loading]'],
 				// Use RegExp, or the regex string convention, for pattern matching.
 				match: /\/checkout\/.*/,
 				maxPageLoadWaitTime: 5000,
+				monitors: ['network', 'elements'],
 				quietTime: 2000,
-				monitors: ['network'],
 			},
 		],
 	},

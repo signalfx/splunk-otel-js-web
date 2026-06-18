@@ -103,9 +103,11 @@ export function isPersistenceType(value: string): value is PersistenceType {
 	return ['cookie', 'localStorage'].includes(value)
 }
 
-export type SpaMetricsMonitor = 'media' | 'network' | 'performance'
+export type SpaMetricsMonitor = 'elements' | 'media' | 'network' | 'performance'
 
 type SpaMetricsOptionsBase = {
+	/** CSS selectors for visible elements that should keep PCT waiting when the elements monitor is enabled. */
+	blockingSelectors?: string[]
 	/** Clear resources triggered on previous pages before calculating PCT for a new page. @default true */
 	clearLoadingResourcesOnNewPage?: boolean
 	/** URLs to exclude from PCT tracking (e.g., analytics, third-party scripts) */
@@ -280,8 +282,8 @@ export interface SplunkOtelWebConfig {
 	 * Enables SPA (Single Page Application) metrics.
 	 *
 	 * Currently supported metrics:
-	 * - **Page Completion Time (PCT)**: Measures the time from a route change until all network
-	 *   requests (fetch/XHR) and media elements have finished loading
+	 * - **Page Completion Time (PCT)**: Measures the time from a route change until all configured
+	 *   resource monitors are complete
 	 *
 	 * @default true (enabled)
 	 *
@@ -292,11 +294,12 @@ export interface SplunkOtelWebConfig {
 	 *
 	 * // Enable with custom configuration
 	 * spaMetrics: {
+	 *   blockingSelectors: ['.loading-spinner'],
 	 *   clearLoadingResourcesOnNewPage: true,
 	 *   ignoreUrls: [/analytics\.example\.com/],
 	 *   maxPageLoadWaitTime: 180000,
 	 *   maxResourcesToWatch: 100,
-	 *   monitors: ['media', 'network', 'performance'],
+	 *   monitors: ['media', 'network', 'performance', 'elements'],
 	 *   quietTime: 1000
 	 * }
 	 *
