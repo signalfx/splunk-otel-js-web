@@ -1276,6 +1276,31 @@ describe('can produce click events', () => {
 		expect(capturer.spans[0].name).toBe('dblclick')
 		expect(capturer.spans[0].attributes.component).toBe('user-interaction')
 	})
+
+	it('marks elements matching configured interactive selectors as interactive', () => {
+		deinit()
+		initWithDefaultConfig(capturer, {
+			instrumentations: {
+				interactions: {
+					experimental_interactiveElementSelectors: ['.custom-interactive'],
+				},
+			},
+		})
+
+		const element = document.createElement('div')
+		element.className = 'custom-interactive'
+		document.body.append(element)
+
+		element.addEventListener('click', function () {
+			/* nop */
+		})
+		element.dispatchEvent(new Event('click'))
+
+		expect(capturer.spans.length).toBe(1)
+		expect(capturer.spans[0]).toHaveSpanAttribute('target_interactive', true)
+
+		element.remove()
+	})
 })
 
 describe('external session handling', () => {

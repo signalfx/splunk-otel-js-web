@@ -231,6 +231,19 @@ test.describe('Frustration signals', () => {
 			expect(recordPage.receivedSpans.filter(deadClickFilter)).toHaveLength(0)
 		})
 
+		test('Dead click detects click on element matching configured interactive selector', async ({ recordPage }) => {
+			await recordPage.goTo('/frustration-signals/dead-click-interactive-selectors.ejs')
+
+			await recordPage.locator('#custom-dead').click()
+
+			await recordPage.waitForSpans((spans) => spans.some(deadClickFilter))
+
+			const deadClickSpans = recordPage.receivedSpans.filter(deadClickFilter)
+
+			expect(deadClickSpans).toHaveLength(1)
+			expect(deadClickSpans[0]).toHaveSpanAttribute('target_xpath')
+		})
+
 		test('Dead click detects click on element with role=button', async ({ recordPage }) => {
 			await recordPage.goTo('/frustration-signals/dead-click.ejs')
 

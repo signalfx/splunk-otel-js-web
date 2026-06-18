@@ -31,6 +31,11 @@ export interface UserInteractionInstrumentationConfig extends InstrumentationCon
 	eventNames?: EventName[]
 
 	/**
+	 * CSS selectors that should be treated as interactive elements.
+	 */
+	experimental_interactiveElementSelectors?: string[]
+
+	/**
 	 * Callback function called each time new span is being created.
 	 * Return `true` to prevent span recording.
 	 * You can also use this handler to enhance created span with extra attributes.
