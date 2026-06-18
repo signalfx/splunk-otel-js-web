@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Dead click interactive selectors</title>
+
+		<%- renderAgent({
+			instrumentations: {
+				interactions: {
+					experimental_interactiveElementSelectors: ['.custom-interactive']
+				}
+			}
+		}) %>
+	</head>
+	<body>
+		<h1>Dead click interactive selectors</h1>
+		<div id="custom-dead" class="custom-interactive">Custom interactive</div>
+
+		<script>
+			document.addEventListener('click', () => {});
+		</script>
+	</body>
+</html>

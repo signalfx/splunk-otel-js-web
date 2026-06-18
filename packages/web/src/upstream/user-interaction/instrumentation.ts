@@ -282,6 +282,11 @@ export class UserInteractionInstrumentation<
 	}
 
 	private _isInteractiveElement(element: Element): boolean {
+		const interactiveElementSelectors = this.getConfig().experimental_interactiveElementSelectors ?? []
+		if (interactiveElementSelectors.some((selector) => element.matches(selector))) {
+			return true
+		}
+
 		const tag = element.tagName.toUpperCase()
 
 		if (tag === 'BUTTON') {
