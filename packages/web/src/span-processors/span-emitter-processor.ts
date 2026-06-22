@@ -42,15 +42,12 @@ export class SpanEmitterProcessor implements SpanProcessor {
 			return
 		}
 
-		const eventType = phase === 'start' ? `${component}:start` : component
-		const listeners = this.listeners.get(eventType) ?? []
-		for (const listener of listeners) {
-			try {
-				listener(span)
-			} catch {
-				// Avoid breaking the pipeline if a listener throws
-			}
+		if (phase === 'start') {
+			this.emitEvent(`${component}:start`, span)
+			return
 		}
+
+		this.emitEvent(`${component}:end`, span)
 	}
 
 	enable() {
@@ -91,5 +88,16 @@ export class SpanEmitterProcessor implements SpanProcessor {
 	shutdown(): Promise<void> {
 		this.listeners.clear()
 		return Promise.resolve()
+	}
+
+	private emitEvent(eventType: SpanEventType, span: ReadableSpan): void {
+		const listeners = this.listeners.get(eventType) ?? []
+		for (const listener of listeners) {
+			try {
+				listener(span)
+			} catch {
+				// Avoid breaking the pipeline if a listener throws
+			}
+		}
 	}
 }

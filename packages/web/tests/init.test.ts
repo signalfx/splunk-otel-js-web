@@ -18,10 +18,10 @@
 
 import { context, diag, trace } from '@opentelemetry/api'
 import * as tracing from '@opentelemetry/sdk-trace-base'
+import { HTTP_TEST_SERVER_URL } from '@test-server/http-constants'
 import { expectDefined } from '@test-utils/assertions'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { HTTP_TEST_SERVER_URL } from '../../../tests/servers/http-constants'
 import SplunkRum from '../src'
 import {
 	BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE,
@@ -31,6 +31,7 @@ import {
 	PAGE_LOAD_METRICS_STATUS_COMPLETED,
 	PAGE_LOAD_METRICS_STATUS_INTERRUPTED,
 	PAGE_LOAD_METRICS_STATUS_TIMEOUT,
+	PCT_NETWORK_TRACKING_REQUIRES_NETWORK_INSTRUMENTATION_WARNING,
 } from '../src/managers'
 import { VERSION } from '../src/version'
 import {
@@ -307,6 +308,152 @@ describe('test init', () => {
 
 			const resourceFetchSpan = capturer.spans.find((span) => span.name === 'resourceFetch')
 			expectDefined(resourceFetchSpan, 'resourceFetch span presence.')
+		})
+
+		it('disables PCT and warns when fetch instrumentation is disabled while network PCT is configured', async () => {
+			const oldUrl = location.href
+			const warnMock = vi.spyOn(diag, 'warn')
+
+			try {
+				SplunkRum.init({
+					applicationName: 'my-app',
+					beaconEndpoint: 'https://127.0.0.1:9999/foo',
+					exporter: { otlp: true },
+					instrumentations: {
+						fetch: false,
+					},
+					rumAccessToken: '123-no-warn-spam-in-console',
+					spanProcessors: [capturer],
+				})
+
+				expect(warnMock).toHaveBeenCalledWith(PCT_NETWORK_TRACKING_REQUIRES_NETWORK_INSTRUMENTATION_WARNING)
+
+				await vi.waitFor(
+					() => {
+						const documentLoadSpan = capturer.spans.find((span) => span.name === 'documentLoad')
+						expectDefined(documentLoadSpan, 'documentLoad span presence.')
+						expect(documentLoadSpan).toNotHaveSpanAttribute(
+							BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE,
+						)
+						expect(documentLoadSpan).toNotHaveSpanAttribute(BROWSER_NAVIGATION_STATUS_ATTRIBUTE)
+						expect(documentLoadSpan).toNotHaveSpanAttribute(
+							BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE,
+						)
+						expect(documentLoadSpan).toNotHaveSpanAttribute(
+							BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
+						)
+					},
+					{ timeout: 6000 },
+				)
+
+				capturer.clear()
+				history.pushState({}, 'title', '/pct-disabled-fetch')
+
+				await vi.waitFor(() => {
+					const routeChangeSpan = capturer.spans.find((span) => span.name === 'routeChange')
+					expectDefined(routeChangeSpan, 'routeChange span presence.')
+					expect(routeChangeSpan).toNotHaveSpanAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE)
+					expect(routeChangeSpan).toNotHaveSpanAttribute(BROWSER_NAVIGATION_STATUS_ATTRIBUTE)
+					expect(routeChangeSpan).toNotHaveSpanAttribute(BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE)
+					expect(routeChangeSpan).toNotHaveSpanAttribute(BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE)
+				})
+			} finally {
+				warnMock.mockRestore()
+			}
+		})
+
+		it('disables PCT and warns when XHR instrumentation is disabled while network PCT is configured', async () => {
+			const warnMock = vi.spyOn(diag, 'warn')
+
+			try {
+				SplunkRum.init({
+					applicationName: 'my-app',
+					beaconEndpoint: 'https://127.0.0.1:9999/foo',
+					exporter: { otlp: true },
+					instrumentations: {
+						xhr: false,
+					},
+					rumAccessToken: '123-no-warn-spam-in-console',
+					spanProcessors: [capturer],
+				})
+
+				expect(warnMock).toHaveBeenCalledWith(PCT_NETWORK_TRACKING_REQUIRES_NETWORK_INSTRUMENTATION_WARNING)
+
+				await vi.waitFor(
+					() => {
+						const documentLoadSpan = capturer.spans.find((span) => span.name === 'documentLoad')
+						expectDefined(documentLoadSpan, 'documentLoad span presence.')
+						expect(documentLoadSpan).toNotHaveSpanAttribute(
+							BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE,
+						)
+						expect(documentLoadSpan).toNotHaveSpanAttribute(BROWSER_NAVIGATION_STATUS_ATTRIBUTE)
+					},
+					{ timeout: 6000 },
+				)
+			} finally {
+				warnMock.mockRestore()
+			}
+		})
+
+		it('disables PCT and warns when fetch instrumentation config is disabled', () => {
+			const warnMock = vi.spyOn(diag, 'warn')
+
+			try {
+				SplunkRum.init({
+					applicationName: 'my-app',
+					beaconEndpoint: 'https://127.0.0.1:9999/foo',
+					exporter: { otlp: true },
+					instrumentations: {
+						fetch: { enabled: false },
+					},
+					rumAccessToken: '123-no-warn-spam-in-console',
+					spanProcessors: [capturer],
+				})
+
+				expect(warnMock).toHaveBeenCalledWith(PCT_NETWORK_TRACKING_REQUIRES_NETWORK_INSTRUMENTATION_WARNING)
+			} finally {
+				warnMock.mockRestore()
+			}
+		})
+
+		it('does not warn and keeps non-network PCT when network monitoring is not configured', async () => {
+			const warnMock = vi.spyOn(diag, 'warn')
+
+			try {
+				SplunkRum.init({
+					applicationName: 'my-app',
+					beaconEndpoint: 'https://127.0.0.1:9999/foo',
+					exporter: { otlp: true },
+					instrumentations: {
+						fetch: false,
+						xhr: false,
+					},
+					rumAccessToken: '123-no-warn-spam-in-console',
+					spaMetrics: {
+						maxPageLoadWaitTime: 100,
+						monitors: ['media', 'performance'],
+						quietTime: 10,
+					},
+					spanProcessors: [capturer],
+				})
+
+				expect(warnMock).not.toHaveBeenCalledWith(PCT_NETWORK_TRACKING_REQUIRES_NETWORK_INSTRUMENTATION_WARNING)
+
+				await vi.waitFor(
+					() => {
+						const documentLoadSpan = capturer.spans.find((span) => span.name === 'documentLoad')
+						expectDefined(documentLoadSpan, 'documentLoad span presence.')
+						expect(documentLoadSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE)
+						expect(documentLoadSpan).toHaveSpanAttribute(
+							BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
+							PAGE_LOAD_METRICS_STATUS_COMPLETED,
+						)
+					},
+					{ timeout: 6000 },
+				)
+			} finally {
+				warnMock.mockRestore()
+			}
 		})
 
 		it('sets timeout status on documentLoad span when PCT computation times out', async () => {
@@ -865,15 +1012,19 @@ describe('test route change', () => {
 		deinit()
 	})
 
-	it('should report a span', () => {
+	it('should report a span', async () => {
 		const oldUrl = location.href
 		capturer.clear()
 		history.pushState({}, 'title', '/thisIsAChange#WithAHash')
-		const span = capturer.spans.find((s) => s.attributes.component === 'user-interaction')
-		expectDefined(span, 'Check if user-interaction span is present.')
-		expect(span.name).toBe('routeChange')
-		expect(span).toHaveSpanAttributeContaining('location.href', '/thisIsAChange#WithAHash')
-		expect(span).toHaveSpanAttribute('prev.href', oldUrl)
+
+		await vi.waitFor(() => {
+			const span = capturer.spans.find((s) => s.attributes.component === 'user-interaction')
+			expectDefined(span, 'Check if user-interaction span is present.')
+			expect(span.name).toBe('routeChange')
+			expect(span).toHaveSpanAttributeContaining('location.href', '/thisIsAChange#WithAHash')
+			expect(span).toHaveSpanAttribute('prev.href', oldUrl)
+		})
+
 		history.pushState({}, 'title', '/')
 	})
 

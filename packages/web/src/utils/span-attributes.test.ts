@@ -16,9 +16,9 @@
  *
  */
 
+import { createSpanMock } from '@web-test-utils/span-mock'
 import { describe, expect, it } from 'vitest'
 
-import { createSpanMock } from '../../tests/utils/span-mock'
 import { setAttributes, setNumberAttribute, setRoundedNumberAttribute, setStringAttribute } from './span-attributes'
 
 describe('span attribute helpers', () => {

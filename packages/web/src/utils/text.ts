@@ -21,6 +21,11 @@ const TRUNCATED_STRING_SUFFIX = '...'
 
 export const MAX_CLICK_TEXT_LENGTH = 50
 
+// Use when interpolating a literal string into a RegExp pattern.
+export function escapeStringForRegExp(value: string): string {
+	return value.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)
+}
+
 export function truncateString(text: string, maxLength: number, suffix = TRUNCATED_STRING_SUFFIX): string {
 	if (text.length <= maxLength) {
 		return text

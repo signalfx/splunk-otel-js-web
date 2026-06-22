@@ -17,7 +17,28 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { truncateString } from './text'
+import { escapeStringForRegExp, truncateString } from './text'
+
+describe('escapeStringForRegExp', () => {
+	it('escapes regular expression metacharacters', () => {
+		const escaped = escapeStringForRegExp(String.raw`https://example.com/v1/rum?token=a+b[0]`)
+
+		expect(escaped).toBe(String.raw`https://example\.com/v1/rum\?token=a\+b\[0\]`)
+		expect(new RegExp(`^${escaped}$`).test(String.raw`https://example.com/v1/rum?token=a+b[0]`)).toBe(true)
+	})
+
+	it('leaves non-metacharacters unchanged', () => {
+		expect(escapeStringForRegExp('abc-123/path_value')).toBe('abc-123/path_value')
+	})
+
+	it('escapes every JavaScript regular expression metacharacter', () => {
+		const value = '.*+?^${}()|[]\\'
+		const escaped = escapeStringForRegExp(value)
+
+		expect(new RegExp(`^${escaped}$`).test(value)).toBe(true)
+		expect(escaped).toBe(String.raw`\.\*\+\?\^\$\{\}\(\)\|\[\]\\`)
+	})
+})
 
 describe('truncateString', () => {
 	it('returns the original string when it does not exceed the max length', () => {

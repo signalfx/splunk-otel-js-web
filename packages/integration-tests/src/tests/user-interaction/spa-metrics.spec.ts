@@ -36,7 +36,7 @@ test.describe('spa-metrics', () => {
 		expect(routeChangeSpans).toHaveLength(1)
 		expect(routeChangeSpans[0].name).toBe('routeChange')
 
-		// Duration should be 0 as no resources were loaded
+		// Duration should be zero when no route-created resources are loaded.
 		expect(routeChangeSpans[0]).toHaveSpanDuration(0)
 	})
 
@@ -91,10 +91,9 @@ test.describe('spa-metrics', () => {
 
 		expect(routeChangeSpans).toHaveLength(3)
 
-		// Both spans should have meaningful duration
 		expect(routeChangeSpans[0]).toHaveSpanDuration(0)
-		expect(routeChangeSpans[1]).toHaveSpanDurationGreaterThanOrEqual(0)
-		expect(routeChangeSpans[2]).toHaveSpanDurationGreaterThanOrEqual(0)
+		expect(routeChangeSpans[1]).toHaveSpanDurationGreaterThan(0)
+		expect(routeChangeSpans[2]).toHaveSpanDurationGreaterThan(0)
 		expect(
 			hrTimeToMicroseconds(routeChangeSpans[1].duration) !== hrTimeToMicroseconds(routeChangeSpans[2].duration),
 		).toBeTruthy()
@@ -130,6 +129,7 @@ test.describe('spa-metrics', () => {
 		expect(overrideConfigSpan).toHaveSpanAttributeContaining('location.href', '#network-disabled')
 		expect(overrideConfigSpan).toHaveSpanAttribute('browser.navigation.page_completion_time', 0)
 		expect(overrideConfigSpan).toHaveSpanAttribute('browser.navigation.status', 'completed')
+		expect(overrideConfigSpan).toNotHaveSpanAttribute('browser.navigation.loading_resource_count')
 	})
 
 	test('routeChange span waits for loading element selectors to disappear', async ({ recordPage }) => {

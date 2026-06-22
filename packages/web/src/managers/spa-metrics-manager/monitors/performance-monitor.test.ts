@@ -16,9 +16,10 @@
  *
  */
 
+import { HTTP_TEST_SERVER_URL } from '@test-server/http-constants'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { HTTP_TEST_SERVER_URL } from '../../../../../../tests/servers/http-constants'
+import { SpanEmitterProcessor } from '../../../span-processors'
 import { ResourceState, ResourceStateEvent } from './monitor'
 import { PerformanceMonitor } from './performance-monitor'
 
@@ -34,6 +35,7 @@ describe('PerformanceMonitor', () => {
 		events = []
 		monitor = new PerformanceMonitor({
 			onResourceStateChange: (event) => events.push(event),
+			spanEmitter: new SpanEmitterProcessor(),
 		})
 	})
 

@@ -72,6 +72,7 @@ import {
 	SYNTHETICS_TEST_ID_ATTRIBUTE,
 } from './synthetics'
 import {
+	isBoolean,
 	isPersistenceType,
 	SplunkOtelWebConfig,
 	SplunkOtelWebExporterOptions,
@@ -82,6 +83,7 @@ import { generateId, getPluginConfig, normalizeIgnoreUrlsConfig } from './utils'
 import { getValidAttributes, SpanContext } from './utils/attributes'
 import { isAgentLoadedViaLatestTag, isAgentLoadedViaNextTag } from './utils/detect-latest'
 import { isBot } from './utils/is-bot'
+import { isInstrumentationEnabled } from './utils/is-instrumentation-enabled'
 import { parseVersion } from './utils/parse-version'
 import { createPicker, isPickerWindow } from './utils/picker'
 import { getBasicPlatformInfo, getEnhancedPlatformInfo } from './utils/platform'
@@ -662,9 +664,10 @@ export const SplunkRum: SplunkOtelWebType = {
 				processedOptions.adjustSessionStartToTimeOrigin,
 			)
 
-			this._spanEmitter = new SpanEmitterProcessor()
-			processedOptions.spanEmitter = this._spanEmitter
-			const spanProcessors: SpanProcessor[] = [this.attributesProcessor, this._spanEmitter]
+			const spanEmitter = new SpanEmitterProcessor()
+			this._spanEmitter = spanEmitter
+			processedOptions.spanEmitter = spanEmitter
+			const spanProcessors: SpanProcessor[] = [this.attributesProcessor, spanEmitter]
 
 			if (processedOptions.beaconEndpoint) {
 				const exporter = buildExporter(processedOptions)
@@ -695,13 +698,17 @@ export const SplunkRum: SplunkOtelWebType = {
 
 			this.sessionManager.start()
 
-			const spaMetricsManager =
-				processedOptions.spaMetrics === false
-					? undefined
-					: new SpaMetricsManager({
-							beaconEndpoint: processedOptions.beaconEndpoint,
-							...(processedOptions.spaMetrics === true ? {} : processedOptions.spaMetrics),
-						})
+			const spaMetricsConfig = isBoolean(processedOptions.spaMetrics) ? {} : processedOptions.spaMetrics
+			const spaMetricsManager = SpaMetricsManager.create({
+				beaconEndpoint: processedOptions.beaconEndpoint,
+				collectSpaMetrics: processedOptions.spaMetrics !== false,
+				networkInstrumentation: {
+					fetch: isInstrumentationEnabled(processedOptions.instrumentations, 'fetch', pluginDefaults, false),
+					xhr: isInstrumentationEnabled(processedOptions.instrumentations, 'xhr', pluginDefaults, false),
+				},
+				...spaMetricsConfig,
+				spanEmitter,
+			})
 			_spaMetricsManager = spaMetricsManager
 
 			const instrumentations = INSTRUMENTATIONS.map(({ confKey, disable, Instrument }) => {

@@ -17,11 +17,11 @@
  */
 
 import { Span } from '@opentelemetry/api'
+import { HTTP_TEST_SERVER_URL } from '@test-server/http-constants'
 import { expectDefined } from '@test-utils/assertions'
 import { describe, expect, it, vi } from 'vitest'
 import { LCPMetricWithAttribution } from 'web-vitals/attribution'
 
-import { HTTP_TEST_SERVER_URL } from '../../../tests/servers/http-constants'
 import { SplunkWebVitalsInstrumentation } from '../src/instrumentations/splunk-webvitals-instrumentation'
 import {
 	getLCPResourceTimingAttributes,

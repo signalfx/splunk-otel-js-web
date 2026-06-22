@@ -16,10 +16,12 @@
  *
  */
 
-import { diag, type Span } from '@opentelemetry/api'
+import { diag } from '@opentelemetry/api'
+import { HTTP_TEST_SERVER_URL } from '@test-server/http-constants'
+import { createSpanMock } from '@web-test-utils/span-mock'
 import { describe, expect, it, vi } from 'vitest'
 
-import { HTTP_TEST_SERVER_URL } from '../../../../../tests/servers/http-constants'
+import { SpanEmitterProcessor } from '../../span-processors'
 import {
 	BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE,
 	BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
@@ -30,26 +32,29 @@ import {
 	PAGE_LOAD_METRICS_STATUS_TIMEOUT,
 } from './constants'
 import { ResourceState } from './monitors'
-import { getDocumentLoadTime, SpaMetricsManager } from './spa-metrics-manager'
+import {
+	getDocumentLoadTime,
+	PCT_NETWORK_TRACKING_REQUIRES_NETWORK_INSTRUMENTATION_WARNING,
+	SpaMetricsManager,
+	type SpaMetricsManagerConfig,
+	type SpaMetricsManagerCreateConfig,
+} from './spa-metrics-manager'
 
 const TEST_API_URL = `${HTTP_TEST_SERVER_URL}/some-data`
 const TEST_BEACON_ENDPOINT = `${HTTP_TEST_SERVER_URL}/v1/rum`
 
-function createSpanMock(): { attributes: Record<string, number | string>; span: Span } {
-	const attributes: Record<string, number | string> = {}
-	const span = {
-		setAttribute: (name: string, value: number | string) => {
-			attributes[name] = value
-			return span
-		},
-	} as Span
+type SpaMetricsManagerTestConfig = Omit<SpaMetricsManagerConfig, 'spanEmitter'>
+type SpaMetricsManagerCreateTestConfig = Omit<SpaMetricsManagerCreateConfig, 'spanEmitter'>
 
-	return { attributes, span }
-}
+const createSpaMetricsManager = (config: SpaMetricsManagerTestConfig = {}) =>
+	new SpaMetricsManager({ ...config, spanEmitter: new SpanEmitterProcessor() })
+
+const createOptionalSpaMetricsManager = (config: SpaMetricsManagerCreateTestConfig = {}) =>
+	SpaMetricsManager.create({ ...config, spanEmitter: new SpanEmitterProcessor() })
 
 describe('SpaMetricsManager', () => {
 	it('uses default config values', () => {
-		const manager = new SpaMetricsManager()
+		const manager = createSpaMetricsManager()
 
 		// @ts-expect-error Config is private. We use it for testing.
 		const config = manager.config
@@ -64,7 +69,7 @@ describe('SpaMetricsManager', () => {
 	})
 
 	it('applies custom config', () => {
-		const manager = new SpaMetricsManager({
+		const manager = createSpaMetricsManager({
 			blockingSelectors: ['.loading-spinner'],
 			clearLoadingResourcesOnNewPage: false,
 			ignoreUrls: [/test/],
@@ -86,7 +91,7 @@ describe('SpaMetricsManager', () => {
 	})
 
 	it('uses the first matching URL override with string substring matching', () => {
-		const manager = new SpaMetricsManager({
+		const manager = createSpaMetricsManager({
 			quietTime: 1000,
 			urlOverrides: [
 				{
@@ -112,7 +117,7 @@ describe('SpaMetricsManager', () => {
 	})
 
 	it('matches URL overrides with regular expressions', () => {
-		const manager = new SpaMetricsManager({
+		const manager = createSpaMetricsManager({
 			urlOverrides: [
 				{
 					match: /\/cart\/[0-9]+/,
@@ -126,7 +131,7 @@ describe('SpaMetricsManager', () => {
 	})
 
 	it('matches URL overrides with global regular expressions repeatedly', () => {
-		const manager = new SpaMetricsManager({
+		const manager = createSpaMetricsManager({
 			urlOverrides: [
 				{
 					match: /\/cart\/[0-9]+/g,
@@ -140,7 +145,7 @@ describe('SpaMetricsManager', () => {
 	})
 
 	it('replaces inherited array fields in URL overrides', () => {
-		const manager = new SpaMetricsManager({
+		const manager = createSpaMetricsManager({
 			blockingSelectors: ['.global-loading'],
 			ignoreUrls: [/global/],
 			monitors: ['media', 'network'],
@@ -162,7 +167,7 @@ describe('SpaMetricsManager', () => {
 	})
 
 	it('inherits blocking selectors in URL overrides', () => {
-		const manager = new SpaMetricsManager({
+		const manager = createSpaMetricsManager({
 			blockingSelectors: ['.global-loading'],
 			urlOverrides: [
 				{
@@ -177,7 +182,7 @@ describe('SpaMetricsManager', () => {
 	})
 
 	it('inherits and overrides clear loading resources config in URL overrides', () => {
-		const manager = new SpaMetricsManager({
+		const manager = createSpaMetricsManager({
 			clearLoadingResourcesOnNewPage: false,
 			urlOverrides: [
 				{
@@ -194,8 +199,8 @@ describe('SpaMetricsManager', () => {
 		expect(manager.getConfigForUrl('https://example.test/clear').clearLoadingResourcesOnNewPage).toBe(true)
 	})
 
-	it('adds beacon endpoint origin to override ignoreUrls', () => {
-		const manager = new SpaMetricsManager({
+	it('adds beacon endpoint URL to override ignoreUrls', () => {
+		const manager = createSpaMetricsManager({
 			beaconEndpoint: TEST_BEACON_ENDPOINT,
 			urlOverrides: [
 				{
@@ -208,13 +213,17 @@ describe('SpaMetricsManager', () => {
 		const config = manager.getConfigForUrl('https://example.test/checkout')
 
 		expect(config.ignoreUrls).toHaveLength(1)
+		expect(config.ignoreUrls[0] instanceof RegExp && config.ignoreUrls[0].test(TEST_BEACON_ENDPOINT)).toBe(true)
+		expect(
+			config.ignoreUrls[0] instanceof RegExp && config.ignoreUrls[0].test(`${TEST_BEACON_ENDPOINT}?auth=token`),
+		).toBe(true)
 		expect(
 			config.ignoreUrls[0] instanceof RegExp && config.ignoreUrls[0].test(`${HTTP_TEST_SERVER_URL}/anything`),
-		).toBe(true)
+		).toBe(false)
 	})
 
-	it('adds beacon endpoint origin to inherited override ignoreUrls', () => {
-		const manager = new SpaMetricsManager({
+	it('adds beacon endpoint URL to inherited override ignoreUrls', () => {
+		const manager = createSpaMetricsManager({
 			beaconEndpoint: TEST_BEACON_ENDPOINT,
 			ignoreUrls: [/global/],
 			urlOverrides: [
@@ -226,7 +235,7 @@ describe('SpaMetricsManager', () => {
 
 		const config = manager.getConfigForUrl('https://example.test/checkout')
 		const beaconEndpointIgnoreUrls = config.ignoreUrls.filter(
-			(ignoreUrl) => ignoreUrl instanceof RegExp && ignoreUrl.test(`${HTTP_TEST_SERVER_URL}/anything`),
+			(ignoreUrl) => ignoreUrl instanceof RegExp && ignoreUrl.test(TEST_BEACON_ENDPOINT),
 		)
 
 		expect(config.ignoreUrls).toHaveLength(2)
@@ -236,7 +245,7 @@ describe('SpaMetricsManager', () => {
 
 	it('normalizes inherited max page load wait time for URL overrides', () => {
 		const diagWarnSpy = vi.spyOn(diag, 'warn')
-		const manager = new SpaMetricsManager({
+		const manager = createSpaMetricsManager({
 			maxPageLoadWaitTime: 5,
 			quietTime: 5,
 			urlOverrides: [
@@ -259,7 +268,7 @@ describe('SpaMetricsManager', () => {
 	})
 
 	it('uses max page load wait time from URL overrides', () => {
-		const manager = new SpaMetricsManager({
+		const manager = createSpaMetricsManager({
 			maxPageLoadWaitTime: 5000,
 			quietTime: 1000,
 			urlOverrides: [
@@ -279,7 +288,7 @@ describe('SpaMetricsManager', () => {
 
 	it('uses quiet time as max page load wait time and warns once when configured max is lower', () => {
 		const diagWarnSpy = vi.spyOn(diag, 'warn')
-		const manager = new SpaMetricsManager({ maxPageLoadWaitTime: 5, quietTime: 30 })
+		const manager = createSpaMetricsManager({ maxPageLoadWaitTime: 5, quietTime: 30 })
 
 		// @ts-expect-error Config is private. We use it for testing.
 		const config = manager.config
@@ -294,8 +303,8 @@ describe('SpaMetricsManager', () => {
 		diagWarnSpy.mockRestore()
 	})
 
-	it('adds beacon endpoint origin to ignoreUrls', () => {
-		const manager = new SpaMetricsManager({
+	it('adds beacon endpoint URL to ignoreUrls', () => {
+		const manager = createSpaMetricsManager({
 			beaconEndpoint: TEST_BEACON_ENDPOINT,
 		})
 
@@ -303,16 +312,20 @@ describe('SpaMetricsManager', () => {
 		const config = manager.config
 
 		expect(config.ignoreUrls).toHaveLength(1)
+		expect(config.ignoreUrls[0] instanceof RegExp && config.ignoreUrls[0].test(TEST_BEACON_ENDPOINT)).toBe(true)
+		expect(
+			config.ignoreUrls[0] instanceof RegExp && config.ignoreUrls[0].test(`${TEST_BEACON_ENDPOINT}?auth=token`),
+		).toBe(true)
 		expect(
 			config.ignoreUrls[0] instanceof RegExp && config.ignoreUrls[0].test(`${HTTP_TEST_SERVER_URL}/anything`),
-		).toBe(true)
+		).toBe(false)
 		expect(config.ignoreUrls[0] instanceof RegExp && config.ignoreUrls[0].test('https://other.com/path')).toBe(
 			false,
 		)
 	})
 
 	it('start/stop controls monitoring state', () => {
-		const manager = new SpaMetricsManager()
+		const manager = createSpaMetricsManager()
 
 		// @ts-expect-error isMonitoring is private. We use it for testing.
 		expect(manager.isMonitoring).toBe(false)
@@ -337,12 +350,12 @@ describe('SpaMetricsManager', () => {
 	})
 
 	it('starts every monitor regardless of configured monitor types', () => {
-		const manager = new SpaMetricsManager({ monitors: ['network'] })
+		const manager = createSpaMetricsManager({ monitors: ['network'] })
 
 		// @ts-expect-error monitors is private. We use it for testing.
 		const monitors = manager.monitors
 		const elementsStart = vi.spyOn(monitors.elements, 'start').mockImplementation(() => {})
-		const fetchXhrStart = vi.spyOn(monitors.network, 'start').mockImplementation(() => {})
+		const networkStart = vi.spyOn(monitors.network, 'start').mockImplementation(() => {})
 		const mediaStart = vi.spyOn(monitors.media, 'start').mockImplementation(() => {})
 		const performanceStart = vi.spyOn(monitors.performance, 'start').mockImplementation(() => {})
 
@@ -350,39 +363,57 @@ describe('SpaMetricsManager', () => {
 			manager.start()
 
 			expect(elementsStart).toHaveBeenCalledOnce()
-			expect(fetchXhrStart).toHaveBeenCalledOnce()
+			expect(networkStart).toHaveBeenCalledOnce()
 			expect(mediaStart).toHaveBeenCalledOnce()
 			expect(performanceStart).toHaveBeenCalledOnce()
 		} finally {
 			manager.stop()
 			elementsStart.mockRestore()
-			fetchXhrStart.mockRestore()
+			networkStart.mockRestore()
 			mediaStart.mockRestore()
 			performanceStart.mockRestore()
 		}
 	})
 
-	it('waitForPageLoad returns promise that resolves after quiet period', async () => {
-		const manager = new SpaMetricsManager({ quietTime: 100 })
+	it('recordPageLoadMetrics returns promise that resolves after quiet period', async () => {
+		const manager = createSpaMetricsManager({ quietTime: 100 })
 		manager.start()
 
-		const promise = manager.waitForPageLoad({ startTime: performance.now() })
-		await fetch('data:text/plain,hello')
+		try {
+			const promise = manager.recordPageLoadMetrics({ startTime: performance.now() })
 
-		const result = await promise
-		expect(result).toHaveProperty('pct')
-		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_COMPLETED)
-		expect(result.loadingResourcesCount).toBe(0)
-		expect(result.loadingResourceUrls).toEqual([])
+			// @ts-expect-error onResourceStateChange is private. We use it for testing.
+			manager.onResourceStateChange({
+				id: 'r_1',
+				monitorType: 'network',
+				state: ResourceState.DISCOVERED,
+				url: TEST_API_URL,
+			})
+			// @ts-expect-error onResourceStateChange is private. We use it for testing.
+			manager.onResourceStateChange({
+				id: 'r_1',
+				loadTime: 10,
+				monitorType: 'network',
+				state: ResourceState.LOADED,
+				timestamp: performance.now(),
+				url: TEST_API_URL,
+			})
 
-		manager.stop()
+			const result = await promise
+			expect(result).toHaveProperty('pct')
+			expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_COMPLETED)
+			expect(result.loadingResourcesCount).toBe(0)
+			expect(result.loadingResourceUrls).toEqual([])
+		} finally {
+			manager.stop()
+		}
 	})
 
-	it('waitForPageLoad with startTime 0 returns pct at least document load time', async () => {
-		const manager = new SpaMetricsManager({ quietTime: 100 })
+	it('recordPageLoadMetrics with startTime 0 returns pct at least document load time', async () => {
+		const manager = createSpaMetricsManager({ quietTime: 100 })
 		manager.start()
 
-		const promise = manager.waitForPageLoad({ startTime: 0 })
+		const promise = manager.recordPageLoadMetrics({ startTime: 0 })
 		const result = await promise
 
 		const navEntry = performance.getEntriesByType('navigation')[0]
@@ -397,30 +428,33 @@ describe('SpaMetricsManager', () => {
 		manager.stop()
 	})
 
-	it('waitForPageLoad resolves with timeout status when max page load wait time expires', async () => {
-		const manager = new SpaMetricsManager({ maxPageLoadWaitTime: 3000, quietTime: 1000 })
+	it('recordPageLoadMetrics resolves with timeout status when max page load wait time expires', async () => {
+		const manager = createSpaMetricsManager({ maxPageLoadWaitTime: 30, quietTime: 10 })
 		manager.start()
-		const slowResourceAbortController = new AbortController()
+		const slowResourceUrl = `${HTTP_TEST_SERVER_URL}/some-data?delay=5000`
 
 		try {
 			const startTime = performance.now()
-			void fetch(`${HTTP_TEST_SERVER_URL}/some-data?delay=5000`, {
-				signal: slowResourceAbortController.signal,
-			}).catch(() => {})
-			const result = await manager.waitForPageLoad({ startTime })
+			// @ts-expect-error onResourceStateChange is private. We use it for testing.
+			manager.onResourceStateChange({
+				id: 'slow',
+				monitorType: 'network',
+				state: ResourceState.DISCOVERED,
+				url: slowResourceUrl,
+			})
+			const result = await manager.recordPageLoadMetrics({ startTime })
 
-			expect(result.pct).toBe(3000)
+			expect(result.pct).toBe(30)
 			expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_TIMEOUT)
 			expect(result.loadingResourcesCount).toBe(1)
-			expect(result.loadingResourceUrls).toEqual([`${HTTP_TEST_SERVER_URL}/some-data?delay=5000`])
+			expect(result.loadingResourceUrls).toEqual([slowResourceUrl])
 		} finally {
-			slowResourceAbortController.abort()
 			manager.stop()
 		}
 	})
 
 	it('sets page load metric attributes on a span', () => {
-		const manager = new SpaMetricsManager()
+		const manager = createSpaMetricsManager()
 		const { attributes, span } = createSpanMock()
 
 		manager.setPageLoadMetricAttributes(span, {
@@ -439,7 +473,7 @@ describe('SpaMetricsManager', () => {
 	})
 
 	it('does not set loading resource attributes when no resources are loading', () => {
-		const manager = new SpaMetricsManager()
+		const manager = createSpaMetricsManager()
 		const { attributes, span } = createSpanMock()
 
 		manager.setPageLoadMetricAttributes(span, {
@@ -455,38 +489,108 @@ describe('SpaMetricsManager', () => {
 		expect(attributes[BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE]).toBeUndefined()
 	})
 
-	it('waitForPageLoad sets page load metric attributes when a span is provided', async () => {
-		const manager = new SpaMetricsManager({ quietTime: 1 })
+	it('recordPageLoadMetrics attaches page load metric attributes to provided span', async () => {
+		const manager = createSpaMetricsManager({ maxPageLoadWaitTime: 10, quietTime: 5 })
+		const slowResourceUrl = `${HTTP_TEST_SERVER_URL}/some-data?delay=5000`
 		const { attributes, span } = createSpanMock()
 		manager.start()
 
 		try {
-			const result = await manager.waitForPageLoad({ span, startTime: performance.now() })
+			const startTime = performance.now()
+			// @ts-expect-error onResourceStateChange is private. We use it for testing.
+			manager.onResourceStateChange({
+				id: 'slow',
+				monitorType: 'network',
+				state: ResourceState.DISCOVERED,
+				url: slowResourceUrl,
+			})
+			const result = await manager.recordPageLoadMetrics({ span, startTime })
 
+			expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_TIMEOUT)
 			expect(attributes[BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE]).toBe(result.pct)
 			expect(attributes[BROWSER_NAVIGATION_STATUS_ATTRIBUTE]).toBe(result.status)
-			expect(attributes[BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE]).toBeUndefined()
-			expect(attributes[BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE]).toBeUndefined()
+			expect(attributes[BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE]).toBe(result.loadingResourcesCount)
+			expect(attributes[BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE]).toBe(
+				JSON.stringify(result.loadingResourceUrls),
+			)
 		} finally {
 			manager.stop()
 		}
 	})
 
-	it('waitForPageLoad reports visible loading elements on timeout', async () => {
+	it('create returns undefined when collection is disabled', () => {
+		expect(createOptionalSpaMetricsManager({ collectSpaMetrics: false })).toBeUndefined()
+	})
+
+	it.each([
+		{ fetch: false, xhr: true },
+		{ fetch: true, xhr: false },
+	])('create warns and returns undefined when network instrumentation is disabled: %s', (networkInstrumentation) => {
+		const warnMock = vi.spyOn(diag, 'warn')
+
+		try {
+			const manager = createOptionalSpaMetricsManager({ networkInstrumentation })
+
+			expect(warnMock).toHaveBeenCalledWith(PCT_NETWORK_TRACKING_REQUIRES_NETWORK_INSTRUMENTATION_WARNING)
+			expect(manager).toBeUndefined()
+		} finally {
+			warnMock.mockRestore()
+		}
+	})
+
+	it('does not warn or disable metrics when network monitor is not configured', () => {
+		const warnMock = vi.spyOn(diag, 'warn')
+
+		try {
+			const manager = createOptionalSpaMetricsManager({
+				monitors: ['media', 'performance'],
+				networkInstrumentation: { fetch: false, xhr: false },
+			})
+
+			expect(warnMock).not.toHaveBeenCalledWith(PCT_NETWORK_TRACKING_REQUIRES_NETWORK_INSTRUMENTATION_WARNING)
+			expect(manager).toBeInstanceOf(SpaMetricsManager)
+		} finally {
+			warnMock.mockRestore()
+		}
+	})
+
+	it('create warns and returns undefined when a URL override uses network monitor without network instrumentation', () => {
+		const warnMock = vi.spyOn(diag, 'warn')
+
+		try {
+			const manager = createOptionalSpaMetricsManager({
+				monitors: ['media', 'performance'],
+				networkInstrumentation: { fetch: false, xhr: false },
+				urlOverrides: [
+					{
+						match: '#network-enabled',
+						monitors: ['network'],
+					},
+				],
+			})
+
+			expect(warnMock).toHaveBeenCalledWith(PCT_NETWORK_TRACKING_REQUIRES_NETWORK_INSTRUMENTATION_WARNING)
+			expect(manager).toBeUndefined()
+		} finally {
+			warnMock.mockRestore()
+		}
+	})
+
+	it('recordPageLoadMetrics reports visible loading elements on timeout', async () => {
 		const loadingElement = document.createElement('div')
 		loadingElement.className = 'loading-spinner'
 		loadingElement.style.height = '10px'
 		loadingElement.style.width = '10px'
 		document.body.append(loadingElement)
 
-		const manager = new SpaMetricsManager({
+		const manager = createSpaMetricsManager({
 			blockingSelectors: ['.loading-spinner'],
 			maxPageLoadWaitTime: 10,
 			monitors: ['elements'],
 			quietTime: 5,
 		})
 
-		const result = await manager.waitForPageLoad({ startTime: performance.now() })
+		const result = await manager.recordPageLoadMetrics({ startTime: performance.now() })
 
 		expect(result.pct).toBe(10)
 		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_TIMEOUT)
@@ -503,7 +607,7 @@ describe('SpaMetricsManager', () => {
 		loadingElement.style.width = '10px'
 		document.body.append(loadingElement)
 
-		const manager = new SpaMetricsManager({
+		const manager = createSpaMetricsManager({
 			blockingSelectors: ['.loading-spinner'],
 			maxPageLoadWaitTime: 20,
 			monitors: ['elements'],
@@ -512,7 +616,7 @@ describe('SpaMetricsManager', () => {
 		manager.start()
 
 		history.pushState({}, '', '#loading-previous-page')
-		const firstPagePromise = manager.waitForPageLoad({ startTime: performance.now() })
+		const firstPagePromise = manager.recordPageLoadMetrics({ startTime: performance.now() })
 
 		// @ts-expect-error loadingResources is private. We use it for testing.
 		expect(manager.loadingResources.size).toBe(1)
@@ -520,7 +624,7 @@ describe('SpaMetricsManager', () => {
 		const firstResourceId = Array.from(manager.loadingResources.keys())[0]
 
 		history.pushState({}, '', '#loading-next-page')
-		const nextPagePromise = manager.waitForPageLoad({ startTime: performance.now() })
+		const nextPagePromise = manager.recordPageLoadMetrics({ startTime: performance.now() })
 		const firstPageResult = await firstPagePromise
 
 		expect(firstPageResult.status).toBe(PAGE_LOAD_METRICS_STATUS_INTERRUPTED)
@@ -550,7 +654,7 @@ describe('SpaMetricsManager', () => {
 		loadingElement.style.width = '10px'
 		document.body.append(loadingElement)
 
-		const manager = new SpaMetricsManager({
+		const manager = createSpaMetricsManager({
 			blockingSelectors: ['.loading-spinner'],
 			clearLoadingResourcesOnNewPage: false,
 			maxPageLoadWaitTime: 100,
@@ -560,7 +664,7 @@ describe('SpaMetricsManager', () => {
 		manager.start()
 
 		history.pushState({}, '', '#loading-previous-page')
-		const firstPagePromise = manager.waitForPageLoad({ startTime: performance.now() })
+		const firstPagePromise = manager.recordPageLoadMetrics({ startTime: performance.now() })
 
 		// @ts-expect-error loadingResources is private. We use it for testing.
 		expect(manager.loadingResources.size).toBe(1)
@@ -568,7 +672,7 @@ describe('SpaMetricsManager', () => {
 		const firstResourceId = Array.from(manager.loadingResources.keys())[0]
 
 		history.pushState({}, '', '#loading-next-page')
-		const nextPagePromise = manager.waitForPageLoad({ startTime: performance.now() })
+		const nextPagePromise = manager.recordPageLoadMetrics({ startTime: performance.now() })
 		const firstPageResult = await firstPagePromise
 
 		expect(firstPageResult.status).toBe(PAGE_LOAD_METRICS_STATUS_INTERRUPTED)
@@ -591,14 +695,14 @@ describe('SpaMetricsManager', () => {
 		manager.stop()
 	})
 
-	it('waitForPageLoad with startTime 0 does not exceed max page load wait time on timeout', async () => {
+	it('recordPageLoadMetrics with startTime 0 does not exceed max page load wait time on timeout', async () => {
 		const getEntriesByType = vi.spyOn(performance, 'getEntriesByType').mockReturnValue([
 			{
 				fetchStart: 0,
 				loadEventEnd: 1000,
 			} as PerformanceNavigationTiming,
 		])
-		const manager = new SpaMetricsManager({ maxPageLoadWaitTime: 10, quietTime: 5 })
+		const manager = createSpaMetricsManager({ maxPageLoadWaitTime: 10, quietTime: 5 })
 		manager.start()
 
 		try {
@@ -609,7 +713,7 @@ describe('SpaMetricsManager', () => {
 				state: ResourceState.DISCOVERED,
 				url: TEST_API_URL,
 			})
-			const result = await manager.waitForPageLoad({ startTime: 0 })
+			const result = await manager.recordPageLoadMetrics({ startTime: 0 })
 
 			expect(result.pct).toBe(10)
 			expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_TIMEOUT)
@@ -621,12 +725,12 @@ describe('SpaMetricsManager', () => {
 		}
 	})
 
-	it('waitForPageLoad resolves with interrupted status when page hides', async () => {
-		const manager = new SpaMetricsManager({ maxPageLoadWaitTime: 5000, quietTime: 1000 })
+	it('recordPageLoadMetrics resolves with interrupted status when page hides', async () => {
+		const manager = createSpaMetricsManager({ maxPageLoadWaitTime: 5000, quietTime: 1000 })
 		manager.start()
 
 		try {
-			const promise = manager.waitForPageLoad({ startTime: performance.now() })
+			const promise = manager.recordPageLoadMetrics({ startTime: performance.now() })
 
 			// @ts-expect-error onResourceStateChange is private. We use it for testing.
 			manager.onResourceStateChange({
@@ -646,11 +750,11 @@ describe('SpaMetricsManager', () => {
 		}
 	})
 
-	it('waitForPageLoad resolves with interrupted status when stopped', async () => {
-		const manager = new SpaMetricsManager({ maxPageLoadWaitTime: 5000, quietTime: 1000 })
+	it('recordPageLoadMetrics resolves with interrupted status when stopped', async () => {
+		const manager = createSpaMetricsManager({ maxPageLoadWaitTime: 5000, quietTime: 1000 })
 		manager.start()
 
-		const promise = manager.waitForPageLoad({ startTime: performance.now() })
+		const promise = manager.recordPageLoadMetrics({ startTime: performance.now() })
 		// @ts-expect-error onResourceStateChange is private. We use it for testing.
 		manager.onResourceStateChange({
 			id: 'r_1',
@@ -666,8 +770,8 @@ describe('SpaMetricsManager', () => {
 		expect(result.loadingResourceUrls).toEqual([TEST_API_URL])
 	})
 
-	it('waitForPageLoad reports the last three loading resource URLs', async () => {
-		const manager = new SpaMetricsManager({ maxPageLoadWaitTime: 10, quietTime: 5 })
+	it('recordPageLoadMetrics reports the last three loading resource URLs', async () => {
+		const manager = createSpaMetricsManager({ maxPageLoadWaitTime: 10, quietTime: 5 })
 		manager.start()
 		const longResourceUrl = `${TEST_API_URL}?resource=4&${'a'.repeat(120)}`
 		const truncatedLongResourceUrl = `${longResourceUrl.slice(0, 97)}...`
@@ -683,7 +787,7 @@ describe('SpaMetricsManager', () => {
 				})
 			}
 
-			const result = await manager.waitForPageLoad({ startTime: performance.now() })
+			const result = await manager.recordPageLoadMetrics({ startTime: performance.now() })
 
 			expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_TIMEOUT)
 			expect(result.loadingResourcesCount).toBe(4)
@@ -698,14 +802,20 @@ describe('SpaMetricsManager', () => {
 	})
 
 	it('tracks loading resources and manages quiet timer', () => {
-		const manager = new SpaMetricsManager({ quietTime: 100 })
+		const manager = createSpaMetricsManager({ quietTime: 100 })
 		manager.start()
 
 		// @ts-expect-error onResourceStateChange is private. We use it for testing.
 		const onResourceStateChange = manager.onResourceStateChange
 
 		// Simulate resource discovery
-		onResourceStateChange({ id: 'r_1', monitorType: 'network', state: ResourceState.DISCOVERED, url: TEST_API_URL })
+		onResourceStateChange({
+			id: 'r_1',
+			monitorType: 'network',
+			state: ResourceState.DISCOVERED,
+			timestamp: performance.now(),
+			url: TEST_API_URL,
+		})
 		// @ts-expect-error loadingResources is private. We use it for testing.
 		expect(manager.loadingResources.size).toBe(1)
 
@@ -726,7 +836,7 @@ describe('SpaMetricsManager', () => {
 	})
 
 	it('handles multiple requests to same URL', () => {
-		const manager = new SpaMetricsManager()
+		const manager = createSpaMetricsManager()
 		manager.start()
 
 		// @ts-expect-error onResourceStateChange is private. We use it for testing.
@@ -734,8 +844,20 @@ describe('SpaMetricsManager', () => {
 		const url = TEST_API_URL
 
 		// Two requests to same URL with different IDs
-		onResourceStateChange({ id: 'r_1', monitorType: 'network', state: ResourceState.DISCOVERED, url })
-		onResourceStateChange({ id: 'r_2', monitorType: 'network', state: ResourceState.DISCOVERED, url })
+		onResourceStateChange({
+			id: 'r_1',
+			monitorType: 'network',
+			state: ResourceState.DISCOVERED,
+			timestamp: performance.now(),
+			url,
+		})
+		onResourceStateChange({
+			id: 'r_2',
+			monitorType: 'network',
+			state: ResourceState.DISCOVERED,
+			timestamp: performance.now(),
+			url,
+		})
 		// @ts-expect-error loadingResources is private. We use it for testing.
 		expect(manager.loadingResources.size).toBe(2)
 
@@ -767,7 +889,7 @@ describe('SpaMetricsManager', () => {
 	})
 
 	it('enforces maxResourcesToWatch limit', () => {
-		const manager = new SpaMetricsManager({ maxResourcesToWatch: 2 })
+		const manager = createSpaMetricsManager({ maxResourcesToWatch: 2 })
 		manager.start()
 
 		// @ts-expect-error onResourceStateChange is private. We use it for testing.
@@ -778,12 +900,14 @@ describe('SpaMetricsManager', () => {
 			id: 'r_1',
 			monitorType: 'network',
 			state: ResourceState.DISCOVERED,
+			timestamp: performance.now(),
 			url: `${TEST_API_URL}?resource=1`,
 		})
 		onResourceStateChange({
 			id: 'r_2',
 			monitorType: 'network',
 			state: ResourceState.DISCOVERED,
+			timestamp: performance.now(),
 			url: `${TEST_API_URL}?resource=2`,
 		})
 
@@ -795,6 +919,7 @@ describe('SpaMetricsManager', () => {
 			id: 'r_3',
 			monitorType: 'network',
 			state: ResourceState.DISCOVERED,
+			timestamp: performance.now(),
 			url: `${TEST_API_URL}?resource=3`,
 		})
 
@@ -821,6 +946,7 @@ describe('SpaMetricsManager', () => {
 			id: 'r_4',
 			monitorType: 'network',
 			state: ResourceState.DISCOVERED,
+			timestamp: performance.now(),
 			url: `${TEST_API_URL}?resource=3`,
 		})
 
@@ -833,9 +959,9 @@ describe('SpaMetricsManager', () => {
 	})
 
 	it('ignores resource events from monitors disabled for the current URL', async () => {
-		const manager = new SpaMetricsManager({ monitors: ['media'], quietTime: 10 })
+		const manager = createSpaMetricsManager({ monitors: ['media'], quietTime: 10 })
 
-		const promise = manager.waitForPageLoad({ startTime: performance.now() })
+		const promise = manager.recordPageLoadMetrics({ startTime: performance.now() })
 
 		// @ts-expect-error onResourceStateChange is private. We use it for testing.
 		manager.onResourceStateChange({
@@ -860,13 +986,13 @@ describe('SpaMetricsManager', () => {
 		loadingElement.style.width = '10px'
 		document.body.append(loadingElement)
 
-		const manager = new SpaMetricsManager({
+		const manager = createSpaMetricsManager({
 			blockingSelectors: ['.loading-spinner'],
 			monitors: ['network'],
 			quietTime: 10,
 		})
 
-		const result = await manager.waitForPageLoad({ startTime: performance.now() })
+		const result = await manager.recordPageLoadMetrics({ startTime: performance.now() })
 
 		expect(result.loadingResourcesCount).toBe(0)
 		expect(result.loadingResourceUrls).toEqual([])
@@ -878,7 +1004,7 @@ describe('SpaMetricsManager', () => {
 	})
 
 	it('uses the current URL override config when handling resource events', () => {
-		const manager = new SpaMetricsManager({
+		const manager = createSpaMetricsManager({
 			monitors: ['network'],
 			quietTime: 10,
 			urlOverrides: [
@@ -913,7 +1039,7 @@ describe('SpaMetricsManager', () => {
 		// @ts-expect-error loadingResources is private. We use it for testing.
 		expect(manager.loadingResources.size).toBe(1)
 
-		void manager.waitForPageLoad({ startTime: performance.now() })
+		void manager.recordPageLoadMetrics({ startTime: performance.now() })
 
 		// @ts-expect-error onResourceStateChange is private. We use it for testing.
 		manager.onResourceStateChange({
@@ -929,8 +1055,8 @@ describe('SpaMetricsManager', () => {
 		expect(manager.loadingResources.size).toBe(0)
 	})
 
-	it('uses the current URL when a resource is discovered before the next waitForPageLoad starts', () => {
-		const manager = new SpaMetricsManager({
+	it('uses the current URL when a resource is discovered before the next recordPageLoadMetrics starts', () => {
+		const manager = createSpaMetricsManager({
 			monitors: ['network'],
 			quietTime: 10,
 			urlOverrides: [
@@ -942,7 +1068,7 @@ describe('SpaMetricsManager', () => {
 		})
 
 		location.hash = '#media-only'
-		void manager.waitForPageLoad({ startTime: performance.now() })
+		void manager.recordPageLoadMetrics({ startTime: performance.now() })
 
 		location.hash = '#network-enabled'
 
@@ -957,7 +1083,7 @@ describe('SpaMetricsManager', () => {
 		// @ts-expect-error loadingResources is private. We use it for testing.
 		expect(manager.loadingResources.size).toBe(1)
 
-		void manager.waitForPageLoad({ startTime: performance.now() })
+		void manager.recordPageLoadMetrics({ startTime: performance.now() })
 
 		// @ts-expect-error onResourceStateChange is private. We use it for testing.
 		manager.onResourceStateChange({
@@ -974,7 +1100,7 @@ describe('SpaMetricsManager', () => {
 	})
 
 	it('clears loading resources discovered on previous pages by default', async () => {
-		const manager = new SpaMetricsManager({ quietTime: 10 })
+		const manager = createSpaMetricsManager({ quietTime: 10 })
 
 		history.pushState({}, '', '#previous-page')
 
@@ -990,7 +1116,7 @@ describe('SpaMetricsManager', () => {
 
 		history.pushState({}, '', '#next-page')
 
-		const promise = manager.waitForPageLoad({ startTime: performance.now() })
+		const promise = manager.recordPageLoadMetrics({ startTime: performance.now() })
 
 		// @ts-expect-error loadingResources is private. We use it for testing.
 		expect(manager.loadingResources.size).toBe(0)
@@ -1012,23 +1138,70 @@ describe('SpaMetricsManager', () => {
 		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_COMPLETED)
 	})
 
-	it('keeps resources discovered on the current page before waitForPageLoad starts', async () => {
-		const manager = new SpaMetricsManager({ quietTime: 10 })
+	it.each([
+		{ changePage: false, clearLoadingResourcesOnNewPage: undefined, description: 'default clearing' },
+		{ changePage: true, clearLoadingResourcesOnNewPage: false, description: 'clearing disabled' },
+	])(
+		'drops loading resources discovered before the current page load start with $description',
+		async ({ changePage, clearLoadingResourcesOnNewPage }) => {
+			const manager = createSpaMetricsManager({
+				...(clearLoadingResourcesOnNewPage === undefined ? {} : { clearLoadingResourcesOnNewPage }),
+				quietTime: 10,
+			})
+			const startTime = performance.now()
 
-		history.pushState({}, '', '#current-page')
+			history.pushState({}, '', '#previous-page')
+
+			// @ts-expect-error onResourceStateChange is private. We use it for testing.
+			manager.onResourceStateChange({
+				id: 'r_1',
+				monitorType: 'network',
+				state: ResourceState.DISCOVERED,
+				timestamp: startTime - 1,
+				url: TEST_API_URL,
+			})
+
+			if (changePage) {
+				history.pushState({}, '', '#next-page')
+			}
+
+			const promise = manager.recordPageLoadMetrics({ startTime })
+
+			// @ts-expect-error loadingResources is private. We use it for testing.
+			expect(manager.loadingResources.size).toBe(0)
+
+			// @ts-expect-error onResourceStateChange is private. We use it for testing.
+			manager.onResourceStateChange({
+				id: 'r_1',
+				loadTime: 50,
+				monitorType: 'network',
+				state: ResourceState.LOADED,
+				timestamp: startTime + 50,
+				url: TEST_API_URL,
+			})
+
+			const result = await promise
+			expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_COMPLETED)
+
+			// @ts-expect-error loadingResources is private. We use it for testing.
+			expect(manager.loadingResources.size).toBe(0)
+		},
+	)
+
+	it('ignores stale resources discovered after recordPageLoadMetrics starts', async () => {
+		const manager = createSpaMetricsManager({ quietTime: 10 })
+		const startTime = performance.now()
+
+		const promise = manager.recordPageLoadMetrics({ startTime })
 
 		// @ts-expect-error onResourceStateChange is private. We use it for testing.
 		manager.onResourceStateChange({
 			id: 'r_1',
 			monitorType: 'network',
 			state: ResourceState.DISCOVERED,
+			timestamp: startTime - 1,
 			url: TEST_API_URL,
 		})
-
-		const promise = manager.waitForPageLoad({ startTime: performance.now() })
-
-		// @ts-expect-error loadingResources is private. We use it for testing.
-		expect(manager.loadingResources.size).toBe(1)
 
 		// @ts-expect-error onResourceStateChange is private. We use it for testing.
 		manager.onResourceStateChange({
@@ -1036,36 +1209,32 @@ describe('SpaMetricsManager', () => {
 			loadTime: 50,
 			monitorType: 'network',
 			state: ResourceState.LOADED,
-			timestamp: performance.now(),
+			timestamp: startTime + 50,
 			url: TEST_API_URL,
 		})
 
 		const result = await promise
+		expect(result.pct).toBe(0)
 		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_COMPLETED)
 
 		// @ts-expect-error loadingResources is private. We use it for testing.
 		expect(manager.loadingResources.size).toBe(0)
 	})
 
-	it('carries previous page loading resources when clearing is disabled', async () => {
-		const manager = new SpaMetricsManager({
-			clearLoadingResourcesOnNewPage: false,
-			quietTime: 10,
-		})
+	it('tracks resources discovered at the current page load start', async () => {
+		const manager = createSpaMetricsManager({ quietTime: 10 })
+		const startTime = performance.now()
 
-		history.pushState({}, '', '#previous-page')
+		const promise = manager.recordPageLoadMetrics({ startTime })
 
 		// @ts-expect-error onResourceStateChange is private. We use it for testing.
 		manager.onResourceStateChange({
 			id: 'r_1',
 			monitorType: 'network',
 			state: ResourceState.DISCOVERED,
+			timestamp: startTime,
 			url: TEST_API_URL,
 		})
-
-		history.pushState({}, '', '#next-page')
-
-		const promise = manager.waitForPageLoad({ startTime: performance.now() })
 
 		// @ts-expect-error loadingResources is private. We use it for testing.
 		expect(manager.loadingResources.size).toBe(1)
@@ -1076,19 +1245,17 @@ describe('SpaMetricsManager', () => {
 			loadTime: 50,
 			monitorType: 'network',
 			state: ResourceState.LOADED,
-			timestamp: performance.now(),
+			timestamp: startTime + 50,
 			url: TEST_API_URL,
 		})
 
 		const result = await promise
+		expect(result.pct).toBe(50)
 		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_COMPLETED)
-
-		// @ts-expect-error loadingResources is private. We use it for testing.
-		expect(manager.loadingResources.size).toBe(0)
 	})
 
 	it('ignores resource events matching ignoreUrls', () => {
-		const manager = new SpaMetricsManager({ ignoreUrls: [/ignore-me/] })
+		const manager = createSpaMetricsManager({ ignoreUrls: [/ignore-me/] })
 
 		// Monitors emit all matching resources. SpaMetricsManager applies ignoreUrls before tracking them.
 		// @ts-expect-error onResourceStateChange is private. We use it for testing.
@@ -1104,7 +1271,7 @@ describe('SpaMetricsManager', () => {
 	})
 
 	it('ignores data URL resource events', () => {
-		const manager = new SpaMetricsManager()
+		const manager = createSpaMetricsManager()
 
 		// @ts-expect-error onResourceStateChange is private. We use it for testing.
 		manager.onResourceStateChange({
@@ -1119,7 +1286,7 @@ describe('SpaMetricsManager', () => {
 	})
 
 	it('tracks resource events from monitors enabled for the current URL', () => {
-		const manager = new SpaMetricsManager({ monitors: ['network'], quietTime: 10 })
+		const manager = createSpaMetricsManager({ monitors: ['network'], quietTime: 10 })
 
 		// @ts-expect-error onResourceStateChange is private. We use it for testing.
 		manager.onResourceStateChange({
@@ -1134,7 +1301,7 @@ describe('SpaMetricsManager', () => {
 	})
 
 	it('drops stale loading resources from monitors disabled by a URL override', () => {
-		const manager = new SpaMetricsManager({
+		const manager = createSpaMetricsManager({
 			clearLoadingResourcesOnNewPage: false,
 			monitors: ['network'],
 			quietTime: 10,
@@ -1159,14 +1326,14 @@ describe('SpaMetricsManager', () => {
 		expect(manager.loadingResources.size).toBe(1)
 
 		location.hash = '#media-only'
-		void manager.waitForPageLoad({ startTime: performance.now() })
+		void manager.recordPageLoadMetrics({ startTime: performance.now() })
 
 		// @ts-expect-error loadingResources is private. We use it for testing.
 		expect(manager.loadingResources.size).toBe(0)
 	})
 
 	it('drops stale loading resources ignored by a URL override', () => {
-		const manager = new SpaMetricsManager({
+		const manager = createSpaMetricsManager({
 			clearLoadingResourcesOnNewPage: false,
 			monitors: ['network'],
 			quietTime: 10,
@@ -1192,7 +1359,7 @@ describe('SpaMetricsManager', () => {
 		expect(manager.loadingResources.size).toBe(1)
 
 		location.hash = '#ignore-slow-resource'
-		void manager.waitForPageLoad({ startTime: performance.now() })
+		void manager.recordPageLoadMetrics({ startTime: performance.now() })
 
 		// @ts-expect-error loadingResources is private. We use it for testing.
 		expect(manager.loadingResources.size).toBe(0)

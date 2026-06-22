@@ -99,7 +99,7 @@ export class DeadClickDetector {
 		}
 
 		if (this.clickSpanEmitterListener) {
-			this.otelConfig.spanEmitter?.removeEventListener('user-interaction', this.clickSpanEmitterListener)
+			this.otelConfig.spanEmitter?.removeEventListener('user-interaction:end', this.clickSpanEmitterListener)
 			this.clickSpanEmitterListener = undefined
 		}
 
@@ -158,7 +158,7 @@ export class DeadClickDetector {
 		this.clickSpanEmitterListener = (span: ReadableSpan) => {
 			this.onClickSpan(span)
 		}
-		this.otelConfig.spanEmitter?.addEventListener('user-interaction', this.clickSpanEmitterListener)
+		this.otelConfig.spanEmitter?.addEventListener('user-interaction:end', this.clickSpanEmitterListener)
 
 		this.fetchSpanEmitterListener = (span: ReadableSpan) => {
 			this.onNetworkSpan(span)

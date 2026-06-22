@@ -198,7 +198,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 		if (this.spaMetricsManager) {
 			// Wait for all in-flight resources monitored by SPA metrics to finish loading,
 			// then resolve after a quiet period with no new monitored activity.
-			const pageLoadMetrics = await this.spaMetricsManager.waitForPageLoad({
+			const pageLoadMetrics = await this.spaMetricsManager.recordPageLoadMetrics({
 				span,
 				startTime: performance.now(),
 			})

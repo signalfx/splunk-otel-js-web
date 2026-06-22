@@ -16,9 +16,9 @@
  *
  */
 
+import { createScript } from '@web-test-utils/loaf'
 import { describe, expect, it } from 'vitest'
 
-import { createScript } from '../../../tests/utils/loaf'
 import { getLoafScriptSummaries } from './script-summary'
 
 describe('LoAF script summaries', () => {

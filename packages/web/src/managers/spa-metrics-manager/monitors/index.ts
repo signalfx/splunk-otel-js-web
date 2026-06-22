@@ -16,8 +16,8 @@
  *
  */
 
-export { FetchXhrMonitor } from './fetch-xhr-monitor'
 export { LoadingElementMonitor } from './loading-element-monitor'
 export { MediaMonitor } from './media-monitor'
 export { ResourceState, type ResourceStateEvent } from './monitor'
+export { NetworkMonitor } from './network-monitor'
 export { PerformanceMonitor } from './performance-monitor'
