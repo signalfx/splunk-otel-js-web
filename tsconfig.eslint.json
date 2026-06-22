@@ -12,6 +12,6 @@
 		"noEmit": true,
 		"allowJs": true
 	},
-	"include": ["**/*.test.ts", "tests/**/*.ts"],
+	"include": ["**/*.test.ts", "packages/test-kit/src/**/*.ts", "packages/web/tests/utils/**/*.ts"],
 	"exclude": ["node_modules"]
 }

@@ -9,7 +9,7 @@
 		"noImplicitAny": true,
 		"skipLibCheck": true,
 		"paths": {
-			"@test-utils/*": ["../../tests/utils/*"]
+			"@test-kit/*": ["../test-kit/src/*"]
 		}
 	}
 }

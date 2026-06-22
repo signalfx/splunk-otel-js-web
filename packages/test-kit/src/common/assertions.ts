@@ -15,7 +15,19 @@
  * limitations under the License.
  *
  */
-export * from './http'
-export * from './http-constants'
-export * from './socket-io'
-export * from './websocket'
+import { expect } from 'vitest'
+
+/**
+ * Asserts that a value is defined (not null or undefined) and narrows the TypeScript type.
+ * This eliminates the need for optional chaining (?.) in subsequent assertions.
+ *
+ * @example
+ * import { expectDefined } from '@test-kit/common/assertions'
+ *
+ * const span = findSpan()
+ * expectDefined(span, 'Span should exist')
+ * expect(span.name).toBe('test') // No need for span?.name
+ */
+export function expectDefined<T>(value: T, message?: string): asserts value is NonNullable<T> {
+	expect(value, message).toBeDefined()
+}

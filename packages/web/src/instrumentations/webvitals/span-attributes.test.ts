@@ -18,7 +18,8 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { createSpanMock } from '../../../tests/utils/span-mock'
+import { createSpanMock } from '@/tests/utils'
+
 import { setRectAttributes } from './span-attributes'
 
 describe('webvitals span attribute helpers', () => {

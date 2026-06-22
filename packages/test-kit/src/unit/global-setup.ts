@@ -15,19 +15,29 @@
  * limitations under the License.
  *
  */
-import { expect } from 'vitest'
+import { initHttpServer, initSocketIo, initWebSocketServer } from '../servers'
 
-/**
- * Asserts that a value is defined (not null or undefined) and narrows the TypeScript type.
- * This eliminates the need for optional chaining (?.) in subsequent assertions.
- *
- * @example
- * import { expectDefined } from '../../../tests/utils/assertions'
- *
- * const span = findSpan()
- * expectDefined(span, 'Span should exist')
- * expect(span.name).toBe('test') // No need for span?.name
- */
-export function expectDefined<T>(value: T, message?: string): asserts value is NonNullable<T> {
-	expect(value, message).toBeDefined()
+let teardown = false
+let isRunning = false
+
+export default async function globalSetup() {
+	if (isRunning) {
+		return
+	}
+
+	const closeHttpServer = await initHttpServer()
+	const closeSocketIoServer = initSocketIo()
+	const closeWebSocketServer = initWebSocketServer()
+
+	isRunning = true
+
+	return async () => {
+		if (teardown) {
+			throw new Error('teardown called twice')
+		}
+
+		teardown = true
+
+		await Promise.all([closeHttpServer(), closeSocketIoServer(), closeWebSocketServer()])
+	}
 }

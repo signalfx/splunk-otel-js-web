@@ -18,10 +18,10 @@
 
 import { context, diag, trace } from '@opentelemetry/api'
 import * as tracing from '@opentelemetry/sdk-trace-base'
-import { expectDefined } from '@test-utils/assertions'
+import { expectDefined } from '@test-kit/common/assertions'
+import { HTTP_TEST_SERVER_URL } from '@test-kit/servers'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { HTTP_TEST_SERVER_URL } from '../../../tests/servers/http-constants'
 import SplunkRum from '../src'
 import {
 	BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE,

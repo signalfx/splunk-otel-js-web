@@ -19,7 +19,9 @@
 		"allowJs": true,
 		"esModuleInterop": true,
 		"paths": {
-			"@test-utils/*": ["tests/utils/*"]
+			"@test-kit/*": ["packages/test-kit/src/*"],
+			"@/tests/utils": ["packages/web/tests/utils/index"],
+			"@/tests/utils/*": ["packages/web/tests/utils/*"]
 		}
 	},
 	"include": [
@@ -31,9 +33,9 @@
 		"*.mts",
 		"scripts/**/*.ts",
 		"scripts/**/*.mts",
+		"packages/test-kit/src/**/*.ts",
 		"packages/web/scripts/remove-jaeger-vars.ts",
 		"packages/**/*.test.ts",
-		"tests/**/*.ts",
 		"packages/**/*.d.ts"
 	],
 	"exclude": ["node_modules", "dist"]

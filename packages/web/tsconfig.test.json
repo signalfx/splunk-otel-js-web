@@ -5,9 +5,11 @@
 		"allowJs": true,
 		"types": ["vitest/globals"],
 		"paths": {
-			"@test-utils/*": ["../../tests/utils/*"]
+			"@test-kit/*": ["../test-kit/src/*"],
+			"@/tests/utils": ["./tests/utils/index"],
+			"@/tests/utils/*": ["./tests/utils/*"]
 		}
 	},
-	"include": ["src/**/*.ts", "tests/**/*.ts", "../../tests/matchers.d.ts"],
+	"include": ["src/**/*.ts", "tests/**/*.ts", "../test-kit/src/unit/matchers.d.ts"],
 	"exclude": []
 }

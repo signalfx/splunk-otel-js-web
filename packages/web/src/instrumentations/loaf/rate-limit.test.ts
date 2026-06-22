@@ -18,7 +18,8 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { createLoafEntry, createScript } from '../../../tests/utils/loaf'
+import { createLoafEntry, createScript } from '@/tests/utils'
+
 import { LOAF_SOURCE_WINDOW_MS, MAX_LOAF_SPANS_PER_SOURCE_WINDOW } from './constants'
 import { getLoafSourceRateLimitKey, LoafSpanRateLimiter } from './rate-limit'
 

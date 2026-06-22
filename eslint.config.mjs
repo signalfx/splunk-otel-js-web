@@ -297,7 +297,7 @@ const config = [
 		},
 	},
 	{
-		files: ['**/*.test.ts', '**/tests/utils/**/*.ts'],
+		files: ['**/*.test.ts', 'packages/web/tests/utils/**/*.ts'],
 		languageOptions: {
 			globals: {
 				...globals.browser,

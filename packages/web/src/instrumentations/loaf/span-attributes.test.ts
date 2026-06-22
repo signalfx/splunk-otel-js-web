@@ -18,8 +18,8 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { createLoafEntry, createScript } from '../../../tests/utils/loaf'
-import { createSpanMock } from '../../../tests/utils/span-mock'
+import { createLoafEntry, createScript, createSpanMock } from '@/tests/utils'
+
 import { setLoafEntryAttributes } from './span-attributes'
 
 describe('LoAF span attributes', () => {

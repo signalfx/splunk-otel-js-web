@@ -503,6 +503,8 @@ importers:
         specifier: ^5.2.5
         version: 5.2.5(tslib@2.8.1)(webpack-cli@7.0.3)(webpack@5.106.2)
 
+  packages/test-kit: {}
+
   packages/web:
     dependencies:
       '@opentelemetry/api':

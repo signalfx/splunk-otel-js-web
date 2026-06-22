@@ -18,7 +18,7 @@
 import { hrTimeToMicroseconds } from '@opentelemetry/core'
 import { afterEach, expect } from 'vitest'
 
-import type { ExportedTestSpan } from './utils/test-span'
+import type { ExportedTestSpan } from '../common/otel/test-span'
 
 expect.extend({
 	toHaveSpanAttribute(received: ExportedTestSpan, key: string, expected?: string | number | boolean) {

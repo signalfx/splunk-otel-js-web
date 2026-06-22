@@ -16,7 +16,7 @@
  *
  */
 import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base'
-import type { ExportedTestSpan } from '@test-utils/test-span'
+import type { ExportedTestSpan } from '@test-kit/common/otel/test-span'
 
 import SplunkRum from '../../src'
 import { SESSION_STORAGE_KEY } from '../../src/managers'

@@ -16,8 +16,8 @@
  *
  */
 
-import { parseOtlpPayload } from '@test-utils/otlp-types'
-import type { ExportedTestSpan } from '@test-utils/test-span'
+import { parseOtlpPayload } from '@test-kit/common/otel/otlp-types'
+import type { ExportedTestSpan } from '@test-kit/common/otel/test-span'
 
 import { SplunkOTLPTraceExporter } from '../../src/exporters/otlp'
 

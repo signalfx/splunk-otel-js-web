@@ -15,8 +15,8 @@
  * limitations under the License.
  *
  */
-import { parseOtlpPayload } from '@test-utils/otlp-types.js'
-import type { ExportedTestSpan } from '@test-utils/test-span.js'
+import { parseOtlpPayload } from '@test-kit/common/otel/otlp-types.js'
+import type { ExportedTestSpan } from '@test-kit/common/otel/test-span.js'
 import { BrowserContext, Page } from 'playwright'
 
 export class RecordPage {

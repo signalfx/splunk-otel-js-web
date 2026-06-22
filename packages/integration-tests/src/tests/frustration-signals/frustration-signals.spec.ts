@@ -16,7 +16,7 @@
  *
  */
 import { expect } from '@playwright/test'
-import type { ExportedTestSpan } from '@test-utils/test-span.js'
+import type { ExportedTestSpan } from '@test-kit/common/otel/test-span.js'
 
 import { RecordPage } from '../../pages/record-page'
 import { test } from '../../utils/test'

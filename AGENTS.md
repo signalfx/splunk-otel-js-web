@@ -38,7 +38,7 @@ Vitest is used for unit tests. Unit tests run in a real browser environment (via
 
 Playwright specs live under `packages/integration-tests/src/tests` and use `*.spec.ts`.
 
-Shared test utilities live in `tests/utils/` at the repo root and are imported via the `@test-utils/*` path alias (e.g. `import type { ExportedTestSpan } from '@test-utils/test-span'`).
+Shared test support lives in `packages/test-kit/src/`: common helpers under `common`, shared test servers under `servers`, and Vitest/unit-test setup under `unit` (e.g. `import type { ExportedTestSpan } from '@test-kit/common/otel/test-span'`).
 
 Run the smallest relevant test first, then `pnpm run test:unit` or `pnpm run test:e2e` before opening a PR.
 

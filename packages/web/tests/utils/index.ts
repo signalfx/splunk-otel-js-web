@@ -16,6 +16,7 @@
  *
  */
 export * from './init'
+export * from './loaf'
 export * from './memory-exporter'
 export * from './navigator'
 export * from './otel-api'

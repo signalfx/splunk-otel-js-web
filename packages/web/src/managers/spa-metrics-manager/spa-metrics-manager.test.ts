@@ -17,9 +17,9 @@
  */
 
 import { diag } from '@opentelemetry/api'
+import { HTTP_TEST_SERVER_URL } from '@test-kit/servers'
 import { describe, expect, it, vi } from 'vitest'
 
-import { HTTP_TEST_SERVER_URL } from '../../../../../tests/servers/http-constants'
 import {
 	PAGE_LOAD_METRICS_STATUS_COMPLETED,
 	PAGE_LOAD_METRICS_STATUS_INTERRUPTED,

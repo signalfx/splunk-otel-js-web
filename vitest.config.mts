@@ -23,7 +23,7 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
 	resolve: {
 		alias: {
-			'@test-utils': path.resolve(__dirname, './tests/utils'),
+			'@test-kit': path.resolve(__dirname, './packages/test-kit/src'),
 		},
 	},
 	test: {
@@ -78,10 +78,10 @@ export default defineConfig({
 						],
 						provider: playwright(),
 					},
-					globalSetup: ['./tests/global-setup.ts'],
+					globalSetup: ['./packages/test-kit/src/unit/global-setup.ts'],
 					include: ['**/*.test.ts'],
 					name: { color: 'blue', label: 'browser' },
-					setupFiles: ['./tests/setup.ts'],
+					setupFiles: ['./packages/test-kit/src/unit/setup.ts'],
 				},
 			},
 			{

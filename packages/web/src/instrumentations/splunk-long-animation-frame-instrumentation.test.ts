@@ -19,8 +19,8 @@
 import { Span } from '@opentelemetry/api'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { createLoafEntry, createScript } from '../../tests/utils/loaf'
-import { createSpanMock } from '../../tests/utils/span-mock'
+import { createLoafEntry, createScript, createSpanMock } from '@/tests/utils'
+
 import { SplunkOtelWebConfig } from '../types'
 import { MAX_LOAF_SPANS_PER_SOURCE_WINDOW } from './loaf/constants'
 import {

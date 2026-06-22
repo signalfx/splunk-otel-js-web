@@ -16,6 +16,7 @@
  *
  */
 
+import { HTTP_TEST_SERVER_URL } from '@test-kit/servers'
 import { describe, expect, it, vi } from 'vitest'
 import {
 	CLSMetricWithAttribution,
@@ -25,8 +26,8 @@ import {
 	TTFBMetricWithAttribution,
 } from 'web-vitals/attribution'
 
-import { HTTP_TEST_SERVER_URL } from '../../../../../tests/servers/http-constants'
-import { createSpanMock } from '../../../tests/utils/span-mock'
+import { createSpanMock } from '@/tests/utils'
+
 import { setCLSAttributionAttributes } from './cls'
 import { setFCPAttributionAttributes } from './fcp'
 import { setINPAttributionAttributes } from './inp'

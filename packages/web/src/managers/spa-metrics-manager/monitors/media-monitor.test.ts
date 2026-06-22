@@ -16,9 +16,9 @@
  *
  */
 
+import { HTTP_TEST_SERVER_URL } from '@test-kit/servers'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { HTTP_TEST_SERVER_URL } from '../../../../../../tests/servers/http-constants'
 import { MediaMonitor } from './media-monitor'
 import { ResourceState, ResourceStateEvent } from './monitor'
 import { expectEventStatesWithMatchingIds } from './monitor-test-utils'

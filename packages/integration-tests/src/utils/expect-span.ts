@@ -18,7 +18,7 @@
 
 import { hrTimeToMicroseconds } from '@opentelemetry/core'
 import { expect } from '@playwright/test'
-import type { ExportedTestSpan } from '@test-utils/test-span.js'
+import type { ExportedTestSpan } from '@test-kit/common/otel/test-span.js'
 
 // See https://playwright.dev/docs/test-assertions#add-custom-matchers-using-expectextend
 expect.extend({
