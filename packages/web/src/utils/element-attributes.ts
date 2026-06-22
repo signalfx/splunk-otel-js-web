@@ -20,6 +20,11 @@ import { Span } from '@opentelemetry/api'
 
 import { isElement } from '../types'
 
+type DataAttributesCaptureConfig = {
+	_experimental_dataAttributesToCapture?: string[]
+	dataAttributesToCapture?: string[]
+}
+
 /**
  * Normalizes a data attribute name from `data-test-id` format to `element.dataset.testId` format.
  * Converts to camelCase like the element.dataset property does.
@@ -43,6 +48,33 @@ function camelCaseToDataAttribute(name: string): string {
 	return `data-${hyphenated}`
 }
 
+function getDataAttributeName(attrName: string): string {
+	return attrName.startsWith('data-') ? attrName : camelCaseToDataAttribute(attrName)
+}
+
+export function resolveDataAttributesToCapture(config: DataAttributesCaptureConfig): string[] | undefined {
+	return config.dataAttributesToCapture ?? config._experimental_dataAttributesToCapture
+}
+
+export function getElementDataAttributes(target: Node, attributeNames?: string[]): Record<string, string> {
+	if (!attributeNames || attributeNames.length === 0 || !isElement(target)) {
+		return {}
+	}
+
+	const attributes: Record<string, string> = {}
+
+	for (const attrName of attributeNames) {
+		const dataAttrName = getDataAttributeName(attrName)
+		const attrValue = target.getAttribute(dataAttrName)
+
+		if (attrValue !== null) {
+			attributes[dataAttrName] = attrValue
+		}
+	}
+
+	return attributes
+}
+
 /**
  * Captures specified data attributes from an element and attaches them to a span.
  * Only data-* attributes are captured
@@ -55,18 +87,8 @@ function camelCaseToDataAttribute(name: string): string {
  * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dataset#name_conversion
  */
 export function captureElementDataAttributes(span: Span, target: Node, attributeNames?: string[]): void {
-	if (!attributeNames || attributeNames.length === 0 || !isElement(target)) {
-		return
-	}
-
-	for (const attrName of attributeNames) {
-		// Convert camelCase to data-* format, or use as-is if already hyphenated
-		const dataAttrName = attrName.startsWith('data-') ? attrName : camelCaseToDataAttribute(attrName)
-
-		const attrValue = target.getAttribute(dataAttrName)
-		if (attrValue !== null) {
-			const normalizedName = normalizeDataAttributeName(dataAttrName)
-			span.setAttribute(normalizedName, attrValue)
-		}
+	for (const [dataAttrName, attrValue] of Object.entries(getElementDataAttributes(target, attributeNames))) {
+		const normalizedName = normalizeDataAttributeName(dataAttrName)
+		span.setAttribute(normalizedName, attrValue)
 	}
 }

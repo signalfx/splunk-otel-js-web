@@ -100,7 +100,12 @@ import {
 	UserManager,
 } from './managers'
 import { ExternalSessionMetadata, isValidExternalSessionMetadata } from './types/external-session-metadata'
-import { getElementXPath, getTextFromNode } from './utils/index'
+import {
+	getElementDataAttributes,
+	getElementXPath,
+	getTextFromNode,
+	resolveDataAttributesToCapture,
+} from './utils/index'
 import { isDebugMode } from './utils/is-debug-mode'
 
 declare const __COMMIT_HASH__: string
@@ -511,6 +516,8 @@ export const SplunkRum: SplunkOtelWebType = {
 				const initializePicker = () => {
 					try {
 						createPicker({
+							getElementDataAttributes: (element: HTMLElement) =>
+								getElementDataAttributes(element, resolveDataAttributesToCapture(processedOptions)),
 							getElementText: (element: HTMLElement) =>
 								getTextFromNode(
 									element,
