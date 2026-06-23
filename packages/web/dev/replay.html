@@ -533,7 +533,7 @@
 									<h4>Image assets</h4>
 									<p class="scenario-desc">
 										Enable <code>features.packAssets</code> in Settings ⚙ to include image data
-										inline in the recording. Mix of data-URI and HTTP sources.
+										inline in the recording. Uses self-contained data-URI sources.
 									</p>
 								</div>
 								<div class="stage">
@@ -549,33 +549,33 @@
 										</figure>
 										<figure>
 											<img
-												src="https://picsum.photos/seed/rum1/80/80"
-												alt="Random photo 1"
+												src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' rx='6' fill='%2358a6ff'/%3E%3Ccircle cx='40' cy='40' r='22' fill='white' fill-opacity='.88'/%3E%3C/svg%3E"
+												alt="data-URI SVG circle"
 												width="80"
 												height="80"
 												loading="lazy"
 											/>
-											<figcaption>HTTP (picsum)</figcaption>
+											<figcaption>data: URI</figcaption>
 										</figure>
 										<figure>
 											<img
-												src="https://picsum.photos/seed/rum2/80/80"
-												alt="Random photo 2"
+												src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' rx='6' fill='%23f0883e'/%3E%3Cpath d='M18 58 40 20l22 38Z' fill='white' fill-opacity='.88'/%3E%3C/svg%3E"
+												alt="data-URI SVG triangle"
 												width="80"
 												height="80"
 												loading="lazy"
 											/>
-											<figcaption>HTTP (picsum)</figcaption>
+											<figcaption>data: URI</figcaption>
 										</figure>
 										<figure>
 											<img
-												src="https://picsum.photos/seed/rum3/80/80"
-												alt="Random photo 3"
+												src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' rx='6' fill='%23a371f7'/%3E%3Crect x='24' y='24' width='32' height='32' rx='4' fill='white' fill-opacity='.88'/%3E%3C/svg%3E"
+												alt="data-URI SVG square"
 												width="80"
 												height="80"
 												loading="lazy"
 											/>
-											<figcaption>HTTP (picsum)</figcaption>
+											<figcaption>data: URI</figcaption>
 										</figure>
 									</div>
 								</div>

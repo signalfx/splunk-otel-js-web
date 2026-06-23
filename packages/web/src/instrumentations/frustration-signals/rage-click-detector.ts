@@ -20,7 +20,12 @@ import { Tracer } from '@opentelemetry/api'
 
 import { PrivacyManager } from '../../managers'
 import { isElement, isNode, SplunkOtelWebConfig } from '../../types'
-import { captureElementDataAttributes, getElementXPath, getTextFromNode } from '../../utils/index'
+import {
+	captureElementDataAttributes,
+	getElementXPath,
+	getTextFromNode,
+	resolveDataAttributesToCapture,
+} from '../../utils/index'
 
 const DEFAULT_RAGE_CLICK_COUNT = 4
 const DEFAULT_RAGE_CLICK_TIMEFRAME_SECONDS = 1
@@ -155,7 +160,7 @@ export class RageClickDetector {
 
 				span.setAttribute('target_text', textValue || `<${target.nodeName.toLowerCase()}>`)
 
-				captureElementDataAttributes(span, target, this.otelConfig._experimental_dataAttributesToCapture)
+				captureElementDataAttributes(span, target, resolveDataAttributesToCapture(this.otelConfig))
 
 				span.end(startTime)
 			}

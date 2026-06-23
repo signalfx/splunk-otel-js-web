@@ -46,8 +46,8 @@ export type SplunkRumRecorderConfig = {
 	 * server errors, or browser issues) are automatically stored in browser storage
 	 * and retried on subsequent page loads.
 	 *
-	 * - `true` or `'localstorage'` (default): Failed chunks are queued in localStorage (2MB budget).
-	 * - `'indexeddb'`: Failed OTLP log exports are queued in IndexedDB (100MB budget).
+	 * - `true` or `'indexeddb'` (default): Failed OTLP log exports are queued in IndexedDB (100MB budget).
+	 * - `'indexeddb'`: Failed chunks are queued in localStorage (2MB budget).
 	 * - `false`: Disables persistence entirely.
 	 * @default true
 	 */
@@ -84,7 +84,7 @@ const isLatestTagUsed = isRecorderLoadedViaLatestTag()
 const isNextTagUsed = isRecorderLoadedViaNextTag()
 
 const useIndexedDBPersistence = (config: SplunkRumRecorderConfig): boolean =>
-	config.persistFailedReplayData === 'indexeddb'
+	config.persistFailedReplayData === 'indexeddb' || config.persistFailedReplayData === true
 
 const retryPendingSegments = (recorderInstance: Recorder, sessionId: string) => {
 	void recorderInstance.getPendingSegments().then((pendingSegments) => {
@@ -170,21 +170,18 @@ const SplunkRumRecorder = {
 			return newAttributes
 		}
 
-		if (persistFailedReplayData === 'indexeddb') {
-			return new OTLPProtoLogExporter({
-				beaconUrl: exportUrl,
-				getResourceAttributes,
-			})
-		} else {
-			const useLocalStorageQueue = persistFailedReplayData === true || persistFailedReplayData === 'localstorage'
-			return new OTLPLogExporter({
-				beaconUrl: exportUrl,
-				exportQueuedLogs,
-				getResourceAttributes,
-				sessionId,
-				usePersistentExportQueue: useLocalStorageQueue,
-			})
-		}
+		return persistFailedReplayData === 'indexeddb' || persistFailedReplayData === true
+			? new OTLPProtoLogExporter({
+					beaconUrl: exportUrl,
+					getResourceAttributes,
+				})
+			: new OTLPLogExporter({
+					beaconUrl: exportUrl,
+					exportQueuedLogs,
+					getResourceAttributes,
+					sessionId,
+					usePersistentExportQueue: persistFailedReplayData === 'localstorage',
+				})
 	},
 
 	deinit(): void {
