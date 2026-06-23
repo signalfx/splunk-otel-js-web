@@ -16,11 +16,15 @@
  *
  */
 
-import { diag } from '@opentelemetry/api'
+import { diag, type Span } from '@opentelemetry/api'
 import { describe, expect, it, vi } from 'vitest'
 
 import { HTTP_TEST_SERVER_URL } from '../../../../../tests/servers/http-constants'
 import {
+	BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE,
+	BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
+	BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE,
+	BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
 	PAGE_LOAD_METRICS_STATUS_COMPLETED,
 	PAGE_LOAD_METRICS_STATUS_INTERRUPTED,
 	PAGE_LOAD_METRICS_STATUS_TIMEOUT,
@@ -30,6 +34,18 @@ import { getDocumentLoadTime, SpaMetricsManager } from './spa-metrics-manager'
 
 const TEST_API_URL = `${HTTP_TEST_SERVER_URL}/some-data`
 const TEST_BEACON_ENDPOINT = `${HTTP_TEST_SERVER_URL}/v1/rum`
+
+function createSpanMock(): { attributes: Record<string, number | string>; span: Span } {
+	const attributes: Record<string, number | string> = {}
+	const span = {
+		setAttribute: (name: string, value: number | string) => {
+			attributes[name] = value
+			return span
+		},
+	} as Span
+
+	return { attributes, span }
+}
 
 describe('SpaMetricsManager', () => {
 	it('uses default config values', () => {
@@ -399,6 +415,59 @@ describe('SpaMetricsManager', () => {
 			expect(result.loadingResourceUrls).toEqual([`${HTTP_TEST_SERVER_URL}/some-data?delay=5000`])
 		} finally {
 			slowResourceAbortController.abort()
+			manager.stop()
+		}
+	})
+
+	it('sets page load metric attributes on a span', () => {
+		const manager = new SpaMetricsManager()
+		const { attributes, span } = createSpanMock()
+
+		manager.setPageLoadMetricAttributes(span, {
+			loadingResourcesCount: 2,
+			loadingResourceUrls: ['https://example.test/slow-1', 'https://example.test/slow-2'],
+			pct: 123,
+			status: PAGE_LOAD_METRICS_STATUS_TIMEOUT,
+		})
+
+		expect(attributes[BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE]).toBe(123)
+		expect(attributes[BROWSER_NAVIGATION_STATUS_ATTRIBUTE]).toBe(PAGE_LOAD_METRICS_STATUS_TIMEOUT)
+		expect(attributes[BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE]).toBe(2)
+		expect(attributes[BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE]).toBe(
+			JSON.stringify(['https://example.test/slow-1', 'https://example.test/slow-2']),
+		)
+	})
+
+	it('does not set loading resource attributes when no resources are loading', () => {
+		const manager = new SpaMetricsManager()
+		const { attributes, span } = createSpanMock()
+
+		manager.setPageLoadMetricAttributes(span, {
+			loadingResourcesCount: 0,
+			loadingResourceUrls: [],
+			pct: 10,
+			status: PAGE_LOAD_METRICS_STATUS_COMPLETED,
+		})
+
+		expect(attributes[BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE]).toBe(10)
+		expect(attributes[BROWSER_NAVIGATION_STATUS_ATTRIBUTE]).toBe(PAGE_LOAD_METRICS_STATUS_COMPLETED)
+		expect(attributes[BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE]).toBeUndefined()
+		expect(attributes[BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE]).toBeUndefined()
+	})
+
+	it('waitForPageLoad sets page load metric attributes when a span is provided', async () => {
+		const manager = new SpaMetricsManager({ quietTime: 1 })
+		const { attributes, span } = createSpanMock()
+		manager.start()
+
+		try {
+			const result = await manager.waitForPageLoad({ span, startTime: performance.now() })
+
+			expect(attributes[BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE]).toBe(result.pct)
+			expect(attributes[BROWSER_NAVIGATION_STATUS_ATTRIBUTE]).toBe(result.status)
+			expect(attributes[BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE]).toBeUndefined()
+			expect(attributes[BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE]).toBeUndefined()
+		} finally {
 			manager.stop()
 		}
 	})

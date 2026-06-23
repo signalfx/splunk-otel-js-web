@@ -29,14 +29,7 @@ import { Span } from '@opentelemetry/sdk-trace-base'
 import { addSpanNetworkEvents, PerformanceEntries, PerformanceTimingNames as PTN } from '@opentelemetry/sdk-trace-web'
 import { SemanticAttributes, SEMATTRS_HTTP_URL } from '@opentelemetry/semantic-conventions'
 
-import {
-	BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE,
-	BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
-	BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE,
-	BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
-	SessionManager,
-	SpaMetricsManager,
-} from '../managers'
+import { SessionManager, SpaMetricsManager } from '../managers'
 import { captureTraceParentFromPerformanceEntries } from '../servertiming'
 import { SplunkOtelWebConfig } from '../types'
 import { isCacheHit } from '../utils/cache'
@@ -167,28 +160,9 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 
 				if (this.documentLoadMetricsPromise) {
 					void this.documentLoadMetricsPromise
-						.then(({ loadingResourcesCount, loadingResourceUrls, pct, status }) => {
-							span.setAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE, pct)
-							span.setAttribute(BROWSER_NAVIGATION_STATUS_ATTRIBUTE, status)
-							if (loadingResourcesCount > 0) {
-								span.setAttribute(
-									BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE,
-									loadingResourcesCount,
-								)
-								if (loadingResourceUrls.length > 0) {
-									span.setAttribute(
-										BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
-										JSON.stringify(loadingResourceUrls),
-									)
-								}
-							}
-
-							api.diag.debug('Sending documentLoad span with PCT result', {
-								loadingResourcesCount,
-								loadingResourceUrls,
-								pct,
-								status,
-							})
+						.then((pageLoadMetrics) => {
+							this.spaMetricsManager?.setPageLoadMetricAttributes(span, pageLoadMetrics)
+							api.diag.debug('Sending documentLoad span with PCT result', pageLoadMetrics)
 							_superEndSpan(span, performanceName, entries)
 						})
 						.catch((error) => {
