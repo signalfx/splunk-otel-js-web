@@ -16,14 +16,20 @@
  *
  */
 
-import { diag } from '@opentelemetry/api'
+import { diag, type Span } from '@opentelemetry/api'
 import { isUrlIgnored } from '@opentelemetry/core'
 
 import type { SpaMetricsMonitor, SpaMetricsUrlOverride } from '../../types'
 import type { Monitor, MonitorConfig } from './monitors/monitor'
 
 import { truncateString } from '../../utils/text'
-import { PAGE_LOAD_METRICS_STATUS_TIMEOUT } from './constants'
+import {
+	BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE,
+	BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
+	BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE,
+	BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
+	PAGE_LOAD_METRICS_STATUS_TIMEOUT,
+} from './constants'
 import {
 	FetchXhrMonitor,
 	LoadingElementMonitor,
@@ -80,6 +86,11 @@ type DroppedLoadingResources = {
 	elementResourceUrls: string[]
 }
 
+type WaitForPageLoadConfig = {
+	span?: Span
+	startTime: number
+}
+
 const MAX_LOADING_RESOURCE_URLS_TO_REPORT = 3
 const MAX_LOADING_RESOURCE_URL_LENGTH = 100
 
@@ -130,6 +141,24 @@ export class SpaMetricsManager {
 		return this.urlOverrides.find((override) => this.isUrlOverrideMatch(override.match, url))?.config ?? this.config
 	}
 
+	setPageLoadMetricAttributes(
+		span: Span,
+		{ loadingResourcesCount, loadingResourceUrls, pct, status }: PageLoadMetricsResult,
+	): void {
+		span.setAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE, pct)
+		span.setAttribute(BROWSER_NAVIGATION_STATUS_ATTRIBUTE, status)
+
+		if (loadingResourcesCount > 0) {
+			span.setAttribute(BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE, loadingResourcesCount)
+			if (loadingResourceUrls.length > 0) {
+				span.setAttribute(
+					BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
+					JSON.stringify(loadingResourceUrls),
+				)
+			}
+		}
+	}
+
 	private get activeConfig(): ResolvedSpaMetricsManagerConfig {
 		return this.getConfigForUrl(location.href)
 	}
@@ -166,7 +195,7 @@ export class SpaMetricsManager {
 		diag.debug('SpaMetricsManager: Stopped monitoring.')
 	}
 
-	waitForPageLoad({ startTime }: { startTime: number }): Promise<PageLoadMetricsResult> {
+	waitForPageLoad({ span, startTime }: WaitForPageLoadConfig): Promise<PageLoadMetricsResult> {
 		this.quietPeriodAwaiter?.interrupt()
 		const activeConfig = this.activeConfig
 		const droppedResources = this.dropLoadingResourcesIgnoredByActiveConfig(activeConfig)
@@ -189,9 +218,11 @@ export class SpaMetricsManager {
 			diag.debug('No loading resources. Starting quiet timer.')
 		}
 
+		let pageLoadMetricsPromise = quietPeriodAwaiter.promise
+
 		// startTime === 0 means this is a documentLoad pct — ensure it's at least the document load time
 		if (startTime === 0) {
-			return quietPeriodAwaiter.promise.then((result) => {
+			pageLoadMetricsPromise = pageLoadMetricsPromise.then((result) => {
 				// Timeout results must stay capped at maxPageLoadWaitTime, even if document load took longer.
 				if (result.status === PAGE_LOAD_METRICS_STATUS_TIMEOUT) {
 					return result
@@ -205,7 +236,13 @@ export class SpaMetricsManager {
 			})
 		}
 
-		return quietPeriodAwaiter.promise
+		return pageLoadMetricsPromise.then((result) => {
+			if (span) {
+				this.setPageLoadMetricAttributes(span, result)
+			}
+
+			return result
+		})
 	}
 
 	private static createMonitors(monitorConfig: MonitorConfig) {

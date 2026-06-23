@@ -19,14 +19,7 @@
 import { diag, Span, trace, Tracer, TracerProvider } from '@opentelemetry/api'
 import { isUrlIgnored } from '@opentelemetry/core'
 
-import {
-	BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE,
-	BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
-	BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE,
-	BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
-	SessionManager,
-	SpaMetricsManager,
-} from '../managers'
+import { SessionManager, SpaMetricsManager } from '../managers'
 import { SplunkOtelWebConfig } from '../types'
 import { UserInteractionInstrumentation } from '../upstream/user-interaction/instrumentation'
 import { UserInteractionInstrumentationConfig } from '../upstream/user-interaction/types'
@@ -205,31 +198,13 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 		if (this.spaMetricsManager) {
 			// Wait for all in-flight resources monitored by SPA metrics to finish loading,
 			// then resolve after a quiet period with no new monitored activity.
-			const { loadingResourcesCount, loadingResourceUrls, pct, status } =
-				await this.spaMetricsManager.waitForPageLoad({
-					startTime: performance.now(),
-				})
-
-			span.setAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE, pct)
-			span.setAttribute(BROWSER_NAVIGATION_STATUS_ATTRIBUTE, status)
-			if (loadingResourcesCount > 0) {
-				span.setAttribute(BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE, loadingResourcesCount)
-				if (loadingResourceUrls.length > 0) {
-					span.setAttribute(
-						BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
-						JSON.stringify(loadingResourceUrls),
-					)
-				}
-			}
-
-			diag.debug('Sending routeChange span with PCT result', {
-				loadingResourcesCount,
-				loadingResourceUrls,
-				pct,
-				status,
+			const pageLoadMetrics = await this.spaMetricsManager.waitForPageLoad({
+				span,
+				startTime: performance.now(),
 			})
-			span.end(now + pct)
-			diag.debug('Route change span ended', { pct, span })
+			diag.debug('Sending routeChange span with PCT result', pageLoadMetrics)
+			span.end(now + pageLoadMetrics.pct)
+			diag.debug('Route change span ended', { pct: pageLoadMetrics.pct, span })
 		} else {
 			span.end(now)
 		}
