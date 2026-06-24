@@ -15,9 +15,9 @@
  * limitations under the License.
  *
  */
+import { HTTP_TEST_SERVER_URL } from '@test-server/http-constants'
 import { describe, expect, it } from 'vitest'
 
-import { HTTP_TEST_SERVER_URL } from '../../../../tests/servers/http-constants'
 import { isCacheHit } from './cache'
 
 const TEST_IMAGE_URL = `${HTTP_TEST_SERVER_URL}/test-image.png`

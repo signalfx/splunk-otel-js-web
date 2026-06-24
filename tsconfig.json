@@ -19,7 +19,11 @@
 		"allowJs": true,
 		"esModuleInterop": true,
 		"paths": {
-			"@test-utils/*": ["tests/utils/*"]
+			"@test-server/*": ["tests/servers/*"],
+			"@test-utils/*": ["tests/utils/*"],
+			"@web/*": ["packages/web/src/*"],
+			"@web-test-utils": ["packages/web/tests/utils/index"],
+			"@web-test-utils/*": ["packages/web/tests/utils/*"]
 		}
 	},
 	"include": [

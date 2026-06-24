@@ -19,6 +19,7 @@
 import { diag } from '@opentelemetry/api'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { SpanEmitterProcessor } from '../../../span-processors'
 import { LoadingElementMonitor } from './loading-element-monitor'
 import { ResourceState, ResourceStateEvent } from './monitor'
 import { expectEventStatesWithMatchingIds } from './monitor-test-utils'
@@ -47,6 +48,7 @@ describe('LoadingElementMonitor', () => {
 		events = []
 		monitor = new LoadingElementMonitor({
 			onResourceStateChange: (event) => events.push(event),
+			spanEmitter: new SpanEmitterProcessor(),
 		})
 	})
 

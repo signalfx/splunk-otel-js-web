@@ -15,8 +15,22 @@
  * limitations under the License.
  *
  */
-export * from './boolean'
-export * from './error'
-export * from './node'
-export * from './number'
-export * from './string'
+
+import { describe, expect, it } from 'vitest'
+
+import { isBoolean } from './boolean'
+
+describe('isBoolean', () => {
+	it('returns true for primitive booleans', () => {
+		expect(isBoolean(true)).toBe(true)
+		expect(isBoolean(false)).toBe(true)
+	})
+
+	it('returns false for non-boolean values', () => {
+		expect(isBoolean()).toBe(false)
+		expect(isBoolean(null)).toBe(false)
+		expect(isBoolean(0)).toBe(false)
+		expect(isBoolean('false')).toBe(false)
+		expect(isBoolean({ value: true })).toBe(false)
+	})
+})

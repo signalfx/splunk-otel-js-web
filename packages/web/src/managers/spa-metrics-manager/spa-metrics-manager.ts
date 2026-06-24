@@ -19,10 +19,11 @@
 import { diag, type Span } from '@opentelemetry/api'
 import { isUrlIgnored } from '@opentelemetry/core'
 
+import type { SpanEmitterProcessor } from '../../span-processors'
 import type { SpaMetricsMonitor, SpaMetricsUrlOverride } from '../../types'
 import type { Monitor, MonitorConfig } from './monitors/monitor'
 
-import { truncateString } from '../../utils/text'
+import { escapeStringForRegExp, truncateString } from '../../utils/text'
 import {
 	BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE,
 	BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
@@ -31,9 +32,9 @@ import {
 	PAGE_LOAD_METRICS_STATUS_TIMEOUT,
 } from './constants'
 import {
-	FetchXhrMonitor,
 	LoadingElementMonitor,
 	MediaMonitor,
+	NetworkMonitor,
 	PerformanceMonitor,
 	ResourceState,
 	ResourceStateEvent,
@@ -49,6 +50,9 @@ const SPA_METRICS_MANAGER_CONFIG_DEFAULTS = {
 	monitors: ['media', 'network', 'performance'] as SpaMetricsMonitor[],
 	quietTime: 1000,
 } as const
+
+export const PCT_NETWORK_TRACKING_REQUIRES_NETWORK_INSTRUMENTATION_WARNING =
+	'PCT network tracking requires fetch or XHR instrumentation to be enabled. Enable instrumentations.fetch and instrumentations.xhr to track network activity.'
 
 type DocumentLoadTiming = Pick<PerformanceNavigationTiming, 'fetchStart' | 'loadEventEnd'>
 
@@ -79,6 +83,7 @@ type ResolvedSpaMetricsUrlOverride = {
 type LoadingResource = {
 	monitorType: SpaMetricsMonitor
 	pageUrl: string
+	timestamp: number
 	url: string
 }
 
@@ -86,9 +91,14 @@ type DroppedLoadingResources = {
 	elementResourceUrls: string[]
 }
 
-type WaitForPageLoadConfig = {
+type RecordPageLoadMetricsConfig = {
 	span?: Span
 	startTime: number
+}
+
+type NetworkInstrumentationConfig = {
+	fetch: boolean
+	xhr: boolean
 }
 
 const MAX_LOADING_RESOURCE_URLS_TO_REPORT = 3
@@ -96,7 +106,13 @@ const MAX_LOADING_RESOURCE_URL_LENGTH = 100
 
 export interface SpaMetricsManagerConfig extends SpaMetricsManagerConfigValues {
 	beaconEndpoint?: string
+	networkInstrumentation?: NetworkInstrumentationConfig
+	spanEmitter: SpanEmitterProcessor
 	urlOverrides?: SpaMetricsUrlOverride[]
+}
+
+export interface SpaMetricsManagerCreateConfig extends SpaMetricsManagerConfig {
+	collectSpaMetrics?: boolean
 }
 
 export class SpaMetricsManager {
@@ -118,11 +134,13 @@ export class SpaMetricsManager {
 
 	private readonly monitors: ReturnType<typeof SpaMetricsManager.createMonitors>
 
+	private pageLoadStartTime: number | undefined
+
 	private quietPeriodAwaiter: QuietPeriodAwaiter | undefined
 
 	private readonly urlOverrides: ResolvedSpaMetricsUrlOverride[]
 
-	constructor(config: SpaMetricsManagerConfig = {}) {
+	constructor(config: SpaMetricsManagerConfig) {
 		const beaconEndpointIgnoreUrls = this.getBeaconEndpointIgnoreUrls(config.beaconEndpoint)
 		this.config = this.resolveConfig(config, beaconEndpointIgnoreUrls)
 		this.urlOverrides = (config.urlOverrides ?? []).map(({ match, ...overrideConfig }) => ({
@@ -132,13 +150,83 @@ export class SpaMetricsManager {
 
 		const monitorConfig = {
 			onResourceStateChange: this.onResourceStateChange,
+			spanEmitter: config.spanEmitter,
 		}
 
 		this.monitors = SpaMetricsManager.createMonitors(monitorConfig)
 	}
 
+	static create(config: SpaMetricsManagerCreateConfig): SpaMetricsManager | undefined {
+		if (config.collectSpaMetrics === false) {
+			return
+		}
+
+		const manager = new SpaMetricsManager(config)
+		if (
+			manager.needsNetworkInstrumentation() &&
+			config.networkInstrumentation &&
+			(!config.networkInstrumentation.fetch || !config.networkInstrumentation.xhr)
+		) {
+			diag.warn(PCT_NETWORK_TRACKING_REQUIRES_NETWORK_INSTRUMENTATION_WARNING)
+			return
+		}
+
+		return manager
+	}
+
 	getConfigForUrl(url: string): ResolvedSpaMetricsManagerConfig {
 		return this.urlOverrides.find((override) => this.isUrlOverrideMatch(override.match, url))?.config ?? this.config
+	}
+
+	recordPageLoadMetrics({ span, startTime }: RecordPageLoadMetricsConfig): Promise<PageLoadMetricsResult> {
+		this.quietPeriodAwaiter?.interrupt()
+		const activeConfig = this.activeConfig
+		this.pageLoadStartTime = startTime
+		const droppedResources = this.dropLoadingResourcesIgnoredForPageLoad(activeConfig, startTime)
+		this.monitors.elements.refresh(
+			activeConfig.monitors.includes('elements') ? activeConfig.blockingSelectors : [],
+			{ droppedResourceUrls: droppedResources.elementResourceUrls },
+		)
+
+		const quietPeriodAwaiter = new QuietPeriodAwaiter({
+			getLoadingResourcesCount: () => this.loadingResourcesCount,
+			getLoadingResourceUrls: () => this.loadingResourceUrls,
+			maxPageLoadWaitTime: activeConfig.maxPageLoadWaitTime,
+			quietTime: activeConfig.quietTime,
+			startTime,
+		})
+		this.quietPeriodAwaiter = quietPeriodAwaiter
+
+		if (this.loadingResourcesCount === 0) {
+			quietPeriodAwaiter.startQuietTimer({ resourceLoadedTimestamp: startTime })
+			diag.debug('No loading resources. Starting quiet timer.')
+		}
+
+		let pageLoadMetricsPromise = quietPeriodAwaiter.promise
+
+		// startTime === 0 means this is a documentLoad pct — ensure it's at least the document load time
+		if (startTime === 0) {
+			pageLoadMetricsPromise = pageLoadMetricsPromise.then((result) => {
+				// Timeout results must stay capped at maxPageLoadWaitTime, even if document load took longer.
+				if (result.status === PAGE_LOAD_METRICS_STATUS_TIMEOUT) {
+					return result
+				}
+
+				const navEntry = performance.getEntriesByType('navigation')[0] as
+					| PerformanceNavigationTiming
+					| undefined
+				const documentLoadTime = navEntry ? getDocumentLoadTime(navEntry) : 0
+				return { ...result, pct: Math.max(result.pct, documentLoadTime) }
+			})
+		}
+
+		return pageLoadMetricsPromise.then((result) => {
+			if (span) {
+				this.setPageLoadMetricAttributes(span, result)
+			}
+
+			return result
+		})
 	}
 
 	setPageLoadMetricAttributes(
@@ -195,72 +283,27 @@ export class SpaMetricsManager {
 		diag.debug('SpaMetricsManager: Stopped monitoring.')
 	}
 
-	waitForPageLoad({ span, startTime }: WaitForPageLoadConfig): Promise<PageLoadMetricsResult> {
-		this.quietPeriodAwaiter?.interrupt()
-		const activeConfig = this.activeConfig
-		const droppedResources = this.dropLoadingResourcesIgnoredByActiveConfig(activeConfig)
-		this.monitors.elements.refresh(
-			activeConfig.monitors.includes('elements') ? activeConfig.blockingSelectors : [],
-			{ droppedResourceUrls: droppedResources.elementResourceUrls },
-		)
-
-		const quietPeriodAwaiter = new QuietPeriodAwaiter({
-			getLoadingResourcesCount: () => this.loadingResourcesCount,
-			getLoadingResourceUrls: () => this.loadingResourceUrls,
-			maxPageLoadWaitTime: activeConfig.maxPageLoadWaitTime,
-			quietTime: activeConfig.quietTime,
-			startTime,
-		})
-		this.quietPeriodAwaiter = quietPeriodAwaiter
-
-		if (this.loadingResourcesCount === 0) {
-			quietPeriodAwaiter.startQuietTimer({ resourceLoadedTimestamp: startTime })
-			diag.debug('No loading resources. Starting quiet timer.')
-		}
-
-		let pageLoadMetricsPromise = quietPeriodAwaiter.promise
-
-		// startTime === 0 means this is a documentLoad pct — ensure it's at least the document load time
-		if (startTime === 0) {
-			pageLoadMetricsPromise = pageLoadMetricsPromise.then((result) => {
-				// Timeout results must stay capped at maxPageLoadWaitTime, even if document load took longer.
-				if (result.status === PAGE_LOAD_METRICS_STATUS_TIMEOUT) {
-					return result
-				}
-
-				const navEntry = performance.getEntriesByType('navigation')[0] as
-					| PerformanceNavigationTiming
-					| undefined
-				const documentLoadTime = navEntry ? getDocumentLoadTime(navEntry) : 0
-				return { ...result, pct: Math.max(result.pct, documentLoadTime) }
-			})
-		}
-
-		return pageLoadMetricsPromise.then((result) => {
-			if (span) {
-				this.setPageLoadMetricAttributes(span, result)
-			}
-
-			return result
-		})
-	}
-
 	private static createMonitors(monitorConfig: MonitorConfig) {
 		return {
 			elements: new LoadingElementMonitor(monitorConfig),
 			media: new MediaMonitor(monitorConfig),
-			network: new FetchXhrMonitor(monitorConfig),
+			network: new NetworkMonitor(monitorConfig),
 			performance: new PerformanceMonitor(monitorConfig),
 		} as const satisfies Record<SpaMetricsMonitor, Monitor>
 	}
 
-	private dropLoadingResourcesIgnoredByActiveConfig(
+	private dropLoadingResourcesIgnoredForPageLoad(
 		activeConfig: ResolvedSpaMetricsManagerConfig,
+		startTime: number,
 	): DroppedLoadingResources {
 		const droppedResources: DroppedLoadingResources = { elementResourceUrls: [] }
 		const pageUrl = location.href
 		for (const [resourceId, resource] of this.loadingResources) {
+			const shouldDropStaleResource =
+				resource.timestamp < startTime &&
+				(activeConfig.clearLoadingResourcesOnNewPage || resource.monitorType !== 'elements')
 			if (
+				shouldDropStaleResource ||
 				(activeConfig.clearLoadingResourcesOnNewPage && resource.pageUrl !== pageUrl) ||
 				!activeConfig.monitors.includes(resource.monitorType) ||
 				this.isIgnoredUrl(resource.url, activeConfig.ignoreUrls)
@@ -281,8 +324,10 @@ export class SpaMetricsManager {
 		}
 
 		try {
-			const beaconOrigin = new URL(beaconEndpoint).origin
-			return [new RegExp(`^${beaconOrigin}`)]
+			const beaconUrl = new URL(beaconEndpoint, location.href)
+			const beaconEndpointWithoutQuery = `${beaconUrl.origin}${beaconUrl.pathname === '/' ? '' : beaconUrl.pathname}`
+			const boundary = beaconUrl.pathname === '/' ? '(?:[/?#]|$)' : '(?:[?#]|$)'
+			return [new RegExp(`^${escapeStringForRegExp(beaconEndpointWithoutQuery)}${boundary}`)]
 		} catch {
 			return [beaconEndpoint]
 		}
@@ -299,6 +344,14 @@ export class SpaMetricsManager {
 		return url.toLowerCase().startsWith('data:') || isUrlIgnored(url, ignoreUrls)
 	}
 
+	private isStaleDiscovery(event: ResourceStateEvent): boolean {
+		return (
+			event.state === ResourceState.DISCOVERED &&
+			this.pageLoadStartTime !== undefined &&
+			event.timestamp < this.pageLoadStartTime
+		)
+	}
+
 	private isUrlOverrideMatch(match: string | RegExp, url: string): boolean {
 		if (typeof match === 'string') {
 			return url.includes(match)
@@ -312,8 +365,19 @@ export class SpaMetricsManager {
 		return match.test(url)
 	}
 
+	private needsNetworkInstrumentation(): boolean {
+		return (
+			this.config.monitors.includes('network') ||
+			this.urlOverrides.some((override) => override.config.monitors.includes('network'))
+		)
+	}
+
 	private onResourceStateChange = (event: ResourceStateEvent): void => {
 		if (event.state === ResourceState.DISCOVERED) {
+			if (this.isStaleDiscovery(event)) {
+				return
+			}
+
 			const activeConfig = this.activeConfig
 
 			if (!activeConfig.monitors.includes(event.monitorType)) {
@@ -332,6 +396,7 @@ export class SpaMetricsManager {
 			this.loadingResources.set(event.id, {
 				monitorType: event.monitorType,
 				pageUrl: location.href,
+				timestamp: event.timestamp,
 				url: event.url,
 			})
 			diag.debug('Detected resource. Resetting quiet timer', event.url)

@@ -16,9 +16,10 @@
  *
  */
 
+import { HTTP_TEST_SERVER_URL } from '@test-server/http-constants'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { HTTP_TEST_SERVER_URL } from '../../../../../../tests/servers/http-constants'
+import { SpanEmitterProcessor } from '../../../span-processors'
 import { MediaMonitor } from './media-monitor'
 import { ResourceState, ResourceStateEvent } from './monitor'
 import { expectEventStatesWithMatchingIds } from './monitor-test-utils'
@@ -43,6 +44,7 @@ describe('MediaMonitor', () => {
 		events = []
 		monitor = new MediaMonitor({
 			onResourceStateChange: (event) => events.push(event),
+			spanEmitter: new SpanEmitterProcessor(),
 		})
 	})
 

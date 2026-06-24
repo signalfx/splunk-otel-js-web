@@ -168,13 +168,15 @@ export class QuietPeriodAwaiter {
 		this.lastResourceTimestamp = quietPeriodTimestamp
 		clearTimeout(this.timeoutId)
 
+		const elapsedQuietTime = Math.max(performance.now() - quietPeriodTimestamp, 0)
+		const remainingQuietTime = Math.max(this.quietTime - elapsedQuietTime, 0)
 		this.timeoutId = setTimeout(() => {
 			diag.debug('QuietPeriodAwaiter: Quiet period expired', this.quietTime)
 			this.resolveOnce({
 				pct: Math.max(quietPeriodTimestamp - this.startTime, 0),
 				status: PAGE_LOAD_METRICS_STATUS_COMPLETED,
 			})
-		}, this.quietTime)
+		}, remainingQuietTime)
 	}
 
 	private readonly interruptListener = (): void => {

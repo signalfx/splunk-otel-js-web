@@ -15,8 +15,4 @@
  * limitations under the License.
  *
  */
-export * from './boolean'
-export * from './error'
-export * from './node'
-export * from './number'
-export * from './string'
+export const isBoolean = (val?: unknown): val is boolean => typeof val === 'boolean'

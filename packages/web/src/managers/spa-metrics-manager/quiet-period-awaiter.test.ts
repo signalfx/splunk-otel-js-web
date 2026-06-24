@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
 	PAGE_LOAD_METRICS_STATUS_COMPLETED,
@@ -45,6 +45,11 @@ function expectNoLoadingResources(result: PageLoadMetricsResult): void {
 }
 
 describe('QuietPeriodAwaiter', () => {
+	afterEach(() => {
+		vi.useRealTimers()
+		vi.restoreAllMocks()
+	})
+
 	it('resolves after quiet period expires', async () => {
 		const startTime = performance.now()
 		const awaiter = createQuietPeriodAwaiter({ quietTime: 100, startTime })
@@ -55,6 +60,37 @@ describe('QuietPeriodAwaiter', () => {
 
 		expect(result).toHaveProperty('pct')
 		expect(result.pct).toBe(10)
+		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_COMPLETED)
+		expectNoLoadingResources(result)
+	})
+
+	it('subtracts elapsed time since resource load from quiet timer', async () => {
+		const elapsedSinceResourceLoaded = 300
+		const quietTime = 1000
+		const remainingQuietTime = quietTime - elapsedSinceResourceLoaded
+		vi.useFakeTimers()
+		vi.spyOn(performance, 'now').mockReturnValue(elapsedSinceResourceLoaded)
+
+		const awaiter = createQuietPeriodAwaiter({
+			maxPageLoadWaitTime: 5000,
+			quietTime,
+			startTime: 0,
+		})
+		let isResolved = false
+		void awaiter.promise.then(() => {
+			isResolved = true
+		})
+
+		awaiter.startQuietTimer({ resourceLoadedTimestamp: 0 })
+
+		await vi.advanceTimersByTimeAsync(remainingQuietTime - 1)
+		expect(isResolved).toBe(false)
+
+		await vi.advanceTimersByTimeAsync(1)
+		expect(isResolved).toBe(true)
+		const result = await awaiter.promise
+
+		expect(result.pct).toBe(0)
 		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_COMPLETED)
 		expectNoLoadingResources(result)
 	})

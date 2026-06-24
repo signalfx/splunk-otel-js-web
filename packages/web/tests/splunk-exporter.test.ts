@@ -19,9 +19,9 @@
 import * as api from '@opentelemetry/api'
 import { timeInputToHrTime } from '@opentelemetry/core'
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base'
+import { HTTP_TEST_SERVER_URL } from '@test-server/http-constants'
 import { afterEach, assert, beforeEach, describe, expect, it, Mock, vi } from 'vitest'
 
-import { HTTP_TEST_SERVER_URL } from '../../../tests/servers/http-constants'
 import { RateLimitProcessor } from '../src/exporters/rate-limit'
 import { SplunkZipkinExporter } from '../src/exporters/zipkin'
 

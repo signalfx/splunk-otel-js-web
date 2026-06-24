@@ -74,7 +74,7 @@ type ExposedSuper = {
 }
 
 export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentation {
-	private readonly documentLoadMetricsPromise: ReturnType<SpaMetricsManager['waitForPageLoad']> | undefined
+	private readonly documentLoadMetricsPromise: ReturnType<SpaMetricsManager['recordPageLoadMetrics']> | undefined
 
 	private readonly spaMetricsManager: SpaMetricsManager | undefined
 
@@ -86,9 +86,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 	) {
 		super(config)
 		this.spaMetricsManager = spaMetricsManager
-		this.documentLoadMetricsPromise = this.spaMetricsManager?.waitForPageLoad({
-			startTime: 0,
-		})
+		this.documentLoadMetricsPromise = this.spaMetricsManager?.recordPageLoadMetrics({ startTime: 0 })
 
 		const exposedSuper = this as any as ExposedSuper
 

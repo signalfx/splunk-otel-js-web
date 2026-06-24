@@ -16,9 +16,9 @@
  *
  */
 
+import { mockNavigator } from '@web-test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { mockNavigator } from '../../tests/utils'
 import { getBasicPlatformInfo, getEnhancedPlatformInfo } from './platform'
 
 // Mock console.warn to avoid noise in tests

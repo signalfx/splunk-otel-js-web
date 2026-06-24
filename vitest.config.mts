@@ -23,7 +23,10 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
 	resolve: {
 		alias: {
+			'@test-server': path.resolve(__dirname, './tests/servers'),
 			'@test-utils': path.resolve(__dirname, './tests/utils'),
+			'@web': path.resolve(__dirname, './packages/web/src'),
+			'@web-test-utils': path.resolve(__dirname, './packages/web/tests/utils'),
 		},
 	},
 	test: {

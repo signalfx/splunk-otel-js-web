@@ -78,12 +78,12 @@ export class ErrorClickDetector {
 
 	disable(): void {
 		if (this.clickSpanEmitterListener) {
-			this.otelConfig.spanEmitter?.removeEventListener('user-interaction', this.clickSpanEmitterListener)
+			this.otelConfig.spanEmitter?.removeEventListener('user-interaction:end', this.clickSpanEmitterListener)
 			this.clickSpanEmitterListener = undefined
 		}
 
 		if (this.errorSpanEmitterListener) {
-			this.otelConfig.spanEmitter?.removeEventListener('error', this.errorSpanEmitterListener)
+			this.otelConfig.spanEmitter?.removeEventListener('error:end', this.errorSpanEmitterListener)
 			this.errorSpanEmitterListener = undefined
 		}
 
@@ -98,12 +98,12 @@ export class ErrorClickDetector {
 		this.clickSpanEmitterListener = (span: ReadableSpan) => {
 			this.onClickSpan(span)
 		}
-		this.otelConfig.spanEmitter?.addEventListener('user-interaction', this.clickSpanEmitterListener)
+		this.otelConfig.spanEmitter?.addEventListener('user-interaction:end', this.clickSpanEmitterListener)
 
 		this.errorSpanEmitterListener = (span: ReadableSpan) => {
 			this.onErrorSpan(span)
 		}
-		this.otelConfig.spanEmitter?.addEventListener('error', this.errorSpanEmitterListener)
+		this.otelConfig.spanEmitter?.addEventListener('error:end', this.errorSpanEmitterListener)
 	}
 
 	private static normalizeConfig(options: ErrorClickOptions): ResolvedErrorClickConfig {

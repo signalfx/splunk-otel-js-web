@@ -80,7 +80,7 @@ export class PerformanceMonitor extends Monitor {
 
 		const loadTime = entry.responseEnd - entry.startTime
 
-		const event = Monitor.createDiscoveredEvent(url)
+		const event = Monitor.createDiscoveredEvent(url, entry.startTime)
 		this.emitResourceStateChange(event)
 		this.emitResourceStateChange(Monitor.createLoadedEvent(event.id, url, loadTime, entry.responseEnd))
 
