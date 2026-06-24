@@ -18,6 +18,7 @@
 import { hrTimeToMilliseconds } from '@opentelemetry/core'
 import { expect } from '@playwright/test'
 
+import { BROWSER_NAVIGATION_ATTRIBUTES, expectBrowserNavigationAttributes } from '../../utils/browser-navigation'
 import { expectDefined, test } from '../../utils/test'
 import { timesMakeSense } from '../../utils/time-make-sense'
 
@@ -163,8 +164,9 @@ test.describe('docload', () => {
 
 		const docLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'documentLoad')
 		expectDefined(docLoadSpan)
+		expectBrowserNavigationAttributes(docLoadSpan, { status: 'completed' })
 
-		const pct = Number(docLoadSpan.attributes['browser.navigation.page_completion_time'])
+		const pct = Number(docLoadSpan.attributes[BROWSER_NAVIGATION_ATTRIBUTES.pageCompletionTime])
 		expect(pct).toBeGreaterThan(0)
 
 		// pct uses the same loadEventEnd - fetchStart calculation as the exported documentLoad span.

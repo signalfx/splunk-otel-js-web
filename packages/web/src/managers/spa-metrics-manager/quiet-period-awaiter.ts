@@ -18,6 +18,8 @@
 
 import { diag } from '@opentelemetry/api'
 
+import type { SpaMetricsMonitor } from '../../types'
+
 import {
 	PAGE_LOAD_METRICS_STATUS_COMPLETED,
 	PAGE_LOAD_METRICS_STATUS_INTERRUPTED,
@@ -34,18 +36,39 @@ export type PageLoadMetricsStatus =
 	| typeof PAGE_LOAD_METRICS_STATUS_INTERRUPTED
 	| typeof PAGE_LOAD_METRICS_STATUS_TIMEOUT
 
+export type LoadedResourceDetails = {
+	duration: number
+	monitorType: SpaMetricsMonitor
+	url: string
+}
+
 export type PageLoadMetricsResult = {
+	detectedResourcesCount: number
+	lastLoadedResources: LoadedResourceDetails[]
 	loadingResourceUrls: string[]
 	loadingResourcesCount: number
+	longestLoadedResource: LoadedResourceDetails | undefined
 	pct: number
+	quietTimerResetCount: number
 	status: PageLoadMetricsStatus
 }
 
-type PageLoadMetricsResolveValue = Omit<PageLoadMetricsResult, 'loadingResourcesCount' | 'loadingResourceUrls'>
+type PageLoadMetricsResolveValue = Omit<
+	PageLoadMetricsResult,
+	| 'detectedResourcesCount'
+	| 'lastLoadedResources'
+	| 'loadingResourcesCount'
+	| 'loadingResourceUrls'
+	| 'longestLoadedResource'
+	| 'quietTimerResetCount'
+>
 
 type QuietPeriodAwaiterConfig = {
+	getDetectedResourcesCount: () => number
+	getLastLoadedResources: () => LoadedResourceDetails[]
 	getLoadingResourceUrls: () => string[]
 	getLoadingResourcesCount: () => number
+	getLongestLoadedResource: () => LoadedResourceDetails | undefined
 	maxPageLoadWaitTime?: number
 	quietTime?: number
 	startTime?: number
@@ -69,9 +92,15 @@ export function normalizeMaxPageLoadWaitTime({ maxPageLoadWaitTime, quietTime }:
 export class QuietPeriodAwaiter {
 	readonly promise: Promise<PageLoadMetricsResult>
 
+	private readonly getDetectedResourcesCount: () => number
+
+	private readonly getLastLoadedResources: () => LoadedResourceDetails[]
+
 	private readonly getLoadingResourceUrls: () => string[]
 
 	private readonly getLoadingResourcesCount: () => number
+
+	private readonly getLongestLoadedResource: () => LoadedResourceDetails | undefined
 
 	private isResolved = false
 
@@ -81,19 +110,27 @@ export class QuietPeriodAwaiter {
 
 	private quietTime: number
 
+	private quietTimerResetCount = 0
+
 	private startTime: number
 
 	private timeoutId: ReturnType<typeof setTimeout> | undefined
 
 	constructor({
+		getDetectedResourcesCount,
+		getLastLoadedResources,
 		getLoadingResourcesCount,
 		getLoadingResourceUrls,
+		getLongestLoadedResource,
 		// maxPageLoadWaitTime = DEFAULT_MAX_PAGE_LOAD_WAIT_TIME,
 		quietTime = DEFAULT_QUIET_TIME,
 		startTime = performance.now(),
 	}: QuietPeriodAwaiterConfig) {
+		this.getDetectedResourcesCount = getDetectedResourcesCount
+		this.getLastLoadedResources = getLastLoadedResources
 		this.getLoadingResourceUrls = getLoadingResourceUrls
 		this.getLoadingResourcesCount = getLoadingResourcesCount
+		this.getLongestLoadedResource = getLongestLoadedResource
 		this.startTime = startTime
 		this.quietTime = quietTime
 		this.promise = new Promise<PageLoadMetricsResult>((r) => {
@@ -152,6 +189,7 @@ export class QuietPeriodAwaiter {
 
 		clearTimeout(this.timeoutId)
 		this.timeoutId = undefined
+		this.quietTimerResetCount += 1
 	}
 
 	startQuietTimer({ resourceLoadedTimestamp }: { resourceLoadedTimestamp: number }): void {
@@ -199,8 +237,12 @@ export class QuietPeriodAwaiter {
 		if (resolveValue.status === PAGE_LOAD_METRICS_STATUS_COMPLETED) {
 			return {
 				...resolveValue,
+				detectedResourcesCount: this.getDetectedResourcesCount(),
+				lastLoadedResources: this.getLastLoadedResources(),
 				loadingResourcesCount: 0,
 				loadingResourceUrls: [],
+				longestLoadedResource: this.getLongestLoadedResource(),
+				quietTimerResetCount: this.quietTimerResetCount,
 			}
 		}
 
@@ -208,8 +250,12 @@ export class QuietPeriodAwaiter {
 
 		return {
 			...resolveValue,
+			detectedResourcesCount: this.getDetectedResourcesCount(),
+			lastLoadedResources: this.getLastLoadedResources(),
 			loadingResourcesCount,
-			loadingResourceUrls: loadingResourcesCount > 0 ? this.getLoadingResourceUrls() : [],
+			loadingResourceUrls: this.getLoadingResourceUrls(),
+			longestLoadedResource: this.getLongestLoadedResource(),
+			quietTimerResetCount: this.quietTimerResetCount,
 		}
 	}
 }

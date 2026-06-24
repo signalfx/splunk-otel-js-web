@@ -21,9 +21,13 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { HTTP_TEST_SERVER_URL } from '../../../../../tests/servers/http-constants'
 import {
+	BROWSER_NAVIGATION_DETECTED_RESOURCE_COUNT_ATTRIBUTE,
+	BROWSER_NAVIGATION_LAST_LOADED_RESOURCES_ATTRIBUTE,
 	BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE,
 	BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
+	BROWSER_NAVIGATION_LONGEST_LOADED_RESOURCE_ATTRIBUTE,
 	BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE,
+	BROWSER_NAVIGATION_QUIET_TIMER_RESET_COUNT_ATTRIBUTE,
 	BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
 	PAGE_LOAD_METRICS_STATUS_COMPLETED,
 	PAGE_LOAD_METRICS_STATUS_INTERRUPTED,
@@ -412,8 +416,10 @@ describe('SpaMetricsManager', () => {
 
 			expect(result.pct).toBe(3000)
 			expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_TIMEOUT)
+			expect(result.detectedResourcesCount).toBeGreaterThanOrEqual(1)
 			expect(result.loadingResourcesCount).toBe(1)
 			expect(result.loadingResourceUrls).toEqual([`${HTTP_TEST_SERVER_URL}/some-data?delay=5000`])
+			expect(result.quietTimerResetCount).toBe(0)
 		} finally {
 			slowResourceAbortController.abort()
 			manager.stop()
@@ -423,20 +429,35 @@ describe('SpaMetricsManager', () => {
 	it('sets page load metric attributes on a span', () => {
 		const manager = new SpaMetricsManager()
 		const { attributes, span } = createSpanMock()
+		const lastLoadedResources = [
+			{ duration: 10, monitorType: 'network' as const, url: 'https://example.test/loaded-1' },
+			{ duration: 25, monitorType: 'performance' as const, url: 'https://example.test/loaded-2' },
+		]
+		const longestLoadedResource = lastLoadedResources[1]
 
 		manager.setPageLoadMetricAttributes(span, {
+			detectedResourcesCount: 4,
+			lastLoadedResources,
 			loadingResourcesCount: 2,
 			loadingResourceUrls: ['https://example.test/slow-1', 'https://example.test/slow-2'],
+			longestLoadedResource,
 			pct: 123,
+			quietTimerResetCount: 3,
 			status: PAGE_LOAD_METRICS_STATUS_TIMEOUT,
 		})
 
 		expect(attributes[BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE]).toBe(123)
 		expect(attributes[BROWSER_NAVIGATION_STATUS_ATTRIBUTE]).toBe(PAGE_LOAD_METRICS_STATUS_TIMEOUT)
+		expect(attributes[BROWSER_NAVIGATION_DETECTED_RESOURCE_COUNT_ATTRIBUTE]).toBe(4)
 		expect(attributes[BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE]).toBe(2)
 		expect(attributes[BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE]).toBe(
 			JSON.stringify(['https://example.test/slow-1', 'https://example.test/slow-2']),
 		)
+		expect(attributes[BROWSER_NAVIGATION_LAST_LOADED_RESOURCES_ATTRIBUTE]).toBe(JSON.stringify(lastLoadedResources))
+		expect(attributes[BROWSER_NAVIGATION_LONGEST_LOADED_RESOURCE_ATTRIBUTE]).toBe(
+			JSON.stringify(longestLoadedResource),
+		)
+		expect(attributes[BROWSER_NAVIGATION_QUIET_TIMER_RESET_COUNT_ATTRIBUTE]).toBe(3)
 	})
 
 	it('does not set loading resource attributes when no resources are loading', () => {
@@ -444,20 +465,28 @@ describe('SpaMetricsManager', () => {
 		const { attributes, span } = createSpanMock()
 
 		manager.setPageLoadMetricAttributes(span, {
+			detectedResourcesCount: 0,
+			lastLoadedResources: [],
 			loadingResourcesCount: 0,
 			loadingResourceUrls: [],
+			longestLoadedResource: undefined,
 			pct: 10,
+			quietTimerResetCount: 0,
 			status: PAGE_LOAD_METRICS_STATUS_COMPLETED,
 		})
 
 		expect(attributes[BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE]).toBe(10)
 		expect(attributes[BROWSER_NAVIGATION_STATUS_ATTRIBUTE]).toBe(PAGE_LOAD_METRICS_STATUS_COMPLETED)
+		expect(attributes[BROWSER_NAVIGATION_DETECTED_RESOURCE_COUNT_ATTRIBUTE]).toBe(0)
+		expect(attributes[BROWSER_NAVIGATION_LAST_LOADED_RESOURCES_ATTRIBUTE]).toBeUndefined()
 		expect(attributes[BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE]).toBeUndefined()
 		expect(attributes[BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE]).toBeUndefined()
+		expect(attributes[BROWSER_NAVIGATION_LONGEST_LOADED_RESOURCE_ATTRIBUTE]).toBeUndefined()
+		expect(attributes[BROWSER_NAVIGATION_QUIET_TIMER_RESET_COUNT_ATTRIBUTE]).toBe(0)
 	})
 
 	it('waitForPageLoad sets page load metric attributes when a span is provided', async () => {
-		const manager = new SpaMetricsManager({ quietTime: 1 })
+		const manager = new SpaMetricsManager({ monitors: [], quietTime: 1 })
 		const { attributes, span } = createSpanMock()
 		manager.start()
 
@@ -466,8 +495,55 @@ describe('SpaMetricsManager', () => {
 
 			expect(attributes[BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE]).toBe(result.pct)
 			expect(attributes[BROWSER_NAVIGATION_STATUS_ATTRIBUTE]).toBe(result.status)
+			expect(attributes[BROWSER_NAVIGATION_DETECTED_RESOURCE_COUNT_ATTRIBUTE]).toBe(0)
 			expect(attributes[BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE]).toBeUndefined()
 			expect(attributes[BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE]).toBeUndefined()
+			expect(attributes[BROWSER_NAVIGATION_QUIET_TIMER_RESET_COUNT_ATTRIBUTE]).toBe(0)
+		} finally {
+			manager.stop()
+		}
+	})
+
+	it('waitForPageLoad sets loaded resource attributes when quiet period completes', async () => {
+		const manager = new SpaMetricsManager({ quietTime: 1 })
+		const { attributes, span } = createSpanMock()
+		const loadedResource = {
+			duration: 42,
+			monitorType: 'performance' as const,
+			url: `${TEST_API_URL}?resource=completed`,
+		}
+
+		try {
+			const promise = manager.waitForPageLoad({ span, startTime: performance.now() })
+
+			// @ts-expect-error onResourceStateChange is private. We use it for testing.
+			manager.onResourceStateChange({
+				id: 'completed-resource',
+				monitorType: loadedResource.monitorType,
+				state: ResourceState.DISCOVERED,
+				url: loadedResource.url,
+			})
+			// @ts-expect-error onResourceStateChange is private. We use it for testing.
+			manager.onResourceStateChange({
+				id: 'completed-resource',
+				loadTime: loadedResource.duration,
+				monitorType: loadedResource.monitorType,
+				state: ResourceState.LOADED,
+				timestamp: performance.now(),
+				url: loadedResource.url,
+			})
+
+			const result = await promise
+
+			expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_COMPLETED)
+			expect(result.lastLoadedResources).toEqual([loadedResource])
+			expect(result.longestLoadedResource).toEqual(loadedResource)
+			expect(attributes[BROWSER_NAVIGATION_LAST_LOADED_RESOURCES_ATTRIBUTE]).toBe(
+				JSON.stringify([loadedResource]),
+			)
+			expect(attributes[BROWSER_NAVIGATION_LONGEST_LOADED_RESOURCE_ATTRIBUTE]).toBe(
+				JSON.stringify(loadedResource),
+			)
 		} finally {
 			manager.stop()
 		}
