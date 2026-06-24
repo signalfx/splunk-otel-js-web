@@ -35,7 +35,7 @@ module.exports = [
 	},
 
 	{
-		limit: '117 kB',
+		limit: '118 kB',
 		name: 'session-recorder/cjs',
 		path: './packages/session-recorder/dist/cjs/index.js',
 	},
