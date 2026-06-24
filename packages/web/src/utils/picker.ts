@@ -19,4 +19,4 @@
 export {
 	createPicker,
 	isPickerWindow,
-} from 'https://cdn.observability.splunkcloud.com/o11y-gdi-rum/session-replay/v2.18.0/picker/picker.module.min.js'
+} from 'https://cdn.observability.splunkcloud.com/o11y-gdi-rum/session-replay/v2.18.1/picker/picker.module.min.js'
