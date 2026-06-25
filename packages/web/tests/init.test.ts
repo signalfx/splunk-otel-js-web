@@ -309,7 +309,8 @@ describe('test init', () => {
 			expectDefined(resourceFetchSpan, 'resourceFetch span presence.')
 		})
 
-		it('sets timeout status on documentLoad span when PCT computation times out', async () => {
+		// Temporarily skipped while PCT timeout is disabled.
+		it.skip('sets timeout status on documentLoad span when PCT computation times out', async () => {
 			SplunkRum.init({
 				applicationName: 'my-app',
 				beaconEndpoint: 'https://127.0.0.1:9999/foo',
@@ -956,7 +957,8 @@ describe('test route change spa metrics timeout', () => {
 		)
 	})
 
-	it('sets timeout status on routeChange span when PCT computation times out', async () => {
+	// Temporarily skipped while PCT timeout is disabled.
+	it.skip('sets timeout status on routeChange span when PCT computation times out', async () => {
 		const oldUrl = location.href
 		const slowResourceAbortController = new AbortController()
 		const slowResourceUrl = `${HTTP_TEST_SERVER_URL}/some-data?delay=5000`

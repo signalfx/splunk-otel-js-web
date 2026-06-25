@@ -138,7 +138,8 @@ describe('QuietPeriodAwaiter', () => {
 		expectNoLoadingResources(result)
 	})
 
-	it('does not resolve with interrupted status when beforeunload fires', async () => {
+	// Temporarily skipped while PCT timeout is disabled.
+	it.skip('does not resolve with interrupted status when beforeunload fires', async () => {
 		const awaiter = createQuietPeriodAwaiter({ maxPageLoadWaitTime: 10, quietTime: 5 })
 
 		window.dispatchEvent(new Event('beforeunload'))
@@ -148,7 +149,8 @@ describe('QuietPeriodAwaiter', () => {
 		expectNoLoadingResources(result)
 	})
 
-	it('resolves with timeout status when max page load wait time expires before quiet timer starts', async () => {
+	// Temporarily skipped while PCT timeout is disabled.
+	it.skip('resolves with timeout status when max page load wait time expires before quiet timer starts', async () => {
 		const startTime = performance.now()
 		const awaiter = createQuietPeriodAwaiter({ maxPageLoadWaitTime: 10, quietTime: 5, startTime })
 
@@ -159,7 +161,8 @@ describe('QuietPeriodAwaiter', () => {
 		expectNoLoadingResources(result)
 	})
 
-	it('resolves only once when quiet period would expire after max page load wait time', async () => {
+	// Temporarily skipped while PCT timeout is disabled.
+	it.skip('resolves only once when quiet period would expire after max page load wait time', async () => {
 		const results: unknown[] = []
 		const startTime = performance.now()
 		const awaiter = createQuietPeriodAwaiter({ maxPageLoadWaitTime: 30, quietTime: 20, startTime })

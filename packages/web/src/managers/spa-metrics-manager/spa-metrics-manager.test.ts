@@ -397,7 +397,8 @@ describe('SpaMetricsManager', () => {
 		manager.stop()
 	})
 
-	it('waitForPageLoad resolves with timeout status when max page load wait time expires', async () => {
+	// Temporarily skipped while PCT timeout is disabled.
+	it.skip('waitForPageLoad resolves with timeout status when max page load wait time expires', async () => {
 		const manager = new SpaMetricsManager({ maxPageLoadWaitTime: 3000, quietTime: 1000 })
 		manager.start()
 		const slowResourceAbortController = new AbortController()
@@ -472,7 +473,8 @@ describe('SpaMetricsManager', () => {
 		}
 	})
 
-	it('waitForPageLoad reports visible loading elements on timeout', async () => {
+	// Temporarily skipped while PCT timeout is disabled.
+	it.skip('waitForPageLoad reports visible loading elements on timeout', async () => {
 		const loadingElement = document.createElement('div')
 		loadingElement.className = 'loading-spinner'
 		loadingElement.style.height = '10px'
@@ -496,7 +498,8 @@ describe('SpaMetricsManager', () => {
 		manager.stop()
 	})
 
-	it('re-tracks still-visible loading elements after clearing previous page resources', async () => {
+	// Temporarily skipped while PCT timeout is disabled.
+	it.skip('re-tracks still-visible loading elements after clearing previous page resources', async () => {
 		const loadingElement = document.createElement('div')
 		loadingElement.className = 'loading-spinner'
 		loadingElement.style.height = '10px'
@@ -591,7 +594,8 @@ describe('SpaMetricsManager', () => {
 		manager.stop()
 	})
 
-	it('waitForPageLoad with startTime 0 does not exceed max page load wait time on timeout', async () => {
+	// Temporarily skipped while PCT timeout is disabled.
+	it.skip('waitForPageLoad with startTime 0 does not exceed max page load wait time on timeout', async () => {
 		const getEntriesByType = vi.spyOn(performance, 'getEntriesByType').mockReturnValue([
 			{
 				fetchStart: 0,
@@ -666,7 +670,8 @@ describe('SpaMetricsManager', () => {
 		expect(result.loadingResourceUrls).toEqual([TEST_API_URL])
 	})
 
-	it('waitForPageLoad reports the last three loading resource URLs', async () => {
+	// Temporarily skipped while PCT timeout is disabled.
+	it.skip('waitForPageLoad reports the last three loading resource URLs', async () => {
 		const manager = new SpaMetricsManager({ maxPageLoadWaitTime: 10, quietTime: 5 })
 		manager.start()
 		const longResourceUrl = `${TEST_API_URL}?resource=4&${'a'.repeat(120)}`

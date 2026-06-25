@@ -105,7 +105,8 @@ test.describe('spa-metrics', () => {
 		expect(routeChangeSpans[2]).toHaveSpanAttributeContaining('location.href', '#page3')
 	})
 
-	test('URL override can disable network monitoring for a matched route', async ({ recordPage }) => {
+	// Temporarily skipped while PCT timeout is disabled.
+	test.skip('URL override can disable network monitoring for a matched route', async ({ recordPage }) => {
 		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
 
 		await recordPage.locator('#btnNavigateWithSlowFetch').click()
