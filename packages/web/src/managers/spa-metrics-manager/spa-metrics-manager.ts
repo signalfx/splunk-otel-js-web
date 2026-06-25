@@ -24,9 +24,13 @@ import type { Monitor, MonitorConfig } from './monitors/monitor'
 
 import { truncateString } from '../../utils/text'
 import {
+	BROWSER_NAVIGATION_DETECTED_RESOURCE_COUNT_ATTRIBUTE,
+	BROWSER_NAVIGATION_LAST_LOADED_RESOURCES_ATTRIBUTE,
 	BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE,
 	BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
+	BROWSER_NAVIGATION_LONGEST_LOADED_RESOURCE_ATTRIBUTE,
 	BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE,
+	BROWSER_NAVIGATION_QUIET_TIMER_RESET_COUNT_ATTRIBUTE,
 	BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
 	PAGE_LOAD_METRICS_STATUS_TIMEOUT,
 } from './constants'
@@ -38,7 +42,12 @@ import {
 	ResourceState,
 	ResourceStateEvent,
 } from './monitors'
-import { normalizeMaxPageLoadWaitTime, type PageLoadMetricsResult, QuietPeriodAwaiter } from './quiet-period-awaiter'
+import {
+	type LoadedResourceDetails,
+	normalizeMaxPageLoadWaitTime,
+	type PageLoadMetricsResult,
+	QuietPeriodAwaiter,
+} from './quiet-period-awaiter'
 
 const SPA_METRICS_MANAGER_CONFIG_DEFAULTS = {
 	blockingSelectors: [] as string[],
@@ -82,6 +91,12 @@ type LoadingResource = {
 	url: string
 }
 
+type PageLoadResourceTracker = {
+	detectedResourcesCount: number
+	lastLoadedResources: LoadedResourceDetails[]
+	longestLoadedResource: LoadedResourceDetails | undefined
+}
+
 type DroppedLoadingResources = {
 	elementResourceUrls: string[]
 }
@@ -92,6 +107,7 @@ type WaitForPageLoadConfig = {
 }
 
 const MAX_LOADING_RESOURCE_URLS_TO_REPORT = 3
+const MAX_LOADED_RESOURCES_TO_REPORT = 3
 const MAX_LOADING_RESOURCE_URL_LENGTH = 100
 
 export interface SpaMetricsManagerConfig extends SpaMetricsManagerConfigValues {
@@ -106,21 +122,35 @@ export class SpaMetricsManager {
 
 	private loadingResources = new Map<string, LoadingResource>()
 
+	private readonly monitors: ReturnType<typeof SpaMetricsManager.createMonitors>
+
+	private pageLoadResourceTracker: PageLoadResourceTracker | undefined
+
+	private quietPeriodAwaiter: QuietPeriodAwaiter | undefined
+
+	private readonly urlOverrides: ResolvedSpaMetricsUrlOverride[]
+
+	private get detectedResourcesCount(): number {
+		return this.pageLoadResourceTracker?.detectedResourcesCount ?? 0
+	}
+
 	private get loadingResourceUrls(): string[] {
 		return Array.from(this.loadingResources.values())
 			.slice(-MAX_LOADING_RESOURCE_URLS_TO_REPORT)
 			.map((resource) => truncateString(resource.url, MAX_LOADING_RESOURCE_URL_LENGTH))
 	}
 
+	private get lastLoadedResources(): LoadedResourceDetails[] {
+		return this.pageLoadResourceTracker?.lastLoadedResources ?? []
+	}
+
 	private get loadingResourcesCount(): number {
 		return this.loadingResources.size
 	}
 
-	private readonly monitors: ReturnType<typeof SpaMetricsManager.createMonitors>
-
-	private quietPeriodAwaiter: QuietPeriodAwaiter | undefined
-
-	private readonly urlOverrides: ResolvedSpaMetricsUrlOverride[]
+	private get longestLoadedResource(): LoadedResourceDetails | undefined {
+		return this.pageLoadResourceTracker?.longestLoadedResource
+	}
 
 	constructor(config: SpaMetricsManagerConfig = {}) {
 		const beaconEndpointIgnoreUrls = this.getBeaconEndpointIgnoreUrls(config.beaconEndpoint)
@@ -143,7 +173,16 @@ export class SpaMetricsManager {
 
 	setPageLoadMetricAttributes(
 		span: Span,
-		{ loadingResourcesCount, loadingResourceUrls, pct, status }: PageLoadMetricsResult,
+		{
+			detectedResourcesCount,
+			lastLoadedResources,
+			loadingResourcesCount,
+			loadingResourceUrls,
+			longestLoadedResource,
+			pct,
+			quietTimerResetCount,
+			status,
+		}: PageLoadMetricsResult,
 	): void {
 		span.setAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE, pct)
 		span.setAttribute(BROWSER_NAVIGATION_STATUS_ATTRIBUTE, status)
@@ -156,6 +195,20 @@ export class SpaMetricsManager {
 					JSON.stringify(loadingResourceUrls),
 				)
 			}
+		}
+
+		span.setAttribute(BROWSER_NAVIGATION_DETECTED_RESOURCE_COUNT_ATTRIBUTE, detectedResourcesCount)
+		span.setAttribute(BROWSER_NAVIGATION_QUIET_TIMER_RESET_COUNT_ATTRIBUTE, quietTimerResetCount)
+
+		if (lastLoadedResources.length > 0) {
+			span.setAttribute(BROWSER_NAVIGATION_LAST_LOADED_RESOURCES_ATTRIBUTE, JSON.stringify(lastLoadedResources))
+		}
+
+		if (longestLoadedResource) {
+			span.setAttribute(
+				BROWSER_NAVIGATION_LONGEST_LOADED_RESOURCE_ATTRIBUTE,
+				JSON.stringify(longestLoadedResource),
+			)
 		}
 	}
 
@@ -199,14 +252,23 @@ export class SpaMetricsManager {
 		this.quietPeriodAwaiter?.interrupt()
 		const activeConfig = this.activeConfig
 		const droppedResources = this.dropLoadingResourcesIgnoredByActiveConfig(activeConfig)
+		this.pageLoadResourceTracker = {
+			detectedResourcesCount: this.loadingResourcesCount,
+			lastLoadedResources: [],
+			longestLoadedResource: undefined,
+		}
+
 		this.monitors.elements.refresh(
 			activeConfig.monitors.includes('elements') ? activeConfig.blockingSelectors : [],
 			{ droppedResourceUrls: droppedResources.elementResourceUrls },
 		)
 
 		const quietPeriodAwaiter = new QuietPeriodAwaiter({
+			getDetectedResourcesCount: () => this.detectedResourcesCount,
+			getLastLoadedResources: () => this.lastLoadedResources,
 			getLoadingResourcesCount: () => this.loadingResourcesCount,
 			getLoadingResourceUrls: () => this.loadingResourceUrls,
+			getLongestLoadedResource: () => this.longestLoadedResource,
 			maxPageLoadWaitTime: activeConfig.maxPageLoadWaitTime,
 			quietTime: activeConfig.quietTime,
 			startTime,
@@ -334,15 +396,48 @@ export class SpaMetricsManager {
 				pageUrl: location.href,
 				url: event.url,
 			})
+			if (this.pageLoadResourceTracker) {
+				this.pageLoadResourceTracker.detectedResourcesCount += 1
+			}
+
 			diag.debug('Detected resource. Resetting quiet timer', event.url)
 			this.quietPeriodAwaiter?.removeQuietTimer()
 		} else {
-			if (this.loadingResources.delete(event.id)) {
+			const resource = this.loadingResources.get(event.id)
+			if (resource && this.loadingResources.delete(event.id)) {
+				if (event.state === ResourceState.LOADED) {
+					this.recordLoadedResource(resource, event.loadTime)
+				}
+
 				if (this.loadingResourcesCount === 0) {
 					diag.debug('No loading resources. Starting quiet timer.')
 					this.quietPeriodAwaiter?.startQuietTimer({ resourceLoadedTimestamp: event.timestamp })
 				}
 			}
+		}
+	}
+
+	private recordLoadedResource(resource: LoadingResource, duration: number): void {
+		if (!this.pageLoadResourceTracker) {
+			return
+		}
+
+		const loadedResource = {
+			duration,
+			monitorType: resource.monitorType,
+			url: truncateString(resource.url, MAX_LOADING_RESOURCE_URL_LENGTH),
+		}
+
+		this.pageLoadResourceTracker.lastLoadedResources = [
+			...this.pageLoadResourceTracker.lastLoadedResources,
+			loadedResource,
+		].slice(-MAX_LOADED_RESOURCES_TO_REPORT)
+
+		if (
+			this.pageLoadResourceTracker.longestLoadedResource === undefined ||
+			duration > this.pageLoadResourceTracker.longestLoadedResource.duration
+		) {
+			this.pageLoadResourceTracker.longestLoadedResource = loadedResource
 		}
 	}
 

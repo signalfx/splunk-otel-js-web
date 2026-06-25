@@ -16,9 +16,13 @@
  *
  */
 
+export const BROWSER_NAVIGATION_DETECTED_RESOURCE_COUNT_ATTRIBUTE = 'browser.navigation.detected_resource_count'
+export const BROWSER_NAVIGATION_LAST_LOADED_RESOURCES_ATTRIBUTE = 'browser.navigation.last_loaded_resources'
 export const BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE = 'browser.navigation.loading_resource_count'
 export const BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE = 'browser.navigation.loading_resource_urls'
+export const BROWSER_NAVIGATION_LONGEST_LOADED_RESOURCE_ATTRIBUTE = 'browser.navigation.longest_loaded_resource'
 export const BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE = 'browser.navigation.page_completion_time'
+export const BROWSER_NAVIGATION_QUIET_TIMER_RESET_COUNT_ATTRIBUTE = 'browser.navigation.quiet_timer_reset_count'
 export const BROWSER_NAVIGATION_STATUS_ATTRIBUTE = 'browser.navigation.status'
 
 export const PAGE_LOAD_METRICS_STATUS_COMPLETED = 'completed'

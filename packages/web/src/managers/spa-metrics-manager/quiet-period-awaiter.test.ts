@@ -22,17 +22,30 @@ import {
 	PAGE_LOAD_METRICS_STATUS_INTERRUPTED,
 	PAGE_LOAD_METRICS_STATUS_TIMEOUT,
 } from './constants'
-import { type PageLoadMetricsResult, QuietPeriodAwaiter } from './quiet-period-awaiter'
+import { type LoadedResourceDetails, type PageLoadMetricsResult, QuietPeriodAwaiter } from './quiet-period-awaiter'
 
 type QuietPeriodAwaiterTestConfig = Omit<
 	ConstructorParameters<typeof QuietPeriodAwaiter>[0],
-	'getLoadingResourceUrls' | 'getLoadingResourcesCount'
+	| 'getDetectedResourcesCount'
+	| 'getLastLoadedResources'
+	| 'getLoadingResourceUrls'
+	| 'getLoadingResourcesCount'
+	| 'getLongestLoadedResource'
 >
+
+const noLoadedResources: LoadedResourceDetails[] = []
+
+function getNoLongestLoadedResource(): LoadedResourceDetails | undefined {
+	return noLoadedResources[0]
+}
 
 function createQuietPeriodAwaiter(config: QuietPeriodAwaiterTestConfig = {}): QuietPeriodAwaiter {
 	return new QuietPeriodAwaiter({
+		getDetectedResourcesCount: () => 0,
+		getLastLoadedResources: () => [],
 		getLoadingResourcesCount: () => 0,
 		getLoadingResourceUrls: () => [],
+		getLongestLoadedResource: getNoLongestLoadedResource,
 		maxPageLoadWaitTime: config.maxPageLoadWaitTime,
 		quietTime: config.quietTime,
 		startTime: config.startTime,
@@ -40,8 +53,10 @@ function createQuietPeriodAwaiter(config: QuietPeriodAwaiterTestConfig = {}): Qu
 }
 
 function expectNoLoadingResources(result: PageLoadMetricsResult): void {
+	expect(result.lastLoadedResources).toEqual([])
 	expect(result.loadingResourcesCount).toBe(0)
 	expect(result.loadingResourceUrls).toEqual([])
+	expect(result.longestLoadedResource).toBeUndefined()
 }
 
 describe('QuietPeriodAwaiter', () => {
@@ -72,7 +87,36 @@ describe('QuietPeriodAwaiter', () => {
 		expect(result.pct).toBeGreaterThanOrEqual(250)
 		expect(result.pct).toBeLessThan(300)
 		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_COMPLETED)
+		expect(result.quietTimerResetCount).toBe(1)
 		expectNoLoadingResources(result)
+	})
+
+	it('keeps loaded resource details when quiet period completes', async () => {
+		const loadedResource = {
+			duration: 12,
+			monitorType: 'network' as const,
+			url: 'https://example.test/loaded-resource.js',
+		}
+		const awaiter = new QuietPeriodAwaiter({
+			getDetectedResourcesCount: () => 1,
+			getLastLoadedResources: () => [loadedResource],
+			getLoadingResourcesCount: () => 0,
+			getLoadingResourceUrls: () => ['https://example.test/resource.js'],
+			getLongestLoadedResource: () => loadedResource,
+			quietTime: 10,
+			startTime: 1000,
+		})
+
+		awaiter.startQuietTimer({ resourceLoadedTimestamp: 1025 })
+		const result = await awaiter.promise
+
+		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_COMPLETED)
+		expect(result.detectedResourcesCount).toBe(1)
+		expect(result.lastLoadedResources).toEqual([loadedResource])
+		expect(result.loadingResourcesCount).toBe(0)
+		expect(result.loadingResourceUrls).toEqual([])
+		expect(result.longestLoadedResource).toEqual(loadedResource)
+		expect(result.quietTimerResetCount).toBe(0)
 	})
 
 	it('keeps the latest resource timestamp when quiet timers are started out of order', async () => {
@@ -85,6 +129,7 @@ describe('QuietPeriodAwaiter', () => {
 		const result = await awaiter.promise
 		expect(result.pct).toBe(500)
 		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_COMPLETED)
+		expect(result.quietTimerResetCount).toBe(1)
 		expectNoLoadingResources(result)
 	})
 
@@ -107,21 +152,6 @@ describe('QuietPeriodAwaiter', () => {
 		const result = await awaiter.promise
 
 		expect(result.pct).toBeGreaterThanOrEqual(0)
-		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_INTERRUPTED)
-		expectNoLoadingResources(result)
-	})
-
-	it('uses empty loading resource URLs when loading resource count is zero', async () => {
-		const awaiter = new QuietPeriodAwaiter({
-			getLoadingResourcesCount: () => 0,
-			getLoadingResourceUrls: () => ['https://example.test/resource.js'],
-			maxPageLoadWaitTime: 5000,
-			quietTime: 1000,
-		})
-
-		awaiter.interrupt()
-		const result = await awaiter.promise
-
 		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_INTERRUPTED)
 		expectNoLoadingResources(result)
 	})
