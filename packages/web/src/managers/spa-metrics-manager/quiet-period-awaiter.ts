@@ -24,7 +24,7 @@ import {
 	PAGE_LOAD_METRICS_STATUS_TIMEOUT,
 } from './constants'
 
-const DEFAULT_MAX_PAGE_LOAD_WAIT_TIME = 180_000
+// const DEFAULT_MAX_PAGE_LOAD_WAIT_TIME = 180_000
 const DEFAULT_QUIET_TIME = 1000
 const INTERRUPT_LISTENER_OPTIONS: AddEventListenerOptions = { capture: true, once: true }
 const INTERRUPT_LISTENER_REMOVE_OPTIONS: EventListenerOptions = { capture: true }
@@ -77,9 +77,7 @@ export class QuietPeriodAwaiter {
 
 	private lastResourceTimestamp: number | undefined
 
-	private maxPageLoadWaitTime: number
-
-	private maxWaitTimeoutId: ReturnType<typeof setTimeout> | undefined
+	// private maxWaitTimeoutId: ReturnType<typeof setTimeout> | undefined
 
 	private quietTime: number
 
@@ -90,7 +88,7 @@ export class QuietPeriodAwaiter {
 	constructor({
 		getLoadingResourcesCount,
 		getLoadingResourceUrls,
-		maxPageLoadWaitTime = DEFAULT_MAX_PAGE_LOAD_WAIT_TIME,
+		// maxPageLoadWaitTime = DEFAULT_MAX_PAGE_LOAD_WAIT_TIME,
 		quietTime = DEFAULT_QUIET_TIME,
 		startTime = performance.now(),
 	}: QuietPeriodAwaiterConfig) {
@@ -98,19 +96,19 @@ export class QuietPeriodAwaiter {
 		this.getLoadingResourcesCount = getLoadingResourcesCount
 		this.startTime = startTime
 		this.quietTime = quietTime
-		this.maxPageLoadWaitTime = maxPageLoadWaitTime
 		this.promise = new Promise<PageLoadMetricsResult>((r) => {
 			// @ts-expect-error Readonly property for resolve
 			this.resolve = r
 		})
-		this.maxWaitTimeoutId = setTimeout(() => {
-			const pct = Math.max(this.maxPageLoadWaitTime, 0)
-			diag.debug('QuietPeriodAwaiter: Max page load wait time expired', { pct })
-			this.resolveOnce({
-				pct,
-				status: PAGE_LOAD_METRICS_STATUS_TIMEOUT,
-			})
-		}, maxPageLoadWaitTime)
+		// Temporarily disabled: do not attach a PCT timeout
+		// this.maxWaitTimeoutId = setTimeout(() => {
+		// 	const pct = Math.max(maxPageLoadWaitTime, 0)
+		// 	diag.debug('QuietPeriodAwaiter: Max page load wait time expired', { pct })
+		// 	this.resolveOnce({
+		// 		pct,
+		// 		status: PAGE_LOAD_METRICS_STATUS_TIMEOUT,
+		// 	})
+		// }, maxPageLoadWaitTime)
 		window.addEventListener('pagehide', this.interruptListener, INTERRUPT_LISTENER_OPTIONS)
 	}
 
@@ -190,9 +188,9 @@ export class QuietPeriodAwaiter {
 
 		this.isResolved = true
 		clearTimeout(this.timeoutId)
-		clearTimeout(this.maxWaitTimeoutId)
 		this.timeoutId = undefined
-		this.maxWaitTimeoutId = undefined
+		// clearTimeout(this.maxWaitTimeoutId)
+		// this.maxWaitTimeoutId = undefined
 		window.removeEventListener('pagehide', this.interruptListener, INTERRUPT_LISTENER_REMOVE_OPTIONS)
 		this.resolve(this.withLoadingResourcesDetails(resolveValue))
 	}
