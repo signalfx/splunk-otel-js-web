@@ -122,7 +122,7 @@ export class Recorder {
 				cacheAssets: this.config.features?.cacheAssets ?? true,
 				canvas: this.config.features?.canvas ?? false,
 				iframes: this.config.features?.iframes ?? false,
-				packAssets: this.config.features?.packAssets ?? { styles: true },
+				packAssets: this.config.features?.packAssets ?? { hashAssetContent: true, styles: true },
 				persistSegments,
 				segmentFlushThresholdKb: MAX_CHUNK_SIZE / 1024,
 				video: this.config.features?.video ?? false,
