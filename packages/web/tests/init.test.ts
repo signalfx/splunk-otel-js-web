@@ -16,7 +16,7 @@
  *
  */
 
-import { context, diag, trace } from '@opentelemetry/api'
+import { context, diag, propagation, ROOT_CONTEXT, trace } from '@opentelemetry/api'
 import * as tracing from '@opentelemetry/sdk-trace-base'
 import { expectDefined } from '@test-utils/assertions'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -181,6 +181,99 @@ describe('test init', () => {
 			expect(warnMock).toHaveBeenCalledWith(
 				expect.stringContaining('Zipkin will be removed in the next major version in favor of OTLP'),
 			)
+		})
+	})
+
+	describe('propagation', () => {
+		it('extracts valid trace context after initialization', () => {
+			SplunkRum.init({
+				applicationName: 'app',
+				beaconEndpoint: 'https://127.0.0.1:8888/valid-trace-context',
+				rumAccessToken: undefined,
+			})
+
+			const contextWithTrace = propagation.extract(ROOT_CONTEXT, {
+				traceparent: '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
+			})
+			const spanContext = trace.getSpanContext(contextWithTrace)
+
+			expect(spanContext?.isRemote).toBe(true)
+			expect(spanContext?.spanId).toBe('00f067aa0ba902b7')
+			expect(spanContext?.traceFlags).toBe(1)
+			expect(spanContext?.traceId).toBe('4bf92f3577b34da6a3ce929d0e0e4736')
+		})
+
+		it('drops oversized trace context after initialization', () => {
+			SplunkRum.init({
+				applicationName: 'app',
+				beaconEndpoint: 'https://127.0.0.1:8888/oversized-trace-context',
+				rumAccessToken: undefined,
+			})
+
+			const contextWithTrace = propagation.extract(ROOT_CONTEXT, {
+				traceparent: `00-${'a'.repeat(8192)}`,
+			})
+
+			expect(trace.getSpanContext(contextWithTrace)).toBeUndefined()
+		})
+
+		it('ignores malformed trace context after initialization', () => {
+			SplunkRum.init({
+				applicationName: 'app',
+				beaconEndpoint: 'https://127.0.0.1:8888/malformed-trace-context',
+				rumAccessToken: undefined,
+			})
+
+			expect(() => {
+				propagation.extract(ROOT_CONTEXT, {
+					traceparent: 'not-a-traceparent',
+				})
+			}).not.toThrow()
+		})
+
+		it('extracts valid baggage after initialization', () => {
+			SplunkRum.init({
+				applicationName: 'app',
+				beaconEndpoint: 'https://127.0.0.1:8888/valid-baggage',
+				rumAccessToken: undefined,
+			})
+
+			const contextWithBaggage = propagation.extract(ROOT_CONTEXT, {
+				baggage: 'tenant=acme,feature=beta;metadata',
+			})
+			const baggage = propagation.getBaggage(contextWithBaggage)
+
+			expect(baggage?.getEntry('tenant')?.value).toBe('acme')
+			expect(baggage?.getEntry('feature')?.value).toBe('beta')
+			expect(baggage?.getEntry('feature')?.metadata?.toString()).toBe('metadata')
+		})
+
+		it('drops oversized baggage after initialization', () => {
+			SplunkRum.init({
+				applicationName: 'app',
+				beaconEndpoint: 'https://127.0.0.1:8888/oversized-baggage',
+				rumAccessToken: undefined,
+			})
+
+			const contextWithBaggage = propagation.extract(ROOT_CONTEXT, {
+				baggage: `tenant=${'a'.repeat(8192)}`,
+			})
+
+			expect(propagation.getBaggage(contextWithBaggage)).toBeUndefined()
+		})
+
+		it('ignores malformed baggage after initialization', () => {
+			SplunkRum.init({
+				applicationName: 'app',
+				beaconEndpoint: 'https://127.0.0.1:8888/malformed-baggage',
+				rumAccessToken: undefined,
+			})
+
+			expect(() => {
+				propagation.extract(ROOT_CONTEXT, {
+					baggage: 'tenant=%E0%A4%A',
+				})
+			}).not.toThrow()
 		})
 	})
 

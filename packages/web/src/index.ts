@@ -17,7 +17,7 @@
  */
 
 import { Attributes, diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api'
-import { _globalThis, SDK_INFO } from '@opentelemetry/core'
+import { _globalThis, CompositePropagator, SDK_INFO, W3CTraceContextPropagator } from '@opentelemetry/core'
 import { registerInstrumentations } from '@opentelemetry/instrumentation'
 import { Resource, ResourceAttributes } from '@opentelemetry/resources'
 import {
@@ -59,6 +59,7 @@ import {
 	SplunkXhrInstrumentation,
 	UserInteractionEventsConfig,
 } from './instrumentations'
+import { SafeW3CBaggagePropagator } from './safe-w3c-baggage-propagator'
 import { BrowserInstanceService } from './services/browser-instance-service'
 import { SessionBasedSampler } from './session-based-sampler'
 import { SpanAttributesProcessor, SpanEmitterProcessor } from './span-processors'
@@ -750,6 +751,9 @@ export const SplunkRum: SplunkOtelWebType = {
 					...processedOptions.context,
 					onBeforeContextEnd: () => _postDocLoadInstrumentation?.onBeforeContextChange(),
 					onBeforeContextStart: () => _postDocLoadInstrumentation?.onBeforeContextChange(),
+				}),
+				propagator: new CompositePropagator({
+					propagators: [new W3CTraceContextPropagator(), new SafeW3CBaggagePropagator()],
 				}),
 			})
 
