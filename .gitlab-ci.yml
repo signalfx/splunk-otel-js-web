@@ -1,6 +1,12 @@
 default:
     image: 'cimg/node:24.11.0-browsers'
 
+variables:
+    # Build artifacts call `git describe --tags --always --long` for `splunk.rumVersionFull*` attributes.
+    # Disable shallow clones so the latest reachable tag is available in GitLab jobs.
+    # https://docs.gitlab.com/ci/pipelines/settings/#limit-the-number-of-changes-fetched-during-clone
+    GIT_DEPTH: '0'
+
 include:
     - project: 'ci-cd/templates'
       file: '/prodsec/.oss-scan.yml'
