@@ -22,7 +22,11 @@ import { JsonObject } from 'type-fest'
 
 import type { LogExporter } from './types'
 
-import { isRecorderLoadedViaLatestTag, isRecorderLoadedViaNextTag } from './detect-latest'
+import {
+	isRecorderLoadedViaLatestTag,
+	isRecorderLoadedViaLockedVersionTag,
+	isRecorderLoadedViaNextTag,
+} from './detect-latest'
 import { log } from './log'
 import OTLPLogExporter from './otlp-log-exporter'
 import { OTLPProtoLogExporter } from './otlp-proto-log-exporter'
@@ -81,7 +85,7 @@ let recorder: Recorder | undefined
 let sessionStateUnsubscribe: undefined | (() => void)
 let pendingSegmentsRetried = false
 const isLatestTagUsed = isRecorderLoadedViaLatestTag()
-const isNextTagUsed = isRecorderLoadedViaNextTag()
+const isFullVersionTagUsed = isRecorderLoadedViaNextTag() || isRecorderLoadedViaLockedVersionTag()
 
 const useIndexedDBPersistence = (config: SplunkRumRecorderConfig): boolean =>
 	config.persistFailedReplayData === 'indexeddb' || config.persistFailedReplayData === true
@@ -271,7 +275,7 @@ const SplunkRumRecorder = {
 			if (SplunkRum.provider) {
 				SplunkRum.provider.resource.attributes['splunk.sessionReplay'] = 'splunk'
 
-				if (isNextTagUsed && typeof __COMMIT_HASH__ === 'string' && __COMMIT_HASH__) {
+				if (isFullVersionTagUsed && typeof __COMMIT_HASH__ === 'string' && __COMMIT_HASH__) {
 					SplunkRum.provider.resource.attributes['splunk.rumVersionFullSessionRecorder'] = __COMMIT_HASH__
 				}
 			}

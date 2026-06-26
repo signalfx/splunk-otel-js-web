@@ -17,6 +17,8 @@
  */
 import { isScriptElement } from './type-guards'
 
+const LOCKED_VERSION_TAG_REGEX = /\/o11y-gdi-rum\/v\d+\.\d+\.\d+-[0-9a-f]{40}\//i
+
 export const isRecorderLoadedViaLatestTag = () => {
 	let isLatestTagUsed = false
 	try {
@@ -30,6 +32,20 @@ export const isRecorderLoadedViaLatestTag = () => {
 	}
 
 	return isLatestTagUsed
+}
+
+export const isRecorderLoadedViaLockedVersionTag = () => {
+	let isLockedVersionTagUsed = false
+	try {
+		if (document.currentScript && isScriptElement(document.currentScript)) {
+			const src = document.currentScript.src
+			isLockedVersionTagUsed = LOCKED_VERSION_TAG_REGEX.test(src)
+		}
+	} catch {
+		// ignore
+	}
+
+	return isLockedVersionTagUsed
 }
 
 export const isRecorderLoadedViaNextTag = () => {

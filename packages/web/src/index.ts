@@ -80,7 +80,11 @@ import {
 } from './types'
 import { generateId, getPluginConfig, normalizeIgnoreUrlsConfig } from './utils'
 import { getValidAttributes, SpanContext } from './utils/attributes'
-import { isAgentLoadedViaLatestTag, isAgentLoadedViaNextTag } from './utils/detect-latest'
+import {
+	isAgentLoadedViaLatestTag,
+	isAgentLoadedViaLockedVersionTag,
+	isAgentLoadedViaNextTag,
+} from './utils/detect-latest'
 import { isBot } from './utils/is-bot'
 import { parseVersion } from './utils/parse-version'
 import { createPicker, isPickerWindow } from './utils/picker'
@@ -289,7 +293,7 @@ let _spaMetricsManager: SpaMetricsManager | undefined
 let eventTarget: InternalEventTarget | undefined
 let _sessionStateUnsubscribe: undefined | (() => void)
 const isLatestTagUsed = isAgentLoadedViaLatestTag()
-const isNextTagUsed = isAgentLoadedViaNextTag()
+const isFullVersionTagUsed = isAgentLoadedViaNextTag() || isAgentLoadedViaLockedVersionTag()
 
 export const SplunkRum: SplunkOtelWebType = {
 	_internalInit: function (options: SplunkOtelWebConfig | Partial<SplunkOtelWebConfigInternal>) {
@@ -600,7 +604,7 @@ export const SplunkRum: SplunkOtelWebType = {
 				resourceAttrs[SYNTHETICS_TEST_ID_ATTRIBUTE] = syntheticsTestId
 			}
 
-			if (isNextTagUsed && typeof __COMMIT_HASH__ === 'string' && __COMMIT_HASH__) {
+			if (isFullVersionTagUsed && typeof __COMMIT_HASH__ === 'string' && __COMMIT_HASH__) {
 				resourceAttrs['splunk.rumVersionFull'] = __COMMIT_HASH__
 			}
 
