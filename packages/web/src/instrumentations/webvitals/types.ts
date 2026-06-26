@@ -92,8 +92,8 @@ export interface SplunkWebVitalsInstrumentationConfig extends InstrumentationCon
 	_experimental_attribution?: WebVitalsAttributionOption
 
 	/**
-	 * Enable experimental FCP collection. Pass an object to forward `web-vitals`
-	 * {@link AttributionReportOpts} (e.g. `reportAllChanges`).
+	 * Enable experimental FCP collection. Pass an object to forward
+	 * `web-vitals` {@link AttributionReportOpts}.
 	 * @default false
 	 */
 	_experimental_fcp?: boolean | AttributionReportOpts
@@ -113,7 +113,7 @@ export interface SplunkWebVitalsInstrumentationConfig extends InstrumentationCon
 
 	/**
 	 * Enable CLS collection. Pass an object to forward `web-vitals`
-	 * {@link AttributionReportOpts} (e.g. `reportAllChanges`). When
+	 * {@link AttributionReportOpts}. When
 	 * `_experimental_attribution` is enabled and `target: 'safe'` is in effect,
 	 * `generateTarget` is set by this instrumentation and any caller-provided
 	 * `generateTarget` is ignored.
