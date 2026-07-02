@@ -33,10 +33,19 @@ export interface SplunkPostDocLoadResourceInstrumentationConfig extends Instrume
 }
 
 const MODULE_NAME = 'splunk-post-doc-load-resource'
-const defaultAllowedInitiatorTypes = ['img', 'script'] //other, css, link
+const defaultAllowedInitiatorTypes = ['css', 'font', 'iframe', 'img', 'link', 'script']
 
-const nodeHasSrcAttribute = (node: Node): node is HTMLScriptElement | HTMLImageElement =>
-	node instanceof HTMLScriptElement || node instanceof HTMLImageElement
+const getNodeResourceUrl = (node: Node): string | undefined => {
+	if (node instanceof HTMLLinkElement) {
+		return node.getAttribute('href') ?? undefined
+	}
+
+	if (node instanceof HTMLIFrameElement || node instanceof HTMLImageElement || node instanceof HTMLScriptElement) {
+		return node.getAttribute('src') ?? undefined
+	}
+
+	return undefined
+}
 
 export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBase {
 	private config: SplunkPostDocLoadResourceInstrumentationConfig
@@ -142,14 +151,13 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 
 		mutations
 			.flatMap((mutation) => Array.from(mutation.addedNodes || []))
-			.filter(nodeHasSrcAttribute)
 			.forEach((node) => {
-				const src = node.getAttribute('src')
-				if (!src) {
+				const resourceUrl = getNodeResourceUrl(node)
+				if (!resourceUrl) {
 					return
 				}
 
-				const srcUrl = new URL(src, location.origin)
+				const srcUrl = new URL(resourceUrl, location.origin)
 				this.urlToContextMap[srcUrl.toString()] = context.active()
 			})
 	}
