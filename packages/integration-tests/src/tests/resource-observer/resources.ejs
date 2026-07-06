@@ -43,7 +43,7 @@
       const p = new Promise(function(resolve, reject) {
         const link = document.createElement('link');
         link.rel = 'stylesheet';
-        link.href = '/docload/assets/css-font-img.css?postload=true';
+        link.href = 'assets/css-font-img.css?postload=true';
         link.onload = function() {
           const fontText = document.createElement('span');
           fontText.textContent = 'postload font';

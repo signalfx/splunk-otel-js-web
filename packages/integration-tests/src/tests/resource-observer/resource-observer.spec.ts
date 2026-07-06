@@ -24,19 +24,6 @@ test.describe('resource observer', () => {
 		await recordPage.goTo('/resource-observer/resources.ejs')
 
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'guard-span').length === 1)
-		await recordPage.waitForSpans(
-			(spans) =>
-				spans.some(
-					(span) =>
-						typeof span.attributes['http.url'] === 'string' &&
-						String(span.attributes['http.url']).endsWith('css-font-img.css?postload=true'),
-				) &&
-				spans.some(
-					(span) =>
-						typeof span.attributes['http.url'] === 'string' &&
-						String(span.attributes['http.url']).endsWith('splunk.woff'),
-				),
-		)
 		const agentSpans = recordPage.receivedSpans.filter(
 			(span) =>
 				typeof span.attributes['http.url'] === 'string' &&
@@ -88,12 +75,15 @@ test.describe('resource observer', () => {
 		expect(cssSpans[0]).toHaveSpanAttribute('component', 'splunk-post-doc-load-resource')
 		expect(cssSpans[0]).toHaveSpanAttribute(
 			'http.url',
-			'http://localhost:3000/docload/assets/css-font-img.css?postload=true',
+			'http://localhost:3000/resource-observer/assets/css-font-img.css?postload=true',
 		)
 
 		expect(fontSpans).toHaveLength(1)
 		expect(fontSpans[0]).toHaveSpanAttribute('component', 'splunk-post-doc-load-resource')
-		expect(fontSpans[0]).toHaveSpanAttribute('http.url', 'http://localhost:3000/docload/assets/splunk.woff')
+		expect(fontSpans[0]).toHaveSpanAttribute(
+			'http.url',
+			'http://localhost:3000/resource-observer/assets/splunk.woff',
+		)
 	})
 
 	test('resources can be ignored', async ({ recordPage }) => {
