@@ -34,6 +34,7 @@ export interface SplunkPostDocLoadResourceInstrumentationConfig extends Instrume
 
 const MODULE_NAME = 'splunk-post-doc-load-resource'
 const defaultAllowedInitiatorTypes = ['css', 'font', 'iframe', 'img', 'link', 'script']
+const fontResourcePattern = /\.(?:eot|otf|ttf|woff2?)(?:[?#]|$)/i
 
 const getNodeResourceUrl = (node: Node): string | undefined => {
 	if (node instanceof HTMLLinkElement) {
@@ -46,6 +47,10 @@ const getNodeResourceUrl = (node: Node): string | undefined => {
 
 	return undefined
 }
+
+const isAllowedResourceEntry = (entry: PerformanceResourceTiming, allowedInitiatorTypes: string[] | undefined) =>
+	allowedInitiatorTypes?.includes(entry.initiatorType) ||
+	(allowedInitiatorTypes?.includes('font') && entry.initiatorType === 'other' && fontResourcePattern.test(entry.name))
 
 export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBase {
 	private config: SplunkPostDocLoadResourceInstrumentationConfig
@@ -107,8 +112,7 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 		this._processHeadMutationObserverRecords(this.headMutationObserver.takeRecords())
 	}
 
-	// TODO: discuss TS built-in types
-	private _createSpan(entry: any) {
+	private _createSpan(entry: PerformanceResourceTiming) {
 		if (isUrlIgnored(entry.name, this.config.ignoreUrls)) {
 			return
 		}
@@ -181,9 +185,9 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 		this.performanceObserver = new PerformanceObserver((list) => {
 			if (window.document.readyState === 'complete') {
 				list.getEntries().forEach((entry) => {
-					// TODO: check how we can amend TS base typing to fix this
-					if (this.config.allowedInitiatorTypes?.includes((entry as any).initiatorType)) {
-						this._createSpan(entry)
+					const resourceEntry = entry as PerformanceResourceTiming
+					if (isAllowedResourceEntry(resourceEntry, this.config.allowedInitiatorTypes)) {
+						this._createSpan(resourceEntry)
 					}
 				})
 			}

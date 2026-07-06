@@ -24,6 +24,19 @@ test.describe('resource observer', () => {
 		await recordPage.goTo('/resource-observer/resources.ejs')
 
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'guard-span').length === 1)
+		await recordPage.waitForSpans(
+			(spans) =>
+				spans.some(
+					(span) =>
+						typeof span.attributes['http.url'] === 'string' &&
+						String(span.attributes['http.url']).endsWith('css-font-img.css?postload=true'),
+				) &&
+				spans.some(
+					(span) =>
+						typeof span.attributes['http.url'] === 'string' &&
+						String(span.attributes['http.url']).endsWith('splunk.woff'),
+				),
+		)
 		const agentSpans = recordPage.receivedSpans.filter(
 			(span) =>
 				typeof span.attributes['http.url'] === 'string' &&
