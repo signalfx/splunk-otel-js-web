@@ -101,6 +101,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 			if (span && spanName === AttributeNames.DOCUMENT_LOAD) {
 				span.setAttribute('component', this.component)
 				addExtraDocLoadTags(span)
+				this.spaMetricsManager?.setCurrentNavigationSpan(span)
 				// The span processor's automatic onStart event already ran before
 				// `component` was set, so emit manually now that SpanEmitter can
 				// route this as `document-load:start`.
@@ -162,10 +163,12 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 					void this.documentLoadMetricsPromise
 						.then((pageLoadMetrics) => {
 							this.spaMetricsManager?.setPageLoadMetricAttributes(span, pageLoadMetrics)
+							this.spaMetricsManager?.clearCurrentNavigationSpan(span)
 							api.diag.debug('Sending documentLoad span with PCT result', pageLoadMetrics)
 							_superEndSpan(span, performanceName, entries)
 						})
 						.catch((error) => {
+							this.spaMetricsManager?.clearCurrentNavigationSpan(span)
 							api.diag.warn('SplunkDocumentLoadInstrumentation: Failed to resolve page load metrics.', {
 								error,
 							})

@@ -15,5 +15,6 @@
  * limitations under the License.
  *
  */
+export * from './pct-relevant-span-processor'
 export * from './span-attributes-processor'
 export * from './span-emitter-processor'

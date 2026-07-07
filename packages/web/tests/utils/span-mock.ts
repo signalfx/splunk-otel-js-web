@@ -17,13 +17,14 @@
  */
 import { Span } from '@opentelemetry/api'
 
-export function createSpanMock(): { attributes: Record<string, number | string>; span: Span } {
+export function createSpanMock(spanId = 'span-id'): { attributes: Record<string, number | string>; span: Span } {
 	const attributes: Record<string, number | string> = {}
 	const span = {
 		setAttribute: (name: string, value: number | string) => {
 			attributes[name] = value
 			return span
 		},
+		spanContext: () => ({ spanId }),
 	} as Span
 
 	return { attributes, span }

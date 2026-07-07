@@ -118,6 +118,8 @@ export interface SpaMetricsManagerConfig extends SpaMetricsManagerConfigValues {
 export class SpaMetricsManager {
 	private readonly config: ResolvedSpaMetricsManagerConfig
 
+	private currentNavigationSpanId: string | undefined
+
 	private isMonitoring = false
 
 	private loadingResources = new Map<string, LoadingResource>()
@@ -167,8 +169,22 @@ export class SpaMetricsManager {
 		this.monitors = SpaMetricsManager.createMonitors(monitorConfig)
 	}
 
+	clearCurrentNavigationSpan(span: Span): void {
+		if (this.currentNavigationSpanId === span.spanContext().spanId) {
+			this.currentNavigationSpanId = undefined
+		}
+	}
+
 	getConfigForUrl(url: string): ResolvedSpaMetricsManagerConfig {
 		return this.urlOverrides.find((override) => this.isUrlOverrideMatch(override.match, url))?.config ?? this.config
+	}
+
+	getCurrentNavigationSpanId(): string | undefined {
+		return this.currentNavigationSpanId
+	}
+
+	setCurrentNavigationSpan(span: Span): void {
+		this.currentNavigationSpanId = span.spanContext().spanId
 	}
 
 	setPageLoadMetricAttributes(
@@ -234,6 +250,7 @@ export class SpaMetricsManager {
 	stop(): void {
 		this.quietPeriodAwaiter?.interrupt()
 		this.quietPeriodAwaiter = undefined
+		this.currentNavigationSpanId = undefined
 
 		if (!this.isMonitoring) {
 			return
@@ -250,6 +267,10 @@ export class SpaMetricsManager {
 
 	waitForPageLoad({ span, startTime }: WaitForPageLoadConfig): Promise<PageLoadMetricsResult> {
 		this.quietPeriodAwaiter?.interrupt()
+		if (span) {
+			this.setCurrentNavigationSpan(span)
+		}
+
 		const activeConfig = this.activeConfig
 		const droppedResources = this.dropLoadingResourcesIgnoredByActiveConfig(activeConfig)
 		this.pageLoadResourceTracker = {
@@ -298,13 +319,28 @@ export class SpaMetricsManager {
 			})
 		}
 
-		return pageLoadMetricsPromise.then((result) => {
-			if (span) {
-				this.setPageLoadMetricAttributes(span, result)
-			}
+		return pageLoadMetricsPromise.then(
+			(result) => {
+				try {
+					if (span) {
+						this.setPageLoadMetricAttributes(span, result)
+					}
 
-			return result
-		})
+					return result
+				} finally {
+					if (span) {
+						this.clearCurrentNavigationSpan(span)
+					}
+				}
+			},
+			(error) => {
+				if (span) {
+					this.clearCurrentNavigationSpan(span)
+				}
+
+				throw error
+			},
+		)
 	}
 
 	private static createMonitors(monitorConfig: MonitorConfig) {

@@ -39,13 +39,14 @@ import { getDocumentLoadTime, SpaMetricsManager } from './spa-metrics-manager'
 const TEST_API_URL = `${HTTP_TEST_SERVER_URL}/some-data`
 const TEST_BEACON_ENDPOINT = `${HTTP_TEST_SERVER_URL}/v1/rum`
 
-function createSpanMock(): { attributes: Record<string, number | string>; span: Span } {
+function createSpanMock(spanId = 'span-id'): { attributes: Record<string, number | string>; span: Span } {
 	const attributes: Record<string, number | string> = {}
 	const span = {
 		setAttribute: (name: string, value: number | string) => {
 			attributes[name] = value
 			return span
 		},
+		spanContext: () => ({ spanId }),
 	} as Span
 
 	return { attributes, span }
@@ -499,6 +500,24 @@ describe('SpaMetricsManager', () => {
 			expect(attributes[BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE]).toBeUndefined()
 			expect(attributes[BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE]).toBeUndefined()
 			expect(attributes[BROWSER_NAVIGATION_QUIET_TIMER_RESET_COUNT_ATTRIBUTE]).toBe(0)
+		} finally {
+			manager.stop()
+		}
+	})
+
+	it('exposes current navigation span id while waiting for page load metrics', async () => {
+		const manager = new SpaMetricsManager({ monitors: [], quietTime: 1 })
+		const { span } = createSpanMock('navigation-span-id')
+		manager.start()
+
+		try {
+			const promise = manager.waitForPageLoad({ span, startTime: performance.now() })
+
+			expect(manager.getCurrentNavigationSpanId()).toBe('navigation-span-id')
+
+			await promise
+
+			expect(manager.getCurrentNavigationSpanId()).toBeUndefined()
 		} finally {
 			manager.stop()
 		}
