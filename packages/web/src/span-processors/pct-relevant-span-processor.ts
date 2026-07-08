@@ -55,17 +55,8 @@ export class PctRelevantSpanProcessor implements SpanProcessor {
 
 	onStart(span: Span): void {
 		const navigationSpanId = this.spaMetricsManager.getCurrentNavigationSpanId()
-		if (!navigationSpanId) {
-			return
-		}
-
-		const originalEnd = span.end.bind(span)
-		span.end = (endTime) => {
-			if (this.spaMetricsManager.getCurrentNavigationSpanId() === navigationSpanId && isPctRelevantSpan(span)) {
-				span.setAttribute(BROWSER_NAVIGATION_RELEVANT_ID_ATTRIBUTE, navigationSpanId)
-			}
-
-			originalEnd(endTime)
+		if (navigationSpanId && isPctRelevantSpan(span)) {
+			span.setAttribute(BROWSER_NAVIGATION_RELEVANT_ID_ATTRIBUTE, navigationSpanId)
 		}
 	}
 

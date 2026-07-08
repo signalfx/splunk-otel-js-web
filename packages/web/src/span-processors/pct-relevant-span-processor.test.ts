@@ -35,7 +35,6 @@ function createReadableSpanMock({ component, name = 'HTTP GET' }: { component?: 
 
 	const span = {
 		attributes,
-		end: () => {},
 		name,
 		setAttribute: (attributeName: string, value: number | string) => {
 			attributes[attributeName] = value
@@ -55,7 +54,6 @@ describe('PctRelevantSpanProcessor', () => {
 		manager.setCurrentNavigationSpan(navigationSpan)
 
 		processor.onStart(span)
-		span.end()
 
 		expect(attributes[BROWSER_NAVIGATION_RELEVANT_ID_ATTRIBUTE]).toBe('navigation-span-id')
 	})
@@ -71,7 +69,6 @@ describe('PctRelevantSpanProcessor', () => {
 		manager.setCurrentNavigationSpan(navigationSpan)
 
 		processor.onStart(span)
-		span.end()
 
 		expect(attributes[BROWSER_NAVIGATION_RELEVANT_ID_ATTRIBUTE]).toBe('navigation-span-id')
 	})
@@ -84,7 +81,6 @@ describe('PctRelevantSpanProcessor', () => {
 		manager.setCurrentNavigationSpan(navigationSpan)
 
 		processor.onStart(span)
-		span.end()
 
 		expect(attributes[BROWSER_NAVIGATION_RELEVANT_ID_ATTRIBUTE]).toBeUndefined()
 	})
@@ -95,21 +91,6 @@ describe('PctRelevantSpanProcessor', () => {
 		const { attributes, span } = createReadableSpanMock({ component: 'splunk-loaf' })
 
 		processor.onStart(span)
-		span.end()
-
-		expect(attributes[BROWSER_NAVIGATION_RELEVANT_ID_ATTRIBUTE]).toBeUndefined()
-	})
-
-	it('does not mark spans ending after navigation is no longer active', () => {
-		const manager = new SpaMetricsManager()
-		const processor = new PctRelevantSpanProcessor(manager)
-		const { span: navigationSpan } = createSpanMock('navigation-span-id')
-		const { attributes, span } = createReadableSpanMock({ component: 'fetch' })
-		manager.setCurrentNavigationSpan(navigationSpan)
-
-		processor.onStart(span)
-		manager.clearCurrentNavigationSpan(navigationSpan)
-		span.end()
 
 		expect(attributes[BROWSER_NAVIGATION_RELEVANT_ID_ATTRIBUTE]).toBeUndefined()
 	})
