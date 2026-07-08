@@ -89,11 +89,16 @@ test.describe('docload', () => {
 		expect(docLoadSpans[0].spanId.match(/[a-f0-9]+/), 'Checking sanity of spanId').toBeTruthy()
 		expect(docFetchSpans[0].traceId).toBe(docLoadSpans[0].traceId)
 		expect(docFetchSpans[0].parentSpanId).toBe(docLoadSpans[0].spanId)
+		expect(docFetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, docLoadSpans[0].spanId)
 
 		expect(scriptFetchSpans).toHaveLength(1)
 		expect(scriptFetchSpans[0].traceId).toBe(docLoadSpans[0].traceId)
 		expect(scriptFetchSpans[0].parentSpanId).toBe(docLoadSpans[0].spanId)
 		expect(scriptFetchSpans[0]).toHaveSpanAttribute('component', 'document-load')
+		expect(scriptFetchSpans[0]).toHaveSpanAttribute(
+			BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId,
+			docLoadSpans[0].spanId,
+		)
 		if (browserName !== 'webkit') {
 			// Webkit does not support https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/responseStatus
 			expect(Number.parseInt(String(scriptFetchSpans[0].attributes['http.status_code']))).toBe(200)
@@ -103,6 +108,10 @@ test.describe('docload', () => {
 		expect(brokenImageFetchSpans.length).toBeGreaterThanOrEqual(1)
 		expect(brokenImageFetchSpans[0].traceId).toBe(docLoadSpans[0].traceId)
 		expect(brokenImageFetchSpans[0].parentSpanId).toBe(docLoadSpans[0].spanId)
+		expect(brokenImageFetchSpans[0]).toHaveSpanAttribute(
+			BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId,
+			docLoadSpans[0].spanId,
+		)
 		if (browserName !== 'webkit') {
 			// Webkit does not support https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/responseStatus
 			expect(Number.parseInt(String(brokenImageFetchSpans[0].attributes['http.status_code']))).toBe(404)

@@ -28,6 +28,7 @@
 
 	<button type="button" id="btnNavigate">Navigate</button>
 	<button type="button" id="btnNavigateWithFetch">Navigate with fetch</button>
+	<button type="button" id="btnNavigateWithXhr">Navigate with XHR</button>
 	<button type="button" id="btnNavigateWithImage">Navigate with image</button>
 	<button type="button" id="btnNavigateWithSlowFetch">Navigate with slow fetch</button>
 	<button type="button" id="btnNavigateWithNetworkDisabled">Navigate with network disabled</button>
@@ -58,11 +59,19 @@
 		document.querySelector('#btnNavigateWithFetch').addEventListener('click', function () {
 			location.hash = 'page2';
 			// Simulate API call after navigation
-			fetch('/some-data').then(function(response) {
+			fetch('/some-data?delay=300&resource=route-change-fetch').then(function(response) {
 				return response.json();
 			}).then(function(data) {
 				document.getElementById('content').textContent = JSON.stringify(data);
 			});
+		});
+
+		document.querySelector('#btnNavigateWithXhr').addEventListener('click', function () {
+			location.hash = 'page-xhr';
+			// Simulate XHR after navigation
+			const req = new XMLHttpRequest();
+			req.open('GET', '/some-data?delay=300&resource=route-change-xhr');
+			req.send();
 		});
 
 		document.querySelector('#btnNavigateWithImage').addEventListener('click', function () {

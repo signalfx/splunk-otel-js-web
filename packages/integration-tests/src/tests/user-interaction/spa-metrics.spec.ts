@@ -76,9 +76,16 @@ test.describe('spa-metrics', () => {
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'routeChange').length === 1)
 
 		const routeChangeSpans = recordPage.receivedSpans.filter((span) => span.name === 'routeChange')
-		const fetchUrl = '/some-data'
+		const fetchUrl = '/some-data?delay=300&resource=route-change-fetch'
+		const fetchSpans = recordPage.receivedSpans.filter(
+			(span) =>
+				span.attributes['component'] === 'fetch' &&
+				span.attributes['http.url'] === `http://localhost:3000${fetchUrl}`,
+		)
 
 		expect(routeChangeSpans).toHaveLength(1)
+		expect(fetchSpans).toHaveLength(1)
+		expect(fetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, routeChangeSpans[0].spanId)
 		expectBrowserNavigationAttributes(routeChangeSpans[0], {
 			detectedResourceCount: 1,
 			quietTimerResetCount: 0,
@@ -96,6 +103,39 @@ test.describe('spa-metrics', () => {
 		expect(routeChangeSpans[0]).toHaveSpanDurationGreaterThan(0)
 	})
 
+	test('routeChange span waits for XHR requests to complete', async ({ recordPage }) => {
+		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+
+		await recordPage.locator('#btnNavigateWithXhr').click()
+
+		// Wait for routeChange span
+		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'routeChange').length === 1)
+
+		const routeChangeSpans = recordPage.receivedSpans.filter((span) => span.name === 'routeChange')
+		const xhrUrl = '/some-data?delay=300&resource=route-change-xhr'
+		const xhrSpans = recordPage.receivedSpans.filter(
+			(span) =>
+				span.attributes['component'] === 'xml-http-request' &&
+				span.attributes['http.url'] === `http://localhost:3000${xhrUrl}`,
+		)
+
+		expect(routeChangeSpans).toHaveLength(1)
+		expect(xhrSpans).toHaveLength(1)
+		expect(xhrSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, routeChangeSpans[0].spanId)
+		expectBrowserNavigationAttributes(routeChangeSpans[0], {
+			detectedResourceCount: 1,
+			quietTimerResetCount: 0,
+			status: 'completed',
+		})
+		expectLoadedResourceAttributes(routeChangeSpans[0], {
+			monitorType: 'network',
+			url: xhrUrl,
+		})
+
+		// Duration should include XHR time + quiet period
+		expect(routeChangeSpans[0]).toHaveSpanDurationGreaterThan(0)
+	})
+
 	test('routeChange span waits for images to load', async ({ recordPage }) => {
 		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
 
@@ -105,8 +145,19 @@ test.describe('spa-metrics', () => {
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'routeChange').length === 1)
 
 		const routeChangeSpans = recordPage.receivedSpans.filter((span) => span.name === 'routeChange')
+		const imageResourceSpans = recordPage.receivedSpans.filter(
+			(span) =>
+				span.attributes['component'] === 'splunk-post-doc-load-resource' &&
+				typeof span.attributes['http.url'] === 'string' &&
+				String(span.attributes['http.url']).includes('/user-interaction/assets/splunk-black.png'),
+		)
 
 		expect(routeChangeSpans).toHaveLength(1)
+		expect(imageResourceSpans).toHaveLength(1)
+		expect(imageResourceSpans[0]).toHaveSpanAttribute(
+			BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId,
+			routeChangeSpans[0].spanId,
+		)
 		expectBrowserNavigationAttributes(routeChangeSpans[0], { status: 'completed' })
 		expect(
 			Number(routeChangeSpans[0].attributes[BROWSER_NAVIGATION_ATTRIBUTES.detectedResourceCount]),

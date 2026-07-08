@@ -30,6 +30,7 @@ import { addSpanNetworkEvents, PerformanceEntries, PerformanceTimingNames as PTN
 import { SemanticAttributes, SEMATTRS_HTTP_URL } from '@opentelemetry/semantic-conventions'
 
 import { SessionManager, SpaMetricsManager } from '../managers'
+import { setBrowserNavigationRelevantId } from '../managers/spa-metrics-manager/navigation-relevance'
 import { captureTraceParentFromPerformanceEntries } from '../servertiming'
 import { SplunkOtelWebConfig } from '../types'
 import { isCacheHit } from '../utils/cache'
@@ -133,6 +134,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 			}
 
 			if (span && exposedSpan.name !== AttributeNames.DOCUMENT_LOAD) {
+				setBrowserNavigationRelevantId(span, this.spaMetricsManager)
 				// only apply links to document/resource fetch
 				// To maintain compatibility, getEntries copies out select items from
 				// different versions of the performance API into its own structure for the

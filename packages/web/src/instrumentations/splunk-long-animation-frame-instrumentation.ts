@@ -19,7 +19,8 @@
 import { diag } from '@opentelemetry/api'
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 
-import { SessionManager } from '../managers'
+import { SessionManager, SpaMetricsManager } from '../managers'
+import { setBrowserNavigationRelevantId } from '../managers/spa-metrics-manager/navigation-relevance'
 import { SplunkOtelWebConfig } from '../types'
 import { VERSION } from '../version'
 import {
@@ -49,6 +50,7 @@ export class SplunkLongAnimationFrameInstrumentation extends InstrumentationBase
 		config: InstrumentationConfig = {},
 		_otelConfig: SplunkOtelWebConfig,
 		public sessionManager?: SessionManager,
+		public spaMetricsManager?: SpaMetricsManager,
 	) {
 		super(LOAF_MODULE_NAME, VERSION, Object.assign({}, config))
 	}
@@ -88,6 +90,7 @@ export class SplunkLongAnimationFrameInstrumentation extends InstrumentationBase
 		})
 
 		setLoafEntryAttributes(span, entry)
+		setBrowserNavigationRelevantId(span, this.spaMetricsManager)
 		span.end(entry.startTime + entry.duration)
 	}
 }

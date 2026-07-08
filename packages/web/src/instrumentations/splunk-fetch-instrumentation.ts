@@ -21,7 +21,8 @@ import { diag, ROOT_CONTEXT } from '@opentelemetry/api'
 import { isTracingSuppressed, suppressTracing } from '@opentelemetry/core'
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch'
 
-import { SessionManager } from '../managers'
+import { SessionManager, SpaMetricsManager } from '../managers'
+import { setBrowserNavigationRelevantId } from '../managers/spa-metrics-manager/navigation-relevance'
 import { captureTraceParent } from '../servertiming'
 import { SplunkFetchInstrumentationConfig, SplunkOtelWebConfig } from '../types'
 
@@ -37,6 +38,7 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
 		config: SplunkFetchInstrumentationConfig = {},
 		otelConfig: SplunkOtelWebConfig,
 		public sessionManager?: SessionManager,
+		public spaMetricsManager?: SpaMetricsManager,
 	) {
 		const separateTraces = config.separateTraces ?? otelConfig.separateTraces ?? false
 
@@ -46,6 +48,7 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
 			// Temporary return to old span name until cleared by backend
 			span.updateName(`HTTP ${(request.method || 'GET').toUpperCase()}`)
 			span.setAttribute('component', 'fetch')
+			setBrowserNavigationRelevantId(span, spaMetricsManager)
 
 			if (span && result instanceof Response && result.headers) {
 				const st = result.headers.get('Server-Timing')

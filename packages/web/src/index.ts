@@ -62,7 +62,7 @@ import {
 import { SafeW3CBaggagePropagator } from './safe-w3c-baggage-propagator'
 import { BrowserInstanceService } from './services/browser-instance-service'
 import { SessionBasedSampler } from './session-based-sampler'
-import { PctRelevantSpanProcessor, SpanAttributesProcessor, SpanEmitterProcessor } from './span-processors'
+import { SpanAttributesProcessor, SpanEmitterProcessor } from './span-processors'
 import { SplunkContextManager } from './splunk-context-manager'
 import { SplunkSamplerWrapper } from './splunk-sampler-wrapper'
 import { SplunkWebTracerProvider } from './splunk-web-tracer-provider'
@@ -678,9 +678,6 @@ export const SplunkRum: SplunkOtelWebType = {
 			this._spanEmitter = new SpanEmitterProcessor()
 			processedOptions.spanEmitter = this._spanEmitter
 			const spanProcessors: SpanProcessor[] = [this.attributesProcessor, this._spanEmitter]
-			if (spaMetricsManager) {
-				spanProcessors.push(new PctRelevantSpanProcessor(spaMetricsManager))
-			}
 
 			if (processedOptions.beaconEndpoint) {
 				const exporter = buildExporter(processedOptions)

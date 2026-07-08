@@ -15,5 +15,15 @@
  * limitations under the License.
  *
  */
-export * from './span-attributes-processor'
-export * from './span-emitter-processor'
+
+import { type Span } from '@opentelemetry/api'
+
+import { BROWSER_NAVIGATION_PAGE_SPAN_ID_ATTRIBUTE } from './constants'
+import { type SpaMetricsManager } from './spa-metrics-manager'
+
+export function setBrowserNavigationRelevantId(span: Span, spaMetricsManager: SpaMetricsManager | undefined): void {
+	const navigationSpanId = spaMetricsManager?.getCurrentNavigationSpanId()
+	if (navigationSpanId) {
+		span.setAttribute(BROWSER_NAVIGATION_PAGE_SPAN_ID_ATTRIBUTE, navigationSpanId)
+	}
+}
