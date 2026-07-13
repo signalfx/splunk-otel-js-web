@@ -29,6 +29,12 @@ test.describe('resource observer', () => {
 				typeof span.attributes['http.url'] === 'string' &&
 				String(span.attributes['http.url']).endsWith('splunk-otel-web.js'),
 		)
+		const audioSpans = recordPage.receivedSpans.filter(
+			(span) =>
+				span.attributes['component'] === 'splunk-post-doc-load-resource' &&
+				typeof span.attributes['http.url'] === 'string' &&
+				String(span.attributes['http.url']).endsWith('image.png?media=audio'),
+		)
 		const imageSpans = recordPage.receivedSpans.filter(
 			(span) =>
 				typeof span.attributes['http.url'] === 'string' &&
@@ -44,19 +50,29 @@ test.describe('resource observer', () => {
 				typeof span.attributes['http.url'] === 'string' &&
 				String(span.attributes['http.url']).endsWith('test.js'),
 		)
+		const videoSpans = recordPage.receivedSpans.filter(
+			(span) =>
+				span.attributes['component'] === 'splunk-post-doc-load-resource' &&
+				typeof span.attributes['http.url'] === 'string' &&
+				String(span.attributes['http.url']).endsWith('image.png?media=video'),
+		)
 		const cssSpans = recordPage.receivedSpans.filter(
 			(span) =>
+				span.attributes['component'] === 'splunk-post-doc-load-resource' &&
 				typeof span.attributes['http.url'] === 'string' &&
 				String(span.attributes['http.url']).endsWith('css-font-img.css?postload=true'),
 		)
 		const fontSpans = recordPage.receivedSpans.filter(
 			(span) =>
+				span.attributes['component'] === 'splunk-post-doc-load-resource' &&
 				typeof span.attributes['http.url'] === 'string' &&
 				String(span.attributes['http.url']).endsWith('splunk.woff'),
 		)
 
 		expect(agentSpans).toHaveLength(1)
+		expect(audioSpans.length).toBeGreaterThan(0)
 		expect(imageSpans).toHaveLength(1)
+		expect(videoSpans.length).toBeGreaterThan(0)
 
 		expect(imageBlackSpans).toHaveLength(1)
 		expect(imageBlackSpans[0].events.length).toBe(8)

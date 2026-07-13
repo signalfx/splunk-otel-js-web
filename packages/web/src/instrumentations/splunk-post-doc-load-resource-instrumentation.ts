@@ -33,7 +33,7 @@ export interface SplunkPostDocLoadResourceInstrumentationConfig extends Instrume
 }
 
 const MODULE_NAME = 'splunk-post-doc-load-resource'
-const defaultAllowedInitiatorTypes = ['css', 'font', 'iframe', 'img', 'link', 'script']
+const defaultAllowedInitiatorTypes = ['audio', 'css', 'font', 'iframe', 'img', 'link', 'script', 'video']
 const fontResourcePattern = /\.(?:eot|otf|ttf|woff2?)(?:[?#]|$)/i
 
 const getNodeResourceUrl = (node: Node): string | undefined => {
