@@ -17,6 +17,7 @@
  */
 
 import { context, diag, propagation, ROOT_CONTEXT, trace } from '@opentelemetry/api'
+import { hrTimeToMilliseconds } from '@opentelemetry/core'
 import * as tracing from '@opentelemetry/sdk-trace-base'
 import { expectDefined } from '@test-utils/assertions'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -381,7 +382,7 @@ describe('test init', () => {
 			const docLoadTraceId = capturer.spans.find((span) => span.name === 'documentLoad')?.spanContext().traceId
 
 			capturer.spans
-				.filter((span) => span.attributes['component'] === 'document-load')
+				.filter((span) => span.attributes['component'] === 'document-load' && span.name !== 'pageLoad')
 				.forEach((span) => {
 					expect(span.spanContext().traceId).toBe(docLoadTraceId)
 				})
@@ -397,6 +398,15 @@ describe('test init', () => {
 				PAGE_LOAD_METRICS_STATUS_COMPLETED,
 			)
 			expect(documentLoadSpan).toHaveSpanAttributeMatching('screen.xy', /^[0-9]+x[0-9]+$/)
+
+			const pageLoadSpan = capturer.spans.find((span) => span.name === 'pageLoad')
+			expectDefined(pageLoadSpan, 'pageLoad span presence.')
+			expect(capturer.spans.indexOf(pageLoadSpan)).toBeLessThan(capturer.spans.indexOf(documentLoadSpan))
+			expect(hrTimeToMilliseconds(pageLoadSpan.duration)).toBeCloseTo(
+				Number(pageLoadSpan.attributes[BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE]),
+				5,
+			)
+			expect(pageLoadSpan).toHaveSpanAttribute('component', 'document-load')
 
 			const resourceFetchSpan = capturer.spans.find((span) => span.name === 'resourceFetch')
 			expectDefined(resourceFetchSpan, 'resourceFetch span presence.')

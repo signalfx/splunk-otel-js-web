@@ -17,7 +17,7 @@
  */
 
 import * as api from '@opentelemetry/api'
-import { isUrlIgnored } from '@opentelemetry/core'
+import { hrTime, isUrlIgnored } from '@opentelemetry/core'
 import { InstrumentationConfig } from '@opentelemetry/instrumentation'
 import {
 	AttributeNames,
@@ -39,6 +39,7 @@ export interface SplunkDocLoadInstrumentationConfig extends InstrumentationConfi
 }
 
 const excludedInitiatorTypes = new Set(['beacon', 'fetch', 'xmlhttprequest'])
+const PAGE_LOAD_SPAN_NAME = 'pageLoad'
 
 function addExtraDocLoadTags(span: api.Span) {
 	if (document.referrer && document.referrer !== '') {
@@ -76,6 +77,10 @@ type ExposedSuper = {
 export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentation {
 	private readonly documentLoadMetricsPromise: ReturnType<SpaMetricsManager['waitForPageLoad']> | undefined
 
+	private pageLoadSpan: api.Span | undefined
+
+	private pageLoadStartTime: number | undefined
+
 	private readonly spaMetricsManager: SpaMetricsManager | undefined
 
 	constructor(
@@ -96,6 +101,22 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 		const _superEndSpan: ExposedSuper['_endSpan'] = exposedSuper._endSpan.bind(this)
 
 		exposedSuper._startSpan = (spanName, performanceName, entries, parentSpan) => {
+			const pageLoadStartTime = entries[PTN.FETCH_START]
+
+			if (
+				spanName === AttributeNames.DOCUMENT_LOAD &&
+				this.documentLoadMetricsPromise &&
+				typeof pageLoadStartTime === 'number'
+			) {
+				this.pageLoadStartTime = pageLoadStartTime
+				this.pageLoadSpan = this.tracer.startSpan(PAGE_LOAD_SPAN_NAME, {
+					startTime: hrTime(pageLoadStartTime),
+				})
+				this.pageLoadSpan.setAttribute('component', this.component)
+				this.pageLoadSpan.setAttribute(SEMATTRS_HTTP_URL, location.href)
+				this.pageLoadSpan.setAttribute(SemanticAttributes.HTTP_USER_AGENT, navigator.userAgent)
+			}
+
 			const span = _superStartSpan(spanName, performanceName, entries, parentSpan)
 
 			if (span && spanName === AttributeNames.DOCUMENT_LOAD) {
@@ -162,6 +183,13 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 					void this.documentLoadMetricsPromise
 						.then((pageLoadMetrics) => {
 							this.spaMetricsManager?.setPageLoadMetricAttributes(span, pageLoadMetrics)
+							if (this.pageLoadSpan && this.pageLoadStartTime !== undefined) {
+								this.spaMetricsManager?.setPageLoadMetricAttributes(this.pageLoadSpan, pageLoadMetrics)
+								this.pageLoadSpan.end(hrTime(this.pageLoadStartTime + pageLoadMetrics.pct))
+								this.pageLoadStartTime = undefined
+								this.pageLoadSpan = undefined
+							}
+
 							api.diag.debug('Sending documentLoad span with PCT result', pageLoadMetrics)
 							_superEndSpan(span, performanceName, entries)
 						})
@@ -169,6 +197,12 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 							api.diag.warn('SplunkDocumentLoadInstrumentation: Failed to resolve page load metrics.', {
 								error,
 							})
+							if (this.pageLoadSpan) {
+								_superEndSpan(this.pageLoadSpan, performanceName, entries)
+								this.pageLoadStartTime = undefined
+								this.pageLoadSpan = undefined
+							}
+
 							_superEndSpan(span, performanceName, entries)
 						})
 

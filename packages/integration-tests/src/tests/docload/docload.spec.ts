@@ -60,6 +60,7 @@ test.describe('docload', () => {
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'documentLoad').length === 1)
 		const docLoadSpans = recordPage.receivedSpans.filter((span) => span.name === 'documentLoad')
 		const docFetchSpans = recordPage.receivedSpans.filter((span) => span.name === 'documentFetch')
+		const pageLoadSpans = recordPage.receivedSpans.filter((span) => span.name === 'pageLoad')
 
 		const scriptFetchSpans = recordPage.receivedSpans.filter(
 			(span) =>
@@ -85,10 +86,19 @@ test.describe('docload', () => {
 
 		expect(docFetchSpans).toHaveLength(1)
 		expect(docLoadSpans).toHaveLength(1)
+		expect(pageLoadSpans).toHaveLength(1)
 		expect(docLoadSpans[0].traceId.match(/[a-f0-9]+/), 'Checking sanity of traceId').toBeTruthy()
 		expect(docLoadSpans[0].spanId.match(/[a-f0-9]+/), 'Checking sanity of spanId').toBeTruthy()
 		expect(docFetchSpans[0].traceId).toBe(docLoadSpans[0].traceId)
 		expect(docFetchSpans[0].parentSpanId).toBe(docLoadSpans[0].spanId)
+		expect(recordPage.receivedSpans.indexOf(pageLoadSpans[0])).toBeLessThan(
+			recordPage.receivedSpans.indexOf(docLoadSpans[0]),
+		)
+		expect(hrTimeToMilliseconds(pageLoadSpans[0].duration)).toBeCloseTo(
+			Number(pageLoadSpans[0].attributes[BROWSER_NAVIGATION_ATTRIBUTES.pageCompletionTime]),
+			5,
+		)
+		expect(pageLoadSpans[0]).toHaveSpanAttribute('component', 'document-load')
 
 		expect(scriptFetchSpans).toHaveLength(1)
 		expect(scriptFetchSpans[0].traceId).toBe(docLoadSpans[0].traceId)
