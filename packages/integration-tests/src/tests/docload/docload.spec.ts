@@ -99,6 +99,10 @@ test.describe('docload', () => {
 			5,
 		)
 		expect(pageLoadSpans[0]).toHaveSpanAttribute('component', 'document-load')
+		expectBrowserNavigationAttributes(pageLoadSpans[0], { status: 'completed' })
+		for (const attributeName of Object.values(BROWSER_NAVIGATION_ATTRIBUTES)) {
+			expect(pageLoadSpans[0].attributes[attributeName]).toEqual(docLoadSpans[0].attributes[attributeName])
+		}
 
 		expect(scriptFetchSpans).toHaveLength(1)
 		expect(scriptFetchSpans[0].traceId).toBe(docLoadSpans[0].traceId)

@@ -407,6 +407,15 @@ describe('test init', () => {
 				5,
 			)
 			expect(pageLoadSpan).toHaveSpanAttribute('component', 'document-load')
+			expect(pageLoadSpan).toHaveSpanAttribute(
+				BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
+				PAGE_LOAD_METRICS_STATUS_COMPLETED,
+			)
+			expect(pageLoadSpan.attributes).toMatchObject({
+				[BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE]:
+					documentLoadSpan.attributes[BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE],
+				[BROWSER_NAVIGATION_STATUS_ATTRIBUTE]: documentLoadSpan.attributes[BROWSER_NAVIGATION_STATUS_ATTRIBUTE],
+			})
 
 			const resourceFetchSpan = capturer.spans.find((span) => span.name === 'resourceFetch')
 			expectDefined(resourceFetchSpan, 'resourceFetch span presence.')
