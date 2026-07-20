@@ -102,6 +102,48 @@ test.describe('resource observer', () => {
 		)
 	})
 
+	test('should report a resource loaded after a route change', async ({ recordPage }) => {
+		await recordPage.goTo('/resource-observer/resources-custom-context.ejs')
+
+		await recordPage.waitForSpans(
+			(spans) =>
+				spans.some((span) => span.name === 'documentLoad') && spans.some((span) => span.name === 'guard-span'),
+		)
+		await recordPage.evaluate(async () => {
+			history.pushState({}, '', '#route-with-resource')
+
+			await new Promise<void>((resolve, reject) => {
+				const image = document.createElement('img')
+				image.addEventListener('error', () => reject(new Error('Route resource failed to load.')))
+				image.addEventListener('load', () => resolve())
+				image.src = 'assets/splunk-black.svg?afterRouteChange=true'
+				document.body.append(image)
+			})
+		})
+
+		await recordPage.waitForSpans(
+			(spans) =>
+				spans.some((span) => span.name === 'routeChange') &&
+				spans.some(
+					(span) =>
+						span.attributes['component'] === 'splunk-post-doc-load-resource' &&
+						typeof span.attributes['http.url'] === 'string' &&
+						String(span.attributes['http.url']).endsWith('splunk-black.svg?afterRouteChange=true'),
+				),
+		)
+
+		const routeResourceSpans = recordPage.receivedSpans.filter(
+			(span) =>
+				span.attributes['component'] === 'splunk-post-doc-load-resource' &&
+				typeof span.attributes['http.url'] === 'string' &&
+				String(span.attributes['http.url']).endsWith('splunk-black.svg?afterRouteChange=true'),
+		)
+
+		expect(routeResourceSpans).toHaveLength(1)
+		expect(recordPage.receivedSpans.filter((span) => span.name === 'routeChange')).toHaveLength(1)
+		expect(recordPage.receivedErrorSpans).toHaveLength(0)
+	})
+
 	test('resources can be ignored', async ({ recordPage }) => {
 		await recordPage.goTo('/resource-observer/resources-ignored.ejs')
 
