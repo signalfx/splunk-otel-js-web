@@ -54,7 +54,21 @@ export interface SplunkFetchInstrumentationConfig extends FetchInstrumentationCo
 	separateTraces?: boolean
 }
 
+export interface SplunkBlockingElementInstrumentationConfig extends InstrumentationConfig {
+	/**
+	 * Falls back to deriving from spaMetrics (monitors includes 'elements' and
+	 * blockingSelectors is non-empty) when unset.
+	 */
+	enabled?: boolean
+	/**
+	 * Falls back to spaMetrics.blockingSelectors (resolved once, at enable() time,
+	 * for the URL active at that moment) when unset.
+	 */
+	selectors?: string[]
+}
+
 export interface SplunkOtelWebOptionsInstrumentations {
+	blockingElement?: boolean | SplunkBlockingElementInstrumentationConfig
 	connectivity?: boolean | InstrumentationConfig
 	document?: boolean | InstrumentationConfig
 	errors?: boolean | SplunkErrorInstrumentationConfig
