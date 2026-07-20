@@ -19,7 +19,7 @@ import { hrTimeToMicroseconds } from '@opentelemetry/core'
 import { expect } from '@playwright/test'
 
 import { BROWSER_NAVIGATION_ATTRIBUTES, expectBrowserNavigationAttributes } from '../../utils/browser-navigation'
-import { test } from '../../utils/test'
+import { expectDefined, test } from '../../utils/test'
 
 const getPageCompletionTime = (span: { attributes: Record<string, unknown> }) =>
 	Number(span.attributes[BROWSER_NAVIGATION_ATTRIBUTES.pageCompletionTime])
@@ -86,6 +86,7 @@ test.describe('spa-metrics', () => {
 		expect(routeChangeSpans).toHaveLength(1)
 		expect(fetchSpans).toHaveLength(1)
 		expect(fetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, routeChangeSpans[0].spanId)
+		expect(fetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, true)
 		expectBrowserNavigationAttributes(routeChangeSpans[0], {
 			detectedResourceCount: 1,
 			quietTimerResetCount: 0,
@@ -122,6 +123,7 @@ test.describe('spa-metrics', () => {
 		expect(routeChangeSpans).toHaveLength(1)
 		expect(xhrSpans).toHaveLength(1)
 		expect(xhrSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, routeChangeSpans[0].spanId)
+		expect(xhrSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, true)
 		expectBrowserNavigationAttributes(routeChangeSpans[0], {
 			detectedResourceCount: 1,
 			quietTimerResetCount: 0,
@@ -158,6 +160,7 @@ test.describe('spa-metrics', () => {
 			BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId,
 			routeChangeSpans[0].spanId,
 		)
+		expect(imageResourceSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, true)
 		expectBrowserNavigationAttributes(routeChangeSpans[0], { status: 'completed' })
 		expect(
 			Number(routeChangeSpans[0].attributes[BROWSER_NAVIGATION_ATTRIBUTES.detectedResourceCount]),
@@ -165,6 +168,29 @@ test.describe('spa-metrics', () => {
 
 		// Duration should include image load time + quiet period
 		expect(routeChangeSpans[0]).toHaveSpanDurationGreaterThan(0)
+	})
+
+	test('spans after PCT retain the page span id and are marked not relevant', async ({ recordPage }) => {
+		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+
+		await recordPage.locator('#btnNavigate').click()
+		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'routeChange').length === 1)
+		await recordPage.locator('#btnFetchAfterPct').click()
+		await recordPage.waitForSpans((spans) =>
+			spans.some(
+				(span) => span.attributes['http.url'] === 'http://localhost:3000/some-data?resource=after-pct-fetch',
+			),
+		)
+
+		const routeChangeSpan = recordPage.receivedSpans.find((span) => span.name === 'routeChange')
+		const afterPctFetchSpan = recordPage.receivedSpans.find(
+			(span) => span.attributes['http.url'] === 'http://localhost:3000/some-data?resource=after-pct-fetch',
+		)
+
+		expectDefined(routeChangeSpan)
+		expectDefined(afterPctFetchSpan)
+		expect(afterPctFetchSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, routeChangeSpan.spanId)
+		expect(afterPctFetchSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, false)
 	})
 
 	test('multiple route changes each have their own duration', async ({ recordPage }) => {

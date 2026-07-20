@@ -18,12 +18,16 @@
 
 import { type Span } from '@opentelemetry/api'
 
-import { BROWSER_NAVIGATION_PAGE_SPAN_ID_ATTRIBUTE } from './constants'
+import { BROWSER_NAVIGATION_PAGE_SPAN_ID_ATTRIBUTE, BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE } from './constants'
 import { type SpaMetricsManager } from './spa-metrics-manager'
 
-export function setBrowserNavigationRelevantId(span: Span, spaMetricsManager: SpaMetricsManager | undefined): void {
+export function setBrowserNavigationPageAttributes(span: Span, spaMetricsManager: SpaMetricsManager | undefined): void {
 	const navigationSpanId = spaMetricsManager?.getCurrentNavigationSpanId()
 	if (navigationSpanId) {
 		span.setAttribute(BROWSER_NAVIGATION_PAGE_SPAN_ID_ATTRIBUTE, navigationSpanId)
+		span.setAttribute(
+			BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE,
+			spaMetricsManager?.isCurrentNavigationPctRelevant() ?? false,
+		)
 	}
 }

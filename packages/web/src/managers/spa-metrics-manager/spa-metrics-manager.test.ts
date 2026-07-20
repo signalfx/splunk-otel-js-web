@@ -27,6 +27,8 @@ import {
 	BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
 	BROWSER_NAVIGATION_LONGEST_LOADED_RESOURCE_ATTRIBUTE,
 	BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE,
+	BROWSER_NAVIGATION_PAGE_SPAN_ID_ATTRIBUTE,
+	BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE,
 	BROWSER_NAVIGATION_QUIET_TIMER_RESET_COUNT_ATTRIBUTE,
 	BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
 	PAGE_LOAD_METRICS_STATUS_COMPLETED,
@@ -34,15 +36,16 @@ import {
 	PAGE_LOAD_METRICS_STATUS_TIMEOUT,
 } from './constants'
 import { ResourceState } from './monitors'
+import { setBrowserNavigationPageAttributes } from './navigation-relevance'
 import { getDocumentLoadTime, SpaMetricsManager } from './spa-metrics-manager'
 
 const TEST_API_URL = `${HTTP_TEST_SERVER_URL}/some-data`
 const TEST_BEACON_ENDPOINT = `${HTTP_TEST_SERVER_URL}/v1/rum`
 
-function createSpanMock(spanId = 'span-id'): { attributes: Record<string, number | string>; span: Span } {
-	const attributes: Record<string, number | string> = {}
+function createSpanMock(spanId = 'span-id'): { attributes: Record<string, boolean | number | string>; span: Span } {
+	const attributes: Record<string, boolean | number | string> = {}
 	const span = {
-		setAttribute: (name: string, value: number | string) => {
+		setAttribute: (name: string, value: boolean | number | string) => {
 			attributes[name] = value
 			return span
 		},
@@ -505,7 +508,7 @@ describe('SpaMetricsManager', () => {
 		}
 	})
 
-	it('exposes current navigation span id while waiting for page load metrics', async () => {
+	it('retains the current navigation span id after PCT completes', async () => {
 		const manager = new SpaMetricsManager({ monitors: [], quietTime: 1 })
 		const { span } = createSpanMock('navigation-span-id')
 		manager.start()
@@ -514,13 +517,45 @@ describe('SpaMetricsManager', () => {
 			const promise = manager.waitForPageLoad({ span, startTime: performance.now() })
 
 			expect(manager.getCurrentNavigationSpanId()).toBe('navigation-span-id')
+			expect(manager.isCurrentNavigationPctRelevant()).toBe(true)
 
 			await promise
 
-			expect(manager.getCurrentNavigationSpanId()).toBeUndefined()
+			expect(manager.getCurrentNavigationSpanId()).toBe('navigation-span-id')
+			expect(manager.isCurrentNavigationPctRelevant()).toBe(false)
 		} finally {
 			manager.stop()
 		}
+	})
+
+	it('sets the page span id and PCT relevance on spans before and after PCT', () => {
+		const manager = new SpaMetricsManager()
+		const { span: navigationSpan } = createSpanMock('navigation-span-id')
+		const { attributes: duringPctAttributes, span: duringPctSpan } = createSpanMock('during-pct-span-id')
+		const { attributes: afterPctAttributes, span: afterPctSpan } = createSpanMock('after-pct-span-id')
+
+		manager.setCurrentNavigationSpan(navigationSpan)
+		setBrowserNavigationPageAttributes(duringPctSpan, manager)
+		manager.completeCurrentNavigationPct(navigationSpan)
+		setBrowserNavigationPageAttributes(afterPctSpan, manager)
+
+		expect(duringPctAttributes[BROWSER_NAVIGATION_PAGE_SPAN_ID_ATTRIBUTE]).toBe('navigation-span-id')
+		expect(duringPctAttributes[BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE]).toBe(true)
+		expect(afterPctAttributes[BROWSER_NAVIGATION_PAGE_SPAN_ID_ATTRIBUTE]).toBe('navigation-span-id')
+		expect(afterPctAttributes[BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE]).toBe(false)
+	})
+
+	it('does not complete the PCT state for a newer navigation', () => {
+		const manager = new SpaMetricsManager()
+		const { span: previousNavigationSpan } = createSpanMock('previous-navigation-span-id')
+		const { span: currentNavigationSpan } = createSpanMock('current-navigation-span-id')
+
+		manager.setCurrentNavigationSpan(previousNavigationSpan)
+		manager.setCurrentNavigationSpan(currentNavigationSpan)
+		manager.completeCurrentNavigationPct(previousNavigationSpan)
+
+		expect(manager.getCurrentNavigationSpanId()).toBe('current-navigation-span-id')
+		expect(manager.isCurrentNavigationPctRelevant()).toBe(true)
 	})
 
 	it('waitForPageLoad sets loaded resource attributes when quiet period completes', async () => {

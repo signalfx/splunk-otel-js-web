@@ -34,6 +34,7 @@
 	<button type="button" id="btnNavigateWithNetworkDisabled">Navigate with network disabled</button>
 	<button type="button" id="btnNavigateWithLoadingElement">Navigate with loading element</button>
 	<button type="button" id="btnNavigateWithOverrideLoadingElement">Navigate with override loading element</button>
+	<button type="button" id="btnFetchAfterPct">Fetch after PCT</button>
 
 	<div id="content"></div>
 
@@ -114,6 +115,10 @@
 				spinner.style.width = '10px';
 				return spinner;
 			});
+		});
+
+		document.querySelector('#btnFetchAfterPct').addEventListener('click', function () {
+			fetch('/some-data?resource=after-pct-fetch').catch(function () {});
 		});
 	</script>
 </body>

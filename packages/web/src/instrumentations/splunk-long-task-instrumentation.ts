@@ -19,7 +19,7 @@
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 
 import { SessionManager, SpaMetricsManager } from '../managers'
-import { setBrowserNavigationRelevantId } from '../managers/spa-metrics-manager/navigation-relevance'
+import { setBrowserNavigationPageAttributes } from '../managers/spa-metrics-manager/navigation-relevance'
 import { SplunkOtelWebConfig } from '../types'
 import { VERSION } from '../version'
 import { isLoafInstrumentationEnabled, isLongAnimationFrameSupported } from './loaf'
@@ -78,7 +78,7 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
 		})
 
 		span.setAttribute('component', MODULE_NAME)
-		setBrowserNavigationRelevantId(span, this.spaMetricsManager)
+		setBrowserNavigationPageAttributes(span, this.spaMetricsManager)
 		span.setAttribute('longtask.name', entry.name)
 		span.setAttribute('longtask.entry_type', entry.entryType)
 		span.setAttribute('longtask.duration', entry.duration)

@@ -20,7 +20,7 @@ import { diag } from '@opentelemetry/api'
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 
 import { SessionManager, SpaMetricsManager } from '../managers'
-import { setBrowserNavigationRelevantId } from '../managers/spa-metrics-manager/navigation-relevance'
+import { setBrowserNavigationPageAttributes } from '../managers/spa-metrics-manager/navigation-relevance'
 import { SplunkOtelWebConfig } from '../types'
 import { VERSION } from '../version'
 import {
@@ -90,7 +90,7 @@ export class SplunkLongAnimationFrameInstrumentation extends InstrumentationBase
 		})
 
 		setLoafEntryAttributes(span, entry)
-		setBrowserNavigationRelevantId(span, this.spaMetricsManager)
+		setBrowserNavigationPageAttributes(span, this.spaMetricsManager)
 		span.end(entry.startTime + entry.duration)
 	}
 }

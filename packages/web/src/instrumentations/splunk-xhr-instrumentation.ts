@@ -23,7 +23,7 @@ import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xm
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base'
 
 import { SessionManager, SpaMetricsManager } from '../managers'
-import { setBrowserNavigationRelevantId } from '../managers/spa-metrics-manager/navigation-relevance'
+import { setBrowserNavigationPageAttributes } from '../managers/spa-metrics-manager/navigation-relevance'
 import { captureTraceParent } from '../servertiming'
 import { SplunkOtelWebConfig, SplunkXhrInstrumentationConfig } from '../types'
 
@@ -75,7 +75,7 @@ export class SplunkXhrInstrumentation extends XMLHttpRequestInstrumentation {
 			if (span) {
 				// don't care about success/failure, just want to see response headers if they exist
 				xhr.addEventListener('readystatechange', () => {
-					setBrowserNavigationRelevantId(span, this.spaMetricsManager)
+					setBrowserNavigationPageAttributes(span, this.spaMetricsManager)
 					if (xhr.readyState === xhr.HEADERS_RECEIVED) {
 						const headers = xhr.getAllResponseHeaders().toLowerCase()
 						if (headers.includes('server-timing')) {
@@ -93,7 +93,7 @@ export class SplunkXhrInstrumentation extends XMLHttpRequestInstrumentation {
 				// relies on component being present to route the event, so 'xml-http-request:start' would never fire.
 				// Work around this by setting component first and then emitting the start event manually.
 				span.setAttribute('component', this.moduleName)
-				setBrowserNavigationRelevantId(span, this.spaMetricsManager)
+				setBrowserNavigationPageAttributes(span, this.spaMetricsManager)
 				this.otelConfig.spanEmitter?.emitSpan(span as unknown as ReadableSpan, 'start')
 				// Temporary return to old span name until cleared by backend
 				span.updateName(`HTTP ${method.toUpperCase()}`)

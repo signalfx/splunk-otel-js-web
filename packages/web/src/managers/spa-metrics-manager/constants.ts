@@ -23,6 +23,7 @@ export const BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE = 'browser.navig
 export const BROWSER_NAVIGATION_LONGEST_LOADED_RESOURCE_ATTRIBUTE = 'browser.navigation.longest_loaded_resource'
 export const BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE = 'browser.navigation.page_completion_time'
 export const BROWSER_NAVIGATION_PAGE_SPAN_ID_ATTRIBUTE = 'browser.navigation.page_span_id'
+export const BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE = 'browser.navigation.pct_relevant'
 export const BROWSER_NAVIGATION_QUIET_TIMER_RESET_COUNT_ATTRIBUTE = 'browser.navigation.quiet_timer_reset_count'
 export const BROWSER_NAVIGATION_STATUS_ATTRIBUTE = 'browser.navigation.status'
 

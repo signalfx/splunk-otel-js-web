@@ -118,6 +118,8 @@ export interface SpaMetricsManagerConfig extends SpaMetricsManagerConfigValues {
 export class SpaMetricsManager {
 	private readonly config: ResolvedSpaMetricsManagerConfig
 
+	private currentNavigationPctRelevant = false
+
 	private currentNavigationSpanId: string | undefined
 
 	private isMonitoring = false
@@ -169,9 +171,9 @@ export class SpaMetricsManager {
 		this.monitors = SpaMetricsManager.createMonitors(monitorConfig)
 	}
 
-	clearCurrentNavigationSpan(span: Span): void {
+	completeCurrentNavigationPct(span: Span): void {
 		if (this.currentNavigationSpanId === span.spanContext().spanId) {
-			this.currentNavigationSpanId = undefined
+			this.currentNavigationPctRelevant = false
 		}
 	}
 
@@ -183,8 +185,13 @@ export class SpaMetricsManager {
 		return this.currentNavigationSpanId
 	}
 
+	isCurrentNavigationPctRelevant(): boolean {
+		return this.currentNavigationPctRelevant
+	}
+
 	setCurrentNavigationSpan(span: Span): void {
 		this.currentNavigationSpanId = span.spanContext().spanId
+		this.currentNavigationPctRelevant = true
 	}
 
 	setPageLoadMetricAttributes(
@@ -251,6 +258,7 @@ export class SpaMetricsManager {
 		this.quietPeriodAwaiter?.interrupt()
 		this.quietPeriodAwaiter = undefined
 		this.currentNavigationSpanId = undefined
+		this.currentNavigationPctRelevant = false
 
 		if (!this.isMonitoring) {
 			return
@@ -329,13 +337,13 @@ export class SpaMetricsManager {
 					return result
 				} finally {
 					if (span) {
-						this.clearCurrentNavigationSpan(span)
+						this.completeCurrentNavigationPct(span)
 					}
 				}
 			},
 			(error) => {
 				if (span) {
-					this.clearCurrentNavigationSpan(span)
+					this.completeCurrentNavigationPct(span)
 				}
 
 				throw error
