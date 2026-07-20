@@ -180,8 +180,9 @@ test.describe('docload', () => {
 		await recordPage.goTo('/docload/docload.ejs?disableInstrumentation=document')
 
 		await recordPage.waitForTimeoutAndFlushData(1000)
-		const SPAN_TYPES = new Set(['documentFetch', 'documentLoad', 'resourceFetch'])
-		const documentSpans = recordPage.receivedSpans.filter((span) => SPAN_TYPES.has(span.name))
+		const documentSpans = recordPage.receivedSpans.filter(
+			(span) => span.attributes['component'] === 'document-load',
+		)
 
 		expect(documentSpans).toHaveLength(0)
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
