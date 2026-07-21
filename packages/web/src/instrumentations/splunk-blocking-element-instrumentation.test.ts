@@ -133,4 +133,38 @@ describe('SplunkBlockingElementInstrumentation', () => {
 			expect(instrumentation.elementSpanTracker.openCount).toBe(1)
 		})
 	})
+
+	it('interrupts all open spans on disable, leaving none open', () => {
+		createVisibleElement()
+		createVisibleElement()
+		instrumentation = new SplunkBlockingElementInstrumentation(
+			{},
+			{ instrumentations: { blockingElement: { enabled: true, selectors: [SELECTOR] } } },
+		)
+		instrumentation.setTracerProvider(provider)
+		instrumentation.enable()
+
+		instrumentation.disable()
+
+		const finishedSpans = getFinishedSpans()
+		expect(finishedSpans).toHaveLength(2)
+		expect(finishedSpans.every((span) => span.attributes['browser.element.completion'] === 'interrupted')).toBe(
+			true,
+		)
+	})
+
+	it('does not observe further DOM mutations after disable', async () => {
+		instrumentation = new SplunkBlockingElementInstrumentation(
+			{},
+			{ instrumentations: { blockingElement: { enabled: true, selectors: [SELECTOR] } } },
+		)
+		instrumentation.setTracerProvider(provider)
+		instrumentation.enable()
+		instrumentation.disable()
+
+		createVisibleElement()
+		await new Promise((resolve) => setTimeout(resolve, 20))
+
+		expect(getFinishedSpans()).toHaveLength(0)
+	})
 })

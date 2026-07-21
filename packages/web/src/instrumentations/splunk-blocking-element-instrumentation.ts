@@ -48,6 +48,8 @@ export class SplunkBlockingElementInstrumentation extends InstrumentationBase<Sp
 		this.observer?.disconnect()
 		this.observer = null
 		this.selectors = []
+		this.elementSpanTracker?.interruptAll()
+		this.elementSpanTracker = undefined
 	}
 
 	enable(): void {
