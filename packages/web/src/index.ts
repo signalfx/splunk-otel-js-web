@@ -43,6 +43,7 @@ import {
 	DEFAULT_AUTO_INSTRUMENTED_EVENTS,
 	ERROR_INSTRUMENTATION_NAME,
 	FRUSTRATION_SIGNALS_INSTRUMENTATION_NAME,
+	SplunkBlockingElementInstrumentation,
 	SplunkConnectivityInstrumentation,
 	SplunkDocumentLoadInstrumentation,
 	SplunkErrorInstrumentation,
@@ -162,6 +163,7 @@ const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
 }
 
 const INSTRUMENTATIONS = [
+	{ confKey: 'blockingElement', disable: false, Instrument: SplunkBlockingElementInstrumentation },
 	{ confKey: 'document', disable: false, Instrument: SplunkDocumentLoadInstrumentation },
 	{ confKey: 'xhr', disable: false, Instrument: SplunkXhrInstrumentation },
 	{ confKey: 'fetch', disable: false, Instrument: SplunkFetchInstrumentation },
