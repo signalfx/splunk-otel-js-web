@@ -57,6 +57,10 @@ export class ElementSpanTracker {
 		span.end(endTimeRelative)
 	}
 
+	getTrackedElements(selector: string): Element[] {
+		return Array.from(this.spansBySelector.get(selector)?.keys() ?? [])
+	}
+
 	has(selector: string, element: Element): boolean {
 		return this.spansBySelector.get(selector)?.has(element) ?? false
 	}

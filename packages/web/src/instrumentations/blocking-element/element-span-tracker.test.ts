@@ -159,6 +159,24 @@ describe('ElementSpanTracker', () => {
 		expect(tracker.openCount).toBe(0)
 	})
 
+	it('returns the currently tracked elements for a selector', () => {
+		const otherSelector = '.other-spinner'
+		const first = createElement()
+		const second = createElement()
+		const other = createElement()
+
+		tracker.startSpan(SELECTOR, first, performance.now())
+		tracker.startSpan(SELECTOR, second, performance.now())
+		tracker.startSpan(otherSelector, other, performance.now())
+
+		expect(tracker.getTrackedElements(SELECTOR)).toEqual([first, second])
+		expect(tracker.getTrackedElements(otherSelector)).toEqual([other])
+	})
+
+	it('returns an empty array for a selector with no tracked elements', () => {
+		expect(tracker.getTrackedElements(SELECTOR)).toEqual([])
+	})
+
 	it('reads a live SVGAnimatedString className via animVal', () => {
 		const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
 		expect(typeof svg.className).toBe('object')
