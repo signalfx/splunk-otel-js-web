@@ -91,6 +91,8 @@ test.describe('docload', () => {
 		expect(docLoadSpans[0].spanId.match(/[a-f0-9]+/), 'Checking sanity of spanId').toBeTruthy()
 		expect(docFetchSpans[0].traceId).toBe(docLoadSpans[0].traceId)
 		expect(docFetchSpans[0].parentSpanId).toBe(docLoadSpans[0].spanId)
+		expect(docFetchSpans[0].startTime).toEqual(docLoadSpans[0].startTime)
+		expect(pageLoadSpans[0].startTime).toEqual(docLoadSpans[0].startTime)
 		expect(recordPage.receivedSpans.indexOf(pageLoadSpans[0])).toBeLessThan(
 			recordPage.receivedSpans.indexOf(docLoadSpans[0]),
 		)
@@ -183,11 +185,10 @@ test.describe('docload', () => {
 		const pct = Number(docLoadSpan.attributes[BROWSER_NAVIGATION_ATTRIBUTES.pageCompletionTime])
 		expect(pct).toBeGreaterThan(0)
 
-		// pct uses the same loadEventEnd - fetchStart calculation as the exported documentLoad span.
+		// pct and the documentLoad span use the same navigation timing values, but Firefox can
+		// expose snapshots that differ by a few milliseconds while the load event is settling.
 		const durationMs = hrTimeToMilliseconds(docLoadSpan.duration)
-		// The span duration is serialized through OTLP HrTime and converted back to milliseconds.
-		// WebKit can report an equivalent integer PCT while durationMs lands just below the next millisecond.
-		expect(pct).toBeGreaterThanOrEqual(Math.floor(durationMs))
+		expect(Math.abs(pct - durationMs)).toBeLessThanOrEqual(5)
 	})
 
 	test('module can be disabled', async ({ recordPage }) => {
