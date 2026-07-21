@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Blocking Element test</title>
+	<%- renderAgent({
+		spaMetrics: {
+			blockingSelectors: ['.global-spinner'],
+			monitors: ['media', 'network', 'performance', 'elements'],
+		},
+	}) %>
+</head>
+<body>
+	<h1>Blocking Element test</h1>
+
+	<button type="button" id="btnTwoSpinnersOneRemoved">Two spinners, one removed</button>
+	<button type="button" id="btnThreeSpinnersTwoRemoved">Three spinners, two removed at different times</button>
+
+	<div id="content"></div>
+
+	<script>
+		function createSpinner(id) {
+			const spinner = document.createElement('div');
+			spinner.className = 'global-spinner';
+			spinner.id = id;
+			spinner.style.height = '10px';
+			spinner.style.width = '10px';
+			return spinner;
+		}
+
+		document.querySelector('#btnTwoSpinnersOneRemoved').addEventListener('click', function () {
+			const first = createSpinner('spinner-first');
+			const second = createSpinner('spinner-second');
+			document.getElementById('content').append(first, second);
+			setTimeout(function () {
+				first.remove();
+			}, 100);
+		});
+
+		document.querySelector('#btnThreeSpinnersTwoRemoved').addEventListener('click', function () {
+			const early = createSpinner('spinner-early');
+			const late = createSpinner('spinner-late');
+			const openEnded = createSpinner('spinner-open-ended');
+			document.getElementById('content').append(early, late, openEnded);
+			setTimeout(function () {
+				early.remove();
+			}, 100);
+			setTimeout(function () {
+				late.remove();
+			}, 300);
+		});
+	</script>
+</body>
+</html>
