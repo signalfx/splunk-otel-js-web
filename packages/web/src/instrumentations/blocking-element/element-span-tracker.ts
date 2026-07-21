@@ -32,7 +32,7 @@ import {
 /** `SVGElement.className` is an `SVGAnimatedString` at runtime; `animVal` gives the live value. */
 function getElementClass(element: Element): string {
 	const className = element.className as unknown as string | SVGAnimatedString
-	return typeof className === 'string' ? className : className.animVal ?? ''
+	return typeof className === 'string' ? className : (className.animVal ?? '')
 }
 
 /**

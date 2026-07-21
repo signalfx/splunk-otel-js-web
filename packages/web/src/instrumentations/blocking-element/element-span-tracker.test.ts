@@ -17,7 +17,12 @@
  */
 
 import { hrTimeToMilliseconds } from '@opentelemetry/core'
-import { BasicTracerProvider, InMemorySpanExporter, type ReadableSpan, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base'
+import {
+	BasicTracerProvider,
+	InMemorySpanExporter,
+	type ReadableSpan,
+	SimpleSpanProcessor,
+} from '@opentelemetry/sdk-trace-base'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { ElementSpanTracker } from './element-span-tracker'
@@ -129,7 +134,9 @@ describe('ElementSpanTracker', () => {
 
 		const finishedSpans = getFinishedSpans()
 		expect(finishedSpans).toHaveLength(2)
-		expect(finishedSpans.every((span) => span.attributes['browser.element.completion'] === 'interrupted')).toBe(true)
+		expect(finishedSpans.every((span) => span.attributes['browser.element.completion'] === 'interrupted')).toBe(
+			true,
+		)
 		expect(tracker.openCount).toBe(1)
 		expect(tracker.has(otherSelector, other)).toBe(true)
 	})
@@ -146,7 +153,9 @@ describe('ElementSpanTracker', () => {
 
 		const finishedSpans = getFinishedSpans()
 		expect(finishedSpans).toHaveLength(2)
-		expect(finishedSpans.every((span) => span.attributes['browser.element.completion'] === 'interrupted')).toBe(true)
+		expect(finishedSpans.every((span) => span.attributes['browser.element.completion'] === 'interrupted')).toBe(
+			true,
+		)
 		expect(tracker.openCount).toBe(0)
 	})
 
