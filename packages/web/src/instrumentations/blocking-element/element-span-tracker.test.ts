@@ -179,10 +179,13 @@ describe('ElementSpanTracker', () => {
 
 	it('reads a live SVGAnimatedString className via animVal', () => {
 		const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+		svg.setAttribute('class', 'loading-spinner')
 		expect(typeof svg.className).toBe('object')
 
 		tracker.startSpan(SELECTOR, svg, performance.now())
+		tracker.completeSpan(SELECTOR, svg, performance.now())
 
-		expect(tracker.has(SELECTOR, svg)).toBe(true)
+		const [span] = getFinishedSpans()
+		expect(span.attributes['browser.element.class']).toBe('loading-spinner')
 	})
 })

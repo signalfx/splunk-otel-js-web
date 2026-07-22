@@ -129,6 +129,24 @@ describe('isBlockingElementInstrumentationEnabled', () => {
 		}
 		expect(isBlockingElementInstrumentationEnabled(config)).toBe(false)
 	})
+
+	it('inherits monitors and blockingSelectors from the base config when a matching urlOverride omits them', () => {
+		location.hash = '#cart-page'
+		const config: SplunkOtelWebConfig = {
+			spaMetrics: {
+				blockingSelectors: ['.loading-spinner'],
+				monitors: ['media', 'network', 'performance', 'elements'],
+				urlOverrides: [
+					{
+						match: '#cart-page',
+						maxResourcesToWatch: 50,
+						quietTime: 1000,
+					},
+				],
+			},
+		}
+		expect(isBlockingElementInstrumentationEnabled(config)).toBe(true)
+	})
 })
 
 describe('resolveBlockingElementSelectors', () => {
@@ -193,5 +211,22 @@ describe('resolveBlockingElementSelectors', () => {
 			},
 		}
 		expect(resolveBlockingElementSelectors(config)).toEqual(['.override-spinner'])
+	})
+
+	it('inherits blockingSelectors from the base config when a matching urlOverride omits it', () => {
+		location.hash = '#cart-page'
+		const config: SplunkOtelWebConfig = {
+			spaMetrics: {
+				blockingSelectors: ['.loading-spinner'],
+				urlOverrides: [
+					{
+						match: '#cart-page',
+						maxResourcesToWatch: 50,
+						quietTime: 1000,
+					},
+				],
+			},
+		}
+		expect(resolveBlockingElementSelectors(config)).toEqual(['.loading-spinner'])
 	})
 })

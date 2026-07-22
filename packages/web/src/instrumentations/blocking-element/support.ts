@@ -30,7 +30,17 @@ function isUrlOverrideMatch(match: string | RegExp, url: string): boolean {
 
 function getSpaMetricsConfigForUrl(spaMetrics: SpaMetricsOptions, url: string): SpaMetricsOptions {
 	const override = spaMetrics.urlOverrides?.find((urlOverride) => isUrlOverrideMatch(urlOverride.match, url))
-	return override ?? spaMetrics
+	if (!override) {
+		return spaMetrics
+	}
+
+	// An override that omits monitors/blockingSelectors inherits the base value for that field,
+	// matching SpaMetricsManager.resolveConfig's per-field fallback.
+	return {
+		...override,
+		blockingSelectors: override.blockingSelectors ?? spaMetrics.blockingSelectors,
+		monitors: override.monitors ?? spaMetrics.monitors,
+	}
 }
 
 // Reads the raw instrumentations.blockingElement value, not this._config/getConfig() —
