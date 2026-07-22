@@ -75,7 +75,6 @@ export class SplunkXhrInstrumentation extends XMLHttpRequestInstrumentation {
 			if (span) {
 				// don't care about success/failure, just want to see response headers if they exist
 				xhr.addEventListener('readystatechange', () => {
-					setBrowserNavigationPageAttributes(span, this.spaMetricsManager)
 					if (xhr.readyState === xhr.HEADERS_RECEIVED) {
 						const headers = xhr.getAllResponseHeaders().toLowerCase()
 						if (headers.includes('server-timing')) {

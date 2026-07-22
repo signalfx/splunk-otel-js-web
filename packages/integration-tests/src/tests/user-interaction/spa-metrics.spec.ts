@@ -89,7 +89,7 @@ test.describe('spa-metrics', () => {
 		expect(fetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, true)
 		expectBrowserNavigationAttributes(routeChangeSpans[0], {
 			detectedResourceCount: 1,
-			quietTimerResetCount: 0,
+			quietTimerResetCount: 1,
 			status: 'completed',
 		})
 		expectLoadedResourceAttributes(routeChangeSpans[0], {
@@ -126,7 +126,7 @@ test.describe('spa-metrics', () => {
 		expect(xhrSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, true)
 		expectBrowserNavigationAttributes(routeChangeSpans[0], {
 			detectedResourceCount: 1,
-			quietTimerResetCount: 0,
+			quietTimerResetCount: 1,
 			status: 'completed',
 		})
 		expectLoadedResourceAttributes(routeChangeSpans[0], {
@@ -192,6 +192,60 @@ test.describe('spa-metrics', () => {
 		expect(afterPctFetchSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, routeChangeSpan.spanId)
 		expect(afterPctFetchSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, false)
 	})
+
+	for (const requestType of ['fetch', 'xhr'] as const) {
+		test(`${requestType} span retains its original page span id across overlapping navigations`, async ({
+			recordPage,
+		}) => {
+			await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+
+			const button =
+				requestType === 'fetch' ? '#btnNavigateWithOverlappingFetch' : '#btnNavigateWithOverlappingXhr'
+			const component = requestType === 'fetch' ? 'fetch' : 'xml-http-request'
+			const navigationAHash = `#overlapping-${requestType}-a`
+			const requestUrl = `http://localhost:3000/some-data?delay=1500&resource=overlapping-navigation-${requestType}`
+
+			// Start navigation A and its delayed request, then interrupt it with navigation B.
+			await recordPage.locator(button).click()
+			await expect
+				.poll(() =>
+					recordPage.evaluate(
+						() => (window as unknown as { overlappingRequestStarted: string }).overlappingRequestStarted,
+					),
+				)
+				.toBe(requestType)
+			await recordPage.locator('#btnNavigate').click()
+			await recordPage.waitForSpans(
+				(spans) =>
+					spans.filter((span) => span.name === 'routeChange').length === 2 &&
+					spans.some(
+						(span) =>
+							span.attributes['component'] === component && span.attributes['http.url'] === requestUrl,
+					),
+			)
+
+			const navigationASpan = recordPage.receivedSpans.find(
+				(span) =>
+					span.name === 'routeChange' && String(span.attributes['location.href']).includes(navigationAHash),
+			)
+			const navigationBSpan = recordPage.receivedSpans.find(
+				(span) => span.name === 'routeChange' && String(span.attributes['location.href']).includes('#page1'),
+			)
+			const requestSpan = recordPage.receivedSpans.find(
+				(span) => span.attributes['component'] === component && span.attributes['http.url'] === requestUrl,
+			)
+
+			expectDefined(navigationASpan)
+			expectDefined(navigationBSpan)
+			expectDefined(requestSpan)
+			expect(navigationASpan.spanId).not.toBe(navigationBSpan.spanId)
+			expect(requestSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, navigationASpan.spanId)
+			expect(requestSpan).not.toHaveSpanAttribute(
+				BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId,
+				navigationBSpan.spanId,
+			)
+		})
+	}
 
 	test('multiple route changes each have their own duration', async ({ recordPage }) => {
 		await recordPage.goTo('/user-interaction/spa-metrics.ejs')

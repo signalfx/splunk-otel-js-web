@@ -48,7 +48,6 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
 			// Temporary return to old span name until cleared by backend
 			span.updateName(`HTTP ${(request.method || 'GET').toUpperCase()}`)
 			span.setAttribute('component', 'fetch')
-			setBrowserNavigationPageAttributes(span, spaMetricsManager)
 
 			if (span && result instanceof Response && result.headers) {
 				const st = result.headers.get('Server-Timing')
@@ -65,16 +64,18 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
 		super(config)
 		this.otelConfig = otelConfig
 
-		if (separateTraces) {
-			const _superCreateSpan = (this as any as ExposedSuper)._createSpan?.bind(this)
-			;(this as any as ExposedSuper)._createSpan = (url, options) => {
+		const _superCreateSpan = (this as any as ExposedSuper)._createSpan?.bind(this)
+		;(this as any as ExposedSuper)._createSpan = (url, options) => {
+			let span: api.Span | undefined
+
+			if (separateTraces) {
 				const activeContext = api.context.active()
 				const parentSpan = api.trace.getSpan(activeContext)
 				const parentContext = parentSpan?.spanContext()
 
 				// Use ROOT_CONTEXT for a new trace, preserving suppressTracing to avoid exporter loops
 				const hybridContext = isTracingSuppressed(activeContext) ? suppressTracing(ROOT_CONTEXT) : ROOT_CONTEXT
-				const span = api.context.with(hybridContext, () => _superCreateSpan(url, options))
+				span = api.context.with(hybridContext, () => _superCreateSpan(url, options))
 
 				// Record parent span reference so the relationship is not lost
 				if (span && parentContext?.traceId) {
@@ -83,9 +84,15 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
 						'link.interaction.traceId': parentContext.traceId,
 					})
 				}
-
-				return span
+			} else {
+				span = _superCreateSpan(url, options)
 			}
+
+			if (span) {
+				setBrowserNavigationPageAttributes(span, spaMetricsManager)
+			}
+
+			return span
 		}
 
 		const _superAddHeaders = (this as unknown as ExposedSuper)._addHeaders.bind(this)
