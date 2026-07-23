@@ -102,13 +102,14 @@
 		});
 
 		document.querySelector('#btnNavigateWithImage').addEventListener('click', function () {
-			location.hash = 'page3';
-			// Add image after navigation
-			const img = document.createElement('img');
-			img.src =
-				'http://localhost:3001/user-interaction/assets/splunk-black.png?delay=300&noCache&resource=' +
-				Date.now();
-			document.getElementById('content').appendChild(img);
+			navigateThen('page3', function () {
+				// Add image after the hash navigation has been observed.
+				const img = document.createElement('img');
+				img.src =
+					'http://localhost:3001/user-interaction/assets/splunk-black.png?delay=300&noCache&resource=' +
+					Date.now();
+				document.getElementById('content').appendChild(img);
+			});
 		});
 
 		document.querySelector('#btnNavigateWithSlowFetch').addEventListener('click', function () {
