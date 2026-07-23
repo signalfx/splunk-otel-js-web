@@ -517,12 +517,10 @@ describe('SpaMetricsManager', () => {
 			const promise = manager.waitForPageLoad({ span, startTime: performance.now() })
 
 			expect(manager.getCurrentNavigationSpanId()).toBe('navigation-span-id')
-			expect(manager.isCurrentNavigationPctOpen()).toBe(true)
 
 			await promise
 
 			expect(manager.getCurrentNavigationSpanId()).toBe('navigation-span-id')
-			expect(manager.isCurrentNavigationPctOpen()).toBe(false)
 		} finally {
 			manager.stop()
 		}
@@ -613,7 +611,10 @@ describe('SpaMetricsManager', () => {
 		manager.completeCurrentNavigationPct(previousNavigationSpan, 250)
 
 		expect(manager.getCurrentNavigationSpanId()).toBe('current-navigation-span-id')
-		expect(manager.isCurrentNavigationPctOpen()).toBe(true)
+		expect(manager.getNavigationPageAttributes(225, { type: 'document' })).toEqual({
+			pageSpanId: 'current-navigation-span-id',
+			pctRelevant: true,
+		})
 	})
 
 	it('looks up the page span by start time but only marks the current navigation relevant', () => {

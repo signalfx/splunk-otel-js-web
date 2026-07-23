@@ -116,7 +116,6 @@ type ResourceAdmissionDecision = {
 	admitted: boolean
 	consumed: boolean
 	monitorType: SpaMetricsMonitor
-	pageSpanId?: string
 	startTime: number
 	url: string
 }
@@ -239,18 +238,12 @@ export class SpaMetricsManager {
 			isCurrentNavigation &&
 			pctWindowOpen &&
 			(activity?.type === 'document' ||
-				(activity?.type === 'resource' &&
-					this.evaluateResourceAdmission(activity, startTime, navigation.spanId)))
+				(activity?.type === 'resource' && this.evaluateResourceAdmission(activity, startTime)))
 
 		return {
 			pageSpanId: navigation.spanId,
 			pctRelevant,
 		}
-	}
-
-	isCurrentNavigationPctOpen(): boolean {
-		const currentNavigation = this.navigationHistory.at(-1)
-		return currentNavigation !== undefined && currentNavigation.pctEndTime === undefined
 	}
 
 	setCurrentNavigationSpan(span: Span, startTime: number): void {
@@ -451,7 +444,6 @@ export class SpaMetricsManager {
 	private evaluateResourceAdmission(
 		activity: Extract<NavigationActivity, { type: 'resource' }>,
 		startTime: number,
-		pageSpanId: string,
 	): boolean {
 		if (activity.resourceId) {
 			const decision = this.resourceAdmissionDecisions.get(activity.resourceId)
@@ -460,7 +452,7 @@ export class SpaMetricsManager {
 			}
 
 			decision.consumed = true
-			return decision.admitted && (!decision.pageSpanId || decision.pageSpanId === pageSpanId)
+			return decision.admitted
 		}
 
 		const normalizedUrl = this.normalizeResourceUrl(activity.url)
@@ -476,9 +468,7 @@ export class SpaMetricsManager {
 			decision.consumed = true
 		}
 
-		return matchingDecisions.some(
-			(decision) => decision.admitted && (!decision.pageSpanId || decision.pageSpanId === pageSpanId),
-		)
+		return matchingDecisions.some((decision) => decision.admitted)
 	}
 
 	private getBeaconEndpointIgnoreUrls(beaconEndpoint: string | undefined): (string | RegExp)[] {
@@ -590,7 +580,6 @@ export class SpaMetricsManager {
 			admitted,
 			consumed: false,
 			monitorType: event.monitorType,
-			pageSpanId: this.getNavigationAt(startTime)?.spanId,
 			startTime,
 			url: this.normalizeResourceUrl(event.url),
 		})

@@ -650,14 +650,6 @@ export const SplunkRum: SplunkOtelWebType = {
 				includeDebugInfo: processedOptions._experimental_captureBrowserDebugAttributes,
 			}
 			const basicPlatformInfo = getBasicPlatformInfo(platformInfoOptions)
-			const spaMetricsManager =
-				processedOptions.spaMetrics === false
-					? undefined
-					: new SpaMetricsManager({
-							beaconEndpoint: processedOptions.beaconEndpoint,
-							...(processedOptions.spaMetrics === true ? {} : processedOptions.spaMetrics),
-						})
-			_spaMetricsManager = spaMetricsManager
 
 			this.attributesProcessor = new SpanAttributesProcessor(
 				this.sessionManager,
@@ -707,6 +699,15 @@ export const SplunkRum: SplunkOtelWebType = {
 			})
 
 			this.sessionManager.start()
+
+			const spaMetricsManager =
+				processedOptions.spaMetrics === false
+					? undefined
+					: new SpaMetricsManager({
+							beaconEndpoint: processedOptions.beaconEndpoint,
+							...(processedOptions.spaMetrics === true ? {} : processedOptions.spaMetrics),
+						})
+			_spaMetricsManager = spaMetricsManager
 
 			const instrumentations = INSTRUMENTATIONS.map(({ confKey, disable, Instrument }) => {
 				const pluginConf = getPluginConfig(processedOptions.instrumentations[confKey], pluginDefaults, disable)
