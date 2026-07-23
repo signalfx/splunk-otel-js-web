@@ -23,6 +23,10 @@ export const BROWSER_ELEMENT_SELECTOR_ATTRIBUTE = 'browser.element.selector'
 export const BROWSER_ELEMENT_ID_ATTRIBUTE = 'browser.element.id'
 export const BROWSER_ELEMENT_CLASS_ATTRIBUTE = 'browser.element.class'
 export const BROWSER_ELEMENT_TAG_ATTRIBUTE = 'browser.element.tag'
+export const BROWSER_ELEMENT_XPATH_ATTRIBUTE = 'browser.element.xpath'
 export const BROWSER_ELEMENT_COMPLETION_ATTRIBUTE = 'browser.element.completion'
 export const BROWSER_ELEMENT_COMPLETION_COMPLETED = 'completed'
 export const BROWSER_ELEMENT_COMPLETION_INTERRUPTED = 'interrupted'
+
+/** Sanity cap on concurrently open element spans; startSpan no-ops past this. */
+export const MAX_OPEN_ELEMENT_SPANS = 1000

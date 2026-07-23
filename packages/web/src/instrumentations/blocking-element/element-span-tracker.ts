@@ -16,7 +16,7 @@
  *
  */
 
-import type { Span, Tracer } from '@opentelemetry/api'
+import { diag, type Span, type Tracer } from '@opentelemetry/api'
 
 import {
 	BLOCKING_ELEMENT_SPAN_NAME,
@@ -27,7 +27,13 @@ import {
 	BROWSER_ELEMENT_ID_ATTRIBUTE,
 	BROWSER_ELEMENT_SELECTOR_ATTRIBUTE,
 	BROWSER_ELEMENT_TAG_ATTRIBUTE,
+	MAX_OPEN_ELEMENT_SPANS,
 } from './constants'
+
+type TrackedElement = {
+	accumulatedSelectors: Set<string>
+	span: Span
+}
 
 /** `SVGElement.className` is an `SVGAnimatedString` at runtime; `animVal` gives the live value. */
 function getElementClass(element: Element): string {
@@ -36,84 +42,85 @@ function getElementClass(element: Element): string {
 }
 
 /**
- * Creates one span per (selector, element) pair matching a configured blocking selector.
- * Kept fully independent of LoadingElementMonitor's own PCT tracking: this class only reacts
- * to element-level start/complete/interrupt calls it is given and never reads or mutates PCT
- * state.
+ * Creates one span per DOM element matching any configured blocking selector, regardless of how
+ * many configured selectors it matches. 
  */
 export class ElementSpanTracker {
-	private readonly spansBySelector = new Map<string, Map<Element, Span>>()
+	private hasWarnedAtCapacity = false
 
-	constructor(private readonly tracer: Tracer) {}
+	private readonly tracked = new Map<Element, TrackedElement>()
 
-	completeSpan(selector: string, element: Element, endTimeRelative: number): void {
-		const span = this.spansBySelector.get(selector)?.get(element)
-		if (!span) {
-			return
-		}
+	/**
+	 * The configured selector list, in configuration order. Used only to join
+	 * `accumulatedSelectors` deterministically at completion time — `Set` iteration order reflects
+	 * insertion order, not configuration order, so it cannot be used directly for the exported
+	 * attribute.
+	 */
+	constructor(
+		private readonly tracer: Tracer,
+		private readonly configuredSelectors: string[],
+	) {}
 
-		this.spansBySelector.get(selector)?.delete(element)
-		span.setAttribute(BROWSER_ELEMENT_COMPLETION_ATTRIBUTE, BROWSER_ELEMENT_COMPLETION_COMPLETED)
-		span.end(endTimeRelative)
+	completeSpan(element: Element, endTimeRelative: number): void {
+		this.endSpan(element, BROWSER_ELEMENT_COMPLETION_COMPLETED, endTimeRelative)
 	}
 
-	getTrackedElements(selector: string): Element[] {
-		return Array.from(this.spansBySelector.get(selector)?.keys() ?? [])
-	}
-
-	has(selector: string, element: Element): boolean {
-		return this.spansBySelector.get(selector)?.has(element) ?? false
+	has(element: Element): boolean {
+		return this.tracked.has(element)
 	}
 
 	interruptAll(): void {
-		for (const selector of this.spansBySelector.keys()) {
-			this.interruptAllForSelector(selector)
+		for (const element of this.trackedElements()) {
+			this.interruptSpan(element)
 		}
 	}
 
 	/**
-	 * No caller in this instrumentation's v1 scope. Kept as the seam a future per-route
-	 * selector re-resolution ticket would call for each selector that falls out of a newly
-	 * resolved list (same pattern as LoadingElementMonitor's setSelectors -> completeSelector).
+	 * Interrupts every open span whose element currently matches the given selector. No caller in
+	 * this instrumentation's v1 scope — kept as the seam a future per-route selector re-resolution
+	 * ticket would call for each selector that falls out of a newly resolved list.
 	 */
 	interruptAllForSelector(selector: string): void {
-		const elements = this.spansBySelector.get(selector)
-		if (!elements) {
-			return
-		}
-
-		for (const element of elements.keys()) {
-			this.interruptSpan(selector, element)
+		for (const element of this.trackedElements()) {
+			if (this.tracked.get(element)?.accumulatedSelectors.has(selector)) {
+				this.interruptSpan(element)
+			}
 		}
 	}
 
-	interruptSpan(selector: string, element: Element): void {
-		const span = this.spansBySelector.get(selector)?.get(element)
-		if (!span) {
-			return
-		}
+	interruptSpan(element: Element): void {
+		this.endSpan(element, BROWSER_ELEMENT_COMPLETION_INTERRUPTED)
+	}
 
-		this.spansBySelector.get(selector)?.delete(element)
-		span.setAttribute(BROWSER_ELEMENT_COMPLETION_ATTRIBUTE, BROWSER_ELEMENT_COMPLETION_INTERRUPTED)
-		span.end()
+	/** Total number of currently open (not yet ended) element spans, one per physical element. */
+	get openCount(): number {
+		return this.tracked.size
 	}
 
 	/**
-	 * Total number of currently open (not yet ended) element spans across all selectors.
-	 * Exposed so a future volume cap can be added as a single guard clause in startSpan
-	 * without needing new plumbing.
+	 * matchedSelectors is every currently-configured selector this element matches right now
+	 * (config order). Merged into the element's accumulated set on every call, including for
+	 * already-tracked elements — a no-op on the Span itself, but keeps the eventual completion
+	 * attribute current.
 	 */
-	get openCount(): number {
-		let count = 0
-		for (const elements of this.spansBySelector.values()) {
-			count += elements.size
+	startSpan(element: Element, matchedSelectors: string[], startTimeRelative: number): void {
+		const existing = this.tracked.get(element)
+		if (existing) {
+			for (const selector of matchedSelectors) {
+				existing.accumulatedSelectors.add(selector)
+			}
+
+			return
 		}
 
-		return count
-	}
+		if (this.tracked.size >= MAX_OPEN_ELEMENT_SPANS) {
+			if (!this.hasWarnedAtCapacity) {
+				this.hasWarnedAtCapacity = true
+				diag.warn('ElementSpanTracker: Reached max open element spans; dropping further elements.', {
+					max: MAX_OPEN_ELEMENT_SPANS,
+				})
+			}
 
-	startSpan(selector: string, element: Element, startTimeRelative: number): void {
-		if (this.has(selector, element)) {
 			return
 		}
 
@@ -122,15 +129,31 @@ export class ElementSpanTracker {
 			startTime: startTimeRelative,
 		})
 		span.setAttribute('component', BLOCKING_ELEMENT_SPAN_NAME)
-		span.setAttribute(BROWSER_ELEMENT_SELECTOR_ATTRIBUTE, selector)
 		span.setAttribute(BROWSER_ELEMENT_ID_ATTRIBUTE, element.id)
 		span.setAttribute(BROWSER_ELEMENT_CLASS_ATTRIBUTE, getElementClass(element))
 		span.setAttribute(BROWSER_ELEMENT_TAG_ATTRIBUTE, element.tagName)
 
-		if (!this.spansBySelector.has(selector)) {
-			this.spansBySelector.set(selector, new Map())
+		this.tracked.set(element, { accumulatedSelectors: new Set(matchedSelectors), span })
+	}
+
+	/** Snapshot of currently tracked elements, safe to iterate while mutating the map. */
+	trackedElements(): Element[] {
+		return Array.from(this.tracked.keys())
+	}
+
+	private endSpan(element: Element, completion: string, endTimeRelative?: number): void {
+		const tracked = this.tracked.get(element)
+		if (!tracked) {
+			return
 		}
 
-		this.spansBySelector.get(selector)?.set(element, span)
+		this.tracked.delete(element)
+
+		const selectorValue = this.configuredSelectors
+			.filter((selector) => tracked.accumulatedSelectors.has(selector))
+			.join(',')
+		tracked.span.setAttribute(BROWSER_ELEMENT_SELECTOR_ATTRIBUTE, selectorValue)
+		tracked.span.setAttribute(BROWSER_ELEMENT_COMPLETION_ATTRIBUTE, completion)
+		tracked.span.end(endTimeRelative)
 	}
 }

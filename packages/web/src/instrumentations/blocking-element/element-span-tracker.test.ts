@@ -28,6 +28,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { ElementSpanTracker } from './element-span-tracker'
 
 const SELECTOR = '.loading-spinner'
+const OTHER_SELECTOR = '[data-loading]'
 
 const createElement = (options: { className?: string; id?: string } = {}): HTMLElement => {
 	const element = document.createElement('div')
@@ -39,21 +40,23 @@ const createElement = (options: { className?: string; id?: string } = {}): HTMLE
 describe('ElementSpanTracker', () => {
 	let exporter: InMemorySpanExporter
 	let provider: BasicTracerProvider
-	let tracker: ElementSpanTracker
 
 	const getFinishedSpans = (): ReadableSpan[] => exporter.getFinishedSpans()
+
+	const createTracker = (configuredSelectors: string[] = [SELECTOR, OTHER_SELECTOR]): ElementSpanTracker =>
+		new ElementSpanTracker(provider.getTracer('test'), configuredSelectors)
 
 	beforeEach(() => {
 		exporter = new InMemorySpanExporter()
 		provider = new BasicTracerProvider({ spanProcessors: [new SimpleSpanProcessor(exporter)] })
-		tracker = new ElementSpanTracker(provider.getTracer('test'))
 	})
 
 	it('creates a root span with component and element attributes', () => {
+		const tracker = createTracker()
 		const element = createElement({ className: 'loading-spinner', id: 'main-spinner' })
 
-		tracker.startSpan(SELECTOR, element, performance.now())
-		tracker.completeSpan(SELECTOR, element, performance.now())
+		tracker.startSpan(element, [SELECTOR], performance.now())
+		tracker.completeSpan(element, performance.now())
 
 		const [span] = getFinishedSpans()
 		expect(span.name).toBe('blockingElement')
@@ -65,70 +68,75 @@ describe('ElementSpanTracker', () => {
 		expect(span.attributes['browser.element.tag']).toBe('DIV')
 	})
 
-	it('no-ops on a duplicate startSpan for the same selector and element', () => {
+	it('no-ops the span on a duplicate startSpan for the same element', () => {
+		const tracker = createTracker()
 		const element = createElement()
 
-		tracker.startSpan(SELECTOR, element, performance.now())
-		tracker.startSpan(SELECTOR, element, performance.now())
+		tracker.startSpan(element, [SELECTOR], performance.now())
+		tracker.startSpan(element, [SELECTOR], performance.now())
 
 		expect(tracker.openCount).toBe(1)
 	})
 
 	it('starts independent spans for two elements matching the same selector', () => {
+		const tracker = createTracker()
 		const first = createElement()
 		const second = createElement()
 
-		tracker.startSpan(SELECTOR, first, performance.now())
-		tracker.startSpan(SELECTOR, second, performance.now())
+		tracker.startSpan(first, [SELECTOR], performance.now())
+		tracker.startSpan(second, [SELECTOR], performance.now())
 
 		expect(tracker.openCount).toBe(2)
-		expect(tracker.has(SELECTOR, first)).toBe(true)
-		expect(tracker.has(SELECTOR, second)).toBe(true)
+		expect(tracker.has(first)).toBe(true)
+		expect(tracker.has(second)).toBe(true)
 	})
 
 	it('completes a span with completion="completed" and the correct duration', () => {
+		const tracker = createTracker()
 		const element = createElement()
 		const startTime = 1000
 		const endTime = 1250
 
-		tracker.startSpan(SELECTOR, element, startTime)
-		tracker.completeSpan(SELECTOR, element, endTime)
+		tracker.startSpan(element, [SELECTOR], startTime)
+		tracker.completeSpan(element, endTime)
 
 		const [span] = getFinishedSpans()
 		expect(span.attributes['browser.element.completion']).toBe('completed')
 		expect(hrTimeToMilliseconds(span.duration)).toBeCloseTo(250, 0)
-		expect(tracker.has(SELECTOR, element)).toBe(false)
+		expect(tracker.has(element)).toBe(false)
 		expect(tracker.openCount).toBe(0)
 	})
 
 	it('no-ops completeSpan for an element that was never started', () => {
+		const tracker = createTracker()
 		const element = createElement()
 
-		tracker.completeSpan(SELECTOR, element, performance.now())
+		tracker.completeSpan(element, performance.now())
 
 		expect(getFinishedSpans()).toHaveLength(0)
 	})
 
 	it('interrupts a single span with completion="interrupted"', () => {
+		const tracker = createTracker()
 		const element = createElement()
 
-		tracker.startSpan(SELECTOR, element, performance.now())
-		tracker.interruptSpan(SELECTOR, element)
+		tracker.startSpan(element, [SELECTOR], performance.now())
+		tracker.interruptSpan(element)
 
 		const [span] = getFinishedSpans()
 		expect(span.attributes['browser.element.completion']).toBe('interrupted')
-		expect(tracker.has(SELECTOR, element)).toBe(false)
+		expect(tracker.has(element)).toBe(false)
 	})
 
-	it('interrupts all spans for a given selector, leaving other selectors untouched', () => {
-		const otherSelector = '.other-spinner'
+	it('interrupts every open span whose accumulated selectors include the given selector', () => {
+		const tracker = createTracker()
 		const first = createElement()
 		const second = createElement()
 		const other = createElement()
 
-		tracker.startSpan(SELECTOR, first, performance.now())
-		tracker.startSpan(SELECTOR, second, performance.now())
-		tracker.startSpan(otherSelector, other, performance.now())
+		tracker.startSpan(first, [SELECTOR], performance.now())
+		tracker.startSpan(second, [SELECTOR], performance.now())
+		tracker.startSpan(other, [OTHER_SELECTOR], performance.now())
 
 		tracker.interruptAllForSelector(SELECTOR)
 
@@ -138,16 +146,16 @@ describe('ElementSpanTracker', () => {
 			true,
 		)
 		expect(tracker.openCount).toBe(1)
-		expect(tracker.has(otherSelector, other)).toBe(true)
+		expect(tracker.has(other)).toBe(true)
 	})
 
 	it('interrupts every open span across all selectors', () => {
-		const otherSelector = '.other-spinner'
+		const tracker = createTracker()
 		const first = createElement()
 		const other = createElement()
 
-		tracker.startSpan(SELECTOR, first, performance.now())
-		tracker.startSpan(otherSelector, other, performance.now())
+		tracker.startSpan(first, [SELECTOR], performance.now())
+		tracker.startSpan(other, [OTHER_SELECTOR], performance.now())
 
 		tracker.interruptAll()
 
@@ -159,33 +167,125 @@ describe('ElementSpanTracker', () => {
 		expect(tracker.openCount).toBe(0)
 	})
 
-	it('returns the currently tracked elements for a selector', () => {
-		const otherSelector = '.other-spinner'
+	it('returns the currently tracked elements', () => {
+		const tracker = createTracker()
 		const first = createElement()
 		const second = createElement()
-		const other = createElement()
 
-		tracker.startSpan(SELECTOR, first, performance.now())
-		tracker.startSpan(SELECTOR, second, performance.now())
-		tracker.startSpan(otherSelector, other, performance.now())
+		tracker.startSpan(first, [SELECTOR], performance.now())
+		tracker.startSpan(second, [OTHER_SELECTOR], performance.now())
 
-		expect(tracker.getTrackedElements(SELECTOR)).toEqual([first, second])
-		expect(tracker.getTrackedElements(otherSelector)).toEqual([other])
+		expect(tracker.trackedElements()).toEqual([first, second])
 	})
 
-	it('returns an empty array for a selector with no tracked elements', () => {
-		expect(tracker.getTrackedElements(SELECTOR)).toEqual([])
+	it('returns an empty array when nothing is tracked', () => {
+		const tracker = createTracker()
+
+		expect(tracker.trackedElements()).toEqual([])
 	})
 
 	it('reads a live SVGAnimatedString className via animVal', () => {
+		const tracker = createTracker()
 		const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
 		svg.setAttribute('class', 'loading-spinner')
 		expect(typeof svg.className).toBe('object')
 
-		tracker.startSpan(SELECTOR, svg, performance.now())
-		tracker.completeSpan(SELECTOR, svg, performance.now())
+		tracker.startSpan(svg, [SELECTOR], performance.now())
+		tracker.completeSpan(svg, performance.now())
 
 		const [span] = getFinishedSpans()
 		expect(span.attributes['browser.element.class']).toBe('loading-spinner')
+	})
+
+	describe('multi-selector consolidation', () => {
+		it('creates one span, not two, for an element matching two configured selectors at open time', () => {
+			const tracker = createTracker()
+			const element = createElement()
+
+			tracker.startSpan(element, [SELECTOR, OTHER_SELECTOR], performance.now())
+
+			expect(tracker.openCount).toBe(1)
+		})
+
+		it('joins matched selectors in configured order, not the order they were observed', () => {
+			const tracker = createTracker([SELECTOR, OTHER_SELECTOR])
+			const element = createElement()
+
+			// Observed in reverse of configured order.
+			tracker.startSpan(element, [OTHER_SELECTOR, SELECTOR], performance.now())
+			tracker.completeSpan(element, performance.now())
+
+			const [span] = getFinishedSpans()
+			expect(span.attributes['browser.element.selector']).toBe(`${SELECTOR},${OTHER_SELECTOR}`)
+		})
+
+		it('accumulates a selector gained mid-span into the final completion attribute', () => {
+			const tracker = createTracker()
+			const element = createElement()
+
+			tracker.startSpan(element, [SELECTOR], performance.now())
+			// Later scan: element now also matches OTHER_SELECTOR while still open.
+			tracker.startSpan(element, [OTHER_SELECTOR], performance.now())
+			tracker.completeSpan(element, performance.now())
+
+			const [span] = getFinishedSpans()
+			expect(span.attributes['browser.element.selector']).toBe(`${SELECTOR},${OTHER_SELECTOR}`)
+		})
+
+		it('keeps a previously matched selector in the final attribute even after the element stops matching it', () => {
+			const tracker = createTracker()
+			const element = createElement()
+
+			tracker.startSpan(element, [SELECTOR, OTHER_SELECTOR], performance.now())
+			// Later scan: element now only matches SELECTOR, but the span stays open (caller's job,
+			// not the tracker's — completeSpan is only called when the caller decides nothing matches).
+			tracker.startSpan(element, [SELECTOR], performance.now())
+			tracker.completeSpan(element, performance.now())
+
+			const [span] = getFinishedSpans()
+			expect(span.attributes['browser.element.selector']).toBe(`${SELECTOR},${OTHER_SELECTOR}`)
+		})
+
+		it('does not double-count openCount for an element matching multiple selectors', () => {
+			const tracker = createTracker()
+			const element = createElement()
+
+			tracker.startSpan(element, [SELECTOR, OTHER_SELECTOR], performance.now())
+
+			expect(tracker.openCount).toBe(1)
+		})
+	})
+
+	describe('MAX_OPEN_ELEMENT_SPANS cap', () => {
+		it('drops the span past the cap without incrementing openCount', () => {
+			const tracker = createTracker()
+
+			for (let index = 0; index < 1000; index += 1) {
+				tracker.startSpan(createElement(), [SELECTOR], performance.now())
+			}
+
+			expect(tracker.openCount).toBe(1000)
+
+			tracker.startSpan(createElement(), [SELECTOR], performance.now())
+
+			expect(tracker.openCount).toBe(1000)
+			expect(getFinishedSpans()).toHaveLength(0)
+		})
+
+		it('does not count a re-entrant startSpan for an already-tracked element against the cap', () => {
+			const tracker = createTracker()
+			const elements: HTMLElement[] = []
+
+			for (let index = 0; index < 1000; index += 1) {
+				const element = createElement()
+				elements.push(element)
+				tracker.startSpan(element, [SELECTOR], performance.now())
+			}
+
+			// Re-matching an already-tracked element must not be treated as a new element.
+			tracker.startSpan(elements[0], [SELECTOR, OTHER_SELECTOR], performance.now())
+
+			expect(tracker.openCount).toBe(1000)
+		})
 	})
 })
