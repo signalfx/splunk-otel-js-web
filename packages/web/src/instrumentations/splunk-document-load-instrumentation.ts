@@ -102,7 +102,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 			if (span && spanName === AttributeNames.DOCUMENT_LOAD) {
 				span.setAttribute('component', this.component)
 				addExtraDocLoadTags(span)
-				this.spaMetricsManager?.setCurrentNavigationSpan(span)
+				this.spaMetricsManager?.setCurrentNavigationSpan(span, 0)
 				// The span processor's automatic onStart event already ran before
 				// `component` was set, so emit manually now that SpanEmitter can
 				// route this as `document-load:start`.
@@ -134,7 +134,12 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 			}
 
 			if (span && exposedSpan.name !== AttributeNames.DOCUMENT_LOAD) {
-				setBrowserNavigationPageAttributes(span, this.spaMetricsManager)
+				const startTime = (entries as unknown as Record<string, unknown>)[performanceName]
+
+				if (typeof startTime === 'number') {
+					setBrowserNavigationPageAttributes(span, this.spaMetricsManager, startTime)
+				}
+
 				// only apply links to document/resource fetch
 				// To maintain compatibility, getEntries copies out select items from
 				// different versions of the performance API into its own structure for the
@@ -165,7 +170,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 					void this.documentLoadMetricsPromise
 						.then((pageLoadMetrics) => {
 							this.spaMetricsManager?.setPageLoadMetricAttributes(span, pageLoadMetrics)
-							this.spaMetricsManager?.completeCurrentNavigationPct(span)
+							this.spaMetricsManager?.completeCurrentNavigationPct(span, pageLoadMetrics.pct)
 							api.diag.debug('Sending documentLoad span with PCT result', pageLoadMetrics)
 							_superEndSpan(span, performanceName, entries)
 						})

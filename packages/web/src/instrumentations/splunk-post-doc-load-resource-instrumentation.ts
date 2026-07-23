@@ -119,7 +119,7 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 		span.setAttribute('component', MODULE_NAME)
 		span.setAttribute(SemanticAttributes.HTTP_URL, entry.name)
 		span.setAttribute(SemanticAttributes.HTTP_METHOD, 'GET')
-		setBrowserNavigationPageAttributes(span, this.spaMetricsManager)
+		setBrowserNavigationPageAttributes(span, this.spaMetricsManager, entry.fetchStart)
 
 		const cacheHit = isCacheHit(entry)
 		if (cacheHit !== undefined) {

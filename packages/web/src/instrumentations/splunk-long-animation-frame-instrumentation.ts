@@ -90,7 +90,7 @@ export class SplunkLongAnimationFrameInstrumentation extends InstrumentationBase
 		})
 
 		setLoafEntryAttributes(span, entry)
-		setBrowserNavigationPageAttributes(span, this.spaMetricsManager)
+		setBrowserNavigationPageAttributes(span, this.spaMetricsManager, entry.startTime)
 		span.end(entry.startTime + entry.duration)
 	}
 }

@@ -534,10 +534,10 @@ describe('SpaMetricsManager', () => {
 		const { attributes: duringPctAttributes, span: duringPctSpan } = createSpanMock('during-pct-span-id')
 		const { attributes: afterPctAttributes, span: afterPctSpan } = createSpanMock('after-pct-span-id')
 
-		manager.setCurrentNavigationSpan(navigationSpan)
-		setBrowserNavigationPageAttributes(duringPctSpan, manager)
-		manager.completeCurrentNavigationPct(navigationSpan)
-		setBrowserNavigationPageAttributes(afterPctSpan, manager)
+		manager.setCurrentNavigationSpan(navigationSpan, 100)
+		setBrowserNavigationPageAttributes(duringPctSpan, manager, 150)
+		manager.completeCurrentNavigationPct(navigationSpan, 200)
+		setBrowserNavigationPageAttributes(afterPctSpan, manager, 250)
 
 		expect(duringPctAttributes[BROWSER_NAVIGATION_PAGE_SPAN_ID_ATTRIBUTE]).toBe('navigation-span-id')
 		expect(duringPctAttributes[BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE]).toBe(true)
@@ -550,12 +550,54 @@ describe('SpaMetricsManager', () => {
 		const { span: previousNavigationSpan } = createSpanMock('previous-navigation-span-id')
 		const { span: currentNavigationSpan } = createSpanMock('current-navigation-span-id')
 
-		manager.setCurrentNavigationSpan(previousNavigationSpan)
-		manager.setCurrentNavigationSpan(currentNavigationSpan)
-		manager.completeCurrentNavigationPct(previousNavigationSpan)
+		manager.setCurrentNavigationSpan(previousNavigationSpan, 100)
+		manager.setCurrentNavigationSpan(currentNavigationSpan, 200)
+		manager.completeCurrentNavigationPct(previousNavigationSpan, 250)
 
 		expect(manager.getCurrentNavigationSpanId()).toBe('current-navigation-span-id')
 		expect(manager.isCurrentNavigationPctRelevant()).toBe(true)
+	})
+
+	it('looks up navigation attributes by span start time from newest to oldest', () => {
+		const manager = new SpaMetricsManager()
+		const { span: firstNavigationSpan } = createSpanMock('first-navigation-span-id')
+		const { span: secondNavigationSpan } = createSpanMock('second-navigation-span-id')
+
+		manager.setCurrentNavigationSpan(firstNavigationSpan, 100)
+		manager.completeCurrentNavigationPct(firstNavigationSpan, 175)
+		manager.setCurrentNavigationSpan(secondNavigationSpan, 200)
+
+		expect(manager.getNavigationPageAttributes(150)).toEqual({
+			pageSpanId: 'first-navigation-span-id',
+			pctRelevant: true,
+		})
+		expect(manager.getNavigationPageAttributes(190)).toEqual({
+			pageSpanId: 'first-navigation-span-id',
+			pctRelevant: false,
+		})
+		expect(manager.getNavigationPageAttributes(200)).toEqual({
+			pageSpanId: 'second-navigation-span-id',
+			pctRelevant: true,
+		})
+		expect(manager.getNavigationPageAttributes(50)).toBeUndefined()
+	})
+
+	it('retains only the ten most recent navigation entries', () => {
+		const manager = new SpaMetricsManager()
+
+		for (let index = 0; index < 11; index++) {
+			manager.setCurrentNavigationSpan(createSpanMock(`navigation-${index}`).span, index * 100)
+		}
+
+		expect(manager.getNavigationPageAttributes(50)).toBeUndefined()
+		expect(manager.getNavigationPageAttributes(150)).toEqual({
+			pageSpanId: 'navigation-1',
+			pctRelevant: true,
+		})
+		expect(manager.getNavigationPageAttributes(1050)).toEqual({
+			pageSpanId: 'navigation-10',
+			pctRelevant: true,
+		})
 	})
 
 	it('waitForPageLoad sets loaded resource attributes when quiet period completes', async () => {

@@ -21,13 +21,14 @@ import { type Span } from '@opentelemetry/api'
 import { BROWSER_NAVIGATION_PAGE_SPAN_ID_ATTRIBUTE, BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE } from './constants'
 import { type SpaMetricsManager } from './spa-metrics-manager'
 
-export function setBrowserNavigationPageAttributes(span: Span, spaMetricsManager: SpaMetricsManager | undefined): void {
-	const navigationSpanId = spaMetricsManager?.getCurrentNavigationSpanId()
-	if (navigationSpanId) {
-		span.setAttribute(BROWSER_NAVIGATION_PAGE_SPAN_ID_ATTRIBUTE, navigationSpanId)
-		span.setAttribute(
-			BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE,
-			spaMetricsManager?.isCurrentNavigationPctRelevant() ?? false,
-		)
+export function setBrowserNavigationPageAttributes(
+	span: Span,
+	spaMetricsManager: SpaMetricsManager | undefined,
+	startTime: number,
+): void {
+	const navigation = spaMetricsManager?.getNavigationPageAttributes(startTime)
+	if (navigation) {
+		span.setAttribute(BROWSER_NAVIGATION_PAGE_SPAN_ID_ATTRIBUTE, navigation.pageSpanId)
+		span.setAttribute(BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE, navigation.pctRelevant)
 	}
 }

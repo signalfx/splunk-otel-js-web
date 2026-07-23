@@ -106,9 +106,21 @@ type WaitForPageLoadConfig = {
 	startTime: number
 }
 
+type NavigationHistoryEntry = {
+	pctEndTime?: number
+	spanId: string
+	startTime: number
+}
+
+export type NavigationPageAttributes = {
+	pageSpanId: string
+	pctRelevant: boolean
+}
+
 const MAX_LOADING_RESOURCE_URLS_TO_REPORT = 3
 const MAX_LOADED_RESOURCES_TO_REPORT = 3
 const MAX_LOADING_RESOURCE_URL_LENGTH = 100
+const MAX_NAVIGATION_HISTORY_ENTRIES = 10
 
 export interface SpaMetricsManagerConfig extends SpaMetricsManagerConfigValues {
 	beaconEndpoint?: string
@@ -118,15 +130,13 @@ export interface SpaMetricsManagerConfig extends SpaMetricsManagerConfigValues {
 export class SpaMetricsManager {
 	private readonly config: ResolvedSpaMetricsManagerConfig
 
-	private currentNavigationPctRelevant = false
-
-	private currentNavigationSpanId: string | undefined
-
 	private isMonitoring = false
 
 	private loadingResources = new Map<string, LoadingResource>()
 
 	private readonly monitors: ReturnType<typeof SpaMetricsManager.createMonitors>
+
+	private navigationHistory: NavigationHistoryEntry[] = []
 
 	private pageLoadResourceTracker: PageLoadResourceTracker | undefined
 
@@ -171,9 +181,14 @@ export class SpaMetricsManager {
 		this.monitors = SpaMetricsManager.createMonitors(monitorConfig)
 	}
 
-	completeCurrentNavigationPct(span: Span): void {
-		if (this.currentNavigationSpanId === span.spanContext().spanId) {
-			this.currentNavigationPctRelevant = false
+	completeCurrentNavigationPct(span: Span, endTime = performance.now()): void {
+		const spanId = span.spanContext().spanId
+		for (let index = this.navigationHistory.length - 1; index >= 0; index--) {
+			const navigation = this.navigationHistory[index]
+			if (navigation.spanId === spanId) {
+				navigation.pctEndTime = endTime
+				return
+			}
 		}
 	}
 
@@ -182,16 +197,36 @@ export class SpaMetricsManager {
 	}
 
 	getCurrentNavigationSpanId(): string | undefined {
-		return this.currentNavigationSpanId
+		return this.navigationHistory.at(-1)?.spanId
+	}
+
+	getNavigationPageAttributes(startTime: number): NavigationPageAttributes | undefined {
+		// Performance entries can be delivered after a later navigation has started.
+		// Resolve them against the navigation that was active at their original start time.
+		for (let index = this.navigationHistory.length - 1; index >= 0; index--) {
+			const navigation = this.navigationHistory[index]
+			if (startTime >= navigation.startTime) {
+				return {
+					pageSpanId: navigation.spanId,
+					pctRelevant: navigation.pctEndTime === undefined || startTime <= navigation.pctEndTime,
+				}
+			}
+		}
+
+		return undefined
 	}
 
 	isCurrentNavigationPctRelevant(): boolean {
-		return this.currentNavigationPctRelevant
+		const currentNavigation = this.navigationHistory.at(-1)
+		return currentNavigation !== undefined && currentNavigation.pctEndTime === undefined
 	}
 
-	setCurrentNavigationSpan(span: Span): void {
-		this.currentNavigationSpanId = span.spanContext().spanId
-		this.currentNavigationPctRelevant = true
+	setCurrentNavigationSpan(span: Span, startTime: number): void {
+		this.navigationHistory.push({ spanId: span.spanContext().spanId, startTime })
+		// Keep the lookup bounded for long-running single-page applications.
+		if (this.navigationHistory.length > MAX_NAVIGATION_HISTORY_ENTRIES) {
+			this.navigationHistory.shift()
+		}
 	}
 
 	setPageLoadMetricAttributes(
@@ -257,8 +292,7 @@ export class SpaMetricsManager {
 	stop(): void {
 		this.quietPeriodAwaiter?.interrupt()
 		this.quietPeriodAwaiter = undefined
-		this.currentNavigationSpanId = undefined
-		this.currentNavigationPctRelevant = false
+		this.navigationHistory = []
 
 		if (!this.isMonitoring) {
 			return
@@ -276,7 +310,7 @@ export class SpaMetricsManager {
 	waitForPageLoad({ span, startTime }: WaitForPageLoadConfig): Promise<PageLoadMetricsResult> {
 		this.quietPeriodAwaiter?.interrupt()
 		if (span) {
-			this.setCurrentNavigationSpan(span)
+			this.setCurrentNavigationSpan(span, startTime)
 		}
 
 		const activeConfig = this.activeConfig
@@ -337,7 +371,7 @@ export class SpaMetricsManager {
 					return result
 				} finally {
 					if (span) {
-						this.completeCurrentNavigationPct(span)
+						this.completeCurrentNavigationPct(span, startTime + result.pct)
 					}
 				}
 			},

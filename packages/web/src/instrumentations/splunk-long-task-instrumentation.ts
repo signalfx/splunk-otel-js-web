@@ -78,7 +78,7 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
 		})
 
 		span.setAttribute('component', MODULE_NAME)
-		setBrowserNavigationPageAttributes(span, this.spaMetricsManager)
+		setBrowserNavigationPageAttributes(span, this.spaMetricsManager, entry.startTime)
 		span.setAttribute('longtask.name', entry.name)
 		span.setAttribute('longtask.entry_type', entry.entryType)
 		span.setAttribute('longtask.duration', entry.duration)

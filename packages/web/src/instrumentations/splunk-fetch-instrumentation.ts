@@ -66,6 +66,7 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
 
 		const _superCreateSpan = (this as any as ExposedSuper)._createSpan?.bind(this)
 		;(this as any as ExposedSuper)._createSpan = (url, options) => {
+			const startTime = performance.now()
 			let span: api.Span | undefined
 
 			if (separateTraces) {
@@ -89,7 +90,7 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
 			}
 
 			if (span) {
-				setBrowserNavigationPageAttributes(span, spaMetricsManager)
+				setBrowserNavigationPageAttributes(span, spaMetricsManager, startTime)
 			}
 
 			return span
