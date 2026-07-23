@@ -173,28 +173,12 @@ describe('resolveBlockingElementSelectors', () => {
 		expect(resolveBlockingElementSelectors(config)).toEqual(['.spinner'])
 	})
 
-	it('falls back to spaMetrics.blockingSelectors when blockingElement is an object with no selectors field', () => {
+	it('falls back to spaMetrics.blockingSelectors when blockingElement is an object with enabled set', () => {
 		const config: SplunkOtelWebConfig = {
 			instrumentations: { blockingElement: { enabled: true } },
 			spaMetrics: { blockingSelectors: ['.spinner'] },
 		}
 		expect(resolveBlockingElementSelectors(config)).toEqual(['.spinner'])
-	})
-
-	it('uses blockingElement.selectors when set, overriding spaMetrics.blockingSelectors', () => {
-		const config: SplunkOtelWebConfig = {
-			instrumentations: { blockingElement: { selectors: ['.override-spinner'] } },
-			spaMetrics: { blockingSelectors: ['.spinner'] },
-		}
-		expect(resolveBlockingElementSelectors(config)).toEqual(['.override-spinner'])
-	})
-
-	it('uses blockingElement.selectors when set to an empty array, overriding spaMetrics.blockingSelectors', () => {
-		const config: SplunkOtelWebConfig = {
-			instrumentations: { blockingElement: { selectors: [] } },
-			spaMetrics: { blockingSelectors: ['.spinner'] },
-		}
-		expect(resolveBlockingElementSelectors(config)).toEqual([])
 	})
 
 	it('uses the spaMetrics config for the matching urlOverride, not the base config', () => {

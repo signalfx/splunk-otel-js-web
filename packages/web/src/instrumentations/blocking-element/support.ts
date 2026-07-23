@@ -60,15 +60,6 @@ export function isBlockingElementInstrumentationEnabled(otelConfig: SplunkOtelWe
 
 // Resolved once for the URL active when called; not re-evaluated on later SPA navigations.
 export function resolveBlockingElementSelectors(otelConfig: SplunkOtelWebConfig): string[] {
-	const blockingElement = otelConfig.instrumentations?.blockingElement
-	if (typeof blockingElement === 'object' && blockingElement.selectors !== undefined) {
-		return blockingElement.selectors
-	}
-
-	return getBlockingSelectorsFromSpaMetrics(otelConfig)
-}
-
-function getBlockingSelectorsFromSpaMetrics(otelConfig: SplunkOtelWebConfig): string[] {
 	const spaMetrics = otelConfig.spaMetrics
 	if (typeof spaMetrics !== 'object') {
 		return []

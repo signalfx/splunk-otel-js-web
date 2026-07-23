@@ -60,11 +60,6 @@ export interface SplunkBlockingElementInstrumentationConfig extends Instrumentat
 	 * blockingSelectors is non-empty) when unset.
 	 */
 	enabled?: boolean
-	/**
-	 * Falls back to spaMetrics.blockingSelectors (resolved once, at enable() time,
-	 * for the URL active at that moment) when unset.
-	 */
-	selectors?: string[]
 }
 
 export interface SplunkOtelWebOptionsInstrumentations {
