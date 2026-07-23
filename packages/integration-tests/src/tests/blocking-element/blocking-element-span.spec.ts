@@ -67,6 +67,20 @@ test.describe('blocking-element', () => {
 		expect(openEndedSpan).toBeUndefined()
 	})
 
+	test('emits exactly one span for an element matching two configured selectors', async ({ recordPage }) => {
+		await recordPage.goTo('/blocking-element/blocking-element-span.ejs')
+
+		await recordPage.locator('#btnMultiSelectorSpinner').click()
+
+		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'blockingElement').length === 1)
+
+		const blockingElementSpans = recordPage.receivedSpans.filter((span) => span.name === 'blockingElement')
+		expect(blockingElementSpans).toHaveLength(1)
+		expect(blockingElementSpans[0]).toHaveSpanAttribute('browser.element.selector', '.global-spinner,[data-loading]')
+		expect(blockingElementSpans[0]).toHaveSpanAttribute('browser.element.id', 'spinner-multi-selector')
+		expect(blockingElementSpans[0]).toHaveSpanAttribute('browser.element.completion', 'completed')
+	})
+
 	test('emits spans via the spaMetrics.blockingSelectors fallback with default blockingElement config', async ({
 		recordPage,
 	}) => {

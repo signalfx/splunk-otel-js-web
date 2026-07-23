@@ -5,7 +5,7 @@
 	<title>Blocking Element test</title>
 	<%- renderAgent({
 		spaMetrics: {
-			blockingSelectors: ['.global-spinner'],
+			blockingSelectors: ['.global-spinner', '[data-loading]'],
 			monitors: ['media', 'network', 'performance', 'elements'],
 		},
 	}) %>
@@ -15,6 +15,7 @@
 
 	<button type="button" id="btnTwoSpinnersOneRemoved">Two spinners, one removed</button>
 	<button type="button" id="btnThreeSpinnersTwoRemoved">Three spinners, two removed at different times</button>
+	<button type="button" id="btnMultiSelectorSpinner">Spinner matching two configured selectors</button>
 
 	<div id="content"></div>
 
@@ -48,6 +49,15 @@
 			setTimeout(function () {
 				late.remove();
 			}, 300);
+		});
+
+		document.querySelector('#btnMultiSelectorSpinner').addEventListener('click', function () {
+			const spinner = createSpinner('spinner-multi-selector');
+			spinner.setAttribute('data-loading', '');
+			document.getElementById('content').append(spinner);
+			setTimeout(function () {
+				spinner.remove();
+			}, 100);
 		});
 	</script>
 </body>
