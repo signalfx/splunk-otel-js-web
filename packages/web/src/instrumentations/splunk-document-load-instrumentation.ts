@@ -31,6 +31,7 @@ import { SemanticAttributes, SEMATTRS_HTTP_URL } from '@opentelemetry/semantic-c
 
 import { SessionManager, SpaMetricsManager } from '../managers'
 import { setBrowserNavigationPageAttributes } from '../managers/spa-metrics-manager/navigation-relevance'
+import { getPctMonitorTypes } from '../managers/spa-metrics-manager/resource-monitor-types'
 import { captureTraceParentFromPerformanceEntries } from '../servertiming'
 import { SplunkOtelWebConfig } from '../types'
 import { isCacheHit } from '../utils/cache'
@@ -134,10 +135,26 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 			}
 
 			if (span && exposedSpan.name !== AttributeNames.DOCUMENT_LOAD) {
-				const startTime = (entries as unknown as Record<string, unknown>)[performanceName]
+				const isResourceFetch = exposedSpan.name === AttributeNames.RESOURCE_FETCH
+				const startTime = (entries as unknown as Record<string, unknown>)[
+					isResourceFetch ? PTN.FETCH_START : performanceName
+				]
 
 				if (typeof startTime === 'number') {
-					setBrowserNavigationPageAttributes(span, this.spaMetricsManager, startTime, { type: 'document' })
+					setBrowserNavigationPageAttributes(
+						span,
+						this.spaMetricsManager,
+						startTime,
+						isResourceFetch
+							? {
+									monitorTypes: getPctMonitorTypes(
+										(entries as unknown as PerformanceResourceTiming).initiatorType,
+									),
+									type: 'resource',
+									url: (entries as unknown as PerformanceResourceTiming).name,
+								}
+							: { type: 'document' },
+					)
 				}
 
 				// only apply links to document/resource fetch

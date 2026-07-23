@@ -24,7 +24,8 @@ import { SemanticAttributes } from '@opentelemetry/semantic-conventions'
 
 import { SessionManager, SpaMetricsManager } from '../managers'
 import { setBrowserNavigationPageAttributes } from '../managers/spa-metrics-manager/navigation-relevance'
-import { type SpaMetricsMonitor, SplunkOtelWebConfig } from '../types'
+import { getPctMonitorTypes } from '../managers/spa-metrics-manager/resource-monitor-types'
+import { SplunkOtelWebConfig } from '../types'
 import { isCacheHit } from '../utils/cache'
 import { VERSION } from '../version'
 
@@ -38,22 +39,6 @@ const defaultAllowedInitiatorTypes = ['img', 'script'] //other, css, link
 
 const nodeHasSrcAttribute = (node: Node): node is HTMLScriptElement | HTMLImageElement =>
 	node instanceof HTMLScriptElement || node instanceof HTMLImageElement
-
-function getPctMonitorTypes(initiatorType: string): SpaMetricsMonitor[] {
-	if (initiatorType === 'img') {
-		return ['media', 'performance']
-	}
-
-	if (initiatorType === 'audio' || initiatorType === 'video') {
-		return ['media']
-	}
-
-	if (['css', 'font', 'link', 'other'].includes(initiatorType)) {
-		return ['performance']
-	}
-
-	return []
-}
 
 export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBase {
 	private config: SplunkPostDocLoadResourceInstrumentationConfig

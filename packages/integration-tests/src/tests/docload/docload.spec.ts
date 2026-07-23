@@ -100,7 +100,8 @@ test.describe('docload', () => {
 			BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId,
 			docLoadSpans[0].spanId,
 		)
-		expect(scriptFetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, true)
+		// Script resources are represented in the document waterfall but are not tracked by a PCT resource monitor.
+		expect(scriptFetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, false)
 		if (browserName !== 'webkit') {
 			// Webkit does not support https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/responseStatus
 			expect(Number.parseInt(String(scriptFetchSpans[0].attributes['http.status_code']))).toBe(200)
@@ -114,7 +115,8 @@ test.describe('docload', () => {
 			BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId,
 			docLoadSpans[0].spanId,
 		)
-		expect(brokenImageFetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, true)
+		// The failed image is retained in the waterfall but is not admitted by a PCT resource monitor.
+		expect(brokenImageFetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, false)
 		if (browserName !== 'webkit') {
 			// Webkit does not support https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/responseStatus
 			expect(Number.parseInt(String(brokenImageFetchSpans[0].attributes['http.status_code']))).toBe(404)
@@ -167,6 +169,58 @@ test.describe('docload', () => {
 		)
 
 		expect(ignoredResourceFetchSpans).toHaveLength(0)
+	})
+
+	test('PCT-ignored resources retain their page span ID but are not PCT relevant', async ({ recordPage }) => {
+		await recordPage.goTo('/docload/docload-pct-ignored.ejs')
+
+		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'documentLoad'))
+		const docLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'documentLoad')
+		const ignoredResourceSpan = recordPage.receivedSpans.find(
+			(span) =>
+				span.name === 'resourceFetch' &&
+				span.attributes['http.url'] === 'http://localhost:3000/non-impactful-resource.jpg',
+		)
+
+		expectDefined(docLoadSpan)
+		expectDefined(ignoredResourceSpan)
+		expect(ignoredResourceSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, docLoadSpan.spanId)
+		expect(ignoredResourceSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, false)
+	})
+
+	test('document resources retain their starting navigation across overlapping navigations', async ({
+		recordPage,
+	}) => {
+		const resourceUrl =
+			'http://localhost:3001/user-interaction/assets/splunk-black.png?delay=1500&noCache&resource=document-load-overlap'
+		await recordPage.goTo('/docload/docload-overlapping-navigation.ejs')
+
+		await recordPage.waitForSpans(
+			(spans) =>
+				spans.some((span) => span.name === 'documentLoad') &&
+				spans.some((span) => span.name === 'routeChange') &&
+				spans.some(
+					(span) =>
+						span.name === 'resourceFetch' &&
+						span.attributes['component'] === 'document-load' &&
+						span.attributes['http.url'] === resourceUrl,
+				),
+		)
+
+		const docLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'documentLoad')
+		const routeChangeSpan = recordPage.receivedSpans.find((span) => span.name === 'routeChange')
+		const resourceSpan = recordPage.receivedSpans.find(
+			(span) =>
+				span.name === 'resourceFetch' &&
+				span.attributes['component'] === 'document-load' &&
+				span.attributes['http.url'] === resourceUrl,
+		)
+
+		expectDefined(docLoadSpan)
+		expectDefined(routeChangeSpan)
+		expectDefined(resourceSpan)
+		expect(resourceSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, docLoadSpan.spanId)
+		expect(resourceSpan).not.toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, routeChangeSpan.spanId)
 	})
 
 	test('documentLoad span has docLoad duration on empty page', async ({ recordPage }) => {
