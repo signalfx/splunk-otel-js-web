@@ -589,6 +589,43 @@ describe('SpaMetricsManager', () => {
 		}
 	})
 
+	it('claims only the closest admission decision for concurrent same-URL resources', () => {
+		const manager = new SpaMetricsManager({ monitors: ['network'] })
+		const { span: navigationSpan } = createSpanMock('navigation-span-id')
+		manager.setCurrentNavigationSpan(navigationSpan, 900)
+
+		for (const [id, timestamp] of [
+			['first-request', 1000],
+			['second-request', 1050],
+		] as const) {
+			// @ts-expect-error onResourceStateChange is private. We use it for testing.
+			manager.onResourceStateChange({
+				id,
+				monitorType: 'network',
+				state: ResourceState.DISCOVERED,
+				timestamp,
+				url: TEST_API_URL,
+			})
+		}
+
+		const { attributes: firstAttributes, span: firstSpan } = createSpanMock('first-request-span')
+		setBrowserNavigationPageAttributes(firstSpan, manager, 1002, {
+			monitorTypes: ['network'],
+			type: 'resource',
+			url: TEST_API_URL,
+		})
+
+		const { attributes: secondAttributes, span: secondSpan } = createSpanMock('second-request-span')
+		setBrowserNavigationPageAttributes(secondSpan, manager, 1052, {
+			monitorTypes: ['network'],
+			type: 'resource',
+			url: TEST_API_URL,
+		})
+
+		expect(firstAttributes[BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE]).toBe(true)
+		expect(secondAttributes[BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE]).toBe(true)
+	})
+
 	it('marks non-resource spans as not PCT relevant', () => {
 		const manager = new SpaMetricsManager()
 		const { span: navigationSpan } = createSpanMock('navigation-span-id')

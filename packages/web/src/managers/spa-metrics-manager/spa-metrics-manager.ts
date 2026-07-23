@@ -456,14 +456,25 @@ export class SpaMetricsManager {
 		}
 
 		const normalizedUrl = this.normalizeResourceUrl(activity.url)
-		const matchingDecisions = Array.from(this.resourceAdmissionDecisions.values()).filter(
-			(decision) =>
-				!decision.consumed &&
-				activity.monitorTypes.includes(decision.monitorType) &&
-				decision.url === normalizedUrl &&
-				Math.abs(decision.startTime - startTime) <= RESOURCE_ADMISSION_START_TIME_TOLERANCE,
-		)
+		const closestDecisionByMonitor = new Map<SpaMetricsMonitor, ResourceAdmissionDecision>()
+		for (const decision of this.resourceAdmissionDecisions.values()) {
+			const startTimeDifference = Math.abs(decision.startTime - startTime)
+			if (
+				decision.consumed ||
+				!activity.monitorTypes.includes(decision.monitorType) ||
+				decision.url !== normalizedUrl ||
+				startTimeDifference > RESOURCE_ADMISSION_START_TIME_TOLERANCE
+			) {
+				continue
+			}
 
+			const closestDecision = closestDecisionByMonitor.get(decision.monitorType)
+			if (!closestDecision || startTimeDifference < Math.abs(closestDecision.startTime - startTime)) {
+				closestDecisionByMonitor.set(decision.monitorType, decision)
+			}
+		}
+
+		const matchingDecisions = Array.from(closestDecisionByMonitor.values())
 		for (const decision of matchingDecisions) {
 			decision.consumed = true
 		}
