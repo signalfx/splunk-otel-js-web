@@ -20,6 +20,7 @@ import { diag, type Span, type Tracer } from '@opentelemetry/api'
 
 import { getElementXPath } from '../../utils/xpath'
 import {
+	BLOCKING_ELEMENT_MODULE_NAME,
 	BLOCKING_ELEMENT_SPAN_NAME,
 	BROWSER_ELEMENT_CLASS_ATTRIBUTE,
 	BROWSER_ELEMENT_COMPLETION_ATTRIBUTE,
@@ -130,7 +131,7 @@ export class ElementSpanTracker {
 			root: true,
 			startTime: startTimeRelative,
 		})
-		span.setAttribute('component', BLOCKING_ELEMENT_SPAN_NAME)
+		span.setAttribute('component', BLOCKING_ELEMENT_MODULE_NAME)
 		span.setAttribute(BROWSER_ELEMENT_ID_ATTRIBUTE, element.id)
 		span.setAttribute(BROWSER_ELEMENT_CLASS_ATTRIBUTE, getElementClass(element))
 		span.setAttribute(BROWSER_ELEMENT_TAG_ATTRIBUTE, element.tagName)

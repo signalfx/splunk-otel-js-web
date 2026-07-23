@@ -61,7 +61,7 @@ describe('ElementSpanTracker', () => {
 		const [span] = getFinishedSpans()
 		expect(span.name).toBe('blockingElement')
 		expect(span.parentSpanId).toBeUndefined()
-		expect(span.attributes.component).toBe('blockingElement')
+		expect(span.attributes.component).toBe('splunk-blocking-element')
 		expect(span.attributes['browser.element.selector']).toBe(SELECTOR)
 		expect(span.attributes['browser.element.id']).toBe('main-spinner')
 		expect(span.attributes['browser.element.class']).toBe('loading-spinner')
