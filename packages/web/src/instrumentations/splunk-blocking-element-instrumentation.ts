@@ -62,7 +62,7 @@ export class SplunkBlockingElementInstrumentation extends InstrumentationBase<Sp
 			return
 		}
 
-		this.elementSpanTracker = new ElementSpanTracker(this.tracer)
+		this.elementSpanTracker = new ElementSpanTracker(this.tracer, this.selectors)
 		this.scanSelectors()
 		this.setupMutationObserver()
 	}
@@ -115,19 +115,39 @@ export class SplunkBlockingElementInstrumentation extends InstrumentationBase<Sp
 		}
 
 		const now = performance.now()
+
+		const currentlyBlocking = new Set<Element>()
 		for (const selector of this.selectors) {
-			const visibleElements = new Set(this.getVisibleElements(selector))
-			const trackedElements = elementSpanTracker.getTrackedElements(selector)
+			for (const element of this.getVisibleElements(selector)) {
+				currentlyBlocking.add(element)
+			}
+		}
 
-			for (const element of visibleElements) {
-				elementSpanTracker.startSpan(selector, element, now)
+		for (const element of elementSpanTracker.trackedElements()) {
+			if (!currentlyBlocking.has(element)) {
+				elementSpanTracker.completeSpan(element, now)
+			}
+		}
+
+		for (const element of currentlyBlocking) {
+			const matchedSelectors = this.selectors.filter((selector) => this.matchesSelector(element, selector))
+			elementSpanTracker.startSpan(element, matchedSelectors, now)
+		}
+	}
+
+	private matchesSelector(element: Element, selector: string): boolean {
+		try {
+			return element.matches(selector)
+		} catch (error) {
+			if (!this.warnedInvalidSelectors.has(selector)) {
+				this.warnedInvalidSelectors.add(selector)
+				diag.warn('SplunkBlockingElementInstrumentation: Invalid blocking element selector.', {
+					error,
+					selector,
+				})
 			}
 
-			for (const element of trackedElements) {
-				if (!visibleElements.has(element)) {
-					elementSpanTracker.completeSpan(selector, element, now)
-				}
-			}
+			return false
 		}
 	}
 

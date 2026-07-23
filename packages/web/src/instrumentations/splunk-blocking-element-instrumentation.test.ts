@@ -27,6 +27,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { SplunkBlockingElementInstrumentation } from './splunk-blocking-element-instrumentation'
 
 const SELECTOR = '.loading-spinner'
+const OTHER_SELECTOR = '[data-loading]'
 const TEST_ELEMENT_CLASS = 'splunk-test-blocking-element'
 
 const createVisibleElement = (): HTMLElement => {
@@ -67,12 +68,29 @@ describe('SplunkBlockingElementInstrumentation', () => {
 		expect(getFinishedSpans()).toHaveLength(0)
 	})
 
+	it('starts spans when instrumentations.blockingElement.enabled overrides spaMetrics not otherwise enabling it', () => {
+		createVisibleElement()
+		instrumentation = new SplunkBlockingElementInstrumentation(
+			{},
+			{
+				instrumentations: { blockingElement: { enabled: true } },
+				spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['network'] },
+			},
+		)
+		instrumentation.setTracerProvider(provider)
+
+		instrumentation.enable()
+
+		// @ts-expect-error elementSpanTracker is private. We use it for testing.
+		expect(instrumentation.elementSpanTracker.openCount).toBe(1)
+	})
+
 	it('starts a span for a single element visible at enable() time', () => {
 		const element = createVisibleElement()
 		element.id = 'spinner-1'
 		instrumentation = new SplunkBlockingElementInstrumentation(
 			{},
-			{ instrumentations: { blockingElement: { enabled: true, selectors: [SELECTOR] } } },
+			{ spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
 		)
 		instrumentation.setTracerProvider(provider)
 
@@ -82,7 +100,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 		// @ts-expect-error elementSpanTracker is private. We use it for testing.
 		expect(instrumentation.elementSpanTracker.openCount).toBe(1)
 		// @ts-expect-error elementSpanTracker is private. We use it for testing.
-		expect(instrumentation.elementSpanTracker.has(SELECTOR, element)).toBe(true)
+		expect(instrumentation.elementSpanTracker.has(element)).toBe(true)
 	})
 
 	it('starts independent spans for two elements matching the same selector', () => {
@@ -90,7 +108,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 		createVisibleElement()
 		instrumentation = new SplunkBlockingElementInstrumentation(
 			{},
-			{ instrumentations: { blockingElement: { enabled: true, selectors: [SELECTOR] } } },
+			{ spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
 		)
 		instrumentation.setTracerProvider(provider)
 
@@ -100,11 +118,28 @@ describe('SplunkBlockingElementInstrumentation', () => {
 		expect(instrumentation.elementSpanTracker.openCount).toBe(2)
 	})
 
+	it('starts exactly one span for an element matching two configured selectors', () => {
+		const element = createVisibleElement()
+		element.setAttribute('data-loading', '')
+		instrumentation = new SplunkBlockingElementInstrumentation(
+			{},
+			{ spaMetrics: { blockingSelectors: [SELECTOR, OTHER_SELECTOR], monitors: ['elements'] } },
+		)
+		instrumentation.setTracerProvider(provider)
+
+		instrumentation.enable()
+		instrumentation.disable()
+
+		const finishedSpans = getFinishedSpans()
+		expect(finishedSpans).toHaveLength(1)
+		expect(finishedSpans[0].attributes['browser.element.selector']).toBe(`${SELECTOR},${OTHER_SELECTOR}`)
+	})
+
 	it('completes the span for an element removed from the DOM', async () => {
 		const element = createVisibleElement()
 		instrumentation = new SplunkBlockingElementInstrumentation(
 			{},
-			{ instrumentations: { blockingElement: { enabled: true, selectors: [SELECTOR] } } },
+			{ spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
 		)
 		instrumentation.setTracerProvider(provider)
 		instrumentation.enable()
@@ -121,7 +156,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 	it('tracks a dynamically added visible element after enable()', async () => {
 		instrumentation = new SplunkBlockingElementInstrumentation(
 			{},
-			{ instrumentations: { blockingElement: { enabled: true, selectors: [SELECTOR] } } },
+			{ spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
 		)
 		instrumentation.setTracerProvider(provider)
 		instrumentation.enable()
@@ -139,7 +174,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 		createVisibleElement()
 		instrumentation = new SplunkBlockingElementInstrumentation(
 			{},
-			{ instrumentations: { blockingElement: { enabled: true, selectors: [SELECTOR] } } },
+			{ spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
 		)
 		instrumentation.setTracerProvider(provider)
 		instrumentation.enable()
@@ -156,7 +191,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 	it('does not observe further DOM mutations after disable', async () => {
 		instrumentation = new SplunkBlockingElementInstrumentation(
 			{},
-			{ instrumentations: { blockingElement: { enabled: true, selectors: [SELECTOR] } } },
+			{ spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
 		)
 		instrumentation.setTracerProvider(provider)
 		instrumentation.enable()
