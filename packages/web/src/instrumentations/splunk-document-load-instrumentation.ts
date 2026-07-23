@@ -137,7 +137,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 				const startTime = (entries as unknown as Record<string, unknown>)[performanceName]
 
 				if (typeof startTime === 'number') {
-					setBrowserNavigationPageAttributes(span, this.spaMetricsManager, startTime)
+					setBrowserNavigationPageAttributes(span, this.spaMetricsManager, startTime, { type: 'document' })
 				}
 
 				// only apply links to document/resource fetch

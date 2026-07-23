@@ -43,11 +43,21 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
 		const separateTraces = config.separateTraces ?? otelConfig.separateTraces ?? false
 
 		const origCustomAttrs = config.applyCustomAttributesOnSpan
+		const navigationActivities = new WeakMap<api.Span, { startTime: number; url: string }>()
 
 		config.applyCustomAttributesOnSpan = function (span, request, result) {
 			// Temporary return to old span name until cleared by backend
 			span.updateName(`HTTP ${(request.method || 'GET').toUpperCase()}`)
 			span.setAttribute('component', 'fetch')
+
+			const navigationActivity = navigationActivities.get(span)
+			if (navigationActivity) {
+				setBrowserNavigationPageAttributes(span, spaMetricsManager, navigationActivity.startTime, {
+					monitorTypes: ['network'],
+					type: 'resource',
+					url: navigationActivity.url,
+				})
+			}
 
 			if (span && result instanceof Response && result.headers) {
 				const st = result.headers.get('Server-Timing')
@@ -90,6 +100,7 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
 			}
 
 			if (span) {
+				navigationActivities.set(span, { startTime, url })
 				setBrowserNavigationPageAttributes(span, spaMetricsManager, startTime)
 			}
 

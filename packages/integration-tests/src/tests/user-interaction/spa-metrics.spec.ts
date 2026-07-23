@@ -193,8 +193,44 @@ test.describe('spa-metrics', () => {
 		expect(afterPctFetchSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, false)
 	})
 
+	test('network resources rejected by the active PCT monitor config are marked not relevant', async ({
+		recordPage,
+	}) => {
+		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+
+		await recordPage.locator('#btnNavigateWithNetworkDisabled').click()
+		await recordPage.waitForSpans(
+			(spans) =>
+				spans.filter((span) => span.name === 'routeChange').length === 1 &&
+				spans.some((span) => String(span.attributes['http.url']).includes('resource=override-slow-fetch')) &&
+				spans.some((span) => String(span.attributes['http.url']).includes('resource=override-slow-xhr')),
+		)
+
+		const routeChangeSpan = recordPage.receivedSpans.find((span) => span.name === 'routeChange')
+		const fetchSpan = recordPage.receivedSpans.find((span) =>
+			String(span.attributes['http.url']).includes('resource=override-slow-fetch'),
+		)
+		const xhrSpan = recordPage.receivedSpans.find((span) =>
+			String(span.attributes['http.url']).includes('resource=override-slow-xhr'),
+		)
+
+		expectDefined(routeChangeSpan)
+		expectDefined(fetchSpan)
+		expectDefined(xhrSpan)
+		expectBrowserNavigationAttributes(routeChangeSpan, {
+			detectedResourceCount: 0,
+			pageCompletionTime: 0,
+			quietTimerResetCount: 0,
+			status: 'completed',
+		})
+		expect(fetchSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, routeChangeSpan.spanId)
+		expect(fetchSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, false)
+		expect(xhrSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, routeChangeSpan.spanId)
+		expect(xhrSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, false)
+	})
+
 	for (const requestType of ['fetch', 'xhr'] as const) {
-		test(`${requestType} span retains its original page span id across overlapping navigations`, async ({
+		test(`${requestType} span retains its original page attribution across overlapping navigations`, async ({
 			recordPage,
 		}) => {
 			await recordPage.goTo('/user-interaction/spa-metrics.ejs')
@@ -244,6 +280,7 @@ test.describe('spa-metrics', () => {
 				BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId,
 				navigationBSpan.spanId,
 			)
+			expect(requestSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, false)
 		})
 	}
 

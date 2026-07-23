@@ -24,7 +24,7 @@ import { SemanticAttributes } from '@opentelemetry/semantic-conventions'
 
 import { SessionManager, SpaMetricsManager } from '../managers'
 import { setBrowserNavigationPageAttributes } from '../managers/spa-metrics-manager/navigation-relevance'
-import { SplunkOtelWebConfig } from '../types'
+import { type SpaMetricsMonitor, SplunkOtelWebConfig } from '../types'
 import { isCacheHit } from '../utils/cache'
 import { VERSION } from '../version'
 
@@ -38,6 +38,22 @@ const defaultAllowedInitiatorTypes = ['img', 'script'] //other, css, link
 
 const nodeHasSrcAttribute = (node: Node): node is HTMLScriptElement | HTMLImageElement =>
 	node instanceof HTMLScriptElement || node instanceof HTMLImageElement
+
+function getPctMonitorTypes(initiatorType: string): SpaMetricsMonitor[] {
+	if (initiatorType === 'img') {
+		return ['media', 'performance']
+	}
+
+	if (initiatorType === 'audio' || initiatorType === 'video') {
+		return ['media']
+	}
+
+	if (['css', 'font', 'link', 'other'].includes(initiatorType)) {
+		return ['performance']
+	}
+
+	return []
+}
 
 export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBase {
 	private config: SplunkPostDocLoadResourceInstrumentationConfig
@@ -119,7 +135,11 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 		span.setAttribute('component', MODULE_NAME)
 		span.setAttribute(SemanticAttributes.HTTP_URL, entry.name)
 		span.setAttribute(SemanticAttributes.HTTP_METHOD, 'GET')
-		setBrowserNavigationPageAttributes(span, this.spaMetricsManager, entry.fetchStart)
+		setBrowserNavigationPageAttributes(span, this.spaMetricsManager, entry.fetchStart, {
+			monitorTypes: getPctMonitorTypes(entry.initiatorType),
+			type: 'resource',
+			url: entry.name,
+		})
 
 		const cacheHit = isCacheHit(entry)
 		if (cacheHit !== undefined) {
@@ -178,7 +198,8 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 				list.getEntries().forEach((entry) => {
 					// TODO: check how we can amend TS base typing to fix this
 					if (this.config.allowedInitiatorTypes?.includes((entry as any).initiatorType)) {
-						this._createSpan(entry)
+						// Let SPA resource monitors preserve their admission decisions first.
+						window.setTimeout(() => this._createSpan(entry))
 					}
 				})
 			}

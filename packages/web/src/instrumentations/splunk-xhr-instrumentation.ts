@@ -94,6 +94,18 @@ export class SplunkXhrInstrumentation extends XMLHttpRequestInstrumentation {
 				// Work around this by setting component first and then emitting the start event manually.
 				span.setAttribute('component', this.moduleName)
 				setBrowserNavigationPageAttributes(span, this.spaMetricsManager, startTime)
+				xhr.addEventListener(
+					'loadend',
+					() => {
+						setBrowserNavigationPageAttributes(span, this.spaMetricsManager, startTime, {
+							monitorTypes: ['network'],
+							resourceId: xhr._splunkMonitorResourceId,
+							type: 'resource',
+							url,
+						})
+					},
+					{ once: true },
+				)
 				this.otelConfig.spanEmitter?.emitSpan(span as unknown as ReadableSpan, 'start')
 				// Temporary return to old span name until cleared by backend
 				span.updateName(`HTTP ${method.toUpperCase()}`)

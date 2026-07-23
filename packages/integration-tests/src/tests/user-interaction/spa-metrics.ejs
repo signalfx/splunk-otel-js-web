@@ -118,8 +118,12 @@
 		});
 
 		document.querySelector('#btnNavigateWithNetworkDisabled').addEventListener('click', function () {
-			location.hash = 'network-disabled';
-			fetch('/some-data?delay=1500&resource=override-slow-fetch').catch(function () {});
+			navigateThen('network-disabled', function () {
+				fetch('/some-data?delay=1500&resource=override-slow-fetch').catch(function () {});
+				const req = new XMLHttpRequest();
+				req.open('GET', '/some-data?delay=1500&resource=override-slow-xhr');
+				req.send();
+			});
 		});
 
 		document.querySelector('#btnNavigateWithLoadingElement').addEventListener('click', function () {

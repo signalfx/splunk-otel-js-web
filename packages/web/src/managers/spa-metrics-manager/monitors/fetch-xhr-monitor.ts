@@ -25,6 +25,7 @@ import { Monitor } from './monitor'
 
 declare global {
 	interface XMLHttpRequest {
+		_splunkMonitorResourceId?: string
 		_splunkMonitorUrl?: string
 	}
 }
@@ -124,6 +125,7 @@ export class FetchXhrMonitor extends Monitor {
 					if (url) {
 						const event = Monitor.createDiscoveredEvent(url)
 						const startTime = performance.now()
+						this._splunkMonitorResourceId = event.id
 
 						self.emitResourceStateChange(event)
 

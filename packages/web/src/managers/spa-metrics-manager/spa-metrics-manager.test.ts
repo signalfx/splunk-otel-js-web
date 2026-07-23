@@ -517,12 +517,12 @@ describe('SpaMetricsManager', () => {
 			const promise = manager.waitForPageLoad({ span, startTime: performance.now() })
 
 			expect(manager.getCurrentNavigationSpanId()).toBe('navigation-span-id')
-			expect(manager.isCurrentNavigationPctRelevant()).toBe(true)
+			expect(manager.isCurrentNavigationPctOpen()).toBe(true)
 
 			await promise
 
 			expect(manager.getCurrentNavigationSpanId()).toBe('navigation-span-id')
-			expect(manager.isCurrentNavigationPctRelevant()).toBe(false)
+			expect(manager.isCurrentNavigationPctOpen()).toBe(false)
 		} finally {
 			manager.stop()
 		}
@@ -535,14 +535,72 @@ describe('SpaMetricsManager', () => {
 		const { attributes: afterPctAttributes, span: afterPctSpan } = createSpanMock('after-pct-span-id')
 
 		manager.setCurrentNavigationSpan(navigationSpan, 100)
-		setBrowserNavigationPageAttributes(duringPctSpan, manager, 150)
+		setBrowserNavigationPageAttributes(duringPctSpan, manager, 150, { type: 'document' })
 		manager.completeCurrentNavigationPct(navigationSpan, 200)
-		setBrowserNavigationPageAttributes(afterPctSpan, manager, 250)
+		setBrowserNavigationPageAttributes(afterPctSpan, manager, 250, { type: 'document' })
 
 		expect(duringPctAttributes[BROWSER_NAVIGATION_PAGE_SPAN_ID_ATTRIBUTE]).toBe('navigation-span-id')
 		expect(duringPctAttributes[BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE]).toBe(true)
 		expect(afterPctAttributes[BROWSER_NAVIGATION_PAGE_SPAN_ID_ATTRIBUTE]).toBe('navigation-span-id')
 		expect(afterPctAttributes[BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE]).toBe(false)
+	})
+
+	it('derives PCT relevance from resource admission decisions', () => {
+		const manager = new SpaMetricsManager({
+			beaconEndpoint: 'https://rum.example/v1/rum',
+			ignoreUrls: ['/ignored'],
+			maxResourcesToWatch: 1,
+			monitors: ['network'],
+		})
+		const { span: navigationSpan } = createSpanMock('navigation-span-id')
+		manager.setCurrentNavigationSpan(navigationSpan, 100)
+
+		const resources = [
+			{ expected: true, id: 'admitted', monitorType: 'network' as const, startTime: 110, url: TEST_API_URL },
+			{ expected: false, id: 'disabled', monitorType: 'media' as const, startTime: 120, url: '/image.png' },
+			{ expected: false, id: 'ignored', monitorType: 'network' as const, startTime: 130, url: '/ignored' },
+			{
+				expected: false,
+				id: 'beacon',
+				monitorType: 'network' as const,
+				startTime: 140,
+				url: 'https://rum.example/v1/rum',
+			},
+			{ expected: false, id: 'over-limit', monitorType: 'network' as const, startTime: 150, url: '/other' },
+		]
+
+		for (const resource of resources) {
+			// @ts-expect-error onResourceStateChange is private. We use it for testing.
+			manager.onResourceStateChange({
+				id: resource.id,
+				monitorType: resource.monitorType,
+				state: ResourceState.DISCOVERED,
+				timestamp: resource.startTime,
+				url: resource.url,
+			})
+			const { attributes, span } = createSpanMock(`${resource.id}-span`)
+			setBrowserNavigationPageAttributes(span, manager, resource.startTime, {
+				monitorTypes: [resource.monitorType],
+				resourceId: resource.id,
+				type: 'resource',
+				url: resource.url,
+			})
+
+			expect(attributes[BROWSER_NAVIGATION_PAGE_SPAN_ID_ATTRIBUTE]).toBe('navigation-span-id')
+			expect(attributes[BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE]).toBe(resource.expected)
+		}
+	})
+
+	it('marks non-resource spans as not PCT relevant', () => {
+		const manager = new SpaMetricsManager()
+		const { span: navigationSpan } = createSpanMock('navigation-span-id')
+		const { attributes, span } = createSpanMock('long-task-span-id')
+
+		manager.setCurrentNavigationSpan(navigationSpan, 100)
+		setBrowserNavigationPageAttributes(span, manager, 150)
+
+		expect(attributes[BROWSER_NAVIGATION_PAGE_SPAN_ID_ATTRIBUTE]).toBe('navigation-span-id')
+		expect(attributes[BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE]).toBe(false)
 	})
 
 	it('does not complete the PCT state for a newer navigation', () => {
@@ -555,10 +613,10 @@ describe('SpaMetricsManager', () => {
 		manager.completeCurrentNavigationPct(previousNavigationSpan, 250)
 
 		expect(manager.getCurrentNavigationSpanId()).toBe('current-navigation-span-id')
-		expect(manager.isCurrentNavigationPctRelevant()).toBe(true)
+		expect(manager.isCurrentNavigationPctOpen()).toBe(true)
 	})
 
-	it('looks up navigation attributes by span start time from newest to oldest', () => {
+	it('looks up the page span by start time but only marks the current navigation relevant', () => {
 		const manager = new SpaMetricsManager()
 		const { span: firstNavigationSpan } = createSpanMock('first-navigation-span-id')
 		const { span: secondNavigationSpan } = createSpanMock('second-navigation-span-id')
@@ -567,19 +625,19 @@ describe('SpaMetricsManager', () => {
 		manager.completeCurrentNavigationPct(firstNavigationSpan, 175)
 		manager.setCurrentNavigationSpan(secondNavigationSpan, 200)
 
-		expect(manager.getNavigationPageAttributes(150)).toEqual({
-			pageSpanId: 'first-navigation-span-id',
-			pctRelevant: true,
-		})
-		expect(manager.getNavigationPageAttributes(190)).toEqual({
+		expect(manager.getNavigationPageAttributes(150, { type: 'document' })).toEqual({
 			pageSpanId: 'first-navigation-span-id',
 			pctRelevant: false,
 		})
-		expect(manager.getNavigationPageAttributes(200)).toEqual({
+		expect(manager.getNavigationPageAttributes(190, { type: 'document' })).toEqual({
+			pageSpanId: 'first-navigation-span-id',
+			pctRelevant: false,
+		})
+		expect(manager.getNavigationPageAttributes(200, { type: 'document' })).toEqual({
 			pageSpanId: 'second-navigation-span-id',
 			pctRelevant: true,
 		})
-		expect(manager.getNavigationPageAttributes(50)).toBeUndefined()
+		expect(manager.getNavigationPageAttributes(50, { type: 'document' })).toBeUndefined()
 	})
 
 	it('retains only the ten most recent navigation entries', () => {
@@ -589,12 +647,12 @@ describe('SpaMetricsManager', () => {
 			manager.setCurrentNavigationSpan(createSpanMock(`navigation-${index}`).span, index * 100)
 		}
 
-		expect(manager.getNavigationPageAttributes(50)).toBeUndefined()
-		expect(manager.getNavigationPageAttributes(150)).toEqual({
+		expect(manager.getNavigationPageAttributes(50, { type: 'document' })).toBeUndefined()
+		expect(manager.getNavigationPageAttributes(150, { type: 'document' })).toEqual({
 			pageSpanId: 'navigation-1',
-			pctRelevant: true,
+			pctRelevant: false,
 		})
-		expect(manager.getNavigationPageAttributes(1050)).toEqual({
+		expect(manager.getNavigationPageAttributes(1050, { type: 'document' })).toEqual({
 			pageSpanId: 'navigation-10',
 			pctRelevant: true,
 		})
