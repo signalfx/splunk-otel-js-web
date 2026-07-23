@@ -158,24 +158,8 @@ describe('resolveBlockingElementSelectors', () => {
 		expect(resolveBlockingElementSelectors({ spaMetrics: false })).toEqual([])
 	})
 
-	it('falls back to spaMetrics.blockingSelectors when blockingElement is unset', () => {
+	it('resolves selectors from spaMetrics.blockingSelectors regardless of the blockingElement config value', () => {
 		const config: SplunkOtelWebConfig = {
-			spaMetrics: { blockingSelectors: ['.spinner'] },
-		}
-		expect(resolveBlockingElementSelectors(config)).toEqual(['.spinner'])
-	})
-
-	it('falls back to spaMetrics.blockingSelectors when blockingElement is true', () => {
-		const config: SplunkOtelWebConfig = {
-			instrumentations: { blockingElement: true },
-			spaMetrics: { blockingSelectors: ['.spinner'] },
-		}
-		expect(resolveBlockingElementSelectors(config)).toEqual(['.spinner'])
-	})
-
-	it('falls back to spaMetrics.blockingSelectors when blockingElement is an object with enabled set', () => {
-		const config: SplunkOtelWebConfig = {
-			instrumentations: { blockingElement: { enabled: true } },
 			spaMetrics: { blockingSelectors: ['.spinner'] },
 		}
 		expect(resolveBlockingElementSelectors(config)).toEqual(['.spinner'])

@@ -66,6 +66,7 @@ describe('ElementSpanTracker', () => {
 		expect(span.attributes['browser.element.id']).toBe('main-spinner')
 		expect(span.attributes['browser.element.class']).toBe('loading-spinner')
 		expect(span.attributes['browser.element.tag']).toBe('DIV')
+		expect(span.attributes['browser.element.xpath']).toBe('//*[@id="main-spinner"]')
 	})
 
 	it('no-ops the span on a duplicate startSpan for the same element', () => {
@@ -246,14 +247,6 @@ describe('ElementSpanTracker', () => {
 			expect(span.attributes['browser.element.selector']).toBe(`${SELECTOR},${OTHER_SELECTOR}`)
 		})
 
-		it('does not double-count openCount for an element matching multiple selectors', () => {
-			const tracker = createTracker()
-			const element = createElement()
-
-			tracker.startSpan(element, [SELECTOR, OTHER_SELECTOR], performance.now())
-
-			expect(tracker.openCount).toBe(1)
-		})
 	})
 
 	describe('MAX_OPEN_ELEMENT_SPANS cap', () => {

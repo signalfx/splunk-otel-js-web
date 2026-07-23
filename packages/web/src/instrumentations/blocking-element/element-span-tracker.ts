@@ -18,6 +18,7 @@
 
 import { diag, type Span, type Tracer } from '@opentelemetry/api'
 
+import { getElementXPath } from '../../utils/xpath'
 import {
 	BLOCKING_ELEMENT_SPAN_NAME,
 	BROWSER_ELEMENT_CLASS_ATTRIBUTE,
@@ -27,6 +28,7 @@ import {
 	BROWSER_ELEMENT_ID_ATTRIBUTE,
 	BROWSER_ELEMENT_SELECTOR_ATTRIBUTE,
 	BROWSER_ELEMENT_TAG_ATTRIBUTE,
+	BROWSER_ELEMENT_XPATH_ATTRIBUTE,
 	MAX_OPEN_ELEMENT_SPANS,
 } from './constants'
 
@@ -132,6 +134,7 @@ export class ElementSpanTracker {
 		span.setAttribute(BROWSER_ELEMENT_ID_ATTRIBUTE, element.id)
 		span.setAttribute(BROWSER_ELEMENT_CLASS_ATTRIBUTE, getElementClass(element))
 		span.setAttribute(BROWSER_ELEMENT_TAG_ATTRIBUTE, element.tagName)
+		span.setAttribute(BROWSER_ELEMENT_XPATH_ATTRIBUTE, getElementXPath(element, true))
 
 		this.tracked.set(element, { accumulatedSelectors: new Set(matchedSelectors), span })
 	}
