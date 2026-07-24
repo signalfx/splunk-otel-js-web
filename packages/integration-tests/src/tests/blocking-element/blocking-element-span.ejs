@@ -16,6 +16,7 @@
 	<button type="button" id="btnTwoSpinnersOneRemoved">Two spinners, one removed</button>
 	<button type="button" id="btnThreeSpinnersTwoRemoved">Three spinners, two removed at different times</button>
 	<button type="button" id="btnMultiSelectorSpinner">Spinner matching two configured selectors</button>
+	<button type="button" id="btnNavigateWithSpinner">Route change with a spinner also tracked by blockingElement</button>
 
 	<div id="content"></div>
 
@@ -54,6 +55,15 @@
 		document.querySelector('#btnMultiSelectorSpinner').addEventListener('click', function () {
 			const spinner = createSpinner('spinner-multi-selector');
 			spinner.setAttribute('data-loading', '');
+			document.getElementById('content').append(spinner);
+			setTimeout(function () {
+				spinner.remove();
+			}, 100);
+		});
+
+		document.querySelector('#btnNavigateWithSpinner').addEventListener('click', function () {
+			location.hash = 'shared-spinner-page';
+			const spinner = createSpinner('spinner-shared-observer');
 			document.getElementById('content').append(spinner);
 			setTimeout(function () {
 				spinner.remove();

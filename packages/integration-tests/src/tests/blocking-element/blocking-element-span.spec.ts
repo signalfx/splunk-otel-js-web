@@ -19,6 +19,7 @@
 import { hrTimeToMicroseconds } from '@opentelemetry/core'
 import { expect } from '@playwright/test'
 
+import { BROWSER_NAVIGATION_ATTRIBUTES, expectBrowserNavigationAttributes } from '../../utils/browser-navigation'
 import { test } from '../../utils/test'
 
 test.describe('blocking-element', () => {
@@ -107,5 +108,40 @@ test.describe('blocking-element', () => {
 
 		const blockingElementSpans = recordPage.receivedSpans.filter((span) => span.name === 'blockingElement')
 		expect(blockingElementSpans).toHaveLength(0)
+	})
+
+	test('PCT and blockingElement both react to the same spinner through the shared visibility observer', async ({
+		recordPage,
+	}) => {
+		await recordPage.goTo('/blocking-element/blocking-element-span.ejs')
+
+		await recordPage.locator('#btnNavigateWithSpinner').click()
+
+		await recordPage.waitForSpans(
+			(spans) =>
+				spans.filter((span) => span.name === 'routeChange').length === 1 &&
+				spans.filter((span) => span.name === 'blockingElement').length === 1,
+		)
+
+		// PCT (LoadingElementMonitor, via SpaMetricsManager) waited on the same spinner...
+		const [routeChangeSpan] = recordPage.receivedSpans.filter((span) => span.name === 'routeChange')
+		expectBrowserNavigationAttributes(routeChangeSpan, {
+			detectedResourceCount: 1,
+			quietTimerResetCount: 1,
+			status: 'completed',
+		})
+		const lastLoadedResources = JSON.parse(
+			String(routeChangeSpan.attributes[BROWSER_NAVIGATION_ATTRIBUTES.lastLoadedResources]),
+		) as Array<{ duration: number; monitorType: string; url: string }>
+		expect(lastLoadedResources).toHaveLength(1)
+		expect(lastLoadedResources[0].monitorType).toBe('elements')
+		expect(lastLoadedResources[0].url).toBe('element:.global-spinner')
+
+		// ...and blockingElement (SplunkBlockingElementInstrumentation) independently produced its
+		// own span for the exact same element, both fed by one shared MutationObserver scan.
+		const [blockingElementSpan] = recordPage.receivedSpans.filter((span) => span.name === 'blockingElement')
+		expect(blockingElementSpan).toHaveSpanAttribute('browser.element.id', 'spinner-shared-observer')
+		expect(blockingElementSpan).toHaveSpanAttribute('browser.element.selector', '.global-spinner')
+		expect(blockingElementSpan).toHaveSpanAttribute('browser.element.completion', 'completed')
 	})
 })

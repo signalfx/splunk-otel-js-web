@@ -38,6 +38,7 @@ import { type SplunkExporterConfig } from './exporters/common'
 import { SplunkOTLPTraceExporter } from './exporters/otlp'
 import { SplunkZipkinExporter } from './exporters/zipkin'
 import { registerGlobal, unregisterGlobal } from './global-utils'
+import { ElementVisibilityObserver } from './observers/element-visibility-observer'
 import {
 	DEFAULT_AUTO_INSTRUMENTED_EVENT_NAMES,
 	DEFAULT_AUTO_INSTRUMENTED_EVENTS,
@@ -702,12 +703,17 @@ export const SplunkRum: SplunkOtelWebType = {
 
 			this.sessionManager.start()
 
+			// Shared by SpaMetricsManager (LoadingElementMonitor) and SplunkBlockingElementInstrumentation
+			// so both watch the DOM through one MutationObserver instead of two independent ones.
+			const elementVisibilityObserver = new ElementVisibilityObserver()
+
 			const spaMetricsManager =
 				processedOptions.spaMetrics === false
 					? undefined
 					: new SpaMetricsManager({
 							beaconEndpoint: processedOptions.beaconEndpoint,
 							...(processedOptions.spaMetrics === true ? {} : processedOptions.spaMetrics),
+							elementVisibilityObserver,
 						})
 			_spaMetricsManager = spaMetricsManager
 
@@ -720,6 +726,7 @@ export const SplunkRum: SplunkOtelWebType = {
 						processedOptions,
 						this.sessionManager,
 						spaMetricsManager,
+						elementVisibilityObserver,
 					)
 
 					if (
