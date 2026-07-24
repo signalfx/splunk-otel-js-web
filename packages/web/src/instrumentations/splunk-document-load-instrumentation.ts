@@ -136,13 +136,18 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 
 			if (span && exposedSpan.name !== AttributeNames.DOCUMENT_LOAD) {
 				const isResourceFetch = exposedSpan.name === AttributeNames.RESOURCE_FETCH
-				const startTime = (entries as unknown as Record<string, unknown>)[PTN.FETCH_START]
+				const fetchStart = (entries as unknown as Record<string, unknown>)[PTN.FETCH_START]
 
-				if (typeof startTime === 'number') {
+				if (typeof fetchStart === 'number') {
+					// Firefox can report a cached document fetch slightly before performance.timeOrigin.
+					// The initial navigation begins at 0 in the manager's relative time coordinate, so
+					// normalize only documentFetch to that boundary. Resource fetches keep their exact
+					// start time so overlapping navigations continue to resolve correctly.
+					const navigationStartTime = isResourceFetch ? fetchStart : Math.max(fetchStart, 0)
 					setBrowserNavigationPageAttributes(
 						span,
 						this.spaMetricsManager,
-						startTime,
+						navigationStartTime,
 						isResourceFetch
 							? {
 									monitorTypes: getPctMonitorTypes(
