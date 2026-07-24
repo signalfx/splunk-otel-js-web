@@ -223,6 +223,29 @@ test.describe('docload', () => {
 		expect(resourceSpan).not.toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, routeChangeSpan.spanId)
 	})
 
+	test('document fetch retains its starting navigation when the response crosses a route navigation', async ({
+		recordPage,
+	}) => {
+		await recordPage.goTo('/docload/docload-streamed-navigation.ejs')
+
+		await recordPage.waitForSpans(
+			(spans) =>
+				spans.some((span) => span.name === 'documentLoad') &&
+				spans.some((span) => span.name === 'documentFetch') &&
+				spans.some((span) => span.name === 'routeChange'),
+		)
+
+		const docLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'documentLoad')
+		const docFetchSpan = recordPage.receivedSpans.find((span) => span.name === 'documentFetch')
+		const routeChangeSpan = recordPage.receivedSpans.find((span) => span.name === 'routeChange')
+
+		expectDefined(docLoadSpan)
+		expectDefined(docFetchSpan)
+		expectDefined(routeChangeSpan)
+		expect(docFetchSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, docLoadSpan.spanId)
+		expect(docFetchSpan).not.toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, routeChangeSpan.spanId)
+	})
+
 	test('documentLoad span has docLoad duration on empty page', async ({ recordPage }) => {
 		await recordPage.goTo('/docload/docload-empty.ejs')
 

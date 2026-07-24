@@ -136,9 +136,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 
 			if (span && exposedSpan.name !== AttributeNames.DOCUMENT_LOAD) {
 				const isResourceFetch = exposedSpan.name === AttributeNames.RESOURCE_FETCH
-				const startTime = (entries as unknown as Record<string, unknown>)[
-					isResourceFetch ? PTN.FETCH_START : performanceName
-				]
+				const startTime = (entries as unknown as Record<string, unknown>)[PTN.FETCH_START]
 
 				if (typeof startTime === 'number') {
 					setBrowserNavigationPageAttributes(
