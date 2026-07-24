@@ -19,18 +19,25 @@
 import { diag } from '@opentelemetry/api'
 import { InstrumentationBase } from '@opentelemetry/instrumentation'
 
-import { isElement, type SplunkBlockingElementInstrumentationConfig, type SplunkOtelWebConfig } from '../types'
+import type { SessionManager, SpaMetricsManager } from '../managers'
+import type { ElementVisibilityChangeEvent, ElementVisibilityObserver } from '../observers/element-visibility-observer'
+import type { SplunkBlockingElementInstrumentationConfig, SplunkOtelWebConfig } from '../types'
+
 import { VERSION } from '../version'
 import { BLOCKING_ELEMENT_MODULE_NAME } from './blocking-element/constants'
 import { ElementSpanTracker } from './blocking-element/element-span-tracker'
 import { isBlockingElementInstrumentationEnabled, resolveBlockingElementSelectors } from './blocking-element/support'
 
+/**
+ * DOM watching itself is delegated to the shared ElementVisibilityObserver — this class only
+ * derives per-element span lifecycle from the per-element events it receives.
+ */
 export class SplunkBlockingElementInstrumentation extends InstrumentationBase<SplunkBlockingElementInstrumentationConfig> {
+	private readonly consumerId = Symbol('splunk-blocking-element')
+
 	private elementSpanTracker: ElementSpanTracker | undefined
 
-	private observer: MutationObserver | null = null
-
-	private scanTimeoutId: ReturnType<typeof setTimeout> | undefined
+	private readonly elementVisibilityObserver: ElementVisibilityObserver
 
 	private selectors: string[] = []
 
@@ -39,17 +46,26 @@ export class SplunkBlockingElementInstrumentation extends InstrumentationBase<Sp
 	constructor(
 		config: SplunkBlockingElementInstrumentationConfig = {},
 		protected otelConfig: SplunkOtelWebConfig,
+		_sessionManager?: SessionManager,
+		_spaMetricsManager?: SpaMetricsManager,
+		elementVisibilityObserver?: ElementVisibilityObserver,
 	) {
 		super(BLOCKING_ELEMENT_MODULE_NAME, VERSION, { ...config, enabled: false })
+		if (!elementVisibilityObserver) {
+			throw new Error('SplunkBlockingElementInstrumentation requires elementVisibilityObserver.')
+		}
+
+		this.elementVisibilityObserver = elementVisibilityObserver
 	}
 
 	disable(): void {
-		this.clearScheduledScan()
-		this.observer?.disconnect()
-		this.observer = null
-		this.selectors = []
+		// Interrupt before unwatch() so open spans end as 'interrupted', not 'completed' — unwatch()'s
+		// synthesized visible:false events would otherwise reach handleVisibilityChange and complete
+		// them as if they'd resolved normally, same ordering LoadingElementMonitor.stop() relies on.
 		this.elementSpanTracker?.interruptAll()
 		this.elementSpanTracker = undefined
+		this.selectors = []
+		this.elementVisibilityObserver.unwatch(this.consumerId)
 	}
 
 	enable(): void {
@@ -63,76 +79,30 @@ export class SplunkBlockingElementInstrumentation extends InstrumentationBase<Sp
 		}
 
 		this.elementSpanTracker = new ElementSpanTracker(this.tracer, this.selectors)
-		this.scanSelectors()
-		this.setupMutationObserver()
+		this.elementVisibilityObserver.watch(this.consumerId, this.selectors, this.handleVisibilityChange)
 	}
 
 	init(): void {}
 
-	private clearScheduledScan(): void {
-		if (this.scanTimeoutId === undefined) {
-			return
-		}
-
-		clearTimeout(this.scanTimeoutId)
-		this.scanTimeoutId = undefined
-	}
-
-	private getVisibleElements(selector: string): Element[] {
-		let elements: NodeListOf<Element>
-		try {
-			elements = document.querySelectorAll(selector)
-		} catch (error) {
-			if (!this.warnedInvalidSelectors.has(selector)) {
-				this.warnedInvalidSelectors.add(selector)
-				diag.warn('SplunkBlockingElementInstrumentation: Invalid blocking element selector.', {
-					error,
-					selector,
-				})
-			}
-
-			return []
-		}
-
-		return Array.from(elements).filter((element) => this.isElementVisible(element))
-	}
-
-	private isElementVisible(element: Element): boolean {
-		if (!element.isConnected || element.hasAttribute('hidden') || element.getClientRects().length === 0) {
-			return false
-		}
-
-		const style = getComputedStyle(element)
-		return style.display !== 'none' && style.visibility !== 'hidden' && style.visibility !== 'collapse'
-	}
-
-	private scanSelectors(): void {
-		this.clearScheduledScan()
-
+	private readonly handleVisibilityChange = (event: ElementVisibilityChangeEvent): void => {
 		const elementSpanTracker = this.elementSpanTracker
 		if (!elementSpanTracker) {
 			return
 		}
 
+		const { element, visible } = event
 		const now = performance.now()
 
-		const currentlyBlocking = new Set<Element>()
-		for (const selector of this.selectors) {
-			for (const element of this.getVisibleElements(selector)) {
-				currentlyBlocking.add(element)
-			}
+		if (!visible) {
+			// Visibility is a property of the element, not the (selector, element) pair — an element
+			// stopping matching one selector while still matching another can't happen from a single
+			// visible:false event, so no re-check against other selectors is needed here.
+			elementSpanTracker.completeSpan(element, now)
+			return
 		}
 
-		for (const element of elementSpanTracker.trackedElements()) {
-			if (!currentlyBlocking.has(element)) {
-				elementSpanTracker.completeSpan(element, now)
-			}
-		}
-
-		for (const element of currentlyBlocking) {
-			const matchedSelectors = this.selectors.filter((selector) => this.matchesSelector(element, selector))
-			elementSpanTracker.startSpan(element, matchedSelectors, now)
-		}
+		const matchedSelectors = this.selectors.filter((selector) => this.matchesSelector(element, selector))
+		elementSpanTracker.startSpan(element, matchedSelectors, now)
 	}
 
 	private matchesSelector(element: Element, selector: string): boolean {
@@ -149,34 +119,5 @@ export class SplunkBlockingElementInstrumentation extends InstrumentationBase<Sp
 
 			return false
 		}
-	}
-
-	private scheduleScan(): void {
-		if (this.scanTimeoutId !== undefined) {
-			return
-		}
-
-		this.scanTimeoutId = setTimeout(() => {
-			this.scanSelectors()
-		}, 0)
-	}
-
-	private setupMutationObserver(): void {
-		this.observer = new MutationObserver((mutations) => {
-			if (
-				mutations.some(
-					(mutation) =>
-						mutation.type === 'childList' || (mutation.type === 'attributes' && isElement(mutation.target)),
-				)
-			) {
-				this.scheduleScan()
-			}
-		})
-
-		this.observer.observe(document.documentElement, {
-			attributes: true,
-			childList: true,
-			subtree: true,
-		})
 	}
 }

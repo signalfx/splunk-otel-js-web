@@ -24,6 +24,7 @@ import {
 } from '@opentelemetry/sdk-trace-base'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { ElementVisibilityObserver } from '../observers/element-visibility-observer'
 import { SplunkBlockingElementInstrumentation } from './splunk-blocking-element-instrumentation'
 
 const SELECTOR = '.loading-spinner'
@@ -40,27 +41,42 @@ const createVisibleElement = (): HTMLElement => {
 }
 
 describe('SplunkBlockingElementInstrumentation', () => {
+	let elementVisibilityObserver: ElementVisibilityObserver
 	let exporter: InMemorySpanExporter
 	let provider: BasicTracerProvider
-	let instrumentation: SplunkBlockingElementInstrumentation
+	let instrumentation: SplunkBlockingElementInstrumentation | undefined
 
 	const getFinishedSpans = (): ReadableSpan[] => exporter.getFinishedSpans()
 
 	beforeEach(() => {
 		exporter = new InMemorySpanExporter()
 		provider = new BasicTracerProvider({ spanProcessors: [new SimpleSpanProcessor(exporter)] })
+		elementVisibilityObserver = new ElementVisibilityObserver()
+		instrumentation = undefined
 	})
 
 	afterEach(() => {
-		instrumentation.disable()
+		instrumentation?.disable()
 		document.body.querySelectorAll(`.${TEST_ELEMENT_CLASS}`).forEach((element) => {
 			element.remove()
 		})
 	})
 
+	it('throws a clear error when constructed without elementVisibilityObserver', () => {
+		expect(
+			() => new SplunkBlockingElementInstrumentation({}, { spaMetrics: false }, undefined, undefined, undefined),
+		).toThrow('SplunkBlockingElementInstrumentation requires elementVisibilityObserver.')
+	})
+
 	it('does not start any spans when disabled', () => {
 		createVisibleElement()
-		instrumentation = new SplunkBlockingElementInstrumentation({}, { spaMetrics: false })
+		instrumentation = new SplunkBlockingElementInstrumentation(
+			{},
+			{ spaMetrics: false },
+			undefined,
+			undefined,
+			elementVisibilityObserver,
+		)
 		instrumentation.setTracerProvider(provider)
 
 		instrumentation.enable()
@@ -76,6 +92,9 @@ describe('SplunkBlockingElementInstrumentation', () => {
 				instrumentations: { blockingElement: { enabled: true } },
 				spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['network'] },
 			},
+			undefined,
+			undefined,
+			elementVisibilityObserver,
 		)
 		instrumentation.setTracerProvider(provider)
 
@@ -91,6 +110,9 @@ describe('SplunkBlockingElementInstrumentation', () => {
 		instrumentation = new SplunkBlockingElementInstrumentation(
 			{},
 			{ spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
+			undefined,
+			undefined,
+			elementVisibilityObserver,
 		)
 		instrumentation.setTracerProvider(provider)
 
@@ -109,6 +131,9 @@ describe('SplunkBlockingElementInstrumentation', () => {
 		instrumentation = new SplunkBlockingElementInstrumentation(
 			{},
 			{ spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
+			undefined,
+			undefined,
+			elementVisibilityObserver,
 		)
 		instrumentation.setTracerProvider(provider)
 
@@ -124,6 +149,9 @@ describe('SplunkBlockingElementInstrumentation', () => {
 		instrumentation = new SplunkBlockingElementInstrumentation(
 			{},
 			{ spaMetrics: { blockingSelectors: [SELECTOR, OTHER_SELECTOR], monitors: ['elements'] } },
+			undefined,
+			undefined,
+			elementVisibilityObserver,
 		)
 		instrumentation.setTracerProvider(provider)
 
@@ -140,6 +168,9 @@ describe('SplunkBlockingElementInstrumentation', () => {
 		instrumentation = new SplunkBlockingElementInstrumentation(
 			{},
 			{ spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
+			undefined,
+			undefined,
+			elementVisibilityObserver,
 		)
 		instrumentation.setTracerProvider(provider)
 		instrumentation.enable()
@@ -157,6 +188,9 @@ describe('SplunkBlockingElementInstrumentation', () => {
 		instrumentation = new SplunkBlockingElementInstrumentation(
 			{},
 			{ spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
+			undefined,
+			undefined,
+			elementVisibilityObserver,
 		)
 		instrumentation.setTracerProvider(provider)
 		instrumentation.enable()
@@ -175,6 +209,9 @@ describe('SplunkBlockingElementInstrumentation', () => {
 		instrumentation = new SplunkBlockingElementInstrumentation(
 			{},
 			{ spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
+			undefined,
+			undefined,
+			elementVisibilityObserver,
 		)
 		instrumentation.setTracerProvider(provider)
 		instrumentation.enable()
@@ -192,6 +229,9 @@ describe('SplunkBlockingElementInstrumentation', () => {
 		instrumentation = new SplunkBlockingElementInstrumentation(
 			{},
 			{ spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
+			undefined,
+			undefined,
+			elementVisibilityObserver,
 		)
 		instrumentation.setTracerProvider(provider)
 		instrumentation.enable()
