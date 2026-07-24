@@ -137,6 +137,45 @@ describe('ElementVisibilityObserver', () => {
 		await waitForScan()
 	})
 
+	it('resync() gives the consumer full current-state events without changing its subscription', () => {
+		createVisibleElement()
+		const events: ElementVisibilityChangeEvent[] = []
+		const consumerId = Symbol('consumer')
+		watch(consumerId, [SELECTOR], (event) => events.push(event))
+
+		observer.resync(consumerId, SELECTOR)
+
+		// One event from watch(), one more from resync() — same element, reported again as current
+		// state, not skipped just because it was already known.
+		expect(events.map((event) => event.visible)).toEqual([true, true])
+	})
+
+	it('resync() does not notify other consumers watching the same selector', () => {
+		createVisibleElement()
+		const first = Symbol('first')
+		const second = Symbol('second')
+		const firstEvents: ElementVisibilityChangeEvent[] = []
+		const secondEvents: ElementVisibilityChangeEvent[] = []
+		watch(first, [SELECTOR], (event) => firstEvents.push(event))
+		watch(second, [SELECTOR], (event) => secondEvents.push(event))
+
+		observer.resync(first, SELECTOR)
+
+		expect(firstEvents).toHaveLength(2)
+		expect(secondEvents).toHaveLength(1)
+	})
+
+	it('resync() no-ops for a consumer that is not watching the given selector', () => {
+		createVisibleElement()
+		const events: ElementVisibilityChangeEvent[] = []
+		const consumerId = Symbol('consumer')
+		watch(consumerId, [SELECTOR], (event) => events.push(event))
+
+		observer.resync(consumerId, OTHER_SELECTOR)
+
+		expect(events).toHaveLength(1)
+	})
+
 	it('only notifies the dropping consumer when watch() omits a previously-watched selector', () => {
 		createVisibleElement()
 		const first = Symbol('first')

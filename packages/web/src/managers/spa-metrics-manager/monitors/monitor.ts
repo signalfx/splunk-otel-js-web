@@ -17,6 +17,7 @@
  */
 
 import type { SpaMetricsMonitor } from '../../../types'
+import type { ElementVisibilityObserver } from '../../../observers/element-visibility-observer'
 
 import { generateId } from '../../../utils'
 
@@ -42,6 +43,12 @@ export type ResourceStateEvent = ResourceStateEventWithoutMonitorType & {
 }
 
 export interface MonitorConfig {
+	/** Only read by LoadingElementMonitor, alongside elementVisibilityObserver. */
+	consumerId?: symbol
+
+	/** Only read by LoadingElementMonitor, to watch selectors without its own MutationObserver. */
+	elementVisibilityObserver?: ElementVisibilityObserver
+
 	onResourceStateChange: (event: ResourceStateEvent) => void
 }
 

@@ -84,6 +84,22 @@ export class ElementVisibilityObserver {
 	}
 
 	/**
+	 * Forces a fresh scan for selector and gives consumerId full current-state events for it, as if
+	 * it had just joined — without changing its subscription. For when a consumer's own bookkeeping
+	 * was cleared independently of any real visibility change (e.g. a resource forgotten for
+	 * unrelated config reasons) and it needs to resynchronize without waiting for some future,
+	 * unrelated DOM mutation to happen to trigger a scan. No-ops if consumerId isn't watching
+	 * selector.
+	 */
+	resync(consumerId: symbol, selector: string): void {
+		if (!this.consumersBySelector.get(selector)?.has(consumerId)) {
+			return
+		}
+
+		this.scanSelector(selector, consumerId)
+	}
+
+	/**
 	 * Always runs a fresh scan for selector, even if another consumer already tracks it — replaying
 	 * the cached visibleElementsBySelector instead would risk handing the joining consumer state
 	 * that's already gone stale, if a DOM mutation landed after the last scan but before this
