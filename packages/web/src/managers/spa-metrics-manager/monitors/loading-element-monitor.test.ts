@@ -19,6 +19,7 @@
 import { diag } from '@opentelemetry/api'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { ElementVisibilityObserver } from '../../../observers/element-visibility-observer'
 import { LoadingElementMonitor } from './loading-element-monitor'
 import { ResourceState, ResourceStateEvent } from './monitor'
 import { expectEventStatesWithMatchingIds } from './monitor-test-utils'
@@ -36,16 +37,18 @@ const createVisibleLoadingElement = (): HTMLElement => {
 }
 
 const waitForScan = () => new Promise((resolve) => setTimeout(resolve, 20))
-const getObserver = (loadingElementMonitor: LoadingElementMonitor) =>
-	(loadingElementMonitor as unknown as { observer: MutationObserver | null }).observer
 
 describe('LoadingElementMonitor', () => {
+	let elementVisibilityObserver: ElementVisibilityObserver
 	let events: ResourceStateEvent[]
 	let monitor: LoadingElementMonitor
 
 	beforeEach(() => {
 		events = []
+		elementVisibilityObserver = new ElementVisibilityObserver()
 		monitor = new LoadingElementMonitor({
+			consumerId: Symbol('loading-element-monitor-test'),
+			elementVisibilityObserver,
 			onResourceStateChange: (event) => events.push(event),
 		})
 	})
@@ -55,6 +58,12 @@ describe('LoadingElementMonitor', () => {
 		document.body.querySelectorAll(`.${TEST_ELEMENT_CLASS}, .loading-spinner`).forEach((element) => {
 			element.remove()
 		})
+	})
+
+	it('throws a clear error when constructed without elementVisibilityObserver or consumerId', () => {
+		expect(() => new LoadingElementMonitor({ onResourceStateChange: () => {} })).toThrow(
+			'LoadingElementMonitor requires elementVisibilityObserver and consumerId.',
+		)
 	})
 
 	it('tracks visible existing elements when refreshed', () => {
@@ -96,23 +105,6 @@ describe('LoadingElementMonitor', () => {
 		await vi.waitFor(() => {
 			expect(events.map((event) => event.state)).toEqual([ResourceState.DISCOVERED])
 		})
-	})
-
-	it('observes mutations only while monitoring with selectors', async () => {
-		monitor.start()
-		expect(getObserver(monitor)).toBeNull()
-
-		monitor.refresh([LOADING_SELECTOR])
-		expect(getObserver(monitor)).not.toBeNull()
-
-		createVisibleLoadingElement()
-
-		await vi.waitFor(() => {
-			expect(events.map((event) => event.state)).toEqual([ResourceState.DISCOVERED])
-		})
-
-		monitor.refresh([])
-		expect(getObserver(monitor)).toBeNull()
 	})
 
 	it('marks removed elements as loaded', async () => {
@@ -263,7 +255,7 @@ describe('LoadingElementMonitor', () => {
 		expect(events).toHaveLength(0)
 		expect(warnSpy).toHaveBeenCalledTimes(1)
 		expect(warnSpy).toHaveBeenCalledWith(
-			'PageLoadingManager.LoadingElementMonitor: Invalid loading element selector.',
+			'ElementVisibilityObserver: Invalid selector.',
 			expect.objectContaining({ selector: invalidSelector }),
 		)
 		warnSpy.mockRestore()
@@ -278,5 +270,28 @@ describe('LoadingElementMonitor', () => {
 		await waitForScan()
 
 		expect(events).toHaveLength(0)
+	})
+
+	it('re-syncs a still-visible selector whose resource was dropped, without waiting for a DOM mutation', () => {
+		createVisibleLoadingElement()
+		monitor.refresh([LOADING_SELECTOR])
+
+		monitor.refresh([LOADING_SELECTOR], { droppedResourceUrls: [`element:${LOADING_SELECTOR}`] })
+
+		// No DOM mutation happened between the two refresh() calls — resync() must be what produced
+		// the second DISCOVERED, not a MutationObserver-triggered scan.
+		expect(events.map((event) => event.state)).toEqual([ResourceState.DISCOVERED, ResourceState.DISCOVERED])
+	})
+
+	it('does not resync a dropped resource whose selector is no longer in the new list', () => {
+		createVisibleLoadingElement()
+		monitor.refresh([LOADING_SELECTOR])
+
+		monitor.refresh([], { droppedResourceUrls: [`element:${LOADING_SELECTOR}`] })
+
+		// The selector was dropped from monitoredSelectors and is not in the new (empty) list, so
+		// setSelectors has nothing left to complete, and resync() is never called for it either —
+		// just the original DISCOVERED, no LOADED and no second DISCOVERED.
+		expect(events.map((event) => event.state)).toEqual([ResourceState.DISCOVERED])
 	})
 })
