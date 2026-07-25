@@ -16,7 +16,7 @@
  *
  */
 
-import type { Span } from '@opentelemetry/api'
+import { context, ROOT_CONTEXT, type Span } from '@opentelemetry/api'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
@@ -25,6 +25,7 @@ import {
 } from './splunk-post-doc-load-resource-instrumentation'
 
 type TestableInstrumentation = {
+	_processHeadMutationObserverRecords: (mutations: MutationRecord[]) => void
 	_startPerformanceObserver: () => void
 	_tracer: { startSpan: ReturnType<typeof vi.fn> }
 }
@@ -49,11 +50,52 @@ class MockPerformanceObserver {
 }
 
 afterEach(() => {
+	document.head.querySelectorAll('[data-test-resource-base]').forEach((element) => element.remove())
 	MockPerformanceObserver.instances = []
+	vi.restoreAllMocks()
 	vi.unstubAllGlobals()
 })
 
 describe('post document load resource instrumentation', () => {
+	it('resolves element resource URLs against the document base', () => {
+		const base = document.createElement('base')
+		base.dataset.testResourceBase = ''
+		base.href = '/resource-observer/page/'
+		document.head.prepend(base)
+
+		const activeContext = ROOT_CONTEXT.setValue(Symbol('active-context'), true)
+		vi.spyOn(context, 'active').mockReturnValue(activeContext)
+
+		const link = document.createElement('link')
+		link.href = 'assets/style.css'
+		const script = document.createElement('script')
+		script.src = 'assets/script.js'
+
+		const { instrumentation, startSpan } = createInstrumentation()
+		instrumentation._processHeadMutationObserverRecords([
+			{ addedNodes: [link, script] } as unknown as MutationRecord,
+		])
+		instrumentation._startPerformanceObserver()
+		MockPerformanceObserver.instances[0].emit([
+			createResourceEntry('link', link.href),
+			createResourceEntry('script', script.src),
+		])
+
+		expect(startSpan).toHaveBeenCalledTimes(2)
+		expect(startSpan).toHaveBeenNthCalledWith(
+			1,
+			'resourceFetch',
+			expect.objectContaining({ startTime: 10 }),
+			activeContext,
+		)
+		expect(startSpan).toHaveBeenNthCalledWith(
+			2,
+			'resourceFetch',
+			expect.objectContaining({ startTime: 10 }),
+			activeContext,
+		)
+	})
+
 	it('creates a resource span for other initiator types by default', () => {
 		const { instrumentation, setAttribute, startSpan } = createInstrumentation()
 

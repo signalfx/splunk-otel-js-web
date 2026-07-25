@@ -161,8 +161,8 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 					return
 				}
 
-				const srcUrl = new URL(resourceUrl, location.origin)
-				this.urlToContextMap[srcUrl.toString()] = context.active()
+				const resolvedUrl = new URL(resourceUrl, document.baseURI)
+				this.urlToContextMap[resolvedUrl.toString()] = context.active()
 			})
 	}
 
