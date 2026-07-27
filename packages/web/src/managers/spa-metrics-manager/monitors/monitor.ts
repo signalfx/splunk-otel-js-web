@@ -27,7 +27,7 @@ export enum ResourceState {
 }
 
 type ResourceStateEventWithoutMonitorType =
-	| { id: string; state: ResourceState.DISCOVERED; url: string }
+	| { id: string; state: ResourceState.DISCOVERED; timestamp?: number; url: string }
 	| { id: string; state: ResourceState.ERROR; timestamp: number; url: string }
 	| {
 			id: string
@@ -56,8 +56,9 @@ export abstract class Monitor {
 
 	static createDiscoveredEvent(
 		url: string,
+		timestamp = performance.now(),
 	): ResourceStateEventWithoutMonitorType & { state: ResourceState.DISCOVERED } {
-		return { id: generateId(64), state: ResourceState.DISCOVERED, url }
+		return { id: generateId(64), state: ResourceState.DISCOVERED, timestamp, url }
 	}
 
 	static createErrorEvent(

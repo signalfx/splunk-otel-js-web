@@ -164,7 +164,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 	enable(): void {
 		this.__hashChangeHandler = (event: Event) => {
 			const hashChangeEvent = event as HashChangeEvent
-			void this._emitRouteChangeSpan(hashChangeEvent.oldURL, hashChangeEvent.newURL)
+			void this._emitRouteChangeSpan(hashChangeEvent.oldURL, hashChangeEvent.newURL, event.timeStamp)
 		}
 
 		// Hash can be changed with location.hash = '#newThing', no way to hook that directly...
@@ -183,7 +183,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 		this._routingTracer = tracerProvider.getTracer(ROUTING_INSTRUMENTATION_NAME, ROUTING_INSTRUMENTATION_VERSION)
 	}
 
-	private async _emitRouteChangeSpan(oldHref: string, newHref: string) {
+	private async _emitRouteChangeSpan(oldHref: string, newHref: string, navigationStartTime = performance.now()) {
 		const config = this.getConfig()
 		if (isUrlIgnored(newHref, config.ignoreUrls)) {
 			return
@@ -200,7 +200,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 			// then resolve after a quiet period with no new monitored activity.
 			const pageLoadMetrics = await this.spaMetricsManager.waitForPageLoad({
 				span,
-				startTime: performance.now(),
+				startTime: navigationStartTime,
 			})
 			diag.debug('Sending routeChange span with PCT result', pageLoadMetrics)
 			span.end(now + pageLoadMetrics.pct)

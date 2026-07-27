@@ -21,7 +21,8 @@ import { diag, ROOT_CONTEXT } from '@opentelemetry/api'
 import { isTracingSuppressed, suppressTracing } from '@opentelemetry/core'
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch'
 
-import { SessionManager } from '../managers'
+import { SessionManager, SpaMetricsManager } from '../managers'
+import { setBrowserNavigationPageAttributes } from '../managers/spa-metrics-manager/navigation-relevance'
 import { captureTraceParent } from '../servertiming'
 import { SplunkFetchInstrumentationConfig, SplunkOtelWebConfig } from '../types'
 
@@ -37,15 +38,26 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
 		config: SplunkFetchInstrumentationConfig = {},
 		otelConfig: SplunkOtelWebConfig,
 		public sessionManager?: SessionManager,
+		public spaMetricsManager?: SpaMetricsManager,
 	) {
 		const separateTraces = config.separateTraces ?? otelConfig.separateTraces ?? false
 
 		const origCustomAttrs = config.applyCustomAttributesOnSpan
+		const navigationActivities = new WeakMap<api.Span, { startTime: number; url: string }>()
 
 		config.applyCustomAttributesOnSpan = function (span, request, result) {
 			// Temporary return to old span name until cleared by backend
 			span.updateName(`HTTP ${(request.method || 'GET').toUpperCase()}`)
 			span.setAttribute('component', 'fetch')
+
+			const navigationActivity = navigationActivities.get(span)
+			if (navigationActivity) {
+				setBrowserNavigationPageAttributes(span, spaMetricsManager, navigationActivity.startTime, {
+					monitorTypes: ['network'],
+					type: 'resource',
+					url: navigationActivity.url,
+				})
+			}
 
 			if (span && result instanceof Response && result.headers) {
 				const st = result.headers.get('Server-Timing')
@@ -62,16 +74,19 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
 		super(config)
 		this.otelConfig = otelConfig
 
-		if (separateTraces) {
-			const _superCreateSpan = (this as any as ExposedSuper)._createSpan?.bind(this)
-			;(this as any as ExposedSuper)._createSpan = (url, options) => {
+		const _superCreateSpan = (this as any as ExposedSuper)._createSpan?.bind(this)
+		;(this as any as ExposedSuper)._createSpan = (url, options) => {
+			const startTime = performance.now()
+			let span: api.Span | undefined
+
+			if (separateTraces) {
 				const activeContext = api.context.active()
 				const parentSpan = api.trace.getSpan(activeContext)
 				const parentContext = parentSpan?.spanContext()
 
 				// Use ROOT_CONTEXT for a new trace, preserving suppressTracing to avoid exporter loops
 				const hybridContext = isTracingSuppressed(activeContext) ? suppressTracing(ROOT_CONTEXT) : ROOT_CONTEXT
-				const span = api.context.with(hybridContext, () => _superCreateSpan(url, options))
+				span = api.context.with(hybridContext, () => _superCreateSpan(url, options))
 
 				// Record parent span reference so the relationship is not lost
 				if (span && parentContext?.traceId) {
@@ -80,9 +95,16 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
 						'link.interaction.traceId': parentContext.traceId,
 					})
 				}
-
-				return span
+			} else {
+				span = _superCreateSpan(url, options)
 			}
+
+			if (span) {
+				navigationActivities.set(span, { startTime, url })
+				setBrowserNavigationPageAttributes(span, spaMetricsManager, startTime)
+			}
+
+			return span
 		}
 
 		const _superAddHeaders = (this as unknown as ExposedSuper)._addHeaders.bind(this)

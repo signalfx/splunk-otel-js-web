@@ -22,7 +22,9 @@ import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instr
 import { addSpanNetworkEvents } from '@opentelemetry/sdk-trace-web'
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions'
 
-import { SessionManager } from '../managers'
+import { SessionManager, SpaMetricsManager } from '../managers'
+import { setBrowserNavigationPageAttributes } from '../managers/spa-metrics-manager/navigation-relevance'
+import { getPctMonitorTypes } from '../managers/spa-metrics-manager/resource-monitor-types'
 import { SplunkOtelWebConfig } from '../types'
 import { isCacheHit } from '../utils/cache'
 import { VERSION } from '../version'
@@ -33,10 +35,24 @@ export interface SplunkPostDocLoadResourceInstrumentationConfig extends Instrume
 }
 
 const MODULE_NAME = 'splunk-post-doc-load-resource'
-const defaultAllowedInitiatorTypes = ['img', 'script'] //other, css, link
+const defaultAllowedInitiatorTypes = ['audio', 'css', 'font', 'iframe', 'img', 'link', 'other', 'script', 'video']
+const fontResourcePattern = /\.(?:eot|otf|ttf|woff2?)(?:[?#]|$)/i
 
-const nodeHasSrcAttribute = (node: Node): node is HTMLScriptElement | HTMLImageElement =>
-	node instanceof HTMLScriptElement || node instanceof HTMLImageElement
+const getNodeResourceUrl = (node: Node): string | undefined => {
+	if (node instanceof HTMLLinkElement) {
+		return node.getAttribute('href') ?? undefined
+	}
+
+	if (node instanceof HTMLIFrameElement || node instanceof HTMLImageElement || node instanceof HTMLScriptElement) {
+		return node.getAttribute('src') ?? undefined
+	}
+
+	return undefined
+}
+
+const isAllowedResourceEntry = (entry: PerformanceResourceTiming, allowedInitiatorTypes: string[] | undefined) =>
+	allowedInitiatorTypes?.includes(entry.initiatorType) ||
+	(allowedInitiatorTypes?.includes('font') && entry.initiatorType === 'other' && fontResourcePattern.test(entry.name))
 
 export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBase {
 	private config: SplunkPostDocLoadResourceInstrumentationConfig
@@ -51,6 +67,7 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 		config: SplunkPostDocLoadResourceInstrumentationConfig = {},
 		protected otelConfig: SplunkOtelWebConfig,
 		public sessionManager?: SessionManager,
+		public spaMetricsManager?: SpaMetricsManager,
 	) {
 		const processedConfig: SplunkPostDocLoadResourceInstrumentationConfig = Object.assign(
 			{},
@@ -98,8 +115,7 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 		this._processHeadMutationObserverRecords(this.headMutationObserver.takeRecords())
 	}
 
-	// TODO: discuss TS built-in types
-	private _createSpan(entry: any) {
+	private _createSpan(entry: PerformanceResourceTiming) {
 		if (isUrlIgnored(entry.name, this.config.ignoreUrls)) {
 			return
 		}
@@ -117,6 +133,11 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 		span.setAttribute('component', MODULE_NAME)
 		span.setAttribute(SemanticAttributes.HTTP_URL, entry.name)
 		span.setAttribute(SemanticAttributes.HTTP_METHOD, 'GET')
+		setBrowserNavigationPageAttributes(span, this.spaMetricsManager, entry.fetchStart, {
+			monitorTypes: getPctMonitorTypes(entry.initiatorType),
+			type: 'resource',
+			url: entry.name,
+		})
 
 		const cacheHit = isCacheHit(entry)
 		if (cacheHit !== undefined) {
@@ -142,15 +163,14 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 
 		mutations
 			.flatMap((mutation) => Array.from(mutation.addedNodes || []))
-			.filter(nodeHasSrcAttribute)
 			.forEach((node) => {
-				const src = node.getAttribute('src')
-				if (!src) {
+				const resourceUrl = getNodeResourceUrl(node)
+				if (!resourceUrl) {
 					return
 				}
 
-				const srcUrl = new URL(src, location.origin)
-				this.urlToContextMap[srcUrl.toString()] = context.active()
+				const resolvedUrl = new URL(resourceUrl, document.baseURI)
+				this.urlToContextMap[resolvedUrl.toString()] = context.active()
 			})
 	}
 
@@ -173,9 +193,10 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 		this.performanceObserver = new PerformanceObserver((list) => {
 			if (window.document.readyState === 'complete') {
 				list.getEntries().forEach((entry) => {
-					// TODO: check how we can amend TS base typing to fix this
-					if (this.config.allowedInitiatorTypes?.includes((entry as any).initiatorType)) {
-						this._createSpan(entry)
+					const resourceEntry = entry as PerformanceResourceTiming
+					if (isAllowedResourceEntry(resourceEntry, this.config.allowedInitiatorTypes)) {
+						// Let SPA resource monitors preserve their admission decisions first.
+						window.setTimeout(() => this._createSpan(resourceEntry))
 					}
 				})
 			}
