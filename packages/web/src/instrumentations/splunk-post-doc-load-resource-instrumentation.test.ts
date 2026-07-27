@@ -52,6 +52,7 @@ class MockPerformanceObserver {
 afterEach(() => {
 	document.head.querySelectorAll('[data-test-resource-base]').forEach((element) => element.remove())
 	MockPerformanceObserver.instances = []
+	vi.useRealTimers()
 	vi.restoreAllMocks()
 	vi.unstubAllGlobals()
 })
@@ -80,6 +81,7 @@ describe('post document load resource instrumentation', () => {
 			createResourceEntry('link', link.href),
 			createResourceEntry('script', script.src),
 		])
+		vi.runAllTimers()
 
 		expect(startSpan).toHaveBeenCalledTimes(2)
 		expect(startSpan).toHaveBeenNthCalledWith(
@@ -101,6 +103,7 @@ describe('post document load resource instrumentation', () => {
 
 		instrumentation._startPerformanceObserver()
 		MockPerformanceObserver.instances[0].emit([createResourceEntry('other', 'https://example.test/icon.svg')])
+		vi.runAllTimers()
 
 		expect(startSpan).toHaveBeenCalledOnce()
 		expect(startSpan).toHaveBeenCalledWith('resourceFetch', expect.objectContaining({ startTime: 10 }), undefined)
@@ -117,6 +120,7 @@ describe('post document load resource instrumentation', () => {
 			createResourceEntry('other', 'https://example.test/icon.svg'),
 			createResourceEntry('other', 'https://example.test/font.woff2'),
 		])
+		vi.runAllTimers()
 
 		expect(startSpan).toHaveBeenCalledOnce()
 		expect(startSpan).toHaveBeenCalledWith('resourceFetch', expect.objectContaining({ startTime: 10 }), undefined)
@@ -130,6 +134,7 @@ function createInstrumentation(config: SplunkPostDocLoadResourceInstrumentationC
 	setAttribute: ReturnType<typeof vi.fn>
 	startSpan: ReturnType<typeof vi.fn>
 } {
+	vi.useFakeTimers()
 	vi.stubGlobal('PerformanceObserver', MockPerformanceObserver)
 
 	const setAttribute = vi.fn().mockReturnThis()

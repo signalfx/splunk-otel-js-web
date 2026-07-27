@@ -28,11 +28,15 @@
 
 	<button type="button" id="btnNavigate">Navigate</button>
 	<button type="button" id="btnNavigateWithFetch">Navigate with fetch</button>
+	<button type="button" id="btnNavigateWithXhr">Navigate with XHR</button>
+	<button type="button" id="btnNavigateWithOverlappingFetch">Navigate with overlapping fetch</button>
+	<button type="button" id="btnNavigateWithOverlappingXhr">Navigate with overlapping XHR</button>
 	<button type="button" id="btnNavigateWithImage">Navigate with image</button>
 	<button type="button" id="btnNavigateWithSlowFetch">Navigate with slow fetch</button>
 	<button type="button" id="btnNavigateWithNetworkDisabled">Navigate with network disabled</button>
 	<button type="button" id="btnNavigateWithLoadingElement">Navigate with loading element</button>
 	<button type="button" id="btnNavigateWithOverrideLoadingElement">Navigate with override loading element</button>
+	<button type="button" id="btnFetchAfterPct">Fetch after PCT</button>
 
 	<div id="content"></div>
 
@@ -40,6 +44,12 @@
 		const LOADING_ELEMENT_RENDER_DELAY_MS = 100;
 		const LOADING_ELEMENT_VISIBLE_MS = 300;
 		window.loadingElementVisibleTimeMs = LOADING_ELEMENT_VISIBLE_MS;
+		window.overlappingRequestStarted = '';
+
+		function navigateThen(hash, callback) {
+			window.addEventListener('hashchange', callback, { once: true });
+			location.hash = hash;
+		}
 
 		function appendTemporaryLoadingElement(createSpinner) {
 			setTimeout(function () {
@@ -56,23 +66,50 @@
 		});
 
 		document.querySelector('#btnNavigateWithFetch').addEventListener('click', function () {
-			location.hash = 'page2';
-			// Simulate API call after navigation
-			fetch('/some-data').then(function(response) {
-				return response.json();
-			}).then(function(data) {
-				document.getElementById('content').textContent = JSON.stringify(data);
+			navigateThen('page2', function () {
+				// Simulate API call after navigation
+				fetch('/some-data?delay=300&resource=route-change-fetch').then(function(response) {
+					return response.json();
+				}).then(function(data) {
+					document.getElementById('content').textContent = JSON.stringify(data);
+				});
+			});
+		});
+
+		document.querySelector('#btnNavigateWithXhr').addEventListener('click', function () {
+			navigateThen('page-xhr', function () {
+				// Simulate XHR after navigation
+				const req = new XMLHttpRequest();
+				req.open('GET', '/some-data?delay=300&resource=route-change-xhr');
+				req.send();
+			});
+		});
+
+		document.querySelector('#btnNavigateWithOverlappingFetch').addEventListener('click', function () {
+			navigateThen('overlapping-fetch-a', function () {
+				fetch('/some-data?delay=1500&resource=overlapping-navigation-fetch').catch(function () {});
+				window.overlappingRequestStarted = 'fetch';
+			});
+		});
+
+		document.querySelector('#btnNavigateWithOverlappingXhr').addEventListener('click', function () {
+			navigateThen('overlapping-xhr-a', function () {
+				const req = new XMLHttpRequest();
+				req.open('GET', '/some-data?delay=1500&resource=overlapping-navigation-xhr');
+				req.send();
+				window.overlappingRequestStarted = 'xhr';
 			});
 		});
 
 		document.querySelector('#btnNavigateWithImage').addEventListener('click', function () {
-			location.hash = 'page3';
-			// Add image after navigation
-			const img = document.createElement('img');
-			img.src =
-				'http://localhost:3001/user-interaction/assets/splunk-black.png?delay=300&noCache&resource=' +
-				Date.now();
-			document.getElementById('content').appendChild(img);
+			navigateThen('page3', function () {
+				// Add image after the hash navigation has been observed.
+				const img = document.createElement('img');
+				img.src =
+					'http://localhost:3001/user-interaction/assets/splunk-black.png?delay=300&noCache&resource=' +
+					Date.now();
+				document.getElementById('content').appendChild(img);
+			});
 		});
 
 		document.querySelector('#btnNavigateWithSlowFetch').addEventListener('click', function () {
@@ -81,8 +118,12 @@
 		});
 
 		document.querySelector('#btnNavigateWithNetworkDisabled').addEventListener('click', function () {
-			location.hash = 'network-disabled';
-			fetch('/some-data?delay=1500&resource=override-slow-fetch').catch(function () {});
+			navigateThen('network-disabled', function () {
+				fetch('/some-data?delay=1500&resource=override-slow-fetch').catch(function () {});
+				const req = new XMLHttpRequest();
+				req.open('GET', '/some-data?delay=1500&resource=override-slow-xhr');
+				req.send();
+			});
 		});
 
 		document.querySelector('#btnNavigateWithLoadingElement').addEventListener('click', function () {
@@ -105,6 +146,10 @@
 				spinner.style.width = '10px';
 				return spinner;
 			});
+		});
+
+		document.querySelector('#btnFetchAfterPct').addEventListener('click', function () {
+			fetch('/some-data?resource=after-pct-fetch').catch(function () {});
 		});
 	</script>
 </body>

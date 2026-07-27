@@ -22,7 +22,9 @@ import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instr
 import { addSpanNetworkEvents } from '@opentelemetry/sdk-trace-web'
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions'
 
-import { SessionManager } from '../managers'
+import { SessionManager, SpaMetricsManager } from '../managers'
+import { setBrowserNavigationPageAttributes } from '../managers/spa-metrics-manager/navigation-relevance'
+import { getPctMonitorTypes } from '../managers/spa-metrics-manager/resource-monitor-types'
 import { SplunkOtelWebConfig } from '../types'
 import { isCacheHit } from '../utils/cache'
 import { VERSION } from '../version'
@@ -65,6 +67,7 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 		config: SplunkPostDocLoadResourceInstrumentationConfig = {},
 		protected otelConfig: SplunkOtelWebConfig,
 		public sessionManager?: SessionManager,
+		public spaMetricsManager?: SpaMetricsManager,
 	) {
 		const processedConfig: SplunkPostDocLoadResourceInstrumentationConfig = Object.assign(
 			{},
@@ -130,6 +133,11 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 		span.setAttribute('component', MODULE_NAME)
 		span.setAttribute(SemanticAttributes.HTTP_URL, entry.name)
 		span.setAttribute(SemanticAttributes.HTTP_METHOD, 'GET')
+		setBrowserNavigationPageAttributes(span, this.spaMetricsManager, entry.fetchStart, {
+			monitorTypes: getPctMonitorTypes(entry.initiatorType),
+			type: 'resource',
+			url: entry.name,
+		})
 
 		const cacheHit = isCacheHit(entry)
 		if (cacheHit !== undefined) {
@@ -187,7 +195,8 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 				list.getEntries().forEach((entry) => {
 					const resourceEntry = entry as PerformanceResourceTiming
 					if (isAllowedResourceEntry(resourceEntry, this.config.allowedInitiatorTypes)) {
-						this._createSpan(resourceEntry)
+						// Let SPA resource monitors preserve their admission decisions first.
+						window.setTimeout(() => this._createSpan(resourceEntry))
 					}
 				})
 			}

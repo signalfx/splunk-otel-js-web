@@ -15,17 +15,21 @@
  * limitations under the License.
  *
  */
-import { Span } from '@opentelemetry/api'
 
-export function createSpanMock(spanId = 'span-id'): { attributes: Record<string, number | string>; span: Span } {
-	const attributes: Record<string, number | string> = {}
-	const span = {
-		setAttribute: (name: string, value: number | string) => {
-			attributes[name] = value
-			return span
-		},
-		spanContext: () => ({ spanId }),
-	} as Span
+import type { SpaMetricsMonitor } from '../../types'
 
-	return { attributes, span }
+export function getPctMonitorTypes(initiatorType: string): SpaMetricsMonitor[] {
+	if (initiatorType === 'img') {
+		return ['media', 'performance']
+	}
+
+	if (initiatorType === 'audio' || initiatorType === 'video') {
+		return ['media']
+	}
+
+	if (['css', 'font', 'link', 'other'].includes(initiatorType)) {
+		return ['performance']
+	}
+
+	return []
 }
