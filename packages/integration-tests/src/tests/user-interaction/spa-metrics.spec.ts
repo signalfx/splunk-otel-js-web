@@ -19,7 +19,7 @@ import { hrTimeToMicroseconds } from '@opentelemetry/core'
 import { expect } from '@playwright/test'
 
 import { BROWSER_NAVIGATION_ATTRIBUTES, expectBrowserNavigationAttributes } from '../../utils/browser-navigation'
-import { test } from '../../utils/test'
+import { expectDefined, test } from '../../utils/test'
 
 const getPageCompletionTime = (span: { attributes: Record<string, unknown> }) =>
 	Number(span.attributes[BROWSER_NAVIGATION_ATTRIBUTES.pageCompletionTime])
@@ -76,12 +76,20 @@ test.describe('spa-metrics', () => {
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'routeChange').length === 1)
 
 		const routeChangeSpans = recordPage.receivedSpans.filter((span) => span.name === 'routeChange')
-		const fetchUrl = '/some-data'
+		const fetchUrl = '/some-data?delay=300&resource=route-change-fetch'
+		const fetchSpans = recordPage.receivedSpans.filter(
+			(span) =>
+				span.attributes['component'] === 'fetch' &&
+				span.attributes['http.url'] === `http://localhost:3000${fetchUrl}`,
+		)
 
 		expect(routeChangeSpans).toHaveLength(1)
+		expect(fetchSpans).toHaveLength(1)
+		expect(fetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, routeChangeSpans[0].spanId)
+		expect(fetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, true)
 		expectBrowserNavigationAttributes(routeChangeSpans[0], {
 			detectedResourceCount: 1,
-			quietTimerResetCount: 0,
+			quietTimerResetCount: 1,
 			status: 'completed',
 		})
 		expectLoadedResourceAttributes(routeChangeSpans[0], {
@@ -96,6 +104,40 @@ test.describe('spa-metrics', () => {
 		expect(routeChangeSpans[0]).toHaveSpanDurationGreaterThan(0)
 	})
 
+	test('routeChange span waits for XHR requests to complete', async ({ recordPage }) => {
+		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+
+		await recordPage.locator('#btnNavigateWithXhr').click()
+
+		// Wait for routeChange span
+		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'routeChange').length === 1)
+
+		const routeChangeSpans = recordPage.receivedSpans.filter((span) => span.name === 'routeChange')
+		const xhrUrl = '/some-data?delay=300&resource=route-change-xhr'
+		const xhrSpans = recordPage.receivedSpans.filter(
+			(span) =>
+				span.attributes['component'] === 'xml-http-request' &&
+				span.attributes['http.url'] === `http://localhost:3000${xhrUrl}`,
+		)
+
+		expect(routeChangeSpans).toHaveLength(1)
+		expect(xhrSpans).toHaveLength(1)
+		expect(xhrSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, routeChangeSpans[0].spanId)
+		expect(xhrSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, true)
+		expectBrowserNavigationAttributes(routeChangeSpans[0], {
+			detectedResourceCount: 1,
+			quietTimerResetCount: 1,
+			status: 'completed',
+		})
+		expectLoadedResourceAttributes(routeChangeSpans[0], {
+			monitorType: 'network',
+			url: xhrUrl,
+		})
+
+		// Duration should include XHR time + quiet period
+		expect(routeChangeSpans[0]).toHaveSpanDurationGreaterThan(0)
+	})
+
 	test('routeChange span waits for images to load', async ({ recordPage }) => {
 		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
 
@@ -105,8 +147,20 @@ test.describe('spa-metrics', () => {
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'routeChange').length === 1)
 
 		const routeChangeSpans = recordPage.receivedSpans.filter((span) => span.name === 'routeChange')
+		const imageResourceSpans = recordPage.receivedSpans.filter(
+			(span) =>
+				span.attributes['component'] === 'splunk-post-doc-load-resource' &&
+				typeof span.attributes['http.url'] === 'string' &&
+				String(span.attributes['http.url']).includes('/user-interaction/assets/splunk-black.png'),
+		)
 
 		expect(routeChangeSpans).toHaveLength(1)
+		expect(imageResourceSpans).toHaveLength(1)
+		expect(imageResourceSpans[0]).toHaveSpanAttribute(
+			BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId,
+			routeChangeSpans[0].spanId,
+		)
+		expect(imageResourceSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, true)
 		expectBrowserNavigationAttributes(routeChangeSpans[0], { status: 'completed' })
 		expect(
 			Number(routeChangeSpans[0].attributes[BROWSER_NAVIGATION_ATTRIBUTES.detectedResourceCount]),
@@ -115,6 +169,120 @@ test.describe('spa-metrics', () => {
 		// Duration should include image load time + quiet period
 		expect(routeChangeSpans[0]).toHaveSpanDurationGreaterThan(0)
 	})
+
+	test('spans after PCT retain the page span id and are marked not relevant', async ({ recordPage }) => {
+		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+
+		await recordPage.locator('#btnNavigate').click()
+		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'routeChange').length === 1)
+		await recordPage.locator('#btnFetchAfterPct').click()
+		await recordPage.waitForSpans((spans) =>
+			spans.some(
+				(span) => span.attributes['http.url'] === 'http://localhost:3000/some-data?resource=after-pct-fetch',
+			),
+		)
+
+		const routeChangeSpan = recordPage.receivedSpans.find((span) => span.name === 'routeChange')
+		const afterPctFetchSpan = recordPage.receivedSpans.find(
+			(span) => span.attributes['http.url'] === 'http://localhost:3000/some-data?resource=after-pct-fetch',
+		)
+
+		expectDefined(routeChangeSpan)
+		expectDefined(afterPctFetchSpan)
+		expect(afterPctFetchSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, routeChangeSpan.spanId)
+		expect(afterPctFetchSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, false)
+	})
+
+	test('network resources rejected by the active PCT monitor config are marked not relevant', async ({
+		recordPage,
+	}) => {
+		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+
+		await recordPage.locator('#btnNavigateWithNetworkDisabled').click()
+		await recordPage.waitForSpans(
+			(spans) =>
+				spans.filter((span) => span.name === 'routeChange').length === 1 &&
+				spans.some((span) => String(span.attributes['http.url']).includes('resource=override-slow-fetch')) &&
+				spans.some((span) => String(span.attributes['http.url']).includes('resource=override-slow-xhr')),
+		)
+
+		const routeChangeSpan = recordPage.receivedSpans.find((span) => span.name === 'routeChange')
+		const fetchSpan = recordPage.receivedSpans.find((span) =>
+			String(span.attributes['http.url']).includes('resource=override-slow-fetch'),
+		)
+		const xhrSpan = recordPage.receivedSpans.find((span) =>
+			String(span.attributes['http.url']).includes('resource=override-slow-xhr'),
+		)
+
+		expectDefined(routeChangeSpan)
+		expectDefined(fetchSpan)
+		expectDefined(xhrSpan)
+		expectBrowserNavigationAttributes(routeChangeSpan, {
+			detectedResourceCount: 0,
+			pageCompletionTime: 0,
+			quietTimerResetCount: 0,
+			status: 'completed',
+		})
+		expect(fetchSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, routeChangeSpan.spanId)
+		expect(fetchSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, false)
+		expect(xhrSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, routeChangeSpan.spanId)
+		expect(xhrSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, false)
+	})
+
+	for (const requestType of ['fetch', 'xhr'] as const) {
+		test(`${requestType} span retains its original page attribution across overlapping navigations`, async ({
+			recordPage,
+		}) => {
+			await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+
+			const button =
+				requestType === 'fetch' ? '#btnNavigateWithOverlappingFetch' : '#btnNavigateWithOverlappingXhr'
+			const component = requestType === 'fetch' ? 'fetch' : 'xml-http-request'
+			const navigationAHash = `#overlapping-${requestType}-a`
+			const requestUrl = `http://localhost:3000/some-data?delay=1500&resource=overlapping-navigation-${requestType}`
+
+			// Start navigation A and its delayed request, then interrupt it with navigation B.
+			await recordPage.locator(button).click()
+			await expect
+				.poll(() =>
+					recordPage.evaluate(
+						() => (window as unknown as { overlappingRequestStarted: string }).overlappingRequestStarted,
+					),
+				)
+				.toBe(requestType)
+			await recordPage.locator('#btnNavigate').click()
+			await recordPage.waitForSpans(
+				(spans) =>
+					spans.filter((span) => span.name === 'routeChange').length === 2 &&
+					spans.some(
+						(span) =>
+							span.attributes['component'] === component && span.attributes['http.url'] === requestUrl,
+					),
+			)
+
+			const navigationASpan = recordPage.receivedSpans.find(
+				(span) =>
+					span.name === 'routeChange' && String(span.attributes['location.href']).includes(navigationAHash),
+			)
+			const navigationBSpan = recordPage.receivedSpans.find(
+				(span) => span.name === 'routeChange' && String(span.attributes['location.href']).includes('#page1'),
+			)
+			const requestSpan = recordPage.receivedSpans.find(
+				(span) => span.attributes['component'] === component && span.attributes['http.url'] === requestUrl,
+			)
+
+			expectDefined(navigationASpan)
+			expectDefined(navigationBSpan)
+			expectDefined(requestSpan)
+			expect(navigationASpan.spanId).not.toBe(navigationBSpan.spanId)
+			expect(requestSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, navigationASpan.spanId)
+			expect(requestSpan).not.toHaveSpanAttribute(
+				BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId,
+				navigationBSpan.spanId,
+			)
+			expect(requestSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, false)
+		})
+	}
 
 	test('multiple route changes each have their own duration', async ({ recordPage }) => {
 		await recordPage.goTo('/user-interaction/spa-metrics.ejs')

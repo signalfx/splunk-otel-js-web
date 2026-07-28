@@ -27,6 +27,8 @@ import {
 	BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
 	BROWSER_NAVIGATION_LONGEST_LOADED_RESOURCE_ATTRIBUTE,
 	BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE,
+	BROWSER_NAVIGATION_PAGE_SPAN_ID_ATTRIBUTE,
+	BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE,
 	BROWSER_NAVIGATION_QUIET_TIMER_RESET_COUNT_ATTRIBUTE,
 	BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
 	PAGE_LOAD_METRICS_STATUS_COMPLETED,
@@ -34,18 +36,20 @@ import {
 	PAGE_LOAD_METRICS_STATUS_TIMEOUT,
 } from './constants'
 import { ResourceState } from './monitors'
+import { setBrowserNavigationPageAttributes } from './navigation-relevance'
 import { getDocumentLoadTime, SpaMetricsManager } from './spa-metrics-manager'
 
 const TEST_API_URL = `${HTTP_TEST_SERVER_URL}/some-data`
 const TEST_BEACON_ENDPOINT = `${HTTP_TEST_SERVER_URL}/v1/rum`
 
-function createSpanMock(): { attributes: Record<string, number | string>; span: Span } {
-	const attributes: Record<string, number | string> = {}
+function createSpanMock(spanId = 'span-id'): { attributes: Record<string, boolean | number | string>; span: Span } {
+	const attributes: Record<string, boolean | number | string> = {}
 	const span = {
-		setAttribute: (name: string, value: number | string) => {
+		setAttribute: (name: string, value: boolean | number | string) => {
 			attributes[name] = value
 			return span
 		},
+		spanContext: () => ({ spanId }),
 	} as Span
 
 	return { attributes, span }
@@ -502,6 +506,194 @@ describe('SpaMetricsManager', () => {
 		} finally {
 			manager.stop()
 		}
+	})
+
+	it('retains the current navigation span id after PCT completes', async () => {
+		const manager = new SpaMetricsManager({ monitors: [], quietTime: 1 })
+		const { span } = createSpanMock('navigation-span-id')
+		manager.start()
+
+		try {
+			const promise = manager.waitForPageLoad({ span, startTime: performance.now() })
+
+			expect(manager.getCurrentNavigationSpanId()).toBe('navigation-span-id')
+
+			await promise
+
+			expect(manager.getCurrentNavigationSpanId()).toBe('navigation-span-id')
+		} finally {
+			manager.stop()
+		}
+	})
+
+	it('sets the page span id and PCT relevance on spans before and after PCT', () => {
+		const manager = new SpaMetricsManager()
+		const { span: navigationSpan } = createSpanMock('navigation-span-id')
+		const { attributes: duringPctAttributes, span: duringPctSpan } = createSpanMock('during-pct-span-id')
+		const { attributes: afterPctAttributes, span: afterPctSpan } = createSpanMock('after-pct-span-id')
+
+		manager.setCurrentNavigationSpan(navigationSpan, 100)
+		setBrowserNavigationPageAttributes(duringPctSpan, manager, 150, { type: 'document' })
+		manager.completeCurrentNavigationPct(navigationSpan, 200)
+		setBrowserNavigationPageAttributes(afterPctSpan, manager, 250, { type: 'document' })
+
+		expect(duringPctAttributes[BROWSER_NAVIGATION_PAGE_SPAN_ID_ATTRIBUTE]).toBe('navigation-span-id')
+		expect(duringPctAttributes[BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE]).toBe(true)
+		expect(afterPctAttributes[BROWSER_NAVIGATION_PAGE_SPAN_ID_ATTRIBUTE]).toBe('navigation-span-id')
+		expect(afterPctAttributes[BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE]).toBe(false)
+	})
+
+	it('derives PCT relevance from resource admission decisions', () => {
+		const manager = new SpaMetricsManager({
+			beaconEndpoint: 'https://rum.example/v1/rum',
+			ignoreUrls: ['/ignored'],
+			maxResourcesToWatch: 1,
+			monitors: ['network'],
+		})
+		const { span: navigationSpan } = createSpanMock('navigation-span-id')
+		manager.setCurrentNavigationSpan(navigationSpan, 100)
+
+		const resources = [
+			{ expected: true, id: 'admitted', monitorType: 'network' as const, startTime: 110, url: TEST_API_URL },
+			{ expected: false, id: 'disabled', monitorType: 'media' as const, startTime: 120, url: '/image.png' },
+			{ expected: false, id: 'ignored', monitorType: 'network' as const, startTime: 130, url: '/ignored' },
+			{
+				expected: false,
+				id: 'beacon',
+				monitorType: 'network' as const,
+				startTime: 140,
+				url: 'https://rum.example/v1/rum',
+			},
+			{ expected: false, id: 'over-limit', monitorType: 'network' as const, startTime: 150, url: '/other' },
+		]
+
+		for (const resource of resources) {
+			// @ts-expect-error onResourceStateChange is private. We use it for testing.
+			manager.onResourceStateChange({
+				id: resource.id,
+				monitorType: resource.monitorType,
+				state: ResourceState.DISCOVERED,
+				timestamp: resource.startTime,
+				url: resource.url,
+			})
+			const { attributes, span } = createSpanMock(`${resource.id}-span`)
+			setBrowserNavigationPageAttributes(span, manager, resource.startTime, {
+				monitorTypes: [resource.monitorType],
+				resourceId: resource.id,
+				type: 'resource',
+				url: resource.url,
+			})
+
+			expect(attributes[BROWSER_NAVIGATION_PAGE_SPAN_ID_ATTRIBUTE]).toBe('navigation-span-id')
+			expect(attributes[BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE]).toBe(resource.expected)
+		}
+	})
+
+	it('claims only the closest admission decision for concurrent same-URL resources', () => {
+		const manager = new SpaMetricsManager({ monitors: ['network'] })
+		const { span: navigationSpan } = createSpanMock('navigation-span-id')
+		manager.setCurrentNavigationSpan(navigationSpan, 900)
+
+		for (const [id, timestamp] of [
+			['first-request', 1000],
+			['second-request', 1050],
+		] as const) {
+			// @ts-expect-error onResourceStateChange is private. We use it for testing.
+			manager.onResourceStateChange({
+				id,
+				monitorType: 'network',
+				state: ResourceState.DISCOVERED,
+				timestamp,
+				url: TEST_API_URL,
+			})
+		}
+
+		const { attributes: firstAttributes, span: firstSpan } = createSpanMock('first-request-span')
+		setBrowserNavigationPageAttributes(firstSpan, manager, 1002, {
+			monitorTypes: ['network'],
+			type: 'resource',
+			url: TEST_API_URL,
+		})
+
+		const { attributes: secondAttributes, span: secondSpan } = createSpanMock('second-request-span')
+		setBrowserNavigationPageAttributes(secondSpan, manager, 1052, {
+			monitorTypes: ['network'],
+			type: 'resource',
+			url: TEST_API_URL,
+		})
+
+		expect(firstAttributes[BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE]).toBe(true)
+		expect(secondAttributes[BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE]).toBe(true)
+	})
+
+	it('marks non-resource spans as not PCT relevant', () => {
+		const manager = new SpaMetricsManager()
+		const { span: navigationSpan } = createSpanMock('navigation-span-id')
+		const { attributes, span } = createSpanMock('long-task-span-id')
+
+		manager.setCurrentNavigationSpan(navigationSpan, 100)
+		setBrowserNavigationPageAttributes(span, manager, 150)
+
+		expect(attributes[BROWSER_NAVIGATION_PAGE_SPAN_ID_ATTRIBUTE]).toBe('navigation-span-id')
+		expect(attributes[BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE]).toBe(false)
+	})
+
+	it('does not complete the PCT state for a newer navigation', () => {
+		const manager = new SpaMetricsManager()
+		const { span: previousNavigationSpan } = createSpanMock('previous-navigation-span-id')
+		const { span: currentNavigationSpan } = createSpanMock('current-navigation-span-id')
+
+		manager.setCurrentNavigationSpan(previousNavigationSpan, 100)
+		manager.setCurrentNavigationSpan(currentNavigationSpan, 200)
+		manager.completeCurrentNavigationPct(previousNavigationSpan, 250)
+
+		expect(manager.getCurrentNavigationSpanId()).toBe('current-navigation-span-id')
+		expect(manager.getNavigationPageAttributes(225, { type: 'document' })).toEqual({
+			pageSpanId: 'current-navigation-span-id',
+			pctRelevant: true,
+		})
+	})
+
+	it('looks up the page span by start time but only marks the current navigation relevant', () => {
+		const manager = new SpaMetricsManager()
+		const { span: firstNavigationSpan } = createSpanMock('first-navigation-span-id')
+		const { span: secondNavigationSpan } = createSpanMock('second-navigation-span-id')
+
+		manager.setCurrentNavigationSpan(firstNavigationSpan, 100)
+		manager.completeCurrentNavigationPct(firstNavigationSpan, 175)
+		manager.setCurrentNavigationSpan(secondNavigationSpan, 200)
+
+		expect(manager.getNavigationPageAttributes(150, { type: 'document' })).toEqual({
+			pageSpanId: 'first-navigation-span-id',
+			pctRelevant: false,
+		})
+		expect(manager.getNavigationPageAttributes(190, { type: 'document' })).toEqual({
+			pageSpanId: 'first-navigation-span-id',
+			pctRelevant: false,
+		})
+		expect(manager.getNavigationPageAttributes(200, { type: 'document' })).toEqual({
+			pageSpanId: 'second-navigation-span-id',
+			pctRelevant: true,
+		})
+		expect(manager.getNavigationPageAttributes(50, { type: 'document' })).toBeUndefined()
+	})
+
+	it('retains only the ten most recent navigation entries', () => {
+		const manager = new SpaMetricsManager()
+
+		for (let index = 0; index < 11; index++) {
+			manager.setCurrentNavigationSpan(createSpanMock(`navigation-${index}`).span, index * 100)
+		}
+
+		expect(manager.getNavigationPageAttributes(50, { type: 'document' })).toBeUndefined()
+		expect(manager.getNavigationPageAttributes(150, { type: 'document' })).toEqual({
+			pageSpanId: 'navigation-1',
+			pctRelevant: false,
+		})
+		expect(manager.getNavigationPageAttributes(1050, { type: 'document' })).toEqual({
+			pageSpanId: 'navigation-10',
+			pctRelevant: true,
+		})
 	})
 
 	it('waitForPageLoad sets loaded resource attributes when quiet period completes', async () => {

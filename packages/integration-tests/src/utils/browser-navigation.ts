@@ -25,6 +25,8 @@ export const BROWSER_NAVIGATION_ATTRIBUTES = {
 	loadingResourceUrls: 'browser.navigation.loading_resource_urls',
 	longestLoadedResource: 'browser.navigation.longest_loaded_resource',
 	pageCompletionTime: 'browser.navigation.page_completion_time',
+	pageSpanId: 'browser.navigation.page_span_id',
+	pctRelevant: 'browser.navigation.pct_relevant',
 	quietTimerResetCount: 'browser.navigation.quiet_timer_reset_count',
 	status: 'browser.navigation.status',
 } as const

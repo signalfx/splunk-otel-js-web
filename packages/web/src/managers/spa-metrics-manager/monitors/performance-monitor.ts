@@ -20,9 +20,8 @@ import { diag } from '@opentelemetry/api'
 
 import type { SpaMetricsMonitor } from '../../../types'
 
+import { getPctMonitorTypes } from '../resource-monitor-types'
 import { Monitor } from './monitor'
-
-const RESOURCE_TYPES_TO_MONITOR = new Set(['css', 'font', 'img', 'link', 'other'])
 
 export class PerformanceMonitor extends Monitor {
 	protected readonly monitorType: SpaMetricsMonitor = 'performance'
@@ -74,13 +73,13 @@ export class PerformanceMonitor extends Monitor {
 	private handleResourceEntry(entry: PerformanceResourceTiming): void {
 		const url = entry.name
 
-		if (!RESOURCE_TYPES_TO_MONITOR.has(entry.initiatorType)) {
+		if (!getPctMonitorTypes(entry.initiatorType).includes(this.monitorType)) {
 			return
 		}
 
 		const loadTime = entry.responseEnd - entry.startTime
 
-		const event = Monitor.createDiscoveredEvent(url)
+		const event = Monitor.createDiscoveredEvent(url, entry.fetchStart)
 		this.emitResourceStateChange(event)
 		this.emitResourceStateChange(Monitor.createLoadedEvent(event.id, url, loadTime, entry.responseEnd))
 

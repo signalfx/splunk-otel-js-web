@@ -30,6 +30,8 @@ import { addSpanNetworkEvents, PerformanceEntries, PerformanceTimingNames as PTN
 import { SemanticAttributes, SEMATTRS_HTTP_URL } from '@opentelemetry/semantic-conventions'
 
 import { SessionManager, SpaMetricsManager } from '../managers'
+import { setBrowserNavigationPageAttributes } from '../managers/spa-metrics-manager/navigation-relevance'
+import { getPctMonitorTypes } from '../managers/spa-metrics-manager/resource-monitor-types'
 import { captureTraceParentFromPerformanceEntries } from '../servertiming'
 import { SplunkOtelWebConfig } from '../types'
 import { isCacheHit } from '../utils/cache'
@@ -101,6 +103,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 			if (span && spanName === AttributeNames.DOCUMENT_LOAD) {
 				span.setAttribute('component', this.component)
 				addExtraDocLoadTags(span)
+				this.spaMetricsManager?.setCurrentNavigationSpan(span, 0)
 				// The span processor's automatic onStart event already ran before
 				// `component` was set, so emit manually now that SpanEmitter can
 				// route this as `document-load:start`.
@@ -132,6 +135,31 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 			}
 
 			if (span && exposedSpan.name !== AttributeNames.DOCUMENT_LOAD) {
+				const isResourceFetch = exposedSpan.name === AttributeNames.RESOURCE_FETCH
+				const fetchStart = (entries as unknown as Record<string, unknown>)[PTN.FETCH_START]
+
+				if (typeof fetchStart === 'number') {
+					// Firefox can report a cached document fetch slightly before performance.timeOrigin.
+					// The initial navigation begins at 0 in the manager's relative time coordinate, so
+					// normalize only documentFetch to that boundary. Resource fetches keep their exact
+					// start time so overlapping navigations continue to resolve correctly.
+					const navigationStartTime = isResourceFetch ? fetchStart : Math.max(fetchStart, 0)
+					setBrowserNavigationPageAttributes(
+						span,
+						this.spaMetricsManager,
+						navigationStartTime,
+						isResourceFetch
+							? {
+									monitorTypes: getPctMonitorTypes(
+										(entries as unknown as PerformanceResourceTiming).initiatorType,
+									),
+									type: 'resource',
+									url: (entries as unknown as PerformanceResourceTiming).name,
+								}
+							: { type: 'document' },
+					)
+				}
+
 				// only apply links to document/resource fetch
 				// To maintain compatibility, getEntries copies out select items from
 				// different versions of the performance API into its own structure for the
@@ -162,10 +190,12 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 					void this.documentLoadMetricsPromise
 						.then((pageLoadMetrics) => {
 							this.spaMetricsManager?.setPageLoadMetricAttributes(span, pageLoadMetrics)
+							this.spaMetricsManager?.completeCurrentNavigationPct(span, pageLoadMetrics.pct)
 							api.diag.debug('Sending documentLoad span with PCT result', pageLoadMetrics)
 							_superEndSpan(span, performanceName, entries)
 						})
 						.catch((error) => {
+							this.spaMetricsManager?.completeCurrentNavigationPct(span)
 							api.diag.warn('SplunkDocumentLoadInstrumentation: Failed to resolve page load metrics.', {
 								error,
 							})
