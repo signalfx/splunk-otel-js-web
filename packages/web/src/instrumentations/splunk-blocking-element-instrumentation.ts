@@ -41,6 +41,8 @@ const PAGEHIDE_LISTENER_REMOVE_OPTIONS: EventListenerOptions = { capture: true }
  * derives per-element span lifecycle from the per-element events it receives.
  */
 export class SplunkBlockingElementInstrumentation extends InstrumentationBase<SplunkBlockingElementInstrumentationConfig> {
+	private readonly activeSelectorsByElement = new Map<Element, Set<string>>()
+
 	private readonly consumerId = Symbol('splunk-blocking-element')
 
 	private elementSpanTracker: ElementSpanTracker | undefined
@@ -75,6 +77,7 @@ export class SplunkBlockingElementInstrumentation extends InstrumentationBase<Sp
 		this.elementSpanTracker?.interruptAll()
 		this.elementSpanTracker = undefined
 		this.selectors = []
+		this.activeSelectorsByElement.clear()
 		this.elementVisibilityObserver.unwatch(this.consumerId)
 	}
 
@@ -112,18 +115,29 @@ export class SplunkBlockingElementInstrumentation extends InstrumentationBase<Sp
 			return
 		}
 
-		const { element, visible } = event
+		const { element, selector, visible } = event
 		const now = performance.now()
 
 		if (!visible) {
-			// Visibility is a property of the element, not the (selector, element) pair — an element
-			// stopping matching one selector while still matching another can't happen from a single
-			// visible:false event, so no re-check against other selectors is needed here.
+			// The observer's events are per (selector, element) pair, not per element — an element
+			// matching two configured selectors can drop out of one while still matching the other,
+			// producing a visible:false for only the dropped selector. Only complete the span once
+			// the element's active-selector set is empty, i.e. it no longer matches anything configured.
+			const activeSelectors = this.activeSelectorsByElement.get(element)
+			activeSelectors?.delete(selector)
+			if (activeSelectors && activeSelectors.size > 0) {
+				return
+			}
+
+			this.activeSelectorsByElement.delete(element)
 			elementSpanTracker.completeSpan(element, now)
 			return
 		}
 
-		const matchedSelectors = this.selectors.filter((selector) => this.matchesSelector(element, selector))
+		const matchedSelectors = this.selectors.filter((matchedSelector) =>
+			this.matchesSelector(element, matchedSelector),
+		)
+		this.activeSelectorsByElement.set(element, new Set(matchedSelectors))
 		elementSpanTracker.startSpan(element, matchedSelectors, now)
 	}
 

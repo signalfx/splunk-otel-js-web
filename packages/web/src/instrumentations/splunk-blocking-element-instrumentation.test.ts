@@ -163,6 +163,42 @@ describe('SplunkBlockingElementInstrumentation', () => {
 		expect(finishedSpans[0].attributes['browser.element.selector']).toBe(`${SELECTOR},${OTHER_SELECTOR}`)
 	})
 
+	it('keeps the span open when an element drops one of two matched selectors but still matches the other', async () => {
+		const element = createVisibleElement()
+		element.dataset.loading = ''
+		instrumentation = new SplunkBlockingElementInstrumentation(
+			{},
+			{ spaMetrics: { blockingSelectors: [SELECTOR, OTHER_SELECTOR], monitors: ['elements'] } },
+			undefined,
+			undefined,
+			elementVisibilityObserver,
+		)
+		instrumentation.setTracerProvider(provider)
+		instrumentation.enable()
+
+		await vi.waitFor(() => {
+			// @ts-expect-error elementSpanTracker is private. We use it for testing.
+			expect(instrumentation.elementSpanTracker.openCount).toBe(1)
+		})
+
+		// Drops OTHER_SELECTOR ([data-loading]) while remaining visible under SELECTOR (.loading-spinner).
+		delete element.dataset.loading
+		await new Promise((resolve) => setTimeout(resolve, 20))
+
+		expect(getFinishedSpans()).toHaveLength(0)
+		// @ts-expect-error elementSpanTracker is private. We use it for testing.
+		expect(instrumentation.elementSpanTracker.has(element)).toBe(true)
+
+		// Now drops SELECTOR too, matching nothing configured — the span should finally complete.
+		element.remove()
+
+		await vi.waitFor(() => {
+			expect(getFinishedSpans()).toHaveLength(1)
+		})
+		const [span] = getFinishedSpans()
+		expect(span.attributes['browser.element.completion']).toBe('completed')
+	})
+
 	it('completes the span for an element removed from the DOM', async () => {
 		const element = createVisibleElement()
 		instrumentation = new SplunkBlockingElementInstrumentation(

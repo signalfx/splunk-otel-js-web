@@ -85,19 +85,6 @@ export class ElementSpanTracker {
 		}
 	}
 
-	/**
-	 * Interrupts every open span whose element currently matches the given selector. No caller in
-	 * this instrumentation's v1 scope — kept as the seam a future per-route selector re-resolution
-	 * ticket would call for each selector that falls out of a newly resolved list.
-	 */
-	interruptAllForSelector(selector: string): void {
-		for (const element of this.trackedElements()) {
-			if (this.tracked.get(element)?.accumulatedSelectors.has(selector)) {
-				this.interruptSpan(element)
-			}
-		}
-	}
-
 	interruptSpan(element: Element): void {
 		this.endSpan(element, BROWSER_ELEMENT_COMPLETION_INTERRUPTED)
 	}

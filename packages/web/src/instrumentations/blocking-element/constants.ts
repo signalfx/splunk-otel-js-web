@@ -29,6 +29,7 @@ export const BROWSER_ELEMENT_COMPLETION_COMPLETED = 'completed'
 export const BROWSER_ELEMENT_COMPLETION_INTERRUPTED = 'interrupted'
 export const BROWSER_ELEMENT_COMPLETION_TIMEOUT = 'timeout'
 
+// TODO: revisit whether 1000 is the right cap — may be too high.
 /** Sanity cap on concurrently open element spans; startSpan no-ops past this. */
 export const MAX_OPEN_ELEMENT_SPANS = 1000
 

@@ -134,27 +134,6 @@ describe('ElementSpanTracker', () => {
 		expect(tracker.has(element)).toBe(false)
 	})
 
-	it('interrupts every open span whose accumulated selectors include the given selector', () => {
-		const tracker = createTracker()
-		const first = createElement()
-		const second = createElement()
-		const other = createElement()
-
-		tracker.startSpan(first, [SELECTOR], performance.now())
-		tracker.startSpan(second, [SELECTOR], performance.now())
-		tracker.startSpan(other, [OTHER_SELECTOR], performance.now())
-
-		tracker.interruptAllForSelector(SELECTOR)
-
-		const finishedSpans = getFinishedSpans()
-		expect(finishedSpans).toHaveLength(2)
-		expect(finishedSpans.every((span) => span.attributes['browser.element.completion'] === 'interrupted')).toBe(
-			true,
-		)
-		expect(tracker.openCount).toBe(1)
-		expect(tracker.has(other)).toBe(true)
-	})
-
 	it('interrupts every open span across all selectors', () => {
 		const tracker = createTracker()
 		const first = createElement()
