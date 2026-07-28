@@ -145,7 +145,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 
 	it('starts exactly one span for an element matching two configured selectors', () => {
 		const element = createVisibleElement()
-		element.setAttribute('data-loading', '')
+		element.dataset.loading = ''
 		instrumentation = new SplunkBlockingElementInstrumentation(
 			{},
 			{ spaMetrics: { blockingSelectors: [SELECTOR, OTHER_SELECTOR], monitors: ['elements'] } },
@@ -241,5 +241,56 @@ describe('SplunkBlockingElementInstrumentation', () => {
 		await new Promise((resolve) => setTimeout(resolve, 20))
 
 		expect(getFinishedSpans()).toHaveLength(0)
+	})
+
+	describe('pagehide', () => {
+		it('interrupts open spans on pagehide without unwatching the shared observer', async () => {
+			const element = createVisibleElement()
+			instrumentation = new SplunkBlockingElementInstrumentation(
+				{},
+				{ spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
+				undefined,
+				undefined,
+				elementVisibilityObserver,
+			)
+			instrumentation.setTracerProvider(provider)
+			instrumentation.enable()
+
+			// @ts-expect-error elementSpanTracker is private. We use it for testing.
+			expect(instrumentation.elementSpanTracker.has(element)).toBe(true)
+
+			window.dispatchEvent(new Event('pagehide'))
+
+			const finishedSpans = getFinishedSpans()
+			expect(finishedSpans).toHaveLength(1)
+			expect(finishedSpans[0].attributes['browser.element.completion']).toBe('interrupted')
+
+			// The observer subscription must survive pagehide (unlike disable()), so a subsequent
+			// mutation on the still-live page still gets tracked — e.g. a bfcache-restored page.
+			createVisibleElement()
+			await vi.waitFor(() => {
+				// @ts-expect-error elementSpanTracker is private. We use it for testing.
+				expect(instrumentation.elementSpanTracker.openCount).toBe(1)
+			})
+		})
+
+		it('does not act on pagehide once disabled', () => {
+			createVisibleElement()
+			instrumentation = new SplunkBlockingElementInstrumentation(
+				{},
+				{ spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
+				undefined,
+				undefined,
+				elementVisibilityObserver,
+			)
+			instrumentation.setTracerProvider(provider)
+			instrumentation.enable()
+			instrumentation.disable()
+
+			// disable() already interrupted the one open span; a later pagehide must not throw or
+			// produce a second span for the same (already-untracked) element.
+			expect(() => window.dispatchEvent(new Event('pagehide'))).not.toThrow()
+			expect(getFinishedSpans()).toHaveLength(1)
+		})
 	})
 })

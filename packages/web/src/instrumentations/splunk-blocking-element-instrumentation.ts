@@ -26,7 +26,15 @@ import type { SplunkBlockingElementInstrumentationConfig, SplunkOtelWebConfig } 
 import { VERSION } from '../version'
 import { BLOCKING_ELEMENT_MODULE_NAME } from './blocking-element/constants'
 import { ElementSpanTracker } from './blocking-element/element-span-tracker'
-import { isBlockingElementInstrumentationEnabled, resolveBlockingElementSelectors } from './blocking-element/support'
+import {
+	isBlockingElementInstrumentationEnabled,
+	resolveBlockingElementSelectors,
+	resolveMaxElementSpanDuration,
+} from './blocking-element/support'
+
+// once: true means the browser removes this listener for us after it fires; no re-entry guard needed.
+const PAGEHIDE_LISTENER_OPTIONS: AddEventListenerOptions = { capture: true, once: true }
+const PAGEHIDE_LISTENER_REMOVE_OPTIONS: EventListenerOptions = { capture: true }
 
 /**
  * DOM watching itself is delegated to the shared ElementVisibilityObserver — this class only
@@ -59,6 +67,8 @@ export class SplunkBlockingElementInstrumentation extends InstrumentationBase<Sp
 	}
 
 	disable(): void {
+		window.removeEventListener('pagehide', this.handlePagehide, PAGEHIDE_LISTENER_REMOVE_OPTIONS)
+
 		// Interrupt before unwatch() so open spans end as 'interrupted', not 'completed' — unwatch()'s
 		// synthesized visible:false events would otherwise reach handleVisibilityChange and complete
 		// them as if they'd resolved normally, same ordering LoadingElementMonitor.stop() relies on.
@@ -78,11 +88,23 @@ export class SplunkBlockingElementInstrumentation extends InstrumentationBase<Sp
 			return
 		}
 
-		this.elementSpanTracker = new ElementSpanTracker(this.tracer, this.selectors)
+		this.elementSpanTracker = new ElementSpanTracker(
+			this.tracer,
+			this.selectors,
+			resolveMaxElementSpanDuration(this.otelConfig),
+		)
 		this.elementVisibilityObserver.watch(this.consumerId, this.selectors, this.handleVisibilityChange)
+		window.addEventListener('pagehide', this.handlePagehide, PAGEHIDE_LISTENER_OPTIONS)
 	}
 
 	init(): void {}
+
+	// Ends open spans as 'interrupted' without unwatching the shared observer — pagehide doesn't
+	// guarantee the page is truly gone (bfcache can restore it later), so leave the subscription
+	// intact rather than tearing down as if disable() had been called.
+	private readonly handlePagehide = (): void => {
+		this.elementSpanTracker?.interruptAll()
+	}
 
 	private readonly handleVisibilityChange = (event: ElementVisibilityChangeEvent): void => {
 		const elementSpanTracker = this.elementSpanTracker

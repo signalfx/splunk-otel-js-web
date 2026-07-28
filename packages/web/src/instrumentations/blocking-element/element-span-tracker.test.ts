@@ -23,12 +23,14 @@ import {
 	type ReadableSpan,
 	SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ElementSpanTracker } from './element-span-tracker'
 
 const SELECTOR = '.loading-spinner'
 const OTHER_SELECTOR = '[data-loading]'
+// Large enough that no test below triggers it by accident; timeout-specific tests pass their own.
+const DEFAULT_TEST_MAX_ELEMENT_SPAN_DURATION = 60_000
 
 const createElement = (options: { className?: string; id?: string } = {}): HTMLElement => {
 	const element = document.createElement('div')
@@ -43,8 +45,11 @@ describe('ElementSpanTracker', () => {
 
 	const getFinishedSpans = (): ReadableSpan[] => exporter.getFinishedSpans()
 
-	const createTracker = (configuredSelectors: string[] = [SELECTOR, OTHER_SELECTOR]): ElementSpanTracker =>
-		new ElementSpanTracker(provider.getTracer('test'), configuredSelectors)
+	const createTracker = (
+		configuredSelectors: string[] = [SELECTOR, OTHER_SELECTOR],
+		maxElementSpanDuration: number = DEFAULT_TEST_MAX_ELEMENT_SPAN_DURATION,
+	): ElementSpanTracker =>
+		new ElementSpanTracker(provider.getTracer('test'), configuredSelectors, maxElementSpanDuration)
 
 	beforeEach(() => {
 		exporter = new InMemorySpanExporter()
@@ -246,7 +251,6 @@ describe('ElementSpanTracker', () => {
 			const [span] = getFinishedSpans()
 			expect(span.attributes['browser.element.selector']).toBe(`${SELECTOR},${OTHER_SELECTOR}`)
 		})
-
 	})
 
 	describe('MAX_OPEN_ELEMENT_SPANS cap', () => {
@@ -279,6 +283,56 @@ describe('ElementSpanTracker', () => {
 			tracker.startSpan(elements[0], [SELECTOR, OTHER_SELECTOR], performance.now())
 
 			expect(tracker.openCount).toBe(1000)
+		})
+	})
+
+	describe('maxElementSpanDuration timeout', () => {
+		afterEach(() => {
+			vi.useRealTimers()
+		})
+
+		it('ends a span with completion="timeout" once maxElementSpanDuration elapses', () => {
+			vi.useFakeTimers()
+			const tracker = createTracker([SELECTOR, OTHER_SELECTOR], 5000)
+			const element = createElement()
+
+			tracker.startSpan(element, [SELECTOR], performance.now())
+			vi.advanceTimersByTime(5000)
+
+			const [span] = getFinishedSpans()
+			expect(span.attributes['browser.element.completion']).toBe('timeout')
+			expect(tracker.has(element)).toBe(false)
+			expect(tracker.openCount).toBe(0)
+		})
+
+		it('does not time out a span that completes before maxElementSpanDuration elapses', () => {
+			vi.useFakeTimers()
+			const tracker = createTracker([SELECTOR, OTHER_SELECTOR], 5000)
+			const element = createElement()
+
+			tracker.startSpan(element, [SELECTOR], performance.now())
+			vi.advanceTimersByTime(1000)
+			tracker.completeSpan(element, performance.now())
+			vi.advanceTimersByTime(5000)
+
+			const finishedSpans = getFinishedSpans()
+			expect(finishedSpans).toHaveLength(1)
+			expect(finishedSpans[0].attributes['browser.element.completion']).toBe('completed')
+		})
+
+		it('does not time out a span that is interrupted before maxElementSpanDuration elapses', () => {
+			vi.useFakeTimers()
+			const tracker = createTracker([SELECTOR, OTHER_SELECTOR], 5000)
+			const element = createElement()
+
+			tracker.startSpan(element, [SELECTOR], performance.now())
+			vi.advanceTimersByTime(1000)
+			tracker.interruptSpan(element)
+			vi.advanceTimersByTime(5000)
+
+			const finishedSpans = getFinishedSpans()
+			expect(finishedSpans).toHaveLength(1)
+			expect(finishedSpans[0].attributes['browser.element.completion']).toBe('interrupted')
 		})
 	})
 })

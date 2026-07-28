@@ -18,6 +18,8 @@
 
 import type { SpaMetricsOptions, SplunkOtelWebConfig } from '../../types'
 
+import { DEFAULT_MAX_ELEMENT_SPAN_DURATION } from './constants'
+
 function isUrlOverrideMatch(match: string | RegExp, url: string): boolean {
 	if (typeof match === 'string') {
 		return url.includes(match)
@@ -56,6 +58,18 @@ export function isBlockingElementInstrumentationEnabled(otelConfig: SplunkOtelWe
 	}
 
 	return blockingElement
+}
+
+// Reads the raw instrumentations.blockingElement value, same reasoning as
+// isBlockingElementInstrumentationEnabled above — this._config.maxElementSpanDuration would be
+// stripped/defaulted before the user's own value could be observed.
+export function resolveMaxElementSpanDuration(otelConfig: SplunkOtelWebConfig): number {
+	const blockingElement = otelConfig.instrumentations?.blockingElement
+	if (typeof blockingElement === 'object' && blockingElement.maxElementSpanDuration !== undefined) {
+		return blockingElement.maxElementSpanDuration
+	}
+
+	return DEFAULT_MAX_ELEMENT_SPAN_DURATION
 }
 
 // Resolved once for the URL active when called; not re-evaluated on later SPA navigations.

@@ -26,6 +26,7 @@ import {
 	BROWSER_ELEMENT_COMPLETION_ATTRIBUTE,
 	BROWSER_ELEMENT_COMPLETION_COMPLETED,
 	BROWSER_ELEMENT_COMPLETION_INTERRUPTED,
+	BROWSER_ELEMENT_COMPLETION_TIMEOUT,
 	BROWSER_ELEMENT_ID_ATTRIBUTE,
 	BROWSER_ELEMENT_SELECTOR_ATTRIBUTE,
 	BROWSER_ELEMENT_TAG_ATTRIBUTE,
@@ -36,6 +37,7 @@ import {
 type TrackedElement = {
 	accumulatedSelectors: Set<string>
 	span: Span
+	timeoutId: ReturnType<typeof setTimeout>
 }
 
 /** `SVGElement.className` is an `SVGAnimatedString` at runtime; `animVal` gives the live value. */
@@ -46,7 +48,7 @@ function getElementClass(element: Element): string {
 
 /**
  * Creates one span per DOM element matching any configured blocking selector, regardless of how
- * many configured selectors it matches. 
+ * many configured selectors it matches.
  */
 export class ElementSpanTracker {
 	private hasWarnedAtCapacity = false
@@ -58,10 +60,15 @@ export class ElementSpanTracker {
 	 * `accumulatedSelectors` deterministically at completion time — `Set` iteration order reflects
 	 * insertion order, not configuration order, so it cannot be used directly for the exported
 	 * attribute.
+	 *
+	 * maxElementSpanDuration bounds how long any single element span can stay open — without it, an
+	 * element that never disappears (and is never interrupted via disable()/pagehide) would produce
+	 * no telemetry at all, the one case a duration-measuring feature can least afford to miss.
 	 */
 	constructor(
 		private readonly tracer: Tracer,
 		private readonly configuredSelectors: string[],
+		private readonly maxElementSpanDuration: number,
 	) {}
 
 	completeSpan(element: Element, endTimeRelative: number): void {
@@ -137,7 +144,11 @@ export class ElementSpanTracker {
 		span.setAttribute(BROWSER_ELEMENT_TAG_ATTRIBUTE, element.tagName)
 		span.setAttribute(BROWSER_ELEMENT_XPATH_ATTRIBUTE, getElementXPath(element, true))
 
-		this.tracked.set(element, { accumulatedSelectors: new Set(matchedSelectors), span })
+		const timeoutId = setTimeout(() => {
+			this.endSpan(element, BROWSER_ELEMENT_COMPLETION_TIMEOUT, performance.now())
+		}, this.maxElementSpanDuration)
+
+		this.tracked.set(element, { accumulatedSelectors: new Set(matchedSelectors), span, timeoutId })
 	}
 
 	/** Snapshot of currently tracked elements, safe to iterate while mutating the map. */
@@ -151,6 +162,7 @@ export class ElementSpanTracker {
 			return
 		}
 
+		clearTimeout(tracked.timeoutId)
 		this.tracked.delete(element)
 
 		const selectorValue = this.configuredSelectors

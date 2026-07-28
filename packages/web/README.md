@@ -214,6 +214,8 @@ Selectors always come from `spaMetrics.blockingSelectors` — there is no separa
 
 If an element matches more than one configured selector, it still gets exactly one span — `browser.element.selector` lists every matched selector as a comma-separated value (in the order the selectors are configured), reflecting every selector the element matched at any point while the span was open, not just the one active when it completed. Concurrently open spans are capped at 1000 elements; once reached, additional elements are silently dropped from tracking until an existing one completes, with a single warning logged. Each span also includes `browser.element.xpath`, an XPath locator for the element.
 
+Every span ends with a `browser.element.completion` attribute: `completed` (the element disappeared normally), `interrupted` (the instrumentation was disabled, or the page was hidden/unloaded, while the span was still open), or `timeout` (the element stayed visible longer than `maxElementSpanDuration`, default 180000ms/3 minutes — configurable via `instrumentations.blockingElement: { maxElementSpanDuration: <ms> }`). The timeout guards against an element that never disappears producing no telemetry at all.
+
 ### Long Animation Frames
 
 The `loaf` instrumentation reports browser Long Animation Frames as `long-animation-frame` spans. It is the preferred path for long task visibility, replacing the deprecated `longtask` instrumentation where browser support is available. It is opt-in because browser support is currently Chromium-only.

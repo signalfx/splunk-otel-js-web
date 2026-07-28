@@ -20,7 +20,11 @@ import { afterEach, describe, expect, it } from 'vitest'
 
 import type { SplunkOtelWebConfig } from '../../types'
 
-import { isBlockingElementInstrumentationEnabled, resolveBlockingElementSelectors } from './support'
+import {
+	isBlockingElementInstrumentationEnabled,
+	resolveBlockingElementSelectors,
+	resolveMaxElementSpanDuration,
+} from './support'
 
 afterEach(() => {
 	location.hash = ''
@@ -196,5 +200,26 @@ describe('resolveBlockingElementSelectors', () => {
 			},
 		}
 		expect(resolveBlockingElementSelectors(config)).toEqual(['.loading-spinner'])
+	})
+})
+
+describe('resolveMaxElementSpanDuration', () => {
+	it('returns the default when blockingElement is unset', () => {
+		expect(resolveMaxElementSpanDuration({})).toBe(180_000)
+	})
+
+	it('returns the default when blockingElement is a boolean', () => {
+		expect(resolveMaxElementSpanDuration({ instrumentations: { blockingElement: true } })).toBe(180_000)
+	})
+
+	it('returns the default when blockingElement is an object without maxElementSpanDuration', () => {
+		expect(resolveMaxElementSpanDuration({ instrumentations: { blockingElement: {} } })).toBe(180_000)
+	})
+
+	it('returns the configured override', () => {
+		const config: SplunkOtelWebConfig = {
+			instrumentations: { blockingElement: { maxElementSpanDuration: 5000 } },
+		}
+		expect(resolveMaxElementSpanDuration(config)).toBe(5000)
 	})
 })

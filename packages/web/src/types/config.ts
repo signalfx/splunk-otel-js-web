@@ -60,6 +60,14 @@ export interface SplunkBlockingElementInstrumentationConfig extends Instrumentat
 	 * blockingSelectors is non-empty) when unset.
 	 */
 	enabled?: boolean
+
+	/**
+	 * Maximum duration, in milliseconds, an element span can stay open before it's forcibly ended
+	 * with completion="timeout". Guards against a spinner that never disappears producing no
+	 * telemetry at all.
+	 * @default 180000
+	 */
+	maxElementSpanDuration?: number
 }
 
 export interface SplunkOtelWebOptionsInstrumentations {

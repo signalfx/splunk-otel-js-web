@@ -27,6 +27,10 @@ export const BROWSER_ELEMENT_XPATH_ATTRIBUTE = 'browser.element.xpath'
 export const BROWSER_ELEMENT_COMPLETION_ATTRIBUTE = 'browser.element.completion'
 export const BROWSER_ELEMENT_COMPLETION_COMPLETED = 'completed'
 export const BROWSER_ELEMENT_COMPLETION_INTERRUPTED = 'interrupted'
+export const BROWSER_ELEMENT_COMPLETION_TIMEOUT = 'timeout'
 
 /** Sanity cap on concurrently open element spans; startSpan no-ops past this. */
 export const MAX_OPEN_ELEMENT_SPANS = 1000
+
+/** Default for maxElementSpanDuration: forcibly ends a span open this long with completion="timeout". */
+export const DEFAULT_MAX_ELEMENT_SPAN_DURATION = 180_000
