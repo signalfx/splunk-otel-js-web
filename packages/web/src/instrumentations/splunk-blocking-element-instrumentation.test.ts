@@ -199,6 +199,45 @@ describe('SplunkBlockingElementInstrumentation', () => {
 		expect(span.attributes['browser.element.completion']).toBe('completed')
 	})
 
+	it('keeps one continuous span when an element swaps from one matched selector directly to another', async () => {
+		const element = createVisibleElement()
+		instrumentation = new SplunkBlockingElementInstrumentation(
+			{},
+			{ spaMetrics: { blockingSelectors: [SELECTOR, OTHER_SELECTOR], monitors: ['elements'] } },
+			undefined,
+			undefined,
+			elementVisibilityObserver,
+		)
+		instrumentation.setTracerProvider(provider)
+		instrumentation.enable()
+
+		await vi.waitFor(() => {
+			// @ts-expect-error elementSpanTracker is private. We use it for testing.
+			expect(instrumentation.elementSpanTracker.openCount).toBe(1)
+		})
+
+		// One synchronous mutation: stops matching SELECTOR, starts matching OTHER_SELECTOR — the
+		// element stays visible throughout, so this must not split into two spans.
+		element.className = TEST_ELEMENT_CLASS
+		element.dataset.loading = ''
+		await new Promise((resolve) => setTimeout(resolve, 20))
+
+		expect(getFinishedSpans()).toHaveLength(0)
+		// @ts-expect-error elementSpanTracker is private. We use it for testing.
+		expect(instrumentation.elementSpanTracker.openCount).toBe(1)
+		// @ts-expect-error elementSpanTracker is private. We use it for testing.
+		expect(instrumentation.elementSpanTracker.has(element)).toBe(true)
+
+		element.remove()
+
+		await vi.waitFor(() => {
+			expect(getFinishedSpans()).toHaveLength(1)
+		})
+		const [span] = getFinishedSpans()
+		expect(span.attributes['browser.element.completion']).toBe('completed')
+		expect(span.attributes['browser.element.selector']).toBe(`${SELECTOR},${OTHER_SELECTOR}`)
+	})
+
 	it('completes the span for an element removed from the DOM', async () => {
 		const element = createVisibleElement()
 		instrumentation = new SplunkBlockingElementInstrumentation(

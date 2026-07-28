@@ -19,7 +19,7 @@
 import { diag } from '@opentelemetry/api'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { ElementVisibilityObserver, type ElementVisibilityChangeEvent } from './element-visibility-observer'
+import { type ElementVisibilityChangeEvent, ElementVisibilityObserver } from './element-visibility-observer'
 
 const SELECTOR = '.loading-spinner'
 const OTHER_SELECTOR = '[data-loading]'
@@ -243,8 +243,29 @@ describe('ElementVisibilityObserver', () => {
 
 		watch(Symbol('consumer'), [SELECTOR, OTHER_SELECTOR], (event) => events.push(event))
 
-		const selectors = events.map((event) => event.selector).sort()
+		const selectors = events.map((event) => event.selector).toSorted()
 		expect(selectors).toEqual([SELECTOR, OTHER_SELECTOR])
+	})
+
+	it('notifies the arrival on a new selector before the departure from the old one when an element swaps selectors in one mutation', async () => {
+		const element = createVisibleElement()
+		const events: ElementVisibilityChangeEvent[] = []
+		watch(Symbol('consumer'), [SELECTOR, OTHER_SELECTOR], (event) => events.push(event))
+		expect(events).toHaveLength(1)
+
+		// One synchronous mutation: stops matching SELECTOR, starts matching OTHER_SELECTOR.
+		element.className = TEST_ELEMENT_CLASS
+		element.dataset.loading = ''
+
+		await vi.waitFor(() => {
+			expect(events).toHaveLength(3)
+		})
+
+		// The arrival on OTHER_SELECTOR must be notified before the departure from SELECTOR, even
+		// though SELECTOR is iterated first — otherwise a consumer tracking per-element active
+		// selectors could see the set go empty between the two events.
+		expect(events[1]).toMatchObject({ selector: OTHER_SELECTOR, visible: true })
+		expect(events[2]).toMatchObject({ selector: SELECTOR, visible: false })
 	})
 
 	it('does not observe DOM mutations once the last consumer unwatches', async () => {

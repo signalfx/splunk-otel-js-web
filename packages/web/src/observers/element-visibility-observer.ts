@@ -51,6 +51,22 @@ export class ElementVisibilityObserver {
 	/** Selectors already warned about, so an invalid selector only logs once. */
 	private warnedInvalidSelectors = new Set<string>()
 
+	/**
+	 * Forces a fresh scan for selector and gives consumerId full current-state events for it, as if
+	 * it had just joined — without changing its subscription. For when a consumer's own bookkeeping
+	 * was cleared independently of any real visibility change (e.g. a resource forgotten for
+	 * unrelated config reasons) and it needs to resynchronize without waiting for some future,
+	 * unrelated DOM mutation to happen to trigger a scan. No-ops if consumerId isn't watching
+	 * selector.
+	 */
+	resync(consumerId: symbol, selector: string): void {
+		if (!this.consumersBySelector.get(selector)?.has(consumerId)) {
+			return
+		}
+
+		this.scanSelector(selector, consumerId)
+	}
+
 	/** Removes a consumer entirely: drops it from every selector and forgets its callback. */
 	unwatch(consumerId: symbol): void {
 		const onChange = this.callbacks.get(consumerId)
@@ -84,22 +100,6 @@ export class ElementVisibilityObserver {
 	}
 
 	/**
-	 * Forces a fresh scan for selector and gives consumerId full current-state events for it, as if
-	 * it had just joined — without changing its subscription. For when a consumer's own bookkeeping
-	 * was cleared independently of any real visibility change (e.g. a resource forgotten for
-	 * unrelated config reasons) and it needs to resynchronize without waiting for some future,
-	 * unrelated DOM mutation to happen to trigger a scan. No-ops if consumerId isn't watching
-	 * selector.
-	 */
-	resync(consumerId: symbol, selector: string): void {
-		if (!this.consumersBySelector.get(selector)?.has(consumerId)) {
-			return
-		}
-
-		this.scanSelector(selector, consumerId)
-	}
-
-	/**
 	 * Always runs a fresh scan for selector, even if another consumer already tracks it — replaying
 	 * the cached visibleElementsBySelector instead would risk handing the joining consumer state
 	 * that's already gone stale, if a DOM mutation landed after the last scan but before this
@@ -128,13 +128,40 @@ export class ElementVisibilityObserver {
 		this.scanTimeoutId = undefined
 	}
 
+	/** Recomputes selector's visible set and reports which elements newly appeared/disappeared, without notifying anyone. */
+	private computeVisibilityDelta(selector: string): {
+		appeared: Element[]
+		currentlyVisible: Set<Element>
+		disappeared: Element[]
+	} {
+		const previouslyVisible = this.visibleElementsBySelector.get(selector) ?? new Set<Element>()
+		const currentlyVisible = this.getVisibleMatches(selector)
+		this.visibleElementsBySelector.set(selector, currentlyVisible)
+
+		const appeared: Element[] = []
+		for (const element of currentlyVisible) {
+			if (!previouslyVisible.has(element)) {
+				appeared.push(element)
+			}
+		}
+
+		const disappeared: Element[] = []
+		for (const element of previouslyVisible) {
+			if (!currentlyVisible.has(element)) {
+				disappeared.push(element)
+			}
+		}
+
+		return { appeared, currentlyVisible, disappeared }
+	}
+
 	/**
 	 * Removes consumerId from selector's watchers and, if it was previously watching a currently
 	 * visible element under that selector, emits one final `visible: false` event for it so the
 	 * dropping consumer can tear its own state down without needing to re-scan.
 	 */
 	private dropConsumerFromAllSelectors(consumerId: symbol, onChange: ElementVisibilityCallback): void {
-		for (const selector of [...this.consumersBySelector.keys()]) {
+		for (const selector of this.consumersBySelector.keys()) {
 			if (this.consumersBySelector.get(selector)?.has(consumerId)) {
 				this.dropConsumerFromSelector(consumerId, selector, onChange)
 			}
@@ -180,6 +207,15 @@ export class ElementVisibilityObserver {
 		return new Set(Array.from(elements).filter((element) => this.isElementVisible(element)))
 	}
 
+	/** Isolates one consumer's callback so a thrown error can't stop other consumers from being notified. */
+	private invokeCallback(consumerId: symbol, event: ElementVisibilityChangeEvent): void {
+		try {
+			this.callbacks.get(consumerId)?.(event)
+		} catch (error) {
+			diag.warn('ElementVisibilityObserver: Consumer callback threw.', { error })
+		}
+	}
+
 	private isElementVisible(element: Element): boolean {
 		if (!element.isConnected || element.hasAttribute('hidden') || element.getClientRects().length === 0) {
 			return false
@@ -189,6 +225,12 @@ export class ElementVisibilityObserver {
 		return style.display !== 'none' && style.visibility !== 'hidden' && style.visibility !== 'collapse'
 	}
 
+	private notify(consumers: Set<symbol>, event: ElementVisibilityChangeEvent): void {
+		for (const consumerId of consumers) {
+			this.invokeCallback(consumerId, event)
+		}
+	}
+
 	/**
 	 * joiningConsumerId, if given, gets full current-state visible:true events for every currently
 	 * visible element (it has no prior state to diff against) and is excluded from the ordinary
@@ -196,9 +238,7 @@ export class ElementVisibilityObserver {
 	 * already-visible and part of this scan's true delta.
 	 */
 	private scanSelector(selector: string, joiningConsumerId?: symbol): void {
-		const previouslyVisible = this.visibleElementsBySelector.get(selector) ?? new Set<Element>()
-		const currentlyVisible = this.getVisibleMatches(selector)
-		this.visibleElementsBySelector.set(selector, currentlyVisible)
+		const { appeared, currentlyVisible, disappeared } = this.computeVisibilityDelta(selector)
 
 		const allConsumers = this.consumersBySelector.get(selector) ?? new Set<symbol>()
 		const deltaConsumers =
@@ -212,26 +252,43 @@ export class ElementVisibilityObserver {
 			}
 		}
 
-		// Notify consumers of new elements that are visible now but weren't before.
-		for (const element of currentlyVisible) {
-			if (!previouslyVisible.has(element)) {
-				this.notify(deltaConsumers, { element, selector, visible: true })
-			}
+		for (const element of appeared) {
+			this.notify(deltaConsumers, { element, selector, visible: true })
 		}
 
-		// Notify consumers of old elements that were visible before but now aren't.
-		for (const element of previouslyVisible) {
-			if (!currentlyVisible.has(element)) {
-				this.notify(deltaConsumers, { element, selector, visible: false })
-			}
+		for (const element of disappeared) {
+			this.notify(deltaConsumers, { element, selector, visible: false })
 		}
 	}
 
+	/**
+	 * Recomputes every selector before notifying any of them, so an element swapping selectors in
+	 * one mutation gets its arrival notified before its departure.
+	 */
 	private scanSelectors(): void {
 		this.clearScheduledScan()
 
-		for (const selector of [...this.consumersBySelector.keys()]) {
-			this.scanSelector(selector)
+		const appearedEvents: Array<{ element: Element; selector: string }> = []
+		const disappearedEvents: Array<{ element: Element; selector: string }> = []
+
+		for (const selector of this.consumersBySelector.keys()) {
+			const { appeared, disappeared } = this.computeVisibilityDelta(selector)
+			for (const element of appeared) {
+				appearedEvents.push({ element, selector })
+			}
+
+			for (const element of disappeared) {
+				disappearedEvents.push({ element, selector })
+			}
+		}
+
+		// All arrivals notified first, across every selector, before any departure — see above.
+		for (const { element, selector } of appearedEvents) {
+			this.notify(this.consumersBySelector.get(selector) ?? new Set(), { element, selector, visible: true })
+		}
+
+		for (const { element, selector } of disappearedEvents) {
+			this.notify(this.consumersBySelector.get(selector) ?? new Set(), { element, selector, visible: false })
 		}
 	}
 
@@ -245,21 +302,6 @@ export class ElementVisibilityObserver {
 		}, 0)
 	}
 
-	/** Isolates one consumer's callback so a thrown error can't stop other consumers from being notified. */
-	private invokeCallback(consumerId: symbol, event: ElementVisibilityChangeEvent): void {
-		try {
-			this.callbacks.get(consumerId)?.(event)
-		} catch (error) {
-			diag.warn('ElementVisibilityObserver: Consumer callback threw.', { error })
-		}
-	}
-
-	private notify(consumers: Set<symbol>, event: ElementVisibilityChangeEvent): void {
-		for (const consumerId of consumers) {
-			this.invokeCallback(consumerId, event)
-		}
-	}
-
 	private syncMutationObserver(): void {
 		if (this.consumersBySelector.size > 0) {
 			if (!this.observer) {
@@ -267,7 +309,8 @@ export class ElementVisibilityObserver {
 					if (
 						mutations.some(
 							(mutation) =>
-								mutation.type === 'childList' || (mutation.type === 'attributes' && isElement(mutation.target)),
+								mutation.type === 'childList' ||
+								(mutation.type === 'attributes' && isElement(mutation.target)),
 						)
 					) {
 						this.scheduleScan()
