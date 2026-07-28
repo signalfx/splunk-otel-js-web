@@ -31,9 +31,10 @@ import {
 	resolveMaxElementSpanDuration,
 } from './blocking-element/support'
 
-// once: true means the browser removes this listener for us after it fires; no re-entry guard needed.
-const PAGEHIDE_LISTENER_OPTIONS: AddEventListenerOptions = { capture: true, once: true }
-const PAGEHIDE_LISTENER_REMOVE_OPTIONS: EventListenerOptions = { capture: true }
+// No once: true — pagehide can fire more than once per page if the browser bfcache-restores it
+// (pageshow with persisted: true) and it's later hidden again; each hide must still interrupt.
+const PAGEHIDE_LISTENER_OPTIONS: AddEventListenerOptions = { capture: true }
+const PAGESHOW_LISTENER_OPTIONS: AddEventListenerOptions = { capture: true }
 
 /**
  * DOM watching itself is delegated to the shared ElementVisibilityObserver — this class only
@@ -66,7 +67,8 @@ export class SplunkBlockingElementInstrumentation extends InstrumentationBase<Sp
 	}
 
 	disable(): void {
-		window.removeEventListener('pagehide', this.handlePagehide, PAGEHIDE_LISTENER_REMOVE_OPTIONS)
+		window.removeEventListener('pagehide', this.handlePagehide, PAGEHIDE_LISTENER_OPTIONS)
+		window.removeEventListener('pageshow', this.handlePageshow, PAGESHOW_LISTENER_OPTIONS)
 
 		// Interrupt before unwatch() so open spans end as 'interrupted', not 'completed' — unwatch()'s
 		// synthesized visible:false events would otherwise reach handleVisibilityChange and complete
@@ -95,15 +97,34 @@ export class SplunkBlockingElementInstrumentation extends InstrumentationBase<Sp
 		)
 		this.elementVisibilityObserver.watch(this.consumerId, this.selectors, this.handleVisibilityChange)
 		window.addEventListener('pagehide', this.handlePagehide, PAGEHIDE_LISTENER_OPTIONS)
+		window.addEventListener('pageshow', this.handlePageshow, PAGESHOW_LISTENER_OPTIONS)
 	}
 
 	init(): void {}
 
 	// Ends open spans as 'interrupted' without unwatching the shared observer — pagehide doesn't
 	// guarantee the page is truly gone (bfcache can restore it later), so leave the subscription
-	// intact rather than tearing down as if disable() had been called.
+	// intact rather than tearing down as if disable() had been called. Also clears our own
+	// active-selector bookkeeping, since a bfcache restore resumes with no DOM mutation to naturally
+	// refresh it — handlePageshow's resync() is what repopulates it for elements still visible.
 	private readonly handlePagehide = (): void => {
 		this.elementSpanTracker?.interruptAll()
+		this.activeSelectorsByElement.clear()
+	}
+
+	// Only meaningful for a bfcache restore (event.persisted) — the DOM is frozen as-is across the
+	// freeze/restore, so the observer never sees a mutation to naturally rediscover elements that
+	// were already visible before pagehide. resync() forces a fresh look per configured selector so
+	// spans reopen for anything still visible, instead of silently going untracked for the rest of
+	// the page's life.
+	private readonly handlePageshow = (event: PageTransitionEvent): void => {
+		if (!event.persisted) {
+			return
+		}
+
+		for (const selector of this.selectors) {
+			this.elementVisibilityObserver.resync(this.consumerId, selector)
+		}
 	}
 
 	private readonly handleVisibilityChange = (event: ElementVisibilityChangeEvent): void => {

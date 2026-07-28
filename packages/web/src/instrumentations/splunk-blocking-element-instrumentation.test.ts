@@ -367,5 +367,92 @@ describe('SplunkBlockingElementInstrumentation', () => {
 			expect(() => window.dispatchEvent(new Event('pagehide'))).not.toThrow()
 			expect(getFinishedSpans()).toHaveLength(1)
 		})
+
+		it('interrupts again on a second pagehide after a bfcache restore, not just the first', async () => {
+			instrumentation = new SplunkBlockingElementInstrumentation(
+				{},
+				{ spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
+				undefined,
+				undefined,
+				elementVisibilityObserver,
+			)
+			instrumentation.setTracerProvider(provider)
+			instrumentation.enable()
+
+			createVisibleElement()
+			await vi.waitFor(() => {
+				// @ts-expect-error elementSpanTracker is private. We use it for testing.
+				expect(instrumentation.elementSpanTracker.openCount).toBe(1)
+			})
+
+			window.dispatchEvent(new Event('pagehide'))
+			expect(getFinishedSpans()).toHaveLength(1)
+
+			// Simulate a bfcache restore: page resumes, a new spinner appears, then the page is hidden
+			// again. With `once: true` this second pagehide would never fire at all.
+			window.dispatchEvent(new Event('pageshow'))
+			createVisibleElement()
+			await vi.waitFor(() => {
+				// @ts-expect-error elementSpanTracker is private. We use it for testing.
+				expect(instrumentation.elementSpanTracker.openCount).toBe(1)
+			})
+
+			window.dispatchEvent(new Event('pagehide'))
+
+			const finishedSpans = getFinishedSpans()
+			expect(finishedSpans).toHaveLength(2)
+			expect(finishedSpans.every((span) => span.attributes['browser.element.completion'] === 'interrupted')).toBe(
+				true,
+			)
+		})
+
+		it('resyncs and reopens a span on pageshow after a bfcache restore for an element still visible throughout', () => {
+			const element = createVisibleElement()
+			instrumentation = new SplunkBlockingElementInstrumentation(
+				{},
+				{ spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
+				undefined,
+				undefined,
+				elementVisibilityObserver,
+			)
+			instrumentation.setTracerProvider(provider)
+			instrumentation.enable()
+
+			window.dispatchEvent(new Event('pagehide'))
+			expect(getFinishedSpans()).toHaveLength(1)
+			// @ts-expect-error elementSpanTracker is private. We use it for testing.
+			expect(instrumentation.elementSpanTracker.openCount).toBe(0)
+
+			// The element never left the DOM across the freeze — no mutation for the observer to
+			// naturally rediscover it. Only a persisted pageshow should trigger a resync.
+			window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }))
+
+			// @ts-expect-error elementSpanTracker is private. We use it for testing.
+			expect(instrumentation.elementSpanTracker.openCount).toBe(1)
+			// @ts-expect-error elementSpanTracker is private. We use it for testing.
+			expect(instrumentation.elementSpanTracker.has(element)).toBe(true)
+		})
+
+		it('does not resync on a non-persisted pageshow', () => {
+			createVisibleElement()
+			instrumentation = new SplunkBlockingElementInstrumentation(
+				{},
+				{ spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
+				undefined,
+				undefined,
+				elementVisibilityObserver,
+			)
+			instrumentation.setTracerProvider(provider)
+			instrumentation.enable()
+
+			window.dispatchEvent(new Event('pagehide'))
+			// @ts-expect-error elementSpanTracker is private. We use it for testing.
+			expect(instrumentation.elementSpanTracker.openCount).toBe(0)
+
+			window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: false }))
+
+			// @ts-expect-error elementSpanTracker is private. We use it for testing.
+			expect(instrumentation.elementSpanTracker.openCount).toBe(0)
+		})
 	})
 })
