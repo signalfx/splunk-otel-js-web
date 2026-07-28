@@ -20,6 +20,7 @@ import { diag, Span, trace, Tracer, TracerProvider } from '@opentelemetry/api'
 import { isUrlIgnored } from '@opentelemetry/core'
 
 import { SessionManager, SpaMetricsManager } from '../managers'
+import { BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION } from '../managers/spa-metrics-manager/constants'
 import { SplunkOtelWebConfig } from '../types'
 import { UserInteractionInstrumentation } from '../upstream/user-interaction/instrumentation'
 import { UserInteractionInstrumentationConfig } from '../upstream/user-interaction/types'
@@ -190,7 +191,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 		}
 
 		const now = Date.now()
-		const span = this._routingTracer.startSpan('routeChange', { startTime: now })
+		const span = this._routingTracer.startSpan(BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION, { startTime: now })
 		span.setAttribute('component', this.moduleName)
 		span.setAttribute('location.href', newHref)
 		span.setAttribute('prev.href', oldHref)
@@ -199,6 +200,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 			// Wait for all in-flight resources monitored by SPA metrics to finish loading,
 			// then resolve after a quiet period with no new monitored activity.
 			const pageLoadMetrics = await this.spaMetricsManager.waitForPageLoad({
+				operation: BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION,
 				span,
 				startTime: navigationStartTime,
 			})

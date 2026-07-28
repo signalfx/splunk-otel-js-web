@@ -20,7 +20,12 @@ import { Attributes, diag } from '@opentelemetry/api'
 import { hrTimeToMilliseconds } from '@opentelemetry/core'
 import { Span, SpanProcessor } from '@opentelemetry/sdk-trace-base'
 
-import { SESSION_DURATION_MS, SessionManager, UserManager } from '../managers'
+import { SESSION_DURATION_MS, SessionManager, SpaMetricsManager, UserManager } from '../managers'
+import {
+	BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION,
+	BROWSER_NAVIGATION_OPERATION_ATTRIBUTE,
+	BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION,
+} from '../managers/spa-metrics-manager/constants'
 
 // Firefox can report navigation timings slightly before performance.timeOrigin.
 // Without this tolerance, [firefox] cookies > Connectivity events are captured can drop documentFetch spans.
@@ -35,6 +40,7 @@ export class SpanAttributesProcessor implements SpanProcessor {
 		globalAttributes: Attributes,
 		private readonly discardDataAfterInactivity: boolean = true,
 		private readonly adjustSessionStartToTimeOrigin: boolean = true,
+		private readonly spaMetricsManager?: SpaMetricsManager,
 	) {
 		this._globalAttributes = globalAttributes ?? {}
 	}
@@ -65,6 +71,18 @@ export class SpanAttributesProcessor implements SpanProcessor {
 	}
 
 	onStart(span: Span): void {
+		if (this.spaMetricsManager) {
+			const startTime = hrTimeToMilliseconds(span.startTime) - performance.timeOrigin
+			// Navigation spans reach processors before instrumentation registers them with SpaMetricsManager,
+			// so use their runtime names instead of looking up the previous navigation.
+			const operation =
+				span.name === BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION ||
+				span.name === BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION
+					? span.name
+					: this.spaMetricsManager.getNavigationOperation(startTime)
+			span.setAttribute(BROWSER_NAVIGATION_OPERATION_ATTRIBUTE, operation)
+		}
+
 		if (span.attributes['location.href'] === undefined) {
 			span.setAttribute('location.href', location.href)
 		}
