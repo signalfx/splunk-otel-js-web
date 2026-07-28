@@ -509,7 +509,11 @@ describe('SpaMetricsManager', () => {
 		manager.start()
 
 		try {
-			const result = await manager.waitForPageLoad({ span, startTime: performance.now() })
+			const result = await manager.waitForPageLoad({
+				operation: BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION,
+				span,
+				startTime: performance.now(),
+			})
 
 			expect(attributes[BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE]).toBe(result.pct)
 			expect(attributes[BROWSER_NAVIGATION_STATUS_ATTRIBUTE]).toBe(result.status)
@@ -528,7 +532,11 @@ describe('SpaMetricsManager', () => {
 		manager.start()
 
 		try {
-			const promise = manager.waitForPageLoad({ span, startTime: performance.now() })
+			const promise = manager.waitForPageLoad({
+				operation: BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION,
+				span,
+				startTime: performance.now(),
+			})
 
 			expect(manager.getCurrentNavigationSpanId()).toBe('navigation-span-id')
 
@@ -743,7 +751,11 @@ describe('SpaMetricsManager', () => {
 		}
 
 		try {
-			const promise = manager.waitForPageLoad({ span, startTime: performance.now() })
+			const promise = manager.waitForPageLoad({
+				operation: BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION,
+				span,
+				startTime: performance.now(),
+			})
 
 			// @ts-expect-error onResourceStateChange is private. We use it for testing.
 			manager.onResourceStateChange({

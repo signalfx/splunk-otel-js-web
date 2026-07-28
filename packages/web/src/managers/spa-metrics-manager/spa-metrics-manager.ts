@@ -102,11 +102,17 @@ type DroppedLoadingResources = {
 	elementResourceUrls: string[]
 }
 
-type WaitForPageLoadConfig = {
-	operation?: string
-	span?: Span
-	startTime: number
-}
+type WaitForPageLoadConfig =
+	| {
+			operation: string
+			span: Span
+			startTime: number
+	  }
+	| {
+			operation?: never
+			span?: never
+			startTime: number
+	  }
 
 type NavigationHistoryEntry = {
 	operation: string
@@ -343,7 +349,7 @@ export class SpaMetricsManager {
 	waitForPageLoad({ operation, span, startTime }: WaitForPageLoadConfig): Promise<PageLoadMetricsResult> {
 		this.quietPeriodAwaiter?.interrupt()
 		if (span) {
-			this.setCurrentNavigationSpan(span, startTime, operation ?? BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION)
+			this.setCurrentNavigationSpan(span, startTime, operation)
 		}
 
 		const activeConfig = this.activeConfig
