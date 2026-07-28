@@ -16,7 +16,6 @@
  *
  */
 
-import { diag } from '@opentelemetry/api'
 import { InstrumentationBase } from '@opentelemetry/instrumentation'
 
 import type { SessionManager, SpaMetricsManager } from '../managers'
@@ -50,8 +49,6 @@ export class SplunkBlockingElementInstrumentation extends InstrumentationBase<Sp
 	private readonly elementVisibilityObserver: ElementVisibilityObserver
 
 	private selectors: string[] = []
-
-	private warnedInvalidSelectors = new Set<string>()
 
 	constructor(
 		config: SplunkBlockingElementInstrumentationConfig = {},
@@ -141,18 +138,12 @@ export class SplunkBlockingElementInstrumentation extends InstrumentationBase<Sp
 		elementSpanTracker.startSpan(element, matchedSelectors, now)
 	}
 
+	// The observer already validates and warns once per invalid selector (same this.selectors list
+	// passed to watch()) — no need to duplicate that warning here.
 	private matchesSelector(element: Element, selector: string): boolean {
 		try {
 			return element.matches(selector)
-		} catch (error) {
-			if (!this.warnedInvalidSelectors.has(selector)) {
-				this.warnedInvalidSelectors.add(selector)
-				diag.warn('SplunkBlockingElementInstrumentation: Invalid blocking element selector.', {
-					error,
-					selector,
-				})
-			}
-
+		} catch {
 			return false
 		}
 	}
