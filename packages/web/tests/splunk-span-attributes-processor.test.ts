@@ -82,6 +82,30 @@ describe('SplunkSpanAttributesProcessor', () => {
 			)
 		})
 
+		it('does not overwrite an existing navigation operation on span start', async () => {
+			const spaMetricsManager = new SpaMetricsManager()
+			const processor = new SpanAttributesProcessor(
+				sessionManager,
+				userManager,
+				{},
+				true,
+				false,
+				spaMetricsManager,
+			)
+			const { exporter, provider, tracer } = createTestTracer(processor)
+			const span = tracer.startSpan(BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION, {
+				attributes: {
+					[BROWSER_NAVIGATION_OPERATION_ATTRIBUTE]: BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION,
+				},
+			})
+			span.end()
+			await provider.forceFlush()
+
+			expect(exporter.getFinishedSpans()[0].attributes[BROWSER_NAVIGATION_OPERATION_ATTRIBUTE]).toBe(
+				BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION,
+			)
+		})
+
 		it('sets the navigation operation that was active at the span start time', async () => {
 			const spaMetricsManager = new SpaMetricsManager()
 			const processor = new SpanAttributesProcessor(
