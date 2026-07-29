@@ -18,8 +18,11 @@
 
 import { diag } from '@opentelemetry/api'
 
+import type {
+	ElementVisibilityChangeEvent,
+	ElementVisibilityObserver,
+} from '../../../observers/element-visibility-observer'
 import type { SpaMetricsMonitor } from '../../../types'
-import type { ElementVisibilityChangeEvent, ElementVisibilityObserver } from '../../../observers/element-visibility-observer'
 
 import { Monitor, type MonitorConfig } from './monitor'
 

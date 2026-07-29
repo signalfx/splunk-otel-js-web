@@ -16,8 +16,8 @@
  *
  */
 
-import type { SpaMetricsMonitor } from '../../../types'
 import type { ElementVisibilityObserver } from '../../../observers/element-visibility-observer'
+import type { SpaMetricsMonitor } from '../../../types'
 
 import { generateId } from '../../../utils'
 

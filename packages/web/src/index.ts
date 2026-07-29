@@ -38,7 +38,6 @@ import { type SplunkExporterConfig } from './exporters/common'
 import { SplunkOTLPTraceExporter } from './exporters/otlp'
 import { SplunkZipkinExporter } from './exporters/zipkin'
 import { registerGlobal, unregisterGlobal } from './global-utils'
-import { ElementVisibilityObserver } from './observers/element-visibility-observer'
 import {
 	DEFAULT_AUTO_INSTRUMENTED_EVENT_NAMES,
 	DEFAULT_AUTO_INSTRUMENTED_EVENTS,
@@ -61,6 +60,7 @@ import {
 	SplunkXhrInstrumentation,
 	UserInteractionEventsConfig,
 } from './instrumentations'
+import { ElementVisibilityObserver } from './observers/element-visibility-observer'
 import { SafeW3CBaggagePropagator } from './safe-w3c-baggage-propagator'
 import { BrowserInstanceService } from './services/browser-instance-service'
 import { SessionBasedSampler } from './session-based-sampler'
