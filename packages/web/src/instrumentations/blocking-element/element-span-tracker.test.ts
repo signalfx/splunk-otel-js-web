@@ -284,6 +284,27 @@ describe('ElementSpanTracker', () => {
 			expect(tracker.openCount).toBe(0)
 		})
 
+		it('calls onSpanTimeout only when the timer itself ends the span, not on completeSpan/interruptSpan', () => {
+			vi.useFakeTimers()
+			const onSpanTimeout = vi.fn()
+			const tracker = new ElementSpanTracker(
+				provider.getTracer('test'),
+				[SELECTOR, OTHER_SELECTOR],
+				5000,
+				onSpanTimeout,
+			)
+			const timedOut = createElement()
+			const completed = createElement()
+
+			tracker.startSpan(timedOut, [SELECTOR], performance.now())
+			tracker.startSpan(completed, [SELECTOR], performance.now())
+			tracker.completeSpan(completed, performance.now())
+			vi.advanceTimersByTime(5000)
+
+			expect(onSpanTimeout).toHaveBeenCalledTimes(1)
+			expect(onSpanTimeout).toHaveBeenCalledWith(timedOut)
+		})
+
 		it('does not time out a span that completes before maxElementSpanDuration elapses', () => {
 			vi.useFakeTimers()
 			const tracker = createTracker([SELECTOR, OTHER_SELECTOR], 5000)

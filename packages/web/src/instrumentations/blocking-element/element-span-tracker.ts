@@ -64,11 +64,16 @@ export class ElementSpanTracker {
 	 * maxElementSpanDuration bounds how long any single element span can stay open — without it, an
 	 * element that never disappears (and is never interrupted via disable()/pagehide) would produce
 	 * no telemetry at all, the one case a duration-measuring feature can least afford to miss.
+	 *
+	 * onSpanTimeout fires only when the timer itself ends a span, not for caller-initiated
+	 * completeSpan/interruptSpan — lets the caller avoid opening a second span for the same
+	 * still-visible element.
 	 */
 	constructor(
 		private readonly tracer: Tracer,
 		private readonly configuredSelectors: string[],
 		private readonly maxElementSpanDuration: number,
+		private readonly onSpanTimeout?: (element: Element) => void,
 	) {}
 
 	completeSpan(element: Element, endTimeRelative: number): void {
@@ -133,6 +138,7 @@ export class ElementSpanTracker {
 
 		const timeoutId = setTimeout(() => {
 			this.endSpan(element, BROWSER_ELEMENT_COMPLETION_TIMEOUT, performance.now())
+			this.onSpanTimeout?.(element)
 		}, this.maxElementSpanDuration)
 
 		this.tracked.set(element, { accumulatedSelectors: new Set(matchedSelectors), span, timeoutId })

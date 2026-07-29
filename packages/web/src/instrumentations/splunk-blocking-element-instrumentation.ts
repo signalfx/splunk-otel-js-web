@@ -51,6 +51,9 @@ export class SplunkBlockingElementInstrumentation extends InstrumentationBase<Sp
 
 	private selectors: string[] = []
 
+	/** Elements timed out by ElementSpanTracker while still visible; prevents a second span until they go invisible. */
+	private readonly timedOutElements = new Set<Element>()
+
 	constructor(
 		config: SplunkBlockingElementInstrumentationConfig = {},
 		protected otelConfig: SplunkOtelWebConfig,
@@ -77,6 +80,7 @@ export class SplunkBlockingElementInstrumentation extends InstrumentationBase<Sp
 		this.elementSpanTracker = undefined
 		this.selectors = []
 		this.activeSelectorsByElement.clear()
+		this.timedOutElements.clear()
 		this.elementVisibilityObserver.unwatch(this.consumerId)
 	}
 
@@ -94,6 +98,7 @@ export class SplunkBlockingElementInstrumentation extends InstrumentationBase<Sp
 			this.tracer,
 			this.selectors,
 			resolveMaxElementSpanDuration(this.otelConfig),
+			(element) => this.timedOutElements.add(element),
 		)
 		this.elementVisibilityObserver.watch(this.consumerId, this.selectors, this.handleVisibilityChange)
 		window.addEventListener('pagehide', this.handlePagehide, PAGEHIDE_LISTENER_OPTIONS)
@@ -110,6 +115,7 @@ export class SplunkBlockingElementInstrumentation extends InstrumentationBase<Sp
 	private readonly handlePagehide = (): void => {
 		this.elementSpanTracker?.interruptAll()
 		this.activeSelectorsByElement.clear()
+		this.timedOutElements.clear()
 	}
 
 	// Only meaningful for a bfcache restore (event.persisted) — the DOM is frozen as-is across the
@@ -148,6 +154,8 @@ export class SplunkBlockingElementInstrumentation extends InstrumentationBase<Sp
 			}
 
 			this.activeSelectorsByElement.delete(element)
+			// Real episode boundary — a future reappearance deserves a fresh span.
+			this.timedOutElements.delete(element)
 			elementSpanTracker.completeSpan(element, now)
 			return
 		}
@@ -156,6 +164,12 @@ export class SplunkBlockingElementInstrumentation extends InstrumentationBase<Sp
 			this.matchesSelector(element, matchedSelector),
 		)
 		this.activeSelectorsByElement.set(element, new Set(matchedSelectors))
+
+		// Tracker already timed this element out while still visible; avoid opening a second span.
+		if (this.timedOutElements.has(element)) {
+			return
+		}
+
 		elementSpanTracker.startSpan(element, matchedSelectors, now)
 	}
 

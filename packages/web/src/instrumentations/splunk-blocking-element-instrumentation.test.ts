@@ -238,6 +238,55 @@ describe('SplunkBlockingElementInstrumentation', () => {
 		expect(span.attributes['browser.element.selector']).toBe(`${SELECTOR},${OTHER_SELECTOR}`)
 	})
 
+	it('does not open a second span for a still-visible element that already timed out, but does after it fully disappears and reappears', async () => {
+		vi.useFakeTimers()
+		try {
+			const element = createVisibleElement()
+			instrumentation = new SplunkBlockingElementInstrumentation(
+				{},
+				{
+					instrumentations: { blockingElement: { maxElementSpanDuration: 5000 } },
+					spaMetrics: { blockingSelectors: [SELECTOR, OTHER_SELECTOR], monitors: ['elements'] },
+				},
+				undefined,
+				undefined,
+				elementVisibilityObserver,
+			)
+			instrumentation.setTracerProvider(provider)
+			instrumentation.enable()
+
+			// @ts-expect-error elementSpanTracker is private. We use it for testing.
+			expect(instrumentation.elementSpanTracker.has(element)).toBe(true)
+
+			vi.advanceTimersByTime(5000)
+			expect(getFinishedSpans()).toHaveLength(1)
+			expect(getFinishedSpans()[0].attributes['browser.element.completion']).toBe('timeout')
+
+			// Still visible, now also matches OTHER_SELECTOR — must not look like a brand-new element.
+			element.dataset.loading = ''
+			await vi.advanceTimersByTimeAsync(0)
+
+			expect(getFinishedSpans()).toHaveLength(1)
+			// @ts-expect-error elementSpanTracker is private. We use it for testing.
+			expect(instrumentation.elementSpanTracker.has(element)).toBe(false)
+
+			// Now genuinely disappears — a real episode boundary.
+			element.remove()
+			await vi.advanceTimersByTimeAsync(0)
+
+			expect(getFinishedSpans()).toHaveLength(1)
+
+			// Reappears — this is a new episode, so it must get a fresh span.
+			document.body.append(element)
+			await vi.advanceTimersByTimeAsync(0)
+
+			// @ts-expect-error elementSpanTracker is private. We use it for testing.
+			expect(instrumentation.elementSpanTracker.has(element)).toBe(true)
+		} finally {
+			vi.useRealTimers()
+		}
+	})
+
 	it('completes the span for an element removed from the DOM', async () => {
 		const element = createVisibleElement()
 		instrumentation = new SplunkBlockingElementInstrumentation(
