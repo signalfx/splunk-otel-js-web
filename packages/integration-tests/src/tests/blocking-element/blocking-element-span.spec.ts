@@ -77,7 +77,10 @@ test.describe('blocking-element', () => {
 
 		const blockingElementSpans = recordPage.receivedSpans.filter((span) => span.name === 'blockingElement')
 		expect(blockingElementSpans).toHaveLength(1)
-		expect(blockingElementSpans[0]).toHaveSpanAttribute('browser.element.selector', '.global-spinner,[data-loading]')
+		expect(blockingElementSpans[0]).toHaveSpanAttribute(
+			'browser.element.selector',
+			'.global-spinner,[data-loading]',
+		)
 		expect(blockingElementSpans[0]).toHaveSpanAttribute('browser.element.id', 'spinner-multi-selector')
 		expect(blockingElementSpans[0]).toHaveSpanAttribute('browser.element.completion', 'completed')
 	})
@@ -124,14 +127,15 @@ test.describe('blocking-element', () => {
 		)
 
 		// PCT (LoadingElementMonitor, via SpaMetricsManager) waited on the same spinner...
-		const [routeChangeSpan] = recordPage.receivedSpans.filter((span) => span.name === 'routeChange')
-		expectBrowserNavigationAttributes(routeChangeSpan, {
+		const routeChangeSpan = recordPage.receivedSpans.find((span) => span.name === 'routeChange')
+		expect(routeChangeSpan).toBeDefined()
+		expectBrowserNavigationAttributes(routeChangeSpan!, {
 			detectedResourceCount: 1,
 			quietTimerResetCount: 1,
 			status: 'completed',
 		})
 		const lastLoadedResources = JSON.parse(
-			String(routeChangeSpan.attributes[BROWSER_NAVIGATION_ATTRIBUTES.lastLoadedResources]),
+			String(routeChangeSpan!.attributes[BROWSER_NAVIGATION_ATTRIBUTES.lastLoadedResources]),
 		) as Array<{ duration: number; monitorType: string; url: string }>
 		expect(lastLoadedResources).toHaveLength(1)
 		expect(lastLoadedResources[0].monitorType).toBe('elements')
@@ -139,7 +143,8 @@ test.describe('blocking-element', () => {
 
 		// ...and blockingElement (SplunkBlockingElementInstrumentation) independently produced its
 		// own span for the exact same element, both fed by one shared MutationObserver scan.
-		const [blockingElementSpan] = recordPage.receivedSpans.filter((span) => span.name === 'blockingElement')
+		const blockingElementSpan = recordPage.receivedSpans.find((span) => span.name === 'blockingElement')
+		expect(blockingElementSpan).toBeDefined()
 		expect(blockingElementSpan).toHaveSpanAttribute('browser.element.id', 'spinner-shared-observer')
 		expect(blockingElementSpan).toHaveSpanAttribute('browser.element.selector', '.global-spinner')
 		expect(blockingElementSpan).toHaveSpanAttribute('browser.element.completion', 'completed')
