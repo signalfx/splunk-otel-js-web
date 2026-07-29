@@ -654,6 +654,20 @@ export const SplunkRum: SplunkOtelWebType = {
 			}
 			const basicPlatformInfo = getBasicPlatformInfo(platformInfoOptions)
 
+			// Shared by SpaMetricsManager (LoadingElementMonitor) and SplunkBlockingElementInstrumentation
+			// so both watch the DOM through one MutationObserver instead of two independent ones.
+			const elementVisibilityObserver = new ElementVisibilityObserver()
+
+			const spaMetricsManager =
+				processedOptions.spaMetrics === false
+					? undefined
+					: new SpaMetricsManager({
+							beaconEndpoint: processedOptions.beaconEndpoint,
+							...(processedOptions.spaMetrics === true ? {} : processedOptions.spaMetrics),
+							elementVisibilityObserver,
+						})
+			_spaMetricsManager = spaMetricsManager
+
 			this.attributesProcessor = new SpanAttributesProcessor(
 				this.sessionManager,
 				this.userManager,
@@ -668,6 +682,7 @@ export const SplunkRum: SplunkOtelWebType = {
 				},
 				processedOptions.discardDataAfterInactivity,
 				processedOptions.adjustSessionStartToTimeOrigin,
+				spaMetricsManager,
 			)
 
 			this._spanEmitter = new SpanEmitterProcessor()
@@ -702,20 +717,6 @@ export const SplunkRum: SplunkOtelWebType = {
 			})
 
 			this.sessionManager.start()
-
-			// Shared by SpaMetricsManager (LoadingElementMonitor) and SplunkBlockingElementInstrumentation
-			// so both watch the DOM through one MutationObserver instead of two independent ones.
-			const elementVisibilityObserver = new ElementVisibilityObserver()
-
-			const spaMetricsManager =
-				processedOptions.spaMetrics === false
-					? undefined
-					: new SpaMetricsManager({
-							beaconEndpoint: processedOptions.beaconEndpoint,
-							...(processedOptions.spaMetrics === true ? {} : processedOptions.spaMetrics),
-							elementVisibilityObserver,
-						})
-			_spaMetricsManager = spaMetricsManager
 
 			const instrumentations = INSTRUMENTATIONS.map(({ confKey, disable, Instrument }) => {
 				const pluginConf = getPluginConfig(processedOptions.instrumentations[confKey], pluginDefaults, disable)

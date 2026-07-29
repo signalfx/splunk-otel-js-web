@@ -26,6 +26,7 @@ import { ElementVisibilityObserver } from '../../observers/element-visibility-ob
 import { truncateString } from '../../utils/text'
 import {
 	BROWSER_NAVIGATION_DETECTED_RESOURCE_COUNT_ATTRIBUTE,
+	BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION,
 	BROWSER_NAVIGATION_LAST_LOADED_RESOURCES_ATTRIBUTE,
 	BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE,
 	BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
@@ -102,12 +103,20 @@ type DroppedLoadingResources = {
 	elementResourceUrls: string[]
 }
 
-type WaitForPageLoadConfig = {
-	span?: Span
-	startTime: number
-}
+type WaitForPageLoadConfig =
+	| {
+			operation: string
+			span: Span
+			startTime: number
+	  }
+	| {
+			operation?: never
+			span?: never
+			startTime: number
+	  }
 
 type NavigationHistoryEntry = {
+	operation: string
 	pctEndTime?: number
 	spanId: string
 	startTime: number
@@ -225,6 +234,10 @@ export class SpaMetricsManager {
 		return this.navigationHistory.at(-1)?.spanId
 	}
 
+	getNavigationOperation(startTime: number): string {
+		return this.getNavigationAt(startTime)?.operation ?? BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION
+	}
+
 	getNavigationPageAttributes(
 		startTime: number,
 		activity?: NavigationActivity,
@@ -250,8 +263,8 @@ export class SpaMetricsManager {
 		}
 	}
 
-	setCurrentNavigationSpan(span: Span, startTime: number): void {
-		this.navigationHistory.push({ spanId: span.spanContext().spanId, startTime })
+	setCurrentNavigationSpan(span: Span, startTime: number, operation: string): void {
+		this.navigationHistory.push({ operation, spanId: span.spanContext().spanId, startTime })
 		// Keep the lookup bounded for long-running single-page applications.
 		if (this.navigationHistory.length > MAX_NAVIGATION_HISTORY_ENTRIES) {
 			this.navigationHistory.shift()
@@ -337,10 +350,10 @@ export class SpaMetricsManager {
 		diag.debug('SpaMetricsManager: Stopped monitoring.')
 	}
 
-	waitForPageLoad({ span, startTime }: WaitForPageLoadConfig): Promise<PageLoadMetricsResult> {
+	waitForPageLoad({ operation, span, startTime }: WaitForPageLoadConfig): Promise<PageLoadMetricsResult> {
 		this.quietPeriodAwaiter?.interrupt()
 		if (span) {
-			this.setCurrentNavigationSpan(span, startTime)
+			this.setCurrentNavigationSpan(span, startTime, operation)
 		}
 
 		const activeConfig = this.activeConfig
