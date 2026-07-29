@@ -30,6 +30,10 @@ import { addSpanNetworkEvents, PerformanceEntries, PerformanceTimingNames as PTN
 import { SemanticAttributes, SEMATTRS_HTTP_URL } from '@opentelemetry/semantic-conventions'
 
 import { SessionManager, SpaMetricsManager } from '../managers'
+import {
+	BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION,
+	BROWSER_NAVIGATION_OPERATION_ATTRIBUTE,
+} from '../managers/spa-metrics-manager/constants'
 import { setBrowserNavigationPageAttributes } from '../managers/spa-metrics-manager/navigation-relevance'
 import { getPctMonitorTypes } from '../managers/spa-metrics-manager/resource-monitor-types'
 import { captureTraceParentFromPerformanceEntries } from '../servertiming'
@@ -101,9 +105,10 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 			const span = _superStartSpan(spanName, performanceName, entries, parentSpan)
 
 			if (span && spanName === AttributeNames.DOCUMENT_LOAD) {
+				span.setAttribute(BROWSER_NAVIGATION_OPERATION_ATTRIBUTE, BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION)
 				span.setAttribute('component', this.component)
 				addExtraDocLoadTags(span)
-				this.spaMetricsManager?.setCurrentNavigationSpan(span, 0)
+				this.spaMetricsManager?.setCurrentNavigationSpan(span, 0, BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION)
 				// The span processor's automatic onStart event already ran before
 				// `component` was set, so emit manually now that SpanEmitter can
 				// route this as `document-load:start`.

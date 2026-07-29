@@ -56,6 +56,7 @@ test.describe('spa-metrics', () => {
 		const routeChangeSpans = recordPage.receivedSpans.filter((span) => span.name === 'routeChange')
 		expect(routeChangeSpans).toHaveLength(1)
 		expect(routeChangeSpans[0].name).toBe('routeChange')
+		expect(routeChangeSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.operation, 'routeChange')
 		expectBrowserNavigationAttributes(routeChangeSpans[0], {
 			detectedResourceCount: 0,
 			pageCompletionTime: 0,
@@ -65,6 +66,29 @@ test.describe('spa-metrics', () => {
 
 		// Duration should be 0 as no resources were loaded
 		expect(routeChangeSpans[0]).toHaveSpanDuration(0)
+	})
+
+	test('errors after a route change have the routeChange operation', async ({ recordPage }) => {
+		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+		await recordPage.locator('#btnNavigate').click()
+		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'routeChange'))
+
+		await recordPage.evaluate(() => {
+			setTimeout(() => {
+				throw new Error('route change operation test')
+			})
+		})
+		await recordPage.waitForSpans((spans) =>
+			spans.some(
+				(span) => span.name === 'onerror' && span.attributes['error.message'] === 'route change operation test',
+			),
+		)
+
+		const errorSpan = recordPage.receivedSpans.find(
+			(span) => span.name === 'onerror' && span.attributes['error.message'] === 'route change operation test',
+		)
+		expectDefined(errorSpan)
+		expect(errorSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.operation, 'routeChange')
 	})
 
 	test('routeChange span waits for fetch requests to complete', async ({ recordPage }) => {
@@ -85,6 +109,7 @@ test.describe('spa-metrics', () => {
 
 		expect(routeChangeSpans).toHaveLength(1)
 		expect(fetchSpans).toHaveLength(1)
+		expect(fetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.operation, 'routeChange')
 		expect(fetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, routeChangeSpans[0].spanId)
 		expect(fetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, true)
 		expectBrowserNavigationAttributes(routeChangeSpans[0], {
@@ -122,6 +147,7 @@ test.describe('spa-metrics', () => {
 
 		expect(routeChangeSpans).toHaveLength(1)
 		expect(xhrSpans).toHaveLength(1)
+		expect(xhrSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.operation, 'routeChange')
 		expect(xhrSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, routeChangeSpans[0].spanId)
 		expect(xhrSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, true)
 		expectBrowserNavigationAttributes(routeChangeSpans[0], {

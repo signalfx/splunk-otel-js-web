@@ -20,7 +20,8 @@ import { Attributes, diag } from '@opentelemetry/api'
 import { hrTimeToMilliseconds } from '@opentelemetry/core'
 import { Span, SpanProcessor } from '@opentelemetry/sdk-trace-base'
 
-import { SESSION_DURATION_MS, SessionManager, UserManager } from '../managers'
+import { SESSION_DURATION_MS, SessionManager, SpaMetricsManager, UserManager } from '../managers'
+import { BROWSER_NAVIGATION_OPERATION_ATTRIBUTE } from '../managers/spa-metrics-manager/constants'
 
 // Firefox can report navigation timings slightly before performance.timeOrigin.
 // Without this tolerance, [firefox] cookies > Connectivity events are captured can drop documentFetch spans.
@@ -35,6 +36,7 @@ export class SpanAttributesProcessor implements SpanProcessor {
 		globalAttributes: Attributes,
 		private readonly discardDataAfterInactivity: boolean = true,
 		private readonly adjustSessionStartToTimeOrigin: boolean = true,
+		private readonly spaMetricsManager?: SpaMetricsManager,
 	) {
 		this._globalAttributes = globalAttributes ?? {}
 	}
@@ -65,6 +67,14 @@ export class SpanAttributesProcessor implements SpanProcessor {
 	}
 
 	onStart(span: Span): void {
+		if (this.spaMetricsManager && span.attributes[BROWSER_NAVIGATION_OPERATION_ATTRIBUTE] === undefined) {
+			const startTime = hrTimeToMilliseconds(span.startTime) - performance.timeOrigin
+			span.setAttribute(
+				BROWSER_NAVIGATION_OPERATION_ATTRIBUTE,
+				this.spaMetricsManager.getNavigationOperation(startTime),
+			)
+		}
+
 		if (span.attributes['location.href'] === undefined) {
 			span.setAttribute('location.href', location.href)
 		}
