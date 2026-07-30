@@ -21,7 +21,8 @@ import { suppressTracing } from '@opentelemetry/core'
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 import * as shimmer from 'shimmer'
 
-import { SessionManager } from '../managers'
+import { SessionManager, SpaMetricsManager } from '../managers'
+import { setBrowserNavigationPageAttributes } from '../managers/spa-metrics-manager/navigation-relevance'
 import { isElement, SplunkOtelWebConfig } from '../types'
 import { limitLen } from '../utils'
 import { getValidAttributes, isPlainObject, removePropertiesWithAdvancedTypes, SpanContext } from '../utils/attributes'
@@ -118,6 +119,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		protected _splunkConfig: SplunkErrorInstrumentationConfig,
 		protected otelConfig: SplunkOtelWebConfig,
 		public sessionManager?: SessionManager,
+		public spaMetricsManager?: SpaMetricsManager,
 	) {
 		super(ERROR_INSTRUMENTATION_NAME, ERROR_INSTRUMENTATION_VERSION, _splunkConfig)
 	}
@@ -193,8 +195,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 			return
 		}
 
-		const now = Date.now()
-		const span = this.tracer.startSpan(source, { startTime: now })
+		const { span, timestamp } = this.startErrorSpan(source)
 
 		this.attachSpanContext(span, err, spanContext)
 
@@ -207,7 +208,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		span.setAttribute('error.message', limitLen(msg, MESSAGE_LIMIT))
 		addStackIfUseful(span, err)
 
-		await this.endSpanWithThrottle(span, now)
+		await this.endSpanWithThrottle(span, timestamp)
 	}
 
 	protected async reportErrorEvent(source: string, ev: ErrorEvent, spanContext: SpanContext): Promise<void> {
@@ -224,8 +225,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 			return
 		}
 
-		const now = Date.now()
-		const span = this.tracer.startSpan(source, { startTime: now })
+		const { span, timestamp } = this.startErrorSpan(source)
 		this.attachSpanContext(span, ev, spanContext)
 		span.setAttribute('component', 'error')
 		span.setAttribute('error.type', ev.type)
@@ -256,7 +256,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 			}
 		}
 
-		await this.endSpanWithThrottle(span, now)
+		await this.endSpanWithThrottle(span, timestamp)
 	}
 
 	protected async reportString(
@@ -269,8 +269,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 			return
 		}
 
-		const now = Date.now()
-		const span = this.tracer.startSpan(source, { startTime: now })
+		const { span, timestamp } = this.startErrorSpan(source)
 		this.attachSpanContext(span, firstError ?? message, spanContext)
 		span.setAttribute('component', 'error')
 		span.setAttribute('error', true)
@@ -280,7 +279,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 			addStackIfUseful(span, firstError)
 		}
 
-		await this.endSpanWithThrottle(span, now)
+		await this.endSpanWithThrottle(span, timestamp)
 	}
 
 	protected transform(error: InternalErrorLike, spanContext: SpanContext): ErrorWithContext | null {
@@ -396,6 +395,15 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 
 	private errorListener = async (event: ErrorEvent) => {
 		await this.report('onerror', event, {})
+	}
+
+	private startErrorSpan(source: string): { span: Span; timestamp: number } {
+		const navigationStartTime = performance.now()
+		const timestamp = Date.now()
+		const span = this.tracer.startSpan(source, { startTime: timestamp })
+		setBrowserNavigationPageAttributes(span, this.spaMetricsManager, navigationStartTime)
+
+		return { span, timestamp }
 	}
 
 	private unhandledRejectionListener = async (event: PromiseRejectionEvent) => {

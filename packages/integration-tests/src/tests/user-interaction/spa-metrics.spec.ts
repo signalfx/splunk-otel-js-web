@@ -87,8 +87,12 @@ test.describe('spa-metrics', () => {
 		const errorSpan = recordPage.receivedSpans.find(
 			(span) => span.name === 'onerror' && span.attributes['error.message'] === 'route change operation test',
 		)
+		const routeChangeSpan = recordPage.receivedSpans.find((span) => span.name === 'routeChange')
 		expectDefined(errorSpan)
+		expectDefined(routeChangeSpan)
 		expect(errorSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.operation, 'routeChange')
+		expect(errorSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, routeChangeSpan.spanId)
+		expect(errorSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, false)
 	})
 
 	test('routeChange span waits for fetch requests to complete', async ({ recordPage }) => {
