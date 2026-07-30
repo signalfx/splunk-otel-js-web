@@ -367,6 +367,34 @@ describe('SplunkBlockingElementInstrumentation', () => {
 		expect(getFinishedSpans()).toHaveLength(0)
 	})
 
+	it('does not replace the tracker on a duplicate enable(), leaving the original span able to complete', async () => {
+		const element = createVisibleElement()
+		instrumentation = new SplunkBlockingElementInstrumentation(
+			{},
+			{ spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
+			undefined,
+			undefined,
+			elementVisibilityObserver,
+		)
+		instrumentation.setTracerProvider(provider)
+		instrumentation.enable()
+
+		// @ts-expect-error elementSpanTracker is private. We use it for testing.
+		const trackerAfterFirstEnable = instrumentation.elementSpanTracker
+
+		instrumentation.enable()
+
+		// @ts-expect-error elementSpanTracker is private. We use it for testing.
+		expect(instrumentation.elementSpanTracker).toBe(trackerAfterFirstEnable)
+
+		element.remove()
+
+		await vi.waitFor(() => {
+			expect(getFinishedSpans()).toHaveLength(1)
+		})
+		expect(getFinishedSpans()[0].attributes['browser.element.completion']).toBe('completed')
+	})
+
 	describe('pagehide', () => {
 		it('interrupts open spans on pagehide without unwatching the shared observer', async () => {
 			const element = createVisibleElement()

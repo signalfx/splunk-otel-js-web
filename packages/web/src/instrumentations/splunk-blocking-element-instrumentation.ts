@@ -16,6 +16,7 @@
  *
  */
 
+import { diag } from '@opentelemetry/api'
 import { InstrumentationBase } from '@opentelemetry/instrumentation'
 
 import type { SessionManager, SpaMetricsManager } from '../managers'
@@ -85,6 +86,11 @@ export class SplunkBlockingElementInstrumentation extends InstrumentationBase<Sp
 	}
 
 	enable(): void {
+		if (this.elementSpanTracker) {
+			diag.warn('SplunkBlockingElementInstrumentation: Already enabled.')
+			return
+		}
+
 		if (!isBlockingElementInstrumentationEnabled(this.otelConfig)) {
 			return
 		}
