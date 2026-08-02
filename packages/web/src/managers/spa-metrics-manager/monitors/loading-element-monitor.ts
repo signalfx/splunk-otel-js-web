@@ -18,8 +18,13 @@
 
 import { diag } from '@opentelemetry/api'
 
-import { isElement, type SpaMetricsMonitor } from '../../../types'
-import { Monitor } from './monitor'
+import type {
+	ElementVisibilityChangeEvent,
+	ElementVisibilityObserver,
+} from '../../../observers/element-visibility-observer'
+import type { SpaMetricsMonitor } from '../../../types'
+
+import { Monitor, type MonitorConfig } from './monitor'
 
 type MonitoredSelector = {
 	id: string
@@ -42,21 +47,35 @@ const LOADING_ELEMENT_URL_PREFIX = 'element:'
  * resource with `url: "element:.loading-spinner"`. It emits the matching LOADED event only when no
  * visible element matches `.loading-spinner` anymore, so removing one of several spinners does not
  * complete the resource too early.
+ *
+ * DOM watching itself is delegated to the shared ElementVisibilityObserver (config.elementVisibilityObserver,
+ * config.consumerId) — this class only derives PCT's any-visible-per-selector aggregate from the
+ * per-element events it receives.
  */
 export class LoadingElementMonitor extends Monitor {
 	protected readonly monitorType: SpaMetricsMonitor = 'elements'
+
+	private readonly consumerId: symbol
+
+	private readonly elementVisibilityObserver: ElementVisibilityObserver
 
 	private isMonitoring = false
 
 	private monitoredSelectors = new Map<string, MonitoredSelector>()
 
-	private observer: MutationObserver | null = null
-
-	private scanTimeoutId: ReturnType<typeof setTimeout> | undefined
-
 	private selectors: string[] = []
 
-	private warnedInvalidSelectors = new Set<string>()
+	private visibleElementsBySelector = new Map<string, Set<Element>>()
+
+	constructor(config: MonitorConfig) {
+		super(config)
+		if (!config.elementVisibilityObserver || !config.consumerId) {
+			throw new Error('LoadingElementMonitor requires elementVisibilityObserver and consumerId.')
+		}
+
+		this.elementVisibilityObserver = config.elementVisibilityObserver
+		this.consumerId = config.consumerId
+	}
 
 	/**
 	 * Applies the selectors for the currently active URL config and scans immediately.
@@ -64,11 +83,17 @@ export class LoadingElementMonitor extends Monitor {
 	 * sees any changes are still counted.
 	 */
 	refresh(selectors: string[], options: LoadingElementMonitorRefreshOptions = {}): void {
-		this.clearScheduledScan()
-		this.forgetDroppedResources(options.droppedResourceUrls)
+		const droppedSelectors = this.forgetDroppedResources(options.droppedResourceUrls)
 		this.setSelectors(selectors)
-		this.syncMutationObserver()
-		this.scanSelectors()
+		this.elementVisibilityObserver.watch(this.consumerId, this.selectors, this.handleVisibilityChange)
+
+		// A dropped resource's selector may still be visible and still in the new selector list —
+		// watch() alone won't re-scan an already-watched selector, so force it explicitly.
+		for (const selector of droppedSelectors) {
+			if (this.selectors.includes(selector)) {
+				this.elementVisibilityObserver.resync(this.consumerId, selector)
+			}
+		}
 	}
 
 	start(): void {
@@ -78,35 +103,25 @@ export class LoadingElementMonitor extends Monitor {
 		}
 
 		this.isMonitoring = true
-		this.syncMutationObserver()
-		this.scanSelectors()
+		this.elementVisibilityObserver.watch(this.consumerId, this.selectors, this.handleVisibilityChange)
 
 		diag.debug('PageLoadingManager.LoadingElementMonitor: Started monitoring loading elements.')
 	}
 
 	stop(): void {
+		// Clear bookkeeping before unwatch() so its synthesized visible:false events no-op instead
+		// of emitting LOADED for selectors being torn down, not resolved. Runs even if !isMonitoring,
+		// since refresh() can establish a subscription without start() ever having run.
+		this.monitoredSelectors.clear()
+		this.visibleElementsBySelector.clear()
+		this.elementVisibilityObserver.unwatch(this.consumerId)
+
 		if (!this.isMonitoring) {
 			return
 		}
 
-		this.observer?.disconnect()
-		this.observer = null
-		this.clearScheduledScan()
-		// The manager interrupts/clears pending PCT resources on stop, so there is no need
-		// to emit LOADED events for selectors that were still visible.
-		this.monitoredSelectors.clear()
 		this.isMonitoring = false
-
 		diag.debug('PageLoadingManager.LoadingElementMonitor: Stopped monitoring.')
-	}
-
-	private clearScheduledScan(): void {
-		if (this.scanTimeoutId === undefined) {
-			return
-		}
-
-		clearTimeout(this.scanTimeoutId)
-		this.scanTimeoutId = undefined
 	}
 
 	/**
@@ -130,17 +145,25 @@ export class LoadingElementMonitor extends Monitor {
 		)
 	}
 
-	private forgetDroppedResources(droppedResourceUrls: string[] = []): void {
+	/** Returns the selectors it dropped, so callers can decide whether any need re-syncing. */
+	private forgetDroppedResources(droppedResourceUrls: string[] = []): string[] {
 		if (droppedResourceUrls.length === 0) {
-			return
+			return []
 		}
 
 		const droppedResourceUrlSet = new Set(droppedResourceUrls)
+		const droppedSelectors: string[] = []
 		for (const [selector, monitoredSelector] of this.monitoredSelectors) {
 			if (droppedResourceUrlSet.has(monitoredSelector.url)) {
 				this.monitoredSelectors.delete(selector)
+				// Also forget our own visibility bookkeeping — otherwise a later resync() would see
+				// wasBlocking already true and never re-emit DISCOVERED for a still-visible element.
+				this.visibleElementsBySelector.delete(selector)
+				droppedSelectors.push(selector)
 			}
 		}
+
+		return droppedSelectors
 	}
 
 	/**
@@ -152,81 +175,41 @@ export class LoadingElementMonitor extends Monitor {
 	}
 
 	/**
-	 * A selector blocks PCT if at least one matching element is currently visible.
-	 * Invalid selectors are ignored after a single warning so one bad selector does not
-	 * disable the whole monitor.
+	 * Derives PCT's any-visible-per-selector aggregate from the observer's per-element events:
+	 * a selector transitions to blocking on its first visible element (DISCOVERED) and to
+	 * not-blocking when its last visible element disappears (LOADED via completeSelector).
 	 */
-	private hasVisibleElement(selector: string): boolean {
-		let elements: NodeListOf<Element>
-		try {
-			elements = document.querySelectorAll(selector)
-		} catch (error) {
-			if (!this.warnedInvalidSelectors.has(selector)) {
-				this.warnedInvalidSelectors.add(selector)
-				diag.warn('PageLoadingManager.LoadingElementMonitor: Invalid loading element selector.', {
-					error,
-					selector,
-				})
-			}
+	private readonly handleVisibilityChange = (event: ElementVisibilityChangeEvent): void => {
+		const { element, selector, visible } = event
+		const elements = this.visibleElementsBySelector.get(selector) ?? new Set<Element>()
+		const wasBlocking = elements.size > 0
 
-			return false
+		if (visible) {
+			elements.add(element)
+		} else {
+			elements.delete(element)
 		}
 
-		return Array.from(elements).some((element) => this.isElementVisible(element))
-	}
-
-	/**
-	 * Visibility is intentionally based on rendered layout, not only DOM presence.
-	 * Hidden elements, `display: none`, and `visibility: hidden/collapse` do not block PCT.
-	 */
-	private isElementVisible(element: Element): boolean {
-		if (!element.isConnected || element.hasAttribute('hidden') || element.getClientRects().length === 0) {
-			return false
+		if (elements.size === 0) {
+			this.visibleElementsBySelector.delete(selector)
+		} else {
+			this.visibleElementsBySelector.set(selector, elements)
 		}
 
-		const style = getComputedStyle(element)
-		return style.display !== 'none' && style.visibility !== 'hidden' && style.visibility !== 'collapse'
-	}
+		const isBlocking = elements.size > 0
 
-	/**
-	 * Reconciles the current DOM with the tracked selector resources:
-	 * - visible selector not tracked yet -> emit DISCOVERED
-	 * - tracked selector no longer visible -> emit LOADED
-	 */
-	private scanSelectors(): void {
-		this.clearScheduledScan()
-
-		for (const selector of this.selectors) {
-			const isVisible = this.hasVisibleElement(selector)
-			const monitoredSelector = this.monitoredSelectors.get(selector)
-
-			if (isVisible && !monitoredSelector) {
-				const url = this.getLoadingElementUrl(selector)
-				const event = Monitor.createDiscoveredEvent(url)
-				this.monitoredSelectors.set(selector, {
-					id: event.id,
-					startTime: performance.now(),
-					url,
-				})
-				this.emitResourceStateChange(event)
-			} else if (!isVisible && monitoredSelector) {
-				this.completeSelector(selector)
-			}
+		if (isBlocking && !wasBlocking) {
+			const url = this.getLoadingElementUrl(selector)
+			const discoveredEvent = Monitor.createDiscoveredEvent(url)
+			this.monitoredSelectors.set(selector, {
+				id: discoveredEvent.id,
+				startTime: performance.now(),
+				url,
+			})
+			this.emitResourceStateChange(discoveredEvent)
+		} else if (!isBlocking && wasBlocking) {
+			this.completeSelector(selector)
 		}
-	}
-
-	/**
-	 * Batches MutationObserver notifications. DOM updates commonly arrive as several mutations
-	 * in the same turn, and scanning once is enough to know whether each selector is visible.
-	 */
-	private scheduleScan(): void {
-		if (this.scanTimeoutId !== undefined) {
-			return
-		}
-
-		this.scanTimeoutId = setTimeout(() => {
-			this.scanSelectors()
-		}, 0)
 	}
 
 	/**
@@ -239,48 +222,10 @@ export class LoadingElementMonitor extends Monitor {
 		for (const selector of this.monitoredSelectors.keys()) {
 			if (!nextSelectorSet.has(selector)) {
 				this.completeSelector(selector)
+				this.visibleElementsBySelector.delete(selector)
 			}
 		}
+
 		this.selectors = nextSelectors
-	}
-
-	/**
-	 * Observes DOM changes that can affect selector visibility. Loading element selectors
-	 * accept arbitrary CSS selectors, so all attribute changes can be relevant.
-	 */
-	private setupMutationObserver(): void {
-		this.observer = new MutationObserver((mutations) => {
-			if (
-				mutations.some(
-					(mutation) =>
-						mutation.type === 'childList' || (mutation.type === 'attributes' && isElement(mutation.target)),
-				)
-			) {
-				this.scheduleScan()
-			}
-		})
-
-		this.observer.observe(document.documentElement, {
-			attributes: true,
-			childList: true,
-			subtree: true,
-		})
-	}
-
-	private shouldObserveMutations(): boolean {
-		return this.isMonitoring && this.selectors.length > 0
-	}
-
-	private syncMutationObserver(): void {
-		if (this.shouldObserveMutations()) {
-			if (!this.observer) {
-				this.setupMutationObserver()
-			}
-
-			return
-		}
-
-		this.observer?.disconnect()
-		this.observer = null
 	}
 }
