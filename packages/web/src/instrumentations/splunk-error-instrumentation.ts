@@ -144,7 +144,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 	}
 
 	enable(): void {
-		this.acceptingPendingPreLoadSpans = true
+		this.acceptingPendingPreLoadSpans = document.readyState !== 'complete'
 		shimmer.wrap(console, 'error', this.consoleErrorHandler)
 		window.addEventListener('unhandledrejection', this.unhandledRejectionListener)
 		window.addEventListener('error', this.errorListener)
