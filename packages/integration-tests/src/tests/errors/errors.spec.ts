@@ -149,6 +149,24 @@ test.describe('errors', () => {
 		expect(errorSpans[0]).toHaveSpanAttribute('error.stack', errorStackMap[browserName])
 	})
 
+	test('pre-load errors reference the documentLoad span', async ({ recordPage }) => {
+		await recordPage.goTo('/errors/views/splunkrum-reporterror.ejs')
+		await recordPage.waitForSpans(
+			(spans) =>
+				spans.some((span) => span.name === 'SplunkRum.reportError') &&
+				spans.some((span) => span.name === 'documentLoad'),
+		)
+
+		const documentLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'documentLoad')
+		const errorSpan = recordPage.receivedSpans.find((span) => span.name === 'SplunkRum.reportError')
+
+		expectDefined(documentLoadSpan)
+		expectDefined(errorSpan)
+		expect(errorSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.operation, 'documentLoad')
+		expect(errorSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, documentLoadSpan.spanId)
+		expect(errorSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, false)
+	})
+
 	test('error spans reference the active documentLoad span', async ({ recordPage }) => {
 		await recordPage.goTo('/errors/views/splunkrum-reporterror.ejs')
 		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'documentLoad'))
