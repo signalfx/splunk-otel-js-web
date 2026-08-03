@@ -449,10 +449,10 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 	}
 
 	private startErrorSpan(source: string): { now: number; span: Span } {
-		const navigationStartTime = performance.now()
-		const now = Date.now()
+		const errorStartTime = performance.now()
+		const now = performance.timeOrigin + errorStartTime
 		const span = this.tracer.startSpan(source, { startTime: now })
-		const hasNavigation = setBrowserNavigationPageAttributes(span, this.navigationMetricsManager, navigationStartTime)
+		const hasNavigation = setBrowserNavigationPageAttributes(span, this.navigationMetricsManager, errorStartTime)
 		if (
 			this.acceptingPendingPreLoadSpans &&
 			this.navigationMetricsManager &&
@@ -460,7 +460,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 			!hasNavigation &&
 			this.otelConfig.instrumentations?.document !== false
 		) {
-			this.preLoadSpanStartTimes.set(span, navigationStartTime)
+			this.preLoadSpanStartTimes.set(span, errorStartTime)
 		}
 
 		return { now, span }
