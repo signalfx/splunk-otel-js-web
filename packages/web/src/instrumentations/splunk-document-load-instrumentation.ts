@@ -17,7 +17,7 @@
  */
 
 import * as api from '@opentelemetry/api'
-import { isUrlIgnored } from '@opentelemetry/core'
+import { addHrTimes, hrTimeToMilliseconds, isUrlIgnored, millisToHrTime, timeInputToHrTime } from '@opentelemetry/core'
 import { InstrumentationConfig } from '@opentelemetry/instrumentation'
 import {
 	AttributeNames,
@@ -45,6 +45,7 @@ export interface SplunkDocLoadInstrumentationConfig extends InstrumentationConfi
 }
 
 const excludedInitiatorTypes = new Set(['beacon', 'fetch', 'xmlhttprequest'])
+const PAGE_LOAD_SPAN_NAME = 'pageLoad'
 
 function addExtraDocLoadTags(span: api.Span) {
 	if (document.referrer && document.referrer !== '') {
@@ -82,6 +83,10 @@ type ExposedSuper = {
 export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentation {
 	private readonly documentLoadMetricsPromise: ReturnType<SpaMetricsManager['waitForPageLoad']> | undefined
 
+	private navigationStartTimeMillis: number | undefined
+
+	private pageLoadSpan: api.Span | undefined
+
 	private readonly spaMetricsManager: SpaMetricsManager | undefined
 
 	constructor(
@@ -102,7 +107,31 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 		const _superEndSpan: ExposedSuper['_endSpan'] = exposedSuper._endSpan.bind(this)
 
 		exposedSuper._startSpan = (spanName, performanceName, entries, parentSpan) => {
-			const span = _superStartSpan(spanName, performanceName, entries, parentSpan)
+			const fetchStart = entries[PTN.FETCH_START]
+
+			if (spanName === AttributeNames.DOCUMENT_LOAD && typeof fetchStart === 'number') {
+				// Convert the relative Performance API timestamp once. Passing the same
+				// absolute timestamp to all three startSpan calls avoids the SDK computing
+				// a slightly different performance-to-epoch offset for each span.
+				this.navigationStartTimeMillis = hrTimeToMilliseconds(timeInputToHrTime(fetchStart))
+
+				if (this.documentLoadMetricsPromise) {
+					this.pageLoadSpan = this.tracer.startSpan(PAGE_LOAD_SPAN_NAME, {
+						startTime: this.navigationStartTimeMillis,
+					})
+					this.pageLoadSpan.setAttribute('component', this.component)
+					this.pageLoadSpan.setAttribute(SEMATTRS_HTTP_URL, location.href)
+					this.pageLoadSpan.setAttribute(SemanticAttributes.HTTP_USER_AGENT, navigator.userAgent)
+				}
+			}
+
+			const isNavigationSpan =
+				spanName === AttributeNames.DOCUMENT_LOAD || spanName === AttributeNames.DOCUMENT_FETCH
+			const startEntries =
+				isNavigationSpan && this.navigationStartTimeMillis !== undefined
+					? { ...entries, [PTN.FETCH_START]: this.navigationStartTimeMillis }
+					: entries
+			const span = _superStartSpan(spanName, performanceName, startEntries, parentSpan)
 
 			if (span && spanName === AttributeNames.DOCUMENT_LOAD) {
 				span.setAttribute(BROWSER_NAVIGATION_OPERATION_ATTRIBUTE, BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION)
@@ -196,6 +225,16 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 						.then((pageLoadMetrics) => {
 							this.spaMetricsManager?.setPageLoadMetricAttributes(span, pageLoadMetrics)
 							this.spaMetricsManager?.completeCurrentNavigationPct(span, pageLoadMetrics.pct)
+							if (this.pageLoadSpan && this.navigationStartTimeMillis !== undefined) {
+								this.spaMetricsManager?.setPageLoadMetricAttributes(this.pageLoadSpan, pageLoadMetrics)
+								const pageLoadSpan = this.pageLoadSpan as Span
+								pageLoadSpan.end(
+									addHrTimes(pageLoadSpan.startTime, millisToHrTime(pageLoadMetrics.pct)),
+								)
+								this.navigationStartTimeMillis = undefined
+								this.pageLoadSpan = undefined
+							}
+
 							api.diag.debug('Sending documentLoad span with PCT result', pageLoadMetrics)
 							_superEndSpan(span, performanceName, entries)
 						})
@@ -204,6 +243,12 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 							api.diag.warn('SplunkDocumentLoadInstrumentation: Failed to resolve page load metrics.', {
 								error,
 							})
+							if (this.pageLoadSpan) {
+								_superEndSpan(this.pageLoadSpan, performanceName, entries)
+								this.navigationStartTimeMillis = undefined
+								this.pageLoadSpan = undefined
+							}
+
 							_superEndSpan(span, performanceName, entries)
 						})
 
