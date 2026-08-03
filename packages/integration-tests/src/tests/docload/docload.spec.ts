@@ -91,6 +91,8 @@ test.describe('docload', () => {
 		expect(docLoadSpans[0].spanId.match(/[a-f0-9]+/), 'Checking sanity of spanId').toBeTruthy()
 		expect(docFetchSpans[0].traceId).toBe(docLoadSpans[0].traceId)
 		expect(docFetchSpans[0].parentSpanId).toBe(docLoadSpans[0].spanId)
+		expect(docLoadSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.operation, 'documentLoad')
+		expect(docFetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.operation, 'documentLoad')
 		expect(docFetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, docLoadSpans[0].spanId)
 		expect(docFetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, true)
 		expect(docFetchSpans[0].startTime).toEqual(docLoadSpans[0].startTime)
@@ -112,6 +114,7 @@ test.describe('docload', () => {
 		expect(scriptFetchSpans[0].traceId).toBe(docLoadSpans[0].traceId)
 		expect(scriptFetchSpans[0].parentSpanId).toBe(docLoadSpans[0].spanId)
 		expect(scriptFetchSpans[0]).toHaveSpanAttribute('component', 'document-load')
+		expect(scriptFetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.operation, 'documentLoad')
 		expect(scriptFetchSpans[0]).toHaveSpanAttribute(
 			BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId,
 			docLoadSpans[0].spanId,

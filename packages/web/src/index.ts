@@ -43,6 +43,7 @@ import {
 	DEFAULT_AUTO_INSTRUMENTED_EVENTS,
 	ERROR_INSTRUMENTATION_NAME,
 	FRUSTRATION_SIGNALS_INSTRUMENTATION_NAME,
+	SplunkBlockingElementInstrumentation,
 	SplunkConnectivityInstrumentation,
 	SplunkDocumentLoadInstrumentation,
 	SplunkErrorInstrumentation,
@@ -59,6 +60,7 @@ import {
 	SplunkXhrInstrumentation,
 	UserInteractionEventsConfig,
 } from './instrumentations'
+import { ElementVisibilityObserver } from './observers/element-visibility-observer'
 import { SafeW3CBaggagePropagator } from './safe-w3c-baggage-propagator'
 import { BrowserInstanceService } from './services/browser-instance-service'
 import { SessionBasedSampler } from './session-based-sampler'
@@ -162,6 +164,7 @@ const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
 }
 
 const INSTRUMENTATIONS = [
+	{ confKey: 'blockingElement', disable: false, Instrument: SplunkBlockingElementInstrumentation },
 	{ confKey: 'document', disable: false, Instrument: SplunkDocumentLoadInstrumentation },
 	{ confKey: 'xhr', disable: false, Instrument: SplunkXhrInstrumentation },
 	{ confKey: 'fetch', disable: false, Instrument: SplunkFetchInstrumentation },
@@ -651,6 +654,20 @@ export const SplunkRum: SplunkOtelWebType = {
 			}
 			const basicPlatformInfo = getBasicPlatformInfo(platformInfoOptions)
 
+			// Shared by SpaMetricsManager (LoadingElementMonitor) and SplunkBlockingElementInstrumentation
+			// so both watch the DOM through one MutationObserver instead of two independent ones.
+			const elementVisibilityObserver = new ElementVisibilityObserver()
+
+			const spaMetricsManager =
+				processedOptions.spaMetrics === false
+					? undefined
+					: new SpaMetricsManager({
+							beaconEndpoint: processedOptions.beaconEndpoint,
+							...(processedOptions.spaMetrics === true ? {} : processedOptions.spaMetrics),
+							elementVisibilityObserver,
+						})
+			_spaMetricsManager = spaMetricsManager
+
 			this.attributesProcessor = new SpanAttributesProcessor(
 				this.sessionManager,
 				this.userManager,
@@ -665,6 +682,7 @@ export const SplunkRum: SplunkOtelWebType = {
 				},
 				processedOptions.discardDataAfterInactivity,
 				processedOptions.adjustSessionStartToTimeOrigin,
+				spaMetricsManager,
 			)
 
 			this._spanEmitter = new SpanEmitterProcessor()
@@ -700,15 +718,6 @@ export const SplunkRum: SplunkOtelWebType = {
 
 			this.sessionManager.start()
 
-			const spaMetricsManager =
-				processedOptions.spaMetrics === false
-					? undefined
-					: new SpaMetricsManager({
-							beaconEndpoint: processedOptions.beaconEndpoint,
-							...(processedOptions.spaMetrics === true ? {} : processedOptions.spaMetrics),
-						})
-			_spaMetricsManager = spaMetricsManager
-
 			const instrumentations = INSTRUMENTATIONS.map(({ confKey, disable, Instrument }) => {
 				const pluginConf = getPluginConfig(processedOptions.instrumentations[confKey], pluginDefaults, disable)
 				if (pluginConf) {
@@ -718,6 +727,7 @@ export const SplunkRum: SplunkOtelWebType = {
 						processedOptions,
 						this.sessionManager,
 						spaMetricsManager,
+						elementVisibilityObserver,
 					)
 
 					if (
