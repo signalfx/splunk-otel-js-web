@@ -20,6 +20,10 @@ import { diag, Span, trace, Tracer, TracerProvider } from '@opentelemetry/api'
 import { isUrlIgnored } from '@opentelemetry/core'
 
 import { SessionManager, SpaMetricsManager } from '../managers'
+import {
+	BROWSER_NAVIGATION_OPERATION_ATTRIBUTE,
+	BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION,
+} from '../managers/spa-metrics-manager/constants'
 import { SplunkOtelWebConfig } from '../types'
 import { UserInteractionInstrumentation } from '../upstream/user-interaction/instrumentation'
 import { UserInteractionInstrumentationConfig } from '../upstream/user-interaction/types'
@@ -164,7 +168,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 	enable(): void {
 		this.__hashChangeHandler = (event: Event) => {
 			const hashChangeEvent = event as HashChangeEvent
-			void this._emitRouteChangeSpan(hashChangeEvent.oldURL, hashChangeEvent.newURL)
+			void this._emitRouteChangeSpan(hashChangeEvent.oldURL, hashChangeEvent.newURL, event.timeStamp)
 		}
 
 		// Hash can be changed with location.hash = '#newThing', no way to hook that directly...
@@ -183,14 +187,19 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 		this._routingTracer = tracerProvider.getTracer(ROUTING_INSTRUMENTATION_NAME, ROUTING_INSTRUMENTATION_VERSION)
 	}
 
-	private async _emitRouteChangeSpan(oldHref: string, newHref: string) {
+	private async _emitRouteChangeSpan(oldHref: string, newHref: string, navigationStartTime = performance.now()) {
 		const config = this.getConfig()
 		if (isUrlIgnored(newHref, config.ignoreUrls)) {
 			return
 		}
 
 		const now = Date.now()
-		const span = this._routingTracer.startSpan('routeChange', { startTime: now })
+		const span = this._routingTracer.startSpan(BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION, {
+			attributes: {
+				[BROWSER_NAVIGATION_OPERATION_ATTRIBUTE]: BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION,
+			},
+			startTime: now,
+		})
 		span.setAttribute('component', this.moduleName)
 		span.setAttribute('location.href', newHref)
 		span.setAttribute('prev.href', oldHref)
@@ -199,8 +208,9 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 			// Wait for all in-flight resources monitored by SPA metrics to finish loading,
 			// then resolve after a quiet period with no new monitored activity.
 			const pageLoadMetrics = await this.spaMetricsManager.waitForPageLoad({
+				operation: BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION,
 				span,
-				startTime: performance.now(),
+				startTime: navigationStartTime,
 			})
 			diag.debug('Sending routeChange span with PCT result', pageLoadMetrics)
 			span.end(now + pageLoadMetrics.pct)

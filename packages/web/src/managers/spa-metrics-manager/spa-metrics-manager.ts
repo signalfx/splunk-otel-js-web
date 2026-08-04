@@ -22,9 +22,11 @@ import { isUrlIgnored } from '@opentelemetry/core'
 import type { SpaMetricsMonitor, SpaMetricsUrlOverride } from '../../types'
 import type { Monitor, MonitorConfig } from './monitors/monitor'
 
+import { ElementVisibilityObserver } from '../../observers/element-visibility-observer'
 import { truncateString } from '../../utils/text'
 import {
 	BROWSER_NAVIGATION_DETECTED_RESOURCE_COUNT_ATTRIBUTE,
+	BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION,
 	BROWSER_NAVIGATION_LAST_LOADED_RESOURCES_ATTRIBUTE,
 	BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE,
 	BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
@@ -101,17 +103,57 @@ type DroppedLoadingResources = {
 	elementResourceUrls: string[]
 }
 
-type WaitForPageLoadConfig = {
-	span?: Span
+type WaitForPageLoadConfig =
+	| {
+			operation: string
+			span: Span
+			startTime: number
+	  }
+	| {
+			operation?: never
+			span?: never
+			startTime: number
+	  }
+
+type NavigationHistoryEntry = {
+	operation: string
+	pctEndTime?: number
+	spanId: string
 	startTime: number
+}
+
+type ResourceAdmissionDecision = {
+	admitted: boolean
+	consumed: boolean
+	monitorType: SpaMetricsMonitor
+	startTime: number
+	url: string
+}
+
+export type NavigationActivity =
+	| { type: 'document' }
+	| {
+			monitorTypes: readonly SpaMetricsMonitor[]
+			resourceId?: string
+			type: 'resource'
+			url: string
+	  }
+
+export type NavigationPageAttributes = {
+	pageSpanId: string
+	pctRelevant: boolean
 }
 
 const MAX_LOADING_RESOURCE_URLS_TO_REPORT = 3
 const MAX_LOADED_RESOURCES_TO_REPORT = 3
 const MAX_LOADING_RESOURCE_URL_LENGTH = 100
+const MAX_NAVIGATION_HISTORY_ENTRIES = 10
+const MAX_RESOURCE_ADMISSION_ENTRIES = 1000
+const RESOURCE_ADMISSION_START_TIME_TOLERANCE = 100
 
 export interface SpaMetricsManagerConfig extends SpaMetricsManagerConfigValues {
 	beaconEndpoint?: string
+	elementVisibilityObserver?: ElementVisibilityObserver
 	urlOverrides?: SpaMetricsUrlOverride[]
 }
 
@@ -124,9 +166,13 @@ export class SpaMetricsManager {
 
 	private readonly monitors: ReturnType<typeof SpaMetricsManager.createMonitors>
 
+	private navigationHistory: NavigationHistoryEntry[] = []
+
 	private pageLoadResourceTracker: PageLoadResourceTracker | undefined
 
 	private quietPeriodAwaiter: QuietPeriodAwaiter | undefined
+
+	private resourceAdmissionDecisions = new Map<string, ResourceAdmissionDecision>()
 
 	private readonly urlOverrides: ResolvedSpaMetricsUrlOverride[]
 
@@ -160,15 +206,69 @@ export class SpaMetricsManager {
 			match,
 		}))
 
-		const monitorConfig = {
+		const monitorConfig: MonitorConfig = {
+			consumerId: Symbol('spa-metrics-manager-elements'),
+			elementVisibilityObserver: config.elementVisibilityObserver ?? new ElementVisibilityObserver(),
 			onResourceStateChange: this.onResourceStateChange,
 		}
 
 		this.monitors = SpaMetricsManager.createMonitors(monitorConfig)
 	}
 
+	completeCurrentNavigationPct(span: Span, endTime = performance.now()): void {
+		const spanId = span.spanContext().spanId
+		for (let index = this.navigationHistory.length - 1; index >= 0; index--) {
+			const navigation = this.navigationHistory[index]
+			if (navigation.spanId === spanId) {
+				navigation.pctEndTime = endTime
+				return
+			}
+		}
+	}
+
 	getConfigForUrl(url: string): ResolvedSpaMetricsManagerConfig {
 		return this.urlOverrides.find((override) => this.isUrlOverrideMatch(override.match, url))?.config ?? this.config
+	}
+
+	getCurrentNavigationSpanId(): string | undefined {
+		return this.navigationHistory.at(-1)?.spanId
+	}
+
+	getNavigationOperation(startTime: number): string {
+		return this.getNavigationAt(startTime)?.operation ?? BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION
+	}
+
+	getNavigationPageAttributes(
+		startTime: number,
+		activity?: NavigationActivity,
+	): NavigationPageAttributes | undefined {
+		// Performance entries can be delivered after a later navigation has started.
+		// Resolve them against the navigation that was active at their original start time.
+		const navigation = this.getNavigationAt(startTime)
+		if (!navigation) {
+			return undefined
+		}
+
+		const pctWindowOpen = navigation.pctEndTime === undefined || startTime <= navigation.pctEndTime
+		const isCurrentNavigation = navigation.spanId === this.getCurrentNavigationSpanId()
+		const pctRelevant =
+			isCurrentNavigation &&
+			pctWindowOpen &&
+			(activity?.type === 'document' ||
+				(activity?.type === 'resource' && this.evaluateResourceAdmission(activity, startTime)))
+
+		return {
+			pageSpanId: navigation.spanId,
+			pctRelevant,
+		}
+	}
+
+	setCurrentNavigationSpan(span: Span, startTime: number, operation: string): void {
+		this.navigationHistory.push({ operation, spanId: span.spanContext().spanId, startTime })
+		// Keep the lookup bounded for long-running single-page applications.
+		if (this.navigationHistory.length > MAX_NAVIGATION_HISTORY_ENTRIES) {
+			this.navigationHistory.shift()
+		}
 	}
 
 	setPageLoadMetricAttributes(
@@ -234,6 +334,8 @@ export class SpaMetricsManager {
 	stop(): void {
 		this.quietPeriodAwaiter?.interrupt()
 		this.quietPeriodAwaiter = undefined
+		this.navigationHistory = []
+		this.resourceAdmissionDecisions.clear()
 
 		if (!this.isMonitoring) {
 			return
@@ -248,8 +350,12 @@ export class SpaMetricsManager {
 		diag.debug('SpaMetricsManager: Stopped monitoring.')
 	}
 
-	waitForPageLoad({ span, startTime }: WaitForPageLoadConfig): Promise<PageLoadMetricsResult> {
+	waitForPageLoad({ operation, span, startTime }: WaitForPageLoadConfig): Promise<PageLoadMetricsResult> {
 		this.quietPeriodAwaiter?.interrupt()
+		if (span) {
+			this.setCurrentNavigationSpan(span, startTime, operation)
+		}
+
 		const activeConfig = this.activeConfig
 		const droppedResources = this.dropLoadingResourcesIgnoredByActiveConfig(activeConfig)
 		this.pageLoadResourceTracker = {
@@ -298,13 +404,28 @@ export class SpaMetricsManager {
 			})
 		}
 
-		return pageLoadMetricsPromise.then((result) => {
-			if (span) {
-				this.setPageLoadMetricAttributes(span, result)
-			}
+		return pageLoadMetricsPromise.then(
+			(result) => {
+				try {
+					if (span) {
+						this.setPageLoadMetricAttributes(span, result)
+					}
 
-			return result
-		})
+					return result
+				} finally {
+					if (span) {
+						this.completeCurrentNavigationPct(span, startTime + result.pct)
+					}
+				}
+			},
+			(error) => {
+				if (span) {
+					this.completeCurrentNavigationPct(span)
+				}
+
+				throw error
+			},
+		)
 	}
 
 	private static createMonitors(monitorConfig: MonitorConfig) {
@@ -337,6 +458,47 @@ export class SpaMetricsManager {
 		return droppedResources
 	}
 
+	private evaluateResourceAdmission(
+		activity: Extract<NavigationActivity, { type: 'resource' }>,
+		startTime: number,
+	): boolean {
+		if (activity.resourceId) {
+			const decision = this.resourceAdmissionDecisions.get(activity.resourceId)
+			if (!decision) {
+				return false
+			}
+
+			decision.consumed = true
+			return decision.admitted
+		}
+
+		const normalizedUrl = this.normalizeResourceUrl(activity.url)
+		const closestDecisionByMonitor = new Map<SpaMetricsMonitor, ResourceAdmissionDecision>()
+		for (const decision of this.resourceAdmissionDecisions.values()) {
+			const startTimeDifference = Math.abs(decision.startTime - startTime)
+			if (
+				decision.consumed ||
+				!activity.monitorTypes.includes(decision.monitorType) ||
+				decision.url !== normalizedUrl ||
+				startTimeDifference > RESOURCE_ADMISSION_START_TIME_TOLERANCE
+			) {
+				continue
+			}
+
+			const closestDecision = closestDecisionByMonitor.get(decision.monitorType)
+			if (!closestDecision || startTimeDifference < Math.abs(closestDecision.startTime - startTime)) {
+				closestDecisionByMonitor.set(decision.monitorType, decision)
+			}
+		}
+
+		const matchingDecisions = Array.from(closestDecisionByMonitor.values())
+		for (const decision of matchingDecisions) {
+			decision.consumed = true
+		}
+
+		return matchingDecisions.some((decision) => decision.admitted)
+	}
+
 	private getBeaconEndpointIgnoreUrls(beaconEndpoint: string | undefined): (string | RegExp)[] {
 		if (!beaconEndpoint) {
 			return []
@@ -348,6 +510,17 @@ export class SpaMetricsManager {
 		} catch {
 			return [beaconEndpoint]
 		}
+	}
+
+	private getNavigationAt(startTime: number): NavigationHistoryEntry | undefined {
+		for (let index = this.navigationHistory.length - 1; index >= 0; index--) {
+			const navigation = this.navigationHistory[index]
+			if (startTime >= navigation.startTime) {
+				return navigation
+			}
+		}
+
+		return undefined
 	}
 
 	private getResolvedIgnoreUrls(
@@ -374,20 +547,29 @@ export class SpaMetricsManager {
 		return match.test(url)
 	}
 
+	private normalizeResourceUrl(url: string): string {
+		try {
+			return new URL(url, location.href).toString()
+		} catch {
+			return url
+		}
+	}
+
 	private onResourceStateChange = (event: ResourceStateEvent): void => {
 		if (event.state === ResourceState.DISCOVERED) {
 			const activeConfig = this.activeConfig
+			const admitted =
+				activeConfig.monitors.includes(event.monitorType) &&
+				!this.isIgnoredUrl(event.url, activeConfig.ignoreUrls) &&
+				this.loadingResourcesCount < activeConfig.maxResourcesToWatch
 
-			if (!activeConfig.monitors.includes(event.monitorType)) {
-				return
-			}
+			this.persistResourceAdmission(event, admitted)
 
-			if (this.isIgnoredUrl(event.url, activeConfig.ignoreUrls)) {
-				return
-			}
+			if (!admitted) {
+				if (this.loadingResourcesCount >= activeConfig.maxResourcesToWatch) {
+					diag.debug('SpaMetricsManager: Max resources limit reached, ignoring new resource', event.url)
+				}
 
-			if (this.loadingResourcesCount >= activeConfig.maxResourcesToWatch) {
-				diag.debug('SpaMetricsManager: Max resources limit reached, ignoring new resource', event.url)
 				return
 			}
 
@@ -413,6 +595,27 @@ export class SpaMetricsManager {
 					diag.debug('No loading resources. Starting quiet timer.')
 					this.quietPeriodAwaiter?.startQuietTimer({ resourceLoadedTimestamp: event.timestamp })
 				}
+			}
+		}
+	}
+
+	private persistResourceAdmission(
+		event: ResourceStateEvent & { state: ResourceState.DISCOVERED },
+		admitted: boolean,
+	): void {
+		const startTime = event.timestamp ?? performance.now()
+		this.resourceAdmissionDecisions.set(event.id, {
+			admitted,
+			consumed: false,
+			monitorType: event.monitorType,
+			startTime,
+			url: this.normalizeResourceUrl(event.url),
+		})
+
+		if (this.resourceAdmissionDecisions.size > MAX_RESOURCE_ADMISSION_ENTRIES) {
+			const oldestResourceId = this.resourceAdmissionDecisions.keys().next().value
+			if (typeof oldestResourceId === 'string') {
+				this.resourceAdmissionDecisions.delete(oldestResourceId)
 			}
 		}
 	}
