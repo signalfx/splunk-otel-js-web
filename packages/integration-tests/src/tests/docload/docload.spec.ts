@@ -60,6 +60,7 @@ test.describe('docload', () => {
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'documentLoad').length === 1)
 		const docLoadSpans = recordPage.receivedSpans.filter((span) => span.name === 'documentLoad')
 		const docFetchSpans = recordPage.receivedSpans.filter((span) => span.name === 'documentFetch')
+		const pageLoadSpans = recordPage.receivedSpans.filter((span) => span.name === 'pageLoad')
 
 		const scriptFetchSpans = recordPage.receivedSpans.filter(
 			(span) =>
@@ -85,6 +86,7 @@ test.describe('docload', () => {
 
 		expect(docFetchSpans).toHaveLength(1)
 		expect(docLoadSpans).toHaveLength(1)
+		expect(pageLoadSpans).toHaveLength(1)
 		expect(docLoadSpans[0].traceId.match(/[a-f0-9]+/), 'Checking sanity of traceId').toBeTruthy()
 		expect(docLoadSpans[0].spanId.match(/[a-f0-9]+/), 'Checking sanity of spanId').toBeTruthy()
 		expect(docFetchSpans[0].traceId).toBe(docLoadSpans[0].traceId)
@@ -93,6 +95,20 @@ test.describe('docload', () => {
 		expect(docFetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.operation, 'documentLoad')
 		expect(docFetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, docLoadSpans[0].spanId)
 		expect(docFetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, true)
+		expect(docFetchSpans[0].startTime).toEqual(docLoadSpans[0].startTime)
+		expect(pageLoadSpans[0].startTime).toEqual(docLoadSpans[0].startTime)
+		expect(recordPage.receivedSpans.indexOf(pageLoadSpans[0])).toBeLessThan(
+			recordPage.receivedSpans.indexOf(docLoadSpans[0]),
+		)
+		expect(hrTimeToMilliseconds(pageLoadSpans[0].duration)).toBeCloseTo(
+			Number(pageLoadSpans[0].attributes[BROWSER_NAVIGATION_ATTRIBUTES.pageCompletionTime]),
+			5,
+		)
+		expect(pageLoadSpans[0]).toHaveSpanAttribute('component', 'document-load')
+		expectBrowserNavigationAttributes(pageLoadSpans[0], { status: 'completed' })
+		for (const attributeName of Object.values(BROWSER_NAVIGATION_ATTRIBUTES)) {
+			expect(pageLoadSpans[0].attributes[attributeName]).toEqual(docLoadSpans[0].attributes[attributeName])
+		}
 
 		expect(scriptFetchSpans).toHaveLength(1)
 		expect(scriptFetchSpans[0].traceId).toBe(docLoadSpans[0].traceId)
@@ -261,11 +277,10 @@ test.describe('docload', () => {
 		const pct = Number(docLoadSpan.attributes[BROWSER_NAVIGATION_ATTRIBUTES.pageCompletionTime])
 		expect(pct).toBeGreaterThan(0)
 
-		// pct uses the same loadEventEnd - fetchStart calculation as the exported documentLoad span.
+		// pct and the documentLoad span use the same navigation timing values, but Firefox can
+		// expose snapshots that differ by a few milliseconds while the load event is settling.
 		const durationMs = hrTimeToMilliseconds(docLoadSpan.duration)
-		// The span duration is serialized through OTLP HrTime and converted back to milliseconds.
-		// WebKit can report an equivalent integer PCT while durationMs lands just below the next millisecond.
-		expect(pct).toBeGreaterThanOrEqual(Math.floor(durationMs))
+		expect(Math.abs(pct - durationMs)).toBeLessThanOrEqual(5)
 	})
 
 	test('module can be disabled', async ({ recordPage }) => {
