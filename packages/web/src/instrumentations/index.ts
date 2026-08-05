@@ -16,6 +16,7 @@
  *
  */
 
+export * from './splunk-blocking-element-instrumentation'
 export * from './splunk-connectivity-instrumentation'
 export * from './splunk-document-load-instrumentation'
 export * from './splunk-error-instrumentation'

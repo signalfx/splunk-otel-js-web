@@ -54,7 +54,24 @@ export interface SplunkFetchInstrumentationConfig extends FetchInstrumentationCo
 	separateTraces?: boolean
 }
 
+export interface SplunkBlockingElementInstrumentationConfig extends InstrumentationConfig {
+	/**
+	 * Falls back to deriving from spaMetrics (monitors includes 'elements' and
+	 * blockingSelectors is non-empty) when unset.
+	 */
+	enabled?: boolean
+
+	/**
+	 * Maximum duration, in milliseconds, an element span can stay open before it's forcibly ended
+	 * with completion="timeout". Guards against a spinner that never disappears producing no
+	 * telemetry at all.
+	 * @default 180000
+	 */
+	maxElementSpanDuration?: number
+}
+
 export interface SplunkOtelWebOptionsInstrumentations {
+	blockingElement?: boolean | SplunkBlockingElementInstrumentationConfig
 	connectivity?: boolean | InstrumentationConfig
 	document?: boolean | InstrumentationConfig
 	errors?: boolean | SplunkErrorInstrumentationConfig

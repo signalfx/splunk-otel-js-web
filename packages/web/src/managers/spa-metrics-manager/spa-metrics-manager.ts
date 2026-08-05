@@ -22,6 +22,7 @@ import { isUrlIgnored } from '@opentelemetry/core'
 import type { SpaMetricsMonitor, SpaMetricsUrlOverride } from '../../types'
 import type { Monitor, MonitorConfig } from './monitors/monitor'
 
+import { ElementVisibilityObserver } from '../../observers/element-visibility-observer'
 import { truncateString } from '../../utils/text'
 import {
 	BROWSER_NAVIGATION_DETECTED_RESOURCE_COUNT_ATTRIBUTE,
@@ -152,6 +153,7 @@ const RESOURCE_ADMISSION_START_TIME_TOLERANCE = 100
 
 export interface SpaMetricsManagerConfig extends SpaMetricsManagerConfigValues {
 	beaconEndpoint?: string
+	elementVisibilityObserver?: ElementVisibilityObserver
 	urlOverrides?: SpaMetricsUrlOverride[]
 }
 
@@ -204,7 +206,9 @@ export class SpaMetricsManager {
 			match,
 		}))
 
-		const monitorConfig = {
+		const monitorConfig: MonitorConfig = {
+			consumerId: Symbol('spa-metrics-manager-elements'),
+			elementVisibilityObserver: config.elementVisibilityObserver ?? new ElementVisibilityObserver(),
 			onResourceStateChange: this.onResourceStateChange,
 		}
 
