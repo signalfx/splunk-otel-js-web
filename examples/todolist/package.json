@@ -15,7 +15,7 @@
 		"@splunk/otel-web": "workspace:*",
 		"@types/react": "^19.2.16",
 		"@types/react-dom": "^19.2.3",
-		"body-parser": "2.2.2",
+		"body-parser": "2.3.0",
 		"cors": "2.8.6",
 		"express": "5.2.1",
 		"react": "19.2.7",
