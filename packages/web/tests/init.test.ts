@@ -293,7 +293,6 @@ describe('test init', () => {
 					},
 					xhr: { ignoreUrls: ['regex/xhr-regex/', 'exact'] },
 				},
-				rumAccessToken: undefined,
 				navigationMetrics: {
 					ignoreUrls: ['regex/navigation-metrics/', 'exact'],
 					urlOverrides: [
@@ -303,6 +302,7 @@ describe('test init', () => {
 						},
 					],
 				},
+				rumAccessToken: undefined,
 			}
 
 			SplunkRum.init(initOptions)
@@ -472,11 +472,11 @@ describe('test init', () => {
 				deploymentEnvironment: 'my-env',
 				experimental: true,
 				globalAttributes: { customerType: 'GOLD' },
-				rumAccessToken: undefined,
 				navigationMetrics: {
 					maxPageLoadWaitTime: 3000,
 					quietTime: 1000,
 				},
+				rumAccessToken: undefined,
 				spanProcessors: [capturer],
 			})
 
@@ -522,11 +522,11 @@ describe('test init', () => {
 				deploymentEnvironment: 'my-env',
 				experimental: true,
 				globalAttributes: { customerType: 'GOLD' },
-				rumAccessToken: undefined,
 				navigationMetrics: {
 					maxPageLoadWaitTime: 3000,
 					quietTime: 1000,
 				},
+				rumAccessToken: undefined,
 				spanProcessors: [capturer],
 			})
 
