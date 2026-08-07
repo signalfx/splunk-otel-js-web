@@ -64,7 +64,14 @@ describe('SplunkBlockingElementInstrumentation', () => {
 
 	it('throws a clear error when constructed without elementVisibilityObserver', () => {
 		expect(
-			() => new SplunkBlockingElementInstrumentation({}, { navigationMetrics: false }, undefined, undefined, undefined),
+			() =>
+				new SplunkBlockingElementInstrumentation(
+					{},
+					{ navigationMetrics: false },
+					undefined,
+					undefined,
+					undefined,
+				),
 		).toThrow('SplunkBlockingElementInstrumentation requires elementVisibilityObserver.')
 	})
 

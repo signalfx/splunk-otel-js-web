@@ -21,7 +21,7 @@ import { diag, ROOT_CONTEXT } from '@opentelemetry/api'
 import { isTracingSuppressed, suppressTracing } from '@opentelemetry/core'
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch'
 
-import { SessionManager, NavigationMetricsManager } from '../managers'
+import { NavigationMetricsManager, SessionManager } from '../managers'
 import { setBrowserNavigationPageAttributes } from '../managers/navigation-metrics-manager/navigation-relevance'
 import { captureTraceParent } from '../servertiming'
 import { SplunkFetchInstrumentationConfig, SplunkOtelWebConfig } from '../types'

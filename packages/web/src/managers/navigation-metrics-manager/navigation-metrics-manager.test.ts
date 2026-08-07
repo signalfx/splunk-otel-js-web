@@ -38,8 +38,8 @@ import {
 	PAGE_LOAD_METRICS_STATUS_TIMEOUT,
 } from './constants'
 import { ResourceState } from './monitors'
-import { setBrowserNavigationPageAttributes } from './navigation-relevance'
 import { getDocumentLoadTime, NavigationMetricsManager } from './navigation-metrics-manager'
+import { setBrowserNavigationPageAttributes } from './navigation-relevance'
 
 const TEST_API_URL = `${HTTP_TEST_SERVER_URL}/some-data`
 const TEST_BEACON_ENDPOINT = `${HTTP_TEST_SERVER_URL}/v1/rum`

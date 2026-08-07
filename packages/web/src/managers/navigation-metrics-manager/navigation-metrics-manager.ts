@@ -567,7 +567,10 @@ export class NavigationMetricsManager {
 
 			if (!admitted) {
 				if (this.loadingResourcesCount >= activeConfig.maxResourcesToWatch) {
-					diag.debug('NavigationMetricsManager: Max resources limit reached, ignoring new resource', event.url)
+					diag.debug(
+						'NavigationMetricsManager: Max resources limit reached, ignoring new resource',
+						event.url,
+					)
 				}
 
 				return

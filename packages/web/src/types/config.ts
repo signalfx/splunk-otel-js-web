@@ -255,6 +255,37 @@ export interface SplunkOtelWebConfig {
 	instrumentations?: SplunkOtelWebOptionsInstrumentations
 
 	/**
+	 * Enables Navigation metrics.
+	 *
+	 * Currently supported metrics:
+	 * - **Page Completion Time (PCT)**: Measures the time from a route change until all configured
+	 *   resource monitors are complete
+	 *
+	 * @default true (enabled)
+	 *
+	 * @example
+	 * ```typescript
+	 * // Enable with defaults
+	 * navigationMetrics: true
+	 *
+	 * // Enable with custom configuration
+	 * navigationMetrics: {
+	 *   blockingSelectors: ['.loading-spinner'],
+	 *   clearLoadingResourcesOnNewPage: true,
+	 *   ignoreUrls: [/analytics\.example\.com/],
+	 *   maxPageLoadWaitTime: 180000,
+	 *   maxResourcesToWatch: 100,
+	 *   monitors: ['media', 'network', 'performance', 'elements'],
+	 *   quietTime: 1000
+	 * }
+	 *
+	 * // Disable Navigation metrics
+	 * navigationMetrics: false
+	 * ```
+	 */
+	navigationMetrics?: boolean | NavigationMetricsOptions
+
+	/**
 	 * Specifies where session data should be stored.
 	 *
 	 * Available options:
@@ -300,37 +331,6 @@ export interface SplunkOtelWebConfig {
 	separateTraces?: boolean
 
 	sessionMetadata?: NonNullable<ExternalSessionMetadata>
-
-	/**
-	 * Enables Navigation metrics.
-	 *
-	 * Currently supported metrics:
-	 * - **Page Completion Time (PCT)**: Measures the time from a route change until all configured
-	 *   resource monitors are complete
-	 *
-	 * @default true (enabled)
-	 *
-	 * @example
-	 * ```typescript
-	 * // Enable with defaults
-	 * navigationMetrics: true
-	 *
-	 * // Enable with custom configuration
-	 * navigationMetrics: {
-	 *   blockingSelectors: ['.loading-spinner'],
-	 *   clearLoadingResourcesOnNewPage: true,
-	 *   ignoreUrls: [/analytics\.example\.com/],
-	 *   maxPageLoadWaitTime: 180000,
-	 *   maxResourcesToWatch: 100,
-	 *   monitors: ['media', 'network', 'performance', 'elements'],
-	 *   quietTime: 1000
-	 * }
-	 *
-	 * // Disable Navigation metrics
-	 * navigationMetrics: false
-	 * ```
-	 */
-	navigationMetrics?: boolean | NavigationMetricsOptions
 
 	/**
 	 * @deprecated Use `navigationMetrics`.
