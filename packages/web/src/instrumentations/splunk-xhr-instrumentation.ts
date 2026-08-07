@@ -22,8 +22,8 @@ import { isTracingSuppressed, suppressTracing } from '@opentelemetry/core'
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request'
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base'
 
-import { SessionManager, SpaMetricsManager } from '../managers'
-import { setBrowserNavigationPageAttributes } from '../managers/spa-metrics-manager/navigation-relevance'
+import { SessionManager, NavigationMetricsManager } from '../managers'
+import { setBrowserNavigationPageAttributes } from '../managers/navigation-metrics-manager/navigation-relevance'
 import { captureTraceParent } from '../servertiming'
 import { SplunkOtelWebConfig, SplunkXhrInstrumentationConfig } from '../types'
 
@@ -39,7 +39,7 @@ export class SplunkXhrInstrumentation extends XMLHttpRequestInstrumentation {
 		config: SplunkXhrInstrumentationConfig = {},
 		otelConfig: SplunkOtelWebConfig,
 		public sessionManager?: SessionManager,
-		public spaMetricsManager?: SpaMetricsManager,
+		public navigationMetricsManager?: NavigationMetricsManager,
 	) {
 		super(config)
 		this.otelConfig = otelConfig
@@ -93,11 +93,11 @@ export class SplunkXhrInstrumentation extends XMLHttpRequestInstrumentation {
 				// relies on component being present to route the event, so 'xml-http-request:start' would never fire.
 				// Work around this by setting component first and then emitting the start event manually.
 				span.setAttribute('component', this.moduleName)
-				setBrowserNavigationPageAttributes(span, this.spaMetricsManager, startTime)
+				setBrowserNavigationPageAttributes(span, this.navigationMetricsManager, startTime)
 				xhr.addEventListener(
 					'loadend',
 					() => {
-						setBrowserNavigationPageAttributes(span, this.spaMetricsManager, startTime, {
+						setBrowserNavigationPageAttributes(span, this.navigationMetricsManager, startTime, {
 							monitorTypes: ['network'],
 							resourceId: xhr._splunkMonitorResourceId,
 							type: 'resource',

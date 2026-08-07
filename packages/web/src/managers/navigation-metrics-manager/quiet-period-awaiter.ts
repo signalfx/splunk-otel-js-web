@@ -18,7 +18,7 @@
 
 import { diag } from '@opentelemetry/api'
 
-import type { SpaMetricsMonitor } from '../../types'
+import type { NavigationMetricsMonitor } from '../../types'
 
 import {
 	PAGE_LOAD_METRICS_STATUS_COMPLETED,
@@ -38,7 +38,7 @@ export type PageLoadMetricsStatus =
 
 export type LoadedResourceDetails = {
 	duration: number
-	monitorType: SpaMetricsMonitor
+	monitorType: NavigationMetricsMonitor
 	url: string
 }
 

@@ -24,12 +24,12 @@ import {
 } from '@opentelemetry/sdk-trace-base'
 import { describe, expect, it } from 'vitest'
 
-import { SessionManager, SpaMetricsManager, StorageManager, UserManager } from '../src/managers'
+import { SessionManager, NavigationMetricsManager, StorageManager, UserManager } from '../src/managers'
 import {
 	BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION,
 	BROWSER_NAVIGATION_OPERATION_ATTRIBUTE,
 	BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION,
-} from '../src/managers/spa-metrics-manager/constants'
+} from '../src/managers/navigation-metrics-manager/constants'
 import { SpanAttributesProcessor } from '../src/span-processors'
 
 describe('SplunkSpanAttributesProcessor', () => {
@@ -83,14 +83,14 @@ describe('SplunkSpanAttributesProcessor', () => {
 		})
 
 		it('does not overwrite an existing navigation operation on span start', async () => {
-			const spaMetricsManager = new SpaMetricsManager()
+			const navigationMetricsManager = new NavigationMetricsManager()
 			const processor = new SpanAttributesProcessor(
 				sessionManager,
 				userManager,
 				{},
 				true,
 				false,
-				spaMetricsManager,
+				navigationMetricsManager,
 			)
 			const { exporter, provider, tracer } = createTestTracer(processor)
 			const span = tracer.startSpan(BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION, {
@@ -107,24 +107,24 @@ describe('SplunkSpanAttributesProcessor', () => {
 		})
 
 		it('sets the navigation operation that was active at the span start time', async () => {
-			const spaMetricsManager = new SpaMetricsManager()
+			const navigationMetricsManager = new NavigationMetricsManager()
 			const processor = new SpanAttributesProcessor(
 				sessionManager,
 				userManager,
 				{},
 				true,
 				false,
-				spaMetricsManager,
+				navigationMetricsManager,
 			)
 			const { exporter, provider, tracer } = createTestTracer(processor)
 			const navigationSpan = tracer.startSpan(BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION, {
 				startTime: performance.timeOrigin + 100,
 			})
-			spaMetricsManager.setCurrentNavigationSpan(navigationSpan, 100, BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION)
+			navigationMetricsManager.setCurrentNavigationSpan(navigationSpan, 100, BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION)
 			const routeChangeSpan = tracer.startSpan(BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION, {
 				startTime: performance.timeOrigin + 200,
 			})
-			spaMetricsManager.setCurrentNavigationSpan(routeChangeSpan, 200, BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION)
+			navigationMetricsManager.setCurrentNavigationSpan(routeChangeSpan, 200, BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION)
 
 			const documentLoadSpan = tracer.startSpan('document-load-span', {
 				startTime: performance.timeOrigin + 150,
@@ -154,14 +154,14 @@ describe('SplunkSpanAttributesProcessor', () => {
 		})
 
 		it('attributes sampled spans after a sampled-out routeChange span without a name', async () => {
-			const spaMetricsManager = new SpaMetricsManager()
+			const navigationMetricsManager = new NavigationMetricsManager()
 			const processor = new SpanAttributesProcessor(
 				sessionManager,
 				userManager,
 				{},
 				true,
 				false,
-				spaMetricsManager,
+				navigationMetricsManager,
 			)
 			const { exporter, provider, tracer } = createTestTracer(processor)
 			const sampledOutProvider = new BasicTracerProvider({ sampler: new AlwaysOffSampler() })
@@ -170,7 +170,7 @@ describe('SplunkSpanAttributesProcessor', () => {
 				.startSpan(BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION, { startTime: performance.timeOrigin + 200 })
 
 			expect('name' in sampledOutRouteChangeSpan).toBe(false)
-			spaMetricsManager.setCurrentNavigationSpan(
+			navigationMetricsManager.setCurrentNavigationSpan(
 				sampledOutRouteChangeSpan,
 				200,
 				BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION,

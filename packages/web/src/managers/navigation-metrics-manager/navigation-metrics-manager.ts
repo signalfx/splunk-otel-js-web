@@ -19,7 +19,7 @@
 import { diag, type Span } from '@opentelemetry/api'
 import { isUrlIgnored } from '@opentelemetry/core'
 
-import type { SpaMetricsMonitor, SpaMetricsUrlOverride } from '../../types'
+import type { NavigationMetricsMonitor, NavigationMetricsUrlOverride } from '../../types'
 import type { Monitor, MonitorConfig } from './monitors/monitor'
 
 import { ElementVisibilityObserver } from '../../observers/element-visibility-observer'
@@ -52,13 +52,13 @@ import {
 	QuietPeriodAwaiter,
 } from './quiet-period-awaiter'
 
-const SPA_METRICS_MANAGER_CONFIG_DEFAULTS = {
+const NAVIGATION_METRICS_MANAGER_CONFIG_DEFAULTS = {
 	blockingSelectors: [] as string[],
 	clearLoadingResourcesOnNewPage: true,
 	ignoreUrls: [] as (string | RegExp)[],
 	maxPageLoadWaitTime: 180_000,
 	maxResourcesToWatch: 100,
-	monitors: ['media', 'network', 'performance'] as SpaMetricsMonitor[],
+	monitors: ['media', 'network', 'performance'] as NavigationMetricsMonitor[],
 	quietTime: 1000,
 } as const
 
@@ -71,25 +71,25 @@ export function getDocumentLoadTime(navEntry: DocumentLoadTiming): number {
 	return navEntry.loadEventEnd - navEntry.fetchStart
 }
 
-type SpaMetricsManagerConfigValues = {
+type NavigationMetricsManagerConfigValues = {
 	blockingSelectors?: string[]
 	clearLoadingResourcesOnNewPage?: boolean
 	ignoreUrls?: (string | RegExp)[]
 	maxPageLoadWaitTime?: number
 	maxResourcesToWatch?: number
-	monitors?: SpaMetricsMonitor[]
+	monitors?: NavigationMetricsMonitor[]
 	quietTime?: number
 }
 
-type ResolvedSpaMetricsManagerConfig = Required<SpaMetricsManagerConfigValues>
+type ResolvedNavigationMetricsManagerConfig = Required<NavigationMetricsManagerConfigValues>
 
-type ResolvedSpaMetricsUrlOverride = {
-	config: ResolvedSpaMetricsManagerConfig
+type ResolvedNavigationMetricsUrlOverride = {
+	config: ResolvedNavigationMetricsManagerConfig
 	match: string | RegExp
 }
 
 type LoadingResource = {
-	monitorType: SpaMetricsMonitor
+	monitorType: NavigationMetricsMonitor
 	pageUrl: string
 	url: string
 }
@@ -126,7 +126,7 @@ type NavigationHistoryEntry = {
 type ResourceAdmissionDecision = {
 	admitted: boolean
 	consumed: boolean
-	monitorType: SpaMetricsMonitor
+	monitorType: NavigationMetricsMonitor
 	startTime: number
 	url: string
 }
@@ -134,7 +134,7 @@ type ResourceAdmissionDecision = {
 export type NavigationActivity =
 	| { type: 'document' }
 	| {
-			monitorTypes: readonly SpaMetricsMonitor[]
+			monitorTypes: readonly NavigationMetricsMonitor[]
 			resourceId?: string
 			type: 'resource'
 			url: string
@@ -152,15 +152,15 @@ const MAX_NAVIGATION_HISTORY_ENTRIES = 10
 const MAX_RESOURCE_ADMISSION_ENTRIES = 1000
 const RESOURCE_ADMISSION_START_TIME_TOLERANCE = 100
 
-export interface SpaMetricsManagerConfig extends SpaMetricsManagerConfigValues {
+export interface NavigationMetricsManagerConfig extends NavigationMetricsManagerConfigValues {
 	beaconEndpoint?: string
 	elementVisibilityObserver?: ElementVisibilityObserver
 	emitNavigationAttributes?: boolean
-	urlOverrides?: SpaMetricsUrlOverride[]
+	urlOverrides?: NavigationMetricsUrlOverride[]
 }
 
-export class SpaMetricsManager {
-	private readonly config: ResolvedSpaMetricsManagerConfig
+export class NavigationMetricsManager {
+	private readonly config: ResolvedNavigationMetricsManagerConfig
 
 	private readonly emitNavigationAttributes: boolean
 
@@ -168,7 +168,7 @@ export class SpaMetricsManager {
 
 	private loadingResources = new Map<string, LoadingResource>()
 
-	private readonly monitors: ReturnType<typeof SpaMetricsManager.createMonitors>
+	private readonly monitors: ReturnType<typeof NavigationMetricsManager.createMonitors>
 
 	private navigationHistory: NavigationHistoryEntry[] = []
 
@@ -178,7 +178,7 @@ export class SpaMetricsManager {
 
 	private resourceAdmissionDecisions = new Map<string, ResourceAdmissionDecision>()
 
-	private readonly urlOverrides: ResolvedSpaMetricsUrlOverride[]
+	private readonly urlOverrides: ResolvedNavigationMetricsUrlOverride[]
 
 	private get detectedResourcesCount(): number {
 		return this.pageLoadResourceTracker?.detectedResourcesCount ?? 0
@@ -202,7 +202,7 @@ export class SpaMetricsManager {
 		return this.pageLoadResourceTracker?.longestLoadedResource
 	}
 
-	constructor(config: SpaMetricsManagerConfig = {}) {
+	constructor(config: NavigationMetricsManagerConfig = {}) {
 		const beaconEndpointIgnoreUrls = this.getBeaconEndpointIgnoreUrls(config.beaconEndpoint)
 		this.config = this.resolveConfig(config, beaconEndpointIgnoreUrls)
 		// SplunkRum.init always supplies the public experimental flag. Keep the standalone
@@ -214,12 +214,12 @@ export class SpaMetricsManager {
 		}))
 
 		const monitorConfig: MonitorConfig = {
-			consumerId: Symbol('spa-metrics-manager-elements'),
+			consumerId: Symbol('navigation-metrics-manager-elements'),
 			elementVisibilityObserver: config.elementVisibilityObserver ?? new ElementVisibilityObserver(),
 			onResourceStateChange: this.onResourceStateChange,
 		}
 
-		this.monitors = SpaMetricsManager.createMonitors(monitorConfig)
+		this.monitors = NavigationMetricsManager.createMonitors(monitorConfig)
 	}
 
 	completeCurrentNavigationPct(span: Span, endTime = performance.now()): void {
@@ -233,7 +233,7 @@ export class SpaMetricsManager {
 		}
 	}
 
-	getConfigForUrl(url: string): ResolvedSpaMetricsManagerConfig {
+	getConfigForUrl(url: string): ResolvedNavigationMetricsManagerConfig {
 		return this.urlOverrides.find((override) => this.isUrlOverrideMatch(override.match, url))?.config ?? this.config
 	}
 
@@ -330,13 +330,13 @@ export class SpaMetricsManager {
 		}
 	}
 
-	private get activeConfig(): ResolvedSpaMetricsManagerConfig {
+	private get activeConfig(): ResolvedNavigationMetricsManagerConfig {
 		return this.getConfigForUrl(location.href)
 	}
 
 	start(): void {
 		if (this.isMonitoring) {
-			diag.warn('SpaMetricsManager: Already monitoring.')
+			diag.warn('NavigationMetricsManager: Already monitoring.')
 			return
 		}
 
@@ -346,7 +346,7 @@ export class SpaMetricsManager {
 			monitor.start()
 		}
 
-		diag.debug('SpaMetricsManager: Started monitoring.')
+		diag.debug('NavigationMetricsManager: Started monitoring.')
 	}
 
 	stop(): void {
@@ -365,7 +365,7 @@ export class SpaMetricsManager {
 		}
 		this.loadingResources.clear()
 
-		diag.debug('SpaMetricsManager: Stopped monitoring.')
+		diag.debug('NavigationMetricsManager: Stopped monitoring.')
 	}
 
 	waitForPageLoad({ operation, span, startTime }: WaitForPageLoadConfig): Promise<PageLoadMetricsResult> {
@@ -452,11 +452,11 @@ export class SpaMetricsManager {
 			media: new MediaMonitor(monitorConfig),
 			network: new FetchXhrMonitor(monitorConfig),
 			performance: new PerformanceMonitor(monitorConfig),
-		} as const satisfies Record<SpaMetricsMonitor, Monitor>
+		} as const satisfies Record<NavigationMetricsMonitor, Monitor>
 	}
 
 	private dropLoadingResourcesIgnoredByActiveConfig(
-		activeConfig: ResolvedSpaMetricsManagerConfig,
+		activeConfig: ResolvedNavigationMetricsManagerConfig,
 	): DroppedLoadingResources {
 		const droppedResources: DroppedLoadingResources = { elementResourceUrls: [] }
 		const pageUrl = location.href
@@ -491,7 +491,7 @@ export class SpaMetricsManager {
 		}
 
 		const normalizedUrl = this.normalizeResourceUrl(activity.url)
-		const closestDecisionByMonitor = new Map<SpaMetricsMonitor, ResourceAdmissionDecision>()
+		const closestDecisionByMonitor = new Map<NavigationMetricsMonitor, ResourceAdmissionDecision>()
 		for (const decision of this.resourceAdmissionDecisions.values()) {
 			const startTimeDifference = Math.abs(decision.startTime - startTime)
 			if (
@@ -585,7 +585,7 @@ export class SpaMetricsManager {
 
 			if (!admitted) {
 				if (this.loadingResourcesCount >= activeConfig.maxResourcesToWatch) {
-					diag.debug('SpaMetricsManager: Max resources limit reached, ignoring new resource', event.url)
+					diag.debug('NavigationMetricsManager: Max resources limit reached, ignoring new resource', event.url)
 				}
 
 				return
@@ -663,10 +663,10 @@ export class SpaMetricsManager {
 	}
 
 	private resolveConfig(
-		config: SpaMetricsManagerConfigValues,
+		config: NavigationMetricsManagerConfigValues,
 		beaconEndpointIgnoreUrls: (string | RegExp)[],
-		defaultConfig: ResolvedSpaMetricsManagerConfig = SPA_METRICS_MANAGER_CONFIG_DEFAULTS,
-	): ResolvedSpaMetricsManagerConfig {
+		defaultConfig: ResolvedNavigationMetricsManagerConfig = NAVIGATION_METRICS_MANAGER_CONFIG_DEFAULTS,
+	): ResolvedNavigationMetricsManagerConfig {
 		const quietTime = config.quietTime ?? defaultConfig.quietTime
 		const maxPageLoadWaitTime = config.maxPageLoadWaitTime ?? defaultConfig.maxPageLoadWaitTime
 

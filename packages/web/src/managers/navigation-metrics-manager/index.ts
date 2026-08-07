@@ -16,8 +16,6 @@
  *
  */
 
+export * from './constants'
 export * from './navigation-metrics-manager'
-export * from './privacy'
-export * from './session-manager'
-export * from './storage'
-export * from './user-manager'
+export * from './resolve-config'

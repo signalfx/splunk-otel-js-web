@@ -16,8 +16,9 @@
  *
  */
 
-import type { SpaMetricsOptions, SplunkOtelWebConfig } from '../../types'
+import type { NavigationMetricsOptions, SplunkOtelWebConfig } from '../../types'
 
+import { resolveNavigationMetricsConfig } from '../../managers/navigation-metrics-manager/resolve-config'
 import { DEFAULT_MAX_ELEMENT_SPAN_DURATION } from './constants'
 
 function isUrlOverrideMatch(match: string | RegExp, url: string): boolean {
@@ -30,18 +31,23 @@ function isUrlOverrideMatch(match: string | RegExp, url: string): boolean {
 	return match.test(url)
 }
 
-function getSpaMetricsConfigForUrl(spaMetrics: SpaMetricsOptions, url: string): SpaMetricsOptions {
-	const override = spaMetrics.urlOverrides?.find((urlOverride) => isUrlOverrideMatch(urlOverride.match, url))
+function getNavigationMetricsConfigForUrl(
+	navigationMetrics: NavigationMetricsOptions,
+	url: string,
+): NavigationMetricsOptions {
+	const override = navigationMetrics.urlOverrides?.find((urlOverride) =>
+		isUrlOverrideMatch(urlOverride.match, url),
+	)
 	if (!override) {
-		return spaMetrics
+		return navigationMetrics
 	}
 
 	// An override that omits monitors/blockingSelectors inherits the base value for that field,
-	// matching SpaMetricsManager.resolveConfig's per-field fallback.
+	// matching NavigationMetricsManager.resolveConfig's per-field fallback.
 	return {
 		...override,
-		blockingSelectors: override.blockingSelectors ?? spaMetrics.blockingSelectors,
-		monitors: override.monitors ?? spaMetrics.monitors,
+		blockingSelectors: override.blockingSelectors ?? navigationMetrics.blockingSelectors,
+		monitors: override.monitors ?? navigationMetrics.monitors,
 	}
 }
 
@@ -58,7 +64,7 @@ export function isBlockingElementInstrumentationEnabled(otelConfig: SplunkOtelWe
 	}
 
 	if (typeof blockingElement === 'object' || blockingElement === undefined) {
-		return isEnabledFromSpaMetrics(otelConfig)
+		return isEnabledFromNavigationMetrics(otelConfig)
 	}
 
 	return blockingElement
@@ -78,21 +84,21 @@ export function resolveMaxElementSpanDuration(otelConfig: SplunkOtelWebConfig): 
 
 // Resolved once for the URL active when called; not re-evaluated on later SPA navigations.
 export function resolveBlockingElementSelectors(otelConfig: SplunkOtelWebConfig): string[] {
-	const spaMetrics = otelConfig.spaMetrics
-	if (typeof spaMetrics !== 'object') {
+	const navigationMetrics = resolveNavigationMetricsConfig(otelConfig)
+	if (typeof navigationMetrics !== 'object') {
 		return []
 	}
 
-	const resolved = getSpaMetricsConfigForUrl(spaMetrics, location.href)
+	const resolved = getNavigationMetricsConfigForUrl(navigationMetrics, location.href)
 	return resolved.blockingSelectors ?? []
 }
 
-function isEnabledFromSpaMetrics(otelConfig: SplunkOtelWebConfig): boolean {
-	const spaMetrics = otelConfig.spaMetrics
-	if (typeof spaMetrics !== 'object') {
+function isEnabledFromNavigationMetrics(otelConfig: SplunkOtelWebConfig): boolean {
+	const navigationMetrics = resolveNavigationMetricsConfig(otelConfig)
+	if (typeof navigationMetrics !== 'object') {
 		return false
 	}
 
-	const resolved = getSpaMetricsConfigForUrl(spaMetrics, location.href)
+	const resolved = getNavigationMetricsConfigForUrl(navigationMetrics, location.href)
 	return (resolved.monitors ?? []).includes('elements') && (resolved.blockingSelectors ?? []).length > 0
 }
