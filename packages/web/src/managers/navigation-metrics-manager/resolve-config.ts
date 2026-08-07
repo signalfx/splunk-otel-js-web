@@ -16,5 +16,12 @@
  *
  */
 
-export * from './constants'
-export * from './spa-metrics-manager'
+import type { NavigationMetricsOptions, SplunkOtelWebConfig } from '../../types'
+
+// `spaMetrics` is deprecated in favor of `navigationMetrics`; `??` correctly treats an explicit
+// `false`/`{}` on either key as a real value, so precedence (navigationMetrics wins when set) holds.
+export function resolveNavigationMetricsConfig(
+	options: Pick<SplunkOtelWebConfig, 'navigationMetrics' | 'spaMetrics'>,
+): boolean | NavigationMetricsOptions {
+	return options.navigationMetrics ?? options.spaMetrics ?? true
+}

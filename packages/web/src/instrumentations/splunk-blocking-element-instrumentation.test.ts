@@ -64,7 +64,14 @@ describe('SplunkBlockingElementInstrumentation', () => {
 
 	it('throws a clear error when constructed without elementVisibilityObserver', () => {
 		expect(
-			() => new SplunkBlockingElementInstrumentation({}, { spaMetrics: false }, undefined, undefined, undefined),
+			() =>
+				new SplunkBlockingElementInstrumentation(
+					{},
+					{ navigationMetrics: false },
+					undefined,
+					undefined,
+					undefined,
+				),
 		).toThrow('SplunkBlockingElementInstrumentation requires elementVisibilityObserver.')
 	})
 
@@ -72,7 +79,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 		createVisibleElement()
 		instrumentation = new SplunkBlockingElementInstrumentation(
 			{},
-			{ spaMetrics: false },
+			{ navigationMetrics: false },
 			undefined,
 			undefined,
 			elementVisibilityObserver,
@@ -84,13 +91,13 @@ describe('SplunkBlockingElementInstrumentation', () => {
 		expect(getFinishedSpans()).toHaveLength(0)
 	})
 
-	it('starts spans when instrumentations.blockingElement.enabled overrides spaMetrics not otherwise enabling it', () => {
+	it('starts spans when instrumentations.blockingElement.enabled overrides navigationMetrics not otherwise enabling it', () => {
 		createVisibleElement()
 		instrumentation = new SplunkBlockingElementInstrumentation(
 			{},
 			{
 				instrumentations: { blockingElement: { enabled: true } },
-				spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['network'] },
+				navigationMetrics: { blockingSelectors: [SELECTOR], monitors: ['network'] },
 			},
 			undefined,
 			undefined,
@@ -109,7 +116,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 		element.id = 'spinner-1'
 		instrumentation = new SplunkBlockingElementInstrumentation(
 			{},
-			{ spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
+			{ navigationMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
 			undefined,
 			undefined,
 			elementVisibilityObserver,
@@ -130,7 +137,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 		createVisibleElement()
 		instrumentation = new SplunkBlockingElementInstrumentation(
 			{},
-			{ spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
+			{ navigationMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
 			undefined,
 			undefined,
 			elementVisibilityObserver,
@@ -148,7 +155,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 		element.dataset.loading = ''
 		instrumentation = new SplunkBlockingElementInstrumentation(
 			{},
-			{ spaMetrics: { blockingSelectors: [SELECTOR, OTHER_SELECTOR], monitors: ['elements'] } },
+			{ navigationMetrics: { blockingSelectors: [SELECTOR, OTHER_SELECTOR], monitors: ['elements'] } },
 			undefined,
 			undefined,
 			elementVisibilityObserver,
@@ -168,7 +175,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 		element.dataset.loading = ''
 		instrumentation = new SplunkBlockingElementInstrumentation(
 			{},
-			{ spaMetrics: { blockingSelectors: [SELECTOR, OTHER_SELECTOR], monitors: ['elements'] } },
+			{ navigationMetrics: { blockingSelectors: [SELECTOR, OTHER_SELECTOR], monitors: ['elements'] } },
 			undefined,
 			undefined,
 			elementVisibilityObserver,
@@ -203,7 +210,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 		const element = createVisibleElement()
 		instrumentation = new SplunkBlockingElementInstrumentation(
 			{},
-			{ spaMetrics: { blockingSelectors: [SELECTOR, OTHER_SELECTOR], monitors: ['elements'] } },
+			{ navigationMetrics: { blockingSelectors: [SELECTOR, OTHER_SELECTOR], monitors: ['elements'] } },
 			undefined,
 			undefined,
 			elementVisibilityObserver,
@@ -246,7 +253,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 				{},
 				{
 					instrumentations: { blockingElement: { maxElementSpanDuration: 5000 } },
-					spaMetrics: { blockingSelectors: [SELECTOR, OTHER_SELECTOR], monitors: ['elements'] },
+					navigationMetrics: { blockingSelectors: [SELECTOR, OTHER_SELECTOR], monitors: ['elements'] },
 				},
 				undefined,
 				undefined,
@@ -291,7 +298,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 		const element = createVisibleElement()
 		instrumentation = new SplunkBlockingElementInstrumentation(
 			{},
-			{ spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
+			{ navigationMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
 			undefined,
 			undefined,
 			elementVisibilityObserver,
@@ -311,7 +318,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 	it('tracks a dynamically added visible element after enable()', async () => {
 		instrumentation = new SplunkBlockingElementInstrumentation(
 			{},
-			{ spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
+			{ navigationMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
 			undefined,
 			undefined,
 			elementVisibilityObserver,
@@ -332,7 +339,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 		createVisibleElement()
 		instrumentation = new SplunkBlockingElementInstrumentation(
 			{},
-			{ spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
+			{ navigationMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
 			undefined,
 			undefined,
 			elementVisibilityObserver,
@@ -352,7 +359,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 	it('does not observe further DOM mutations after disable', async () => {
 		instrumentation = new SplunkBlockingElementInstrumentation(
 			{},
-			{ spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
+			{ navigationMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
 			undefined,
 			undefined,
 			elementVisibilityObserver,
@@ -371,7 +378,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 		const element = createVisibleElement()
 		instrumentation = new SplunkBlockingElementInstrumentation(
 			{},
-			{ spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
+			{ navigationMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
 			undefined,
 			undefined,
 			elementVisibilityObserver,
@@ -400,7 +407,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 			const element = createVisibleElement()
 			instrumentation = new SplunkBlockingElementInstrumentation(
 				{},
-				{ spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
+				{ navigationMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
 				undefined,
 				undefined,
 				elementVisibilityObserver,
@@ -430,7 +437,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 			createVisibleElement()
 			instrumentation = new SplunkBlockingElementInstrumentation(
 				{},
-				{ spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
+				{ navigationMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
 				undefined,
 				undefined,
 				elementVisibilityObserver,
@@ -448,7 +455,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 		it('interrupts again on a second pagehide after a bfcache restore, not just the first', async () => {
 			instrumentation = new SplunkBlockingElementInstrumentation(
 				{},
-				{ spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
+				{ navigationMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
 				undefined,
 				undefined,
 				elementVisibilityObserver,
@@ -487,7 +494,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 			const element = createVisibleElement()
 			instrumentation = new SplunkBlockingElementInstrumentation(
 				{},
-				{ spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
+				{ navigationMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
 				undefined,
 				undefined,
 				elementVisibilityObserver,
@@ -514,7 +521,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 			createVisibleElement()
 			instrumentation = new SplunkBlockingElementInstrumentation(
 				{},
-				{ spaMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
+				{ navigationMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
 				undefined,
 				undefined,
 				elementVisibilityObserver,

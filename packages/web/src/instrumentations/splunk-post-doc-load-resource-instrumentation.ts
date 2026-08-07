@@ -22,9 +22,9 @@ import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instr
 import { addSpanNetworkEvents } from '@opentelemetry/sdk-trace-web'
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions'
 
-import { SessionManager, SpaMetricsManager } from '../managers'
-import { setBrowserNavigationPageAttributes } from '../managers/spa-metrics-manager/navigation-relevance'
-import { getPctMonitorTypes } from '../managers/spa-metrics-manager/resource-monitor-types'
+import { NavigationMetricsManager, SessionManager } from '../managers'
+import { setBrowserNavigationPageAttributes } from '../managers/navigation-metrics-manager/navigation-relevance'
+import { getPctMonitorTypes } from '../managers/navigation-metrics-manager/resource-monitor-types'
 import { SplunkOtelWebConfig } from '../types'
 import { isCacheHit } from '../utils/cache'
 import { VERSION } from '../version'
@@ -67,7 +67,7 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 		config: SplunkPostDocLoadResourceInstrumentationConfig = {},
 		protected otelConfig: SplunkOtelWebConfig,
 		public sessionManager?: SessionManager,
-		public spaMetricsManager?: SpaMetricsManager,
+		public navigationMetricsManager?: NavigationMetricsManager,
 	) {
 		const processedConfig: SplunkPostDocLoadResourceInstrumentationConfig = Object.assign(
 			{},
@@ -133,7 +133,7 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 		span.setAttribute('component', MODULE_NAME)
 		span.setAttribute(SemanticAttributes.HTTP_URL, entry.name)
 		span.setAttribute(SemanticAttributes.HTTP_METHOD, 'GET')
-		setBrowserNavigationPageAttributes(span, this.spaMetricsManager, entry.fetchStart, {
+		setBrowserNavigationPageAttributes(span, this.navigationMetricsManager, entry.fetchStart, {
 			monitorTypes: getPctMonitorTypes(entry.initiatorType),
 			type: 'resource',
 			url: entry.name,

@@ -18,7 +18,7 @@
 
 import { diag } from '@opentelemetry/api'
 
-import { isElement, isMediaElement, type SpaMetricsMonitor } from '../../../types'
+import { isElement, isMediaElement, type NavigationMetricsMonitor } from '../../../types'
 import { Monitor } from './monitor'
 
 type MonitoredMediaElement = {
@@ -28,7 +28,7 @@ type MonitoredMediaElement = {
 }
 
 export class MediaMonitor extends Monitor {
-	protected readonly monitorType: SpaMetricsMonitor = 'media'
+	protected readonly monitorType: NavigationMetricsMonitor = 'media'
 
 	private isMonitoring = false
 

@@ -29,13 +29,13 @@ import { Span } from '@opentelemetry/sdk-trace-base'
 import { addSpanNetworkEvents, PerformanceEntries, PerformanceTimingNames as PTN } from '@opentelemetry/sdk-trace-web'
 import { SemanticAttributes, SEMATTRS_HTTP_URL } from '@opentelemetry/semantic-conventions'
 
-import { SessionManager, SpaMetricsManager } from '../managers'
+import { NavigationMetricsManager, SessionManager } from '../managers'
 import {
 	BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION,
 	BROWSER_NAVIGATION_OPERATION_ATTRIBUTE,
-} from '../managers/spa-metrics-manager/constants'
-import { setBrowserNavigationPageAttributes } from '../managers/spa-metrics-manager/navigation-relevance'
-import { getPctMonitorTypes } from '../managers/spa-metrics-manager/resource-monitor-types'
+} from '../managers/navigation-metrics-manager/constants'
+import { setBrowserNavigationPageAttributes } from '../managers/navigation-metrics-manager/navigation-relevance'
+import { getPctMonitorTypes } from '../managers/navigation-metrics-manager/resource-monitor-types'
 import { captureTraceParentFromPerformanceEntries } from '../servertiming'
 import { SplunkOtelWebConfig } from '../types'
 import { isCacheHit } from '../utils/cache'
@@ -81,23 +81,23 @@ type ExposedSuper = {
 }
 
 export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentation {
-	private readonly documentLoadMetricsPromise: ReturnType<SpaMetricsManager['waitForPageLoad']> | undefined
+	private readonly documentLoadMetricsPromise: ReturnType<NavigationMetricsManager['waitForPageLoad']> | undefined
+
+	private readonly navigationMetricsManager: NavigationMetricsManager | undefined
 
 	private navigationStartTimeMillis: number | undefined
 
 	private pageLoadSpan: api.Span | undefined
 
-	private readonly spaMetricsManager: SpaMetricsManager | undefined
-
 	constructor(
 		config: SplunkDocLoadInstrumentationConfig = {},
 		protected otelConfig: SplunkOtelWebConfig,
 		public sessionManager?: SessionManager,
-		spaMetricsManager?: SpaMetricsManager,
+		navigationMetricsManager?: NavigationMetricsManager,
 	) {
 		super(config)
-		this.spaMetricsManager = spaMetricsManager
-		this.documentLoadMetricsPromise = this.spaMetricsManager?.waitForPageLoad({
+		this.navigationMetricsManager = navigationMetricsManager
+		this.documentLoadMetricsPromise = this.navigationMetricsManager?.waitForPageLoad({
 			startTime: 0,
 		})
 
@@ -137,7 +137,11 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 				span.setAttribute(BROWSER_NAVIGATION_OPERATION_ATTRIBUTE, BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION)
 				span.setAttribute('component', this.component)
 				addExtraDocLoadTags(span)
-				this.spaMetricsManager?.setCurrentNavigationSpan(span, 0, BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION)
+				this.navigationMetricsManager?.setCurrentNavigationSpan(
+					span,
+					0,
+					BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION,
+				)
 				// The span processor's automatic onStart event already ran before
 				// `component` was set, so emit manually now that SpanEmitter can
 				// route this as `document-load:start`.
@@ -180,7 +184,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 					const navigationStartTime = isResourceFetch ? fetchStart : Math.max(fetchStart, 0)
 					setBrowserNavigationPageAttributes(
 						span,
-						this.spaMetricsManager,
+						this.navigationMetricsManager,
 						navigationStartTime,
 						isResourceFetch
 							? {
@@ -223,10 +227,13 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 				if (this.documentLoadMetricsPromise) {
 					void this.documentLoadMetricsPromise
 						.then((pageLoadMetrics) => {
-							this.spaMetricsManager?.setPageLoadMetricAttributes(span, pageLoadMetrics)
-							this.spaMetricsManager?.completeCurrentNavigationPct(span, pageLoadMetrics.pct)
+							this.navigationMetricsManager?.setPageLoadMetricAttributes(span, pageLoadMetrics)
+							this.navigationMetricsManager?.completeCurrentNavigationPct(span, pageLoadMetrics.pct)
 							if (this.pageLoadSpan && this.navigationStartTimeMillis !== undefined) {
-								this.spaMetricsManager?.setPageLoadMetricAttributes(this.pageLoadSpan, pageLoadMetrics)
+								this.navigationMetricsManager?.setPageLoadMetricAttributes(
+									this.pageLoadSpan,
+									pageLoadMetrics,
+								)
 								const pageLoadSpan = this.pageLoadSpan as Span
 								pageLoadSpan.end(
 									addHrTimes(pageLoadSpan.startTime, millisToHrTime(pageLoadMetrics.pct)),
@@ -239,7 +246,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 							_superEndSpan(span, performanceName, entries)
 						})
 						.catch((error) => {
-							this.spaMetricsManager?.completeCurrentNavigationPct(span)
+							this.navigationMetricsManager?.completeCurrentNavigationPct(span)
 							api.diag.warn('SplunkDocumentLoadInstrumentation: Failed to resolve page load metrics.', {
 								error,
 							})

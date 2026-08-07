@@ -44,9 +44,9 @@ const expectLoadedResourceAttributes = (
 	expect(longestLoadedResource.duration).toBeGreaterThanOrEqual(0)
 }
 
-test.describe('spa-metrics', () => {
+test.describe('navigation-metrics', () => {
 	test('routeChange span has duration after quiet period', async ({ recordPage }) => {
-		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+		await recordPage.goTo('/user-interaction/navigation-metrics.ejs')
 
 		await recordPage.locator('#btnNavigate').click()
 
@@ -69,7 +69,7 @@ test.describe('spa-metrics', () => {
 	})
 
 	test('errors after a route change have the routeChange operation', async ({ recordPage }) => {
-		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+		await recordPage.goTo('/user-interaction/navigation-metrics.ejs')
 		await recordPage.locator('#btnNavigate').click()
 		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'routeChange'))
 
@@ -92,7 +92,7 @@ test.describe('spa-metrics', () => {
 	})
 
 	test('routeChange span waits for fetch requests to complete', async ({ recordPage }) => {
-		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+		await recordPage.goTo('/user-interaction/navigation-metrics.ejs')
 
 		await recordPage.locator('#btnNavigateWithFetch').click()
 
@@ -130,7 +130,7 @@ test.describe('spa-metrics', () => {
 	})
 
 	test('routeChange span waits for XHR requests to complete', async ({ recordPage }) => {
-		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+		await recordPage.goTo('/user-interaction/navigation-metrics.ejs')
 
 		await recordPage.locator('#btnNavigateWithXhr').click()
 
@@ -165,7 +165,7 @@ test.describe('spa-metrics', () => {
 	})
 
 	test('routeChange span waits for images to load', async ({ recordPage }) => {
-		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+		await recordPage.goTo('/user-interaction/navigation-metrics.ejs')
 
 		await recordPage.locator('#btnNavigateWithImage').click()
 
@@ -197,7 +197,7 @@ test.describe('spa-metrics', () => {
 	})
 
 	test('spans after PCT retain the page span id and are marked not relevant', async ({ recordPage }) => {
-		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+		await recordPage.goTo('/user-interaction/navigation-metrics.ejs')
 
 		await recordPage.locator('#btnNavigate').click()
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'routeChange').length === 1)
@@ -222,7 +222,7 @@ test.describe('spa-metrics', () => {
 	test('network resources rejected by the active PCT monitor config are marked not relevant', async ({
 		recordPage,
 	}) => {
-		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+		await recordPage.goTo('/user-interaction/navigation-metrics.ejs')
 
 		await recordPage.locator('#btnNavigateWithNetworkDisabled').click()
 		await recordPage.waitForSpans(
@@ -259,7 +259,7 @@ test.describe('spa-metrics', () => {
 		test(`${requestType} span retains its original page attribution across overlapping navigations`, async ({
 			recordPage,
 		}) => {
-			await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+			await recordPage.goTo('/user-interaction/navigation-metrics.ejs')
 
 			const button =
 				requestType === 'fetch' ? '#btnNavigateWithOverlappingFetch' : '#btnNavigateWithOverlappingXhr'
@@ -311,7 +311,7 @@ test.describe('spa-metrics', () => {
 	}
 
 	test('multiple route changes each have their own duration', async ({ recordPage }) => {
-		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+		await recordPage.goTo('/user-interaction/navigation-metrics.ejs')
 
 		// First navigation
 		await recordPage.locator('#btnNavigate').click()
@@ -353,7 +353,7 @@ test.describe('spa-metrics', () => {
 
 	// Temporarily skipped while PCT timeout is disabled.
 	test.skip('URL override can disable network monitoring for a matched route', async ({ recordPage }) => {
-		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+		await recordPage.goTo('/user-interaction/navigation-metrics.ejs')
 
 		await recordPage.locator('#btnNavigateWithSlowFetch').click()
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'routeChange').length === 1)
@@ -391,7 +391,7 @@ test.describe('spa-metrics', () => {
 	})
 
 	test('routeChange span waits for loading element selectors to disappear', async ({ recordPage }) => {
-		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+		await recordPage.goTo('/user-interaction/navigation-metrics.ejs')
 		const loadingElementVisibleTimeMs = await recordPage.evaluate(
 			() => (window as unknown as { loadingElementVisibleTimeMs: number }).loadingElementVisibleTimeMs,
 		)
