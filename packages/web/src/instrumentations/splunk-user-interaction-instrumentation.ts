@@ -19,11 +19,11 @@
 import { diag, Span, trace, Tracer, TracerProvider } from '@opentelemetry/api'
 import { isUrlIgnored } from '@opentelemetry/core'
 
-import { SessionManager, SpaMetricsManager } from '../managers'
+import { SessionManager, NavigationMetricsManager } from '../managers'
 import {
 	BROWSER_NAVIGATION_OPERATION_ATTRIBUTE,
 	BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION,
-} from '../managers/spa-metrics-manager/constants'
+} from '../managers/navigation-metrics-manager/constants'
 import { SplunkOtelWebConfig } from '../types'
 import { UserInteractionInstrumentation } from '../upstream/user-interaction/instrumentation'
 import { UserInteractionInstrumentationConfig } from '../upstream/user-interaction/types'
@@ -76,13 +76,13 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 
 	private _routingTracer: Tracer
 
-	private readonly spaMetricsManager: SpaMetricsManager | undefined
+	private readonly navigationMetricsManager: NavigationMetricsManager | undefined
 
 	constructor(
 		config: SplunkUserInteractionInstrumentationConfig = {},
 		otelConfig: SplunkOtelWebConfig,
 		public sessionManager?: SessionManager,
-		spaMetricsManager?: SpaMetricsManager,
+		navigationMetricsManager?: NavigationMetricsManager,
 	) {
 		// Prefer otel's eventNames property
 		if (!config.eventNames) {
@@ -96,7 +96,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 
 		super(config, otelConfig)
 
-		this.spaMetricsManager = spaMetricsManager
+		this.navigationMetricsManager = navigationMetricsManager
 
 		this._routingTracer = trace.getTracer(ROUTING_INSTRUMENTATION_NAME, ROUTING_INSTRUMENTATION_VERSION)
 
@@ -204,10 +204,10 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 		span.setAttribute('location.href', newHref)
 		span.setAttribute('prev.href', oldHref)
 
-		if (this.spaMetricsManager) {
+		if (this.navigationMetricsManager) {
 			// Wait for all in-flight resources monitored by SPA metrics to finish loading,
 			// then resolve after a quiet period with no new monitored activity.
-			const pageLoadMetrics = await this.spaMetricsManager.waitForPageLoad({
+			const pageLoadMetrics = await this.navigationMetricsManager.waitForPageLoad({
 				operation: BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION,
 				span,
 				startTime: navigationStartTime,

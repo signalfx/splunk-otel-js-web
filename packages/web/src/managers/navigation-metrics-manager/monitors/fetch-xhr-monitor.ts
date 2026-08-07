@@ -19,7 +19,7 @@
 import { diag } from '@opentelemetry/api'
 import * as shimmer from 'shimmer'
 
-import type { SpaMetricsMonitor } from '../../../types'
+import type { NavigationMetricsMonitor } from '../../../types'
 
 import { Monitor } from './monitor'
 
@@ -31,7 +31,7 @@ declare global {
 }
 
 export class FetchXhrMonitor extends Monitor {
-	protected readonly monitorType: SpaMetricsMonitor = 'network'
+	protected readonly monitorType: NavigationMetricsMonitor = 'network'
 
 	private isMonitoring = false
 

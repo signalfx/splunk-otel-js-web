@@ -17,7 +17,7 @@
  */
 
 import type { ElementVisibilityObserver } from '../../../observers/element-visibility-observer'
-import type { SpaMetricsMonitor } from '../../../types'
+import type { NavigationMetricsMonitor } from '../../../types'
 
 import { generateId } from '../../../utils'
 
@@ -39,7 +39,7 @@ type ResourceStateEventWithoutMonitorType =
 	  }
 
 export type ResourceStateEvent = ResourceStateEventWithoutMonitorType & {
-	monitorType: SpaMetricsMonitor
+	monitorType: NavigationMetricsMonitor
 }
 
 export interface MonitorConfig {
@@ -55,7 +55,7 @@ export interface MonitorConfig {
 export abstract class Monitor {
 	protected config: MonitorConfig
 
-	protected abstract readonly monitorType: SpaMetricsMonitor
+	protected abstract readonly monitorType: NavigationMetricsMonitor
 
 	constructor(config: MonitorConfig) {
 		this.config = config

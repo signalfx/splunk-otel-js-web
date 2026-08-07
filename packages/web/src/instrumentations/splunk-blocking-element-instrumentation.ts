@@ -19,7 +19,7 @@
 import { diag } from '@opentelemetry/api'
 import { InstrumentationBase } from '@opentelemetry/instrumentation'
 
-import type { SessionManager, SpaMetricsManager } from '../managers'
+import type { SessionManager, NavigationMetricsManager } from '../managers'
 import type { ElementVisibilityChangeEvent, ElementVisibilityObserver } from '../observers/element-visibility-observer'
 import type { SplunkBlockingElementInstrumentationConfig, SplunkOtelWebConfig } from '../types'
 
@@ -59,7 +59,7 @@ export class SplunkBlockingElementInstrumentation extends InstrumentationBase<Sp
 		config: SplunkBlockingElementInstrumentationConfig = {},
 		protected otelConfig: SplunkOtelWebConfig,
 		_sessionManager?: SessionManager,
-		_spaMetricsManager?: SpaMetricsManager,
+		_navigationMetricsManager?: NavigationMetricsManager,
 		elementVisibilityObserver?: ElementVisibilityObserver,
 	) {
 		super(BLOCKING_ELEMENT_MODULE_NAME, VERSION, { ...config, enabled: false })
