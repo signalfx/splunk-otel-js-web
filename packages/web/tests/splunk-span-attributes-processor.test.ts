@@ -24,7 +24,7 @@ import {
 } from '@opentelemetry/sdk-trace-base'
 import { describe, expect, it } from 'vitest'
 
-import { SessionManager, NavigationMetricsManager, StorageManager, UserManager } from '../src/managers'
+import { NavigationMetricsManager, SessionManager, StorageManager, UserManager } from '../src/managers'
 import {
 	BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION,
 	BROWSER_NAVIGATION_OPERATION_ATTRIBUTE,
@@ -120,11 +120,19 @@ describe('SplunkSpanAttributesProcessor', () => {
 			const navigationSpan = tracer.startSpan(BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION, {
 				startTime: performance.timeOrigin + 100,
 			})
-			navigationMetricsManager.setCurrentNavigationSpan(navigationSpan, 100, BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION)
+			navigationMetricsManager.setCurrentNavigationSpan(
+				navigationSpan,
+				100,
+				BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION,
+			)
 			const routeChangeSpan = tracer.startSpan(BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION, {
 				startTime: performance.timeOrigin + 200,
 			})
-			navigationMetricsManager.setCurrentNavigationSpan(routeChangeSpan, 200, BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION)
+			navigationMetricsManager.setCurrentNavigationSpan(
+				routeChangeSpan,
+				200,
+				BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION,
+			)
 
 			const documentLoadSpan = tracer.startSpan('document-load-span', {
 				startTime: performance.timeOrigin + 150,

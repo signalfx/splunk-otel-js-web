@@ -18,7 +18,7 @@
 
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 
-import { SessionManager, NavigationMetricsManager } from '../managers'
+import { NavigationMetricsManager, SessionManager } from '../managers'
 import { setBrowserNavigationPageAttributes } from '../managers/navigation-metrics-manager/navigation-relevance'
 import { SplunkOtelWebConfig } from '../types'
 import { VERSION } from '../version'

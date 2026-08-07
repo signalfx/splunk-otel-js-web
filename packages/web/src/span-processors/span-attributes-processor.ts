@@ -20,7 +20,7 @@ import { Attributes, diag } from '@opentelemetry/api'
 import { hrTimeToMilliseconds } from '@opentelemetry/core'
 import { Span, SpanProcessor } from '@opentelemetry/sdk-trace-base'
 
-import { SESSION_DURATION_MS, SessionManager, NavigationMetricsManager, UserManager } from '../managers'
+import { NavigationMetricsManager, SESSION_DURATION_MS, SessionManager, UserManager } from '../managers'
 import { BROWSER_NAVIGATION_OPERATION_ATTRIBUTE } from '../managers/navigation-metrics-manager/constants'
 
 // Firefox can report navigation timings slightly before performance.timeOrigin.

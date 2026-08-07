@@ -19,7 +19,7 @@
 import { diag } from '@opentelemetry/api'
 import { InstrumentationBase } from '@opentelemetry/instrumentation'
 
-import type { SessionManager, NavigationMetricsManager } from '../managers'
+import type { NavigationMetricsManager, SessionManager } from '../managers'
 import type { ElementVisibilityChangeEvent, ElementVisibilityObserver } from '../observers/element-visibility-observer'
 import type { SplunkBlockingElementInstrumentationConfig, SplunkOtelWebConfig } from '../types'
 

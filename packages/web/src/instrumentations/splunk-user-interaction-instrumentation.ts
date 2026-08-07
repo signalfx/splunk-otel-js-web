@@ -19,7 +19,7 @@
 import { diag, Span, trace, Tracer, TracerProvider } from '@opentelemetry/api'
 import { isUrlIgnored } from '@opentelemetry/core'
 
-import { SessionManager, NavigationMetricsManager } from '../managers'
+import { NavigationMetricsManager, SessionManager } from '../managers'
 import {
 	BROWSER_NAVIGATION_OPERATION_ATTRIBUTE,
 	BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION,
