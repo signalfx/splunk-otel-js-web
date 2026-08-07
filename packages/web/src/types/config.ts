@@ -56,7 +56,7 @@ export interface SplunkFetchInstrumentationConfig extends FetchInstrumentationCo
 
 export interface SplunkBlockingElementInstrumentationConfig extends InstrumentationConfig {
 	/**
-	 * Falls back to deriving from spaMetrics (monitors includes 'elements' and
+	 * Falls back to deriving from navigationMetrics (monitors includes 'elements' and
 	 * blockingSelectors is non-empty) when unset.
 	 */
 	enabled?: boolean
@@ -120,9 +120,9 @@ export function isPersistenceType(value: string): value is PersistenceType {
 	return ['cookie', 'localStorage'].includes(value)
 }
 
-export type SpaMetricsMonitor = 'elements' | 'media' | 'network' | 'performance'
+export type NavigationMetricsMonitor = 'elements' | 'media' | 'network' | 'performance'
 
-type SpaMetricsOptionsBase = {
+type NavigationMetricsOptionsBase = {
 	/** CSS selectors for visible elements that should keep PCT waiting when the elements monitor is enabled. */
 	blockingSelectors?: string[]
 	/** Clear resources triggered on previous pages before calculating PCT for a new page. @default true */
@@ -134,19 +134,19 @@ type SpaMetricsOptionsBase = {
 	/** Maximum number of concurrent resources to track. @default 100 */
 	maxResourcesToWatch?: number
 	/** Resource monitor types to use for matched URLs. @default ['media', 'network', 'performance'] */
-	monitors?: SpaMetricsMonitor[]
+	monitors?: NavigationMetricsMonitor[]
 	/** Time in milliseconds to wait after last resource loads before considering page complete. @default 1000 */
 	quietTime?: number
 }
 
-export type SpaMetricsUrlOverride = SpaMetricsOptionsBase & {
+export type NavigationMetricsUrlOverride = NavigationMetricsOptionsBase & {
 	/** URL matcher for this override. Strings match by substring, regex strings and RegExp values use RegExp.test(). */
 	match: string | RegExp
 }
 
-export type SpaMetricsOptions = SpaMetricsOptionsBase & {
+export type NavigationMetricsOptions = NavigationMetricsOptionsBase & {
 	/** Ordered per-URL overrides. The first matching override wins. */
-	urlOverrides?: SpaMetricsUrlOverride[]
+	urlOverrides?: NavigationMetricsUrlOverride[]
 }
 
 type SensitivityRule = {
@@ -313,7 +313,7 @@ export interface SplunkOtelWebConfig {
 	sessionMetadata?: NonNullable<ExternalSessionMetadata>
 
 	/**
-	 * Enables SPA (Single Page Application) metrics.
+	 * Enables Navigation metrics.
 	 *
 	 * Currently supported metrics:
 	 * - **Page Completion Time (PCT)**: Measures the time from a route change until all configured
@@ -324,10 +324,10 @@ export interface SplunkOtelWebConfig {
 	 * @example
 	 * ```typescript
 	 * // Enable with defaults
-	 * spaMetrics: true
+	 * navigationMetrics: true
 	 *
 	 * // Enable with custom configuration
-	 * spaMetrics: {
+	 * navigationMetrics: {
 	 *   blockingSelectors: ['.loading-spinner'],
 	 *   clearLoadingResourcesOnNewPage: true,
 	 *   ignoreUrls: [/analytics\.example\.com/],
@@ -337,11 +337,16 @@ export interface SplunkOtelWebConfig {
 	 *   quietTime: 1000
 	 * }
 	 *
-	 * // Disable SPA metrics
-	 * spaMetrics: false
+	 * // Disable Navigation metrics
+	 * navigationMetrics: false
 	 * ```
 	 */
-	spaMetrics?: boolean | SpaMetricsOptions
+	navigationMetrics?: boolean | NavigationMetricsOptions
+
+	/**
+	 * @deprecated Use `navigationMetrics`.
+	 */
+	spaMetrics?: boolean | NavigationMetricsOptions
 
 	spanEmitter?: SpanEmitterProcessor
 

@@ -87,7 +87,7 @@ describe('PerformanceMonitor', () => {
 		expect(cssEvents[0].id).toBe(cssEvents[1].id)
 	})
 
-	it('emits URLs matching ignore patterns because SpaMetricsManager applies ignoreUrls', () => {
+	it('emits URLs matching ignore patterns because NavigationMetricsManager applies ignoreUrls', () => {
 		// @ts-expect-error handleResourceEntry is private. We use it for focused monitor testing.
 		monitor.handleResourceEntry({
 			initiatorType: 'img',

@@ -294,11 +294,11 @@ describe('test init', () => {
 					xhr: { ignoreUrls: ['regex/xhr-regex/', 'exact'] },
 				},
 				rumAccessToken: undefined,
-				spaMetrics: {
-					ignoreUrls: ['regex/spa-metrics/', 'exact'],
+				navigationMetrics: {
+					ignoreUrls: ['regex/navigation-metrics/', 'exact'],
 					urlOverrides: [
 						{
-							ignoreUrls: ['regex/spa-metrics-override/', 'exact-override'],
+							ignoreUrls: ['regex/navigation-metrics-override/', 'exact-override'],
 							match: 'regex/checkout/',
 						},
 					],
@@ -323,11 +323,11 @@ describe('test init', () => {
 			expect(initOptions.instrumentations.xhr.ignoreUrls[1]).toBeTypeOf('string')
 			expect(initOptions.instrumentations.fetch.ignoreUrls[0]).toBeInstanceOf(RegExp)
 			expect(initOptions.instrumentations.fetch.ignoreUrls[1]).toBeTypeOf('string')
-			expect(initOptions.spaMetrics.ignoreUrls[0]).toBeInstanceOf(RegExp)
-			expect(initOptions.spaMetrics.ignoreUrls[1]).toBeTypeOf('string')
-			expect(initOptions.spaMetrics.urlOverrides[0].ignoreUrls[0]).toBeInstanceOf(RegExp)
-			expect(initOptions.spaMetrics.urlOverrides[0].ignoreUrls[1]).toBeTypeOf('string')
-			expect(initOptions.spaMetrics.urlOverrides[0].match).toBeInstanceOf(RegExp)
+			expect(initOptions.navigationMetrics.ignoreUrls[0]).toBeInstanceOf(RegExp)
+			expect(initOptions.navigationMetrics.ignoreUrls[1]).toBeTypeOf('string')
+			expect(initOptions.navigationMetrics.urlOverrides[0].ignoreUrls[0]).toBeInstanceOf(RegExp)
+			expect(initOptions.navigationMetrics.urlOverrides[0].ignoreUrls[1]).toBeTypeOf('string')
+			expect(initOptions.navigationMetrics.urlOverrides[0].match).toBeInstanceOf(RegExp)
 
 			const frustrationSignalsConfig = processedOptions?.instrumentations?.frustrationSignals as
 				| FrustrationSignalsConfig
@@ -343,15 +343,15 @@ describe('test init', () => {
 			expect(frustrationSignalsConfig?.errorClick?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
 			expect(frustrationSignalsConfig?.thrashedCursor?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
 
-			const spaMetricsConfig = processedOptions?.spaMetrics as
+			const navigationMetricsConfig = processedOptions?.navigationMetrics as
 				| {
 						ignoreUrls?: Array<string | RegExp>
 						urlOverrides?: Array<{ ignoreUrls?: Array<string | RegExp>; match?: string | RegExp }>
 				  }
 				| undefined
-			expect(spaMetricsConfig?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
-			expect(spaMetricsConfig?.urlOverrides?.[0]?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
-			expect(spaMetricsConfig?.urlOverrides?.[0]?.match).toBeInstanceOf(RegExp)
+			expect(navigationMetricsConfig?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
+			expect(navigationMetricsConfig?.urlOverrides?.[0]?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
+			expect(navigationMetricsConfig?.urlOverrides?.[0]?.match).toBeInstanceOf(RegExp)
 		})
 
 		it('reports malformed regex strings without preventing initialization', () => {
@@ -473,7 +473,7 @@ describe('test init', () => {
 				experimental: true,
 				globalAttributes: { customerType: 'GOLD' },
 				rumAccessToken: undefined,
-				spaMetrics: {
+				navigationMetrics: {
 					maxPageLoadWaitTime: 3000,
 					quietTime: 1000,
 				},
@@ -523,7 +523,7 @@ describe('test init', () => {
 				experimental: true,
 				globalAttributes: { customerType: 'GOLD' },
 				rumAccessToken: undefined,
-				spaMetrics: {
+				navigationMetrics: {
 					maxPageLoadWaitTime: 3000,
 					quietTime: 1000,
 				},
@@ -1076,14 +1076,14 @@ describe('test route change', () => {
 	})
 })
 
-describe('test route change spa metrics timeout', () => {
+describe('test route change navigation metrics timeout', () => {
 	let capturer: SpanCapturer
 
 	beforeEach(() => {
 		capturer = new SpanCapturer()
 		initWithDefaultConfig(capturer, {
 			experimental: true,
-			spaMetrics: {
+			navigationMetrics: {
 				maxPageLoadWaitTime: 3000,
 				quietTime: 1000,
 			},
