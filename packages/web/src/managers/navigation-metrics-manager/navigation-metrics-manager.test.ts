@@ -273,7 +273,7 @@ describe('NavigationMetricsManager', () => {
 
 		expect(config.maxPageLoadWaitTime).toBe(30)
 		expect(diagWarnSpy).toHaveBeenCalledWith(
-			'spa.maxPageLoadWaitTime cannot be lower than quietTime. Using quietTime as maxPageLoadWaitTime.',
+			'navigationMetrics.maxPageLoadWaitTime cannot be lower than quietTime. Using quietTime as maxPageLoadWaitTime.',
 			{ maxPageLoadWaitTime: 5, quietTime: 30 },
 		)
 
@@ -309,7 +309,7 @@ describe('NavigationMetricsManager', () => {
 		expect(config.maxPageLoadWaitTime).toBe(30)
 		expect(diagWarnSpy).toHaveBeenCalledTimes(1)
 		expect(diagWarnSpy).toHaveBeenCalledWith(
-			'spa.maxPageLoadWaitTime cannot be lower than quietTime. Using quietTime as maxPageLoadWaitTime.',
+			'navigationMetrics.maxPageLoadWaitTime cannot be lower than quietTime. Using quietTime as maxPageLoadWaitTime.',
 			{ maxPageLoadWaitTime: 5, quietTime: 30 },
 		)
 
