@@ -48,6 +48,10 @@ function getSpaMetricsConfigForUrl(spaMetrics: SpaMetricsOptions, url: string): 
 // Reads the raw instrumentations.blockingElement value, not this._config/getConfig() —
 // getPluginConfig's pluginDefaults force enabled to false on every instrumentation's processed config.
 export function isBlockingElementInstrumentationEnabled(otelConfig: SplunkOtelWebConfig): boolean {
+	if (!otelConfig.experimental) {
+		return false
+	}
+
 	const blockingElement = otelConfig.instrumentations?.blockingElement
 	if (typeof blockingElement === 'object' && blockingElement.enabled !== undefined) {
 		return blockingElement.enabled

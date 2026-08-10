@@ -239,6 +239,15 @@ export interface SplunkOtelWebConfig {
 	 */
 	discardDataAfterInactivity?: boolean
 
+	/**
+	 * Enables features that are still experimental and may change without notice.
+	 *
+	 * Currently this enables page completion attributes on spans, the `pageLoad`
+	 * span, `blockingElement` spans, and Long Animation Frame instrumentation.
+	 * @default false
+	 */
+	experimental?: boolean
+
 	/** Allows configuring how telemetry data is sent to the backend */
 	exporter?: SplunkOtelWebExporterOptions
 

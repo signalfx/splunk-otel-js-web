@@ -356,11 +356,34 @@ describe('test init', () => {
 	})
 
 	describe('successful', () => {
+		it('does not emit experimental page load telemetry by default', async () => {
+			SplunkRum.init({
+				applicationName: 'my-app',
+				beaconEndpoint: 'https://127.0.0.1:9999/foo',
+				rumAccessToken: undefined,
+				spanProcessors: [capturer],
+			})
+
+			await vi.waitFor(
+				() => {
+					expect(capturer.spans.some((span) => span.name === 'documentLoad')).toBeTruthy()
+				},
+				{ timeout: 6000 },
+			)
+
+			const documentLoadSpan = capturer.spans.find((span) => span.name === 'documentLoad')
+			expectDefined(documentLoadSpan, 'documentLoad span presence.')
+			expect(documentLoadSpan).toNotHaveSpanAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE)
+			expect(documentLoadSpan).toNotHaveSpanAttribute(BROWSER_NAVIGATION_STATUS_ATTRIBUTE)
+			expect(capturer.spans.some((span) => span.name === 'pageLoad')).toBe(false)
+		})
+
 		it('should have been inited properly with doc load spans', async () => {
 			SplunkRum.init({
 				applicationName: 'my-app',
 				beaconEndpoint: 'https://127.0.0.1:9999/foo',
 				deploymentEnvironment: 'my-env',
+				experimental: true,
 				globalAttributes: { customerType: 'GOLD' },
 				instrumentations: {
 					websocket: true,
@@ -427,6 +450,7 @@ describe('test init', () => {
 				applicationName: 'my-app',
 				beaconEndpoint: 'https://127.0.0.1:9999/foo',
 				deploymentEnvironment: 'my-env',
+				experimental: true,
 				globalAttributes: { customerType: 'GOLD' },
 				rumAccessToken: undefined,
 				spaMetrics: {
@@ -476,6 +500,7 @@ describe('test init', () => {
 				applicationName: 'my-app',
 				beaconEndpoint: 'https://127.0.0.1:9999/foo',
 				deploymentEnvironment: 'my-env',
+				experimental: true,
 				globalAttributes: { customerType: 'GOLD' },
 				rumAccessToken: undefined,
 				spaMetrics: {
@@ -1037,6 +1062,7 @@ describe('test route change spa metrics timeout', () => {
 	beforeEach(() => {
 		capturer = new SpanCapturer()
 		initWithDefaultConfig(capturer, {
+			experimental: true,
 			spaMetrics: {
 				maxPageLoadWaitTime: 3000,
 				quietTime: 1000,
