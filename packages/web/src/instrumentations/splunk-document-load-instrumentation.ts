@@ -39,7 +39,7 @@ import { getPctMonitorTypes } from '../managers/spa-metrics-manager/resource-mon
 import { captureTraceParentFromPerformanceEntries } from '../servertiming'
 import { SplunkOtelWebConfig } from '../types'
 import { isCacheHit } from '../utils/cache'
-import { markResourceHandledByDocumentLoad } from './resource-span-dedupe'
+import { didResourceStartAfterDocumentLoad, markResourceHandledByDocumentLoad } from './resource-span-dedupe'
 
 export interface SplunkDocLoadInstrumentationConfig extends InstrumentationConfig {
 	ignoreUrls?: (string | RegExp)[]
@@ -263,7 +263,11 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 		}
 
 		exposedSuper._initResourceSpan = (resource, parentSpan) => {
-			if (excludedInitiatorTypes.has(resource.initiatorType) || isUrlIgnored(resource.name, config.ignoreUrls)) {
+			if (
+				didResourceStartAfterDocumentLoad(resource) ||
+				excludedInitiatorTypes.has(resource.initiatorType) ||
+				isUrlIgnored(resource.name, config.ignoreUrls)
+			) {
 				return
 			}
 

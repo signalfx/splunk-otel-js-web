@@ -23,6 +23,13 @@ function getResourceKey(resource: PerformanceResourceTiming): string {
 	return [resource.name, resource.initiatorType, resource.fetchStart, resource.responseEnd].join('\n')
 }
 
+export function didResourceStartAfterDocumentLoad(resource: PerformanceResourceTiming): boolean {
+	const navigationEntry = performance.getEntriesByType?.('navigation')[0] as PerformanceNavigationTiming | undefined
+	const loadEventStart = navigationEntry?.loadEventStart
+
+	return typeof loadEventStart === 'number' && loadEventStart > 0 && resource.fetchStart >= loadEventStart
+}
+
 export function markResourceHandledByDocumentLoad(resource: PerformanceResourceTiming): void {
 	const key = getResourceKey(resource)
 	documentLoadResourceKeys.add(key)
