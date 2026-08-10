@@ -30,6 +30,7 @@ import {
 import { log } from './log'
 import OTLPLogExporter from './otlp-log-exporter'
 import { OTLPProtoLogExporter } from './otlp-proto-log-exporter'
+import { type FailedReplayPersistence, resolveFailedReplayPersistence, usesIndexedDBPersistence } from './persistence'
 import { Recorder, RecorderPublicConfig } from './session-replay'
 import { getGlobal, getSplunkRumVersion, isDebugMode, parseVersion } from './utils'
 import { VERSION } from './version'
@@ -51,11 +52,11 @@ export type SplunkRumRecorderConfig = {
 	 * and retried on subsequent page loads.
 	 *
 	 * - `true` or `'indexeddb'` (default): Failed OTLP log exports are queued in IndexedDB (100MB budget).
-	 * - `'indexeddb'`: Failed chunks are queued in localStorage (2MB budget).
+	 * - `'localstorage'`: Failed chunks are queued in localStorage (2MB budget).
 	 * - `false`: Disables persistence entirely.
 	 * @default true
 	 */
-	persistFailedReplayData?: boolean | 'indexeddb' | 'localstorage'
+	persistFailedReplayData?: FailedReplayPersistence
 
 	/**
 	 * The name of your organization’s realm. Automatically configures beaconUrl with correct URL
@@ -86,9 +87,6 @@ let sessionStateUnsubscribe: undefined | (() => void)
 let pendingSegmentsRetried = false
 const isLatestTagUsed = isRecorderLoadedViaLatestTag()
 const isFullVersionTagUsed = isRecorderLoadedViaNextTag() || isRecorderLoadedViaLockedVersionTag()
-
-const useIndexedDBPersistence = (config: SplunkRumRecorderConfig): boolean =>
-	config.persistFailedReplayData === 'indexeddb' || config.persistFailedReplayData === true
 
 const retryPendingSegments = (recorderInstance: Recorder, sessionId: string) => {
 	void recorderInstance.getPendingSegments().then((pendingSegments) => {
@@ -159,7 +157,7 @@ const SplunkRumRecorder = {
 		attributes: Attributes
 		exportQueuedLogs: boolean
 		exportUrl: string
-		persistFailedReplayData: boolean | 'indexeddb' | 'localstorage'
+		persistFailedReplayData: FailedReplayPersistence
 		sessionId: string
 	}): LogExporter {
 		const getResourceAttributes = () => {
@@ -174,7 +172,7 @@ const SplunkRumRecorder = {
 			return newAttributes
 		}
 
-		return persistFailedReplayData === 'indexeddb' || persistFailedReplayData === true
+		return usesIndexedDBPersistence(persistFailedReplayData)
 			? new OTLPProtoLogExporter({
 					beaconUrl: exportUrl,
 					getResourceAttributes,
@@ -268,7 +266,16 @@ const SplunkRumRecorder = {
 
 			const resource = SplunkRum.resource
 
-			const { beaconEndpoint, realm, rumAccessToken, sampler, ...initRecorderConfig } = config
+			const {
+				beaconEndpoint,
+				persistFailedReplayData: configuredPersistence,
+				realm,
+				rumAccessToken,
+				sampler,
+				...initRecorderConfig
+			} = config
+			const persistFailedReplayData = resolveFailedReplayPersistence(configuredPersistence)
+			const persistSegments = usesIndexedDBPersistence(persistFailedReplayData)
 			sessionSampler = sampler
 
 			// Mark recorded session as splunk
@@ -327,14 +334,13 @@ const SplunkRumRecorder = {
 						return
 					}
 
-					const persistSegments = useIndexedDBPersistence(config)
 					recorder = new Recorder({
 						exporter: this._getExporterForSession({
 							anonymousUserId: SplunkRum.getAnonymousId(),
 							attributes: resource.attributes,
 							exportQueuedLogs: false,
 							exportUrl,
-							persistFailedReplayData: config.persistFailedReplayData ?? true,
+							persistFailedReplayData,
 							sessionId: currentState.id,
 						}),
 						initRecorderConfig,
@@ -353,14 +359,13 @@ const SplunkRumRecorder = {
 
 			const sessionId = SplunkRum.getSessionId()
 			if (sessionId && createSessionReplaySpanIfAllowed(SpanName.IS_RECORDING, sessionId)) {
-				const persistSegments = useIndexedDBPersistence(config)
 				recorder = new Recorder({
 					exporter: this._getExporterForSession({
 						anonymousUserId: SplunkRum.getAnonymousId(),
 						attributes: resource.attributes,
 						exportQueuedLogs: true,
 						exportUrl,
-						persistFailedReplayData: config.persistFailedReplayData ?? true,
+						persistFailedReplayData,
 						sessionId,
 					}),
 					initRecorderConfig,
