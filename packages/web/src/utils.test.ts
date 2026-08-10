@@ -15,7 +15,8 @@
  * limitations under the License.
  *
  */
-import { describe, expect, it } from 'vitest'
+import { diag } from '@opentelemetry/api'
+import { describe, expect, it, vi } from 'vitest'
 
 import { normalizeIgnoreUrlsConfig } from './utils'
 
@@ -84,6 +85,7 @@ describe('normalizeIgnoreUrlsConfig', () => {
 	})
 
 	it('keeps invalid regex strings as plain strings', () => {
+		const errorSpy = vi.spyOn(diag, 'error')
 		const options = {
 			ignoreUrls: ['regex/[invalid/', 'regex/abc/z'],
 			spaMetrics: {
@@ -100,6 +102,15 @@ describe('normalizeIgnoreUrlsConfig', () => {
 		expect(options.ignoreUrls[0]).toBe('regex/[invalid/')
 		expect(options.ignoreUrls[1]).toBe('regex/abc/z')
 		expect(options.spaMetrics.urlOverrides[0].match).toBe('regex/[invalid/')
+		expect(errorSpy).toHaveBeenCalledWith(
+			'SplunkRum: Invalid regex string in configuration; treating it as a literal string.',
+			expect.objectContaining({ value: 'regex/[invalid/' }),
+		)
+		expect(errorSpy).toHaveBeenCalledWith(
+			'SplunkRum: Invalid regex string in configuration; treating it as a literal string.',
+			{ value: 'regex/abc/z' },
+		)
+		errorSpy.mockRestore()
 	})
 
 	it('ignores non-array ignoreUrls values', () => {

@@ -353,6 +353,26 @@ describe('test init', () => {
 			expect(spaMetricsConfig?.urlOverrides?.[0]?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
 			expect(spaMetricsConfig?.urlOverrides?.[0]?.match).toBeInstanceOf(RegExp)
 		})
+
+		it('reports malformed regex strings without preventing initialization', () => {
+			const errorSpy = vi.spyOn(diag, 'error')
+			const initOptions = {
+				applicationName: 'app',
+				beaconEndpoint: 'https://127.0.0.1:8888/foo',
+				ignoreUrls: ['regex/[invalid/'],
+				rumAccessToken: undefined,
+			}
+
+			SplunkRum.init(initOptions)
+
+			expect(SplunkRum.inited).toBeTruthy()
+			expect(initOptions.ignoreUrls[0]).toBe('regex/[invalid/')
+			expect(errorSpy).toHaveBeenCalledWith(
+				'SplunkRum: Invalid regex string in configuration; treating it as a literal string.',
+				expect.objectContaining({ value: 'regex/[invalid/' }),
+			)
+			errorSpy.mockRestore()
+		})
 	})
 
 	describe('successful', () => {
