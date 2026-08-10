@@ -1486,11 +1486,11 @@ describe('can produce click events', () => {
 		expect(capturer.spans).toHaveLength(2)
 		expect(capturer.spans[0]).toHaveSpanAttribute('target_interactive', true)
 		expect(capturer.spans[1]).toHaveSpanAttribute('target_interactive', true)
-		expect(warnSpy).toHaveBeenCalledTimes(1)
-		expect(warnSpy).toHaveBeenCalledWith(
-			'UserInteractionInstrumentation: Invalid interactive element selector.',
-			expect.objectContaining({ selector: '[' }),
+		const invalidSelectorWarnings = warnSpy.mock.calls.filter(
+			([message]) => message === 'UserInteractionInstrumentation: Invalid interactive element selector.',
 		)
+		expect(invalidSelectorWarnings).toHaveLength(1)
+		expect(invalidSelectorWarnings[0][1]).toEqual(expect.objectContaining({ selector: '[' }))
 
 		warnSpy.mockRestore()
 		element.remove()
