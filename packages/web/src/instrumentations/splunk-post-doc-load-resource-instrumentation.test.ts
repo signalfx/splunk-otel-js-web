@@ -19,6 +19,7 @@
 import { context, ROOT_CONTEXT, type Span } from '@opentelemetry/api'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { markResourceHandledByDocumentLoad } from './resource-span-dedupe'
 import {
 	SplunkPostDocLoadResourceInstrumentation,
 	type SplunkPostDocLoadResourceInstrumentationConfig,
@@ -59,7 +60,7 @@ afterEach(() => {
 })
 
 describe('post document load resource instrumentation', () => {
-	it('starts observing after document-load resource collection on load', () => {
+	it('starts observing on the trusted load event', () => {
 		vi.spyOn(document, 'readyState', 'get').mockReturnValue('loading')
 		const addEventListener = vi.spyOn(window, 'addEventListener')
 		const { instrumentation } = createInstrumentation()
@@ -68,9 +69,19 @@ describe('post document load resource instrumentation', () => {
 		const loadListener = addEventListener.mock.calls.find(([event]) => event === 'load')?.[1] as EventListener
 		loadListener({ isTrusted: true } as Event)
 
-		expect(MockPerformanceObserver.instances).toHaveLength(0)
-		vi.runAllTimers()
 		expect(MockPerformanceObserver.instances).toHaveLength(1)
+	})
+
+	it('does not duplicate a resource handled by document-load instrumentation', () => {
+		const { instrumentation, startSpan } = createInstrumentation()
+		const resource = createResourceEntry('script', 'https://example.test/script.js')
+
+		markResourceHandledByDocumentLoad(resource)
+		instrumentation._startPerformanceObserver()
+		MockPerformanceObserver.instances[0].emit([resource])
+		vi.runAllTimers()
+
+		expect(startSpan).not.toHaveBeenCalled()
 	})
 
 	it('resolves element resource URLs against the document base', () => {

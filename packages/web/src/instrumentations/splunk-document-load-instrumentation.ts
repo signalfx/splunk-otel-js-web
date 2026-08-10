@@ -39,6 +39,7 @@ import { getPctMonitorTypes } from '../managers/spa-metrics-manager/resource-mon
 import { captureTraceParentFromPerformanceEntries } from '../servertiming'
 import { SplunkOtelWebConfig } from '../types'
 import { isCacheHit } from '../utils/cache'
+import { markResourceHandledByDocumentLoad } from './resource-span-dedupe'
 
 export interface SplunkDocLoadInstrumentationConfig extends InstrumentationConfig {
 	ignoreUrls?: (string | RegExp)[]
@@ -268,6 +269,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 
 			const span = exposedSuper._startSpan(AttributeNames.RESOURCE_FETCH, PTN.FETCH_START, resource, parentSpan)
 			if (span) {
+				markResourceHandledByDocumentLoad(resource)
 				span.setAttribute(SEMATTRS_HTTP_URL, resource.name)
 				const cacheHitResult = isCacheHit(resource)
 				if (cacheHitResult !== undefined) {

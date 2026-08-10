@@ -28,6 +28,7 @@ import { getPctMonitorTypes } from '../managers/spa-metrics-manager/resource-mon
 import { SplunkOtelWebConfig } from '../types'
 import { isCacheHit } from '../utils/cache'
 import { VERSION } from '../version'
+import { wasResourceHandledByDocumentLoad } from './resource-span-dedupe'
 
 export interface SplunkPostDocLoadResourceInstrumentationConfig extends InstrumentationConfig {
 	allowedInitiatorTypes?: string[]
@@ -99,10 +100,7 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 						return
 					}
 
-					// Document-load instrumentation collects its resource entries in a load-event
-					// timeout. Start observing afterward so a resource initiated by another load
-					// listener cannot be emitted by both instrumentations.
-					window.setTimeout(() => this._startPerformanceObserver())
+					this._startPerformanceObserver()
 				})
 			}
 		}
@@ -123,7 +121,7 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 	}
 
 	private _createSpan(entry: PerformanceResourceTiming) {
-		if (isUrlIgnored(entry.name, this.config.ignoreUrls)) {
+		if (wasResourceHandledByDocumentLoad(entry) || isUrlIgnored(entry.name, this.config.ignoreUrls)) {
 			return
 		}
 
