@@ -27,9 +27,6 @@ const runTest = async (recordPage: RecordPage, urlPath: string) => {
 	await recordPage.locator('#btn1').click()
 
 	await recordPage.waitForTestToFinish()
-	await recordPage.waitForSpans(
-		(spans) => spans.some((span) => span.name === 'click') && spans.some((span) => span.name === 'custom-span'),
-	)
 
 	const clickSpans = recordPage.receivedSpans.filter((span) => span.name === 'click')
 	const customSpans = recordPage.receivedSpans.filter((span) => span.name === 'custom-span')
@@ -61,9 +58,6 @@ test.describe('framework', () => {
 		await recordPage.goTo('/context/framework/react-latest.ejs')
 		await recordPage.locator('#btn1').click()
 		await recordPage.waitForTestToFinish()
-		await recordPage.waitForSpans(
-			(spans) => spans.some((span) => span.name === 'click') && spans.some((span) => span.name === 'custom-span'),
-		)
 
 		const clickSpans = recordPage.receivedSpans.filter((span) => span.name === 'click')
 		const customSpans = recordPage.receivedSpans.filter((span) => span.name === 'custom-span')

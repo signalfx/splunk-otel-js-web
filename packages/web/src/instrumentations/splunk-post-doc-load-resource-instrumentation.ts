@@ -28,7 +28,6 @@ import { getPctMonitorTypes } from '../managers/spa-metrics-manager/resource-mon
 import { SplunkOtelWebConfig } from '../types'
 import { isCacheHit } from '../utils/cache'
 import { VERSION } from '../version'
-import { wasResourceHandledByDocumentLoad } from './resource-span-dedupe'
 
 export interface SplunkPostDocLoadResourceInstrumentationConfig extends InstrumentationConfig {
 	allowedInitiatorTypes?: string[]
@@ -96,11 +95,7 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 				this._startPerformanceObserver()
 			} else {
 				window.addEventListener('load', (e) => {
-					if (!e.isTrusted) {
-						return
-					}
-
-					this._startPerformanceObserver()
+					this._startPerformanceObserver(e)
 				})
 			}
 		}
@@ -121,7 +116,7 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 	}
 
 	private _createSpan(entry: PerformanceResourceTiming) {
-		if (wasResourceHandledByDocumentLoad(entry) || isUrlIgnored(entry.name, this.config.ignoreUrls)) {
+		if (isUrlIgnored(entry.name, this.config.ignoreUrls)) {
 			return
 		}
 
@@ -184,7 +179,12 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 		this.headMutationObserver.observe(document.head, { childList: true })
 	}
 
-	private _startPerformanceObserver() {
+	private _startPerformanceObserver(event?: Event) {
+		if (event && !event.isTrusted) {
+			// React only to browser triggered load event
+			return
+		}
+
 		if (this.performanceObserver) {
 			// Gate keep
 			return
