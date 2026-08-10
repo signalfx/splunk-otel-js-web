@@ -1441,6 +1441,40 @@ describe('can produce click events', () => {
 
 		element.remove()
 	})
+
+	it('warns once and ignores invalid interactive selectors', () => {
+		deinit()
+		initWithDefaultConfig(capturer, {
+			instrumentations: {
+				interactions: {
+					experimental_interactiveElementSelectors: ['[', '.custom-interactive'],
+				},
+			},
+		})
+
+		const warnSpy = vi.spyOn(diag, 'warn')
+		const listener = vi.fn()
+		const element = document.createElement('div')
+		element.className = 'custom-interactive'
+		document.body.append(element)
+		element.addEventListener('click', listener)
+
+		element.dispatchEvent(new Event('click'))
+		element.dispatchEvent(new Event('click'))
+
+		expect(listener).toHaveBeenCalledTimes(2)
+		expect(capturer.spans).toHaveLength(2)
+		expect(capturer.spans[0]).toHaveSpanAttribute('target_interactive', true)
+		expect(capturer.spans[1]).toHaveSpanAttribute('target_interactive', true)
+		expect(warnSpy).toHaveBeenCalledTimes(1)
+		expect(warnSpy).toHaveBeenCalledWith(
+			'UserInteractionInstrumentation: Invalid interactive element selector.',
+			expect.objectContaining({ selector: '[' }),
+		)
+
+		warnSpy.mockRestore()
+		element.remove()
+	})
 })
 
 describe('external session handling', () => {
