@@ -28,6 +28,7 @@ type TestableInstrumentation = {
 	_processHeadMutationObserverRecords: (mutations: MutationRecord[]) => void
 	_startPerformanceObserver: () => void
 	_tracer: { startSpan: ReturnType<typeof vi.fn> }
+	enable: () => void
 }
 
 class MockPerformanceObserver {
@@ -58,6 +59,20 @@ afterEach(() => {
 })
 
 describe('post document load resource instrumentation', () => {
+	it('starts observing after document-load resource collection on load', () => {
+		vi.spyOn(document, 'readyState', 'get').mockReturnValue('loading')
+		const addEventListener = vi.spyOn(window, 'addEventListener')
+		const { instrumentation } = createInstrumentation()
+
+		instrumentation.enable()
+		const loadListener = addEventListener.mock.calls.find(([event]) => event === 'load')?.[1] as EventListener
+		loadListener({ isTrusted: true } as Event)
+
+		expect(MockPerformanceObserver.instances).toHaveLength(0)
+		vi.runAllTimers()
+		expect(MockPerformanceObserver.instances).toHaveLength(1)
+	})
+
 	it('resolves element resource URLs against the document base', () => {
 		const base = document.createElement('base')
 		base.dataset.testResourceBase = ''

@@ -95,7 +95,14 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 				this._startPerformanceObserver()
 			} else {
 				window.addEventListener('load', (e) => {
-					this._startPerformanceObserver(e)
+					if (!e.isTrusted) {
+						return
+					}
+
+					// Document-load instrumentation collects its resource entries in a load-event
+					// timeout. Start observing afterward so a resource initiated by another load
+					// listener cannot be emitted by both instrumentations.
+					window.setTimeout(() => this._startPerformanceObserver())
 				})
 			}
 		}
@@ -179,12 +186,7 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 		this.headMutationObserver.observe(document.head, { childList: true })
 	}
 
-	private _startPerformanceObserver(event?: Event) {
-		if (event && !event.isTrusted) {
-			// React only to browser triggered load event
-			return
-		}
-
+	private _startPerformanceObserver() {
 		if (this.performanceObserver) {
 			// Gate keep
 			return
