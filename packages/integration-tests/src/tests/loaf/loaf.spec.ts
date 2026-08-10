@@ -69,7 +69,11 @@ test.describe('long animation frame', () => {
 		expect(attributes[`loaf.script[${MAX_LOAF_SCRIPT_SUMMARIES}].duration`]).toBeUndefined()
 	})
 
-	test('reports buffered LoAF entries', async ({ recordPage }) => {
+	test('reports buffered LoAF entries', async ({ recordPage }, testInfo) => {
+		test.skip(
+			testInfo.project.name === 'edge',
+			'Edge does not reliably expose LoAF entries buffered before observer registration.',
+		)
 		await skipIfLoafUnsupported(recordPage)
 
 		await recordPage.goTo('/loaf/buffered.ejs')

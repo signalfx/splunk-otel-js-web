@@ -66,10 +66,15 @@ test.describe('long task', () => {
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})
 
-	test('reports buffered longtask', async ({ browserName, recordPage }) => {
+	test('reports buffered longtask', async ({ browserName, recordPage }, testInfo) => {
 		if (browserName === 'webkit' || browserName === 'firefox') {
 			test.skip()
 		}
+
+		test.skip(
+			testInfo.project.name === 'edge',
+			'Edge does not reliably expose longtask entries buffered before observer registration.',
+		)
 
 		await recordPage.goTo('/long-task/buffered.ejs')
 		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'longtask'))
