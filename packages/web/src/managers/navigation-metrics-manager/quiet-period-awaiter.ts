@@ -81,10 +81,13 @@ export function normalizeMaxPageLoadWaitTime({ maxPageLoadWaitTime, quietTime }:
 		return maxPageLoadWaitTime
 	}
 
-	diag.warn('navigationMetrics.maxPageLoadWaitTime cannot be lower than quietTime. Using quietTime as maxPageLoadWaitTime.', {
-		maxPageLoadWaitTime,
-		quietTime,
-	})
+	diag.warn(
+		'navigationMetrics.maxPageLoadWaitTime cannot be lower than quietTime. Using quietTime as maxPageLoadWaitTime.',
+		{
+			maxPageLoadWaitTime,
+			quietTime,
+		},
+	)
 
 	return quietTime
 }
