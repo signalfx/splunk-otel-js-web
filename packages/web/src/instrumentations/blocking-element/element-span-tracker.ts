@@ -25,7 +25,6 @@ import {
 	BROWSER_ELEMENT_CLASS_ATTRIBUTE,
 	BROWSER_ELEMENT_COMPLETION_ATTRIBUTE,
 	BROWSER_ELEMENT_COMPLETION_COMPLETED,
-	BROWSER_ELEMENT_COMPLETION_INTERRUPTED,
 	BROWSER_ELEMENT_COMPLETION_TIMEOUT,
 	BROWSER_ELEMENT_ID_ATTRIBUTE,
 	BROWSER_ELEMENT_SELECTOR_ATTRIBUTE,
@@ -71,7 +70,7 @@ export class ElementSpanTracker {
 	 */
 	constructor(
 		private readonly tracer: Tracer,
-		private readonly configuredSelectors: string[],
+		private configuredSelectors: string[],
 		private readonly maxElementSpanDuration: number,
 		private readonly onSpanTimeout?: (element: Element) => void,
 	) {}
@@ -84,19 +83,24 @@ export class ElementSpanTracker {
 		return this.tracked.has(element)
 	}
 
-	interruptAll(): void {
+	interruptAll(completion: string): void {
 		for (const element of this.trackedElements()) {
-			this.interruptSpan(element)
+			this.interruptSpan(element, completion)
 		}
 	}
 
-	interruptSpan(element: Element): void {
-		this.endSpan(element, BROWSER_ELEMENT_COMPLETION_INTERRUPTED)
+	interruptSpan(element: Element, completion: string): void {
+		this.endSpan(element, completion)
 	}
 
 	/** Total number of currently open (not yet ended) element spans, one per physical element. */
 	get openCount(): number {
 		return this.tracked.size
+	}
+
+	/** Updates the selector list used to order `browser.element.selector` at completion time. */
+	setConfiguredSelectors(selectors: string[]): void {
+		this.configuredSelectors = selectors
 	}
 
 	/**

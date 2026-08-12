@@ -186,6 +186,8 @@ export class NavigationMetricsManager {
 
 	private resourceAdmissionDecisions = new Map<string, ResourceAdmissionDecision>()
 
+	private readonly routeChangeSubscribers = new Set<() => void>()
+
 	private readonly urlOverrides: ResolvedNavigationMetricsUrlOverride[]
 
 	private get detectedResourcesCount(): number {
@@ -293,6 +295,14 @@ export class NavigationMetricsManager {
 		}
 	}
 
+	/** Notified after activeConfig is resolved for every route change. Returns an unsubscribe function. */
+	onRouteChange(callback: () => void): () => void {
+		this.routeChangeSubscribers.add(callback)
+		return () => {
+			this.routeChangeSubscribers.delete(callback)
+		}
+	}
+
 	registerManualPageLoad(): ManualPageLoadHandle | undefined {
 		return this.quietPeriodAwaiter?.registerManualPageLoad()
 	}
@@ -388,6 +398,7 @@ export class NavigationMetricsManager {
 		this.pageLoadMetricsPromise = undefined
 		this.navigationHistory = []
 		this.resourceAdmissionDecisions.clear()
+		this.routeChangeSubscribers.clear()
 
 		if (!this.isMonitoring) {
 			return
@@ -410,6 +421,10 @@ export class NavigationMetricsManager {
 		}
 
 		const activeConfig = this.activeConfig
+		for (const callback of this.routeChangeSubscribers) {
+			callback()
+		}
+
 		const droppedResources = this.dropLoadingResourcesIgnoredByActiveConfig(activeConfig)
 		this.pageLoadResourceTracker = {
 			detectedResourcesCount: this.loadingResourcesCount,
