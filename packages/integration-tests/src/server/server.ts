@@ -123,6 +123,7 @@ fastify.get('/docload/docload-streamed-navigation.ejs', async (request, reply) =
 			beaconEndpoint: beaconUrl.toString(),
 			bufferTimeout: GLOBAL_TEST_BUFFER_TIMEOUT,
 			debug: true,
+			experimental: true,
 			exporter: { otlp: true },
 		}),
 		otelApiGlobalsFile: '/artifacts/otel-api-globals.js',

@@ -144,6 +144,7 @@ const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
 	disableAutomationFrameworks: false,
 	disableBots: false,
 	discardDataAfterInactivity: true,
+	experimental: false,
 	exporter: {
 		factory: (options) => {
 			if (options.otlp) {
@@ -665,6 +666,7 @@ export const SplunkRum: SplunkOtelWebType = {
 							beaconEndpoint: processedOptions.beaconEndpoint,
 							...(processedOptions.spaMetrics === true ? {} : processedOptions.spaMetrics),
 							elementVisibilityObserver,
+							emitNavigationAttributes: processedOptions.experimental,
 						})
 			_spaMetricsManager = spaMetricsManager
 

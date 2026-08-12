@@ -115,7 +115,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 				// a slightly different performance-to-epoch offset for each span.
 				this.navigationStartTimeMillis = hrTimeToMilliseconds(timeInputToHrTime(fetchStart))
 
-				if (this.documentLoadMetricsPromise) {
+				if (this.documentLoadMetricsPromise && this.otelConfig.experimental) {
 					this.pageLoadSpan = this.tracer.startSpan(PAGE_LOAD_SPAN_NAME, {
 						startTime: this.navigationStartTimeMillis,
 					})

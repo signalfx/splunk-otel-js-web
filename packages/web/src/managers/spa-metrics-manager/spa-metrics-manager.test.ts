@@ -478,6 +478,30 @@ describe('SpaMetricsManager', () => {
 		expect(attributes[BROWSER_NAVIGATION_QUIET_TIMER_RESET_COUNT_ATTRIBUTE]).toBe(3)
 	})
 
+	it('does not set page load or navigation correlation attributes when their emission is disabled', () => {
+		const manager = new SpaMetricsManager({ emitNavigationAttributes: false })
+		const { span: navigationSpan } = createSpanMock('navigation-span-id')
+		const { attributes, span } = createSpanMock('resource-span-id')
+
+		manager.setCurrentNavigationSpan(navigationSpan, 100, BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION)
+		manager.setPageLoadMetricAttributes(span, {
+			detectedResourcesCount: 0,
+			lastLoadedResources: [],
+			loadingResourcesCount: 0,
+			loadingResourceUrls: [],
+			longestLoadedResource: undefined,
+			pct: 123,
+			quietTimerResetCount: 0,
+			status: PAGE_LOAD_METRICS_STATUS_COMPLETED,
+		})
+		setBrowserNavigationPageAttributes(span, manager, 150, { type: 'document' })
+
+		expect(attributes[BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE]).toBeUndefined()
+		expect(attributes[BROWSER_NAVIGATION_STATUS_ATTRIBUTE]).toBeUndefined()
+		expect(attributes[BROWSER_NAVIGATION_PAGE_SPAN_ID_ATTRIBUTE]).toBeUndefined()
+		expect(attributes[BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE]).toBeUndefined()
+	})
+
 	it('does not set loading resource attributes when no resources are loading', () => {
 		const manager = new SpaMetricsManager()
 		const { attributes, span } = createSpanMock()

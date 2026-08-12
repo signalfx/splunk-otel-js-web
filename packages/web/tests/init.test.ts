@@ -353,14 +353,57 @@ describe('test init', () => {
 			expect(spaMetricsConfig?.urlOverrides?.[0]?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
 			expect(spaMetricsConfig?.urlOverrides?.[0]?.match).toBeInstanceOf(RegExp)
 		})
+
+		it('reports malformed regex strings without preventing initialization', () => {
+			const errorSpy = vi.spyOn(diag, 'error')
+			const initOptions = {
+				applicationName: 'app',
+				beaconEndpoint: 'https://127.0.0.1:8888/foo',
+				ignoreUrls: ['regex/[invalid/'],
+				rumAccessToken: undefined,
+			}
+
+			SplunkRum.init(initOptions)
+
+			expect(SplunkRum.inited).toBeTruthy()
+			expect(initOptions.ignoreUrls[0]).toBe('regex/[invalid/')
+			expect(errorSpy).toHaveBeenCalledWith(
+				'SplunkRum: Invalid regex string in configuration; treating it as a literal string.',
+				expect.objectContaining({ value: 'regex/[invalid/' }),
+			)
+			errorSpy.mockRestore()
+		})
 	})
 
 	describe('successful', () => {
+		it('does not emit experimental page load telemetry by default', async () => {
+			SplunkRum.init({
+				applicationName: 'my-app',
+				beaconEndpoint: 'https://127.0.0.1:9999/foo',
+				rumAccessToken: undefined,
+				spanProcessors: [capturer],
+			})
+
+			await vi.waitFor(
+				() => {
+					expect(capturer.spans.some((span) => span.name === 'documentLoad')).toBeTruthy()
+				},
+				{ timeout: 6000 },
+			)
+
+			const documentLoadSpan = capturer.spans.find((span) => span.name === 'documentLoad')
+			expectDefined(documentLoadSpan, 'documentLoad span presence.')
+			expect(documentLoadSpan).toNotHaveSpanAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE)
+			expect(documentLoadSpan).toNotHaveSpanAttribute(BROWSER_NAVIGATION_STATUS_ATTRIBUTE)
+			expect(capturer.spans.some((span) => span.name === 'pageLoad')).toBe(false)
+		})
+
 		it('should have been inited properly with doc load spans', async () => {
 			SplunkRum.init({
 				applicationName: 'my-app',
 				beaconEndpoint: 'https://127.0.0.1:9999/foo',
 				deploymentEnvironment: 'my-env',
+				experimental: true,
 				globalAttributes: { customerType: 'GOLD' },
 				instrumentations: {
 					websocket: true,
@@ -427,6 +470,7 @@ describe('test init', () => {
 				applicationName: 'my-app',
 				beaconEndpoint: 'https://127.0.0.1:9999/foo',
 				deploymentEnvironment: 'my-env',
+				experimental: true,
 				globalAttributes: { customerType: 'GOLD' },
 				rumAccessToken: undefined,
 				spaMetrics: {
@@ -476,6 +520,7 @@ describe('test init', () => {
 				applicationName: 'my-app',
 				beaconEndpoint: 'https://127.0.0.1:9999/foo',
 				deploymentEnvironment: 'my-env',
+				experimental: true,
 				globalAttributes: { customerType: 'GOLD' },
 				rumAccessToken: undefined,
 				spaMetrics: {
@@ -1037,6 +1082,7 @@ describe('test route change spa metrics timeout', () => {
 	beforeEach(() => {
 		capturer = new SpanCapturer()
 		initWithDefaultConfig(capturer, {
+			experimental: true,
 			spaMetrics: {
 				maxPageLoadWaitTime: 3000,
 				quietTime: 1000,
@@ -1413,6 +1459,40 @@ describe('can produce click events', () => {
 		expect(capturer.spans.length).toBe(1)
 		expect(capturer.spans[0]).toHaveSpanAttribute('target_interactive', true)
 
+		element.remove()
+	})
+
+	it('warns once and ignores invalid interactive selectors', () => {
+		deinit()
+		initWithDefaultConfig(capturer, {
+			instrumentations: {
+				interactions: {
+					experimental_interactiveElementSelectors: ['[', '.custom-interactive'],
+				},
+			},
+		})
+
+		const warnSpy = vi.spyOn(diag, 'warn')
+		const listener = vi.fn()
+		const element = document.createElement('div')
+		element.className = 'custom-interactive'
+		document.body.append(element)
+		element.addEventListener('click', listener)
+
+		element.dispatchEvent(new Event('click'))
+		element.dispatchEvent(new Event('click'))
+
+		expect(listener).toHaveBeenCalledTimes(2)
+		expect(capturer.spans).toHaveLength(2)
+		expect(capturer.spans[0]).toHaveSpanAttribute('target_interactive', true)
+		expect(capturer.spans[1]).toHaveSpanAttribute('target_interactive', true)
+		const invalidSelectorWarnings = warnSpy.mock.calls.filter(
+			([message]) => message === 'UserInteractionInstrumentation: Invalid interactive element selector.',
+		)
+		expect(invalidSelectorWarnings).toHaveLength(1)
+		expect(invalidSelectorWarnings[0][1]).toEqual(expect.objectContaining({ selector: '[' }))
+
+		warnSpy.mockRestore()
 		element.remove()
 	})
 })

@@ -154,11 +154,14 @@ const RESOURCE_ADMISSION_START_TIME_TOLERANCE = 100
 export interface SpaMetricsManagerConfig extends SpaMetricsManagerConfigValues {
 	beaconEndpoint?: string
 	elementVisibilityObserver?: ElementVisibilityObserver
+	emitNavigationAttributes?: boolean
 	urlOverrides?: SpaMetricsUrlOverride[]
 }
 
 export class SpaMetricsManager {
 	private readonly config: ResolvedSpaMetricsManagerConfig
+
+	private readonly emitNavigationAttributes: boolean
 
 	private isMonitoring = false
 
@@ -201,6 +204,9 @@ export class SpaMetricsManager {
 	constructor(config: SpaMetricsManagerConfig = {}) {
 		const beaconEndpointIgnoreUrls = this.getBeaconEndpointIgnoreUrls(config.beaconEndpoint)
 		this.config = this.resolveConfig(config, beaconEndpointIgnoreUrls)
+		// SplunkRum.init always supplies the public experimental flag. Keep the standalone
+		// manager default compatible for internal consumers and focused manager tests.
+		this.emitNavigationAttributes = config.emitNavigationAttributes ?? true
 		this.urlOverrides = (config.urlOverrides ?? []).map(({ match, ...overrideConfig }) => ({
 			config: this.resolveConfig(overrideConfig, beaconEndpointIgnoreUrls, this.config),
 			match,
@@ -242,6 +248,10 @@ export class SpaMetricsManager {
 		startTime: number,
 		activity?: NavigationActivity,
 	): NavigationPageAttributes | undefined {
+		if (!this.emitNavigationAttributes) {
+			return undefined
+		}
+
 		// Performance entries can be delivered after a later navigation has started.
 		// Resolve them against the navigation that was active at their original start time.
 		const navigation = this.getNavigationAt(startTime)
@@ -284,6 +294,10 @@ export class SpaMetricsManager {
 			status,
 		}: PageLoadMetricsResult,
 	): void {
+		if (!this.emitNavigationAttributes) {
+			return
+		}
+
 		span.setAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE, pct)
 		span.setAttribute(BROWSER_NAVIGATION_STATUS_ATTRIBUTE, status)
 

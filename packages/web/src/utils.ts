@@ -16,6 +16,7 @@
  *
  */
 
+import { diag } from '@opentelemetry/api'
 import { customAlphabet } from 'nanoid'
 import { wrap } from 'shimmer'
 
@@ -156,10 +157,16 @@ export function waitForGlobal<T = unknown>(identifier: string, callback: (value:
 }
 
 const REGEX_STRING_PATTERN = /^regex\/([\s\S]*)\/([dgimsuvy]*)$/
+const INVALID_REGEX_STRING_MESSAGE =
+	'SplunkRum: Invalid regex string in configuration; treating it as a literal string.'
 
 function parseRegexString(value: string): RegExp | null {
 	const match = REGEX_STRING_PATTERN.exec(value)
 	if (!match) {
+		if (value.startsWith('regex/')) {
+			diag.error(INVALID_REGEX_STRING_MESSAGE, { value })
+		}
+
 		return null
 	}
 
@@ -167,7 +174,8 @@ function parseRegexString(value: string): RegExp | null {
 
 	try {
 		return new RegExp(pattern, flags)
-	} catch {
+	} catch (error) {
+		diag.error(INVALID_REGEX_STRING_MESSAGE, { error, value })
 		return null
 	}
 }
