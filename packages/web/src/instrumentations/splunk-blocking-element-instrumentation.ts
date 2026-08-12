@@ -19,12 +19,16 @@
 import { diag } from '@opentelemetry/api'
 import { InstrumentationBase } from '@opentelemetry/instrumentation'
 
-import type { SessionManager, NavigationMetricsManager } from '../managers'
+import type { NavigationMetricsManager, SessionManager } from '../managers'
 import type { ElementVisibilityChangeEvent, ElementVisibilityObserver } from '../observers/element-visibility-observer'
 import type { SplunkBlockingElementInstrumentationConfig, SplunkOtelWebConfig } from '../types'
 
 import { VERSION } from '../version'
-import { BLOCKING_ELEMENT_MODULE_NAME } from './blocking-element/constants'
+import {
+	BLOCKING_ELEMENT_MODULE_NAME,
+	BROWSER_ELEMENT_COMPLETION_INTERRUPTED,
+	BROWSER_ELEMENT_COMPLETION_VISIBILITY_HIDDEN,
+} from './blocking-element/constants'
 import { ElementSpanTracker } from './blocking-element/element-span-tracker'
 import {
 	isBlockingElementInstrumentationEnabled,
@@ -36,6 +40,7 @@ import {
 // (pageshow with persisted: true) and it's later hidden again; each hide must still interrupt.
 const PAGEHIDE_LISTENER_OPTIONS: AddEventListenerOptions = { capture: true }
 const PAGESHOW_LISTENER_OPTIONS: AddEventListenerOptions = { capture: true }
+const DOCUMENT_VISIBLE_LISTENER_OPTIONS: AddEventListenerOptions = { capture: true }
 
 /**
  * DOM watching itself is delegated to the shared ElementVisibilityObserver — this class only
@@ -50,6 +55,12 @@ export class SplunkBlockingElementInstrumentation extends InstrumentationBase<Sp
 
 	private readonly elementVisibilityObserver: ElementVisibilityObserver
 
+	private hasEnabled = false
+
+	private readonly navigationMetricsManager: NavigationMetricsManager | undefined
+
+	private routeChangeUnsubscribe: (() => void) | undefined
+
 	private selectors: string[] = []
 
 	/** Elements timed out by ElementSpanTracker while still visible; prevents a second span until they go invisible. */
@@ -59,7 +70,7 @@ export class SplunkBlockingElementInstrumentation extends InstrumentationBase<Sp
 		config: SplunkBlockingElementInstrumentationConfig = {},
 		protected otelConfig: SplunkOtelWebConfig,
 		_sessionManager?: SessionManager,
-		_navigationMetricsManager?: NavigationMetricsManager,
+		navigationMetricsManager?: NavigationMetricsManager,
 		elementVisibilityObserver?: ElementVisibilityObserver,
 	) {
 		super(BLOCKING_ELEMENT_MODULE_NAME, VERSION, { ...config, enabled: false })
@@ -68,16 +79,22 @@ export class SplunkBlockingElementInstrumentation extends InstrumentationBase<Sp
 		}
 
 		this.elementVisibilityObserver = elementVisibilityObserver
+		this.navigationMetricsManager = navigationMetricsManager
 	}
 
 	disable(): void {
+		this.hasEnabled = false
+		this.routeChangeUnsubscribe?.()
+		this.routeChangeUnsubscribe = undefined
+
 		window.removeEventListener('pagehide', this.handlePagehide, PAGEHIDE_LISTENER_OPTIONS)
 		window.removeEventListener('pageshow', this.handlePageshow, PAGESHOW_LISTENER_OPTIONS)
+		window.removeEventListener('visibilitychange', this.handleDocumentVisible, DOCUMENT_VISIBLE_LISTENER_OPTIONS)
 
 		// Interrupt before unwatch() so open spans end as 'interrupted', not 'completed' — unwatch()'s
 		// synthesized visible:false events would otherwise reach handleVisibilityChange and complete
 		// them as if they'd resolved normally, same ordering LoadingElementMonitor.stop() relies on.
-		this.elementSpanTracker?.interruptAll()
+		this.elementSpanTracker?.interruptAll(BROWSER_ELEMENT_COMPLETION_INTERRUPTED)
 		this.elementSpanTracker = undefined
 		this.selectors = []
 		this.activeSelectorsByElement.clear()
@@ -86,32 +103,58 @@ export class SplunkBlockingElementInstrumentation extends InstrumentationBase<Sp
 	}
 
 	enable(): void {
-		if (this.elementSpanTracker) {
+		if (this.hasEnabled) {
 			diag.warn('SplunkBlockingElementInstrumentation: Already enabled.')
 			return
 		}
 
-		if (!isBlockingElementInstrumentationEnabled(this.otelConfig)) {
-			return
-		}
-
-		this.selectors = resolveBlockingElementSelectors(this.otelConfig)
-		if (this.selectors.length === 0) {
-			return
-		}
-
+		this.hasEnabled = true
 		this.elementSpanTracker = new ElementSpanTracker(
 			this.tracer,
 			this.selectors,
 			resolveMaxElementSpanDuration(this.otelConfig),
 			(element) => this.timedOutElements.add(element),
 		)
-		this.elementVisibilityObserver.watch(this.consumerId, this.selectors, this.handleVisibilityChange)
 		window.addEventListener('pagehide', this.handlePagehide, PAGEHIDE_LISTENER_OPTIONS)
 		window.addEventListener('pageshow', this.handlePageshow, PAGESHOW_LISTENER_OPTIONS)
+		window.addEventListener('visibilitychange', this.handleDocumentVisible, DOCUMENT_VISIBLE_LISTENER_OPTIONS)
+		this.routeChangeUnsubscribe = this.navigationMetricsManager?.onRouteChange(this.applySelectors)
+
+		this.applySelectors()
 	}
 
 	init(): void {}
+
+	// Called from index.ts on visibilitychange->hidden, before the app's forceFlush() — ending open
+	// spans here (not just on pagehide) so they make it into the export buffer before that flush.
+	// Does not unwatch(): a later visibilitychange->visible reopens still-visible elements.
+	interruptForHidden(): void {
+		this.elementSpanTracker?.interruptAll(BROWSER_ELEMENT_COMPLETION_VISIBILITY_HIDDEN)
+		this.activeSelectorsByElement.clear()
+		this.timedOutElements.clear()
+	}
+
+	// Re-resolves selectors/enablement and re-applies via watch() — disabled-or-empty is just
+	// "watch nothing," not a distinct branch. Called at enable() and on every route change.
+	private readonly applySelectors = (): void => {
+		this.selectors = isBlockingElementInstrumentationEnabled(this.otelConfig)
+			? resolveBlockingElementSelectors(this.otelConfig)
+			: []
+		this.elementSpanTracker?.setConfiguredSelectors(this.selectors)
+		this.elementVisibilityObserver.watch(this.consumerId, this.selectors, this.handleVisibilityChange)
+	}
+
+	// No competing listener/ordering requirement on this side (unlike hidden's flush race), so this
+	// stays self-contained here rather than routed through index.ts.
+	private readonly handleDocumentVisible = (): void => {
+		if (document.visibilityState !== 'visible') {
+			return
+		}
+
+		for (const selector of this.selectors) {
+			this.elementVisibilityObserver.resync(this.consumerId, selector)
+		}
+	}
 
 	// Ends open spans as 'interrupted' without unwatching the shared observer — pagehide doesn't
 	// guarantee the page is truly gone (bfcache can restore it later), so leave the subscription
@@ -119,7 +162,7 @@ export class SplunkBlockingElementInstrumentation extends InstrumentationBase<Sp
 	// active-selector bookkeeping, since a bfcache restore resumes with no DOM mutation to naturally
 	// refresh it — handlePageshow's resync() is what repopulates it for elements still visible.
 	private readonly handlePagehide = (): void => {
-		this.elementSpanTracker?.interruptAll()
+		this.elementSpanTracker?.interruptAll(BROWSER_ELEMENT_COMPLETION_INTERRUPTED)
 		this.activeSelectorsByElement.clear()
 		this.timedOutElements.clear()
 	}

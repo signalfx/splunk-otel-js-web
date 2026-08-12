@@ -38,8 +38,8 @@ import {
 	PAGE_LOAD_METRICS_STATUS_TIMEOUT,
 } from './constants'
 import { ResourceState } from './monitors'
-import { setBrowserNavigationPageAttributes } from './navigation-relevance'
 import { getDocumentLoadTime, NavigationMetricsManager } from './navigation-metrics-manager'
+import { setBrowserNavigationPageAttributes } from './navigation-relevance'
 
 const TEST_API_URL = `${HTTP_TEST_SERVER_URL}/some-data`
 const TEST_BEACON_ENDPOINT = `${HTTP_TEST_SERVER_URL}/v1/rum`
@@ -1518,5 +1518,64 @@ describe('NavigationMetricsManager', () => {
 
 		// @ts-expect-error loadingResources is private. We use it for testing.
 		expect(manager.loadingResources.size).toBe(0)
+	})
+
+	it('notifies onRouteChange subscribers on waitForPageLoad', () => {
+		const manager = new NavigationMetricsManager()
+		manager.start()
+		const callback = vi.fn()
+		manager.onRouteChange(callback)
+
+		void manager.waitForPageLoad({ startTime: performance.now() })
+
+		expect(callback).toHaveBeenCalledTimes(1)
+
+		manager.stop()
+	})
+
+	it('stops notifying an onRouteChange subscriber once unsubscribed', () => {
+		const manager = new NavigationMetricsManager()
+		manager.start()
+		const callback = vi.fn()
+		const unsubscribe = manager.onRouteChange(callback)
+
+		unsubscribe()
+		void manager.waitForPageLoad({ startTime: performance.now() })
+
+		expect(callback).not.toHaveBeenCalled()
+
+		manager.stop()
+	})
+
+	it('notifies multiple onRouteChange subscribers independently', () => {
+		const manager = new NavigationMetricsManager()
+		manager.start()
+		const firstCallback = vi.fn()
+		const secondCallback = vi.fn()
+		const unsubscribeFirst = manager.onRouteChange(firstCallback)
+		manager.onRouteChange(secondCallback)
+
+		unsubscribeFirst()
+		void manager.waitForPageLoad({ startTime: performance.now() })
+
+		expect(firstCallback).not.toHaveBeenCalled()
+		expect(secondCallback).toHaveBeenCalledTimes(1)
+
+		manager.stop()
+	})
+
+	it('clears onRouteChange subscribers on stop', () => {
+		const manager = new NavigationMetricsManager()
+		manager.start()
+		const callback = vi.fn()
+		manager.onRouteChange(callback)
+
+		manager.stop()
+		manager.start()
+		void manager.waitForPageLoad({ startTime: performance.now() })
+
+		expect(callback).not.toHaveBeenCalled()
+
+		manager.stop()
 	})
 })

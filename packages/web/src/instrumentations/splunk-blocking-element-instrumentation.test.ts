@@ -24,6 +24,7 @@ import {
 } from '@opentelemetry/sdk-trace-base'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { NavigationMetricsManager } from '../managers'
 import { ElementVisibilityObserver } from '../observers/element-visibility-observer'
 import { SplunkBlockingElementInstrumentation } from './splunk-blocking-element-instrumentation'
 
@@ -64,7 +65,14 @@ describe('SplunkBlockingElementInstrumentation', () => {
 
 	it('throws a clear error when constructed without elementVisibilityObserver', () => {
 		expect(
-			() => new SplunkBlockingElementInstrumentation({}, { navigationMetrics: false }, undefined, undefined, undefined),
+			() =>
+				new SplunkBlockingElementInstrumentation(
+					{},
+					{ navigationMetrics: false },
+					undefined,
+					undefined,
+					undefined,
+				),
 		).toThrow('SplunkBlockingElementInstrumentation requires elementVisibilityObserver.')
 	})
 
@@ -530,6 +538,206 @@ describe('SplunkBlockingElementInstrumentation', () => {
 
 			// @ts-expect-error elementSpanTracker is private. We use it for testing.
 			expect(instrumentation.elementSpanTracker.openCount).toBe(0)
+		})
+	})
+
+	describe('route changes', () => {
+		afterEach(() => {
+			location.hash = ''
+		})
+
+		it('applies a urlOverride selector after a route change', () => {
+			const navigationMetricsManager = new NavigationMetricsManager()
+			instrumentation = new SplunkBlockingElementInstrumentation(
+				{},
+				{
+					navigationMetrics: {
+						blockingSelectors: [SELECTOR],
+						monitors: ['elements'],
+						urlOverrides: [
+							{ blockingSelectors: [OTHER_SELECTOR], match: '#other-page', monitors: ['elements'] },
+						],
+					},
+				},
+				undefined,
+				navigationMetricsManager,
+				elementVisibilityObserver,
+			)
+			instrumentation.setTracerProvider(provider)
+			instrumentation.enable()
+
+			location.hash = '#other-page'
+			void navigationMetricsManager.waitForPageLoad({ startTime: performance.now() })
+
+			// @ts-expect-error selectors is private. We use it for testing.
+			expect(instrumentation.selectors).toEqual([OTHER_SELECTOR])
+		})
+
+		it('completes a still-visible element whose selector was dropped by a route change', async () => {
+			const navigationMetricsManager = new NavigationMetricsManager()
+			const element = createVisibleElement()
+			instrumentation = new SplunkBlockingElementInstrumentation(
+				{},
+				{
+					navigationMetrics: {
+						blockingSelectors: [SELECTOR],
+						monitors: ['elements'],
+						urlOverrides: [
+							{ blockingSelectors: [OTHER_SELECTOR], match: '#other-page', monitors: ['elements'] },
+						],
+					},
+				},
+				undefined,
+				navigationMetricsManager,
+				elementVisibilityObserver,
+			)
+			instrumentation.setTracerProvider(provider)
+			instrumentation.enable()
+
+			await vi.waitFor(() => {
+				expect(elementVisibilityObserver).toBeTruthy()
+				// @ts-expect-error elementSpanTracker is private. We use it for testing.
+				expect(instrumentation.elementSpanTracker.has(element)).toBe(true)
+			})
+
+			location.hash = '#other-page'
+			void navigationMetricsManager.waitForPageLoad({ startTime: performance.now() })
+
+			const [span] = getFinishedSpans()
+			expect(span.attributes['browser.element.completion']).toBe('completed')
+		})
+
+		it('keeps a span open across a route change when the selector remains configured', async () => {
+			const navigationMetricsManager = new NavigationMetricsManager()
+			const element = createVisibleElement()
+			instrumentation = new SplunkBlockingElementInstrumentation(
+				{},
+				{
+					navigationMetrics: {
+						blockingSelectors: [SELECTOR],
+						monitors: ['elements'],
+						urlOverrides: [{ match: '#other-page', monitors: ['elements'] }],
+					},
+				},
+				undefined,
+				navigationMetricsManager,
+				elementVisibilityObserver,
+			)
+			instrumentation.setTracerProvider(provider)
+			instrumentation.enable()
+
+			await vi.waitFor(() => {
+				// @ts-expect-error elementSpanTracker is private. We use it for testing.
+				expect(instrumentation.elementSpanTracker.has(element)).toBe(true)
+			})
+
+			location.hash = '#other-page'
+			void navigationMetricsManager.waitForPageLoad({ startTime: performance.now() })
+
+			expect(getFinishedSpans()).toHaveLength(0)
+			// @ts-expect-error elementSpanTracker is private. We use it for testing.
+			expect(instrumentation.elementSpanTracker.has(element)).toBe(true)
+		})
+
+		it('starts tracking a selector newly enabled by a route change', () => {
+			const navigationMetricsManager = new NavigationMetricsManager()
+			const element = createVisibleElement()
+			instrumentation = new SplunkBlockingElementInstrumentation(
+				{},
+				{
+					navigationMetrics: {
+						blockingSelectors: [],
+						monitors: ['elements'],
+						urlOverrides: [{ blockingSelectors: [SELECTOR], match: '#other-page', monitors: ['elements'] }],
+					},
+				},
+				undefined,
+				navigationMetricsManager,
+				elementVisibilityObserver,
+			)
+			instrumentation.setTracerProvider(provider)
+			instrumentation.enable()
+
+			// @ts-expect-error elementSpanTracker is private. We use it for testing.
+			expect(instrumentation.elementSpanTracker.openCount).toBe(0)
+
+			location.hash = '#other-page'
+			void navigationMetricsManager.waitForPageLoad({ startTime: performance.now() })
+
+			// @ts-expect-error elementSpanTracker is private. We use it for testing.
+			expect(instrumentation.elementSpanTracker.has(element)).toBe(true)
+		})
+
+		it('stops tracking a selector disabled by a route change, completing its open span', () => {
+			const navigationMetricsManager = new NavigationMetricsManager()
+			const element = createVisibleElement()
+			instrumentation = new SplunkBlockingElementInstrumentation(
+				{},
+				{
+					navigationMetrics: {
+						blockingSelectors: [SELECTOR],
+						monitors: ['elements'],
+						urlOverrides: [{ blockingSelectors: [], match: '#other-page', monitors: ['elements'] }],
+					},
+				},
+				undefined,
+				navigationMetricsManager,
+				elementVisibilityObserver,
+			)
+			instrumentation.setTracerProvider(provider)
+			instrumentation.enable()
+
+			// @ts-expect-error elementSpanTracker is private. We use it for testing.
+			expect(instrumentation.elementSpanTracker.has(element)).toBe(true)
+
+			location.hash = '#other-page'
+			void navigationMetricsManager.waitForPageLoad({ startTime: performance.now() })
+
+			const [span] = getFinishedSpans()
+			expect(span.attributes['browser.element.completion']).toBe('completed')
+		})
+	})
+
+	describe('visibilitychange', () => {
+		it('interrupts open spans with completion="visibility_hidden" on interruptForHidden', () => {
+			createVisibleElement()
+			instrumentation = new SplunkBlockingElementInstrumentation(
+				{},
+				{ navigationMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
+				undefined,
+				undefined,
+				elementVisibilityObserver,
+			)
+			instrumentation.setTracerProvider(provider)
+			instrumentation.enable()
+
+			instrumentation.interruptForHidden()
+
+			const [span] = getFinishedSpans()
+			expect(span.attributes['browser.element.completion']).toBe('visibility_hidden')
+			// @ts-expect-error elementSpanTracker is private. We use it for testing.
+			expect(instrumentation.elementSpanTracker.openCount).toBe(0)
+		})
+
+		it('reopens a still-visible element on the next visibilitychange to visible', () => {
+			const element = createVisibleElement()
+			instrumentation = new SplunkBlockingElementInstrumentation(
+				{},
+				{ navigationMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
+				undefined,
+				undefined,
+				elementVisibilityObserver,
+			)
+			instrumentation.setTracerProvider(provider)
+			instrumentation.enable()
+
+			instrumentation.interruptForHidden()
+			expect(getFinishedSpans()).toHaveLength(1)
+
+			window.dispatchEvent(new Event('visibilitychange'))
+
+			// @ts-expect-error elementSpanTracker is private. We use it for testing.
+			expect(instrumentation.elementSpanTracker.has(element)).toBe(true)
 		})
 	})
 })

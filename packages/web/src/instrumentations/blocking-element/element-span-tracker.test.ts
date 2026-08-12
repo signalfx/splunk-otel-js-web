@@ -25,6 +25,7 @@ import {
 } from '@opentelemetry/sdk-trace-base'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { BROWSER_ELEMENT_COMPLETION_INTERRUPTED, BROWSER_ELEMENT_COMPLETION_VISIBILITY_HIDDEN } from './constants'
 import { ElementSpanTracker } from './element-span-tracker'
 
 const SELECTOR = '.loading-spinner'
@@ -127,7 +128,7 @@ describe('ElementSpanTracker', () => {
 		const element = createElement()
 
 		tracker.startSpan(element, [SELECTOR], performance.now())
-		tracker.interruptSpan(element)
+		tracker.interruptSpan(element, BROWSER_ELEMENT_COMPLETION_INTERRUPTED)
 
 		const [span] = getFinishedSpans()
 		expect(span.attributes['browser.element.completion']).toBe('interrupted')
@@ -142,7 +143,7 @@ describe('ElementSpanTracker', () => {
 		tracker.startSpan(first, [SELECTOR], performance.now())
 		tracker.startSpan(other, [OTHER_SELECTOR], performance.now())
 
-		tracker.interruptAll()
+		tracker.interruptAll(BROWSER_ELEMENT_COMPLETION_INTERRUPTED)
 
 		const finishedSpans = getFinishedSpans()
 		expect(finishedSpans).toHaveLength(2)
@@ -150,6 +151,34 @@ describe('ElementSpanTracker', () => {
 			true,
 		)
 		expect(tracker.openCount).toBe(0)
+	})
+
+	it('interrupts a single span with a caller-provided completion value', () => {
+		const tracker = createTracker()
+		const element = createElement()
+
+		tracker.startSpan(element, [SELECTOR], performance.now())
+		tracker.interruptSpan(element, BROWSER_ELEMENT_COMPLETION_VISIBILITY_HIDDEN)
+
+		const [span] = getFinishedSpans()
+		expect(span.attributes['browser.element.completion']).toBe('visibility_hidden')
+	})
+
+	it('interrupts every open span with a caller-provided completion value', () => {
+		const tracker = createTracker()
+		const first = createElement()
+		const other = createElement()
+
+		tracker.startSpan(first, [SELECTOR], performance.now())
+		tracker.startSpan(other, [OTHER_SELECTOR], performance.now())
+
+		tracker.interruptAll(BROWSER_ELEMENT_COMPLETION_VISIBILITY_HIDDEN)
+
+		const finishedSpans = getFinishedSpans()
+		expect(finishedSpans).toHaveLength(2)
+		expect(
+			finishedSpans.every((span) => span.attributes['browser.element.completion'] === 'visibility_hidden'),
+		).toBe(true)
 	})
 
 	it('returns the currently tracked elements', () => {
@@ -327,7 +356,7 @@ describe('ElementSpanTracker', () => {
 
 			tracker.startSpan(element, [SELECTOR], performance.now())
 			vi.advanceTimersByTime(1000)
-			tracker.interruptSpan(element)
+			tracker.interruptSpan(element, BROWSER_ELEMENT_COMPLETION_INTERRUPTED)
 			vi.advanceTimersByTime(5000)
 
 			const finishedSpans = getFinishedSpans()

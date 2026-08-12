@@ -174,6 +174,8 @@ export class NavigationMetricsManager {
 
 	private resourceAdmissionDecisions = new Map<string, ResourceAdmissionDecision>()
 
+	private readonly routeChangeSubscribers = new Set<() => void>()
+
 	private readonly urlOverrides: ResolvedNavigationMetricsUrlOverride[]
 
 	private get detectedResourcesCount(): number {
@@ -263,6 +265,14 @@ export class NavigationMetricsManager {
 		}
 	}
 
+	/** Notified after activeConfig is resolved for every route change. Returns an unsubscribe function. */
+	onRouteChange(callback: () => void): () => void {
+		this.routeChangeSubscribers.add(callback)
+		return () => {
+			this.routeChangeSubscribers.delete(callback)
+		}
+	}
+
 	setCurrentNavigationSpan(span: Span, startTime: number, operation: string): void {
 		this.navigationHistory.push({ operation, spanId: span.spanContext().spanId, startTime })
 		// Keep the lookup bounded for long-running single-page applications.
@@ -336,6 +346,7 @@ export class NavigationMetricsManager {
 		this.quietPeriodAwaiter = undefined
 		this.navigationHistory = []
 		this.resourceAdmissionDecisions.clear()
+		this.routeChangeSubscribers.clear()
 
 		if (!this.isMonitoring) {
 			return
@@ -357,6 +368,10 @@ export class NavigationMetricsManager {
 		}
 
 		const activeConfig = this.activeConfig
+		for (const callback of this.routeChangeSubscribers) {
+			callback()
+		}
+
 		const droppedResources = this.dropLoadingResourcesIgnoredByActiveConfig(activeConfig)
 		this.pageLoadResourceTracker = {
 			detectedResourcesCount: this.loadingResourcesCount,
@@ -567,7 +582,10 @@ export class NavigationMetricsManager {
 
 			if (!admitted) {
 				if (this.loadingResourcesCount >= activeConfig.maxResourcesToWatch) {
-					diag.debug('NavigationMetricsManager: Max resources limit reached, ignoring new resource', event.url)
+					diag.debug(
+						'NavigationMetricsManager: Max resources limit reached, ignoring new resource',
+						event.url,
+					)
 				}
 
 				return
