@@ -170,6 +170,11 @@ test.describe('blocking-element', () => {
 	test('interrupts an open span as completion="visibility_hidden" on tab hide, then reopens it on tab show', async ({
 		recordPage,
 	}) => {
+		// The exporter switches to navigator.sendBeacon() while document.hidden is true (see
+		// otlp.ts), and Playwright's page.route() network interception (mockNetwork()/receivedSpans)
+		// doesn't reliably observe sendBeacon() calls in WebKit — so this test captures the beacon
+		// payload directly at the JS call site instead. Must be called before goTo().
+		await recordPage.captureSendBeacon()
 		await recordPage.goTo('/blocking-element/blocking-element-span.ejs')
 
 		await recordPage.locator('#btnPersistentSpinner').click()
@@ -179,23 +184,23 @@ test.describe('blocking-element', () => {
 
 		await recordPage.changeVisibilityInTab('hidden')
 		await recordPage.waitForTimeout(500)
+		await recordPage.collectCapturedBeaconSpans()
 
-		await recordPage.waitForSpans((spans) => spans.filter((item) => item.name === 'blockingElement').length === 1)
-
-		const hiddenSpan = recordPage.receivedSpans.find((item) => item.name === 'blockingElement')
+		const hiddenSpan = recordPage.receivedBeaconSpans.find((item) => item.name === 'blockingElement')
 		expect(hiddenSpan).toHaveSpanAttribute('browser.element.id', 'spinner-persistent')
 		expect(hiddenSpan).toHaveSpanAttribute('browser.element.completion', 'visibility_hidden')
 
 		// The spinner never left the DOM, so returning to visible resyncs and reopens a fresh span for
 		// it — confirmed by hiding again and observing a second, independent span.
-		recordPage.clearReceivedSpans()
+		recordPage.receivedBeaconSpans = []
 		await recordPage.changeVisibilityInTab('visible')
 		await recordPage.waitForTimeout(500)
 
 		await recordPage.changeVisibilityInTab('hidden')
-		await recordPage.waitForSpans((spans) => spans.filter((item) => item.name === 'blockingElement').length === 1)
+		await recordPage.waitForTimeout(500)
+		await recordPage.collectCapturedBeaconSpans()
 
-		const secondHiddenSpan = recordPage.receivedSpans.find((item) => item.name === 'blockingElement')
+		const secondHiddenSpan = recordPage.receivedBeaconSpans.find((item) => item.name === 'blockingElement')
 		expect(secondHiddenSpan).toHaveSpanAttribute('browser.element.id', 'spinner-persistent')
 		expect(secondHiddenSpan).toHaveSpanAttribute('browser.element.completion', 'visibility_hidden')
 	})
