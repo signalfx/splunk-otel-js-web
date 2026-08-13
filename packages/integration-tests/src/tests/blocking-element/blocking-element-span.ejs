@@ -7,6 +7,13 @@
 		navigationMetrics: {
 			blockingSelectors: ['.global-spinner', '[data-loading]'],
 			monitors: ['media', 'network', 'performance', 'elements'],
+			urlOverrides: [
+				{
+					blockingSelectors: ['.override-spinner'],
+					match: '#override-page',
+					monitors: ['elements'],
+				},
+			],
 		},
 	}) %>
 </head>
@@ -17,6 +24,8 @@
 	<button type="button" id="btnThreeSpinnersTwoRemoved">Three spinners, two removed at different times</button>
 	<button type="button" id="btnMultiSelectorSpinner">Spinner matching two configured selectors</button>
 	<button type="button" id="btnNavigateWithSpinner">Route change with a spinner also tracked by blockingElement</button>
+	<button type="button" id="btnNavigateToOverridePage">Route change to a page with a urlOverride spinner selector</button>
+	<button type="button" id="btnPersistentSpinner">Spinner that stays visible across tab hide/show</button>
 
 	<div id="content"></div>
 
@@ -68,6 +77,28 @@
 			setTimeout(function () {
 				spinner.remove();
 			}, 100);
+		});
+
+		document.querySelector('#btnNavigateToOverridePage').addEventListener('click', function () {
+			const spinner = createSpinner('spinner-global-before-override');
+			document.getElementById('content').append(spinner);
+
+			const overrideSpinner = document.createElement('div');
+			overrideSpinner.className = 'override-spinner';
+			overrideSpinner.id = 'spinner-override-page';
+			overrideSpinner.style.height = '10px';
+			overrideSpinner.style.width = '10px';
+			document.getElementById('content').append(overrideSpinner);
+
+			location.hash = 'override-page';
+			setTimeout(function () {
+				overrideSpinner.remove();
+			}, 100);
+		});
+
+		document.querySelector('#btnPersistentSpinner').addEventListener('click', function () {
+			const spinner = createSpinner('spinner-persistent');
+			document.getElementById('content').append(spinner);
 		});
 	</script>
 </body>
