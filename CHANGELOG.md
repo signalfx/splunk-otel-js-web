@@ -4,83 +4,168 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 
 ## 3.1.0
 
-### New Features and Improvements
+### Upgrade impact
+
+No code or configuration changes are required for customers upgrading from 3.0.x. Review the default changes below if
+your organization limits browser storage or wants to control the additional frustration-signal telemetry.
+
+### Defaults changed — review recommended
 
 - `@splunk/otel-web`
-    - **Page Completion Time (PCT) for SPA route changes** [#1807](https://github.com/signalfx/splunk-otel-js-web/pull/1807), [#1846](https://github.com/signalfx/splunk-otel-js-web/pull/1846), [#1847](https://github.com/signalfx/splunk-otel-js-web/pull/1847), [#1816](https://github.com/signalfx/splunk-otel-js-web/pull/1816), [#1818](https://github.com/signalfx/splunk-otel-js-web/pull/1818), [#1812](https://github.com/signalfx/splunk-otel-js-web/pull/1812)
-        - This entry covers both new capabilities and bug fixes to PCT calculation.
-        - Attaches a `page_completion_time` metric and a `browser.navigation.status` attribute (`completed` / `interrupted`) to `documentLoad` and `routeChange` spans, measuring how long a page or route takes to fully settle after navigation
-        - Configurable via the `spaMetrics` option, including per-route `urlOverrides` (first match wins) and `clearLoadingResourcesOnNewPage` to drop in-flight resources from a previous route:
-
-            ```js
-            spaMetrics: {
-                quietTime: 1000, // default: 1000 (ms to wait after last resource before completing)
-                maxResourcesToWatch: 100, // default: 100 (max concurrent resources tracked)
-                clearLoadingResourcesOnNewPage: true, // default: true (drop previous-page resources on a new navigation)
-                monitors: ['media', 'network', 'performance'], // default: ['media', 'network', 'performance']
-                ignoreUrls: [/analytics\.example\.com/], // default: [] (URLs excluded from PCT tracking)
-                urlOverrides: [
-                    // default: [] (ordered per-route overrides, first match wins)
-                    { match: '/checkout', monitors: ['network'] },
-                    { match: /\/product\//, quietTime: 2000 },
-                ],
-            }
-            ```
-
-        - **Interrupted navigations:** when a new navigation starts while resources from the previous one are still loading, the previous route-change duration is now measured from navigation start to the moment the new navigation begins (rather than to the last resource that happened to finish), and the span is marked `browser.navigation.status: interrupted`
-        - **Duplicate resources:** identical concurrent resources (e.g. the same image or API call) are now tracked individually, so PCT waits for all of them instead of completing as soon as one finishes
-        - **Failed media resources:** images and videos that fail to load are no longer treated as perpetually loading — previously this could produce absurdly long durations or prevent the span from being reported at all
-        - **Page closed mid-calculation:** if PCT is still pending when the page is closed or hidden, the span is now reported and marked `interrupted`, with its duration calculated up to the moment the page was closed
-
-    - **Long Animation Frames (LoAF) instrumentation** [#1811](https://github.com/signalfx/splunk-otel-js-web/pull/1811)
-        - New `instrumentations.loaf` instrumentation reports the browser's [Long Animation Frames](https://developer.mozilla.org/en-US/docs/Web/API/PerformanceLongAnimationFrameTiming) as `long-animation-frame` spans, giving deeper insight into main-thread jank than the older long task API — including per-frame timing (`loaf.duration`, `loaf.blocking_duration`, `loaf.render_start`, `loaf.style_and_layout_start`, paint/presentation times) and bounded script attribution (`loaf.script_count` plus the top three scripts by duration as `loaf.script[0..2].*`, with source URL, function name, and forced reflow timing)
-        - Opt-in (`@default false`) because LoAF is currently Chromium-only. When enabled and supported, it suppresses the deprecated `longtask` spans for that page session to avoid double-reporting; keep `instrumentations.longtask` enabled for fallback coverage in browsers without LoAF support
-        - To bound payload volume, the SDK emits up to 50 LoAF spans per source per rolling minute; further entries from the same source are dropped silently
-
-        ```js
-        instrumentations: {
-            loaf: true,
-        }
-        ```
-
-    - **Web Vitals attribution** [#1796](https://github.com/signalfx/splunk-otel-js-web/pull/1796)
-        - New experimental `instrumentations.webvitals._experimental_attribution` option enriches CLS, INP, and LCP spans with diagnostic attribution data from `web-vitals/attribution`, so you can see _why_ a metric was poor rather than just its value — e.g. INP breaks down into `inp.input_delay`, `inp.processing_duration`, `inp.presentation_delay`, the longest-blocking script, and the interaction target; CLS reports the largest shift target; LCP reports its element target and resource URL
-        - Also adds optional `_experimental_fcp` and `_experimental_ttfb` collection, extending attribution coverage to the First Contentful Paint and Time to First Byte metrics
-        - Privacy-shaped by default and disabled unless opted in: element selectors use a bounded `target: 'safe'` mode (structural tag/role/`nth-of-type` selectors only — never ids, classes, dataset, `aria-label`, or text) and `lcp.url` uses `lcpUrl: 'sanitized'` (origin + pathname, no query string). Pass a config object to override these to `'raw'` or `'off'`
-
-        ```js
-        instrumentations: {
-            webvitals: {
-                _experimental_attribution: true, // or { target: 'safe', lcpUrl: 'sanitized' }
-            },
-        }
-        ```
-
-    - **Configurable data attribute capture** [#1844](https://github.com/signalfx/splunk-otel-js-web/pull/1844)
-        - New `dataAttributesToCapture` config allowlist feeds both interaction span creation and the element picker; backward compatible with the prior experimental option
-    - **Custom interactive element selectors** [#1852](https://github.com/signalfx/splunk-otel-js-web/pull/1852)
-        - New `experimental_interactiveElementSelectors` option under interactions instrumentation to define custom CSS selectors for interactive elements
-    - **Enable all frustration signals by default** [#1806](https://github.com/signalfx/splunk-otel-js-web/pull/1806)
-        - All four frustration-signal detectors — rage click, error click, dead click, and thrashed cursor — are now enabled by default; previously only rage click was on, while error click, dead click, and thrashed cursor were opt-in
-        - Each signal stays active unless explicitly disabled via `instrumentations.frustrationSignals.<signal>: false`
-    - **Regex support for `ignoreUrls` in JSON config** [#1802](https://github.com/signalfx/splunk-otel-js-web/pull/1802)
-        - Allows specifying `ignoreUrl` as a string in `regex/foo/` format for regex-based URL filtering in JSON configuration
-    - **Support `testId` for synthetics** [#1803](https://github.com/signalfx/splunk-otel-js-web/pull/1803)
-    - **Upgrade upstream to v2.18.1** [#1861](https://github.com/signalfx/splunk-otel-js-web/pull/1861)
-    - **Bound W3C baggage propagation to remediate [SNYK-JS-OPENTELEMETRYCORE-17373280](https://security.snyk.io/vuln/SNYK-JS-OPENTELEMETRYCORE-17373280)** [#1864](https://github.com/signalfx/splunk-otel-js-web/pull/1864)
-        - The SDK now uses the upstream trace-context propagator together with a safe baggage propagator that limits baggage entry count, per-entry size, and total header size during extraction and injection
-        - This fixes the unbounded baggage handling vulnerability in the code shipped by `@splunk/otel-web`; it does not upgrade the OpenTelemetry dependency stack to 2.x, because upgrading only `@opentelemetry/core` would be incompatible with the rest of the 1.x OpenTelemetry SDK packages used here
-    - **Preserve captured URL on route change spans** [#1845](https://github.com/signalfx/splunk-otel-js-web/pull/1845)
-        - Fixes incorrect URL attribution when multiple hash changes occur before `hashchange` handlers run
+    - **All frustration signals are enabled by default** [#1806](https://github.com/signalfx/splunk-otel-js-web/pull/1806)
+        - **Default:** Rage click, error click, dead click, and thrashed cursor detection are enabled after upgrading.
+        - **Why:** This provides broader visibility into unresponsive or confusing user experiences without requiring each application team to discover and enable the detectors separately.
+        - **Customer action:** None. Disable an unwanted detector with `instrumentations.frustrationSignals.<signal>: false` if its spans are not useful for an application.
+    - **The PCT quiet period is now one second** [#1812](https://github.com/signalfx/splunk-otel-js-web/pull/1812)
+        - **Default:** Page Completion Time (PCT) completes after 1000 ms without monitored activity.
+        - **Why:** This reduces the delay before a route-change span is reported while still allowing closely spaced resources to participate in the calculation.
+        - **Customer action:** None. Configure `spaMetrics.quietTime` when an application has longer gaps between meaningful asynchronous updates.
 
 - `@splunk/otel-web-session-recorder`
-    - **IndexedDB persistence with OTLP/protobuf export, now the default** [#1792](https://github.com/signalfx/splunk-otel-js-web/pull/1792), [#1857](https://github.com/signalfx/splunk-otel-js-web/pull/1857)
-        - Failed replay exports are queued in IndexedDB (100MB budget) and sent as OTLP/protobuf instead of JSON, reducing payload size and improving upload speed
-        - This is now the default (`persistFailedReplayData: true`); set `persistFailedReplayData: 'localstorage'` to keep the previous localStorage + JSON behavior
-    - **Hash packed asset content by default** [#1869](https://github.com/signalfx/splunk-otel-js-web/pull/1869)
-        - `hashAssetContent` replaces large embedded stylesheet content in replay events with short hash references and sends the content through the asset pipeline, allowing identical content to be cached instead of resent and reducing replay payload size
+    - **Failed replay uploads use IndexedDB and OTLP/protobuf by default** [#1792](https://github.com/signalfx/splunk-otel-js-web/pull/1792), [#1857](https://github.com/signalfx/splunk-otel-js-web/pull/1857), [#1890](https://github.com/signalfx/splunk-otel-js-web/pull/1890)
+        - **Default:** `persistFailedReplayData: true` queues failed uploads in IndexedDB with a 100 MB budget and retries them on later page loads. Replay exports use OTLP/protobuf instead of JSON.
+        - **Why:** IndexedDB provides more reliable recovery from temporary network or server failures, while protobuf reduces replay payload size.
+        - **Customer action:** None. Set `persistFailedReplayData: 'localstorage'` to retain the previous 2 MB localStorage/JSON path, or `false` if organizational storage policy prohibits failed-upload persistence.
+    - **Packed replay asset content is hashed by default** [#1869](https://github.com/signalfx/splunk-otel-js-web/pull/1869)
+        - **Default:** `hashAssetContent` replaces repeated embedded stylesheet content with hash references.
+        - **Why:** Identical content can be cached rather than sent repeatedly, reducing replay payload size.
+        - **Customer action:** None.
 
-- **Updated dependencies** [#1853](https://github.com/signalfx/splunk-otel-js-web/pull/1853), [#1854](https://github.com/signalfx/splunk-otel-js-web/pull/1854), [#1835](https://github.com/signalfx/splunk-otel-js-web/pull/1835), [#1836](https://github.com/signalfx/splunk-otel-js-web/pull/1836), [#1838](https://github.com/signalfx/splunk-otel-js-web/pull/1838), [#1842](https://github.com/signalfx/splunk-otel-js-web/pull/1842), [#1840](https://github.com/signalfx/splunk-otel-js-web/pull/1840), [#1841](https://github.com/signalfx/splunk-otel-js-web/pull/1841), [#1837](https://github.com/signalfx/splunk-otel-js-web/pull/1837), [#1839](https://github.com/signalfx/splunk-otel-js-web/pull/1839), [#1828](https://github.com/signalfx/splunk-otel-js-web/pull/1828), [#1829](https://github.com/signalfx/splunk-otel-js-web/pull/1829), [#1826](https://github.com/signalfx/splunk-otel-js-web/pull/1826), [#1832](https://github.com/signalfx/splunk-otel-js-web/pull/1832), [#1833](https://github.com/signalfx/splunk-otel-js-web/pull/1833), [#1823](https://github.com/signalfx/splunk-otel-js-web/pull/1823), [#1830](https://github.com/signalfx/splunk-otel-js-web/pull/1830), [#1831](https://github.com/signalfx/splunk-otel-js-web/pull/1831), [#1825](https://github.com/signalfx/splunk-otel-js-web/pull/1825), [#1824](https://github.com/signalfx/splunk-otel-js-web/pull/1824), [#1817](https://github.com/signalfx/splunk-otel-js-web/pull/1817), [#1814](https://github.com/signalfx/splunk-otel-js-web/pull/1814), [#1805](https://github.com/signalfx/splunk-otel-js-web/pull/1805), [#1799](https://github.com/signalfx/splunk-otel-js-web/pull/1799), [#1800](https://github.com/signalfx/splunk-otel-js-web/pull/1800), [#1707](https://github.com/signalfx/splunk-otel-js-web/pull/1707), [#1795](https://github.com/signalfx/splunk-otel-js-web/pull/1795)
+### Enabled automatically — no configuration needed
+
+- `@splunk/otel-web`
+    - **More accurate PCT for SPA route changes** [#1807](https://github.com/signalfx/splunk-otel-js-web/pull/1807), [#1816](https://github.com/signalfx/splunk-otel-js-web/pull/1816), [#1818](https://github.com/signalfx/splunk-otel-js-web/pull/1818), [#1847](https://github.com/signalfx/splunk-otel-js-web/pull/1847), [#1848](https://github.com/signalfx/splunk-otel-js-web/pull/1848), [#1849](https://github.com/signalfx/splunk-otel-js-web/pull/1849)
+        - Route-change spans continue to use PCT for their duration when `spaMetrics` is enabled, which remains the default.
+        - Concurrent requests for the same resource are tracked independently, failed media no longer remain loading indefinitely, and resources that began on a previous navigation no longer extend the new page by default.
+        - A new navigation or `pagehide` interrupts the previous calculation at the interruption time so its route-change span can still be reported.
+    - **Navigation operation attribution** [#1883](https://github.com/signalfx/splunk-otel-js-web/pull/1883)
+        - Spans are labeled with `browser.navigation.operation` as `documentLoad` or `routeChange`, making it possible to distinguish initial-page and SPA-navigation activity.
+    - **Additional post-load resource coverage** [#1872](https://github.com/signalfx/splunk-otel-js-web/pull/1872)
+        - Resource spans now cover audio, CSS, fonts, iframes, links, images, scripts, video, and other Resource Timing initiator types.
+        - Relative resource URLs are resolved against the document base, preserving the active trace context for pages that are not hosted at the origin root.
+    - **Synthetics test correlation** [#1803](https://github.com/signalfx/splunk-otel-js-web/pull/1803)
+        - The agent adds `Synthetics-TestId` when the Splunk Synthetics runtime exposes a test ID, complementing the existing run ID.
+    - **Bounded W3C baggage propagation** [#1864](https://github.com/signalfx/splunk-otel-js-web/pull/1864)
+        - Baggage extraction and injection now limit entry count, per-entry size, and total header size to remediate [SNYK-JS-OPENTELEMETRYCORE-17373280](https://security.snyk.io/vuln/SNYK-JS-OPENTELEMETRYCORE-17373280).
+        - No customer configuration or unsafe OpenTelemetry 2.x override is required.
+
+### Optional features — configuration required
+
+- **Experimental navigation telemetry** [#1862](https://github.com/signalfx/splunk-otel-js-web/pull/1862), [#1873](https://github.com/signalfx/splunk-otel-js-web/pull/1873), [#1874](https://github.com/signalfx/splunk-otel-js-web/pull/1874), [#1890](https://github.com/signalfx/splunk-otel-js-web/pull/1890)
+    - **Default:** Disabled. PCT still determines route-change span duration without this option.
+    - **Why and when to enable:** Enable during evaluation of the new page-load model when you need a dedicated initial `pageLoad` span, page-completion diagnostics, or correlation between resource spans and the navigation that owns them.
+    - **Configuration:** Set `experimental: true` in `SplunkRum.init()`. This telemetry also requires `spaMetrics`, which remains enabled by default.
+    - **Result:** Adds the `pageLoad` span, `browser.navigation.page_completion_time`, `browser.navigation.status`, resource-diagnostic attributes, `browser.navigation.page_span_id`, and `browser.navigation.pct_relevant`. Experimental telemetry may change in a future release.
+
+```js
+SplunkRum.init({
+	experimental: true,
+	// Existing application, realm/token, and other options...
+})
+```
+
+- **Per-page PCT configuration and loading-element monitoring** [#1846](https://github.com/signalfx/splunk-otel-js-web/pull/1846), [#1850](https://github.com/signalfx/splunk-otel-js-web/pull/1850)
+    - **Default:** Network, media, and performance resources participate in PCT. Loading-element monitoring is disabled until `elements` and at least one selector are configured.
+    - **Why and when to configure:** Use URL overrides when background requests should not delay a particular route. Add the `elements` monitor when application-controlled spinners or overlays indicate readiness more accurately than network activity.
+    - **Configuration:** Overrides are evaluated in order and the first matching URL wins.
+
+```js
+SplunkRum.init({
+	spaMetrics: {
+		ignoreUrls: [/analytics\.example\.com/],
+		monitors: ['media', 'network', 'performance', 'elements'],
+		blockingSelectors: ['.loading-spinner'],
+		urlOverrides: [
+			{ match: '/checkout', quietTime: 2000 },
+			{ match: /\/streaming\//, monitors: ['elements'] },
+		],
+	},
+	// Existing application, realm/token, and other options...
+})
+```
+
+- **Blocking-element spans** [#1879](https://github.com/signalfx/splunk-otel-js-web/pull/1879), [#1890](https://github.com/signalfx/splunk-otel-js-web/pull/1890)
+    - **Default:** Disabled and requires `experimental: true`.
+    - **Why and when to enable:** Use these spans to identify which configured spinner or overlay kept users waiting and for how long. This is separate from using the same selectors to calculate PCT.
+    - **Configuration:** Enable experimental telemetry and configure `spaMetrics.blockingSelectors`; include `elements` in `spaMetrics.monitors` to have the elements also delay PCT.
+
+```js
+SplunkRum.init({
+	experimental: true,
+	spaMetrics: {
+		monitors: ['media', 'network', 'performance', 'elements'],
+		blockingSelectors: ['.loading-spinner'],
+	},
+	// Existing application, realm/token, and other options...
+})
+```
+
+- **Long Animation Frames (LoAF)** [#1811](https://github.com/signalfx/splunk-otel-js-web/pull/1811), [#1890](https://github.com/signalfx/splunk-otel-js-web/pull/1890)
+    - **Default:** Disabled, requires `experimental: true`, and is currently supported only in Chromium-based browsers.
+    - **Why and when to enable:** Use LoAF to investigate main-thread responsiveness when long-task spans do not provide enough script, rendering, or forced-reflow attribution.
+    - **Configuration:** Set both `experimental: true` and `instrumentations.loaf: true`. Supported browsers suppress overlapping `longtask` spans; unsupported browsers retain long-task fallback coverage.
+    - **Volume control:** Up to 50 LoAF spans per source are emitted per rolling minute, with the top three scripts by duration attached to each span.
+
+```js
+SplunkRum.init({
+	experimental: true,
+	instrumentations: { loaf: true },
+	// Existing application, realm/token, and other options...
+})
+```
+
+- **Web Vitals attribution, FCP, and TTFB** [#1796](https://github.com/signalfx/splunk-otel-js-web/pull/1796)
+    - **Default:** Disabled. These Web Vitals options are independent of the top-level `experimental` flag.
+    - **Why and when to enable:** Enable attribution to diagnose why CLS, INP, or LCP is poor; enable `_experimental_fcp` or `_experimental_ttfb` when those additional metrics are needed.
+    - **Privacy:** Default attribution uses structural selectors and sanitizes the LCP URL by removing its query string. Raw targets or URLs should be enabled only after reviewing privacy and cardinality requirements.
+
+```js
+SplunkRum.init({
+	instrumentations: {
+		webvitals: {
+			_experimental_attribution: true,
+			_experimental_fcp: true,
+			_experimental_ttfb: true,
+		},
+	},
+	// Existing application, realm/token, and other options...
+})
+```
+
+- **Application-specific interaction metadata** [#1844](https://github.com/signalfx/splunk-otel-js-web/pull/1844), [#1852](https://github.com/signalfx/splunk-otel-js-web/pull/1852), [#1890](https://github.com/signalfx/splunk-otel-js-web/pull/1890)
+    - **Default:** No custom data attributes or selectors are captured.
+    - **Why and when to configure:** Use `dataAttributesToCapture` for stable application identifiers that help teams recognize a control in telemetry. Use `experimental_interactiveElementSelectors` when a custom control does not have native interactive HTML semantics.
+    - **Privacy:** Avoid sensitive or high-cardinality data-attribute values. Invalid selectors are ignored without preventing valid selectors or application initialization.
+
+```js
+SplunkRum.init({
+	dataAttributesToCapture: ['data-component-id'],
+	instrumentations: {
+		interactions: {
+			experimental_interactiveElementSelectors: ['.custom-control'],
+		},
+	},
+	// Existing application, realm/token, and other options...
+})
+```
+
+- **Regex URL filtering in JSON configuration** [#1802](https://github.com/signalfx/splunk-otel-js-web/pull/1802), [#1890](https://github.com/signalfx/splunk-otel-js-web/pull/1890)
+    - Use strings such as `regex/^https:\/\/analytics\./i` where JSON cannot represent a JavaScript `RegExp`. Malformed regex strings are reported and treated as literal strings without preventing initialization.
+
+### Fixes
+
+- **Route-change URLs remain associated with the navigation that captured them** [#1845](https://github.com/signalfx/splunk-otel-js-web/pull/1845), fixing incorrect attribution when multiple hash changes occur before their handlers run.
+- **Full build identity is available for locked and commit-based CDN builds** [#1865](https://github.com/signalfx/splunk-otel-js-web/pull/1865), [#1868](https://github.com/signalfx/splunk-otel-js-web/pull/1868), so `splunk.rumVersionFull` identifies the tested artifact rather than only the package version.
+
+### Known limitations
+
+- The PCT `maxPageLoadWaitTime` timeout is temporarily disabled in this release [#1863](https://github.com/signalfx/splunk-otel-js-web/pull/1863). Active calculations finish through normal completion or navigation/page interruption instead of the configured maximum wait.
+- Features controlled by the top-level `experimental` flag have no compatibility guarantee until promoted to stable configuration.
+
+### Internal and dependency updates
+
+- Upgraded the upstream Session Replay dependency to 2.18.1 [#1861](https://github.com/signalfx/splunk-otel-js-web/pull/1861).
+- Updated development, build, test, and example dependencies [#1853](https://github.com/signalfx/splunk-otel-js-web/pull/1853), [#1854](https://github.com/signalfx/splunk-otel-js-web/pull/1854), [#1835](https://github.com/signalfx/splunk-otel-js-web/pull/1835), [#1836](https://github.com/signalfx/splunk-otel-js-web/pull/1836), [#1838](https://github.com/signalfx/splunk-otel-js-web/pull/1838), [#1842](https://github.com/signalfx/splunk-otel-js-web/pull/1842), [#1840](https://github.com/signalfx/splunk-otel-js-web/pull/1840), [#1841](https://github.com/signalfx/splunk-otel-js-web/pull/1841), [#1837](https://github.com/signalfx/splunk-otel-js-web/pull/1837), [#1839](https://github.com/signalfx/splunk-otel-js-web/pull/1839), [#1828](https://github.com/signalfx/splunk-otel-js-web/pull/1828), [#1829](https://github.com/signalfx/splunk-otel-js-web/pull/1829), [#1826](https://github.com/signalfx/splunk-otel-js-web/pull/1826), [#1832](https://github.com/signalfx/splunk-otel-js-web/pull/1832), [#1833](https://github.com/signalfx/splunk-otel-js-web/pull/1833), [#1823](https://github.com/signalfx/splunk-otel-js-web/pull/1823), [#1830](https://github.com/signalfx/splunk-otel-js-web/pull/1830), [#1831](https://github.com/signalfx/splunk-otel-js-web/pull/1831), [#1825](https://github.com/signalfx/splunk-otel-js-web/pull/1825), [#1824](https://github.com/signalfx/splunk-otel-js-web/pull/1824), [#1817](https://github.com/signalfx/splunk-otel-js-web/pull/1817), [#1814](https://github.com/signalfx/splunk-otel-js-web/pull/1814), [#1805](https://github.com/signalfx/splunk-otel-js-web/pull/1805), [#1799](https://github.com/signalfx/splunk-otel-js-web/pull/1799), [#1800](https://github.com/signalfx/splunk-otel-js-web/pull/1800), [#1707](https://github.com/signalfx/splunk-otel-js-web/pull/1707), [#1795](https://github.com/signalfx/splunk-otel-js-web/pull/1795), [#1875](https://github.com/signalfx/splunk-otel-js-web/pull/1875), [#1876](https://github.com/signalfx/splunk-otel-js-web/pull/1876), [#1877](https://github.com/signalfx/splunk-otel-js-web/pull/1877), [#1878](https://github.com/signalfx/splunk-otel-js-web/pull/1878), [#1881](https://github.com/signalfx/splunk-otel-js-web/pull/1881), [#1882](https://github.com/signalfx/splunk-otel-js-web/pull/1882), [#1885](https://github.com/signalfx/splunk-otel-js-web/pull/1885), [#1886](https://github.com/signalfx/splunk-otel-js-web/pull/1886).
 
 ## 3.0.0
 
