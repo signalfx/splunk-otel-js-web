@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Docload with early fetch</title>
+
+	<%- renderAgent({experimental: true}) %>
+	<script>
+		window.earlyFetchReadyState = document.readyState;
+		fetch('/some-data?delay=100&resource=early-fetch').then(response => response.json());
+	</script>
+</head>
+<body>
+	<p>Docload with early fetch</p>
+</body>
+</html>

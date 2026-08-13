@@ -85,6 +85,8 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 
 	private navigationStartTimeMillis: number | undefined
 
+	private navigationTimingObserver: PerformanceObserver | undefined
+
 	private pageLoadSpan: api.Span | undefined
 
 	private readonly spaMetricsManager: SpaMetricsManager | undefined
@@ -110,19 +112,10 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 			const fetchStart = entries[PTN.FETCH_START]
 
 			if (spanName === AttributeNames.DOCUMENT_LOAD && typeof fetchStart === 'number') {
-				// Convert the relative Performance API timestamp once. Passing the same
-				// absolute timestamp to all three startSpan calls avoids the SDK computing
-				// a slightly different performance-to-epoch offset for each span.
-				this.navigationStartTimeMillis = hrTimeToMilliseconds(timeInputToHrTime(fetchStart))
-
-				if (this.documentLoadMetricsPromise && this.otelConfig.experimental) {
-					this.pageLoadSpan = this.tracer.startSpan(PAGE_LOAD_SPAN_NAME, {
-						startTime: this.navigationStartTimeMillis,
-					})
-					this.pageLoadSpan.setAttribute('component', this.component)
-					this.pageLoadSpan.setAttribute(SEMATTRS_HTTP_URL, location.href)
-					this.pageLoadSpan.setAttribute(SemanticAttributes.HTTP_USER_AGENT, navigator.userAgent)
-				}
+				// The navigation entry is normally available when the tracer provider is set.
+				// Keep this fallback for browsers that expose it only when document-load
+				// performance collection runs.
+				this.startPageLoadSpan(fetchStart)
 			}
 
 			const isNavigationSpan =
@@ -137,7 +130,17 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 				span.setAttribute(BROWSER_NAVIGATION_OPERATION_ATTRIBUTE, BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION)
 				span.setAttribute('component', this.component)
 				addExtraDocLoadTags(span)
-				this.spaMetricsManager?.setCurrentNavigationSpan(span, 0, BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION)
+				// pageLoad is the canonical span for the initial navigation when experimental
+				// navigation telemetry is enabled. Otherwise preserve the existing documentLoad
+				// association used for navigation operation assignment.
+				if (!this.pageLoadSpan) {
+					this.spaMetricsManager?.setCurrentNavigationSpan(
+						span,
+						0,
+						BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION,
+					)
+				}
+
 				// The span processor's automatic onStart event already ran before
 				// `component` was set, so emit manually now that SpanEmitter can
 				// route this as `document-load:start`.
@@ -224,7 +227,10 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 					void this.documentLoadMetricsPromise
 						.then((pageLoadMetrics) => {
 							this.spaMetricsManager?.setPageLoadMetricAttributes(span, pageLoadMetrics)
-							this.spaMetricsManager?.completeCurrentNavigationPct(span, pageLoadMetrics.pct)
+							this.spaMetricsManager?.completeCurrentNavigationPct(
+								(this.pageLoadSpan as Span | undefined) ?? span,
+								pageLoadMetrics.pct,
+							)
 							if (this.pageLoadSpan && this.navigationStartTimeMillis !== undefined) {
 								this.spaMetricsManager?.setPageLoadMetricAttributes(this.pageLoadSpan, pageLoadMetrics)
 								const pageLoadSpan = this.pageLoadSpan as Span
@@ -239,7 +245,9 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 							_superEndSpan(span, performanceName, entries)
 						})
 						.catch((error) => {
-							this.spaMetricsManager?.completeCurrentNavigationPct(span)
+							this.spaMetricsManager?.completeCurrentNavigationPct(
+								(this.pageLoadSpan as Span | undefined) ?? span,
+							)
 							api.diag.warn('SplunkDocumentLoadInstrumentation: Failed to resolve page load metrics.', {
 								error,
 							})
@@ -288,6 +296,78 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 				)
 				exposedSuper._endSpan(span, PTN.RESPONSE_END, resource)
 			}
+		}
+	}
+
+	disable(): void {
+		this.navigationTimingObserver?.disconnect()
+		this.navigationTimingObserver = undefined
+		super.disable()
+	}
+
+	setTracerProvider(tracerProvider: api.TracerProvider): void {
+		super.setTracerProvider(tracerProvider)
+		this.startPageLoadSpanWhenNavigationTimingIsAvailable()
+	}
+
+	private startPageLoadSpan(fetchStart: number): void {
+		// Convert the relative Performance API timestamp once. The same absolute value
+		// starts pageLoad and overrides the documentLoad and documentFetch entries,
+		// avoiding a slightly different performance-to-epoch offset for each span.
+		this.navigationStartTimeMillis ??= hrTimeToMilliseconds(timeInputToHrTime(fetchStart))
+
+		if (this.pageLoadSpan || !this.documentLoadMetricsPromise || !this.otelConfig.experimental) {
+			return
+		}
+
+		this.navigationTimingObserver?.disconnect()
+		this.navigationTimingObserver = undefined
+
+		this.pageLoadSpan = this.tracer.startSpan(PAGE_LOAD_SPAN_NAME, {
+			startTime: this.navigationStartTimeMillis,
+		})
+		this.pageLoadSpan.setAttribute('component', this.component)
+		this.pageLoadSpan.setAttribute(SEMATTRS_HTTP_URL, location.href)
+		this.pageLoadSpan.setAttribute(SemanticAttributes.HTTP_USER_AGENT, navigator.userAgent)
+		this.spaMetricsManager?.setCurrentNavigationSpan(
+			this.pageLoadSpan,
+			0,
+			BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION,
+		)
+	}
+
+	private startPageLoadSpanWhenNavigationTimingIsAvailable(): void {
+		if (
+			!this.documentLoadMetricsPromise ||
+			!this.otelConfig.experimental ||
+			this.pageLoadSpan ||
+			this.navigationTimingObserver
+		) {
+			return
+		}
+
+		const navigationEntry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined
+		if (navigationEntry && Number.isFinite(navigationEntry.fetchStart)) {
+			this.startPageLoadSpan(navigationEntry.fetchStart)
+			return
+		}
+
+		if (typeof PerformanceObserver === 'undefined') {
+			return
+		}
+
+		try {
+			this.navigationTimingObserver = new PerformanceObserver((list) => {
+				const observedEntry = list.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined
+				if (observedEntry && Number.isFinite(observedEntry.fetchStart)) {
+					this.startPageLoadSpan(observedEntry.fetchStart)
+				}
+			})
+			this.navigationTimingObserver.observe({ buffered: true, type: 'navigation' })
+		} catch (error) {
+			this.navigationTimingObserver?.disconnect()
+			this.navigationTimingObserver = undefined
+			api.diag.debug('SplunkDocumentLoadInstrumentation: Unable to observe initial navigation timing.', { error })
 		}
 	}
 }

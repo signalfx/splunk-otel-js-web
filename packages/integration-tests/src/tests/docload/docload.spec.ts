@@ -93,7 +93,7 @@ test.describe('docload', () => {
 		expect(docFetchSpans[0].parentSpanId).toBe(docLoadSpans[0].spanId)
 		expect(docLoadSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.operation, 'documentLoad')
 		expect(docFetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.operation, 'documentLoad')
-		expect(docFetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, docLoadSpans[0].spanId)
+		expect(docFetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, pageLoadSpans[0].spanId)
 		expect(docFetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, true)
 		expect(docFetchSpans[0].startTime).toEqual(docLoadSpans[0].startTime)
 		expect(pageLoadSpans[0].startTime).toEqual(docLoadSpans[0].startTime)
@@ -117,7 +117,7 @@ test.describe('docload', () => {
 		expect(scriptFetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.operation, 'documentLoad')
 		expect(scriptFetchSpans[0]).toHaveSpanAttribute(
 			BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId,
-			docLoadSpans[0].spanId,
+			pageLoadSpans[0].spanId,
 		)
 		// Script resources are represented in the document waterfall but are not tracked by a PCT resource monitor.
 		expect(scriptFetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, false)
@@ -132,7 +132,7 @@ test.describe('docload', () => {
 		expect(brokenImageFetchSpans[0].parentSpanId).toBe(docLoadSpans[0].spanId)
 		expect(brokenImageFetchSpans[0]).toHaveSpanAttribute(
 			BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId,
-			docLoadSpans[0].spanId,
+			pageLoadSpans[0].spanId,
 		)
 		// The failed image is retained in the waterfall but is not admitted by a PCT resource monitor.
 		expect(brokenImageFetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, false)
@@ -179,6 +179,34 @@ test.describe('docload', () => {
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})
 
+	test('fetch started before the load event receives the pageLoad span ID', async ({ recordPage }) => {
+		const fetchUrl = 'http://localhost:3000/some-data?delay=100&resource=early-fetch'
+		await recordPage.goTo('/docload/docload-early-fetch.ejs')
+
+		await recordPage.waitForSpans(
+			(spans) =>
+				spans.some((span) => span.name === 'pageLoad') &&
+				spans.some((span) => span.name === 'documentLoad') &&
+				spans.some((span) => span.attributes.component === 'fetch' && span.attributes['http.url'] === fetchUrl),
+		)
+
+		const readyStateAtFetch = await recordPage.evaluate(
+			() => (window as typeof window & { earlyFetchReadyState?: DocumentReadyState }).earlyFetchReadyState,
+		)
+		const pageLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'pageLoad')
+		const documentLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'documentLoad')
+		const fetchSpan = recordPage.receivedSpans.find(
+			(span) => span.attributes.component === 'fetch' && span.attributes['http.url'] === fetchUrl,
+		)
+
+		expect(readyStateAtFetch).toBe('loading')
+		expectDefined(pageLoadSpan)
+		expectDefined(documentLoadSpan)
+		expectDefined(fetchSpan)
+		expect(fetchSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, pageLoadSpan.spanId)
+		expect(fetchSpan).not.toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, documentLoadSpan.spanId)
+	})
+
 	test('ignoring resource URLs', async ({ recordPage }) => {
 		await recordPage.goTo('/docload/docload-ignored.ejs')
 
@@ -195,6 +223,7 @@ test.describe('docload', () => {
 
 		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'documentLoad'))
 		const docLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'documentLoad')
+		const pageLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'pageLoad')
 		const ignoredResourceSpan = recordPage.receivedSpans.find(
 			(span) =>
 				span.name === 'resourceFetch' &&
@@ -202,8 +231,9 @@ test.describe('docload', () => {
 		)
 
 		expectDefined(docLoadSpan)
+		expectDefined(pageLoadSpan)
 		expectDefined(ignoredResourceSpan)
-		expect(ignoredResourceSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, docLoadSpan.spanId)
+		expect(ignoredResourceSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, pageLoadSpan.spanId)
 		expect(ignoredResourceSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, false)
 	})
 
@@ -227,6 +257,7 @@ test.describe('docload', () => {
 		)
 
 		const docLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'documentLoad')
+		const pageLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'pageLoad')
 		const routeChangeSpan = recordPage.receivedSpans.find((span) => span.name === 'routeChange')
 		const resourceSpan = recordPage.receivedSpans.find(
 			(span) =>
@@ -236,9 +267,10 @@ test.describe('docload', () => {
 		)
 
 		expectDefined(docLoadSpan)
+		expectDefined(pageLoadSpan)
 		expectDefined(routeChangeSpan)
 		expectDefined(resourceSpan)
-		expect(resourceSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, docLoadSpan.spanId)
+		expect(resourceSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, pageLoadSpan.spanId)
 		expect(resourceSpan).not.toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, routeChangeSpan.spanId)
 	})
 
@@ -255,13 +287,15 @@ test.describe('docload', () => {
 		)
 
 		const docLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'documentLoad')
+		const pageLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'pageLoad')
 		const docFetchSpan = recordPage.receivedSpans.find((span) => span.name === 'documentFetch')
 		const routeChangeSpan = recordPage.receivedSpans.find((span) => span.name === 'routeChange')
 
 		expectDefined(docLoadSpan)
+		expectDefined(pageLoadSpan)
 		expectDefined(docFetchSpan)
 		expectDefined(routeChangeSpan)
-		expect(docFetchSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, docLoadSpan.spanId)
+		expect(docFetchSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, pageLoadSpan.spanId)
 		expect(docFetchSpan).not.toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, routeChangeSpan.spanId)
 	})
 
