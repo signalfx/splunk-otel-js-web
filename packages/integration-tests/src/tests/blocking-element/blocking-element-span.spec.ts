@@ -149,4 +149,54 @@ test.describe('blocking-element', () => {
 		expect(blockingElementSpan).toHaveSpanAttribute('browser.element.selector', '.global-spinner')
 		expect(blockingElementSpan).toHaveSpanAttribute('browser.element.completion', 'completed')
 	})
+
+	test('applies a urlOverride blocking selector after a route change', async ({ recordPage }) => {
+		await recordPage.goTo('/blocking-element/blocking-element-span.ejs')
+
+		await recordPage.locator('#btnNavigateToOverridePage').click()
+
+		await recordPage.waitForSpans((spans) => spans.filter((item) => item.name === 'blockingElement').length === 1)
+
+		const blockingElementSpans = recordPage.receivedSpans.filter((item) => item.name === 'blockingElement')
+		expect(blockingElementSpans).toHaveLength(1)
+
+		// The base-config spinner (matches .global-spinner, not .override-spinner) never gets a span,
+		// since the urlOverride resolved for #override-page only tracks .override-spinner.
+		const [span] = blockingElementSpans
+		expect(span).toHaveSpanAttribute('browser.element.id', 'spinner-override-page')
+		expect(span).toHaveSpanAttribute('browser.element.selector', '.override-spinner')
+	})
+
+	test('interrupts an open span as completion="visibility_hidden" on tab hide, then reopens it on tab show', async ({
+		recordPage,
+	}) => {
+		await recordPage.goTo('/blocking-element/blocking-element-span.ejs')
+
+		await recordPage.locator('#btnPersistentSpinner').click()
+		// The spinner never auto-removes, so nothing exports until the tab hides — give the debounced
+		// MutationObserver scan time to register it as tracked first.
+		await recordPage.waitForTimeout(500)
+
+		await recordPage.changeVisibilityInTab('hidden')
+		await recordPage.waitForTimeout(500)
+
+		await recordPage.waitForSpans((spans) => spans.filter((item) => item.name === 'blockingElement').length === 1)
+
+		const hiddenSpan = recordPage.receivedSpans.find((item) => item.name === 'blockingElement')
+		expect(hiddenSpan).toHaveSpanAttribute('browser.element.id', 'spinner-persistent')
+		expect(hiddenSpan).toHaveSpanAttribute('browser.element.completion', 'visibility_hidden')
+
+		// The spinner never left the DOM, so returning to visible resyncs and reopens a fresh span for
+		// it — confirmed by hiding again and observing a second, independent span.
+		recordPage.clearReceivedSpans()
+		await recordPage.changeVisibilityInTab('visible')
+		await recordPage.waitForTimeout(500)
+
+		await recordPage.changeVisibilityInTab('hidden')
+		await recordPage.waitForSpans((spans) => spans.filter((item) => item.name === 'blockingElement').length === 1)
+
+		const secondHiddenSpan = recordPage.receivedSpans.find((item) => item.name === 'blockingElement')
+		expect(secondHiddenSpan).toHaveSpanAttribute('browser.element.id', 'spinner-persistent')
+		expect(secondHiddenSpan).toHaveSpanAttribute('browser.element.completion', 'visibility_hidden')
+	})
 })
