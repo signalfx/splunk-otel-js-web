@@ -20,6 +20,8 @@ import type { ExportedTestSpan } from '@test-utils/test-span.js'
 import { BrowserContext, Page } from 'playwright'
 
 export class RecordPage {
+	receivedBeaconSpans: ExportedTestSpan[] = []
+
 	receivedSpans: ExportedTestSpan[] = []
 
 	get receivedErrorSpans() {
@@ -30,6 +32,34 @@ export class RecordPage {
 		private readonly page: Page,
 		private readonly context: BrowserContext,
 	) {}
+
+	// Alternative to mockNetwork()'s page.route() interception, for cases where that's unreliable
+	// (e.g. WebKit not consistently surfacing navigator.sendBeacon() calls to page.route()).
+	// Captures beacon payloads directly at the JS call site instead. Must be called before goTo(),
+	// since addInitScript only affects subsequent navigations. Opt-in and independent of
+	// mockNetwork()/receivedSpans — calling this does not affect any other test.
+	async captureSendBeacon() {
+		await this.page.addInitScript(() => {
+			;(window as any).__capturedBeaconTexts = []
+			const original = navigator.sendBeacon?.bind(navigator)
+			if (!original) {
+				return
+			}
+
+			navigator.sendBeacon = (url: string | URL, data?: BodyInit) => {
+				const result = original(url, data)
+				if (data instanceof Blob) {
+					void data.text().then((text) => {
+						;(window as any).__capturedBeaconTexts.push(text)
+					})
+				} else if (typeof data === 'string') {
+					;(window as any).__capturedBeaconTexts.push(data)
+				}
+
+				return result
+			}
+		})
+	}
 
 	changeVisibilityInTab = async (state: 'visible' | 'hidden') => {
 		await this.page.evaluate((stateInner) => {
@@ -42,6 +72,17 @@ export class RecordPage {
 
 	clearReceivedSpans() {
 		this.receivedSpans = []
+	}
+
+	async collectCapturedBeaconSpans() {
+		const texts: string[] = await this.page.evaluate(() => (window as any).__capturedBeaconTexts ?? [])
+		for (const text of texts) {
+			this.receivedBeaconSpans.push(...parseOtlpPayload(text))
+		}
+
+		await this.page.evaluate(() => {
+			;(window as any).__capturedBeaconTexts = []
+		})
 	}
 
 	async flushData() {
