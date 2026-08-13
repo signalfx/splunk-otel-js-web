@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Docload resource crossing a navigation boundary</title>
+
+	<%- renderAgent({experimental: true}) %>
+</head>
+<body>
+	<p>Docload resource crossing a navigation boundary</p>
+	<img
+		src="http://localhost:3001/user-interaction/assets/splunk-black.png?delay=1500&noCache&resource=document-load-overlap"
+	>
+	<script>
+		window.setTimeout(() => {
+			location.hash = 'navigation-b'
+		}, 100)
+	</script>
+</body>
+</html>

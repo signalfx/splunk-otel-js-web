@@ -29,6 +29,12 @@ test.describe('resource observer', () => {
 				typeof span.attributes['http.url'] === 'string' &&
 				String(span.attributes['http.url']).endsWith('splunk-otel-web.js'),
 		)
+		const audioSpans = recordPage.receivedSpans.filter(
+			(span) =>
+				span.attributes['component'] === 'splunk-post-doc-load-resource' &&
+				typeof span.attributes['http.url'] === 'string' &&
+				String(span.attributes['http.url']).endsWith('image.png?media=audio'),
+		)
 		const imageSpans = recordPage.receivedSpans.filter(
 			(span) =>
 				typeof span.attributes['http.url'] === 'string' &&
@@ -44,9 +50,29 @@ test.describe('resource observer', () => {
 				typeof span.attributes['http.url'] === 'string' &&
 				String(span.attributes['http.url']).endsWith('test.js'),
 		)
+		const videoSpans = recordPage.receivedSpans.filter(
+			(span) =>
+				span.attributes['component'] === 'splunk-post-doc-load-resource' &&
+				typeof span.attributes['http.url'] === 'string' &&
+				String(span.attributes['http.url']).endsWith('image.png?media=video'),
+		)
+		const cssSpans = recordPage.receivedSpans.filter(
+			(span) =>
+				span.attributes['component'] === 'splunk-post-doc-load-resource' &&
+				typeof span.attributes['http.url'] === 'string' &&
+				String(span.attributes['http.url']).endsWith('css-font-img.css?postload=true'),
+		)
+		const fontSpans = recordPage.receivedSpans.filter(
+			(span) =>
+				span.attributes['component'] === 'splunk-post-doc-load-resource' &&
+				typeof span.attributes['http.url'] === 'string' &&
+				String(span.attributes['http.url']).endsWith('splunk.woff'),
+		)
 
 		expect(agentSpans).toHaveLength(1)
+		expect(audioSpans.length).toBeGreaterThan(0)
 		expect(imageSpans).toHaveLength(1)
+		expect(videoSpans.length).toBeGreaterThan(0)
 
 		expect(imageBlackSpans).toHaveLength(1)
 		expect(imageBlackSpans[0].events.length).toBe(8)
@@ -60,6 +86,62 @@ test.describe('resource observer', () => {
 		expect(scriptSpans[0].events.length).toBe(8)
 		expect(scriptSpans[0]).toHaveSpanAttribute('http.url', 'http://localhost:3000/resource-observer/assets/test.js')
 		expect(scriptSpans[0]).toHaveSpanAttribute('http.cache.hit', false)
+
+		expect(cssSpans).toHaveLength(1)
+		expect(cssSpans[0]).toHaveSpanAttribute('component', 'splunk-post-doc-load-resource')
+		expect(cssSpans[0]).toHaveSpanAttribute(
+			'http.url',
+			'http://localhost:3000/resource-observer/assets/css-font-img.css?postload=true',
+		)
+
+		expect(fontSpans).toHaveLength(1)
+		expect(fontSpans[0]).toHaveSpanAttribute('component', 'splunk-post-doc-load-resource')
+		expect(fontSpans[0]).toHaveSpanAttribute(
+			'http.url',
+			'http://localhost:3000/resource-observer/assets/splunk.woff',
+		)
+	})
+
+	test('should report a resource loaded after a route change', async ({ recordPage }) => {
+		await recordPage.goTo('/resource-observer/resources-custom-context.ejs')
+
+		await recordPage.waitForSpans(
+			(spans) =>
+				spans.some((span) => span.name === 'documentLoad') && spans.some((span) => span.name === 'guard-span'),
+		)
+		await recordPage.evaluate(async () => {
+			history.pushState({}, '', '#route-with-resource')
+
+			await new Promise<void>((resolve, reject) => {
+				const image = document.createElement('img')
+				image.addEventListener('error', () => reject(new Error('Route resource failed to load.')))
+				image.addEventListener('load', () => resolve())
+				image.src = 'assets/splunk-black.svg?afterRouteChange=true'
+				document.body.append(image)
+			})
+		})
+
+		await recordPage.waitForSpans(
+			(spans) =>
+				spans.some((span) => span.name === 'routeChange') &&
+				spans.some(
+					(span) =>
+						span.attributes['component'] === 'splunk-post-doc-load-resource' &&
+						typeof span.attributes['http.url'] === 'string' &&
+						String(span.attributes['http.url']).endsWith('splunk-black.svg?afterRouteChange=true'),
+				),
+		)
+
+		const routeResourceSpans = recordPage.receivedSpans.filter(
+			(span) =>
+				span.attributes['component'] === 'splunk-post-doc-load-resource' &&
+				typeof span.attributes['http.url'] === 'string' &&
+				String(span.attributes['http.url']).endsWith('splunk-black.svg?afterRouteChange=true'),
+		)
+
+		expect(routeResourceSpans).toHaveLength(1)
+		expect(recordPage.receivedSpans.filter((span) => span.name === 'routeChange')).toHaveLength(1)
+		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})
 
 	test('resources can be ignored', async ({ recordPage }) => {

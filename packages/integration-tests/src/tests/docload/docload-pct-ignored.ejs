@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Docload with PCT-ignored resource</title>
+
+	<%- renderAgent({experimental: true, spaMetrics: {ignoreUrls: ['/non-impactful-resource.jpg']}}) %>
+</head>
+<body>
+	<p>Docload with PCT-ignored resource</p>
+	<img src="/non-impactful-resource.jpg">
+</body>
+</html>

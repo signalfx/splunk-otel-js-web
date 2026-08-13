@@ -112,6 +112,47 @@ fastify.get('/', (request, reply) => {
 	reply.send()
 })
 
+fastify.get('/docload/docload-streamed-navigation.ejs', async (request, reply) => {
+	const beaconUrl = new URL(`http://${request.headers.host}/api/v2/spans`)
+	const agent = ejs.render(RENDER_AGENT_TEMPLATE, {
+		customOptions: '{}',
+		file: '/artifacts/splunk-otel-web.js',
+		noInit: false,
+		options: JSON.stringify({
+			applicationName: 'splunk-otel-js-dummy-app',
+			beaconEndpoint: beaconUrl.toString(),
+			bufferTimeout: GLOBAL_TEST_BUFFER_TIMEOUT,
+			debug: true,
+			experimental: true,
+			exporter: { otlp: true },
+		}),
+		otelApiGlobalsFile: '/artifacts/otel-api-globals.js',
+	})
+
+	reply.hijack()
+	reply.raw.writeHead(200, {
+		'cache-control': 'no-store',
+		'content-type': 'text/html; charset=utf-8',
+	})
+	reply.raw.write(`<!DOCTYPE html>
+		<html lang="en">
+			<head>
+				<meta charset="UTF-8">
+				<title>Document fetch crossing a navigation boundary</title>
+				${agent}
+			</head>
+			<body>
+				<p>Document fetch crossing a navigation boundary</p>
+				<script>
+					window.setTimeout(() => {
+						location.hash = 'route-navigation'
+					}, 100)
+				</script>`)
+
+	await new Promise((resolve) => setTimeout(resolve, 1000))
+	reply.raw.end('</body></html>')
+})
+
 fastify.get<{
 	Querystring: {
 		beaconEndpoint?: string

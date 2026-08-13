@@ -18,6 +18,7 @@
 import { expect } from '@playwright/test'
 import type { ExportedTestSpan } from '@test-utils/test-span.js'
 
+import { BROWSER_NAVIGATION_ATTRIBUTES } from '../../utils/browser-navigation'
 import { test } from '../../utils/test'
 
 test.describe('errors', () => {
@@ -68,6 +69,7 @@ test.describe('errors', () => {
 		expect(errorSpans[0]).toHaveSpanAttribute('component', 'error')
 		expect(errorSpans[0]).toHaveSpanAttribute('error', true)
 		expect(errorSpans[0]).toHaveSpanAttribute('error.object', 'TypeError')
+		expect(errorSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.operation, 'documentLoad')
 
 		const errorMessageMap = {
 			chromium: "Cannot set properties of null (setting 'prop1')",
