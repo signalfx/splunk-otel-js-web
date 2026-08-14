@@ -19,7 +19,7 @@ collect every frustration signal.
         - **Customer action:** No action is required to collect all signals. To retain the 3.0 behavior, set `deadClick`, `errorClick`, and `thrashedCursor` to `false` under `instrumentations.frustrationSignals`. Set `instrumentations.frustrationSignals: false` to disable all frustration detection.
     - **The PCT quiet period changed from five seconds to one second** [#1812](https://github.com/signalfx/splunk-otel-js-web/pull/1812)
         - **Changed from 3.0:** Page Completion Time (PCT) now completes after 1000 ms, instead of 5000 ms, without monitored network, media, resource-timing, or configured loading-element activity.
-        - **Why:** Route-change spans can be completed and exported four seconds sooner after the last monitored activity.
+        - **Why:** The shorter quiet period reduces the chance that unrelated background activity keeps resetting the timer and extending page completion.
         - **Customer action:** No action is required for most applications. If meaningful page-loading work can start after a gap longer than one second, set `spaMetrics.quietTime: 5000` to retain the 3.0 behavior or choose another value appropriate for the application.
 
 To retain the relevant 3.0 defaults:
@@ -54,7 +54,7 @@ SplunkRum.init({
 
 - `@splunk/otel-web`
     - **More reliable PCT resource and interruption tracking for SPA route changes** [#1807](https://github.com/signalfx/splunk-otel-js-web/pull/1807), [#1816](https://github.com/signalfx/splunk-otel-js-web/pull/1816), [#1818](https://github.com/signalfx/splunk-otel-js-web/pull/1818), [#1847](https://github.com/signalfx/splunk-otel-js-web/pull/1847), [#1848](https://github.com/signalfx/splunk-otel-js-web/pull/1848), [#1849](https://github.com/signalfx/splunk-otel-js-web/pull/1849)
-        - Each monitored fetch, XHR, media, or Resource Timing load now has a unique internal identifier. Its completion or error is matched to that identifier instead of only its URL, so one of several concurrent requests to the same URL cannot finish tracking another request.
+        - Each resource request is now tracked independently. Previously, concurrent requests to the same URL shared a tracking key, so completion of one request could incorrectly mark another in-flight request as finished and produce an inaccurate PCT.
         - Media that fails, is aborted, is removed from the DOM, or changes its source now releases its pending PCT activity instead of potentially leaving the page waiting indefinitely.
         - Pending resources discovered during the previous page are cleared when a new navigation starts by default, so unrelated earlier work does not extend the new page's PCT.
         - When another navigation starts or the browser emits `pagehide`, the current calculation finishes at the interruption time instead of leaving its route-change span unfinished. Route-change span duration continues to use PCT when `spaMetrics` is enabled, which remains the default.
