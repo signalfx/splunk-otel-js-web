@@ -299,8 +299,7 @@ let _sessionStateUnsubscribe: undefined | (() => void)
 const isLatestTagUsed = isAgentLoadedViaLatestTag()
 const isFullVersionTagUsed = isAgentLoadedViaNextTag() || isAgentLoadedViaLockedVersionTag()
 
-// Registered at module load, before BatchSpanProcessor exists — wins the race against its
-// internal flush listener and the app-level one below.
+// Registered at module load, before the app-level listener below — wins that race.
 window.addEventListener('visibilitychange', () => {
 	if (document.visibilityState === 'hidden') {
 		_blockingElementInstrumentation?.interruptForHidden()

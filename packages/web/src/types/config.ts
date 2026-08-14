@@ -58,6 +58,12 @@ export interface SplunkBlockingElementInstrumentationConfig extends Instrumentat
 	/**
 	 * Falls back to deriving from navigationMetrics (monitors includes 'elements' and
 	 * blockingSelectors is non-empty) when unset.
+	 *
+	 * Re-resolving selectors/enablement on SPA route changes (including navigationMetrics'
+	 * urlOverrides) depends on `instrumentations.interactions` being enabled — it's the only
+	 * instrumentation that detects SPA navigations (history/hashchange) and triggers re-evaluation.
+	 * If `interactions` is disabled, blockingElement still applies its initial page's config, but
+	 * never re-resolves on later route changes.
 	 */
 	enabled?: boolean
 
@@ -145,7 +151,12 @@ export type NavigationMetricsUrlOverride = NavigationMetricsOptionsBase & {
 }
 
 export type NavigationMetricsOptions = NavigationMetricsOptionsBase & {
-	/** Ordered per-URL overrides. The first matching override wins. */
+	/**
+	 * Ordered per-URL overrides. The first matching override wins.
+	 *
+	 * For blockingElement: re-resolving on SPA route changes requires `instrumentations.interactions`
+	 * to be enabled (it's what detects the route change and triggers re-evaluation).
+	 */
 	urlOverrides?: NavigationMetricsUrlOverride[]
 }
 
@@ -255,6 +266,37 @@ export interface SplunkOtelWebConfig {
 	instrumentations?: SplunkOtelWebOptionsInstrumentations
 
 	/**
+	 * Enables Navigation metrics.
+	 *
+	 * Currently supported metrics:
+	 * - **Page Completion Time (PCT)**: Measures the time from a route change until all configured
+	 *   resource monitors are complete
+	 *
+	 * @default true (enabled)
+	 *
+	 * @example
+	 * ```typescript
+	 * // Enable with defaults
+	 * navigationMetrics: true
+	 *
+	 * // Enable with custom configuration
+	 * navigationMetrics: {
+	 *   blockingSelectors: ['.loading-spinner'],
+	 *   clearLoadingResourcesOnNewPage: true,
+	 *   ignoreUrls: [/analytics\.example\.com/],
+	 *   maxPageLoadWaitTime: 180000,
+	 *   maxResourcesToWatch: 100,
+	 *   monitors: ['media', 'network', 'performance', 'elements'],
+	 *   quietTime: 1000
+	 * }
+	 *
+	 * // Disable Navigation metrics
+	 * navigationMetrics: false
+	 * ```
+	 */
+	navigationMetrics?: boolean | NavigationMetricsOptions
+
+	/**
 	 * Specifies where session data should be stored.
 	 *
 	 * Available options:
@@ -300,37 +342,6 @@ export interface SplunkOtelWebConfig {
 	separateTraces?: boolean
 
 	sessionMetadata?: NonNullable<ExternalSessionMetadata>
-
-	/**
-	 * Enables Navigation metrics.
-	 *
-	 * Currently supported metrics:
-	 * - **Page Completion Time (PCT)**: Measures the time from a route change until all configured
-	 *   resource monitors are complete
-	 *
-	 * @default true (enabled)
-	 *
-	 * @example
-	 * ```typescript
-	 * // Enable with defaults
-	 * navigationMetrics: true
-	 *
-	 * // Enable with custom configuration
-	 * navigationMetrics: {
-	 *   blockingSelectors: ['.loading-spinner'],
-	 *   clearLoadingResourcesOnNewPage: true,
-	 *   ignoreUrls: [/analytics\.example\.com/],
-	 *   maxPageLoadWaitTime: 180000,
-	 *   maxResourcesToWatch: 100,
-	 *   monitors: ['media', 'network', 'performance', 'elements'],
-	 *   quietTime: 1000
-	 * }
-	 *
-	 * // Disable Navigation metrics
-	 * navigationMetrics: false
-	 * ```
-	 */
-	navigationMetrics?: boolean | NavigationMetricsOptions
 
 	/**
 	 * @deprecated Use `navigationMetrics`.

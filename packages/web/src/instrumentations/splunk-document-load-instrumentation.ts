@@ -29,7 +29,7 @@ import { Span } from '@opentelemetry/sdk-trace-base'
 import { addSpanNetworkEvents, PerformanceEntries, PerformanceTimingNames as PTN } from '@opentelemetry/sdk-trace-web'
 import { SemanticAttributes, SEMATTRS_HTTP_URL } from '@opentelemetry/semantic-conventions'
 
-import { SessionManager, NavigationMetricsManager } from '../managers'
+import { NavigationMetricsManager, SessionManager } from '../managers'
 import {
 	BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION,
 	BROWSER_NAVIGATION_OPERATION_ATTRIBUTE,
@@ -83,11 +83,11 @@ type ExposedSuper = {
 export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentation {
 	private readonly documentLoadMetricsPromise: ReturnType<NavigationMetricsManager['waitForPageLoad']> | undefined
 
+	private readonly navigationMetricsManager: NavigationMetricsManager | undefined
+
 	private navigationStartTimeMillis: number | undefined
 
 	private pageLoadSpan: api.Span | undefined
-
-	private readonly navigationMetricsManager: NavigationMetricsManager | undefined
 
 	constructor(
 		config: SplunkDocLoadInstrumentationConfig = {},
@@ -137,7 +137,11 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 				span.setAttribute(BROWSER_NAVIGATION_OPERATION_ATTRIBUTE, BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION)
 				span.setAttribute('component', this.component)
 				addExtraDocLoadTags(span)
-				this.navigationMetricsManager?.setCurrentNavigationSpan(span, 0, BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION)
+				this.navigationMetricsManager?.setCurrentNavigationSpan(
+					span,
+					0,
+					BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION,
+				)
 				// The span processor's automatic onStart event already ran before
 				// `component` was set, so emit manually now that SpanEmitter can
 				// route this as `document-load:start`.

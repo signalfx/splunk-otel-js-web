@@ -22,7 +22,7 @@ import { isTracingSuppressed, suppressTracing } from '@opentelemetry/core'
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request'
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base'
 
-import { SessionManager, NavigationMetricsManager } from '../managers'
+import { NavigationMetricsManager, SessionManager } from '../managers'
 import { setBrowserNavigationPageAttributes } from '../managers/navigation-metrics-manager/navigation-relevance'
 import { captureTraceParent } from '../servertiming'
 import { SplunkOtelWebConfig, SplunkXhrInstrumentationConfig } from '../types'

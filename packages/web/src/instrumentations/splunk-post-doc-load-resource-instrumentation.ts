@@ -22,7 +22,7 @@ import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instr
 import { addSpanNetworkEvents } from '@opentelemetry/sdk-trace-web'
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions'
 
-import { SessionManager, NavigationMetricsManager } from '../managers'
+import { NavigationMetricsManager, SessionManager } from '../managers'
 import { setBrowserNavigationPageAttributes } from '../managers/navigation-metrics-manager/navigation-relevance'
 import { getPctMonitorTypes } from '../managers/navigation-metrics-manager/resource-monitor-types'
 import { SplunkOtelWebConfig } from '../types'

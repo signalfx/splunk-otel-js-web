@@ -35,9 +35,7 @@ function getNavigationMetricsConfigForUrl(
 	navigationMetrics: NavigationMetricsOptions,
 	url: string,
 ): NavigationMetricsOptions {
-	const override = navigationMetrics.urlOverrides?.find((urlOverride) =>
-		isUrlOverrideMatch(urlOverride.match, url),
-	)
+	const override = navigationMetrics.urlOverrides?.find((urlOverride) => isUrlOverrideMatch(urlOverride.match, url))
 	if (!override) {
 		return navigationMetrics
 	}
