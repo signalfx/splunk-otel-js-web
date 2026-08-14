@@ -51,19 +51,6 @@ your organization limits browser storage or wants to control the additional frus
 
 ### Optional features — configuration required
 
-- **Experimental navigation telemetry** [#1862](https://github.com/signalfx/splunk-otel-js-web/pull/1862), [#1873](https://github.com/signalfx/splunk-otel-js-web/pull/1873), [#1874](https://github.com/signalfx/splunk-otel-js-web/pull/1874), [#1890](https://github.com/signalfx/splunk-otel-js-web/pull/1890)
-    - **Default:** Disabled. PCT still determines route-change span duration without this option.
-    - **Why and when to enable:** Enable during evaluation of the new page-load model when you need a dedicated initial `pageLoad` span, page-completion diagnostics, or correlation between resource spans and the navigation that owns them.
-    - **Configuration:** Set `experimental: true` in `SplunkRum.init()`. This telemetry also requires `spaMetrics`, which remains enabled by default.
-    - **Result:** Adds the `pageLoad` span, `browser.navigation.page_completion_time`, `browser.navigation.status`, resource-diagnostic attributes, `browser.navigation.page_span_id`, and `browser.navigation.pct_relevant`. Experimental telemetry may change in a future release.
-
-```js
-SplunkRum.init({
-	experimental: true,
-	// Existing application, realm/token, and other options...
-})
-```
-
 - **Per-page PCT configuration and loading-element monitoring** [#1846](https://github.com/signalfx/splunk-otel-js-web/pull/1846), [#1850](https://github.com/signalfx/splunk-otel-js-web/pull/1850)
     - **Default:** Network, media, and performance resources participate in PCT. Loading-element monitoring is disabled until `elements` and at least one selector are configured.
     - **Why and when to configure:** Use URL overrides when background requests should not delay a particular route. Add the `elements` monitor when application-controlled spinners or overlays indicate readiness more accurately than network activity.
@@ -84,38 +71,8 @@ SplunkRum.init({
 })
 ```
 
-- **Blocking-element spans** [#1879](https://github.com/signalfx/splunk-otel-js-web/pull/1879), [#1890](https://github.com/signalfx/splunk-otel-js-web/pull/1890)
-    - **Default:** Disabled and requires `experimental: true`.
-    - **Why and when to enable:** Use these spans to identify which configured spinner or overlay kept users waiting and for how long. This is separate from using the same selectors to calculate PCT.
-    - **Configuration:** Enable experimental telemetry and configure `spaMetrics.blockingSelectors`; include `elements` in `spaMetrics.monitors` to have the elements also delay PCT.
-
-```js
-SplunkRum.init({
-	experimental: true,
-	spaMetrics: {
-		monitors: ['media', 'network', 'performance', 'elements'],
-		blockingSelectors: ['.loading-spinner'],
-	},
-	// Existing application, realm/token, and other options...
-})
-```
-
-- **Long Animation Frames (LoAF)** [#1811](https://github.com/signalfx/splunk-otel-js-web/pull/1811), [#1890](https://github.com/signalfx/splunk-otel-js-web/pull/1890)
-    - **Default:** Disabled, requires `experimental: true`, and is currently supported only in Chromium-based browsers.
-    - **Why and when to enable:** Use LoAF to investigate main-thread responsiveness when long-task spans do not provide enough script, rendering, or forced-reflow attribution.
-    - **Configuration:** Set both `experimental: true` and `instrumentations.loaf: true`. Supported browsers suppress overlapping `longtask` spans; unsupported browsers retain long-task fallback coverage.
-    - **Volume control:** Up to 50 LoAF spans per source are emitted per rolling minute, with the top three scripts by duration attached to each span.
-
-```js
-SplunkRum.init({
-	experimental: true,
-	instrumentations: { loaf: true },
-	// Existing application, realm/token, and other options...
-})
-```
-
 - **Web Vitals attribution, FCP, and TTFB** [#1796](https://github.com/signalfx/splunk-otel-js-web/pull/1796)
-    - **Default:** Disabled. These Web Vitals options are independent of the top-level `experimental` flag.
+    - **Default:** Disabled. Each Web Vitals option must be enabled explicitly.
     - **Why and when to enable:** Enable attribution to diagnose why CLS, INP, or LCP is poor; enable `_experimental_fcp` or `_experimental_ttfb` when those additional metrics are needed.
     - **Privacy:** Default attribution uses structural selectors and sanitizes the LCP URL by removing its query string. Raw targets or URLs should be enabled only after reviewing privacy and cardinality requirements.
 
@@ -160,7 +117,6 @@ SplunkRum.init({
 ### Known limitations
 
 - The PCT `maxPageLoadWaitTime` timeout is temporarily disabled in this release [#1863](https://github.com/signalfx/splunk-otel-js-web/pull/1863). Active calculations finish through normal completion or navigation/page interruption instead of the configured maximum wait.
-- Features controlled by the top-level `experimental` flag have no compatibility guarantee until promoted to stable configuration.
 
 ### Internal and dependency updates
 
