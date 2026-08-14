@@ -58,6 +58,12 @@ export interface SplunkBlockingElementInstrumentationConfig extends Instrumentat
 	/**
 	 * Falls back to deriving from navigationMetrics (monitors includes 'elements' and
 	 * blockingSelectors is non-empty) when unset.
+	 *
+	 * Re-resolving selectors/enablement on SPA route changes (including navigationMetrics'
+	 * urlOverrides) depends on `instrumentations.interactions` being enabled — it's the only
+	 * instrumentation that detects SPA navigations (history/hashchange) and triggers re-evaluation.
+	 * If `interactions` is disabled, blockingElement still applies its initial page's config, but
+	 * never re-resolves on later route changes.
 	 */
 	enabled?: boolean
 
@@ -147,7 +153,12 @@ export type NavigationMetricsUrlOverride = NavigationMetricsOptionsBase & {
 }
 
 export type NavigationMetricsOptions = NavigationMetricsOptionsBase & {
-	/** Ordered per-URL overrides. The first matching override wins. */
+	/**
+	 * Ordered per-URL overrides. The first matching override wins.
+	 *
+	 * For blockingElement: re-resolving on SPA route changes requires `instrumentations.interactions`
+	 * to be enabled (it's what detects the route change and triggers re-evaluation).
+	 */
 	urlOverrides?: NavigationMetricsUrlOverride[]
 }
 
