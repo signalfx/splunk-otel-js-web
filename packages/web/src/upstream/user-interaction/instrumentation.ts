@@ -60,6 +60,8 @@ export class UserInteractionInstrumentation<
 
 	private _spansData = new WeakMap<api.Span, SpanData>()
 
+	private _warnedInvalidInteractiveElementSelectors = new Set<string>()
+
 	// for addEventListener/removeEventListener state
 	private _wrappedListeners = new WeakMap<
 		EventListenerOrEventListenerObject,
@@ -288,10 +290,26 @@ export class UserInteractionInstrumentation<
 
 	private _isInteractiveElement(element: Element): boolean {
 		const interactiveElementSelectors = this.getConfig().experimental_interactiveElementSelectors ?? []
+		let matchesConfiguredSelector = false
 		for (const selector of interactiveElementSelectors) {
-			if (element.matches(selector)) {
-				return true
+			if (this._warnedInvalidInteractiveElementSelectors.has(selector)) {
+				continue
 			}
+
+			try {
+				const selectorMatches = element.matches(selector)
+				matchesConfiguredSelector = matchesConfiguredSelector || selectorMatches
+			} catch (error) {
+				this._warnedInvalidInteractiveElementSelectors.add(selector)
+				api.diag.warn('UserInteractionInstrumentation: Invalid interactive element selector.', {
+					error,
+					selector,
+				})
+			}
+		}
+
+		if (matchesConfiguredSelector) {
+			return true
 		}
 
 		const tag = element.tagName.toUpperCase()

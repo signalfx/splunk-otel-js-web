@@ -87,6 +87,15 @@ describe('long animation frame instrumentation', () => {
 		expect(isLongAnimationFrameSupported()).toBe(false)
 	})
 
+	it('does not observe frames when experimental features are disabled', () => {
+		installPerformanceObserver([LONG_ANIMATION_FRAME_PERFORMANCE_TYPE])
+		const { instrumentation } = createLoafInstrumentationMock({ experimental: false })
+
+		instrumentation.enable()
+
+		expect(mockObservers).toHaveLength(0)
+	})
+
 	it('emits frame attributes and script count when no scripts are present', () => {
 		installPerformanceObserver([LONG_ANIMATION_FRAME_PERFORMANCE_TYPE])
 		const { attributes, instrumentation, span } = createLoafInstrumentationMock()
@@ -242,6 +251,7 @@ describe('longtask suppression for LoAF', () => {
 	it('suppresses longtask when LoAF is configured and supported', () => {
 		installPerformanceObserver(['longtask', LONG_ANIMATION_FRAME_PERFORMANCE_TYPE])
 		const instrumentation = createLongTaskInstrumentationMock({
+			experimental: true,
 			instrumentations: { loaf: true },
 		})
 
@@ -253,6 +263,7 @@ describe('longtask suppression for LoAF', () => {
 	it('keeps longtask active when LoAF is unsupported', () => {
 		installPerformanceObserver(['longtask'])
 		const instrumentation = createLongTaskInstrumentationMock({
+			experimental: true,
 			instrumentations: { loaf: true },
 		})
 
@@ -272,9 +283,23 @@ describe('longtask suppression for LoAF', () => {
 		expect(mockObservers[0].observe).toHaveBeenCalledWith({ buffered: true, type: 'longtask' })
 	})
 
+	it('keeps longtask active when LoAF is configured but experimental features are disabled', () => {
+		installPerformanceObserver(['longtask', LONG_ANIMATION_FRAME_PERFORMANCE_TYPE])
+		const instrumentation = createLongTaskInstrumentationMock({
+			experimental: false,
+			instrumentations: { loaf: true },
+		})
+
+		instrumentation.enable()
+
+		expect(mockObservers).toHaveLength(1)
+		expect(mockObservers[0].observe).toHaveBeenCalledWith({ buffered: true, type: 'longtask' })
+	})
+
 	it('keeps longtask active when LoAF config is disabled', () => {
 		installPerformanceObserver(['longtask', LONG_ANIMATION_FRAME_PERFORMANCE_TYPE])
 		const instrumentation = createLongTaskInstrumentationMock({
+			experimental: true,
 			instrumentations: { loaf: { enabled: false } },
 		})
 
@@ -291,7 +316,7 @@ function installPerformanceObserver(supportedEntryTypes?: string[], observe?: Mo
 	vi.stubGlobal('PerformanceObserver', MockPerformanceObserver)
 }
 
-function createLoafInstrumentationMock(): {
+function createLoafInstrumentationMock(otelConfig?: SplunkOtelWebConfig): {
 	attributes: Record<string, number | string>
 	instrumentation: TestableInstrumentation
 	span: Span & { end: ReturnType<typeof vi.fn> }
@@ -300,7 +325,7 @@ function createLoafInstrumentationMock(): {
 	const spanWithEnd = Object.assign(span, { end: vi.fn() }) as Span & { end: ReturnType<typeof vi.fn> }
 	const instrumentation = new SplunkLongAnimationFrameInstrumentation(
 		{ enabled: false },
-		{},
+		otelConfig ?? { experimental: true },
 	) as unknown as TestableInstrumentation
 
 	instrumentation._tracer = {
