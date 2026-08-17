@@ -68,6 +68,22 @@ test.describe('spa-metrics', () => {
 		expect(routeChangeSpans[0]).toHaveSpanDuration(0)
 	})
 
+	test('routeChange span waits for every manual completion handle', async ({ recordPage }) => {
+		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+
+		await recordPage.locator('#btnNavigateWithManualCompletion').click()
+		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'routeChange').length === 1)
+
+		const routeChangeSpan = recordPage.receivedSpans.find((span) => span.name === 'routeChange')
+		expectDefined(routeChangeSpan)
+		expectBrowserNavigationAttributes(routeChangeSpan, {
+			completionSource: 'manual',
+			status: 'completed',
+		})
+		expect(getPageCompletionTime(routeChangeSpan)).toBeGreaterThanOrEqual(100)
+		expect(await recordPage.evaluate(() => (window as any).manualPageLoadResults)).toEqual([true, false, true])
+	})
+
 	test('errors after a route change have the routeChange operation', async ({ recordPage }) => {
 		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
 		await recordPage.locator('#btnNavigate').click()

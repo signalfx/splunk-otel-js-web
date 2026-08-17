@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
 	PAGE_LOAD_METRICS_STATUS_COMPLETED,
@@ -58,6 +58,11 @@ function expectNoLoadingResources(result: PageLoadMetricsResult): void {
 	expect(result.loadingResourceUrls).toEqual([])
 	expect(result.longestLoadedResource).toBeUndefined()
 }
+
+afterEach(() => {
+	vi.useRealTimers()
+	vi.restoreAllMocks()
+})
 
 describe('QuietPeriodAwaiter', () => {
 	it('resolves after quiet period expires', async () => {
@@ -168,8 +173,205 @@ describe('QuietPeriodAwaiter', () => {
 		expectNoLoadingResources(result)
 	})
 
-	// Temporarily skipped while PCT timeout is disabled.
-	it.skip('does not resolve with interrupted status when beforeunload fires', async () => {
+	it('switches to manual completion and uses the accepted completion timestamp', async () => {
+		vi.useFakeTimers()
+		const now = vi.spyOn(performance, 'now').mockReturnValue(1000)
+
+		try {
+			const awaiter = createQuietPeriodAwaiter({ quietTime: 100, startTime: 1000 })
+			awaiter.startQuietTimer({ resourceLoadedTimestamp: 1000 })
+			const handle = awaiter.startManualPageLoad()
+			let resolved = false
+			void awaiter.promise.then(() => {
+				resolved = true
+			})
+
+			await vi.advanceTimersByTimeAsync(100)
+			expect(resolved).toBe(false)
+
+			now.mockReturnValue(1040)
+			expect(handle?.markComplete()).toBe(true)
+			await vi.advanceTimersByTimeAsync(100)
+
+			const result = await awaiter.promise
+			expect(result.completionSource).toBe('manual')
+			expect(result.pct).toBe(40)
+			expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_COMPLETED)
+		} finally {
+			vi.useRealTimers()
+		}
+	})
+
+	it('waits for every manual participant and accepts each handle only once', async () => {
+		vi.useFakeTimers()
+		const now = vi.spyOn(performance, 'now').mockReturnValue(1000)
+
+		try {
+			const awaiter = createQuietPeriodAwaiter({ quietTime: 100, startTime: 1000 })
+			const firstHandle = awaiter.startManualPageLoad()
+			const secondHandle = awaiter.startManualPageLoad()
+			let resolved = false
+			void awaiter.promise.then(() => {
+				resolved = true
+			})
+
+			now.mockReturnValue(1010)
+			expect(firstHandle?.markComplete()).toBe(true)
+			expect(firstHandle?.markComplete()).toBe(false)
+			await vi.advanceTimersByTimeAsync(100)
+			expect(resolved).toBe(false)
+
+			now.mockReturnValue(1030)
+			expect(secondHandle?.markComplete()).toBe(true)
+			await vi.advanceTimersByTimeAsync(100)
+
+			const result = await awaiter.promise
+			expect(result.pct).toBe(30)
+			expect(result.completionSource).toBe('manual')
+		} finally {
+			vi.useRealTimers()
+		}
+	})
+
+	it('reopens the manual registration window for a late participant', async () => {
+		vi.useFakeTimers()
+		const now = vi.spyOn(performance, 'now').mockReturnValue(1000)
+
+		try {
+			const awaiter = createQuietPeriodAwaiter({ quietTime: 100, startTime: 1000 })
+			const firstHandle = awaiter.startManualPageLoad()
+			now.mockReturnValue(1010)
+			expect(firstHandle?.markComplete()).toBe(true)
+
+			await vi.advanceTimersByTimeAsync(50)
+			const secondHandle = awaiter.startManualPageLoad()
+			await vi.advanceTimersByTimeAsync(100)
+			let resolved = false
+			void awaiter.promise.then(() => {
+				resolved = true
+			})
+			await Promise.resolve()
+			expect(resolved).toBe(false)
+
+			now.mockReturnValue(1040)
+			expect(secondHandle?.markComplete()).toBe(true)
+			await vi.advanceTimersByTimeAsync(100)
+			expect((await awaiter.promise).pct).toBe(40)
+		} finally {
+			vi.useRealTimers()
+		}
+	})
+
+	it('does not let resource activity extend manual completion', async () => {
+		vi.useFakeTimers()
+		const now = vi.spyOn(performance, 'now').mockReturnValue(1000)
+
+		try {
+			const awaiter = createQuietPeriodAwaiter({ quietTime: 100, startTime: 1000 })
+			const handle = awaiter.startManualPageLoad()
+			now.mockReturnValue(1020)
+			expect(handle?.markComplete()).toBe(true)
+
+			awaiter.removeQuietTimer()
+			awaiter.startQuietTimer({ resourceLoadedTimestamp: 1090 })
+			await vi.advanceTimersByTimeAsync(100)
+
+			const result = await awaiter.promise
+			expect(result.pct).toBe(20)
+			expect(result.quietTimerResetCount).toBe(0)
+		} finally {
+			vi.useRealTimers()
+		}
+	})
+
+	it('reports resources that are still loading at manual completion', async () => {
+		vi.useFakeTimers()
+		const now = vi.spyOn(performance, 'now').mockReturnValue(1000)
+		let loadingResourcesCount = 1
+		let loadingResourceUrls = ['https://example.test/pending.js']
+
+		try {
+			const awaiter = new QuietPeriodAwaiter({
+				getDetectedResourcesCount: () => 1,
+				getLastLoadedResources: () => [],
+				getLoadingResourcesCount: () => loadingResourcesCount,
+				getLoadingResourceUrls: () => loadingResourceUrls,
+				getLongestLoadedResource: getNoLongestLoadedResource,
+				quietTime: 100,
+				startTime: 1000,
+			})
+			const handle = awaiter.startManualPageLoad()
+			now.mockReturnValue(1020)
+			handle?.markComplete()
+			loadingResourcesCount = 0
+			loadingResourceUrls = []
+			await vi.advanceTimersByTimeAsync(100)
+
+			const result = await awaiter.promise
+			expect(result.loadingResourcesCount).toBe(1)
+			expect(result.loadingResourceUrls).toEqual(['https://example.test/pending.js'])
+		} finally {
+			vi.useRealTimers()
+		}
+	})
+
+	it('completes at the last manual timestamp when interrupted during registration quiet time', async () => {
+		const now = vi.spyOn(performance, 'now').mockReturnValue(1000)
+		const awaiter = createQuietPeriodAwaiter({ quietTime: 100, startTime: 1000 })
+		const handle = awaiter.startManualPageLoad()
+		now.mockReturnValue(1020)
+		handle?.markComplete()
+
+		awaiter.interrupt(1050)
+
+		const result = await awaiter.promise
+		expect(result.pct).toBe(20)
+		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_COMPLETED)
+		expect(result.completionSource).toBe('manual')
+	})
+
+	it('interrupts when a manual participant remains pending and rejects its stale handle', async () => {
+		const awaiter = createQuietPeriodAwaiter({ quietTime: 100, startTime: performance.now() })
+		const handle = awaiter.startManualPageLoad()
+
+		awaiter.interrupt()
+
+		expect((await awaiter.promise).status).toBe(PAGE_LOAD_METRICS_STATUS_INTERRUPTED)
+		expect(handle?.markComplete()).toBe(false)
+	})
+
+	it('times out when a manual participant remains pending', async () => {
+		vi.useFakeTimers()
+		vi.spyOn(performance, 'now').mockReturnValue(1000)
+
+		const awaiter = createQuietPeriodAwaiter({ maxPageLoadWaitTime: 100, quietTime: 100, startTime: 1000 })
+		const handle = awaiter.startManualPageLoad()
+		await vi.advanceTimersByTimeAsync(100)
+
+		const result = await awaiter.promise
+		expect(result.pct).toBe(100)
+		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_TIMEOUT)
+		expect(result.completionSource).toBeUndefined()
+		expect(handle?.markComplete()).toBe(false)
+	})
+
+	it('accepts the last manual completion candidate when the maximum wait expires', async () => {
+		vi.useFakeTimers()
+		const now = vi.spyOn(performance, 'now').mockReturnValue(1000)
+
+		const awaiter = createQuietPeriodAwaiter({ maxPageLoadWaitTime: 100, quietTime: 100, startTime: 1000 })
+		const handle = awaiter.startManualPageLoad()
+		now.mockReturnValue(1020)
+		handle?.markComplete()
+		await vi.advanceTimersByTimeAsync(100)
+
+		const result = await awaiter.promise
+		expect(result.pct).toBe(20)
+		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_COMPLETED)
+		expect(result.completionSource).toBe('manual')
+	})
+
+	it('does not resolve with interrupted status when beforeunload fires', async () => {
 		const awaiter = createQuietPeriodAwaiter({ maxPageLoadWaitTime: 10, quietTime: 5 })
 
 		window.dispatchEvent(new Event('beforeunload'))
@@ -179,8 +381,7 @@ describe('QuietPeriodAwaiter', () => {
 		expectNoLoadingResources(result)
 	})
 
-	// Temporarily skipped while PCT timeout is disabled.
-	it.skip('resolves with timeout status when max page load wait time expires before quiet timer starts', async () => {
+	it('resolves with timeout status when max page load wait time expires before quiet timer starts', async () => {
 		const startTime = performance.now()
 		const awaiter = createQuietPeriodAwaiter({ maxPageLoadWaitTime: 10, quietTime: 5, startTime })
 
@@ -191,8 +392,7 @@ describe('QuietPeriodAwaiter', () => {
 		expectNoLoadingResources(result)
 	})
 
-	// Temporarily skipped while PCT timeout is disabled.
-	it.skip('resolves only once when quiet period would expire after max page load wait time', async () => {
+	it('resolves only once when quiet period would expire after max page load wait time', async () => {
 		const results: unknown[] = []
 		const startTime = performance.now()
 		const awaiter = createQuietPeriodAwaiter({ maxPageLoadWaitTime: 30, quietTime: 20, startTime })

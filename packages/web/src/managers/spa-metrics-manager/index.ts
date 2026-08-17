@@ -17,4 +17,5 @@
  */
 
 export * from './constants'
+export type { ManualPageLoadHandle } from './quiet-period-awaiter'
 export * from './spa-metrics-manager'
