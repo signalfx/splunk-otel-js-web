@@ -80,7 +80,7 @@ Choose a versioning strategy based on your needs:
 **Minor Version Lock**
 
 ```html
-<!-- Locks to v3.0.x - gets latest patch updates only -->
+<!-- Locks to v3.1.x - gets latest patch updates only -->
 <script
 	src="https://cdn.observability.splunkcloud.com/o11y-gdi-rum/v3.1/splunk-otel-web.js"
 	crossorigin="anonymous"
@@ -90,7 +90,7 @@ Choose a versioning strategy based on your needs:
 **Exact Version Lock**
 
 ```html
-<!-- Locks to exact version v3.0.0 - no automatic updates -->
+<!-- Locks to exact version v3.1.0 - no automatic updates -->
 <script
 	src="https://cdn.observability.splunkcloud.com/o11y-gdi-rum/v3.1.0/splunk-otel-web.js"
 	crossorigin="anonymous"
