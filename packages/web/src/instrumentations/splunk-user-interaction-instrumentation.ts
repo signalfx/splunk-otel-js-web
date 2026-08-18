@@ -205,7 +205,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 		span.setAttribute('prev.href', oldHref)
 
 		if (this.navigationMetricsManager) {
-			// Wait for all in-flight resources monitored by SPA metrics to finish loading,
+			// Wait for all in-flight resources monitored by navigation metrics to finish loading,
 			// then resolve after a quiet period with no new monitored activity.
 			const pageLoadMetrics = await this.navigationMetricsManager.waitForPageLoad({
 				operation: BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION,
