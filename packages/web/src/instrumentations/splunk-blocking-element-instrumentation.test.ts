@@ -41,6 +41,12 @@ const createVisibleElement = (): HTMLElement => {
 	return element
 }
 
+// document.visibilityState has no setter by default in this environment; stub it like
+// RecordPage.changeVisibilityInTab() does for the e2e suite.
+const setDocumentVisibilityState = (state: DocumentVisibilityState): void => {
+	Object.defineProperty(document, 'visibilityState', { configurable: true, value: state })
+}
+
 describe('SplunkBlockingElementInstrumentation', () => {
 	let elementVisibilityObserver: ElementVisibilityObserver
 	let exporter: InMemorySpanExporter
@@ -61,6 +67,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 		document.body.querySelectorAll(`.${TEST_ELEMENT_CLASS}`).forEach((element) => {
 			element.remove()
 		})
+		setDocumentVisibilityState('visible')
 	})
 
 	it('throws a clear error when constructed without elementVisibilityObserver', () => {
@@ -814,6 +821,36 @@ describe('SplunkBlockingElementInstrumentation', () => {
 			instrumentation.interruptForHidden()
 			expect(getFinishedSpans()).toHaveLength(1)
 
+			window.dispatchEvent(new Event('visibilitychange'))
+
+			// @ts-expect-error elementSpanTracker is private. We use it for testing.
+			expect(instrumentation.elementSpanTracker.has(element)).toBe(true)
+		})
+
+		it('does not start a span for an element that newly matches while still hidden, only once visible again', async () => {
+			instrumentation = new SplunkBlockingElementInstrumentation(
+				{},
+				{ navigationMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
+				undefined,
+				undefined,
+				elementVisibilityObserver,
+			)
+			instrumentation.setTracerProvider(provider)
+			instrumentation.enable()
+
+			setDocumentVisibilityState('hidden')
+			instrumentation.interruptForHidden()
+			expect(getFinishedSpans()).toHaveLength(0)
+
+			// A new matching element appears while the tab is still hidden.
+			const element = createVisibleElement()
+			await new Promise((resolve) => setTimeout(resolve, 20))
+
+			expect(getFinishedSpans()).toHaveLength(0)
+			// @ts-expect-error elementSpanTracker is private. We use it for testing.
+			expect(instrumentation.elementSpanTracker.openCount).toBe(0)
+
+			setDocumentVisibilityState('visible')
 			window.dispatchEvent(new Event('visibilitychange'))
 
 			// @ts-expect-error elementSpanTracker is private. We use it for testing.

@@ -76,7 +76,7 @@ export function resolveMaxElementSpanDuration(otelConfig: SplunkOtelWebConfig): 
 	return DEFAULT_MAX_ELEMENT_SPAN_DURATION
 }
 
-// Resolved once for the URL active when called; not re-evaluated on later SPA navigations.
+// Resolved once for the URL active when called; not re-evaluated on later route change navigations.
 export function resolveBlockingElementSelectors(otelConfig: SplunkOtelWebConfig): string[] {
 	const navigationMetrics = resolveNavigationMetricsConfig(otelConfig)
 	if (typeof navigationMetrics !== 'object') {

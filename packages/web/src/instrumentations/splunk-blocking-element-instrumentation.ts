@@ -207,6 +207,13 @@ export class SplunkBlockingElementInstrumentation extends InstrumentationBase<Sp
 			return
 		}
 
+		// The shared observer keeps watching while hidden (see interruptForHidden), so a mutation while
+		// still hidden can otherwise start a span with a background-time start. Ignore it here — the
+		// visibilitychange->visible resync (handleDocumentVisible) re-delivers it correctly once visible.
+		if (document.visibilityState === 'hidden') {
+			return
+		}
+
 		const matchedSelectors = this.selectors.filter((matchedSelector) =>
 			this.matchesSelector(element, matchedSelector),
 		)
