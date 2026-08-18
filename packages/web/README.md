@@ -178,7 +178,7 @@ Choose a versioning strategy based on your needs:
 | `instrumentations.document`           | `boolean\|Config`                                     | ❌       | `true`                                                                                             | Document load instrumentation                                                                                                                                                                                                                                                                                                                                           |
 | `instrumentations.errors`             | `boolean\|Config`                                     | ❌       | `true`                                                                                             | Error capture                                                                                                                                                                                                                                                                                                                                                           |
 | `instrumentations.fetch`              | `boolean\|Config`                                     | ❌       | `true`                                                                                             | Fetch API monitoring                                                                                                                                                                                                                                                                                                                                                    |
-| `instrumentations.frustrationSignals` | `boolean\|Config`                                     | ❌       | `true`                                                                                             | User frustration detection (rage clicks enabled by default, error clicks and thrashed cursor opt-in). See [Frustration Signals](#frustration-signals) below                                                                                                                                                                                                             |
+| `instrumentations.frustrationSignals` | `boolean\|Config`                                     | ❌       | `true`                                                                                             | User frustration detection. Rage click, dead click, error click, and thrashed cursor detection are enabled by default and can be disabled individually. See [Frustration Signals](#frustration-signals) below                                                                                                                                                           |
 | `instrumentations.interactions`       | `boolean\|Config`                                     | ❌       | `true`                                                                                             | User interaction tracking                                                                                                                                                                                                                                                                                                                                               |
 | `instrumentations.loaf`               | `boolean\|Config`                                     | ❌       | `false`                                                                                            | Long Animation Frames tracking in supported Chromium browsers. Requires `experimental: true`; when enabled and supported, this suppresses longtask spans for the page session.                                                                                                                                                                                          |
 | `instrumentations.longtask`           | `boolean\|Config`                                     | ❌       | `true`                                                                                             | Deprecated. Long task detection (>50ms). Prefer `instrumentations.loaf` for Long Animation Frames; keep enabled for fallback coverage where LoAF is unsupported.                                                                                                                                                                                                        |
@@ -269,7 +269,7 @@ privacy: {
 
 ### Frustration Signals
 
-The `frustrationSignals` instrumentation detects user frustration patterns and emits `frustration` spans. Rage click detection is enabled by default. Dead click, error click, and thrashed cursor detection are disabled by default and must be explicitly enabled.
+The `frustrationSignals` instrumentation detects user frustration patterns and emits `frustration` spans. Rage click, dead click, error click, and thrashed cursor detection are all enabled by default. Set an individual detector to `false` to disable it, or set `instrumentations.frustrationSignals` to `false` to disable all frustration detection.
 
 **Rage Clicks** detect rapid repeated clicks on the same element, indicating the user is frustrated because the UI is unresponsive.
 
@@ -280,19 +280,19 @@ The `frustrationSignals` instrumentation detects user frustration patterns and e
 | `rageClick.timeframeSeconds` | `number`                  | `1`     | Time window in seconds                         |
 | `rageClick.ignoreSelectors`  | `string[]`                | `[]`    | CSS selectors to exclude from detection        |
 
-**Dead Clicks** detect when a user clicks on an interactive element (link, button, or submit input) but nothing happens — no DOM mutation and no network request occur within the configured time window. Dead click detection is disabled by default and must be explicitly enabled.
+**Dead Clicks** detect when a user clicks on an interactive element (link, button, or submit input) but nothing happens — no DOM mutation and no network request occur within the configured time window.
 
 | Option                   | Type                      | Default | Description                                                       |
 | ------------------------ | ------------------------- | ------- | ----------------------------------------------------------------- |
-| `deadClick`              | `false \| object \| true` | `false` | Set to `true` or an options object to enable dead click detection |
+| `deadClick`              | `false \| object \| true` | `true`  | Set to `false` to disable dead click detection                    |
 | `deadClick.timeWindowMs` | `number`                  | `1000`  | Time window in milliseconds to wait for a DOM or network response |
 | `deadClick.ignoreUrls`   | `Array<string\|RegExp>`   | `[]`    | URLs where detection is skipped                                   |
 
-**Error Clicks** detect when a user clicks on an element and a JavaScript error occurs shortly after, indicating the click triggered a broken interaction. Error click detection is disabled by default and must be explicitly enabled.
+**Error Clicks** detect when a user clicks on an element and a JavaScript error occurs shortly after, indicating the click triggered a broken interaction.
 
 | Option                    | Type                      | Default | Description                                                   |
 | ------------------------- | ------------------------- | ------- | ------------------------------------------------------------- |
-| `errorClick`              | `false \| object \| true` | `false` | Set to `true` or an options object to enable detection        |
+| `errorClick`              | `false \| object \| true` | `true`  | Set to `false` to disable error click detection               |
 | `errorClick.timeWindowMs` | `number`                  | `1000`  | Time window in milliseconds after a click to watch for errors |
 | `errorClick.ignoreUrls`   | `Array<string\|RegExp>`   | `[]`    | URLs where detection is skipped                               |
 
@@ -300,7 +300,7 @@ The `frustrationSignals` instrumentation detects user frustration patterns and e
 
 | Option                                       | Type                      | Default | Description                                                                    |
 | -------------------------------------------- | ------------------------- | ------- | ------------------------------------------------------------------------------ |
-| `thrashedCursor`                             | `false \| object \| true` | `false` | Set to `true` or an options object to enable thrashed cursor detection         |
+| `thrashedCursor`                             | `false \| object \| true` | `true`  | Set to `false` to disable thrashed cursor detection                            |
 | `thrashedCursor.timeWindowMs`                | `number`                  | `2000`  | Analysis time window in milliseconds. Also used as cooldown between detections |
 | `thrashedCursor.throttleMs`                  | `number`                  | `16`    | Minimum interval between samples (min: 16ms)                                   |
 | `thrashedCursor.minDirectionChanges`         | `number`                  | `4`     | Minimum direction changes to consider                                          |
@@ -342,18 +342,19 @@ instrumentations: {
 }
 ```
 
-To enable dead click, error click, and thrashed cursor detection while disabling rage clicks:
+To retain the 3.0 defaults, keep rage click detection enabled and disable the other three detectors:
 
 ```typescript
 instrumentations: {
 	frustrationSignals: {
-		rageClick: false,     // Disable rage click detection
-		deadClick: true,      // Enable dead click detection (disabled by default)
-		errorClick: true,     // Enable error click detection (disabled by default)
-		thrashedCursor: true, // Enable thrashed cursor detection (disabled by default)
+		deadClick: false,
+		errorClick: false,
+		thrashedCursor: false,
 	},
 }
 ```
+
+Set `instrumentations.frustrationSignals` to `false` instead to disable all four detectors.
 
 ### Complete Configuration Example
 
@@ -449,9 +450,9 @@ SplunkRum.init({
 		fetch: true,
 		frustrationSignals: {
 			rageClick: { count: 4 },
-			deadClick: true, // Opt-in: disabled by default
-			errorClick: true, // Opt-in: disabled by default
-			thrashedCursor: true, // Opt-in: disabled by default
+			deadClick: true, // Enabled by default
+			errorClick: true, // Enabled by default
+			thrashedCursor: true, // Enabled by default
 		},
 		interactions: true,
 		loaf: false, // Opt-in: disabled by default
