@@ -191,6 +191,22 @@ describe('ElementVisibilityObserver', () => {
 		expect(secondEvents.map((event) => event.visible)).toEqual([true])
 	})
 
+	it('notifies the arrival on a replacement selector before the departure from the old one when watch() swaps selectors', () => {
+		const element = createVisibleElement()
+		element.dataset.loading = ''
+		const events: ElementVisibilityChangeEvent[] = []
+		const consumerId = Symbol('consumer')
+		watch(consumerId, [SELECTOR], (event) => events.push(event))
+		expect(events).toHaveLength(1)
+
+		// Same physical element matches both the old and the replacement selector.
+		watch(consumerId, [OTHER_SELECTOR], (event) => events.push(event))
+
+		expect(events).toHaveLength(3)
+		expect(events[1]).toMatchObject({ selector: OTHER_SELECTOR, visible: true })
+		expect(events[2]).toMatchObject({ selector: SELECTOR, visible: false })
+	})
+
 	it('does not emit a spurious drop+rediscover when watch() is called again with the same selector', () => {
 		createVisibleElement()
 		const consumerId = Symbol('consumer')
