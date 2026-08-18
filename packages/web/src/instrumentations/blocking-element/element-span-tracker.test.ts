@@ -47,10 +47,8 @@ describe('ElementSpanTracker', () => {
 	const getFinishedSpans = (): ReadableSpan[] => exporter.getFinishedSpans()
 
 	const createTracker = (
-		configuredSelectors: string[] = [SELECTOR, OTHER_SELECTOR],
 		maxElementSpanDuration: number = DEFAULT_TEST_MAX_ELEMENT_SPAN_DURATION,
-	): ElementSpanTracker =>
-		new ElementSpanTracker(provider.getTracer('test'), configuredSelectors, maxElementSpanDuration)
+	): ElementSpanTracker => new ElementSpanTracker(provider.getTracer('test'), maxElementSpanDuration)
 
 	beforeEach(() => {
 		exporter = new InMemorySpanExporter()
@@ -221,8 +219,8 @@ describe('ElementSpanTracker', () => {
 			expect(tracker.openCount).toBe(1)
 		})
 
-		it('joins matched selectors in configured order, not the order they were observed', () => {
-			const tracker = createTracker([SELECTOR, OTHER_SELECTOR])
+		it('joins matched selectors in the order they were first observed, not configured order', () => {
+			const tracker = createTracker()
 			const element = createElement()
 
 			// Observed in reverse of configured order.
@@ -230,7 +228,7 @@ describe('ElementSpanTracker', () => {
 			tracker.completeSpan(element, performance.now())
 
 			const [span] = getFinishedSpans()
-			expect(span.attributes['browser.element.selector']).toBe(`${SELECTOR},${OTHER_SELECTOR}`)
+			expect(span.attributes['browser.element.selector']).toBe(`${OTHER_SELECTOR},${SELECTOR}`)
 		})
 
 		it('accumulates a selector gained mid-span into the final completion attribute', () => {
@@ -301,7 +299,7 @@ describe('ElementSpanTracker', () => {
 
 		it('ends a span with completion="timeout" once maxElementSpanDuration elapses', () => {
 			vi.useFakeTimers()
-			const tracker = createTracker([SELECTOR, OTHER_SELECTOR], 5000)
+			const tracker = createTracker(5000)
 			const element = createElement()
 
 			tracker.startSpan(element, [SELECTOR], performance.now())
@@ -316,12 +314,7 @@ describe('ElementSpanTracker', () => {
 		it('calls onSpanTimeout only when the timer itself ends the span, not on completeSpan/interruptSpan', () => {
 			vi.useFakeTimers()
 			const onSpanTimeout = vi.fn()
-			const tracker = new ElementSpanTracker(
-				provider.getTracer('test'),
-				[SELECTOR, OTHER_SELECTOR],
-				5000,
-				onSpanTimeout,
-			)
+			const tracker = new ElementSpanTracker(provider.getTracer('test'), 5000, onSpanTimeout)
 			const timedOut = createElement()
 			const completed = createElement()
 
@@ -336,7 +329,7 @@ describe('ElementSpanTracker', () => {
 
 		it('does not time out a span that completes before maxElementSpanDuration elapses', () => {
 			vi.useFakeTimers()
-			const tracker = createTracker([SELECTOR, OTHER_SELECTOR], 5000)
+			const tracker = createTracker(5000)
 			const element = createElement()
 
 			tracker.startSpan(element, [SELECTOR], performance.now())
@@ -351,7 +344,7 @@ describe('ElementSpanTracker', () => {
 
 		it('does not time out a span that is interrupted before maxElementSpanDuration elapses', () => {
 			vi.useFakeTimers()
-			const tracker = createTracker([SELECTOR, OTHER_SELECTOR], 5000)
+			const tracker = createTracker(5000)
 			const element = createElement()
 
 			tracker.startSpan(element, [SELECTOR], performance.now())

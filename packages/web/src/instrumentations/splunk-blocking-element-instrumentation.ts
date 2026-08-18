@@ -111,7 +111,6 @@ export class SplunkBlockingElementInstrumentation extends InstrumentationBase<Sp
 		this.hasEnabled = true
 		this.elementSpanTracker = new ElementSpanTracker(
 			this.tracer,
-			this.selectors,
 			resolveMaxElementSpanDuration(this.otelConfig),
 			(element) => this.timedOutElements.add(element),
 		)
@@ -140,7 +139,6 @@ export class SplunkBlockingElementInstrumentation extends InstrumentationBase<Sp
 		this.selectors = isBlockingElementInstrumentationEnabled(this.otelConfig)
 			? resolveBlockingElementSelectors(this.otelConfig)
 			: []
-		this.elementSpanTracker?.setConfiguredSelectors(this.selectors)
 		this.elementVisibilityObserver.watch(this.consumerId, this.selectors, this.handleVisibilityChange)
 	}
 
