@@ -58,6 +58,7 @@ const SPA_METRICS_MANAGER_CONFIG_DEFAULTS = {
 	blockingSelectors: [] as string[],
 	clearLoadingResourcesOnNewPage: true,
 	ignoreUrls: [] as (string | RegExp)[],
+	maxPageLoadTimeoutForManualApi: 180_000,
 	maxPageLoadWaitTime: 180_000,
 	maxResourcesToWatch: 100,
 	monitors: ['media', 'network', 'performance'] as SpaMetricsMonitor[],
@@ -77,6 +78,7 @@ type SpaMetricsManagerConfigValues = {
 	blockingSelectors?: string[]
 	clearLoadingResourcesOnNewPage?: boolean
 	ignoreUrls?: (string | RegExp)[]
+	maxPageLoadTimeoutForManualApi?: number
 	maxPageLoadWaitTime?: number
 	maxResourcesToWatch?: number
 	monitors?: SpaMetricsMonitor[]
@@ -423,7 +425,7 @@ export class SpaMetricsManager {
 			getLoadingResourcesCount: () => this.loadingResourcesCount,
 			getLoadingResourceUrls: () => this.loadingResourceUrls,
 			getLongestLoadedResource: () => this.longestLoadedResource,
-			maxPageLoadWaitTime: activeConfig.maxPageLoadWaitTime,
+			maxPageLoadTimeoutForManualApi: activeConfig.maxPageLoadTimeoutForManualApi,
 			onManualCompletionCandidate: this.onManualCompletionCandidate,
 			onManualRegistrationReopened: this.onManualRegistrationReopened,
 			quietTime: activeConfig.quietTime,
@@ -447,7 +449,8 @@ export class SpaMetricsManager {
 					return result
 				}
 
-				// Timeout results must stay capped at maxPageLoadWaitTime, even if document load took longer.
+				// Manual API timeout results must stay capped at maxPageLoadTimeoutForManualApi,
+				// even if document load took longer.
 				if (result.status === PAGE_LOAD_METRICS_STATUS_TIMEOUT) {
 					return result
 				}
@@ -734,6 +737,8 @@ export class SpaMetricsManager {
 				config.ignoreUrls ?? defaultConfig.ignoreUrls,
 				beaconEndpointIgnoreUrls,
 			),
+			maxPageLoadTimeoutForManualApi:
+				config.maxPageLoadTimeoutForManualApi ?? defaultConfig.maxPageLoadTimeoutForManualApi,
 			maxPageLoadWaitTime: normalizeMaxPageLoadWaitTime({ maxPageLoadWaitTime, quietTime }),
 			maxResourcesToWatch: config.maxResourcesToWatch ?? defaultConfig.maxResourcesToWatch,
 			monitors: [...(config.monitors ?? defaultConfig.monitors)],

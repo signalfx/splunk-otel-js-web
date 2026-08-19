@@ -78,6 +78,7 @@ describe('SpaMetricsManager', () => {
 		const config = manager.config
 
 		expect(config.quietTime).toBe(1000)
+		expect(config.maxPageLoadTimeoutForManualApi).toBe(180_000)
 		expect(config.maxPageLoadWaitTime).toBe(180_000)
 		expect(config.maxResourcesToWatch).toBe(100)
 		expect(config.ignoreUrls).toEqual([])
@@ -91,6 +92,7 @@ describe('SpaMetricsManager', () => {
 			blockingSelectors: ['.loading-spinner'],
 			clearLoadingResourcesOnNewPage: false,
 			ignoreUrls: [/test/],
+			maxPageLoadTimeoutForManualApi: 7000,
 			maxPageLoadWaitTime: 5000,
 			monitors: ['network', 'elements'],
 			quietTime: 2000,
@@ -100,6 +102,7 @@ describe('SpaMetricsManager', () => {
 		const config = manager.config
 
 		expect(config.quietTime).toBe(2000)
+		expect(config.maxPageLoadTimeoutForManualApi).toBe(7000)
 		expect(config.maxPageLoadWaitTime).toBe(5000)
 		expect(config.maxResourcesToWatch).toBe(100)
 		expect(config.ignoreUrls).toHaveLength(1)
@@ -300,6 +303,21 @@ describe('SpaMetricsManager', () => {
 		expect(config.quietTime).toBe(2000)
 	})
 
+	it('uses manual API timeout from URL overrides', () => {
+		const manager = new SpaMetricsManager({
+			maxPageLoadTimeoutForManualApi: 5000,
+			urlOverrides: [
+				{
+					match: '/checkout',
+					maxPageLoadTimeoutForManualApi: 2500,
+				},
+			],
+		})
+
+		expect(manager.getConfigForUrl('https://example.test/checkout').maxPageLoadTimeoutForManualApi).toBe(2500)
+		expect(manager.getConfigForUrl('https://example.test/cart').maxPageLoadTimeoutForManualApi).toBe(5000)
+	})
+
 	it('uses quiet time as max page load wait time and warns once when configured max is lower', () => {
 		const diagWarnSpy = vi.spyOn(diag, 'warn')
 		const manager = new SpaMetricsManager({ maxPageLoadWaitTime: 5, quietTime: 30 })
@@ -420,7 +438,8 @@ describe('SpaMetricsManager', () => {
 		manager.stop()
 	})
 
-	it('waitForPageLoad resolves with timeout status when max page load wait time expires', async () => {
+	// Temporarily skipped while the automatic PCT timeout is disabled.
+	it.skip('waitForPageLoad resolves with timeout status when max page load wait time expires', async () => {
 		const manager = new SpaMetricsManager({ maxPageLoadWaitTime: 3000, quietTime: 1000 })
 		manager.start()
 		const slowResourceAbortController = new AbortController()
@@ -598,6 +617,31 @@ describe('SpaMetricsManager', () => {
 			expect(result.completionSource).toBe('manual')
 			expect(result.pct).toBe(40)
 			expect(manager.startManualPageLoad()).toBeUndefined()
+		} finally {
+			manager.stop()
+			now.mockRestore()
+			vi.useRealTimers()
+		}
+	})
+
+	it('applies the configured timeout after manual completion starts', async () => {
+		vi.useFakeTimers()
+		const now = vi.spyOn(performance, 'now').mockReturnValue(1000)
+		const manager = new SpaMetricsManager({
+			maxPageLoadTimeoutForManualApi: 50,
+			monitors: [],
+			quietTime: 100,
+		})
+
+		try {
+			const promise = manager.waitForPageLoad({ startTime: 1000 })
+			const handle = manager.startManualPageLoad()
+			await vi.advanceTimersByTimeAsync(50)
+
+			const result = await promise
+			expect(result.pct).toBe(50)
+			expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_TIMEOUT)
+			expect(handle?.markComplete()).toBe(false)
 		} finally {
 			manager.stop()
 			now.mockRestore()
@@ -926,7 +970,8 @@ describe('SpaMetricsManager', () => {
 		}
 	})
 
-	it('waitForPageLoad reports visible loading elements on timeout', async () => {
+	// Temporarily skipped while the automatic PCT timeout is disabled.
+	it.skip('waitForPageLoad reports visible loading elements on timeout', async () => {
 		const loadingElement = document.createElement('div')
 		loadingElement.className = 'loading-spinner'
 		loadingElement.style.height = '10px'
@@ -950,7 +995,8 @@ describe('SpaMetricsManager', () => {
 		manager.stop()
 	})
 
-	it('re-tracks still-visible loading elements after clearing previous page resources', async () => {
+	// Temporarily skipped while the automatic PCT timeout is disabled.
+	it.skip('re-tracks still-visible loading elements after clearing previous page resources', async () => {
 		const loadingElement = document.createElement('div')
 		loadingElement.className = 'loading-spinner'
 		loadingElement.style.height = '10px'
@@ -1045,7 +1091,8 @@ describe('SpaMetricsManager', () => {
 		manager.stop()
 	})
 
-	it('waitForPageLoad with startTime 0 does not exceed max page load wait time on timeout', async () => {
+	// Temporarily skipped while the automatic PCT timeout is disabled.
+	it.skip('waitForPageLoad with startTime 0 does not exceed max page load wait time on timeout', async () => {
 		const getEntriesByType = vi.spyOn(performance, 'getEntriesByType').mockReturnValue([
 			{
 				fetchStart: 0,
@@ -1120,7 +1167,8 @@ describe('SpaMetricsManager', () => {
 		expect(result.loadingResourceUrls).toEqual([TEST_API_URL])
 	})
 
-	it('waitForPageLoad reports the last three loading resource URLs', async () => {
+	// Temporarily skipped while the automatic PCT timeout is disabled.
+	it.skip('waitForPageLoad reports the last three loading resource URLs', async () => {
 		const manager = new SpaMetricsManager({ maxPageLoadWaitTime: 10, quietTime: 5 })
 		manager.start()
 		const longResourceUrl = `${TEST_API_URL}?resource=4&${'a'.repeat(120)}`

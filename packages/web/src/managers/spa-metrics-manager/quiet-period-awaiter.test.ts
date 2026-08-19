@@ -46,6 +46,7 @@ function createQuietPeriodAwaiter(config: QuietPeriodAwaiterTestConfig = {}): Qu
 		getLoadingResourcesCount: () => 0,
 		getLoadingResourceUrls: () => [],
 		getLongestLoadedResource: getNoLongestLoadedResource,
+		maxPageLoadTimeoutForManualApi: config.maxPageLoadTimeoutForManualApi,
 		maxPageLoadWaitTime: config.maxPageLoadWaitTime,
 		quietTime: config.quietTime,
 		startTime: config.startTime,
@@ -147,6 +148,26 @@ describe('QuietPeriodAwaiter', () => {
 		expect(result.pct).toBeLessThan(1000)
 		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_COMPLETED)
 		expectNoLoadingResources(result)
+	})
+
+	it('does not apply the manual API timeout to automatic completion', async () => {
+		vi.useFakeTimers()
+		const awaiter = createQuietPeriodAwaiter({
+			maxPageLoadTimeoutForManualApi: 10,
+			maxPageLoadWaitTime: 10,
+			quietTime: 100,
+		})
+		let resolved = false
+		void awaiter.promise.then(() => {
+			resolved = true
+		})
+
+		awaiter.startQuietTimer({ resourceLoadedTimestamp: performance.now() })
+		await vi.advanceTimersByTimeAsync(10)
+		expect(resolved).toBe(false)
+
+		await vi.advanceTimersByTimeAsync(90)
+		expect((await awaiter.promise).status).toBe(PAGE_LOAD_METRICS_STATUS_COMPLETED)
 	})
 
 	it('interrupt() resolves immediately with interrupted status', async () => {
@@ -344,7 +365,11 @@ describe('QuietPeriodAwaiter', () => {
 		vi.useFakeTimers()
 		vi.spyOn(performance, 'now').mockReturnValue(1000)
 
-		const awaiter = createQuietPeriodAwaiter({ maxPageLoadWaitTime: 100, quietTime: 100, startTime: 1000 })
+		const awaiter = createQuietPeriodAwaiter({
+			maxPageLoadTimeoutForManualApi: 100,
+			quietTime: 100,
+			startTime: 1000,
+		})
 		const handle = awaiter.startManualPageLoad()
 		await vi.advanceTimersByTimeAsync(100)
 
@@ -355,11 +380,38 @@ describe('QuietPeriodAwaiter', () => {
 		expect(handle?.markComplete()).toBe(false)
 	})
 
+	it('measures the manual API timeout from navigation start', async () => {
+		vi.useFakeTimers()
+		const now = vi.spyOn(performance, 'now').mockReturnValue(1060)
+		const awaiter = createQuietPeriodAwaiter({
+			maxPageLoadTimeoutForManualApi: 100,
+			quietTime: 100,
+			startTime: 1000,
+		})
+		awaiter.startManualPageLoad()
+
+		await vi.advanceTimersByTimeAsync(39)
+		let resolved = false
+		void awaiter.promise.then(() => {
+			resolved = true
+		})
+		await Promise.resolve()
+		expect(resolved).toBe(false)
+
+		await vi.advanceTimersByTimeAsync(1)
+		expect((await awaiter.promise).status).toBe(PAGE_LOAD_METRICS_STATUS_TIMEOUT)
+		now.mockRestore()
+	})
+
 	it('accepts the last manual completion candidate when the maximum wait expires', async () => {
 		vi.useFakeTimers()
 		const now = vi.spyOn(performance, 'now').mockReturnValue(1000)
 
-		const awaiter = createQuietPeriodAwaiter({ maxPageLoadWaitTime: 100, quietTime: 100, startTime: 1000 })
+		const awaiter = createQuietPeriodAwaiter({
+			maxPageLoadTimeoutForManualApi: 100,
+			quietTime: 100,
+			startTime: 1000,
+		})
 		const handle = awaiter.startManualPageLoad()
 		now.mockReturnValue(1020)
 		handle?.markComplete()
@@ -371,7 +423,8 @@ describe('QuietPeriodAwaiter', () => {
 		expect(result.completionSource).toBe('manual')
 	})
 
-	it('does not resolve with interrupted status when beforeunload fires', async () => {
+	// Temporarily skipped while the automatic PCT timeout is disabled.
+	it.skip('does not resolve with interrupted status when beforeunload fires', async () => {
 		const awaiter = createQuietPeriodAwaiter({ maxPageLoadWaitTime: 10, quietTime: 5 })
 
 		window.dispatchEvent(new Event('beforeunload'))
@@ -381,7 +434,8 @@ describe('QuietPeriodAwaiter', () => {
 		expectNoLoadingResources(result)
 	})
 
-	it('resolves with timeout status when max page load wait time expires before quiet timer starts', async () => {
+	// Temporarily skipped while the automatic PCT timeout is disabled.
+	it.skip('resolves with timeout status when max page load wait time expires before quiet timer starts', async () => {
 		const startTime = performance.now()
 		const awaiter = createQuietPeriodAwaiter({ maxPageLoadWaitTime: 10, quietTime: 5, startTime })
 
@@ -392,7 +446,8 @@ describe('QuietPeriodAwaiter', () => {
 		expectNoLoadingResources(result)
 	})
 
-	it('resolves only once when quiet period would expire after max page load wait time', async () => {
+	// Temporarily skipped while the automatic PCT timeout is disabled.
+	it.skip('resolves only once when quiet period would expire after max page load wait time', async () => {
 		const results: unknown[] = []
 		const startTime = performance.now()
 		const awaiter = createQuietPeriodAwaiter({ maxPageLoadWaitTime: 30, quietTime: 20, startTime })

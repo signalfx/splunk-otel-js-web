@@ -4,7 +4,7 @@
 	<meta charset="UTF-8">
 	<title>Manual document load completion</title>
 
-	<%- renderAgent({experimental: true, spaMetrics: {quietTime: 100}}) %>
+	<%- renderAgent({experimental: true, spaMetrics: {maxPageLoadTimeoutForManualApi: 1000, quietTime: 100}}) %>
 	<script>
 		const manualDocumentLoad = SplunkRum.startManualPageLoad();
 		window.manualDocumentLoadResult = undefined;

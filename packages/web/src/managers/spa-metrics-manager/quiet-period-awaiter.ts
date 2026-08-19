@@ -26,7 +26,7 @@ import {
 	PAGE_LOAD_METRICS_STATUS_TIMEOUT,
 } from './constants'
 
-const DEFAULT_MAX_PAGE_LOAD_WAIT_TIME = 180_000
+const DEFAULT_MAX_PAGE_LOAD_TIMEOUT_FOR_MANUAL_API = 180_000
 const DEFAULT_QUIET_TIME = 1000
 const INTERRUPT_LISTENER_OPTIONS: AddEventListenerOptions = { capture: true, once: true }
 const INTERRUPT_LISTENER_REMOVE_OPTIONS: EventListenerOptions = { capture: true }
@@ -78,6 +78,7 @@ type QuietPeriodAwaiterConfig = {
 	getLoadingResourceUrls: () => string[]
 	getLoadingResourcesCount: () => number
 	getLongestLoadedResource: () => LoadedResourceDetails | undefined
+	maxPageLoadTimeoutForManualApi?: number
 	maxPageLoadWaitTime?: number
 	onManualCompletionCandidate?: (timestamp: number) => void
 	onManualRegistrationReopened?: () => void
@@ -123,11 +124,13 @@ export class QuietPeriodAwaiter {
 
 	private manualMode = false
 
+	private manualPageLoadTimeoutId: ReturnType<typeof setTimeout> | undefined
+
 	private manualParticipantId = 0
 
 	private readonly manualParticipants = new Set<number>()
 
-	private maxWaitTimeoutId: ReturnType<typeof setTimeout> | undefined
+	private readonly maxPageLoadTimeoutForManualApi: number
 
 	private readonly onManualCompletionCandidate: (timestamp: number) => void
 
@@ -147,7 +150,7 @@ export class QuietPeriodAwaiter {
 		getLoadingResourcesCount,
 		getLoadingResourceUrls,
 		getLongestLoadedResource,
-		maxPageLoadWaitTime = DEFAULT_MAX_PAGE_LOAD_WAIT_TIME,
+		maxPageLoadTimeoutForManualApi = DEFAULT_MAX_PAGE_LOAD_TIMEOUT_FOR_MANUAL_API,
 		onManualCompletionCandidate = () => {},
 		onManualRegistrationReopened = () => {},
 		quietTime = DEFAULT_QUIET_TIME,
@@ -158,6 +161,7 @@ export class QuietPeriodAwaiter {
 		this.getLoadingResourceUrls = getLoadingResourceUrls
 		this.getLoadingResourcesCount = getLoadingResourcesCount
 		this.getLongestLoadedResource = getLongestLoadedResource
+		this.maxPageLoadTimeoutForManualApi = maxPageLoadTimeoutForManualApi
 		this.onManualCompletionCandidate = onManualCompletionCandidate
 		this.onManualRegistrationReopened = onManualRegistrationReopened
 		this.startTime = startTime
@@ -166,27 +170,6 @@ export class QuietPeriodAwaiter {
 			// @ts-expect-error Readonly property for resolve
 			this.resolve = r
 		})
-		const elapsedTime = Math.max(performance.now() - startTime, 0)
-		this.maxWaitTimeoutId = setTimeout(
-			() => {
-				if (
-					this.manualMode &&
-					this.manualParticipants.size === 0 &&
-					this.lastManualCompletionTimestamp !== undefined
-				) {
-					this.resolveManualCompletion()
-					return
-				}
-
-				const pct = Math.max(maxPageLoadWaitTime, 0)
-				diag.debug('QuietPeriodAwaiter: Max page load wait time expired', { pct })
-				this.resolveOnce({
-					pct,
-					status: PAGE_LOAD_METRICS_STATUS_TIMEOUT,
-				})
-			},
-			Math.max(maxPageLoadWaitTime - elapsedTime, 0),
-		)
 		window.addEventListener('pagehide', this.interruptListener, INTERRUPT_LISTENER_OPTIONS)
 	}
 
@@ -250,6 +233,7 @@ export class QuietPeriodAwaiter {
 		if (!this.manualMode) {
 			this.manualMode = true
 			this.clearQuietTimer()
+			this.startManualPageLoadTimeout()
 		} else if (this.manualParticipants.size === 0) {
 			// Reopen the registration window when another component joins before it expires.
 			this.clearQuietTimer()
@@ -345,11 +329,31 @@ export class QuietPeriodAwaiter {
 
 		this.isResolved = true
 		this.clearQuietTimer()
-		clearTimeout(this.maxWaitTimeoutId)
-		this.maxWaitTimeoutId = undefined
+		clearTimeout(this.manualPageLoadTimeoutId)
+		this.manualPageLoadTimeoutId = undefined
 		this.manualParticipants.clear()
 		window.removeEventListener('pagehide', this.interruptListener, INTERRUPT_LISTENER_REMOVE_OPTIONS)
 		this.resolve(this.withLoadingResourcesDetails(resolveValue))
+	}
+
+	private startManualPageLoadTimeout(): void {
+		const timeout = Math.max(this.maxPageLoadTimeoutForManualApi, 0)
+		const elapsedTime = Math.max(performance.now() - this.startTime, 0)
+		this.manualPageLoadTimeoutId = setTimeout(
+			() => {
+				if (this.manualParticipants.size === 0 && this.lastManualCompletionTimestamp !== undefined) {
+					this.resolveManualCompletion()
+					return
+				}
+
+				diag.debug('QuietPeriodAwaiter: Manual page load timeout expired', { pct: timeout })
+				this.resolveOnce({
+					pct: timeout,
+					status: PAGE_LOAD_METRICS_STATUS_TIMEOUT,
+				})
+			},
+			Math.max(timeout - elapsedTime, 0),
+		)
 	}
 
 	private startManualRegistrationTimer(): void {
