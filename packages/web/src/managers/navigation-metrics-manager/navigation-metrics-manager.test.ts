@@ -479,7 +479,7 @@ describe('NavigationMetricsManager', () => {
 	})
 
 	it('does not set page load or navigation correlation attributes when their emission is disabled', () => {
-		const manager = new SpaMetricsManager({ emitNavigationAttributes: false })
+		const manager = new NavigationMetricsManager({ emitNavigationAttributes: false })
 		const { span: navigationSpan } = createSpanMock('navigation-span-id')
 		const { attributes, span } = createSpanMock('resource-span-id')
 
@@ -503,7 +503,7 @@ describe('NavigationMetricsManager', () => {
 	})
 
 	it('sets completion time and status on route changes when experimental attributes are disabled', async () => {
-		const manager = new SpaMetricsManager({ emitNavigationAttributes: false, monitors: [], quietTime: 1 })
+		const manager = new NavigationMetricsManager({ emitNavigationAttributes: false, monitors: [], quietTime: 1 })
 		const { attributes, span } = createSpanMock()
 		manager.start()
 
