@@ -21,8 +21,8 @@ import { diag, ROOT_CONTEXT } from '@opentelemetry/api'
 import { isTracingSuppressed, suppressTracing } from '@opentelemetry/core'
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch'
 
-import { SessionManager, SpaMetricsManager } from '../managers'
-import { setBrowserNavigationPageAttributes } from '../managers/spa-metrics-manager/navigation-relevance'
+import { NavigationMetricsManager, SessionManager } from '../managers'
+import { setBrowserNavigationPageAttributes } from '../managers/navigation-metrics-manager/navigation-relevance'
 import { captureTraceParent } from '../servertiming'
 import { SplunkFetchInstrumentationConfig, SplunkOtelWebConfig } from '../types'
 
@@ -38,7 +38,7 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
 		config: SplunkFetchInstrumentationConfig = {},
 		otelConfig: SplunkOtelWebConfig,
 		public sessionManager?: SessionManager,
-		public spaMetricsManager?: SpaMetricsManager,
+		public navigationMetricsManager?: NavigationMetricsManager,
 	) {
 		const separateTraces = config.separateTraces ?? otelConfig.separateTraces ?? false
 
@@ -52,7 +52,7 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
 
 			const navigationActivity = navigationActivities.get(span)
 			if (navigationActivity) {
-				setBrowserNavigationPageAttributes(span, spaMetricsManager, navigationActivity.startTime, {
+				setBrowserNavigationPageAttributes(span, navigationMetricsManager, navigationActivity.startTime, {
 					monitorTypes: ['network'],
 					type: 'resource',
 					url: navigationActivity.url,
@@ -101,7 +101,7 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
 
 			if (span) {
 				navigationActivities.set(span, { startTime, url })
-				setBrowserNavigationPageAttributes(span, spaMetricsManager, startTime)
+				setBrowserNavigationPageAttributes(span, navigationMetricsManager, startTime)
 			}
 
 			return span

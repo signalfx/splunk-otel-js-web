@@ -22,7 +22,7 @@ import type {
 	ElementVisibilityChangeEvent,
 	ElementVisibilityObserver,
 } from '../../../observers/element-visibility-observer'
-import type { SpaMetricsMonitor } from '../../../types'
+import type { NavigationMetricsMonitor } from '../../../types'
 
 import { Monitor, type MonitorConfig } from './monitor'
 
@@ -53,7 +53,7 @@ const LOADING_ELEMENT_URL_PREFIX = 'element:'
  * per-element events it receives.
  */
 export class LoadingElementMonitor extends Monitor {
-	protected readonly monitorType: SpaMetricsMonitor = 'elements'
+	protected readonly monitorType: NavigationMetricsMonitor = 'elements'
 
 	private readonly consumerId: symbol
 
@@ -126,7 +126,7 @@ export class LoadingElementMonitor extends Monitor {
 
 	/**
 	 * Marks a selector as no longer blocking page completion.
-	 * The resource id must match the original DISCOVERED event so SpaMetricsManager can
+	 * The resource id must match the original DISCOVERED event so NavigationMetricsManager can
 	 * remove the exact pending resource.
 	 */
 	private completeSelector(selector: string): void {

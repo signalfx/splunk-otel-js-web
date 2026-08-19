@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>History events test</title>
-    <%- renderAgent({ spaMetrics: false }, true) %>
+    <%- renderAgent({ navigationMetrics: false }, true) %>
     <script>
 		window.SplunkRumOptions.ignoreUrls = [/another/, window.location.href]
 		window.SplunkRum && window.SplunkRum.init(window.SplunkRumOptions)
