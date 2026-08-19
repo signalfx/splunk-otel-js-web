@@ -10,7 +10,7 @@ No mandatory code or configuration changes are required for customers upgrading 
 the changes in default behavior below, especially if your organization limits browser storage or does not want to
 collect every frustration signal.
 
-### Please review changes in the default configuration
+### Default configuration changes
 
 - `@splunk/otel-web`
     - **All frustration signals are enabled by default** [#1806](https://github.com/signalfx/splunk-otel-js-web/pull/1806)
@@ -50,7 +50,7 @@ SplunkRum.init({
         - **Why:** Identical content can be cached instead of sent repeatedly, reducing replay payload size.
         - **Customer action:** None.
 
-### Enabled automatically — no configuration needed
+### Automatically enabled improvements
 
 - `@splunk/otel-web`
     - **More reliable PCT resource and interruption tracking for SPA route changes** [#1807](https://github.com/signalfx/splunk-otel-js-web/pull/1807), [#1816](https://github.com/signalfx/splunk-otel-js-web/pull/1816), [#1818](https://github.com/signalfx/splunk-otel-js-web/pull/1818), [#1847](https://github.com/signalfx/splunk-otel-js-web/pull/1847), [#1848](https://github.com/signalfx/splunk-otel-js-web/pull/1848), [#1849](https://github.com/signalfx/splunk-otel-js-web/pull/1849)
@@ -64,11 +64,8 @@ SplunkRum.init({
         - When an image or script uses a relative URL such as `assets/app.js`, the agent now resolves it against `document.baseURI`. This produces the same absolute URL reported by the browser's Resource Timing entry, including the current document path or a `<base>` element. Matching the two records allows the resource span to inherit the trace context that was active when the element was added instead of being reported as an unrelated root span.
     - **Synthetics test correlation** [#1803](https://github.com/signalfx/splunk-otel-js-web/pull/1803)
         - The agent previously attached only the Synthetics run ID. It now also adds `Synthetics-TestId` when the Splunk Synthetics runtime exposes it, allowing spans from separate runs to be grouped under the test that produced them.
-    - **Bounded W3C baggage propagation** [#1864](https://github.com/signalfx/splunk-otel-js-web/pull/1864)
-        - Baggage extraction and injection are now limited to 180 entries, 4096 characters per entry, and 8192 characters in total. Entries exceeding these limits are ignored, preventing an oversized baggage header from causing unbounded resource allocation and remediating [SNYK-JS-OPENTELEMETRYCORE-17373280](https://security.snyk.io/vuln/SNYK-JS-OPENTELEMETRYCORE-17373280).
-        - No customer configuration or unsafe OpenTelemetry 2.x override is required.
 
-### Optional features — configuration required
+### Optional features
 
 - **Per-page PCT configuration and loading-element monitoring** [#1846](https://github.com/signalfx/splunk-otel-js-web/pull/1846), [#1850](https://github.com/signalfx/splunk-otel-js-web/pull/1850)
     - **Default:** Network, media, and performance resources participate in PCT, and a calculation is capped at 180 seconds. Loading-element monitoring is disabled until `elements` and at least one selector are configured.
@@ -90,11 +87,56 @@ SplunkRum.init({
 })
 ```
 
+- **Application-specific interaction metadata** [#1844](https://github.com/signalfx/splunk-otel-js-web/pull/1844), [#1890](https://github.com/signalfx/splunk-otel-js-web/pull/1890)
+    - **Default:** The agent does not copy application `data-*` attributes into spans.
+    - **Captured identifiers:** `dataAttributesToCapture` is an allowlist of `data-*` attributes to copy from clicked elements into click and rage-click spans as `element.dataset.*` attributes. Use it for stable identifiers such as `data-component-id` when the default element path and text are not enough to identify the control.
+    - **Privacy:** Avoid sensitive or high-cardinality data-attribute values.
+
+```js
+SplunkRum.init({
+	dataAttributesToCapture: ['data-component-id'],
+	// Existing application, realm/token, and other options...
+})
+```
+
+- **Regular expressions in JSON configuration** [#1802](https://github.com/signalfx/splunk-otel-js-web/pull/1802), [#1890](https://github.com/signalfx/splunk-otel-js-web/pull/1890)
+    - JavaScript configuration can continue to use native `RegExp` values. For serialized JSON configuration, strings using `regex/<pattern>/<flags>` syntax are converted to regular expressions in `ignoreUrls` and `spaMetrics.urlOverrides[].match`.
+    - Invalid regex strings are reported and treated as literal strings, so they do not prevent agent initialization.
+
+JavaScript configuration:
+
+```js
+SplunkRum.init({
+	ignoreUrls: [/^https:\/\/analytics\./i],
+})
+```
+
+Equivalent serialized JSON configuration:
+
+```json
+{
+	"ignoreUrls": ["regex/^https:\\/\\/analytics\\./i"]
+}
+```
+
+### Fixes
+
+- **Oversized W3C baggage is safely bounded** [#1864](https://github.com/signalfx/splunk-otel-js-web/pull/1864). Baggage extraction and injection are now limited to 180 entries, 4096 characters per entry, and 8192 characters in total. Entries exceeding these limits are ignored, preventing an oversized baggage header from causing unbounded resource allocation and remediating [SNYK-JS-OPENTELEMETRYCORE-17373280](https://security.snyk.io/vuln/SNYK-JS-OPENTELEMETRYCORE-17373280). No customer configuration or unsafe OpenTelemetry 2.x override is required.
+- **Route-change URLs remain associated with the navigation that captured them** [#1845](https://github.com/signalfx/splunk-otel-js-web/pull/1845). When several hash changes occur before their callbacks execute, each route-change span now uses the URL captured for its own navigation instead of a later value from `location.href`.
+- **Full build identity is available for locked and commit-based CDN builds** [#1865](https://github.com/signalfx/splunk-otel-js-web/pull/1865), [#1868](https://github.com/signalfx/splunk-otel-js-web/pull/1868). `splunk.rumVersionFull` now includes the Git-derived build identity, allowing a span to identify the exact CDN artifact under test instead of reporting only the package version.
+
+### Internal and dependency updates
+
+- Upgraded the upstream Session Replay dependency to 2.18.1 [#1861](https://github.com/signalfx/splunk-otel-js-web/pull/1861).
+- Updated runtime, development, build, test, and example dependencies [#1853](https://github.com/signalfx/splunk-otel-js-web/pull/1853), [#1854](https://github.com/signalfx/splunk-otel-js-web/pull/1854), [#1835](https://github.com/signalfx/splunk-otel-js-web/pull/1835), [#1836](https://github.com/signalfx/splunk-otel-js-web/pull/1836), [#1838](https://github.com/signalfx/splunk-otel-js-web/pull/1838), [#1842](https://github.com/signalfx/splunk-otel-js-web/pull/1842), [#1840](https://github.com/signalfx/splunk-otel-js-web/pull/1840), [#1841](https://github.com/signalfx/splunk-otel-js-web/pull/1841), [#1837](https://github.com/signalfx/splunk-otel-js-web/pull/1837), [#1839](https://github.com/signalfx/splunk-otel-js-web/pull/1839), [#1828](https://github.com/signalfx/splunk-otel-js-web/pull/1828), [#1829](https://github.com/signalfx/splunk-otel-js-web/pull/1829), [#1826](https://github.com/signalfx/splunk-otel-js-web/pull/1826), [#1832](https://github.com/signalfx/splunk-otel-js-web/pull/1832), [#1833](https://github.com/signalfx/splunk-otel-js-web/pull/1833), [#1823](https://github.com/signalfx/splunk-otel-js-web/pull/1823), [#1830](https://github.com/signalfx/splunk-otel-js-web/pull/1830), [#1831](https://github.com/signalfx/splunk-otel-js-web/pull/1831), [#1825](https://github.com/signalfx/splunk-otel-js-web/pull/1825), [#1824](https://github.com/signalfx/splunk-otel-js-web/pull/1824), [#1817](https://github.com/signalfx/splunk-otel-js-web/pull/1817), [#1814](https://github.com/signalfx/splunk-otel-js-web/pull/1814), [#1805](https://github.com/signalfx/splunk-otel-js-web/pull/1805), [#1799](https://github.com/signalfx/splunk-otel-js-web/pull/1799), [#1800](https://github.com/signalfx/splunk-otel-js-web/pull/1800), [#1707](https://github.com/signalfx/splunk-otel-js-web/pull/1707), [#1795](https://github.com/signalfx/splunk-otel-js-web/pull/1795), [#1875](https://github.com/signalfx/splunk-otel-js-web/pull/1875), [#1876](https://github.com/signalfx/splunk-otel-js-web/pull/1876), [#1877](https://github.com/signalfx/splunk-otel-js-web/pull/1877), [#1878](https://github.com/signalfx/splunk-otel-js-web/pull/1878), [#1881](https://github.com/signalfx/splunk-otel-js-web/pull/1881), [#1882](https://github.com/signalfx/splunk-otel-js-web/pull/1882), [#1885](https://github.com/signalfx/splunk-otel-js-web/pull/1885), [#1886](https://github.com/signalfx/splunk-otel-js-web/pull/1886), [#1889](https://github.com/signalfx/splunk-otel-js-web/pull/1889), [#1893](https://github.com/signalfx/splunk-otel-js-web/pull/1893), [#1894](https://github.com/signalfx/splunk-otel-js-web/pull/1894).
+
+### Experimental features
+
 - **Web Vitals attribution, FCP, and TTFB** [#1796](https://github.com/signalfx/splunk-otel-js-web/pull/1796)
     - **Default:** CLS, INP, and LCP continue to be collected without detailed attribution. Attribution, First Contentful Paint (FCP), and Time to First Byte (TTFB) are disabled until explicitly enabled.
     - **Attribution:** `_experimental_attribution` adds diagnostic details to existing Web Vitals spans: the element and layout shift for CLS, interaction processing and presentation phases for INP, and the element, resource, and load phases for LCP. Enable it when a metric value alone does not explain the cause of poor performance.
     - **Additional metrics:** `_experimental_fcp` emits FCP spans, and `_experimental_ttfb` emits TTFB spans. When attribution is also enabled, FCP includes the time from first byte to first contentful paint, while TTFB includes cache, DNS, connection, request, and server-wait timing breakdowns.
-    - **Privacy:** Default attribution uses structural selectors and sanitizes the LCP URL by removing its query string. Raw targets or URLs should be enabled only after reviewing privacy and cardinality requirements.
+    - **Privacy:** Setting `_experimental_attribution: true` uses privacy-preserving defaults: element targets are bounded structural selectors that exclude IDs, classes, labels, dataset values, and text, while LCP URLs exclude query strings and fragments. Raw targets or URLs are emitted only when explicitly requested with `target: 'raw'` or `lcpUrl: 'raw'`; review those values first because they can contain sensitive identifiers and create high-cardinality telemetry.
 
 ```js
 SplunkRum.init({
@@ -109,15 +151,11 @@ SplunkRum.init({
 })
 ```
 
-- **Application-specific interaction metadata** [#1844](https://github.com/signalfx/splunk-otel-js-web/pull/1844), [#1852](https://github.com/signalfx/splunk-otel-js-web/pull/1852), [#1890](https://github.com/signalfx/splunk-otel-js-web/pull/1890)
-    - **Default:** The agent does not copy application `data-*` attributes into spans or treat application-specific CSS selectors as interactive controls.
-    - **Captured identifiers:** `dataAttributesToCapture` is an allowlist of `data-*` attributes to copy from clicked elements into click and rage-click spans as `element.dataset.*` attributes. Use it for stable identifiers such as `data-component-id` when the default element path and text are not enough to identify the control.
-    - **Custom controls:** `experimental_interactiveElementSelectors` identifies controls implemented with non-native markup, such as a clickable `<div>`. Elements matching a configured selector are treated as interactive when the agent decides whether a click should be considered a dead-click candidate.
-    - **Privacy:** Avoid sensitive or high-cardinality data-attribute values. Invalid selectors are ignored without preventing valid selectors or application initialization.
+- **Custom interactive-element selectors** [#1852](https://github.com/signalfx/splunk-otel-js-web/pull/1852), [#1890](https://github.com/signalfx/splunk-otel-js-web/pull/1890)
+    - `experimental_interactiveElementSelectors` identifies controls implemented with non-native markup, such as a clickable `<div>`. Elements matching a configured selector are treated as interactive when the agent decides whether a click should be considered a dead-click candidate.
 
 ```js
 SplunkRum.init({
-	dataAttributesToCapture: ['data-component-id'],
 	instrumentations: {
 		interactions: {
 			experimental_interactiveElementSelectors: ['.custom-control'],
@@ -126,19 +164,6 @@ SplunkRum.init({
 	// Existing application, realm/token, and other options...
 })
 ```
-
-- **Regex URL filtering in JSON configuration** [#1802](https://github.com/signalfx/splunk-otel-js-web/pull/1802), [#1890](https://github.com/signalfx/splunk-otel-js-web/pull/1890)
-    - Script-tag and other JSON-based configurations cannot contain JavaScript `RegExp` objects. A string such as `regex/^https:\/\/analytics\./i` is now converted to a regular expression, allowing one rule to ignore a family of matching URLs. A malformed regex is reported and treated as a literal string so it does not prevent agent initialization.
-
-### Fixes
-
-- **Route-change URLs remain associated with the navigation that captured them** [#1845](https://github.com/signalfx/splunk-otel-js-web/pull/1845). When several hash changes occur before their callbacks execute, each route-change span now uses the URL captured for its own navigation instead of a later value from `location.href`.
-- **Full build identity is available for locked and commit-based CDN builds** [#1865](https://github.com/signalfx/splunk-otel-js-web/pull/1865), [#1868](https://github.com/signalfx/splunk-otel-js-web/pull/1868). `splunk.rumVersionFull` now includes the Git-derived build identity, allowing a span to identify the exact CDN artifact under test instead of reporting only the package version.
-
-### Internal and dependency updates
-
-- Upgraded the upstream Session Replay dependency to 2.18.1 [#1861](https://github.com/signalfx/splunk-otel-js-web/pull/1861).
-- Updated runtime, development, build, test, and example dependencies [#1853](https://github.com/signalfx/splunk-otel-js-web/pull/1853), [#1854](https://github.com/signalfx/splunk-otel-js-web/pull/1854), [#1835](https://github.com/signalfx/splunk-otel-js-web/pull/1835), [#1836](https://github.com/signalfx/splunk-otel-js-web/pull/1836), [#1838](https://github.com/signalfx/splunk-otel-js-web/pull/1838), [#1842](https://github.com/signalfx/splunk-otel-js-web/pull/1842), [#1840](https://github.com/signalfx/splunk-otel-js-web/pull/1840), [#1841](https://github.com/signalfx/splunk-otel-js-web/pull/1841), [#1837](https://github.com/signalfx/splunk-otel-js-web/pull/1837), [#1839](https://github.com/signalfx/splunk-otel-js-web/pull/1839), [#1828](https://github.com/signalfx/splunk-otel-js-web/pull/1828), [#1829](https://github.com/signalfx/splunk-otel-js-web/pull/1829), [#1826](https://github.com/signalfx/splunk-otel-js-web/pull/1826), [#1832](https://github.com/signalfx/splunk-otel-js-web/pull/1832), [#1833](https://github.com/signalfx/splunk-otel-js-web/pull/1833), [#1823](https://github.com/signalfx/splunk-otel-js-web/pull/1823), [#1830](https://github.com/signalfx/splunk-otel-js-web/pull/1830), [#1831](https://github.com/signalfx/splunk-otel-js-web/pull/1831), [#1825](https://github.com/signalfx/splunk-otel-js-web/pull/1825), [#1824](https://github.com/signalfx/splunk-otel-js-web/pull/1824), [#1817](https://github.com/signalfx/splunk-otel-js-web/pull/1817), [#1814](https://github.com/signalfx/splunk-otel-js-web/pull/1814), [#1805](https://github.com/signalfx/splunk-otel-js-web/pull/1805), [#1799](https://github.com/signalfx/splunk-otel-js-web/pull/1799), [#1800](https://github.com/signalfx/splunk-otel-js-web/pull/1800), [#1707](https://github.com/signalfx/splunk-otel-js-web/pull/1707), [#1795](https://github.com/signalfx/splunk-otel-js-web/pull/1795), [#1875](https://github.com/signalfx/splunk-otel-js-web/pull/1875), [#1876](https://github.com/signalfx/splunk-otel-js-web/pull/1876), [#1877](https://github.com/signalfx/splunk-otel-js-web/pull/1877), [#1878](https://github.com/signalfx/splunk-otel-js-web/pull/1878), [#1881](https://github.com/signalfx/splunk-otel-js-web/pull/1881), [#1882](https://github.com/signalfx/splunk-otel-js-web/pull/1882), [#1885](https://github.com/signalfx/splunk-otel-js-web/pull/1885), [#1886](https://github.com/signalfx/splunk-otel-js-web/pull/1886), [#1889](https://github.com/signalfx/splunk-otel-js-web/pull/1889), [#1893](https://github.com/signalfx/splunk-otel-js-web/pull/1893), [#1894](https://github.com/signalfx/splunk-otel-js-web/pull/1894).
 
 ## 3.0.0
 
