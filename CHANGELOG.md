@@ -7,8 +7,7 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 ### Upgrade impact
 
 No mandatory code or configuration changes are required for customers upgrading from 3.0.x. Before upgrading, review
-the changes in default behavior below, especially if your organization limits browser storage or does not want to
-collect every frustration signal.
+the changes in default behavior below.
 
 ### Default configuration changes
 
