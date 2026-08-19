@@ -28,6 +28,7 @@ import {
 	BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE,
 	BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
 	BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE,
+	BROWSER_NAVIGATION_PAGE_SPAN_ID_ATTRIBUTE,
 	BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
 	PAGE_LOAD_METRICS_STATUS_COMPLETED,
 	PAGE_LOAD_METRICS_STATUS_INTERRUPTED,
@@ -445,6 +446,12 @@ describe('test init', () => {
 			const pageLoadSpan = capturer.spans.find((span) => span.name === 'pageLoad')
 			expectDefined(pageLoadSpan, 'pageLoad span presence.')
 			expect(capturer.spans.indexOf(pageLoadSpan)).toBeLessThan(capturer.spans.indexOf(documentLoadSpan))
+			expect(pageLoadSpan.startTime).toEqual(documentLoadSpan.startTime)
+			expect(documentFetchSpan.startTime).toEqual(documentLoadSpan.startTime)
+			expect(documentFetchSpan).toHaveSpanAttribute(
+				BROWSER_NAVIGATION_PAGE_SPAN_ID_ATTRIBUTE,
+				pageLoadSpan.spanContext().spanId,
+			)
 			expect(hrTimeToMilliseconds(pageLoadSpan.duration)).toBeCloseTo(
 				Number(pageLoadSpan.attributes[BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE]),
 				5,
