@@ -17,7 +17,7 @@ the changes in default behavior below.
         - **Why:** Applications receive all four types of frustration telemetry without having to enable each detector separately.
         - **Customer action:** No action is required to collect all signals. To retain the 3.0 behavior, set `deadClick`, `errorClick`, and `thrashedCursor` to `false` under `instrumentations.frustrationSignals`. Set `instrumentations.frustrationSignals: false` to disable all frustration detection.
     - **The PCT quiet period changed from five seconds to one second** [#1812](https://github.com/signalfx/splunk-otel-js-web/pull/1812)
-        - **Changed from 3.0:** Page Completion Time (PCT) now completes after 1000 ms, instead of 5000 ms, without monitored network, media, resource-timing, or configured loading-element activity.
+        - **Changed from 3.0:** Page Completion Time (PCT) now completes after 1000 ms, instead of 5000 ms, without monitored network, media, or resource-timing activity.
         - **Why:** The shorter quiet period reduces the chance that unrelated background activity keeps resetting the timer and extending page completion.
         - **Customer action:** No action is required for most applications. If meaningful page-loading work can start after a gap longer than one second, set `spaMetrics.quietTime: 5000` to retain the 3.0 behavior or choose another value appropriate for the application.
 
@@ -59,111 +59,109 @@ SplunkRum.init({
 
 ### Optional features
 
-- **Application-specific interaction metadata** [#1844](https://github.com/signalfx/splunk-otel-js-web/pull/1844), [#1890](https://github.com/signalfx/splunk-otel-js-web/pull/1890)
-    - **Default:** The agent does not copy application `data-*` attributes into spans.
-    - **Captured identifiers:** `dataAttributesToCapture` is an allowlist of `data-*` attributes to copy from clicked elements into click and rage-click spans as `element.dataset.*` attributes. Use it for stable identifiers such as `data-component-id` when the default element path and text are not enough to identify the control.
-    - **Privacy:** Avoid sensitive or high-cardinality data-attribute values.
+- `@splunk/otel-web`
+    - **Application-specific interaction metadata** [#1844](https://github.com/signalfx/splunk-otel-js-web/pull/1844), [#1890](https://github.com/signalfx/splunk-otel-js-web/pull/1890)
+        - **Default:** The agent does not copy application `data-*` attributes into spans.
+        - **Captured metadata:** `dataAttributesToCapture` is an allowlist of `data-*` attributes to copy from clicked elements into click and rage-click spans as `element.dataset.*` attributes. Use it for stable, bounded categories such as `data-component-type` when the default element path and text are not enough to identify the control.
+        - **Privacy:** Avoid sensitive or high-cardinality data-attribute values.
 
-```js
-SplunkRum.init({
-	dataAttributesToCapture: ['data-component-id'],
-	// Existing application, realm/token, and other options...
-})
-```
+        ```js
+        SplunkRum.init({
+            dataAttributesToCapture: ['data-component-type'],
+            // Existing application, realm/token, and other options...
+        })
+        ```
 
-#### Regular expressions in URL-matching configuration
+    - **Regular expressions in URL-matching configuration** [#1802](https://github.com/signalfx/splunk-otel-js-web/pull/1802), [#1890](https://github.com/signalfx/splunk-otel-js-web/pull/1890)
+        - URL-matching settings accept native JavaScript `RegExp` values or strings using the `regex/<pattern>/<flags>` syntax.
+        - **Supported settings:**
+            - Top-level `ignoreUrls`
+            - Instrumentation-specific `ignoreUrls`
+            - `spaMetrics.ignoreUrls`
+            - `spaMetrics.urlOverrides[].ignoreUrls`
+            - `spaMetrics.urlOverrides[].match`
+        - **JSON configuration:** Use the string form when providing serialized JSON, which does not support native `RegExp` values.
 
-([#1802](https://github.com/signalfx/splunk-otel-js-web/pull/1802), [#1890](https://github.com/signalfx/splunk-otel-js-web/pull/1890))
+        JavaScript configuration:
 
-URL-matching settings accept native JavaScript `RegExp` values or strings using the
-`regex/<pattern>/<flags>` syntax. This includes:
+        ```typescript
+        SplunkRum.init({
+            ignoreUrls: [/^https:\/\/analytics\./i],
+            spaMetrics: {
+                urlOverrides: [
+                    {
+                        match: /\/checkout\//,
+                        ignoreUrls: ['regex/^https:\\/\\/metrics\\./i'],
+                    },
+                ],
+            },
+        })
+        ```
 
-- Top-level `ignoreUrls`
-- Instrumentation-specific `ignoreUrls`
-- `spaMetrics.ignoreUrls`
-- `spaMetrics.urlOverrides[].ignoreUrls`
-- `spaMetrics.urlOverrides[].match`
+        Equivalent serialized JSON configuration:
 
-The string form is useful when providing configuration in JSON, which does not support native `RegExp` values.
-
-JavaScript configuration:
-
-```typescript
-SplunkRum.init({
-	ignoreUrls: [/^https:\/\/analytics\./i],
-	spaMetrics: {
-		urlOverrides: [
-			{
-				match: /\/checkout\//,
-				ignoreUrls: ['regex/^https:\\/\\/metrics\\./i'],
-			},
-		],
-	},
-})
-```
-
-Equivalent serialized JSON configuration:
-
-```json
-{
-	"ignoreUrls": ["regex/^https:\\/\\/analytics\\./i"],
-	"spaMetrics": {
-		"urlOverrides": [
-			{
-				"match": "regex/\\/checkout\\//",
-				"ignoreUrls": ["regex/^https:\\/\\/metrics\\./i"]
-			}
-		]
-	}
-}
-```
+        ```json
+        {
+            "ignoreUrls": ["regex/^https:\\/\\/analytics\\./i"],
+            "spaMetrics": {
+                "urlOverrides": [
+                    {
+                        "match": "regex/\\/checkout\\//",
+                        "ignoreUrls": ["regex/^https:\\/\\/metrics\\./i"]
+                    }
+                ]
+            }
+        }
+        ```
 
 ### Fixes
 
-- **More reliable PCT resource and interruption tracking for SPA route changes** [#1807](https://github.com/signalfx/splunk-otel-js-web/pull/1807), [#1816](https://github.com/signalfx/splunk-otel-js-web/pull/1816), [#1818](https://github.com/signalfx/splunk-otel-js-web/pull/1818), [#1847](https://github.com/signalfx/splunk-otel-js-web/pull/1847), [#1848](https://github.com/signalfx/splunk-otel-js-web/pull/1848), [#1849](https://github.com/signalfx/splunk-otel-js-web/pull/1849)
-    - Each resource request is now tracked independently. Previously, concurrent requests to the same URL shared a tracking key, so completion of one request could incorrectly mark another in-flight request as finished and produce an inaccurate PCT.
-    - Media that fails, is aborted, is removed from the DOM, or changes its source now releases its pending PCT activity instead of potentially leaving the page waiting indefinitely.
-    - Pending resources discovered during the previous page are cleared when a new navigation starts by default, so unrelated earlier work does not extend the new page's PCT.
-    - When another navigation starts or the browser emits `pagehide`, the current calculation finishes at the interruption time instead of leaving its route-change span unfinished. Route-change span duration continues to use PCT when `spaMetrics` is enabled, which remains the default.
-- **Correct post-load resource association for relative URLs** [#1872](https://github.com/signalfx/splunk-otel-js-web/pull/1872)
-    - When an image or script uses a relative URL such as `assets/app.js`, the agent now resolves it against `document.baseURI`. This produces the same absolute URL reported by the browser's Resource Timing entry, including the current document path or a `<base>` element. Matching the two records allows the resource span to inherit the trace context that was active when the element was added instead of being reported as an unrelated root span.
-- **Oversized W3C baggage is safely bounded** [#1864](https://github.com/signalfx/splunk-otel-js-web/pull/1864). Baggage extraction and injection are now limited to 180 entries, 4096 characters per entry, and 8192 characters in total. Entries exceeding these limits are ignored, preventing an oversized baggage header from causing unbounded resource allocation and remediating [CVE-2026-54285](https://nvd.nist.gov/vuln/detail/CVE-2026-54285). No customer configuration or unsafe OpenTelemetry 2.x override is required.
-- **Route-change URLs remain associated with the navigation that captured them** [#1845](https://github.com/signalfx/splunk-otel-js-web/pull/1845). When several hash changes occur before their callbacks execute, each route-change span now uses the URL captured for its own navigation instead of a later value from `location.href`.
-- **Full build identity is available for locked and commit-based CDN builds** [#1865](https://github.com/signalfx/splunk-otel-js-web/pull/1865), [#1868](https://github.com/signalfx/splunk-otel-js-web/pull/1868). `splunk.rumVersionFull` now includes the Git-derived build identity, allowing a span to identify the exact CDN artifact under test instead of reporting only the package version.
+- `@splunk/otel-web`
+    - **More reliable PCT resource and interruption tracking for SPA route changes** [#1807](https://github.com/signalfx/splunk-otel-js-web/pull/1807), [#1816](https://github.com/signalfx/splunk-otel-js-web/pull/1816), [#1818](https://github.com/signalfx/splunk-otel-js-web/pull/1818), [#1847](https://github.com/signalfx/splunk-otel-js-web/pull/1847), [#1848](https://github.com/signalfx/splunk-otel-js-web/pull/1848), [#1849](https://github.com/signalfx/splunk-otel-js-web/pull/1849)
+        - Each resource request is now tracked independently. Previously, concurrent requests to the same URL shared a tracking key, so completion of one request could incorrectly mark another in-flight request as finished and produce an inaccurate PCT.
+        - Media that fails, is aborted, is removed from the DOM, or changes its source now releases its pending PCT activity instead of potentially leaving the page waiting indefinitely.
+        - Pending resources discovered during the previous page are cleared when a new navigation starts by default, so unrelated earlier work does not extend the new page's PCT.
+        - When another navigation starts or the browser emits `pagehide`, the current calculation finishes at the interruption time instead of leaving its route-change span unfinished. Route-change span duration continues to use PCT when `spaMetrics` is enabled, which remains the default.
+    - **Correct post-load resource association for relative URLs** [#1872](https://github.com/signalfx/splunk-otel-js-web/pull/1872)
+        - When an image or script uses a relative URL such as `assets/app.js`, the agent now resolves it against `document.baseURI`. This produces the same absolute URL reported by the browser's Resource Timing entry, including the current document path or a `<base>` element. Matching the two records allows the resource span to inherit the trace context that was active when the element was added instead of being reported as an unrelated root span.
+    - **Oversized W3C baggage is safely bounded** [#1864](https://github.com/signalfx/splunk-otel-js-web/pull/1864). Baggage extraction and injection are now limited to 180 entries, 4096 characters per entry, and 8192 characters in total. Entries exceeding these limits are ignored, preventing an oversized baggage header from causing unbounded resource allocation and remediating [CVE-2026-54285](https://nvd.nist.gov/vuln/detail/CVE-2026-54285). No customer configuration or unsafe OpenTelemetry 2.x override is required.
+    - **Route-change URLs remain associated with the navigation that captured them** [#1845](https://github.com/signalfx/splunk-otel-js-web/pull/1845). When several hash changes occur before their callbacks execute, each route-change span now uses the URL captured for its own navigation instead of a later value from `location.href`.
+    - **Full build identity is available for locked and commit-based CDN builds** [#1865](https://github.com/signalfx/splunk-otel-js-web/pull/1865), [#1868](https://github.com/signalfx/splunk-otel-js-web/pull/1868). `splunk.rumVersionFull` now includes the Git-derived build identity, allowing a span to identify the exact CDN artifact under test instead of reporting only the package version.
 
 ### Experimental features
 
-- **Web Vitals attribution, FCP, and TTFB** [#1796](https://github.com/signalfx/splunk-otel-js-web/pull/1796)
-    - **Default:** CLS, INP, and LCP continue to be collected without detailed attribution. Attribution, First Contentful Paint (FCP), and Time to First Byte (TTFB) are disabled until explicitly enabled.
-    - **Attribution:** `_experimental_attribution` adds diagnostic details to existing Web Vitals spans: the element and layout shift for CLS, interaction processing and presentation phases for INP, and the element, resource, and load phases for LCP. Enable it when a metric value alone does not explain the cause of poor performance.
-    - **Additional metrics:** `_experimental_fcp` emits FCP spans, and `_experimental_ttfb` emits TTFB spans. When attribution is also enabled, FCP includes the time from first byte to first contentful paint, while TTFB includes cache, DNS, connection, request, and server-wait timing breakdowns.
+- `@splunk/otel-web`
+    - **Web Vitals attribution, FCP, and TTFB** [#1796](https://github.com/signalfx/splunk-otel-js-web/pull/1796)
+        - **Default:** CLS, INP, and LCP continue to be collected without detailed attribution. Attribution, First Contentful Paint (FCP), and Time to First Byte (TTFB) are disabled until explicitly enabled.
+        - **Attribution:** `_experimental_attribution` adds diagnostic details to existing Web Vitals spans: the element and layout shift for CLS, interaction processing and presentation phases for INP, and the element, resource, and load phases for LCP. Enable it when a metric value alone does not explain the cause of poor performance.
+        - **Additional metrics:** `_experimental_fcp` emits FCP spans, and `_experimental_ttfb` emits TTFB spans. When attribution is also enabled, FCP includes the time from first byte to first contentful paint, while TTFB includes cache, DNS, connection, request, and server-wait timing breakdowns.
 
-```js
-SplunkRum.init({
-	instrumentations: {
-		webvitals: {
-			_experimental_attribution: true,
-			_experimental_fcp: true,
-			_experimental_ttfb: true,
-		},
-	},
-	// Existing application, realm/token, and other options...
-})
-```
+        ```js
+        SplunkRum.init({
+            instrumentations: {
+                webvitals: {
+                    _experimental_attribution: true,
+                    _experimental_fcp: true,
+                    _experimental_ttfb: true,
+                },
+            },
+            // Existing application, realm/token, and other options...
+        })
+        ```
 
-- **Custom interactive-element selectors** [#1852](https://github.com/signalfx/splunk-otel-js-web/pull/1852), [#1890](https://github.com/signalfx/splunk-otel-js-web/pull/1890)
-    - `experimental_interactiveElementSelectors` identifies controls implemented with non-native markup, such as a clickable `<div>`. Elements matching a configured selector are treated as interactive when the agent decides whether a click should be considered a dead-click candidate.
+    - **Custom interactive-element selectors** [#1852](https://github.com/signalfx/splunk-otel-js-web/pull/1852), [#1890](https://github.com/signalfx/splunk-otel-js-web/pull/1890)
+        - `experimental_interactiveElementSelectors` identifies controls implemented with non-native markup, such as a clickable `<div>`. Elements matching a configured selector are treated as interactive when the agent decides whether a click should be considered a dead-click candidate.
 
-```js
-SplunkRum.init({
-	instrumentations: {
-		interactions: {
-			experimental_interactiveElementSelectors: ['.custom-control'],
-		},
-	},
-	// Existing application, realm/token, and other options...
-})
-```
+        ```js
+        SplunkRum.init({
+            instrumentations: {
+                interactions: {
+                    experimental_interactiveElementSelectors: ['.custom-control'],
+                },
+            },
+            // Existing application, realm/token, and other options...
+        })
+        ```
 
 ### Internal and dependency updates
 
