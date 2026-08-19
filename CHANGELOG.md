@@ -67,8 +67,8 @@ SplunkRum.init({
 
         ```js
         SplunkRum.init({
-            dataAttributesToCapture: ['data-component-type'],
-            // Existing application, realm/token, and other options...
+        	dataAttributesToCapture: ['data-component-type'],
+        	// Existing application, realm/token, and other options...
         })
         ```
 
@@ -86,15 +86,15 @@ SplunkRum.init({
 
         ```typescript
         SplunkRum.init({
-            ignoreUrls: [/^https:\/\/analytics\./i],
-            spaMetrics: {
-                urlOverrides: [
-                    {
-                        match: /\/checkout\//,
-                        ignoreUrls: ['regex/^https:\\/\\/metrics\\./i'],
-                    },
-                ],
-            },
+        	ignoreUrls: [/^https:\/\/analytics\./i],
+        	spaMetrics: {
+        		urlOverrides: [
+        			{
+        				match: /\/checkout\//,
+        				ignoreUrls: ['regex/^https:\\/\\/metrics\\./i'],
+        			},
+        		],
+        	},
         })
         ```
 
@@ -102,15 +102,15 @@ SplunkRum.init({
 
         ```json
         {
-            "ignoreUrls": ["regex/^https:\\/\\/analytics\\./i"],
-            "spaMetrics": {
-                "urlOverrides": [
-                    {
-                        "match": "regex/\\/checkout\\//",
-                        "ignoreUrls": ["regex/^https:\\/\\/metrics\\./i"]
-                    }
-                ]
-            }
+        	"ignoreUrls": ["regex/^https:\\/\\/analytics\\./i"],
+        	"spaMetrics": {
+        		"urlOverrides": [
+        			{
+        				"match": "regex/\\/checkout\\//",
+        				"ignoreUrls": ["regex/^https:\\/\\/metrics\\./i"]
+        			}
+        		]
+        	}
         }
         ```
 
@@ -138,14 +138,14 @@ SplunkRum.init({
 
         ```js
         SplunkRum.init({
-            instrumentations: {
-                webvitals: {
-                    _experimental_attribution: true,
-                    _experimental_fcp: true,
-                    _experimental_ttfb: true,
-                },
-            },
-            // Existing application, realm/token, and other options...
+        	instrumentations: {
+        		webvitals: {
+        			_experimental_attribution: true,
+        			_experimental_fcp: true,
+        			_experimental_ttfb: true,
+        		},
+        	},
+        	// Existing application, realm/token, and other options...
         })
         ```
 
@@ -154,12 +154,12 @@ SplunkRum.init({
 
         ```js
         SplunkRum.init({
-            instrumentations: {
-                interactions: {
-                    experimental_interactiveElementSelectors: ['.custom-control'],
-                },
-            },
-            // Existing application, realm/token, and other options...
+        	instrumentations: {
+        		interactions: {
+        			experimental_interactiveElementSelectors: ['.custom-control'],
+        		},
+        	},
+        	// Existing application, realm/token, and other options...
         })
         ```
 
