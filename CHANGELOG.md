@@ -9,7 +9,7 @@ If the version of Open Telemetry is unspecified for a version, then it is the sa
 No mandatory code or configuration changes are required for customers upgrading from 3.0.x. Before upgrading, review
 the changes in default behavior below.
 
-### Default configuration changes
+### Changes in Default Configuration
 
 - `@splunk/otel-web`
     - **All frustration signals are enabled by default** [#1806](https://github.com/signalfx/splunk-otel-js-web/pull/1806)
@@ -67,7 +67,7 @@ SplunkRum.init({
 ### Optional features
 
 - **Per-page PCT configuration and loading-element monitoring** [#1846](https://github.com/signalfx/splunk-otel-js-web/pull/1846), [#1850](https://github.com/signalfx/splunk-otel-js-web/pull/1850)
-    - **Default:** Network, media, and performance resources participate in PCT, and a calculation is capped at 180 seconds. Loading-element monitoring is disabled until `elements` and at least one selector are configured.
+    - **Default:** Network, media, and performance resources participate in PCT. Loading-element monitoring is disabled until `elements` and at least one selector are configured.
     - **Why and when to configure:** Use `urlOverrides` when different routes need different quiet times, maximum wait times, ignored URLs, selectors, or resource monitors—for example, when polling or analytics requests should not delay one route. Add the `elements` monitor when a visible application spinner or overlay is a better readiness signal than network activity.
     - **Behavior:** A visible element matching `blockingSelectors` keeps PCT open until the element is hidden, removed, or no longer matches. URL overrides are evaluated in order and the first matching URL wins.
 
@@ -98,15 +98,15 @@ SplunkRum.init({
 })
 ```
 
-- **Regular expressions in JSON configuration** [#1802](https://github.com/signalfx/splunk-otel-js-web/pull/1802), [#1890](https://github.com/signalfx/splunk-otel-js-web/pull/1890)
-    - JavaScript configuration can continue to use native `RegExp` values. For serialized JSON configuration, strings using `regex/<pattern>/<flags>` syntax are converted to regular expressions in `ignoreUrls` and `spaMetrics.urlOverrides[].match`.
+- **Regular expressions in configuration** [#1802](https://github.com/signalfx/splunk-otel-js-web/pull/1802), [#1890](https://github.com/signalfx/splunk-otel-js-web/pull/1890)
+    - JavaScript configuration can use either native `RegExp` values or strings using `regex/<pattern>/<flags>` syntax. Serialized JSON cannot contain `RegExp` objects, so it must use the string form.
     - Invalid regex strings are reported and treated as literal strings, so they do not prevent agent initialization.
 
 JavaScript configuration:
 
 ```js
 SplunkRum.init({
-	ignoreUrls: [/^https:\/\/analytics\./i],
+	ignoreUrls: [/^https:\/\/analytics\./i, 'regex/^https:\\/\\/metrics\\./i'],
 })
 ```
 
@@ -114,7 +114,7 @@ Equivalent serialized JSON configuration:
 
 ```json
 {
-	"ignoreUrls": ["regex/^https:\\/\\/analytics\\./i"]
+	"ignoreUrls": ["regex/^https:\\/\\/analytics\\./i", "regex/^https:\\/\\/metrics\\./i"]
 }
 ```
 
