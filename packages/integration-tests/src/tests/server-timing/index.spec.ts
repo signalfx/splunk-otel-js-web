@@ -21,8 +21,8 @@ import { generateServerTiming } from '../../server/server-timing'
 import { test } from '../../utils/test'
 
 test.describe('server-timing', () => {
-	test('traceId should be attached to documentFetch span if Server-Timing was sent', async ({ recordPage }) => {
-		const serverTiming = generateServerTiming()
+	test('trace context with random flag should be attached to documentFetch span', async ({ recordPage }) => {
+		const serverTiming = generateServerTiming('03')
 
 		const url = new URL('/server-timing/index.ejs', 'http://localhost:3000')
 		url.searchParams.set('serverTiming', serverTiming.header)
@@ -34,6 +34,7 @@ test.describe('server-timing', () => {
 
 		expect(documentFetchSpans).toHaveLength(1)
 		expect(documentFetchSpans[0]).toHaveSpanAttribute('link.traceId', serverTiming.traceId)
+		expect(documentFetchSpans[0]).toHaveSpanAttribute('link.spanId', serverTiming.spanId)
 		expect(documentFetchSpans[0]).toHaveSpanAttribute('location.href', url.toString())
 
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
