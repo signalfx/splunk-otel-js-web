@@ -62,7 +62,7 @@ SplunkRum.init({
 - `@splunk/otel-web`
     - **Application-specific interaction metadata** [#1844](https://github.com/signalfx/splunk-otel-js-web/pull/1844), [#1890](https://github.com/signalfx/splunk-otel-js-web/pull/1890)
         - **Default:** The agent does not copy application `data-*` attributes into spans.
-        - **Captured metadata:** `dataAttributesToCapture` is an allowlist of `data-*` attributes to copy from clicked elements into click and rage-click spans as `element.dataset.*` attributes. Use it for stable, bounded categories such as `data-component-type` when the default element path and text are not enough to identify the control.
+        - **Captured metadata:** `dataAttributesToCapture` is an allowlist of `data-*` attributes to copy from clicked elements into click and rage-click spans as `element.dataset.*` attributes. Use it for stable, bounded categories when the default element path and text are not enough to identify the control.
         - **Privacy:** Avoid sensitive or high-cardinality data-attribute values.
 
         ```js
@@ -82,7 +82,7 @@ SplunkRum.init({
             - `spaMetrics.urlOverrides[].match`
         - **JSON configuration:** Use the string form when providing serialized JSON, which does not support native `RegExp` values.
 
-        JavaScript configuration:
+        JavaScript configuration accepts both forms. This example uses a native `RegExp` for the top-level setting and the `regex/<pattern>/<flags>` string form in the URL override:
 
         ```typescript
         SplunkRum.init({
@@ -98,7 +98,7 @@ SplunkRum.init({
         })
         ```
 
-        Equivalent serialized JSON configuration:
+        Equivalent serialized JSON configuration, where the string form is required:
 
         ```json
         {
@@ -124,9 +124,12 @@ SplunkRum.init({
         - When another navigation starts or the browser emits `pagehide`, the current calculation finishes at the interruption time instead of leaving its route-change span unfinished. Route-change span duration continues to use PCT when `spaMetrics` is enabled, which remains the default.
     - **Correct post-load resource association for relative URLs** [#1872](https://github.com/signalfx/splunk-otel-js-web/pull/1872)
         - When an image or script uses a relative URL such as `assets/app.js`, the agent now resolves it against `document.baseURI`. This produces the same absolute URL reported by the browser's Resource Timing entry, including the current document path or a `<base>` element. Matching the two records allows the resource span to inherit the trace context that was active when the element was added instead of being reported as an unrelated root span.
-    - **Oversized W3C baggage is safely bounded** [#1864](https://github.com/signalfx/splunk-otel-js-web/pull/1864). Baggage extraction and injection are now limited to 180 entries, 4096 characters per entry, and 8192 characters in total. Entries exceeding these limits are ignored, preventing an oversized baggage header from causing unbounded resource allocation and remediating [CVE-2026-54285](https://nvd.nist.gov/vuln/detail/CVE-2026-54285). No customer configuration or unsafe OpenTelemetry 2.x override is required.
-    - **Route-change URLs remain associated with the navigation that captured them** [#1845](https://github.com/signalfx/splunk-otel-js-web/pull/1845). When several hash changes occur before their callbacks execute, each route-change span now uses the URL captured for its own navigation instead of a later value from `location.href`.
-    - **Full build identity is available for locked and commit-based CDN builds** [#1865](https://github.com/signalfx/splunk-otel-js-web/pull/1865), [#1868](https://github.com/signalfx/splunk-otel-js-web/pull/1868). `splunk.rumVersionFull` now includes the Git-derived build identity, allowing a span to identify the exact CDN artifact under test instead of reporting only the package version.
+    - **Oversized W3C baggage is safely bounded** [#1864](https://github.com/signalfx/splunk-otel-js-web/pull/1864)
+        - Baggage extraction and injection are now limited to 180 entries, 4096 characters per entry, and 8192 characters in total. Entries exceeding these limits are ignored, preventing an oversized baggage header from causing unbounded resource allocation and remediating [CVE-2026-54285](https://nvd.nist.gov/vuln/detail/CVE-2026-54285). No customer configuration or unsafe OpenTelemetry 2.x override is required.
+    - **Route-change URLs remain associated with the navigation that captured them** [#1845](https://github.com/signalfx/splunk-otel-js-web/pull/1845)
+        - When several hash changes occur before their callbacks execute, each route-change span now uses the URL captured for its own navigation instead of a later value from `location.href`.
+    - **Full build identity is available for locked and commit-based CDN builds** [#1865](https://github.com/signalfx/splunk-otel-js-web/pull/1865), [#1868](https://github.com/signalfx/splunk-otel-js-web/pull/1868)
+        - `splunk.rumVersionFull` now includes the Git-derived build identity, allowing a span to identify the exact CDN artifact under test instead of reporting only the package version.
 
 ### Experimental features
 
