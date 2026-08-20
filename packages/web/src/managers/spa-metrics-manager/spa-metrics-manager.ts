@@ -34,6 +34,7 @@ import {
 	BROWSER_NAVIGATION_PAGE_COMPLETION_SOURCE_ATTRIBUTE,
 	BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE,
 	BROWSER_NAVIGATION_QUIET_TIMER_RESET_COUNT_ATTRIBUTE,
+	BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION,
 	BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
 	PAGE_LOAD_METRICS_STATUS_COMPLETED,
 	PAGE_LOAD_METRICS_STATUS_TIMEOUT,
@@ -293,6 +294,10 @@ export class SpaMetricsManager {
 		}
 	}
 
+	registerManualPageLoad(): ManualPageLoadHandle | undefined {
+		return this.quietPeriodAwaiter?.registerManualPageLoad()
+	}
+
 	setCurrentNavigationSpan(span: Span, startTime: number, operation: string): void {
 		this.navigationHistory.push({
 			operation,
@@ -319,15 +324,18 @@ export class SpaMetricsManager {
 			quietTimerResetCount,
 			status,
 		}: PageLoadMetricsResult,
+		operation?: string,
 	): void {
-		if (!this.emitNavigationAttributes) {
-			return
+		if (this.emitNavigationAttributes || operation === BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION) {
+			span.setAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE, pct)
+			span.setAttribute(BROWSER_NAVIGATION_STATUS_ATTRIBUTE, status)
+			if (status === PAGE_LOAD_METRICS_STATUS_COMPLETED && completionSource) {
+				span.setAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_SOURCE_ATTRIBUTE, completionSource)
+			}
 		}
 
-		span.setAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE, pct)
-		span.setAttribute(BROWSER_NAVIGATION_STATUS_ATTRIBUTE, status)
-		if (status === PAGE_LOAD_METRICS_STATUS_COMPLETED && completionSource) {
-			span.setAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_SOURCE_ATTRIBUTE, completionSource)
+		if (!this.emitNavigationAttributes) {
+			return
 		}
 
 		if (loadingResourcesCount > 0) {
@@ -372,10 +380,6 @@ export class SpaMetricsManager {
 		}
 
 		diag.debug('SpaMetricsManager: Started monitoring.')
-	}
-
-	startManualPageLoad(): ManualPageLoadHandle | undefined {
-		return this.quietPeriodAwaiter?.startManualPageLoad()
 	}
 
 	stop(): void {
@@ -467,7 +471,7 @@ export class SpaMetricsManager {
 			(result) => {
 				try {
 					if (span) {
-						this.setPageLoadMetricAttributes(span, result)
+						this.setPageLoadMetricAttributes(span, result, operation)
 					}
 
 					return result

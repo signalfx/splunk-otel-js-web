@@ -549,6 +549,29 @@ describe('SpaMetricsManager', () => {
 		expect(attributes[BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE]).toBeUndefined()
 	})
 
+	it('sets core completion attributes on route changes when experimental attributes are disabled', async () => {
+		const manager = new SpaMetricsManager({ emitNavigationAttributes: false, monitors: [], quietTime: 1 })
+		const { attributes, span } = createSpanMock()
+		manager.start()
+
+		try {
+			const result = await manager.waitForPageLoad({
+				operation: BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION,
+				span,
+				startTime: performance.now(),
+			})
+
+			expect(attributes[BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE]).toBe(result.pct)
+			expect(attributes[BROWSER_NAVIGATION_STATUS_ATTRIBUTE]).toBe(result.status)
+			expect(attributes[BROWSER_NAVIGATION_PAGE_COMPLETION_SOURCE_ATTRIBUTE]).toBe('automatic')
+			expect(attributes[BROWSER_NAVIGATION_DETECTED_RESOURCE_COUNT_ATTRIBUTE]).toBeUndefined()
+			expect(attributes[BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE]).toBeUndefined()
+			expect(attributes[BROWSER_NAVIGATION_QUIET_TIMER_RESET_COUNT_ATTRIBUTE]).toBeUndefined()
+		} finally {
+			manager.stop()
+		}
+	})
+
 	it('does not set loading resource attributes when no resources are loading', () => {
 		const manager = new SpaMetricsManager()
 		const { attributes, span } = createSpanMock()
@@ -604,8 +627,8 @@ describe('SpaMetricsManager', () => {
 
 		try {
 			const promise = manager.waitForPageLoad({ startTime: 1000 })
-			const firstHandle = manager.startManualPageLoad()
-			const secondHandle = manager.startManualPageLoad()
+			const firstHandle = manager.registerManualPageLoad()
+			const secondHandle = manager.registerManualPageLoad()
 			now.mockReturnValue(1020)
 			expect(firstHandle?.markComplete()).toBe(true)
 			now.mockReturnValue(1040)
@@ -616,7 +639,7 @@ describe('SpaMetricsManager', () => {
 
 			expect(result.completionSource).toBe('manual')
 			expect(result.pct).toBe(40)
-			expect(manager.startManualPageLoad()).toBeUndefined()
+			expect(manager.registerManualPageLoad()).toBeUndefined()
 		} finally {
 			manager.stop()
 			now.mockRestore()
@@ -635,7 +658,7 @@ describe('SpaMetricsManager', () => {
 
 		try {
 			const promise = manager.waitForPageLoad({ startTime: 1000 })
-			const handle = manager.startManualPageLoad()
+			const handle = manager.registerManualPageLoad()
 			await vi.advanceTimersByTimeAsync(50)
 
 			const result = await promise
@@ -665,8 +688,8 @@ describe('SpaMetricsManager', () => {
 				span: navigationSpan,
 				startTime: 1000,
 			})
-			const firstHandle = manager.startManualPageLoad()
-			const pendingHandle = manager.startManualPageLoad()
+			const firstHandle = manager.registerManualPageLoad()
+			const pendingHandle = manager.registerManualPageLoad()
 			setBrowserNavigationPageAttributes(beforeSpan, manager, 1010, { type: 'document' })
 			now.mockReturnValue(1020)
 			firstHandle?.markComplete()
@@ -675,7 +698,7 @@ describe('SpaMetricsManager', () => {
 			pendingHandle?.markComplete()
 			setBrowserNavigationPageAttributes(afterSpan, manager, 1050, { type: 'document' })
 
-			const lateHandle = manager.startManualPageLoad()
+			const lateHandle = manager.registerManualPageLoad()
 			setBrowserNavigationPageAttributes(reopenedSpan, manager, 1050, { type: 'document' })
 			now.mockReturnValue(1060)
 			lateHandle?.markComplete()
@@ -696,7 +719,7 @@ describe('SpaMetricsManager', () => {
 	it('invalidates manual handles when a new navigation starts', async () => {
 		const manager = new SpaMetricsManager({ monitors: [], quietTime: 100 })
 		const firstPromise = manager.waitForPageLoad({ startTime: performance.now() })
-		const firstHandle = manager.startManualPageLoad()
+		const firstHandle = manager.registerManualPageLoad()
 
 		const secondPromise = manager.waitForPageLoad({ startTime: performance.now() })
 

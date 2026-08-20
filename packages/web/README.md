@@ -182,7 +182,7 @@ Choose a versioning strategy based on your needs:
 | `instrumentations.interactions`       | `boolean\|Config`                                     | ❌       | `true`                                                                                             | User interaction tracking                                                                                                                                                                                                                                                                                                                                               |
 | `instrumentations.loaf`               | `boolean\|Config`                                     | ❌       | `false`                                                                                            | Long Animation Frames tracking in supported Chromium browsers. Requires `experimental: true`; when enabled and supported, this suppresses longtask spans for the page session.                                                                                                                                                                                          |
 | `instrumentations.longtask`           | `boolean\|Config`                                     | ❌       | `true`                                                                                             | Deprecated. Long task detection (>50ms). Prefer `instrumentations.loaf` for Long Animation Frames; keep enabled for fallback coverage where LoAF is unsupported.                                                                                                                                                                                                        |
-| `instrumentations.postload`           | `boolean\|Config`                                     | ❌       | `true`                                                                                             | Post-load resource timing                                                                                                                                                                                                                                                                                                                                               |
+| `instrumentations.postload`           | `boolean\|Config`                                     | ❌       | `true`                                                                                             | Post-load resource timing. Image and script resources are captured by default; `experimental: true` also captures audio, CSS, fonts, iframes, links, other resources, and video.                                                                                                                                                                                        |
 | `instrumentations.socketio`           | `boolean\|Config`                                     | ❌       | `false`                                                                                            | Socket.IO client monitoring                                                                                                                                                                                                                                                                                                                                             |
 | `instrumentations.visibility`         | `boolean\|Config`                                     | ❌       | `false`                                                                                            | Page visibility changes                                                                                                                                                                                                                                                                                                                                                 |
 | `instrumentations.webvitals`          | `boolean\|Config`                                     | ❌       | `true`                                                                                             | Web Vitals collection                                                                                                                                                                                                                                                                                                                                                   |
@@ -193,7 +193,7 @@ Choose a versioning strategy based on your needs:
 
 The `spaMetrics` option controls page completion time (PCT) calculation for document loads and SPA route changes. When `spaMetrics` is `true`, the default monitor types are enabled with the default timing settings. Use `spaMetrics.monitors` globally, or inside `spaMetrics.urlOverrides`, to control which resource sources can keep PCT waiting for a specific page.
 
-PCT continues to determine route-change span duration with the default configuration. Set `experimental: true` to also emit PCT and page-correlation attributes on spans and the PCT-based `pageLoad` span for the initial document load.
+PCT continues to determine route-change span duration with the default configuration, and route-change spans include `browser.navigation.page_completion_time` and `browser.navigation.status`. Set `experimental: true` to also emit PCT diagnostic and page-correlation attributes on related spans, PCT attributes on the initial document-load span, and the PCT-based `pageLoad` span.
 
 By default, `spaMetrics.clearLoadingResourcesOnNewPage` is `true`, so pending resources discovered on a previous page are ignored when PCT calculation starts for a new page. Set it to `false` to keep carrying pending resources into the next page calculation unless they are filtered by the active `monitors` or `ignoreUrls` config.
 
@@ -210,15 +210,15 @@ Array fields in URL overrides replace the inherited arrays for matched URLs. For
 
 #### Manual page completion
 
-Use `SplunkRum.startManualPageLoad()` when application state, rather than monitored network or DOM activity, is the authoritative signal that the current page is ready. No additional `init()` configuration is required.
+Use `SplunkRum.registerManualPageLoad()` when application state, rather than automatically monitored fetch/XHR, media, resource timing, or configured loading-element activity, is the authoritative signal that the current page is ready. An ordinary DOM render is not itself an automatic readiness signal. No completion mode or URL list is required.
 
 ```typescript
-const pageLoad = SplunkRum.startManualPageLoad()
+const pageLoadRegistration = SplunkRum.registerManualPageLoad()
 
 try {
 	await renderApplicationContent()
 } finally {
-	pageLoad?.markComplete()
+	pageLoadRegistration?.markComplete()
 }
 ```
 
@@ -226,11 +226,11 @@ The first registration switches the current document load or SPA route change fr
 
 After the last participant completes, the agent keeps registration open for `spaMetrics.quietTime` to allow another component to join. This registration window delays span export but does not increase PCT: the reported PCT uses the timestamp of the latest accepted `markComplete()` call. Network and resource activity does not reset the manual registration window.
 
-The first registration also starts a manual-only safety timeout measured from the navigation start. It defaults to 180000 ms and can be configured globally or per URL with `spaMetrics.maxPageLoadTimeoutForManualApi`. Automatic page completion is not affected by this timeout.
+The first registration also starts a manual-only safety timeout measured from the navigation start. It defaults to 180000 ms and can optionally be configured globally or per URL with `spaMetrics.maxPageLoadTimeoutForManualApi`. Automatic page completion is not affected by this timeout.
 
-`markComplete()` returns `true` only the first time that handle is accepted. It returns `false` for duplicate calls and for handles made stale by a new navigation, page interruption, timeout, or agent shutdown. `startManualPageLoad()` returns `undefined` when SPA metrics are disabled or there is no active page load. Applications with components that can mount late should keep a root or app-shell handle open until registration is complete.
+`markComplete()` returns `true` only the first time that handle is accepted. It returns `false` for duplicate calls and for handles made stale by a new navigation, page interruption, timeout, or agent shutdown. `registerManualPageLoad()` returns `undefined` when SPA metrics are disabled or there is no active page load. A component that registers after the final registration window has expired cannot reopen the completed navigation, so components should register as soon as their page-load work begins.
 
-When `experimental: true` enables page-completion attributes, completed navigation spans include `browser.navigation.page_completion_source` with `manual` or `automatic`. A navigation interrupted while manual participants remain pending is reported as interrupted; if all participants have completed, navigation or page hide finalizes it at the latest manual completion timestamp.
+Route-change spans include `browser.navigation.page_completion_time`, `browser.navigation.status`, and, when completed, `browser.navigation.page_completion_source` with `manual` or `automatic`. Setting `experimental: true` also enables these completion attributes on document-load and page-load spans, along with the remaining experimental navigation diagnostics. A navigation interrupted while manual participants remain pending is reported as interrupted; if all participants have completed, navigation or page hide finalizes it at the latest manual completion timestamp.
 
 ### Blocking Element Spans
 
@@ -509,7 +509,7 @@ SplunkRum.init({
 | `init(config)`               | `SplunkRumConfig` | `void`                              | Initialize the RUM SDK                                          |
 | `setGlobalAttributes(attrs)` | `Attributes`      | `void`                              | Add global span attributes                                      |
 | `getSessionId()`             | -                 | `string`                            | Get current session ID                                          |
-| `startManualPageLoad()`      | -                 | `ManualPageLoadHandle \| undefined` | Register manual completion work for the current page navigation |
+| `registerManualPageLoad()`   | -                 | `ManualPageLoadHandle \| undefined` | Register manual completion work for the current page navigation |
 
 #### Properties
 

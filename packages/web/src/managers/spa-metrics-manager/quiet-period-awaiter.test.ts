@@ -48,6 +48,8 @@ function createQuietPeriodAwaiter(config: QuietPeriodAwaiterTestConfig = {}): Qu
 		getLongestLoadedResource: getNoLongestLoadedResource,
 		maxPageLoadTimeoutForManualApi: config.maxPageLoadTimeoutForManualApi,
 		maxPageLoadWaitTime: config.maxPageLoadWaitTime,
+		onManualCompletionCandidate: config.onManualCompletionCandidate,
+		onManualRegistrationReopened: config.onManualRegistrationReopened,
 		quietTime: config.quietTime,
 		startTime: config.startTime,
 	})
@@ -201,7 +203,7 @@ describe('QuietPeriodAwaiter', () => {
 		try {
 			const awaiter = createQuietPeriodAwaiter({ quietTime: 100, startTime: 1000 })
 			awaiter.startQuietTimer({ resourceLoadedTimestamp: 1000 })
-			const handle = awaiter.startManualPageLoad()
+			const handle = awaiter.registerManualPageLoad()
 			let resolved = false
 			void awaiter.promise.then(() => {
 				resolved = true
@@ -229,8 +231,8 @@ describe('QuietPeriodAwaiter', () => {
 
 		try {
 			const awaiter = createQuietPeriodAwaiter({ quietTime: 100, startTime: 1000 })
-			const firstHandle = awaiter.startManualPageLoad()
-			const secondHandle = awaiter.startManualPageLoad()
+			const firstHandle = awaiter.registerManualPageLoad()
+			const secondHandle = awaiter.registerManualPageLoad()
 			let resolved = false
 			void awaiter.promise.then(() => {
 				resolved = true
@@ -260,12 +262,12 @@ describe('QuietPeriodAwaiter', () => {
 
 		try {
 			const awaiter = createQuietPeriodAwaiter({ quietTime: 100, startTime: 1000 })
-			const firstHandle = awaiter.startManualPageLoad()
+			const firstHandle = awaiter.registerManualPageLoad()
 			now.mockReturnValue(1010)
 			expect(firstHandle?.markComplete()).toBe(true)
 
 			await vi.advanceTimersByTimeAsync(50)
-			const secondHandle = awaiter.startManualPageLoad()
+			const secondHandle = awaiter.registerManualPageLoad()
 			await vi.advanceTimersByTimeAsync(100)
 			let resolved = false
 			void awaiter.promise.then(() => {
@@ -289,7 +291,7 @@ describe('QuietPeriodAwaiter', () => {
 
 		try {
 			const awaiter = createQuietPeriodAwaiter({ quietTime: 100, startTime: 1000 })
-			const handle = awaiter.startManualPageLoad()
+			const handle = awaiter.registerManualPageLoad()
 			now.mockReturnValue(1020)
 			expect(handle?.markComplete()).toBe(true)
 
@@ -321,7 +323,7 @@ describe('QuietPeriodAwaiter', () => {
 				quietTime: 100,
 				startTime: 1000,
 			})
-			const handle = awaiter.startManualPageLoad()
+			const handle = awaiter.registerManualPageLoad()
 			now.mockReturnValue(1020)
 			handle?.markComplete()
 			loadingResourcesCount = 0
@@ -339,7 +341,7 @@ describe('QuietPeriodAwaiter', () => {
 	it('completes at the last manual timestamp when interrupted during registration quiet time', async () => {
 		const now = vi.spyOn(performance, 'now').mockReturnValue(1000)
 		const awaiter = createQuietPeriodAwaiter({ quietTime: 100, startTime: 1000 })
-		const handle = awaiter.startManualPageLoad()
+		const handle = awaiter.registerManualPageLoad()
 		now.mockReturnValue(1020)
 		handle?.markComplete()
 
@@ -353,7 +355,7 @@ describe('QuietPeriodAwaiter', () => {
 
 	it('interrupts when a manual participant remains pending and rejects its stale handle', async () => {
 		const awaiter = createQuietPeriodAwaiter({ quietTime: 100, startTime: performance.now() })
-		const handle = awaiter.startManualPageLoad()
+		const handle = awaiter.registerManualPageLoad()
 
 		awaiter.interrupt()
 
@@ -370,7 +372,7 @@ describe('QuietPeriodAwaiter', () => {
 			quietTime: 100,
 			startTime: 1000,
 		})
-		const handle = awaiter.startManualPageLoad()
+		const handle = awaiter.registerManualPageLoad()
 		await vi.advanceTimersByTimeAsync(100)
 
 		const result = await awaiter.promise
@@ -378,6 +380,46 @@ describe('QuietPeriodAwaiter', () => {
 		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_TIMEOUT)
 		expect(result.completionSource).toBeUndefined()
 		expect(handle?.markComplete()).toBe(false)
+	})
+
+	it('enforces the manual deadline when the timeout callback is delayed', async () => {
+		vi.useFakeTimers()
+		const now = vi.spyOn(performance, 'now').mockReturnValue(1000)
+		const awaiter = createQuietPeriodAwaiter({
+			maxPageLoadTimeoutForManualApi: 100,
+			quietTime: 100,
+			startTime: 1000,
+		})
+		const handle = awaiter.registerManualPageLoad()
+
+		now.mockReturnValue(1101)
+		expect(handle?.markComplete()).toBe(false)
+
+		const result = await awaiter.promise
+		expect(result.pct).toBe(100)
+		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_TIMEOUT)
+		expect(result.completionSource).toBeUndefined()
+	})
+
+	it('does not reopen manual completion after its deadline', async () => {
+		vi.useFakeTimers()
+		const now = vi.spyOn(performance, 'now').mockReturnValue(1000)
+		const onManualRegistrationReopened = vi.fn()
+		const awaiter = createQuietPeriodAwaiter({
+			maxPageLoadTimeoutForManualApi: 100,
+			onManualRegistrationReopened,
+			quietTime: 100,
+			startTime: 1000,
+		})
+		const handle = awaiter.registerManualPageLoad()
+
+		now.mockReturnValue(1050)
+		expect(handle?.markComplete()).toBe(true)
+		now.mockReturnValue(1101)
+		expect(awaiter.registerManualPageLoad()).toBeUndefined()
+		expect(onManualRegistrationReopened).not.toHaveBeenCalled()
+
+		expect((await awaiter.promise).status).toBe(PAGE_LOAD_METRICS_STATUS_TIMEOUT)
 	})
 
 	it('measures the manual API timeout from navigation start', async () => {
@@ -388,7 +430,7 @@ describe('QuietPeriodAwaiter', () => {
 			quietTime: 100,
 			startTime: 1000,
 		})
-		awaiter.startManualPageLoad()
+		awaiter.registerManualPageLoad()
 
 		await vi.advanceTimersByTimeAsync(39)
 		let resolved = false
@@ -412,7 +454,7 @@ describe('QuietPeriodAwaiter', () => {
 			quietTime: 100,
 			startTime: 1000,
 		})
-		const handle = awaiter.startManualPageLoad()
+		const handle = awaiter.registerManualPageLoad()
 		now.mockReturnValue(1020)
 		handle?.markComplete()
 		await vi.advanceTimersByTimeAsync(100)

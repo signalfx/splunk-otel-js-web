@@ -154,8 +154,8 @@
 
 		document.querySelector('#btnNavigateWithManualCompletion').addEventListener('click', function () {
 			navigateThen('manual-completion', function () {
-				const firstHandle = SplunkRum.startManualPageLoad();
-				const secondHandle = SplunkRum.startManualPageLoad();
+				const firstHandle = SplunkRum.registerManualPageLoad();
+				const secondHandle = SplunkRum.registerManualPageLoad();
 				setTimeout(function () {
 					window.manualPageLoadResults.push(firstHandle.markComplete());
 					window.manualPageLoadResults.push(firstHandle.markComplete());

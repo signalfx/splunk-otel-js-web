@@ -64,7 +64,7 @@ describe('Transitive API', () => {
 
 	describe('Manual page completion', () => {
 		it('returns undefined when there is no active navigation', () => {
-			expect(SplunkOtelWeb.startManualPageLoad()).toBeUndefined()
+			expect(SplunkOtelWeb.registerManualPageLoad()).toBeUndefined()
 		})
 	})
 

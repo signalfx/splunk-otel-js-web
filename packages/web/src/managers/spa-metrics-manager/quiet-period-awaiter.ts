@@ -39,6 +39,7 @@ export type PageLoadMetricsStatus =
 export type PageLoadCompletionSource = 'automatic' | 'manual'
 
 export interface ManualPageLoadHandle {
+	/** Marks this participant complete. Returns true only when this call is accepted. */
 	markComplete(): boolean
 }
 
@@ -211,6 +212,60 @@ export class QuietPeriodAwaiter {
 		})
 	}
 
+	registerManualPageLoad(): ManualPageLoadHandle | undefined {
+		if (this.isResolved) {
+			return undefined
+		}
+
+		if (this.hasManualPageLoadTimedOut()) {
+			this.resolveManualPageLoadTimeout()
+			return undefined
+		}
+
+		const startsManualMode = !this.manualMode
+		if (startsManualMode) {
+			this.manualMode = true
+			this.clearQuietTimer()
+		} else if (this.manualParticipants.size === 0) {
+			// Reopen the registration window when another component joins before it expires.
+			this.clearQuietTimer()
+			this.onManualRegistrationReopened()
+		}
+
+		if (startsManualMode) {
+			this.startManualPageLoadTimeout()
+		}
+
+		this.manualParticipantId += 1
+		const participantId = this.manualParticipantId
+		this.manualParticipants.add(participantId)
+		let completed = false
+
+		return {
+			markComplete: () => {
+				if (completed || this.isResolved || !this.manualParticipants.has(participantId)) {
+					return false
+				}
+
+				if (this.hasManualPageLoadTimedOut()) {
+					this.resolveManualPageLoadTimeout()
+					return false
+				}
+
+				this.manualParticipants.delete(participantId)
+				completed = true
+				this.lastManualCompletionTimestamp = performance.now()
+				this.manualCompletionResourceDetails = this.getCurrentResourceDetails()
+				if (this.manualParticipants.size === 0) {
+					this.onManualCompletionCandidate(this.lastManualCompletionTimestamp)
+					this.startManualRegistrationTimer()
+				}
+
+				return true
+			},
+		}
+	}
+
 	removeQuietTimer(): void {
 		if (this.manualMode) {
 			return
@@ -223,45 +278,6 @@ export class QuietPeriodAwaiter {
 		clearTimeout(this.timeoutId)
 		this.timeoutId = undefined
 		this.quietTimerResetCount += 1
-	}
-
-	startManualPageLoad(): ManualPageLoadHandle | undefined {
-		if (this.isResolved) {
-			return undefined
-		}
-
-		if (!this.manualMode) {
-			this.manualMode = true
-			this.clearQuietTimer()
-			this.startManualPageLoadTimeout()
-		} else if (this.manualParticipants.size === 0) {
-			// Reopen the registration window when another component joins before it expires.
-			this.clearQuietTimer()
-			this.onManualRegistrationReopened()
-		}
-
-		this.manualParticipantId += 1
-		const participantId = this.manualParticipantId
-		this.manualParticipants.add(participantId)
-		let completed = false
-
-		return {
-			markComplete: () => {
-				if (completed || this.isResolved || !this.manualParticipants.delete(participantId)) {
-					return false
-				}
-
-				completed = true
-				this.lastManualCompletionTimestamp = performance.now()
-				this.manualCompletionResourceDetails = this.getCurrentResourceDetails()
-				if (this.manualParticipants.size === 0) {
-					this.onManualCompletionCandidate(this.lastManualCompletionTimestamp)
-					this.startManualRegistrationTimer()
-				}
-
-				return true
-			},
-		}
 	}
 
 	startQuietTimer({ resourceLoadedTimestamp }: { resourceLoadedTimestamp: number }): void {
@@ -302,6 +318,10 @@ export class QuietPeriodAwaiter {
 		}
 	}
 
+	private hasManualPageLoadTimedOut(): boolean {
+		return Math.max(performance.now() - this.startTime, 0) >= Math.max(this.maxPageLoadTimeoutForManualApi, 0)
+	}
+
 	private readonly interruptListener = (): void => {
 		this.interrupt()
 	}
@@ -319,6 +339,15 @@ export class QuietPeriodAwaiter {
 			completionSource: 'manual',
 			pct,
 			status: PAGE_LOAD_METRICS_STATUS_COMPLETED,
+		})
+	}
+
+	private resolveManualPageLoadTimeout(): void {
+		const pct = Math.max(this.maxPageLoadTimeoutForManualApi, 0)
+		diag.debug('QuietPeriodAwaiter: Manual page load timeout expired', { pct })
+		this.resolveOnce({
+			pct,
+			status: PAGE_LOAD_METRICS_STATUS_TIMEOUT,
 		})
 	}
 
@@ -346,11 +375,7 @@ export class QuietPeriodAwaiter {
 					return
 				}
 
-				diag.debug('QuietPeriodAwaiter: Manual page load timeout expired', { pct: timeout })
-				this.resolveOnce({
-					pct: timeout,
-					status: PAGE_LOAD_METRICS_STATUS_TIMEOUT,
-				})
+				this.resolveManualPageLoadTimeout()
 			},
 			Math.max(timeout - elapsedTime, 0),
 		)

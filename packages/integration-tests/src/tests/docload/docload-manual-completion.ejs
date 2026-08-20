@@ -6,7 +6,7 @@
 
 	<%- renderAgent({experimental: true, spaMetrics: {maxPageLoadTimeoutForManualApi: 1000, quietTime: 100}}) %>
 	<script>
-		const manualDocumentLoad = SplunkRum.startManualPageLoad();
+		const manualDocumentLoad = SplunkRum.registerManualPageLoad();
 		window.manualDocumentLoadResult = undefined;
 		setTimeout(function () {
 			window.manualDocumentLoadResult = manualDocumentLoad.markComplete();

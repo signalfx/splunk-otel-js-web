@@ -272,6 +272,12 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 
 	provider?: SplunkWebTracerProvider
 
+	/**
+	 * Registers work that must finish before the current page load is complete.
+	 * The returned handle is bound to the current document load or route change.
+	 */
+	registerManualPageLoad: () => ManualPageLoadHandle | undefined
+
 	reportError: (error: string | Event | Error | ErrorEvent, context?: SpanContext) => Promise<void>
 
 	resource?: Resource
@@ -281,12 +287,6 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 	setGlobalAttributes: (attributes: Attributes) => void
 
 	setUserTrackingMode: (mode: UserTrackingMode) => void
-
-	/**
-	 * Registers work that must finish before the current page load is complete.
-	 * The returned handle is bound to the current document load or route change.
-	 */
-	startManualPageLoad: () => ManualPageLoadHandle | undefined
 
 	userManager?: UserManager
 
@@ -821,6 +821,14 @@ export const SplunkRum: SplunkOtelWebType = {
 
 	ParentBasedSampler,
 
+	registerManualPageLoad() {
+		if (!inited) {
+			return
+		}
+
+		return _spaMetricsManager?.registerManualPageLoad()
+	},
+
 	removeEventListener(name, callback): void {
 		try {
 			eventTarget?.removeEventListener(name, callback)
@@ -903,14 +911,6 @@ export const SplunkRum: SplunkOtelWebType = {
 		}
 
 		this.userManager.userTrackingMode = mode
-	},
-
-	startManualPageLoad() {
-		if (!inited) {
-			return
-		}
-
-		return _spaMetricsManager?.startManualPageLoad()
 	},
 
 	get userTrackingMode() {
