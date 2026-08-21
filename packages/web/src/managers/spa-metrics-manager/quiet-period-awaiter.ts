@@ -207,6 +207,7 @@ export class QuietPeriodAwaiter {
 		const pct = Math.max(endTimestamp - this.startTime, 0)
 		diag.debug('QuietPeriodAwaiter: Interrupted', { pct })
 		this.resolveOnce({
+			completionSource: this.manualMode ? 'manual' : 'automatic',
 			pct,
 			status: PAGE_LOAD_METRICS_STATUS_INTERRUPTED,
 		})
@@ -346,6 +347,7 @@ export class QuietPeriodAwaiter {
 		const pct = Math.max(this.maxPageLoadTimeoutForManualApi, 0)
 		diag.debug('QuietPeriodAwaiter: Manual page load timeout expired', { pct })
 		this.resolveOnce({
+			completionSource: 'manual',
 			pct,
 			status: PAGE_LOAD_METRICS_STATUS_TIMEOUT,
 		})

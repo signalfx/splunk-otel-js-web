@@ -179,6 +179,7 @@ describe('QuietPeriodAwaiter', () => {
 		awaiter.interrupt()
 		const result = await awaiter.promise
 
+		expect(result.completionSource).toBe('automatic')
 		expect(result.pct).toBeGreaterThanOrEqual(0)
 		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_INTERRUPTED)
 		expectNoLoadingResources(result)
@@ -192,6 +193,7 @@ describe('QuietPeriodAwaiter', () => {
 		window.dispatchEvent(event)
 
 		const result = await awaiter.promise
+		expect(result.completionSource).toBe('automatic')
 		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_INTERRUPTED)
 		expectNoLoadingResources(result)
 	})
@@ -359,7 +361,9 @@ describe('QuietPeriodAwaiter', () => {
 
 		awaiter.interrupt()
 
-		expect((await awaiter.promise).status).toBe(PAGE_LOAD_METRICS_STATUS_INTERRUPTED)
+		const result = await awaiter.promise
+		expect(result.completionSource).toBe('manual')
+		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_INTERRUPTED)
 		expect(handle?.markComplete()).toBe(false)
 	})
 
@@ -376,9 +380,9 @@ describe('QuietPeriodAwaiter', () => {
 		await vi.advanceTimersByTimeAsync(100)
 
 		const result = await awaiter.promise
+		expect(result.completionSource).toBe('manual')
 		expect(result.pct).toBe(100)
 		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_TIMEOUT)
-		expect(result.completionSource).toBeUndefined()
 		expect(handle?.markComplete()).toBe(false)
 	})
 
@@ -396,9 +400,9 @@ describe('QuietPeriodAwaiter', () => {
 		expect(handle?.markComplete()).toBe(false)
 
 		const result = await awaiter.promise
+		expect(result.completionSource).toBe('manual')
 		expect(result.pct).toBe(100)
 		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_TIMEOUT)
-		expect(result.completionSource).toBeUndefined()
 	})
 
 	it('does not reopen manual completion after its deadline', async () => {

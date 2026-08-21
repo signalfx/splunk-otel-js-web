@@ -497,10 +497,11 @@ describe('SpaMetricsManager', () => {
 		expect(attributes[BROWSER_NAVIGATION_QUIET_TIMER_RESET_COUNT_ATTRIBUTE]).toBe(3)
 	})
 
-	it('sets the completion source only for completed page loads', () => {
+	it('sets the completion source for completed, interrupted, and timed-out page loads', () => {
 		const manager = new SpaMetricsManager()
 		const { attributes: completedAttributes, span: completedSpan } = createSpanMock('completed')
 		const { attributes: interruptedAttributes, span: interruptedSpan } = createSpanMock('interrupted')
+		const { attributes: timeoutAttributes, span: timeoutSpan } = createSpanMock('timeout')
 		const result = {
 			detectedResourcesCount: 0,
 			lastLoadedResources: [],
@@ -518,11 +519,18 @@ describe('SpaMetricsManager', () => {
 		})
 		manager.setPageLoadMetricAttributes(interruptedSpan, {
 			...result,
+			completionSource: 'automatic',
 			status: PAGE_LOAD_METRICS_STATUS_INTERRUPTED,
+		})
+		manager.setPageLoadMetricAttributes(timeoutSpan, {
+			...result,
+			completionSource: 'manual',
+			status: PAGE_LOAD_METRICS_STATUS_TIMEOUT,
 		})
 
 		expect(completedAttributes[BROWSER_NAVIGATION_PAGE_COMPLETION_SOURCE_ATTRIBUTE]).toBe('manual')
-		expect(interruptedAttributes[BROWSER_NAVIGATION_PAGE_COMPLETION_SOURCE_ATTRIBUTE]).toBeUndefined()
+		expect(interruptedAttributes[BROWSER_NAVIGATION_PAGE_COMPLETION_SOURCE_ATTRIBUTE]).toBe('automatic')
+		expect(timeoutAttributes[BROWSER_NAVIGATION_PAGE_COMPLETION_SOURCE_ATTRIBUTE]).toBe('manual')
 	})
 
 	it('does not set page load or navigation correlation attributes when their emission is disabled', () => {
@@ -662,6 +670,7 @@ describe('SpaMetricsManager', () => {
 			await vi.advanceTimersByTimeAsync(50)
 
 			const result = await promise
+			expect(result.completionSource).toBe('manual')
 			expect(result.pct).toBe(50)
 			expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_TIMEOUT)
 			expect(handle?.markComplete()).toBe(false)
@@ -723,10 +732,14 @@ describe('SpaMetricsManager', () => {
 
 		const secondPromise = manager.waitForPageLoad({ startTime: performance.now() })
 
-		expect((await firstPromise).status).toBe(PAGE_LOAD_METRICS_STATUS_INTERRUPTED)
+		const firstResult = await firstPromise
+		expect(firstResult.completionSource).toBe('manual')
+		expect(firstResult.status).toBe(PAGE_LOAD_METRICS_STATUS_INTERRUPTED)
 		expect(firstHandle?.markComplete()).toBe(false)
 		manager.stop()
-		expect((await secondPromise).status).toBe(PAGE_LOAD_METRICS_STATUS_INTERRUPTED)
+		const secondResult = await secondPromise
+		expect(secondResult.completionSource).toBe('automatic')
+		expect(secondResult.status).toBe(PAGE_LOAD_METRICS_STATUS_INTERRUPTED)
 	})
 
 	it('retains the current navigation span id after PCT completes', async () => {

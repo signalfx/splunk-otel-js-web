@@ -39,6 +39,8 @@
 	<button type="button" id="btnNavigateWithLoadingElement">Navigate with loading element</button>
 	<button type="button" id="btnNavigateWithOverrideLoadingElement">Navigate with override loading element</button>
 	<button type="button" id="btnNavigateWithManualCompletion">Navigate with manual completion</button>
+	<button type="button" id="btnNavigateWithManualInterruption">Interrupt manual completion</button>
+	<button type="button" id="btnNavigateWithManualTimeout">Time out manual completion</button>
 	<button type="button" id="btnFetchAfterPct">Fetch after PCT</button>
 
 	<div id="content"></div>
@@ -163,6 +165,21 @@
 				setTimeout(function () {
 					window.manualPageLoadResults.push(secondHandle.markComplete());
 				}, 100);
+			});
+		});
+
+		document.querySelector('#btnNavigateWithManualInterruption').addEventListener('click', function () {
+			navigateThen('manual-interruption-a', function () {
+				SplunkRum.registerManualPageLoad();
+				setTimeout(function () {
+					location.hash = 'manual-interruption-b';
+				}, 100);
+			});
+		});
+
+		document.querySelector('#btnNavigateWithManualTimeout').addEventListener('click', function () {
+			navigateThen('manual-timeout', function () {
+				SplunkRum.registerManualPageLoad();
 			});
 		});
 

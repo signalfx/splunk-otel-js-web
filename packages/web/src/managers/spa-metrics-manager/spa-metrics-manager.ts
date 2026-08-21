@@ -36,7 +36,6 @@ import {
 	BROWSER_NAVIGATION_QUIET_TIMER_RESET_COUNT_ATTRIBUTE,
 	BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION,
 	BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
-	PAGE_LOAD_METRICS_STATUS_COMPLETED,
 	PAGE_LOAD_METRICS_STATUS_TIMEOUT,
 } from './constants'
 import {
@@ -329,7 +328,7 @@ export class SpaMetricsManager {
 		if (this.emitNavigationAttributes || operation === BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION) {
 			span.setAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE, pct)
 			span.setAttribute(BROWSER_NAVIGATION_STATUS_ATTRIBUTE, status)
-			if (status === PAGE_LOAD_METRICS_STATUS_COMPLETED && completionSource) {
+			if (completionSource) {
 				span.setAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_SOURCE_ATTRIBUTE, completionSource)
 			}
 		}
