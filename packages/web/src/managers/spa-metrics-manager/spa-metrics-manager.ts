@@ -31,6 +31,7 @@ import {
 	BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE,
 	BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
 	BROWSER_NAVIGATION_LONGEST_LOADED_RESOURCE_ATTRIBUTE,
+	BROWSER_NAVIGATION_PAGE_COMPLETION_SOURCE_ATTRIBUTE,
 	BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE,
 	BROWSER_NAVIGATION_QUIET_TIMER_RESET_COUNT_ATTRIBUTE,
 	BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION,
@@ -47,6 +48,7 @@ import {
 } from './monitors'
 import {
 	type LoadedResourceDetails,
+	type ManualPageLoadHandle,
 	normalizeMaxPageLoadWaitTime,
 	type PageLoadMetricsResult,
 	QuietPeriodAwaiter,
@@ -56,6 +58,7 @@ const SPA_METRICS_MANAGER_CONFIG_DEFAULTS = {
 	blockingSelectors: [] as string[],
 	clearLoadingResourcesOnNewPage: true,
 	ignoreUrls: [] as (string | RegExp)[],
+	maxPageLoadTimeoutForManualApi: 180_000,
 	maxPageLoadWaitTime: 180_000,
 	maxResourcesToWatch: 100,
 	monitors: ['media', 'network', 'performance'] as SpaMetricsMonitor[],
@@ -75,6 +78,7 @@ type SpaMetricsManagerConfigValues = {
 	blockingSelectors?: string[]
 	clearLoadingResourcesOnNewPage?: boolean
 	ignoreUrls?: (string | RegExp)[]
+	maxPageLoadTimeoutForManualApi?: number
 	maxPageLoadWaitTime?: number
 	maxResourcesToWatch?: number
 	monitors?: SpaMetricsMonitor[]
@@ -168,9 +172,13 @@ export class SpaMetricsManager {
 
 	private loadingResources = new Map<string, LoadingResource>()
 
+	private manualCompletionCandidateTimestamp: number | undefined
+
 	private readonly monitors: ReturnType<typeof SpaMetricsManager.createMonitors>
 
 	private navigationHistory: NavigationHistoryEntry[] = []
+
+	private pageLoadMetricsPromise: Promise<PageLoadMetricsResult> | undefined
 
 	private pageLoadResourceTracker: PageLoadResourceTracker | undefined
 
@@ -233,6 +241,17 @@ export class SpaMetricsManager {
 		}
 	}
 
+	async finalizeCurrentNavigation(endTimestamp = performance.now()): Promise<void> {
+		const pageLoadMetricsPromise = this.pageLoadMetricsPromise
+		this.quietPeriodAwaiter?.interrupt(endTimestamp)
+
+		try {
+			await pageLoadMetricsPromise
+		} catch {
+			// Consumers of the page-load promise handle and report their own failures.
+		}
+	}
+
 	getConfigForUrl(url: string): ResolvedSpaMetricsManagerConfig {
 		return this.urlOverrides.find((override) => this.isUrlOverrideMatch(override.match, url))?.config ?? this.config
 	}
@@ -274,8 +293,17 @@ export class SpaMetricsManager {
 		}
 	}
 
+	registerManualPageLoad(): ManualPageLoadHandle | undefined {
+		return this.quietPeriodAwaiter?.registerManualPageLoad()
+	}
+
 	setCurrentNavigationSpan(span: Span, startTime: number, operation: string): void {
-		this.navigationHistory.push({ operation, spanId: span.spanContext().spanId, startTime })
+		this.navigationHistory.push({
+			operation,
+			pctEndTime: this.manualCompletionCandidateTimestamp,
+			spanId: span.spanContext().spanId,
+			startTime,
+		})
 		// Keep the lookup bounded for long-running single-page applications.
 		if (this.navigationHistory.length > MAX_NAVIGATION_HISTORY_ENTRIES) {
 			this.navigationHistory.shift()
@@ -285,6 +313,7 @@ export class SpaMetricsManager {
 	setPageLoadMetricAttributes(
 		span: Span,
 		{
+			completionSource,
 			detectedResourcesCount,
 			lastLoadedResources,
 			loadingResourcesCount,
@@ -299,6 +328,9 @@ export class SpaMetricsManager {
 		if (this.emitNavigationAttributes || operation === BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION) {
 			span.setAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE, pct)
 			span.setAttribute(BROWSER_NAVIGATION_STATUS_ATTRIBUTE, status)
+			if (completionSource) {
+				span.setAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_SOURCE_ATTRIBUTE, completionSource)
+			}
 		}
 
 		if (!this.emitNavigationAttributes) {
@@ -352,6 +384,8 @@ export class SpaMetricsManager {
 	stop(): void {
 		this.quietPeriodAwaiter?.interrupt()
 		this.quietPeriodAwaiter = undefined
+		this.manualCompletionCandidateTimestamp = undefined
+		this.pageLoadMetricsPromise = undefined
 		this.navigationHistory = []
 		this.resourceAdmissionDecisions.clear()
 
@@ -370,6 +404,7 @@ export class SpaMetricsManager {
 
 	waitForPageLoad({ operation, span, startTime }: WaitForPageLoadConfig): Promise<PageLoadMetricsResult> {
 		this.quietPeriodAwaiter?.interrupt()
+		this.manualCompletionCandidateTimestamp = undefined
 		if (span) {
 			this.setCurrentNavigationSpan(span, startTime, operation)
 		}
@@ -393,7 +428,9 @@ export class SpaMetricsManager {
 			getLoadingResourcesCount: () => this.loadingResourcesCount,
 			getLoadingResourceUrls: () => this.loadingResourceUrls,
 			getLongestLoadedResource: () => this.longestLoadedResource,
-			maxPageLoadWaitTime: activeConfig.maxPageLoadWaitTime,
+			maxPageLoadTimeoutForManualApi: activeConfig.maxPageLoadTimeoutForManualApi,
+			onManualCompletionCandidate: this.onManualCompletionCandidate,
+			onManualRegistrationReopened: this.onManualRegistrationReopened,
 			quietTime: activeConfig.quietTime,
 			startTime,
 		})
@@ -409,7 +446,14 @@ export class SpaMetricsManager {
 		// startTime === 0 means this is a documentLoad pct — ensure it's at least the document load time
 		if (startTime === 0) {
 			pageLoadMetricsPromise = pageLoadMetricsPromise.then((result) => {
-				// Timeout results must stay capped at maxPageLoadWaitTime, even if document load took longer.
+				// Manual completion is an explicit application timestamp and must not be
+				// moved to the browser load event. The documentLoad span keeps its native duration.
+				if (result.completionSource === 'manual') {
+					return result
+				}
+
+				// Manual API timeout results must stay capped at maxPageLoadTimeoutForManualApi,
+				// even if document load took longer.
 				if (result.status === PAGE_LOAD_METRICS_STATUS_TIMEOUT) {
 					return result
 				}
@@ -422,7 +466,7 @@ export class SpaMetricsManager {
 			})
 		}
 
-		return pageLoadMetricsPromise.then(
+		this.pageLoadMetricsPromise = pageLoadMetricsPromise.then(
 			(result) => {
 				try {
 					if (span) {
@@ -444,6 +488,8 @@ export class SpaMetricsManager {
 				throw error
 			},
 		)
+
+		return this.pageLoadMetricsPromise
 	}
 
 	private static createMonitors(monitorConfig: MonitorConfig) {
@@ -573,6 +619,22 @@ export class SpaMetricsManager {
 		}
 	}
 
+	private onManualCompletionCandidate = (timestamp: number): void => {
+		this.manualCompletionCandidateTimestamp = timestamp
+		const currentNavigation = this.navigationHistory.at(-1)
+		if (currentNavigation) {
+			currentNavigation.pctEndTime = timestamp
+		}
+	}
+
+	private onManualRegistrationReopened = (): void => {
+		this.manualCompletionCandidateTimestamp = undefined
+		const currentNavigation = this.navigationHistory.at(-1)
+		if (currentNavigation) {
+			currentNavigation.pctEndTime = undefined
+		}
+	}
+
 	private onResourceStateChange = (event: ResourceStateEvent): void => {
 		if (event.state === ResourceState.DISCOVERED) {
 			const activeConfig = this.activeConfig
@@ -678,6 +740,8 @@ export class SpaMetricsManager {
 				config.ignoreUrls ?? defaultConfig.ignoreUrls,
 				beaconEndpointIgnoreUrls,
 			),
+			maxPageLoadTimeoutForManualApi:
+				config.maxPageLoadTimeoutForManualApi ?? defaultConfig.maxPageLoadTimeoutForManualApi,
 			maxPageLoadWaitTime: normalizeMaxPageLoadWaitTime({ maxPageLoadWaitTime, quietTime }),
 			maxResourcesToWatch: config.maxResourcesToWatch ?? defaultConfig.maxResourcesToWatch,
 			monitors: [...(config.monitors ?? defaultConfig.monitors)],

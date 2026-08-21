@@ -7,6 +7,7 @@
 		experimental: true,
 		spaMetrics: {
 			blockingSelectors: ['.global-loading-spinner'],
+			maxPageLoadTimeoutForManualApi: 1000,
 			maxPageLoadWaitTime: 1000,
 			monitors: ['media', 'network', 'performance', 'elements'],
 			quietTime: 500,
@@ -37,6 +38,9 @@
 	<button type="button" id="btnNavigateWithNetworkDisabled">Navigate with network disabled</button>
 	<button type="button" id="btnNavigateWithLoadingElement">Navigate with loading element</button>
 	<button type="button" id="btnNavigateWithOverrideLoadingElement">Navigate with override loading element</button>
+	<button type="button" id="btnNavigateWithManualCompletion">Navigate with manual completion</button>
+	<button type="button" id="btnNavigateWithManualInterruption">Interrupt manual completion</button>
+	<button type="button" id="btnNavigateWithManualTimeout">Time out manual completion</button>
 	<button type="button" id="btnFetchAfterPct">Fetch after PCT</button>
 
 	<div id="content"></div>
@@ -45,6 +49,7 @@
 		const LOADING_ELEMENT_RENDER_DELAY_MS = 100;
 		const LOADING_ELEMENT_VISIBLE_MS = 300;
 		window.loadingElementVisibleTimeMs = LOADING_ELEMENT_VISIBLE_MS;
+		window.manualPageLoadResults = [];
 		window.overlappingRequestStarted = '';
 
 		function navigateThen(hash, callback) {
@@ -146,6 +151,35 @@
 				spinner.style.height = '10px';
 				spinner.style.width = '10px';
 				return spinner;
+			});
+		});
+
+		document.querySelector('#btnNavigateWithManualCompletion').addEventListener('click', function () {
+			navigateThen('manual-completion', function () {
+				const firstHandle = SplunkRum.registerManualPageLoad();
+				const secondHandle = SplunkRum.registerManualPageLoad();
+				setTimeout(function () {
+					window.manualPageLoadResults.push(firstHandle.markComplete());
+					window.manualPageLoadResults.push(firstHandle.markComplete());
+				}, 50);
+				setTimeout(function () {
+					window.manualPageLoadResults.push(secondHandle.markComplete());
+				}, 100);
+			});
+		});
+
+		document.querySelector('#btnNavigateWithManualInterruption').addEventListener('click', function () {
+			navigateThen('manual-interruption-a', function () {
+				SplunkRum.registerManualPageLoad();
+				setTimeout(function () {
+					location.hash = 'manual-interruption-b';
+				}, 100);
+			});
+		});
+
+		document.querySelector('#btnNavigateWithManualTimeout').addEventListener('click', function () {
+			navigateThen('manual-timeout', function () {
+				SplunkRum.registerManualPageLoad();
 			});
 		});
 

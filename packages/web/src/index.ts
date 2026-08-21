@@ -96,9 +96,10 @@ import { VERSION } from './version'
 
 export { type SplunkExporterConfig } from './exporters/common'
 export { SplunkZipkinExporter } from './exporters/zipkin'
+export type { ManualPageLoadHandle } from './managers'
 export * from './session-based-sampler'
-export * from './splunk-web-tracer-provider'
 import {
+	type ManualPageLoadHandle,
 	PrivacyManager,
 	SessionManager,
 	SessionState,
@@ -271,6 +272,12 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 
 	provider?: SplunkWebTracerProvider
 
+	/**
+	 * Registers work that must finish before the current page load is complete.
+	 * The returned handle is bound to the current document load or route change.
+	 */
+	registerManualPageLoad: () => ManualPageLoadHandle | undefined
+
 	reportError: (error: string | Event | Error | ErrorEvent, context?: SpanContext) => Promise<void>
 
 	resource?: Resource
@@ -295,6 +302,7 @@ let _deinitSessionTracking: undefined | (() => void)
 let _errorInstrumentation: SplunkErrorInstrumentation | undefined
 let _postDocLoadInstrumentation: SplunkPostDocLoadResourceInstrumentation | undefined
 let _spaMetricsManager: SpaMetricsManager | undefined
+let _visibilityChangeListener: (() => void) | undefined
 let eventTarget: InternalEventTarget | undefined
 let _sessionStateUnsubscribe: undefined | (() => void)
 const isLatestTagUsed = isAgentLoadedViaLatestTag()
@@ -328,6 +336,11 @@ export const SplunkRum: SplunkOtelWebType = {
 		}
 
 		try {
+			if (_visibilityChangeListener) {
+				window.removeEventListener('visibilitychange', _visibilityChangeListener)
+				_visibilityChangeListener = undefined
+			}
+
 			_deregisterInstrumentations?.()
 			_deregisterInstrumentations = undefined
 
@@ -750,13 +763,17 @@ export const SplunkRum: SplunkOtelWebType = {
 				// eslint-disable-next-line unicorn/prefer-native-coercion-functions
 			}).filter((a): a is Exclude<typeof a, null> => Boolean(a))
 
-			window.addEventListener('visibilitychange', () => {
+			_visibilityChangeListener = () => {
 				// this condition applies when the page is hidden or when it's closed
 				// see for more details: https://developers.google.com/web/updates/2018/07/page-lifecycle-api#developer-recommendations-for-each-state
 				if (document.visibilityState === 'hidden') {
-					void this._processor?.forceFlush()
+					void (async () => {
+						await _spaMetricsManager?.finalizeCurrentNavigation()
+						await this._processor?.forceFlush()
+					})()
 				}
-			})
+			}
+			window.addEventListener('visibilitychange', _visibilityChangeListener)
 
 			provider.register({
 				contextManager: new SplunkContextManager({
@@ -789,6 +806,11 @@ export const SplunkRum: SplunkOtelWebType = {
 				diag.debug('[Splunk]: Enhanced platform attributes updated')
 			})
 		} catch (error) {
+			if (_visibilityChangeListener) {
+				window.removeEventListener('visibilitychange', _visibilityChangeListener)
+				_visibilityChangeListener = undefined
+			}
+
 			diag.warn('[Splunk]: SplunkRum.init() - Failed to initialize due to internal exception.', { error })
 		}
 	},
@@ -798,6 +820,14 @@ export const SplunkRum: SplunkOtelWebType = {
 	},
 
 	ParentBasedSampler,
+
+	registerManualPageLoad() {
+		if (!inited) {
+			return
+		}
+
+		return _spaMetricsManager?.registerManualPageLoad()
+	},
 
 	removeEventListener(name, callback): void {
 		try {
@@ -898,4 +928,5 @@ export const SplunkRum: SplunkOtelWebType = {
 
 export default SplunkRum
 
+export * from './splunk-web-tracer-provider'
 export { type SplunkOtelWebConfig, type SplunkOtelWebExporterOptions } from './types'

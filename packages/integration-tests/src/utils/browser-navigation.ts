@@ -19,6 +19,7 @@ import { expect } from '@playwright/test'
 import type { ExportedTestSpan } from '@test-utils/test-span.js'
 
 export const BROWSER_NAVIGATION_ATTRIBUTES = {
+	completionSource: 'browser.navigation.page_completion_source',
 	detectedResourceCount: 'browser.navigation.detected_resource_count',
 	lastLoadedResources: 'browser.navigation.last_loaded_resources',
 	loadingResourceCount: 'browser.navigation.loading_resource_count',
@@ -33,6 +34,7 @@ export const BROWSER_NAVIGATION_ATTRIBUTES = {
 } as const
 
 type BrowserNavigationAttributeExpectations = {
+	completionSource?: 'automatic' | 'manual'
 	detectedResourceCount?: number
 	pageCompletionTime?: number
 	quietTimerResetCount?: number
@@ -41,12 +43,21 @@ type BrowserNavigationAttributeExpectations = {
 
 export function expectBrowserNavigationAttributes(
 	span: ExportedTestSpan,
-	{ detectedResourceCount, pageCompletionTime, quietTimerResetCount, status }: BrowserNavigationAttributeExpectations,
+	{
+		completionSource,
+		detectedResourceCount,
+		pageCompletionTime,
+		quietTimerResetCount,
+		status,
+	}: BrowserNavigationAttributeExpectations,
 ): void {
 	expect(span).toHaveNumericAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageCompletionTime)
 	expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.status)
 	expect(span).toHaveNumericAttribute(BROWSER_NAVIGATION_ATTRIBUTES.detectedResourceCount)
 	expect(span).toHaveNumericAttribute(BROWSER_NAVIGATION_ATTRIBUTES.quietTimerResetCount)
+	if (completionSource !== undefined) {
+		expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.completionSource, completionSource)
+	}
 
 	if (status !== undefined) {
 		expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.status, status)

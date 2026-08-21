@@ -27,6 +27,7 @@ import {
 	BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE,
 	BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
 	BROWSER_NAVIGATION_LONGEST_LOADED_RESOURCE_ATTRIBUTE,
+	BROWSER_NAVIGATION_PAGE_COMPLETION_SOURCE_ATTRIBUTE,
 	BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE,
 	BROWSER_NAVIGATION_PAGE_SPAN_ID_ATTRIBUTE,
 	BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE,
@@ -77,6 +78,7 @@ describe('SpaMetricsManager', () => {
 		const config = manager.config
 
 		expect(config.quietTime).toBe(1000)
+		expect(config.maxPageLoadTimeoutForManualApi).toBe(180_000)
 		expect(config.maxPageLoadWaitTime).toBe(180_000)
 		expect(config.maxResourcesToWatch).toBe(100)
 		expect(config.ignoreUrls).toEqual([])
@@ -90,6 +92,7 @@ describe('SpaMetricsManager', () => {
 			blockingSelectors: ['.loading-spinner'],
 			clearLoadingResourcesOnNewPage: false,
 			ignoreUrls: [/test/],
+			maxPageLoadTimeoutForManualApi: 7000,
 			maxPageLoadWaitTime: 5000,
 			monitors: ['network', 'elements'],
 			quietTime: 2000,
@@ -99,6 +102,7 @@ describe('SpaMetricsManager', () => {
 		const config = manager.config
 
 		expect(config.quietTime).toBe(2000)
+		expect(config.maxPageLoadTimeoutForManualApi).toBe(7000)
 		expect(config.maxPageLoadWaitTime).toBe(5000)
 		expect(config.maxResourcesToWatch).toBe(100)
 		expect(config.ignoreUrls).toHaveLength(1)
@@ -299,6 +303,21 @@ describe('SpaMetricsManager', () => {
 		expect(config.quietTime).toBe(2000)
 	})
 
+	it('uses manual API timeout from URL overrides', () => {
+		const manager = new SpaMetricsManager({
+			maxPageLoadTimeoutForManualApi: 5000,
+			urlOverrides: [
+				{
+					match: '/checkout',
+					maxPageLoadTimeoutForManualApi: 2500,
+				},
+			],
+		})
+
+		expect(manager.getConfigForUrl('https://example.test/checkout').maxPageLoadTimeoutForManualApi).toBe(2500)
+		expect(manager.getConfigForUrl('https://example.test/cart').maxPageLoadTimeoutForManualApi).toBe(5000)
+	})
+
 	it('uses quiet time as max page load wait time and warns once when configured max is lower', () => {
 		const diagWarnSpy = vi.spyOn(diag, 'warn')
 		const manager = new SpaMetricsManager({ maxPageLoadWaitTime: 5, quietTime: 30 })
@@ -419,7 +438,7 @@ describe('SpaMetricsManager', () => {
 		manager.stop()
 	})
 
-	// Temporarily skipped while PCT timeout is disabled.
+	// Temporarily skipped while the automatic PCT timeout is disabled.
 	it.skip('waitForPageLoad resolves with timeout status when max page load wait time expires', async () => {
 		const manager = new SpaMetricsManager({ maxPageLoadWaitTime: 3000, quietTime: 1000 })
 		manager.start()
@@ -478,6 +497,42 @@ describe('SpaMetricsManager', () => {
 		expect(attributes[BROWSER_NAVIGATION_QUIET_TIMER_RESET_COUNT_ATTRIBUTE]).toBe(3)
 	})
 
+	it('sets the completion source for completed, interrupted, and timed-out page loads', () => {
+		const manager = new SpaMetricsManager()
+		const { attributes: completedAttributes, span: completedSpan } = createSpanMock('completed')
+		const { attributes: interruptedAttributes, span: interruptedSpan } = createSpanMock('interrupted')
+		const { attributes: timeoutAttributes, span: timeoutSpan } = createSpanMock('timeout')
+		const result = {
+			detectedResourcesCount: 0,
+			lastLoadedResources: [],
+			loadingResourcesCount: 0,
+			loadingResourceUrls: [],
+			longestLoadedResource: undefined,
+			pct: 10,
+			quietTimerResetCount: 0,
+		}
+
+		manager.setPageLoadMetricAttributes(completedSpan, {
+			...result,
+			completionSource: 'manual',
+			status: PAGE_LOAD_METRICS_STATUS_COMPLETED,
+		})
+		manager.setPageLoadMetricAttributes(interruptedSpan, {
+			...result,
+			completionSource: 'automatic',
+			status: PAGE_LOAD_METRICS_STATUS_INTERRUPTED,
+		})
+		manager.setPageLoadMetricAttributes(timeoutSpan, {
+			...result,
+			completionSource: 'manual',
+			status: PAGE_LOAD_METRICS_STATUS_TIMEOUT,
+		})
+
+		expect(completedAttributes[BROWSER_NAVIGATION_PAGE_COMPLETION_SOURCE_ATTRIBUTE]).toBe('manual')
+		expect(interruptedAttributes[BROWSER_NAVIGATION_PAGE_COMPLETION_SOURCE_ATTRIBUTE]).toBe('automatic')
+		expect(timeoutAttributes[BROWSER_NAVIGATION_PAGE_COMPLETION_SOURCE_ATTRIBUTE]).toBe('manual')
+	})
+
 	it('does not set page load or navigation correlation attributes when their emission is disabled', () => {
 		const manager = new SpaMetricsManager({ emitNavigationAttributes: false })
 		const { span: navigationSpan } = createSpanMock('navigation-span-id')
@@ -502,7 +557,7 @@ describe('SpaMetricsManager', () => {
 		expect(attributes[BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE]).toBeUndefined()
 	})
 
-	it('sets completion time and status on route changes when experimental attributes are disabled', async () => {
+	it('sets core completion attributes on route changes when experimental attributes are disabled', async () => {
 		const manager = new SpaMetricsManager({ emitNavigationAttributes: false, monitors: [], quietTime: 1 })
 		const { attributes, span } = createSpanMock()
 		manager.start()
@@ -516,6 +571,7 @@ describe('SpaMetricsManager', () => {
 
 			expect(attributes[BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE]).toBe(result.pct)
 			expect(attributes[BROWSER_NAVIGATION_STATUS_ATTRIBUTE]).toBe(result.status)
+			expect(attributes[BROWSER_NAVIGATION_PAGE_COMPLETION_SOURCE_ATTRIBUTE]).toBe('automatic')
 			expect(attributes[BROWSER_NAVIGATION_DETECTED_RESOURCE_COUNT_ATTRIBUTE]).toBeUndefined()
 			expect(attributes[BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE]).toBeUndefined()
 			expect(attributes[BROWSER_NAVIGATION_QUIET_TIMER_RESET_COUNT_ATTRIBUTE]).toBeUndefined()
@@ -570,6 +626,120 @@ describe('SpaMetricsManager', () => {
 		} finally {
 			manager.stop()
 		}
+	})
+
+	it('uses manual handles to complete the current navigation', async () => {
+		vi.useFakeTimers()
+		const now = vi.spyOn(performance, 'now').mockReturnValue(1000)
+		const manager = new SpaMetricsManager({ monitors: [], quietTime: 100 })
+
+		try {
+			const promise = manager.waitForPageLoad({ startTime: 1000 })
+			const firstHandle = manager.registerManualPageLoad()
+			const secondHandle = manager.registerManualPageLoad()
+			now.mockReturnValue(1020)
+			expect(firstHandle?.markComplete()).toBe(true)
+			now.mockReturnValue(1040)
+			expect(secondHandle?.markComplete()).toBe(true)
+
+			await vi.advanceTimersByTimeAsync(100)
+			const result = await promise
+
+			expect(result.completionSource).toBe('manual')
+			expect(result.pct).toBe(40)
+			expect(manager.registerManualPageLoad()).toBeUndefined()
+		} finally {
+			manager.stop()
+			now.mockRestore()
+			vi.useRealTimers()
+		}
+	})
+
+	it('applies the configured timeout after manual completion starts', async () => {
+		vi.useFakeTimers()
+		const now = vi.spyOn(performance, 'now').mockReturnValue(1000)
+		const manager = new SpaMetricsManager({
+			maxPageLoadTimeoutForManualApi: 50,
+			monitors: [],
+			quietTime: 100,
+		})
+
+		try {
+			const promise = manager.waitForPageLoad({ startTime: 1000 })
+			const handle = manager.registerManualPageLoad()
+			await vi.advanceTimersByTimeAsync(50)
+
+			const result = await promise
+			expect(result.completionSource).toBe('manual')
+			expect(result.pct).toBe(50)
+			expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_TIMEOUT)
+			expect(handle?.markComplete()).toBe(false)
+		} finally {
+			manager.stop()
+			now.mockRestore()
+			vi.useRealTimers()
+		}
+	})
+
+	it('uses the latest manual completion candidate as the PCT relevance boundary', async () => {
+		vi.useFakeTimers()
+		const now = vi.spyOn(performance, 'now').mockReturnValue(1000)
+		const manager = new SpaMetricsManager({ monitors: [], quietTime: 100 })
+		const { span: navigationSpan } = createSpanMock('navigation')
+		const { attributes: beforeAttributes, span: beforeSpan } = createSpanMock('before')
+		const { attributes: pendingAttributes, span: pendingSpan } = createSpanMock('pending')
+		const { attributes: afterAttributes, span: afterSpan } = createSpanMock('after')
+		const { attributes: reopenedAttributes, span: reopenedSpan } = createSpanMock('reopened')
+
+		try {
+			const promise = manager.waitForPageLoad({
+				operation: BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION,
+				span: navigationSpan,
+				startTime: 1000,
+			})
+			const firstHandle = manager.registerManualPageLoad()
+			const pendingHandle = manager.registerManualPageLoad()
+			setBrowserNavigationPageAttributes(beforeSpan, manager, 1010, { type: 'document' })
+			now.mockReturnValue(1020)
+			firstHandle?.markComplete()
+			setBrowserNavigationPageAttributes(pendingSpan, manager, 1030, { type: 'document' })
+			now.mockReturnValue(1040)
+			pendingHandle?.markComplete()
+			setBrowserNavigationPageAttributes(afterSpan, manager, 1050, { type: 'document' })
+
+			const lateHandle = manager.registerManualPageLoad()
+			setBrowserNavigationPageAttributes(reopenedSpan, manager, 1050, { type: 'document' })
+			now.mockReturnValue(1060)
+			lateHandle?.markComplete()
+			await vi.advanceTimersByTimeAsync(100)
+			await promise
+
+			expect(beforeAttributes[BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE]).toBe(true)
+			expect(pendingAttributes[BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE]).toBe(true)
+			expect(afterAttributes[BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE]).toBe(false)
+			expect(reopenedAttributes[BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE]).toBe(true)
+		} finally {
+			manager.stop()
+			now.mockRestore()
+			vi.useRealTimers()
+		}
+	})
+
+	it('invalidates manual handles when a new navigation starts', async () => {
+		const manager = new SpaMetricsManager({ monitors: [], quietTime: 100 })
+		const firstPromise = manager.waitForPageLoad({ startTime: performance.now() })
+		const firstHandle = manager.registerManualPageLoad()
+
+		const secondPromise = manager.waitForPageLoad({ startTime: performance.now() })
+
+		const firstResult = await firstPromise
+		expect(firstResult.completionSource).toBe('manual')
+		expect(firstResult.status).toBe(PAGE_LOAD_METRICS_STATUS_INTERRUPTED)
+		expect(firstHandle?.markComplete()).toBe(false)
+		manager.stop()
+		const secondResult = await secondPromise
+		expect(secondResult.completionSource).toBe('automatic')
+		expect(secondResult.status).toBe(PAGE_LOAD_METRICS_STATUS_INTERRUPTED)
 	})
 
 	it('retains the current navigation span id after PCT completes', async () => {
@@ -836,7 +1006,7 @@ describe('SpaMetricsManager', () => {
 		}
 	})
 
-	// Temporarily skipped while PCT timeout is disabled.
+	// Temporarily skipped while the automatic PCT timeout is disabled.
 	it.skip('waitForPageLoad reports visible loading elements on timeout', async () => {
 		const loadingElement = document.createElement('div')
 		loadingElement.className = 'loading-spinner'
@@ -861,7 +1031,7 @@ describe('SpaMetricsManager', () => {
 		manager.stop()
 	})
 
-	// Temporarily skipped while PCT timeout is disabled.
+	// Temporarily skipped while the automatic PCT timeout is disabled.
 	it.skip('re-tracks still-visible loading elements after clearing previous page resources', async () => {
 		const loadingElement = document.createElement('div')
 		loadingElement.className = 'loading-spinner'
@@ -957,7 +1127,7 @@ describe('SpaMetricsManager', () => {
 		manager.stop()
 	})
 
-	// Temporarily skipped while PCT timeout is disabled.
+	// Temporarily skipped while the automatic PCT timeout is disabled.
 	it.skip('waitForPageLoad with startTime 0 does not exceed max page load wait time on timeout', async () => {
 		const getEntriesByType = vi.spyOn(performance, 'getEntriesByType').mockReturnValue([
 			{
@@ -1033,7 +1203,7 @@ describe('SpaMetricsManager', () => {
 		expect(result.loadingResourceUrls).toEqual([TEST_API_URL])
 	})
 
-	// Temporarily skipped while PCT timeout is disabled.
+	// Temporarily skipped while the automatic PCT timeout is disabled.
 	it.skip('waitForPageLoad reports the last three loading resource URLs', async () => {
 		const manager = new SpaMetricsManager({ maxPageLoadWaitTime: 10, quietTime: 5 })
 		manager.start()

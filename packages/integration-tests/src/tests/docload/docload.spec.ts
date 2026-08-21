@@ -23,6 +23,35 @@ import { expectDefined, test } from '../../utils/test'
 import { timesMakeSense } from '../../utils/time-make-sense'
 
 test.describe('docload', () => {
+	test('documentLoad uses the manual completion timestamp without changing its load duration', async ({
+		recordPage,
+	}) => {
+		await recordPage.goTo('/docload/docload-manual-completion.ejs')
+		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'documentLoad'))
+
+		const documentLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'documentLoad')
+		const pageLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'pageLoad')
+		expectDefined(documentLoadSpan)
+		expectDefined(pageLoadSpan)
+		expectBrowserNavigationAttributes(documentLoadSpan, {
+			completionSource: 'manual',
+			status: 'completed',
+		})
+		expectBrowserNavigationAttributes(pageLoadSpan, {
+			completionSource: 'manual',
+			status: 'completed',
+		})
+		const browserLoadDuration = await recordPage.evaluate(() => {
+			const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming
+			return navigation.loadEventEnd - navigation.fetchStart
+		})
+		expect(Number(documentLoadSpan.attributes[BROWSER_NAVIGATION_ATTRIBUTES.pageCompletionTime])).toBeGreaterThan(
+			200,
+		)
+		expect(Math.abs(hrTimeToMilliseconds(documentLoadSpan.duration) - browserLoadDuration)).toBeLessThan(5)
+		expect(await recordPage.evaluate(() => (window as any).manualDocumentLoadResult)).toBe(true)
+	})
+
 	test('resources before load event are correctly captured', async ({ recordPage }) => {
 		await recordPage.goTo('/docload/docload-all.ejs')
 

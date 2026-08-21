@@ -160,7 +160,7 @@ Choose a versioning strategy based on your needs:
 | `debug`                               | `boolean`                                             | ❌       | `false`                                                                                            | Enable internal debug logging                                                                                                                                                                                                                                                                                                                                           |
 | `cookieDomain`                        | `string`                                              | ❌       | `window.location.hostname`                                                                         | Domain for session cookies                                                                                                                                                                                                                                                                                                                                              |
 | `ignoreUrls`                          | `Array<string\|RegExp>`                               | ❌       | `[]`                                                                                               | URLs to exclude from tracing                                                                                                                                                                                                                                                                                                                                            |
-| `spaMetrics`                          | `boolean\|Config`                                     | ❌       | `true`                                                                                             | SPA page completion metrics. Supports global settings and ordered `urlOverrides` for page-specific `clearLoadingResourcesOnNewPage`, `quietTime`, `ignoreUrls`, `blockingSelectors`, `maxPageLoadWaitTime`, `maxResourcesToWatch`, and `monitors`.                                                                                                                      |
+| `spaMetrics`                          | `boolean\|Config`                                     | ❌       | `true`                                                                                             | SPA page completion metrics. Supports global settings and ordered `urlOverrides` for page-specific `clearLoadingResourcesOnNewPage`, `quietTime`, `ignoreUrls`, `blockingSelectors`, `maxPageLoadTimeoutForManualApi`, `maxPageLoadWaitTime`, `maxResourcesToWatch`, and `monitors`.                                                                                    |
 | `globalAttributes`                    | `Attributes`                                          | ❌       | `{}`                                                                                               | Attributes added to every span                                                                                                                                                                                                                                                                                                                                          |
 | `dataAttributesToCapture`             | `string[]`                                            | ❌       | `[]`                                                                                               | Explicit allowlist of `data-*` attributes to capture from click and rage-click targets, and expose to the element picker. Accepts hyphenated names like `data-test-id` or camelCase names like `testId`. Captured values may be sensitive or high-cardinality, so only allowlist attributes intended for telemetry.                                                     |
 | `persistence`                         | `'cookie'\|'localStorage'`                            | ❌       | `'cookie'`                                                                                         | Where to store session data                                                                                                                                                                                                                                                                                                                                             |
@@ -207,6 +207,30 @@ By default, `spaMetrics.clearLoadingResourcesOnNewPage` is `true`, so pending re
 The `elements` monitor is opt-in. Add `'elements'` to `spaMetrics.monitors` and configure `blockingSelectors` to wait for visible loading indicators. Hidden elements, elements with `display: none`, and elements with `visibility: hidden` or `collapse` do not block PCT.
 
 Array fields in URL overrides replace the inherited arrays for matched URLs. For example, `monitors: ['network']` waits only for fetch/XHR activity on that page, while `monitors: ['media', 'performance']` ignores fetch/XHR activity but still watches media and resource timing entries. If an override specifies `ignoreUrls` or `blockingSelectors`, include any global entries that should still apply on that page.
+
+#### Manual page completion
+
+Use `SplunkRum.registerManualPageLoad()` when application state, rather than automatically monitored fetch/XHR, media, resource timing, or configured loading-element activity, is the authoritative signal that the current page is ready. An ordinary DOM render is not itself an automatic readiness signal. No completion mode or URL list is required.
+
+```typescript
+const pageLoadRegistration = SplunkRum.registerManualPageLoad()
+
+try {
+	await renderApplicationContent()
+} finally {
+	pageLoadRegistration?.markComplete()
+}
+```
+
+The first registration switches the current document load or SPA route change from automatic to manual completion. Every call returns a distinct handle, and the navigation completes only after every registered handle calls `markComplete()`. This supports independently deployed components without requiring them to share a handle.
+
+After the last participant completes, the agent keeps registration open for `spaMetrics.quietTime` to allow another component to join. This registration window delays span export but does not increase PCT: the reported PCT uses the timestamp of the latest accepted `markComplete()` call. Network and resource activity does not reset the manual registration window.
+
+The first registration also starts a manual-only safety timeout measured from the navigation start. It defaults to 180000 ms and can optionally be configured globally or per URL with `spaMetrics.maxPageLoadTimeoutForManualApi`. Automatic page completion is not affected by this timeout.
+
+`markComplete()` returns `true` only the first time that handle is accepted. It returns `false` for duplicate calls and for handles made stale by a new navigation, page interruption, timeout, or agent shutdown. `registerManualPageLoad()` returns `undefined` when SPA metrics are disabled or there is no active page load. A component that registers after the final registration window has expired cannot reopen the completed navigation, so components should register as soon as their page-load work begins.
+
+Route-change spans include `browser.navigation.page_completion_time`, `browser.navigation.status`, and, when completed, `browser.navigation.page_completion_source` with `manual` or `automatic`. Setting `experimental: true` also enables these completion attributes on document-load and page-load spans, along with the remaining experimental navigation diagnostics. A navigation interrupted while manual participants remain pending is reported as interrupted; if all participants have completed, navigation or page hide finalizes it at the latest manual completion timestamp.
 
 ### Blocking Element Spans
 
@@ -377,6 +401,7 @@ SplunkRum.init({
 		blockingSelectors: ['.loading-spinner'],
 		clearLoadingResourcesOnNewPage: true,
 		ignoreUrls: ['/analytics/track'],
+		maxPageLoadTimeoutForManualApi: 180000,
 		maxResourcesToWatch: 100,
 		monitors: ['media', 'network', 'performance', 'elements'],
 		quietTime: 1000,
@@ -479,11 +504,12 @@ SplunkRum.init({
 
 #### Static Methods
 
-| Method                       | Parameters        | Returns  | Description                |
-| ---------------------------- | ----------------- | -------- | -------------------------- |
-| `init(config)`               | `SplunkRumConfig` | `void`   | Initialize the RUM SDK     |
-| `setGlobalAttributes(attrs)` | `Attributes`      | `void`   | Add global span attributes |
-| `getSessionId()`             | -                 | `string` | Get current session ID     |
+| Method                       | Parameters        | Returns                             | Description                                                     |
+| ---------------------------- | ----------------- | ----------------------------------- | --------------------------------------------------------------- |
+| `init(config)`               | `SplunkRumConfig` | `void`                              | Initialize the RUM SDK                                          |
+| `setGlobalAttributes(attrs)` | `Attributes`      | `void`                              | Add global span attributes                                      |
+| `getSessionId()`             | -                 | `string`                            | Get current session ID                                          |
+| `registerManualPageLoad()`   | -                 | `ManualPageLoadHandle \| undefined` | Register manual completion work for the current page navigation |
 
 #### Properties
 

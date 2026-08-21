@@ -68,6 +68,65 @@ test.describe('spa-metrics', () => {
 		expect(routeChangeSpans[0]).toHaveSpanDuration(0)
 	})
 
+	test('routeChange span waits for every manual completion handle', async ({ recordPage }) => {
+		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+
+		await recordPage.locator('#btnNavigateWithManualCompletion').click()
+		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'routeChange').length === 1)
+
+		const routeChangeSpan = recordPage.receivedSpans.find((span) => span.name === 'routeChange')
+		expectDefined(routeChangeSpan)
+		expectBrowserNavigationAttributes(routeChangeSpan, {
+			completionSource: 'manual',
+			status: 'completed',
+		})
+		expect(getPageCompletionTime(routeChangeSpan)).toBeGreaterThanOrEqual(100)
+		expect(await recordPage.evaluate(() => (window as any).manualPageLoadResults)).toEqual([true, false, true])
+	})
+
+	test('interrupted routeChange spans retain their manual completion source', async ({ recordPage }) => {
+		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+
+		await recordPage.locator('#btnNavigateWithManualInterruption').click()
+		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'routeChange').length === 2)
+
+		const interruptedSpan = recordPage.receivedSpans.find(
+			(span) =>
+				span.name === 'routeChange' &&
+				String(span.attributes['location.href']).includes('#manual-interruption-a'),
+		)
+		const nextSpan = recordPage.receivedSpans.find(
+			(span) =>
+				span.name === 'routeChange' &&
+				String(span.attributes['location.href']).includes('#manual-interruption-b'),
+		)
+		expectDefined(interruptedSpan)
+		expectDefined(nextSpan)
+		expectBrowserNavigationAttributes(interruptedSpan, {
+			completionSource: 'manual',
+			status: 'interrupted',
+		})
+		expectBrowserNavigationAttributes(nextSpan, {
+			completionSource: 'automatic',
+			status: 'completed',
+		})
+	})
+
+	test('timed-out routeChange spans retain their manual completion source', async ({ recordPage }) => {
+		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+
+		await recordPage.locator('#btnNavigateWithManualTimeout').click()
+		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'routeChange').length === 1)
+
+		const timeoutSpan = recordPage.receivedSpans.find((span) => span.name === 'routeChange')
+		expectDefined(timeoutSpan)
+		expectBrowserNavigationAttributes(timeoutSpan, {
+			completionSource: 'manual',
+			pageCompletionTime: 1000,
+			status: 'timeout',
+		})
+	})
+
 	test('errors after a route change have the routeChange operation', async ({ recordPage }) => {
 		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
 		await recordPage.locator('#btnNavigate').click()
@@ -300,6 +359,10 @@ test.describe('spa-metrics', () => {
 			expectDefined(navigationASpan)
 			expectDefined(navigationBSpan)
 			expectDefined(requestSpan)
+			expectBrowserNavigationAttributes(navigationASpan, {
+				completionSource: 'automatic',
+				status: 'interrupted',
+			})
 			expect(navigationASpan.spanId).not.toBe(navigationBSpan.spanId)
 			expect(requestSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, navigationASpan.spanId)
 			expect(requestSpan).not.toHaveSpanAttribute(
