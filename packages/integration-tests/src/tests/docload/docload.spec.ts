@@ -193,6 +193,10 @@ test.describe('docload', () => {
 		const readyStateAtFetch = await recordPage.evaluate(
 			() => (window as typeof window & { earlyFetchReadyState?: DocumentReadyState }).earlyFetchReadyState,
 		)
+		const navigationEntryReadsDuringInit = await recordPage.evaluate(
+			() =>
+				(window as typeof window & { navigationEntryReadsDuringInit?: number }).navigationEntryReadsDuringInit,
+		)
 		const pageLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'pageLoad')
 		const documentLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'documentLoad')
 		const fetchSpan = recordPage.receivedSpans.find(
@@ -200,6 +204,7 @@ test.describe('docload', () => {
 		)
 
 		expect(readyStateAtFetch).toBe('loading')
+		expect(navigationEntryReadsDuringInit).toBeGreaterThan(0)
 		expectDefined(pageLoadSpan)
 		expectDefined(documentLoadSpan)
 		expectDefined(fetchSpan)

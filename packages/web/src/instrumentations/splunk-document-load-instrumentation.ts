@@ -17,7 +17,14 @@
  */
 
 import * as api from '@opentelemetry/api'
-import { addHrTimes, hrTimeToMilliseconds, isUrlIgnored, millisToHrTime, timeInputToHrTime } from '@opentelemetry/core'
+import {
+	addHrTimes,
+	hrTimeToMilliseconds,
+	isUrlIgnored,
+	millisToHrTime,
+	timeInputToHrTime,
+	TRACE_PARENT_HEADER,
+} from '@opentelemetry/core'
 import { InstrumentationConfig } from '@opentelemetry/instrumentation'
 import {
 	AttributeNames,
@@ -46,6 +53,13 @@ export interface SplunkDocLoadInstrumentationConfig extends InstrumentationConfi
 
 const excludedInitiatorTypes = new Set(['beacon', 'fetch', 'xmlhttprequest'])
 const PAGE_LOAD_SPAN_NAME = 'pageLoad'
+
+function getDocumentTraceContext(): api.Context {
+	const metaElement = document.querySelector<HTMLMetaElement>(`meta[name="${TRACE_PARENT_HEADER}"]`)
+	return api.propagation.extract(api.ROOT_CONTEXT, {
+		[TRACE_PARENT_HEADER]: metaElement?.content ?? '',
+	})
+}
 
 function addExtraDocLoadTags(span: api.Span) {
 	if (document.referrer && document.referrer !== '') {
@@ -232,13 +246,11 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 								pageLoadMetrics.pct,
 							)
 							if (this.pageLoadSpan && this.navigationStartTimeMillis !== undefined) {
-								this.spaMetricsManager?.setPageLoadMetricAttributes(this.pageLoadSpan, pageLoadMetrics)
 								const pageLoadSpan = this.pageLoadSpan as Span
-								pageLoadSpan.end(
+								this.spaMetricsManager?.setPageLoadMetricAttributes(pageLoadSpan, pageLoadMetrics)
+								this.endPageLoadSpan(
 									addHrTimes(pageLoadSpan.startTime, millisToHrTime(pageLoadMetrics.pct)),
 								)
-								this.navigationStartTimeMillis = undefined
-								this.pageLoadSpan = undefined
 							}
 
 							api.diag.debug('Sending documentLoad span with PCT result', pageLoadMetrics)
@@ -252,9 +264,8 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 								error,
 							})
 							if (this.pageLoadSpan) {
-								_superEndSpan(this.pageLoadSpan, performanceName, entries)
-								this.navigationStartTimeMillis = undefined
-								this.pageLoadSpan = undefined
+								const endTime = (entries as unknown as Record<string, unknown>)[performanceName]
+								this.endPageLoadSpan(typeof endTime === 'number' ? endTime : undefined)
 							}
 
 							_superEndSpan(span, performanceName, entries)
@@ -302,12 +313,19 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 	disable(): void {
 		this.navigationTimingObserver?.disconnect()
 		this.navigationTimingObserver = undefined
+		this.endPageLoadSpan()
 		super.disable()
 	}
 
 	setTracerProvider(tracerProvider: api.TracerProvider): void {
 		super.setTracerProvider(tracerProvider)
 		this.startPageLoadSpanWhenNavigationTimingIsAvailable()
+	}
+
+	private endPageLoadSpan(endTime?: api.TimeInput): void {
+		this.pageLoadSpan?.end(endTime)
+		this.navigationStartTimeMillis = undefined
+		this.pageLoadSpan = undefined
 	}
 
 	private startPageLoadSpan(fetchStart: number): void {
@@ -323,9 +341,11 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 		this.navigationTimingObserver?.disconnect()
 		this.navigationTimingObserver = undefined
 
-		this.pageLoadSpan = this.tracer.startSpan(PAGE_LOAD_SPAN_NAME, {
-			startTime: this.navigationStartTimeMillis,
-		})
+		this.pageLoadSpan = this.tracer.startSpan(
+			PAGE_LOAD_SPAN_NAME,
+			{ startTime: this.navigationStartTimeMillis },
+			getDocumentTraceContext(),
+		)
 		this.pageLoadSpan.setAttribute('component', this.component)
 		this.pageLoadSpan.setAttribute(SEMATTRS_HTTP_URL, location.href)
 		this.pageLoadSpan.setAttribute(SemanticAttributes.HTTP_USER_AGENT, navigator.userAgent)

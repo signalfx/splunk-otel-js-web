@@ -4,8 +4,24 @@
 	<meta charset="UTF-8">
 	<title>Docload with early fetch</title>
 
-	<%- renderAgent({experimental: true}) %>
+	<%- renderAgent({experimental: true}, true) %>
 	<script>
+		const originalGetEntriesByType = performance.getEntriesByType.bind(performance);
+		window.navigationEntryReadsDuringInit = 0;
+		performance.getEntriesByType = function (type) {
+			if (type === 'navigation') {
+				window.navigationEntryReadsDuringInit += 1;
+				return [];
+			}
+
+			return originalGetEntriesByType(type);
+		};
+		try {
+			SplunkRum.init(window.SplunkRumOptions);
+		} finally {
+			performance.getEntriesByType = originalGetEntriesByType;
+		}
+
 		window.earlyFetchReadyState = document.readyState;
 		fetch('/some-data?delay=100&resource=early-fetch').then(response => response.json());
 	</script>
