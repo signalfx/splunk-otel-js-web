@@ -19,6 +19,8 @@
 import { context, ROOT_CONTEXT, type Span } from '@opentelemetry/api'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import type { SplunkOtelWebConfig } from '../types'
+
 import {
 	SplunkPostDocLoadResourceInstrumentation,
 	type SplunkPostDocLoadResourceInstrumentationConfig,
@@ -72,7 +74,7 @@ describe('post document load resource instrumentation', () => {
 		const script = document.createElement('script')
 		script.src = 'assets/script.js'
 
-		const { instrumentation, startSpan } = createInstrumentation()
+		const { instrumentation, startSpan } = createInstrumentation({}, { experimental: true })
 		instrumentation._processHeadMutationObserverRecords([
 			{ addedNodes: [link, script] } as unknown as MutationRecord,
 		])
@@ -98,8 +100,8 @@ describe('post document load resource instrumentation', () => {
 		)
 	})
 
-	it('creates a resource span for other initiator types by default', () => {
-		const { instrumentation, setAttribute, startSpan } = createInstrumentation()
+	it('creates a resource span for additional initiator types when experimental features are enabled', () => {
+		const { instrumentation, setAttribute, startSpan } = createInstrumentation({}, { experimental: true })
 
 		instrumentation._startPerformanceObserver()
 		MockPerformanceObserver.instances[0].emit([createResourceEntry('other', 'https://example.test/icon.svg')])
@@ -108,6 +110,21 @@ describe('post document load resource instrumentation', () => {
 		expect(startSpan).toHaveBeenCalledOnce()
 		expect(startSpan).toHaveBeenCalledWith('resourceFetch', expect.objectContaining({ startTime: 10 }), undefined)
 		expect(setAttribute).toHaveBeenCalledWith('http.url', 'https://example.test/icon.svg')
+	})
+
+	it('does not create resource spans for additional initiator types by default', () => {
+		const { instrumentation, startSpan } = createInstrumentation()
+
+		instrumentation._startPerformanceObserver()
+		MockPerformanceObserver.instances[0].emit([
+			createResourceEntry('audio', 'https://example.test/audio.mp3'),
+			createResourceEntry('other', 'https://example.test/icon.svg'),
+			createResourceEntry('script', 'https://example.test/script.js'),
+		])
+		vi.runAllTimers()
+
+		expect(startSpan).toHaveBeenCalledOnce()
+		expect(startSpan).toHaveBeenCalledWith('resourceFetch', expect.objectContaining({ startTime: 10 }), undefined)
 	})
 
 	it('keeps arbitrary other resources disabled when only font is configured', () => {
@@ -129,7 +146,10 @@ describe('post document load resource instrumentation', () => {
 	})
 })
 
-function createInstrumentation(config: SplunkPostDocLoadResourceInstrumentationConfig = {}): {
+function createInstrumentation(
+	config: SplunkPostDocLoadResourceInstrumentationConfig = {},
+	otelConfig: SplunkOtelWebConfig = {},
+): {
 	instrumentation: TestableInstrumentation
 	setAttribute: ReturnType<typeof vi.fn>
 	startSpan: ReturnType<typeof vi.fn>
@@ -146,7 +166,7 @@ function createInstrumentation(config: SplunkPostDocLoadResourceInstrumentationC
 	const startSpan = vi.fn(() => span)
 	const instrumentation = new SplunkPostDocLoadResourceInstrumentation(
 		config,
-		{},
+		otelConfig,
 	) as unknown as TestableInstrumentation
 	instrumentation._tracer = { startSpan }
 

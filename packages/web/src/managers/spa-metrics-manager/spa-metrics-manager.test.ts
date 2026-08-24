@@ -502,6 +502,28 @@ describe('SpaMetricsManager', () => {
 		expect(attributes[BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE]).toBeUndefined()
 	})
 
+	it('sets completion time and status on route changes when experimental attributes are disabled', async () => {
+		const manager = new SpaMetricsManager({ emitNavigationAttributes: false, monitors: [], quietTime: 1 })
+		const { attributes, span } = createSpanMock()
+		manager.start()
+
+		try {
+			const result = await manager.waitForPageLoad({
+				operation: BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION,
+				span,
+				startTime: performance.now(),
+			})
+
+			expect(attributes[BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE]).toBe(result.pct)
+			expect(attributes[BROWSER_NAVIGATION_STATUS_ATTRIBUTE]).toBe(result.status)
+			expect(attributes[BROWSER_NAVIGATION_DETECTED_RESOURCE_COUNT_ATTRIBUTE]).toBeUndefined()
+			expect(attributes[BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE]).toBeUndefined()
+			expect(attributes[BROWSER_NAVIGATION_QUIET_TIMER_RESET_COUNT_ATTRIBUTE]).toBeUndefined()
+		} finally {
+			manager.stop()
+		}
+	})
+
 	it('does not set loading resource attributes when no resources are loading', () => {
 		const manager = new SpaMetricsManager()
 		const { attributes, span } = createSpanMock()

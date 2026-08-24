@@ -35,7 +35,8 @@ export interface SplunkPostDocLoadResourceInstrumentationConfig extends Instrume
 }
 
 const MODULE_NAME = 'splunk-post-doc-load-resource'
-const defaultAllowedInitiatorTypes = ['audio', 'css', 'font', 'iframe', 'img', 'link', 'other', 'script', 'video']
+const defaultAllowedInitiatorTypes = ['img', 'script']
+const experimentalAllowedInitiatorTypes = ['audio', 'css', 'font', 'iframe', 'img', 'link', 'other', 'script', 'video']
 const fontResourcePattern = /\.(?:eot|otf|ttf|woff2?)(?:[?#]|$)/i
 
 const getNodeResourceUrl = (node: Node): string | undefined => {
@@ -71,7 +72,11 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 	) {
 		const processedConfig: SplunkPostDocLoadResourceInstrumentationConfig = Object.assign(
 			{},
-			{ allowedInitiatorTypes: defaultAllowedInitiatorTypes },
+			{
+				allowedInitiatorTypes: otelConfig.experimental
+					? experimentalAllowedInitiatorTypes
+					: defaultAllowedInitiatorTypes,
+			},
 			config,
 		)
 		super(MODULE_NAME, VERSION, processedConfig)

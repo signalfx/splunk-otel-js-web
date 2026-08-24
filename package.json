@@ -71,7 +71,9 @@
 	"packageManager": "pnpm@10.26.1",
 	"pnpm": {
 		"overrides": {
-			"@opentelemetry/api": "$@opentelemetry/api"
+			"@opentelemetry/api": "$@opentelemetry/api",
+			"picomatch@>=4.0.0 <4.0.4": "4.0.4",
+			"protobufjs@>=7.0.0 <7.6.5": "7.6.5"
 		}
 	}
 }

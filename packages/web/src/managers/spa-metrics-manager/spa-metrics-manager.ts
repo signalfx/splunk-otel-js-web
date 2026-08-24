@@ -33,6 +33,7 @@ import {
 	BROWSER_NAVIGATION_LONGEST_LOADED_RESOURCE_ATTRIBUTE,
 	BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE,
 	BROWSER_NAVIGATION_QUIET_TIMER_RESET_COUNT_ATTRIBUTE,
+	BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION,
 	BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
 	PAGE_LOAD_METRICS_STATUS_TIMEOUT,
 } from './constants'
@@ -293,13 +294,16 @@ export class SpaMetricsManager {
 			quietTimerResetCount,
 			status,
 		}: PageLoadMetricsResult,
+		operation?: string,
 	): void {
+		if (this.emitNavigationAttributes || operation === BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION) {
+			span.setAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE, pct)
+			span.setAttribute(BROWSER_NAVIGATION_STATUS_ATTRIBUTE, status)
+		}
+
 		if (!this.emitNavigationAttributes) {
 			return
 		}
-
-		span.setAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE, pct)
-		span.setAttribute(BROWSER_NAVIGATION_STATUS_ATTRIBUTE, status)
 
 		if (loadingResourcesCount > 0) {
 			span.setAttribute(BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE, loadingResourcesCount)
@@ -422,7 +426,7 @@ export class SpaMetricsManager {
 			(result) => {
 				try {
 					if (span) {
-						this.setPageLoadMetricAttributes(span, result)
+						this.setPageLoadMetricAttributes(span, result, operation)
 					}
 
 					return result
