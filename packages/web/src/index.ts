@@ -767,10 +767,10 @@ export const SplunkRum: SplunkOtelWebType = {
 				// this condition applies when the page is hidden or when it's closed
 				// see for more details: https://developers.google.com/web/updates/2018/07/page-lifecycle-api#developer-recommendations-for-each-state
 				if (document.visibilityState === 'hidden') {
-					void (async () => {
-						await _spaMetricsManager?.finalizeCurrentNavigation()
-						await this._processor?.forceFlush()
-					})()
+					// interrupt() runs synchronously inside finalizeCurrentNavigation(). Do not delay the
+					// lifecycle flush while the resulting page-load promise chain finishes.
+					void _spaMetricsManager?.finalizeCurrentNavigation()
+					void this._processor?.forceFlush()
 				}
 			}
 			window.addEventListener('visibilitychange', _visibilityChangeListener)

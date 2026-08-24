@@ -52,6 +52,25 @@ test.describe('docload', () => {
 		expect(await recordPage.evaluate(() => (window as any).manualDocumentLoadResult)).toBe(true)
 	})
 
+	test('hidden pages flush interrupted manual document-load spans', async ({ recordPage }) => {
+		await recordPage.goTo('/docload/docload-manual-interruption.ejs')
+		await recordPage.changeVisibilityInTab('hidden')
+		await recordPage.changeVisibilityInTab('visible')
+
+		await recordPage.waitForSpans((spans) =>
+			['documentLoad', 'pageLoad'].every((name) => spans.some((span) => span.name === name)),
+		)
+
+		for (const name of ['documentLoad', 'pageLoad']) {
+			const span = recordPage.receivedSpans.find((candidate) => candidate.name === name)
+			expectDefined(span)
+			expectBrowserNavigationAttributes(span, {
+				completionSource: 'manual',
+				status: 'interrupted',
+			})
+		}
+	})
+
 	test('resources before load event are correctly captured', async ({ recordPage }) => {
 		await recordPage.goTo('/docload/docload-all.ejs')
 
