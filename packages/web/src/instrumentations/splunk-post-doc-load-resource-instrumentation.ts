@@ -28,6 +28,7 @@ import { getPctMonitorTypes } from '../managers/spa-metrics-manager/resource-mon
 import { SplunkOtelWebConfig } from '../types'
 import { isCacheHit } from '../utils/cache'
 import { VERSION } from '../version'
+import { wasResourceHandledByDocumentLoad } from './resource-span-dedupe'
 
 export interface SplunkPostDocLoadResourceInstrumentationConfig extends InstrumentationConfig {
 	allowedInitiatorTypes?: string[]
@@ -121,7 +122,7 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 	}
 
 	private _createSpan(entry: PerformanceResourceTiming) {
-		if (isUrlIgnored(entry.name, this.config.ignoreUrls)) {
+		if (wasResourceHandledByDocumentLoad(entry) || isUrlIgnored(entry.name, this.config.ignoreUrls)) {
 			return
 		}
 
