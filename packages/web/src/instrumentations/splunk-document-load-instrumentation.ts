@@ -17,13 +17,7 @@
  */
 
 import * as api from '@opentelemetry/api'
-import {
-	addHrTimes,
-	hrTimeToMilliseconds,
-	isUrlIgnored,
-	millisToHrTime,
-	timeInputToHrTime,
-} from '@opentelemetry/core'
+import { addHrTimes, hrTimeToMilliseconds, isUrlIgnored, millisToHrTime, timeInputToHrTime } from '@opentelemetry/core'
 import { InstrumentationConfig } from '@opentelemetry/instrumentation'
 import {
 	AttributeNames,
@@ -115,15 +109,6 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 		const _superEndSpan: ExposedSuper['_endSpan'] = exposedSuper._endSpan.bind(this)
 
 		exposedSuper._startSpan = (spanName, performanceName, entries, parentSpan) => {
-			const fetchStart = entries[PTN.FETCH_START]
-
-			if (spanName === AttributeNames.DOCUMENT_LOAD && typeof fetchStart === 'number') {
-				// The navigation entry is normally available when the tracer provider is set.
-				// Keep this fallback for browsers that expose it only when document-load
-				// performance collection runs.
-				this.startPageLoadSpan(fetchStart)
-			}
-
 			const isNavigationSpan =
 				spanName === AttributeNames.DOCUMENT_LOAD || spanName === AttributeNames.DOCUMENT_FETCH
 			const startEntries =

@@ -110,6 +110,28 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 		expect(MockPerformanceObserver.instances[0].disconnect).toHaveBeenCalledOnce()
 	})
 
+	it('does not create pageLoad late when document-load timing becomes available', () => {
+		const { setCurrentNavigationSpan, spaMetricsManager } = createSpaMetricsManagerMock()
+		vi.spyOn(performance, 'getEntriesByType').mockReturnValue([])
+		vi.stubGlobal('PerformanceObserver', null)
+
+		instrumentation = new SplunkDocumentLoadInstrumentation(
+			{},
+			{ experimental: true },
+			undefined,
+			spaMetricsManager,
+		)
+		instrumentation.setTracerProvider(new BasicTracerProvider())
+
+		const exposedInstrumentation = instrumentation as unknown as {
+			_startSpan(spanName: string, performanceName: string, entries: Record<string, number>): void
+		}
+		exposedInstrumentation._startSpan('documentLoad', 'fetchStart', { fetchStart: 12.5 })
+
+		expect(setCurrentNavigationSpan).toHaveBeenCalledOnce()
+		expect((setCurrentNavigationSpan.mock.calls[0][0] as Span).name).toBe('documentLoad')
+	})
+
 	it('ends an open pageLoad span when disabled', () => {
 		const { setCurrentNavigationSpan, spaMetricsManager } = createSpaMetricsManagerMock()
 		vi.spyOn(performance, 'getEntriesByType').mockReturnValue([{ fetchStart: 12.5 } as PerformanceNavigationTiming])
