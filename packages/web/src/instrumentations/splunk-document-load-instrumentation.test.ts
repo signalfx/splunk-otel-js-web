@@ -16,8 +16,7 @@
  *
  */
 
-import * as api from '@opentelemetry/api'
-import { hrTimeToMilliseconds, timeInputToHrTime, W3CTraceContextPropagator } from '@opentelemetry/core'
+import { hrTimeToMilliseconds, timeInputToHrTime } from '@opentelemetry/core'
 import { BasicTracerProvider, Span } from '@opentelemetry/sdk-trace-base'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -69,8 +68,6 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 
 	afterEach(() => {
 		instrumentation?.disable()
-		document.querySelectorAll('meta[name="traceparent"]').forEach((element) => element.remove())
-		api.propagation.disable()
 		vi.restoreAllMocks()
 		vi.unstubAllGlobals()
 	})
@@ -111,32 +108,6 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 		expect(startTime).toBe(0)
 		expect(operation).toBe(BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION)
 		expect(MockPerformanceObserver.instances[0].disconnect).toHaveBeenCalledOnce()
-	})
-
-	it('continues the server trace from the document traceparent', () => {
-		const traceId = '1234567890abcdef1234567890abcdef'
-		const parentSpanId = '1234567890abcdef'
-		const metaElement = document.createElement('meta')
-		metaElement.name = 'traceparent'
-		metaElement.content = `00-${traceId}-${parentSpanId}-01`
-		document.head.append(metaElement)
-		api.propagation.disable()
-		api.propagation.setGlobalPropagator(new W3CTraceContextPropagator())
-
-		const { setCurrentNavigationSpan, spaMetricsManager } = createSpaMetricsManagerMock()
-		vi.spyOn(performance, 'getEntriesByType').mockReturnValue([{ fetchStart: 12.5 } as PerformanceNavigationTiming])
-
-		instrumentation = new SplunkDocumentLoadInstrumentation(
-			{},
-			{ experimental: true },
-			undefined,
-			spaMetricsManager,
-		)
-		instrumentation.setTracerProvider(new BasicTracerProvider())
-
-		const [pageLoadSpan] = setCurrentNavigationSpan.mock.calls[0] as [Span, number, string]
-		expect(pageLoadSpan.spanContext().traceId).toBe(traceId)
-		expect(pageLoadSpan.parentSpanId).toBe(parentSpanId)
 	})
 
 	it('ends an open pageLoad span when disabled', () => {

@@ -23,7 +23,6 @@ import {
 	isUrlIgnored,
 	millisToHrTime,
 	timeInputToHrTime,
-	TRACE_PARENT_HEADER,
 } from '@opentelemetry/core'
 import { InstrumentationConfig } from '@opentelemetry/instrumentation'
 import {
@@ -53,13 +52,6 @@ export interface SplunkDocLoadInstrumentationConfig extends InstrumentationConfi
 
 const excludedInitiatorTypes = new Set(['beacon', 'fetch', 'xmlhttprequest'])
 const PAGE_LOAD_SPAN_NAME = 'pageLoad'
-
-function getDocumentTraceContext(): api.Context {
-	const metaElement = document.querySelector<HTMLMetaElement>(`meta[name="${TRACE_PARENT_HEADER}"]`)
-	return api.propagation.extract(api.ROOT_CONTEXT, {
-		[TRACE_PARENT_HEADER]: metaElement?.content ?? '',
-	})
-}
 
 function addExtraDocLoadTags(span: api.Span) {
 	if (document.referrer && document.referrer !== '') {
@@ -341,11 +333,9 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 		this.navigationTimingObserver?.disconnect()
 		this.navigationTimingObserver = undefined
 
-		this.pageLoadSpan = this.tracer.startSpan(
-			PAGE_LOAD_SPAN_NAME,
-			{ startTime: this.navigationStartTimeMillis },
-			getDocumentTraceContext(),
-		)
+		this.pageLoadSpan = this.tracer.startSpan(PAGE_LOAD_SPAN_NAME, {
+			startTime: this.navigationStartTimeMillis,
+		})
 		this.pageLoadSpan.setAttribute('component', this.component)
 		this.pageLoadSpan.setAttribute(SEMATTRS_HTTP_URL, location.href)
 		this.pageLoadSpan.setAttribute(SemanticAttributes.HTTP_USER_AGENT, navigator.userAgent)
