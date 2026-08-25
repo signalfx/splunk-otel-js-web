@@ -1129,10 +1129,9 @@ describe('test route change spa metrics', () => {
 		const visibilityState = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden')
 		const processor = SplunkRum._processor
 		expectDefined(processor)
+		let spanAtFlush: (typeof capturer.spans)[number] | undefined
 		const forceFlush = vi.spyOn(processor, 'forceFlush').mockImplementation(() => {
-			const span = capturer.spans.find((candidate) => candidate.name === 'routeChange')
-			expectDefined(span, 'Route change should end before the exporter is flushed.')
-			expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_STATUS_ATTRIBUTE, PAGE_LOAD_METRICS_STATUS_INTERRUPTED)
+			spanAtFlush = capturer.spans.find((candidate) => candidate.name === 'routeChange')
 			return Promise.resolve()
 		})
 
@@ -1144,6 +1143,11 @@ describe('test route change spa metrics', () => {
 			window.dispatchEvent(new Event('visibilitychange'))
 
 			await vi.waitFor(() => expect(forceFlush).toHaveBeenCalledOnce())
+			expectDefined(spanAtFlush, 'Route change should end before the exporter is flushed.')
+			expect(spanAtFlush).toHaveSpanAttribute(
+				BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
+				PAGE_LOAD_METRICS_STATUS_INTERRUPTED,
+			)
 			expect(handle?.markComplete()).toBe(false)
 		} finally {
 			forceFlush.mockRestore()
@@ -1155,11 +1159,9 @@ describe('test route change spa metrics', () => {
 		const visibilityState = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden')
 		const processor = SplunkRum._processor
 		expectDefined(processor)
+		let spanAtFlush: (typeof capturer.spans)[number] | undefined
 		const forceFlush = vi.spyOn(processor, 'forceFlush').mockImplementation(() => {
-			const span = capturer.spans.find((candidate) => candidate.name === 'routeChange')
-			expectDefined(span, 'Route change should end before the exporter is flushed.')
-			expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_STATUS_ATTRIBUTE, PAGE_LOAD_METRICS_STATUS_COMPLETED)
-			expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_SOURCE_ATTRIBUTE, 'manual')
+			spanAtFlush = capturer.spans.find((candidate) => candidate.name === 'routeChange')
 			return Promise.resolve()
 		})
 
@@ -1171,6 +1173,12 @@ describe('test route change spa metrics', () => {
 			window.dispatchEvent(new Event('visibilitychange'))
 
 			await vi.waitFor(() => expect(forceFlush).toHaveBeenCalledOnce())
+			expectDefined(spanAtFlush, 'Route change should end before the exporter is flushed.')
+			expect(spanAtFlush).toHaveSpanAttribute(
+				BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
+				PAGE_LOAD_METRICS_STATUS_COMPLETED,
+			)
+			expect(spanAtFlush).toHaveSpanAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_SOURCE_ATTRIBUTE, 'manual')
 		} finally {
 			forceFlush.mockRestore()
 			visibilityState.mockRestore()
