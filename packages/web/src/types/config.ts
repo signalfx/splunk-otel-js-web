@@ -244,8 +244,7 @@ export interface SplunkOtelWebConfig {
 	 *
 	 * Currently this enables experimental page completion and correlation attributes,
 	 * the `pageLoad` span, additional post-load resource types, `blockingElement`
-	 * spans, and Long Animation Frame instrumentation. Route-change spans emit their
-	 * completion time and status without this flag.
+	 * spans. Route-change spans emit their completion time and status without this flag.
 	 * @default false
 	 */
 	experimental?: boolean
