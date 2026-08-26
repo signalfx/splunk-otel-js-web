@@ -60,6 +60,7 @@ SplunkRum.init({
 ### Optional features
 
 - `@splunk/otel-web`
+    - Added opt-in Long Animation Frame instrumentation with frame and bounded script attribution. It suppresses legacy long-task spans where LoAF is supported to prevent duplicate reporting.
     - **Application-specific interaction metadata** [#1844](https://github.com/signalfx/splunk-otel-js-web/pull/1844), [#1890](https://github.com/signalfx/splunk-otel-js-web/pull/1890)
         - **Default:** The agent does not copy application `data-*` attributes into spans.
         - **Captured metadata:** `dataAttributesToCapture` is an allowlist of `data-*` attributes to copy from clicked elements into click and rage-click spans as `element.dataset.*` attributes. Use it for stable, bounded categories when the default element path and text are not enough to identify the control.
