@@ -78,9 +78,9 @@ CSS data in replay payloads. No action is required.
 
 **`@splunk/otel-web`**
 
-#### Clearer navigation information [#1883](https://github.com/signalfx/splunk-otel-js-web/pull/1883)
+#### Add browser.navigation.operation to all spans [#1883](https://github.com/signalfx/splunk-otel-js-web/pull/1883)
 
-Navigation spans now include `browser.navigation.operation` to identify whether they belong to the initial page load
+All spans now include `browser.navigation.operation` to identify whether they belong to the initial page load
 (`documentLoad`) or an SPA route change (`routeChange`).
 
 #### Better Synthetics test correlation [#1803](https://github.com/signalfx/splunk-otel-js-web/pull/1803)
