@@ -11,9 +11,9 @@ review the changes in default behavior below and decide whether your application
 
 ### Changes to default behavior
 
-#### `@splunk/otel-web`
+**`@splunk/otel-web`**
 
-##### More frustration signals are collected automatically [#1806](https://github.com/signalfx/splunk-otel-js-web/pull/1806)
+#### More frustration signals are collected automatically [#1806](https://github.com/signalfx/splunk-otel-js-web/pull/1806)
 
 All four frustration signals are now enabled by default:
 
@@ -22,22 +22,8 @@ All four frustration signals are now enabled by default:
 - Dead clicks
 - Thrashed cursors
 
-Previously, only rage-click detection was enabled without configuration. No action is required to collect all signals.
-To retain the 3.0 behavior, set `deadClick`, `errorClick`, and `thrashedCursor` to `false` under
-`instrumentations.frustrationSignals`. To disable all frustration-signal detection, set
-`instrumentations.frustrationSignals` to `false`.
-
-##### Page completion is measured sooner [#1812](https://github.com/signalfx/splunk-otel-js-web/pull/1812)
-
-Page Completion Time (PCT) now completes after one second of inactivity, compared with five seconds in version 3.0.x,
-when there is no monitored network, media, or resource-timing activity. This helps prevent unrelated background
-activity from extending page-load measurements.
-
-Most applications do not require any changes. If meaningful page-loading activity may begin more than one second after
-the previous activity, set `spaMetrics.quietTime: 5000` to retain the 3.0 behavior or choose another value appropriate
-for the application.
-
-To retain the relevant 3.0 defaults:
+No action is required to begin collecting these signals. To keep the previous behavior, disable dead-click, error-click,
+and thrashed-cursor detection:
 
 ```js
 SplunkRum.init({
@@ -48,16 +34,33 @@ SplunkRum.init({
 			thrashedCursor: false,
 		},
 	},
-	spaMetrics: {
-		quietTime: 5000,
-	},
-	// Existing application, realm/token, and other options...
 })
 ```
 
-#### `@splunk/otel-web-session-recorder`
+To disable all frustration-signal detection, set `instrumentations.frustrationSignals` to `false`.
 
-##### Failed replay uploads can be stored and retried [#1792](https://github.com/signalfx/splunk-otel-js-web/pull/1792), [#1857](https://github.com/signalfx/splunk-otel-js-web/pull/1857), [#1890](https://github.com/signalfx/splunk-otel-js-web/pull/1890)
+#### Page completion is measured sooner [#1812](https://github.com/signalfx/splunk-otel-js-web/pull/1812)
+
+Page Completion Time (PCT) now completes after one second of inactivity, compared with five seconds in version 3.0.x,
+when there is no monitored network, media, or resource-timing activity. This helps prevent unrelated background
+activity from extending page-load measurements.
+
+Most applications do not require any changes. If important page-loading activity may begin more than one second after
+the previous activity, you can retain the previous behavior:
+
+```js
+SplunkRum.init({
+	spaMetrics: {
+		quietTime: 5000,
+	},
+})
+```
+
+You may also choose a different value that better reflects your application’s behavior.
+
+**`@splunk/otel-web-session-recorder`**
+
+#### Failed replay uploads can be stored and retried [#1792](https://github.com/signalfx/splunk-otel-js-web/pull/1792), [#1857](https://github.com/signalfx/splunk-otel-js-web/pull/1857), [#1890](https://github.com/signalfx/splunk-otel-js-web/pull/1890)
 
 Failed Session Replay uploads are now queued in IndexedDB with a 100 MB limit and retried during later page loads.
 Previously, persistence used a 2 MB localStorage limit and JSON encoding. Replay exports now use OTLP/protobuf, which
@@ -66,12 +69,14 @@ reduces replay payload size.
 No action is required. To retain the previous 2 MB localStorage/JSON behavior, set
 `persistFailedReplayData: 'localstorage'`. To prevent failed uploads from being stored, set this option to `false`.
 
-##### Replay assets use less data [#1869](https://github.com/signalfx/splunk-otel-js-web/pull/1869)
+#### Replay assets use less data [#1869](https://github.com/signalfx/splunk-otel-js-web/pull/1869)
 
 Repeated stylesheet content in packed replays is now identified by a hash and reused where possible. This can reduce
 the size of replay data. No action is required.
 
 ### Automatically enabled improvements
+
+**`@splunk/otel-web`**
 
 #### Clearer navigation information [#1883](https://github.com/signalfx/splunk-otel-js-web/pull/1883)
 
@@ -80,10 +85,12 @@ Navigation spans now include `browser.navigation.operation` to identify whether 
 
 #### Better Synthetics test correlation [#1803](https://github.com/signalfx/splunk-otel-js-web/pull/1803)
 
-When the Splunk Synthetics runtime exposes the test ID, spans now include `Synthetics-TestId` in addition to the
-individual run ID. This makes it easier to group spans from multiple runs under the test that produced them.
+When available, spans now include the Synthetics test ID in addition to the individual run ID. This makes it easier to
+group results from multiple runs of the same test.
 
 ### Optional features
+
+**`@splunk/otel-web`**
 
 #### Capture application-specific interaction details [#1844](https://github.com/signalfx/splunk-otel-js-web/pull/1844), [#1890](https://github.com/signalfx/splunk-otel-js-web/pull/1890)
 
@@ -104,50 +111,11 @@ SplunkRum.init({
 URL-matching settings now support native JavaScript `RegExp` values and strings using the `regex/<pattern>/<flags>`
 syntax. This includes URL exclusions and SPA navigation overrides.
 
-Supported settings include:
-
-- Top-level `ignoreUrls`
-- Instrumentation-specific `ignoreUrls`
-- `spaMetrics.ignoreUrls`
-- `spaMetrics.urlOverrides[].ignoreUrls`
-- `spaMetrics.urlOverrides[].match`
-
 For serialized JSON configuration, use the string form because JSON does not support native `RegExp` values.
 
-JavaScript configuration accepts both forms. This example uses a native `RegExp` for the top-level setting and the
-`regex/<pattern>/<flags>` string form in the URL override:
-
-```typescript
-SplunkRum.init({
-	ignoreUrls: [/^https:\/\/analytics\./i],
-	spaMetrics: {
-		urlOverrides: [
-			{
-				match: /\/checkout\//,
-				ignoreUrls: ['regex/^https:\\/\\/metrics\\./i'],
-			},
-		],
-	},
-})
-```
-
-Equivalent serialized JSON configuration, where the string form is required:
-
-```json
-{
-	"ignoreUrls": ["regex/^https:\\/\\/analytics\\./i"],
-	"spaMetrics": {
-		"urlOverrides": [
-			{
-				"match": "regex/\\/checkout\\//",
-				"ignoreUrls": ["regex/^https:\\/\\/metrics\\./i"]
-			}
-		]
-	}
-}
-```
-
 ### Fixes
+
+**`@splunk/otel-web`**
 
 This release includes improvements that:
 
@@ -179,31 +147,7 @@ This release includes improvements that:
 
 ### Experimental features
 
-#### Web Vitals attribution, FCP, and TTFB [#1796](https://github.com/signalfx/splunk-otel-js-web/pull/1796)
-
-CLS, INP, and LCP continue to be collected without detailed attribution by default. Attribution, First Contentful Paint
-(FCP), and Time to First Byte (TTFB) are disabled until explicitly enabled.
-
-`_experimental_attribution` adds diagnostic details to existing Web Vitals spans: the element and layout shift for CLS,
-interaction processing and presentation phases for INP, and the element, resource, and load phases for LCP. Enable it
-when a metric value alone does not explain the cause of poor performance.
-
-`_experimental_fcp` emits FCP spans, and `_experimental_ttfb` emits TTFB spans. When attribution is also enabled, FCP
-includes the time from first byte to first contentful paint, while TTFB includes cache, DNS, connection, request, and
-server-wait timing breakdowns.
-
-```js
-SplunkRum.init({
-	instrumentations: {
-		webvitals: {
-			_experimental_attribution: true,
-			_experimental_fcp: true,
-			_experimental_ttfb: true,
-		},
-	},
-	// Existing application, realm/token, and other options...
-})
-```
+**`@splunk/otel-web`**
 
 #### Custom interactive-element selectors [#1852](https://github.com/signalfx/splunk-otel-js-web/pull/1852), [#1890](https://github.com/signalfx/splunk-otel-js-web/pull/1890)
 
