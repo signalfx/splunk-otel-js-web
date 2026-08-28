@@ -44,18 +44,15 @@ export type { PerformanceLongAnimationFrameTiming } from './loaf'
 export class SplunkLongAnimationFrameInstrumentation extends InstrumentationBase {
 	private loafObserver: PerformanceObserver | undefined
 
-	private readonly otelConfig: SplunkOtelWebConfig
-
 	private spanRateLimiter = new LoafSpanRateLimiter()
 
 	constructor(
 		config: InstrumentationConfig = {},
-		otelConfig: SplunkOtelWebConfig,
+		_otelConfig: SplunkOtelWebConfig,
 		public sessionManager?: SessionManager,
 		public spaMetricsManager?: SpaMetricsManager,
 	) {
 		super(LOAF_MODULE_NAME, VERSION, Object.assign({}, config))
-		this.otelConfig = otelConfig
 	}
 
 	disable(): void {
@@ -64,7 +61,7 @@ export class SplunkLongAnimationFrameInstrumentation extends InstrumentationBase
 	}
 
 	enable(): void {
-		if (!this.otelConfig.experimental || !isLongAnimationFrameSupported()) {
+		if (!isLongAnimationFrameSupported()) {
 			return
 		}
 

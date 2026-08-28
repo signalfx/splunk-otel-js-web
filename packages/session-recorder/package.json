@@ -1,6 +1,6 @@
 {
 	"name": "@splunk/otel-web-session-recorder",
-	"version": "3.0.0",
+	"version": "3.1.0",
 	"description": "Session recorder for Splunk Observability",
 	"keywords": [
 		"splunk",

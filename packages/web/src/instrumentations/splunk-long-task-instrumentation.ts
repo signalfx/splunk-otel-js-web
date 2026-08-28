@@ -108,10 +108,6 @@ export class SplunkLongTaskInstrumentation extends InstrumentationBase {
 	}
 
 	private shouldSuppressForLoaf(): boolean {
-		return (
-			this.initOptions.experimental === true &&
-			isLoafInstrumentationEnabled(this.initOptions.instrumentations?.loaf) &&
-			isLongAnimationFrameSupported()
-		)
+		return isLoafInstrumentationEnabled(this.initOptions.instrumentations?.loaf) && isLongAnimationFrameSupported()
 	}
 }
