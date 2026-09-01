@@ -27,6 +27,7 @@ import { setBrowserNavigationPageAttributes } from '../managers/spa-metrics-mana
 import { getPctMonitorTypes } from '../managers/spa-metrics-manager/resource-monitor-types'
 import { SplunkOtelWebConfig } from '../types'
 import { isCacheHit } from '../utils/cache'
+import { getResourceElementUrl, setResourceTimingStatus } from '../utils/resource-timing'
 import { VERSION } from '../version'
 
 export interface SplunkPostDocLoadResourceInstrumentationConfig extends InstrumentationConfig {
@@ -38,18 +39,6 @@ const MODULE_NAME = 'splunk-post-doc-load-resource'
 const defaultAllowedInitiatorTypes = ['img', 'script']
 const experimentalAllowedInitiatorTypes = ['audio', 'css', 'font', 'iframe', 'img', 'link', 'other', 'script', 'video']
 const fontResourcePattern = /\.(?:eot|otf|ttf|woff2?)(?:[?#]|$)/i
-
-const getNodeResourceUrl = (node: Node): string | undefined => {
-	if (node instanceof HTMLLinkElement) {
-		return node.getAttribute('href') ?? undefined
-	}
-
-	if (node instanceof HTMLIFrameElement || node instanceof HTMLImageElement || node instanceof HTMLScriptElement) {
-		return node.getAttribute('src') ?? undefined
-	}
-
-	return undefined
-}
 
 const isAllowedResourceEntry = (entry: PerformanceResourceTiming, allowedInitiatorTypes: string[] | undefined) =>
 	allowedInitiatorTypes?.includes(entry.initiatorType) ||
@@ -150,6 +139,7 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 		}
 
 		addSpanNetworkEvents(span, entry)
+		setResourceTimingStatus(span, entry)
 		//TODO look for server-timings? captureTraceParentFromPerformanceEntries(entry)
 		const resEnd = entry['responseEnd']
 		if (resEnd && resEnd > 0) {
@@ -169,7 +159,7 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 		mutations
 			.flatMap((mutation) => Array.from(mutation.addedNodes || []))
 			.forEach((node) => {
-				const resourceUrl = getNodeResourceUrl(node)
+				const resourceUrl = node instanceof Element ? getResourceElementUrl(node) : undefined
 				if (!resourceUrl) {
 					return
 				}

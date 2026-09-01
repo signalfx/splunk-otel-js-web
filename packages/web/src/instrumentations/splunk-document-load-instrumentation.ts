@@ -39,6 +39,7 @@ import { getPctMonitorTypes } from '../managers/spa-metrics-manager/resource-mon
 import { captureTraceParentFromPerformanceEntries } from '../servertiming'
 import { SplunkOtelWebConfig } from '../types'
 import { isCacheHit } from '../utils/cache'
+import { setResourceTimingStatus } from '../utils/resource-timing'
 
 export interface SplunkDocLoadInstrumentationConfig extends InstrumentationConfig {
 	ignoreUrls?: (string | RegExp)[]
@@ -276,9 +277,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 
 				if (!exposedSuper.getConfig().ignoreNetworkEvents) {
 					addSpanNetworkEvents(span, resource)
-					if (typeof resource.responseStatus === 'number' && resource.responseStatus > 0) {
-						span.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, resource.responseStatus)
-					}
+					setResourceTimingStatus(span, resource)
 				}
 
 				exposedSuper._addCustomAttributesOnResourceSpan(

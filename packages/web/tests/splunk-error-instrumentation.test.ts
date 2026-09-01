@@ -16,11 +16,26 @@
  *
  */
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import type { Span } from '@opentelemetry/api'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import SplunkOtelWeb, { SplunkRum } from '../src'
-import { SplunkErrorInstrumentationConfig, STACK_TRACE_URL_PATTER } from '../src/instrumentations'
+import {
+	SplunkErrorInstrumentation,
+	SplunkErrorInstrumentationConfig,
+	STACK_TRACE_URL_PATTER,
+} from '../src/instrumentations'
 import { deinit, SpanCapturer } from './utils'
+
+class TestableSplunkErrorInstrumentation extends SplunkErrorInstrumentation {
+	reportTestEvent(source: string, event: Event): Promise<void> {
+		return this.reportEvent(source, event, {})
+	}
+
+	setStartSpan(startSpan: ReturnType<typeof vi.fn>): void {
+		Object.defineProperty(this, '_tracer', { configurable: true, value: { startSpan } })
+	}
+}
 
 export function generateFilePaths(domainCount: number, pathCount: number): string[] {
 	const paths: string[] = []
@@ -250,6 +265,21 @@ describe('SplunkErrorInstrumentation', () => {
 		}
 		const urlArr = [...urls]
 		expect(urlArr.toSorted()).toStrictEqual(randomPaths.toSorted())
+	})
+
+	it('does not report resource element load failures as client error spans', async () => {
+		const instrumentation = new TestableSplunkErrorInstrumentation({ enabled: false }, {})
+		const startSpan = vi.fn(() => ({ end: vi.fn(), setAttribute: vi.fn() }) as unknown as Span)
+		instrumentation.setStartSpan(startSpan)
+
+		const img = document.createElement('img')
+		img.src = '/missing.png'
+		const event = new Event('error')
+		Object.defineProperty(event, 'target', { value: img })
+
+		await instrumentation.reportTestEvent('eventListener.error', event)
+
+		expect(startSpan).not.toHaveBeenCalled()
 	})
 
 	describe('onError hook', () => {
