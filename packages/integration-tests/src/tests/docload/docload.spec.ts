@@ -54,7 +54,7 @@ test.describe('docload', () => {
 
 	test('hidden pages flush interrupted manual document-load spans', async ({ recordPage }) => {
 		await recordPage.goTo('/docload/docload-manual-interruption.ejs')
-		await recordPage.changeVisibilityInTab('hidden')
+		await recordPage.changeVisibilityInTab('hidden', true)
 		await recordPage.changeVisibilityInTab('visible')
 
 		await recordPage.waitForSpans((spans) =>
