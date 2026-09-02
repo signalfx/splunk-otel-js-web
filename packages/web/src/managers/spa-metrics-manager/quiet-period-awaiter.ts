@@ -256,8 +256,8 @@ export class QuietPeriodAwaiter {
 				this.manualParticipants.delete(participantId)
 				completed = true
 				this.lastManualCompletionTimestamp = performance.now()
-				this.manualCompletionResourceDetails = this.getCurrentResourceDetails()
 				if (this.manualParticipants.size === 0) {
+					this.manualCompletionResourceDetails = this.getCurrentResourceDetails()
 					this.onManualCompletionCandidate(this.lastManualCompletionTimestamp)
 					this.startManualRegistrationTimer()
 				}
@@ -389,7 +389,11 @@ export class QuietPeriodAwaiter {
 	}
 
 	private withLoadingResourcesDetails(resolveValue: PageLoadMetricsResolveValue): PageLoadMetricsResult {
-		if (resolveValue.completionSource === 'manual' && this.manualCompletionResourceDetails) {
+		if (
+			resolveValue.completionSource === 'manual' &&
+			resolveValue.status === PAGE_LOAD_METRICS_STATUS_COMPLETED &&
+			this.manualCompletionResourceDetails
+		) {
 			return { ...resolveValue, ...this.manualCompletionResourceDetails }
 		}
 

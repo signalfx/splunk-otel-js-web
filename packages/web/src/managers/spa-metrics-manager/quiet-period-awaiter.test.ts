@@ -367,6 +367,39 @@ describe('QuietPeriodAwaiter', () => {
 		expect(handle?.markComplete()).toBe(false)
 	})
 
+	it('reports current loading resources when interrupted after partial manual completion', async () => {
+		const now = vi.spyOn(performance, 'now').mockReturnValue(1000)
+		let loadingResourcesCount = 1
+		let loadingResourceUrls = ['https://example.test/first-pending.js']
+		const awaiter = new QuietPeriodAwaiter({
+			getDetectedResourcesCount: () => 2,
+			getLastLoadedResources: () => [],
+			getLoadingResourcesCount: () => loadingResourcesCount,
+			getLoadingResourceUrls: () => loadingResourceUrls,
+			getLongestLoadedResource: getNoLongestLoadedResource,
+			quietTime: 100,
+			startTime: 1000,
+		})
+		const firstHandle = awaiter.registerManualPageLoad()
+		const pendingHandle = awaiter.registerManualPageLoad()
+
+		now.mockReturnValue(1020)
+		expect(firstHandle?.markComplete()).toBe(true)
+		loadingResourcesCount = 2
+		loadingResourceUrls = ['https://example.test/current-a.js', 'https://example.test/current-b.js']
+		awaiter.interrupt(1050)
+
+		const result = await awaiter.promise
+		expect(result.completionSource).toBe('manual')
+		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_INTERRUPTED)
+		expect(result.loadingResourcesCount).toBe(2)
+		expect(result.loadingResourceUrls).toEqual([
+			'https://example.test/current-a.js',
+			'https://example.test/current-b.js',
+		])
+		expect(pendingHandle?.markComplete()).toBe(false)
+	})
+
 	it('times out when a manual participant remains pending', async () => {
 		vi.useFakeTimers()
 		vi.spyOn(performance, 'now').mockReturnValue(1000)
@@ -384,6 +417,41 @@ describe('QuietPeriodAwaiter', () => {
 		expect(result.pct).toBe(100)
 		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_TIMEOUT)
 		expect(handle?.markComplete()).toBe(false)
+	})
+
+	it('reports current loading resources when timing out after partial manual completion', async () => {
+		vi.useFakeTimers()
+		const now = vi.spyOn(performance, 'now').mockReturnValue(1000)
+		let loadingResourcesCount = 1
+		let loadingResourceUrls = ['https://example.test/first-pending.js']
+		const awaiter = new QuietPeriodAwaiter({
+			getDetectedResourcesCount: () => 2,
+			getLastLoadedResources: () => [],
+			getLoadingResourcesCount: () => loadingResourcesCount,
+			getLoadingResourceUrls: () => loadingResourceUrls,
+			getLongestLoadedResource: getNoLongestLoadedResource,
+			maxPageLoadTimeoutForManualApi: 100,
+			quietTime: 100,
+			startTime: 1000,
+		})
+		const firstHandle = awaiter.registerManualPageLoad()
+		const pendingHandle = awaiter.registerManualPageLoad()
+
+		now.mockReturnValue(1020)
+		expect(firstHandle?.markComplete()).toBe(true)
+		loadingResourcesCount = 2
+		loadingResourceUrls = ['https://example.test/current-a.js', 'https://example.test/current-b.js']
+		await vi.advanceTimersByTimeAsync(100)
+
+		const result = await awaiter.promise
+		expect(result.completionSource).toBe('manual')
+		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_TIMEOUT)
+		expect(result.loadingResourcesCount).toBe(2)
+		expect(result.loadingResourceUrls).toEqual([
+			'https://example.test/current-a.js',
+			'https://example.test/current-b.js',
+		])
+		expect(pendingHandle?.markComplete()).toBe(false)
 	})
 
 	it('enforces the manual deadline when the timeout callback is delayed', async () => {
