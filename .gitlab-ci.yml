@@ -120,6 +120,7 @@ release_npm:
         - rm -f ~/.npmrc
 
 release_github:
+    <<: *pnpm-setup
     artifacts:
         paths:
             - artifacts/
@@ -136,12 +137,15 @@ release_github:
         - echo "deb [arch=$(dpkg --print-architecture)] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
         - sudo apt update
         - sudo apt install gh
+        - pnpm install --frozen-lockfile
         - |
             prerelease_flag=""
             if [[ "$CI_COMMIT_REF_NAME" == *"-beta"* ]]; then
               prerelease_flag="--prerelease"
             fi
-            gh release create v${CI_COMMIT_REF_NAME:1} ./artifacts/* --target $CI_COMMIT_SHA --repo $GITHUB_REPOSITORY $prerelease_flag
+            release_notes_file="release-notes.md"
+            pnpm exec tsx scripts/extract-github-release-notes.mts "$CI_COMMIT_REF_NAME" "$release_notes_file"
+            gh release create v${CI_COMMIT_REF_NAME:1} ./artifacts/* --notes-file "$release_notes_file" --target $CI_COMMIT_SHA --repo $GITHUB_REPOSITORY $prerelease_flag
 
 release_cdn:
     <<: *pnpm-setup
