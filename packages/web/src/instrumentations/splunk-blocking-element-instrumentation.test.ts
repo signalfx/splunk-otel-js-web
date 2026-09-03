@@ -573,6 +573,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 			instrumentation = new SplunkBlockingElementInstrumentation(
 				{},
 				{
+					experimental: true,
 					navigationMetrics: {
 						blockingSelectors: [SELECTOR],
 						monitors: ['elements'],
@@ -601,6 +602,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 			instrumentation = new SplunkBlockingElementInstrumentation(
 				{},
 				{
+					experimental: true,
 					navigationMetrics: {
 						blockingSelectors: [SELECTOR],
 						monitors: ['elements'],
@@ -635,6 +637,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 			instrumentation = new SplunkBlockingElementInstrumentation(
 				{},
 				{
+					experimental: true,
 					navigationMetrics: {
 						blockingSelectors: [SELECTOR],
 						monitors: ['elements'],
@@ -668,6 +671,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 			instrumentation = new SplunkBlockingElementInstrumentation(
 				{},
 				{
+					experimental: true,
 					navigationMetrics: {
 						blockingSelectors: [SELECTOR, OTHER_SELECTOR],
 						monitors: ['elements'],
@@ -709,6 +713,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 			instrumentation = new SplunkBlockingElementInstrumentation(
 				{},
 				{
+					experimental: true,
 					navigationMetrics: {
 						blockingSelectors: [],
 						monitors: ['elements'],
@@ -740,6 +745,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 			instrumentation = new SplunkBlockingElementInstrumentation(
 				{},
 				{
+					experimental: true,
 					navigationMetrics: {
 						blockingSelectors: [SELECTOR],
 						monitors: ['elements'],
@@ -776,6 +782,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 			instrumentation = new SplunkBlockingElementInstrumentation(
 				{},
 				{
+					experimental: true,
 					navigationMetrics: {
 						blockingSelectors: [SELECTOR],
 						monitors: ['elements'],
@@ -805,7 +812,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 			createVisibleElement()
 			instrumentation = new SplunkBlockingElementInstrumentation(
 				{},
-				{ navigationMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
+				{ experimental: true, navigationMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
 				undefined,
 				undefined,
 				elementVisibilityObserver,
@@ -825,7 +832,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 			const element = createVisibleElement()
 			instrumentation = new SplunkBlockingElementInstrumentation(
 				{},
-				{ navigationMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
+				{ experimental: true, navigationMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
 				undefined,
 				undefined,
 				elementVisibilityObserver,
@@ -845,7 +852,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 		it('does not start a span for an element that newly matches while still hidden, only once visible again', async () => {
 			instrumentation = new SplunkBlockingElementInstrumentation(
 				{},
-				{ navigationMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
+				{ experimental: true, navigationMetrics: { blockingSelectors: [SELECTOR], monitors: ['elements'] } },
 				undefined,
 				undefined,
 				elementVisibilityObserver,
