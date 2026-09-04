@@ -26,10 +26,13 @@ export function setBrowserNavigationPageAttributes(
 	spaMetricsManager: SpaMetricsManager | undefined,
 	startTime: number,
 	activity?: NavigationActivity,
-): void {
+): boolean {
 	const navigation = spaMetricsManager?.getNavigationPageAttributes(startTime, activity)
-	if (navigation) {
-		span.setAttribute(BROWSER_NAVIGATION_PAGE_SPAN_ID_ATTRIBUTE, navigation.pageSpanId)
-		span.setAttribute(BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE, navigation.pctRelevant)
+	if (!navigation) {
+		return false
 	}
+
+	span.setAttribute(BROWSER_NAVIGATION_PAGE_SPAN_ID_ATTRIBUTE, navigation.pageSpanId)
+	span.setAttribute(BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE, navigation.pctRelevant)
+	return true
 }
