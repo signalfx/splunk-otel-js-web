@@ -18,7 +18,7 @@
 import { request } from '@octokit/request'
 
 interface GithubRelease {
-	body: string
+	body: null | string
 	html_url: string
 	id: number
 	name: string
