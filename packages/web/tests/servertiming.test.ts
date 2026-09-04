@@ -22,6 +22,9 @@ import { describe, expect, it } from 'vitest'
 import { captureTraceParent, captureTraceParentFromPerformanceEntries } from '../src/servertiming'
 import { createSpan } from './utils'
 
+const SPAN_ID = '7e1c10b3c482edbe'
+const TRACE_ID = '000000000000000078499d3266d75d5f'
+
 describe('server timing', () => {
 	it('captureTraceParent() - should deal with simple value', () => {
 		const span = createSpan('test')
@@ -30,6 +33,15 @@ describe('server timing', () => {
 
 		expect(span).toHaveSpanAttribute('link.traceId', '000000000000000078499d3266d75d5f')
 		expect(span).toHaveSpanAttribute('link.spanId', '7e1c10b3c482edbe')
+	})
+
+	it('captureTraceParent() - should handle random and sampled trace flags', () => {
+		const span = createSpan('test')
+
+		captureTraceParent(`traceparent;desc="00-${TRACE_ID}-${SPAN_ID}-03"`, span)
+
+		expect(span).toHaveSpanAttribute('link.traceId', TRACE_ID)
+		expect(span).toHaveSpanAttribute('link.spanId', SPAN_ID)
 	})
 
 	it('captureTraceParent() - should deal with multiple values', () => {
@@ -41,6 +53,15 @@ describe('server timing', () => {
 		)
 		expect(span).toHaveSpanAttribute('link.traceId', '000000000000000078499d3266d75d5f')
 		expect(span).toHaveSpanAttribute('link.spanId', '7e1c10b3c482edbe')
+	})
+
+	it('captureTraceParent() - should ignore an invalid traceparent', () => {
+		const span = createSpan('test')
+
+		captureTraceParent(`traceparent;desc="00-${TRACE_ID}-${SPAN_ID}-0g"`, span)
+
+		expect(span).toNotHaveSpanAttribute('link.traceId')
+		expect(span).toNotHaveSpanAttribute('link.spanId')
 	})
 
 	it('should deal with single quotes', () => {
@@ -71,5 +92,17 @@ describe('server timing', () => {
 		captureTraceParentFromPerformanceEntries(entries as PerformanceEntries, span)
 		expect(span).toHaveSpanAttribute('link.traceId', '000000000000000078499d3266d75d5f')
 		expect(span).toHaveSpanAttribute('link.spanId', '7e1c10b3c482edbe')
+	})
+
+	it('captureTraceParentFromPerformanceEntries() - should handle random and sampled trace flags', () => {
+		const entries = {
+			serverTiming: [{ description: `00-${TRACE_ID}-${SPAN_ID}-03`, name: 'traceparent' }],
+		}
+		const span = createSpan('test')
+
+		captureTraceParentFromPerformanceEntries(entries as PerformanceEntries, span)
+
+		expect(span).toHaveSpanAttribute('link.traceId', TRACE_ID)
+		expect(span).toHaveSpanAttribute('link.spanId', SPAN_ID)
 	})
 })
