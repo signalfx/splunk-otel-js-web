@@ -99,10 +99,11 @@ export { SplunkZipkinExporter } from './exporters/zipkin'
 export * from './session-based-sampler'
 export * from './splunk-web-tracer-provider'
 import {
+	NavigationMetricsManager,
 	PrivacyManager,
+	resolveNavigationMetricsConfig,
 	SessionManager,
 	SessionState,
-	SpaMetricsManager,
 	StorageManager,
 	UserManager,
 } from './managers'
@@ -128,7 +129,6 @@ interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
 	}
 
 	instrumentations: SplunkOtelWebOptionsInstrumentations
-	spaMetrics: NonNullable<SplunkOtelWebConfig['spaMetrics']>
 
 	spanProcessor: {
 		factory: <T extends BufferConfig>(exporter: SpanExporter, config: T) => SpanProcessor
@@ -158,7 +158,6 @@ const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
 	persistence: 'cookie',
 	rumAccessToken: undefined,
 	sessionMetadata: undefined,
-	spaMetrics: true,
 	spanProcessor: {
 		factory: (exporter, config) => new BatchSpanProcessor(exporter, config),
 	},
@@ -294,7 +293,7 @@ let _deregisterInstrumentations: undefined | (() => void)
 let _deinitSessionTracking: undefined | (() => void)
 let _errorInstrumentation: SplunkErrorInstrumentation | undefined
 let _postDocLoadInstrumentation: SplunkPostDocLoadResourceInstrumentation | undefined
-let _spaMetricsManager: SpaMetricsManager | undefined
+let _navigationMetricsManager: NavigationMetricsManager | undefined
 let eventTarget: InternalEventTarget | undefined
 let _sessionStateUnsubscribe: undefined | (() => void)
 const isLatestTagUsed = isAgentLoadedViaLatestTag()
@@ -331,8 +330,8 @@ export const SplunkRum: SplunkOtelWebType = {
 			_deregisterInstrumentations?.()
 			_deregisterInstrumentations = undefined
 
-			_spaMetricsManager?.stop()
-			_spaMetricsManager = undefined
+			_navigationMetricsManager?.stop()
+			_navigationMetricsManager = undefined
 
 			_deinitSessionTracking?.()
 			_deinitSessionTracking = undefined
@@ -655,20 +654,21 @@ export const SplunkRum: SplunkOtelWebType = {
 			}
 			const basicPlatformInfo = getBasicPlatformInfo(platformInfoOptions)
 
-			// Shared by SpaMetricsManager (LoadingElementMonitor) and SplunkBlockingElementInstrumentation
+			// Shared by NavigationMetricsManager (LoadingElementMonitor) and SplunkBlockingElementInstrumentation
 			// so both watch the DOM through one MutationObserver instead of two independent ones.
 			const elementVisibilityObserver = new ElementVisibilityObserver()
 
-			const spaMetricsManager =
-				processedOptions.spaMetrics === false
+			const navigationMetricsConfig = resolveNavigationMetricsConfig(processedOptions)
+			const navigationMetricsManager =
+				navigationMetricsConfig === false
 					? undefined
-					: new SpaMetricsManager({
+					: new NavigationMetricsManager({
 							beaconEndpoint: processedOptions.beaconEndpoint,
-							...(processedOptions.spaMetrics === true ? {} : processedOptions.spaMetrics),
+							...(navigationMetricsConfig === true ? {} : navigationMetricsConfig),
 							elementVisibilityObserver,
 							emitNavigationAttributes: processedOptions.experimental,
 						})
-			_spaMetricsManager = spaMetricsManager
+			_navigationMetricsManager = navigationMetricsManager
 
 			this.attributesProcessor = new SpanAttributesProcessor(
 				this.sessionManager,
@@ -684,7 +684,7 @@ export const SplunkRum: SplunkOtelWebType = {
 				},
 				processedOptions.discardDataAfterInactivity,
 				processedOptions.adjustSessionStartToTimeOrigin,
-				spaMetricsManager,
+				navigationMetricsManager,
 			)
 
 			this._spanEmitter = new SpanEmitterProcessor()
@@ -728,7 +728,7 @@ export const SplunkRum: SplunkOtelWebType = {
 						pluginConf,
 						processedOptions,
 						this.sessionManager,
-						spaMetricsManager,
+						navigationMetricsManager,
 						elementVisibilityObserver,
 					)
 
@@ -774,7 +774,7 @@ export const SplunkRum: SplunkOtelWebType = {
 				instrumentations,
 				tracerProvider: provider,
 			})
-			spaMetricsManager?.start()
+			navigationMetricsManager?.start()
 
 			this._spanEmitter?.enable()
 

@@ -85,7 +85,7 @@ test.describe('blocking-element', () => {
 		expect(blockingElementSpans[0]).toHaveSpanAttribute('browser.element.completion', 'completed')
 	})
 
-	test('emits spans via the spaMetrics.blockingSelectors fallback with default blockingElement config', async ({
+	test('emits spans via the navigationMetrics.blockingSelectors fallback with default blockingElement config', async ({
 		recordPage,
 	}) => {
 		await recordPage.goTo('/blocking-element/blocking-element-span.ejs')
@@ -99,7 +99,7 @@ test.describe('blocking-element', () => {
 		expect(blockingElementSpans[0]).toHaveSpanAttribute('browser.element.selector', '.global-spinner')
 	})
 
-	test('emits no spans when instrumentations.blockingElement is disabled, independent of spaMetrics', async ({
+	test('emits no spans when instrumentations.blockingElement is disabled, independent of navigationMetrics', async ({
 		recordPage,
 	}) => {
 		await recordPage.goTo('/blocking-element/blocking-element-span.ejs?disableInstrumentation=blockingElement')
@@ -126,7 +126,7 @@ test.describe('blocking-element', () => {
 				spans.filter((span) => span.name === 'blockingElement').length === 1,
 		)
 
-		// PCT (LoadingElementMonitor, via SpaMetricsManager) waited on the same spinner...
+		// PCT (LoadingElementMonitor, via NavigationMetricsManager) waited on the same spinner...
 		const routeChangeSpan = recordPage.receivedSpans.find((span) => span.name === 'routeChange')
 		expect(routeChangeSpan).toBeDefined()
 		expectBrowserNavigationAttributes(routeChangeSpan!, {

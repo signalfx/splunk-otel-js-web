@@ -16,9 +16,9 @@
  *
  */
 
-import type { SpaMetricsMonitor } from '../../types'
+import type { NavigationMetricsMonitor } from '../../types'
 
-export function getPctMonitorTypes(initiatorType: string): SpaMetricsMonitor[] {
+export function getPctMonitorTypes(initiatorType: string): NavigationMetricsMonitor[] {
 	if (initiatorType === 'img') {
 		return ['media', 'performance']
 	}

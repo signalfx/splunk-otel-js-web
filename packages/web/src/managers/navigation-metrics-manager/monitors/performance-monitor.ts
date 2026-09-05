@@ -18,13 +18,13 @@
 
 import { diag } from '@opentelemetry/api'
 
-import type { SpaMetricsMonitor } from '../../../types'
+import type { NavigationMetricsMonitor } from '../../../types'
 
 import { getPctMonitorTypes } from '../resource-monitor-types'
 import { Monitor } from './monitor'
 
 export class PerformanceMonitor extends Monitor {
-	protected readonly monitorType: SpaMetricsMonitor = 'performance'
+	protected readonly monitorType: NavigationMetricsMonitor = 'performance'
 
 	private isMonitoring = false
 
