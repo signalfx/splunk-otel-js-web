@@ -5,7 +5,7 @@
 	<title>Blocking Element test</title>
 	<%- renderAgent({
 		experimental: true,
-		spaMetrics: {
+		navigationMetrics: {
 			blockingSelectors: ['.global-spinner', '[data-loading]'],
 			monitors: ['media', 'network', 'performance', 'elements'],
 		},

@@ -44,11 +44,11 @@ describe('normalizeIgnoreUrlsConfig', () => {
 					thrashedCursor: { ignoreUrls: ['regex/thrashed-cursor/'] },
 				},
 			},
-			spaMetrics: {
-				ignoreUrls: ['regex/spa-metrics/'],
+			navigationMetrics: {
+				ignoreUrls: ['regex/navigation-metrics/'],
 				urlOverrides: [
 					{
-						ignoreUrls: ['regex/spa-metrics-override/'],
+						ignoreUrls: ['regex/navigation-metrics-override/'],
 						match: 'regex/checkout/',
 					},
 				],
@@ -62,11 +62,11 @@ describe('normalizeIgnoreUrlsConfig', () => {
 		expect(options.instrumentations.frustrationSignals.deadClick.ignoreUrls[0]).toBeInstanceOf(RegExp)
 		expect(options.instrumentations.frustrationSignals.errorClick.ignoreUrls[0]).toBeInstanceOf(RegExp)
 		expect(options.instrumentations.frustrationSignals.thrashedCursor.ignoreUrls[0]).toBeInstanceOf(RegExp)
-		expect(options.spaMetrics.ignoreUrls[0]).toBeInstanceOf(RegExp)
-		expect(options.spaMetrics.urlOverrides[0].ignoreUrls[0]).toBeInstanceOf(RegExp)
+		expect(options.navigationMetrics.ignoreUrls[0]).toBeInstanceOf(RegExp)
+		expect(options.navigationMetrics.urlOverrides[0].ignoreUrls[0]).toBeInstanceOf(RegExp)
 		expect(
-			options.spaMetrics.urlOverrides[0].match instanceof RegExp &&
-				options.spaMetrics.urlOverrides[0].match.test('https://example.com/checkout/'),
+			options.navigationMetrics.urlOverrides[0].match instanceof RegExp &&
+				options.navigationMetrics.urlOverrides[0].match.test('https://example.com/checkout/'),
 		).toBeTruthy()
 	})
 
@@ -88,7 +88,7 @@ describe('normalizeIgnoreUrlsConfig', () => {
 		const errorSpy = vi.spyOn(diag, 'error')
 		const options = {
 			ignoreUrls: ['regex/[invalid/', 'regex/abc/z'],
-			spaMetrics: {
+			navigationMetrics: {
 				urlOverrides: [
 					{
 						match: 'regex/[invalid/',
@@ -101,7 +101,7 @@ describe('normalizeIgnoreUrlsConfig', () => {
 
 		expect(options.ignoreUrls[0]).toBe('regex/[invalid/')
 		expect(options.ignoreUrls[1]).toBe('regex/abc/z')
-		expect(options.spaMetrics.urlOverrides[0].match).toBe('regex/[invalid/')
+		expect(options.navigationMetrics.urlOverrides[0].match).toBe('regex/[invalid/')
 		expect(errorSpy).toHaveBeenCalledWith(
 			'SplunkRum: Invalid regex string in configuration; treating it as a literal string.',
 			expect.objectContaining({ value: 'regex/[invalid/' }),

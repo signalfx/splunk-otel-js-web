@@ -20,9 +20,9 @@ import { hrTimeToMilliseconds, timeInputToHrTime } from '@opentelemetry/core'
 import { BasicTracerProvider, Span } from '@opentelemetry/sdk-trace-base'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { SpaMetricsManager } from '../managers'
+import type { NavigationMetricsManager } from '../managers'
 
-import { BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION } from '../managers/spa-metrics-manager/constants'
+import { BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION } from '../managers/navigation-metrics-manager/constants'
 import { SplunkDocumentLoadInstrumentation } from './splunk-document-load-instrumentation'
 
 class MockPerformanceObserver {
@@ -48,15 +48,15 @@ class MockPerformanceObserver {
 	}
 }
 
-function createSpaMetricsManagerMock() {
+function createNavigationMetricsManagerMock() {
 	const setCurrentNavigationSpan = vi.fn()
-	const spaMetricsManager = {
+	const navigationMetricsManager = {
 		getNavigationPageAttributes: vi.fn(() => {}),
 		setCurrentNavigationSpan,
 		waitForPageLoad: vi.fn(() => new Promise(() => {})),
-	} as unknown as SpaMetricsManager
+	} as unknown as NavigationMetricsManager
 
-	return { setCurrentNavigationSpan, spaMetricsManager }
+	return { navigationMetricsManager, setCurrentNavigationSpan }
 }
 
 describe('SplunkDocumentLoadInstrumentation', () => {
@@ -73,7 +73,7 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 	})
 
 	it('starts and registers pageLoad when a buffered navigation entry becomes available', () => {
-		const { setCurrentNavigationSpan, spaMetricsManager } = createSpaMetricsManagerMock()
+		const { navigationMetricsManager, setCurrentNavigationSpan } = createNavigationMetricsManagerMock()
 		vi.spyOn(performance, 'getEntriesByType').mockReturnValue([])
 		vi.stubGlobal('PerformanceObserver', MockPerformanceObserver)
 
@@ -81,7 +81,7 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 			{},
 			{ experimental: true },
 			undefined,
-			spaMetricsManager,
+			navigationMetricsManager,
 		)
 		instrumentation.setTracerProvider(new BasicTracerProvider())
 
@@ -111,7 +111,7 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 	})
 
 	it('does not create pageLoad late when document-load timing becomes available', () => {
-		const { setCurrentNavigationSpan, spaMetricsManager } = createSpaMetricsManagerMock()
+		const { navigationMetricsManager, setCurrentNavigationSpan } = createNavigationMetricsManagerMock()
 		vi.spyOn(performance, 'getEntriesByType').mockReturnValue([])
 		vi.stubGlobal('PerformanceObserver', null)
 
@@ -119,7 +119,7 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 			{},
 			{ experimental: true },
 			undefined,
-			spaMetricsManager,
+			navigationMetricsManager,
 		)
 		instrumentation.setTracerProvider(new BasicTracerProvider())
 
@@ -133,14 +133,14 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 	})
 
 	it('ends an open pageLoad span when disabled', () => {
-		const { setCurrentNavigationSpan, spaMetricsManager } = createSpaMetricsManagerMock()
+		const { navigationMetricsManager, setCurrentNavigationSpan } = createNavigationMetricsManagerMock()
 		vi.spyOn(performance, 'getEntriesByType').mockReturnValue([{ fetchStart: 12.5 } as PerformanceNavigationTiming])
 
 		instrumentation = new SplunkDocumentLoadInstrumentation(
 			{},
 			{ experimental: true },
 			undefined,
-			spaMetricsManager,
+			navigationMetricsManager,
 		)
 		instrumentation.setTracerProvider(new BasicTracerProvider())
 		const [pageLoadSpan] = setCurrentNavigationSpan.mock.calls[0] as [Span, number, string]

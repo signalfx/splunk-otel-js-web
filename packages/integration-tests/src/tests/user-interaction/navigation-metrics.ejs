@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title>SPA Metrics test</title>
+	<title>Navigation Metrics test</title>
 	<%- renderAgent({
 		experimental: true,
-		spaMetrics: {
+		navigationMetrics: {
 			blockingSelectors: ['.global-loading-spinner'],
 			maxPageLoadWaitTime: 1000,
 			monitors: ['media', 'network', 'performance', 'elements'],
@@ -25,7 +25,7 @@
 	}) %>
 </head>
 <body>
-	<h1>SPA Metrics test</h1>
+	<h1>Navigation Metrics test</h1>
 
 	<button type="button" id="btnNavigate">Navigate</button>
 	<button type="button" id="btnNavigateWithFetch">Navigate with fetch</button>

@@ -20,10 +20,10 @@ import { FastifyReply } from 'fastify'
 const generateHex = (length: number) =>
 	[...Array.from({ length }).keys()].map(() => Math.floor(Math.random() * 16).toString(16)).join('')
 
-export const generateServerTiming = () => {
+export const generateServerTiming = (traceFlags = '01') => {
 	const traceId = generateHex(32)
 	const spanId = generateHex(16)
-	const formatted = `traceparent;desc="00-${traceId}-${spanId}-01"`
+	const formatted = `traceparent;desc="00-${traceId}-${spanId}-${traceFlags}"`
 	return {
 		header: formatted,
 		spanId,

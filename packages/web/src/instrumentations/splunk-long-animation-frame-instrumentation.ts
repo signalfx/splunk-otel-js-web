@@ -19,8 +19,8 @@
 import { diag } from '@opentelemetry/api'
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 
-import { SessionManager, SpaMetricsManager } from '../managers'
-import { setBrowserNavigationPageAttributes } from '../managers/spa-metrics-manager/navigation-relevance'
+import { NavigationMetricsManager, SessionManager } from '../managers'
+import { setBrowserNavigationPageAttributes } from '../managers/navigation-metrics-manager/navigation-relevance'
 import { SplunkOtelWebConfig } from '../types'
 import { VERSION } from '../version'
 import {
@@ -44,18 +44,15 @@ export type { PerformanceLongAnimationFrameTiming } from './loaf'
 export class SplunkLongAnimationFrameInstrumentation extends InstrumentationBase {
 	private loafObserver: PerformanceObserver | undefined
 
-	private readonly otelConfig: SplunkOtelWebConfig
-
 	private spanRateLimiter = new LoafSpanRateLimiter()
 
 	constructor(
 		config: InstrumentationConfig = {},
-		otelConfig: SplunkOtelWebConfig,
+		_otelConfig: SplunkOtelWebConfig,
 		public sessionManager?: SessionManager,
-		public spaMetricsManager?: SpaMetricsManager,
+		public navigationMetricsManager?: NavigationMetricsManager,
 	) {
 		super(LOAF_MODULE_NAME, VERSION, Object.assign({}, config))
-		this.otelConfig = otelConfig
 	}
 
 	disable(): void {
@@ -64,7 +61,7 @@ export class SplunkLongAnimationFrameInstrumentation extends InstrumentationBase
 	}
 
 	enable(): void {
-		if (!this.otelConfig.experimental || !isLongAnimationFrameSupported()) {
+		if (!isLongAnimationFrameSupported()) {
 			return
 		}
 
@@ -93,7 +90,7 @@ export class SplunkLongAnimationFrameInstrumentation extends InstrumentationBase
 		})
 
 		setLoafEntryAttributes(span, entry)
-		setBrowserNavigationPageAttributes(span, this.spaMetricsManager, entry.startTime)
+		setBrowserNavigationPageAttributes(span, this.navigationMetricsManager, entry.startTime)
 		span.end(entry.startTime + entry.duration)
 	}
 }
