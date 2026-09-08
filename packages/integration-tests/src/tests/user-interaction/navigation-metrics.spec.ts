@@ -69,7 +69,7 @@ test.describe('navigation-metrics', () => {
 	})
 
 	test('routeChange span waits for every manual completion handle', async ({ recordPage }) => {
-		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+		await recordPage.goTo('/user-interaction/navigation-metrics.ejs')
 
 		await recordPage.locator('#btnNavigateWithManualCompletion').click()
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'routeChange').length === 1)
@@ -85,7 +85,7 @@ test.describe('navigation-metrics', () => {
 	})
 
 	test('interrupted routeChange spans retain their manual completion source', async ({ recordPage }) => {
-		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+		await recordPage.goTo('/user-interaction/navigation-metrics.ejs')
 
 		await recordPage.locator('#btnNavigateWithManualInterruption').click()
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'routeChange').length === 2)
@@ -113,7 +113,7 @@ test.describe('navigation-metrics', () => {
 	})
 
 	test('timed-out routeChange spans retain their manual completion source', async ({ recordPage }) => {
-		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+		await recordPage.goTo('/user-interaction/navigation-metrics.ejs')
 
 		await recordPage.locator('#btnNavigateWithManualTimeout').click()
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'routeChange').length === 1)
