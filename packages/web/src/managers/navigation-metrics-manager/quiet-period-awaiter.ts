@@ -18,7 +18,7 @@
 
 import { diag } from '@opentelemetry/api'
 
-import type { SpaMetricsMonitor } from '../../types'
+import type { NavigationMetricsMonitor } from '../../types'
 
 import {
 	PAGE_LOAD_METRICS_STATUS_COMPLETED,
@@ -45,7 +45,7 @@ export interface ManualPageLoadHandle {
 
 export type LoadedResourceDetails = {
 	duration: number
-	monitorType: SpaMetricsMonitor
+	monitorType: NavigationMetricsMonitor
 	url: string
 }
 
@@ -94,10 +94,13 @@ export function normalizeMaxPageLoadWaitTime({ maxPageLoadWaitTime, quietTime }:
 		return maxPageLoadWaitTime
 	}
 
-	diag.warn('spa.maxPageLoadWaitTime cannot be lower than quietTime. Using quietTime as maxPageLoadWaitTime.', {
-		maxPageLoadWaitTime,
-		quietTime,
-	})
+	diag.warn(
+		'navigationMetrics.maxPageLoadWaitTime cannot be lower than quietTime. Using quietTime as maxPageLoadWaitTime.',
+		{
+			maxPageLoadWaitTime,
+			quietTime,
+		},
+	)
 
 	return quietTime
 }

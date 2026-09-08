@@ -165,7 +165,7 @@ describe('MediaMonitor', () => {
 			expect(firstEvents[0].id).not.toBe(secondEvents[0].id)
 		})
 
-		it('emits URLs matching ignore patterns because SpaMetricsManager applies ignoreUrls', async () => {
+		it('emits URLs matching ignore patterns because NavigationMetricsManager applies ignoreUrls', async () => {
 			monitor.start()
 
 			const img = document.createElement('img')

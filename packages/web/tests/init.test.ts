@@ -32,6 +32,7 @@ import {
 	BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
 	PAGE_LOAD_METRICS_STATUS_COMPLETED,
 	PAGE_LOAD_METRICS_STATUS_INTERRUPTED,
+	PAGE_LOAD_METRICS_STATUS_TIMEOUT,
 } from '../src/managers'
 import { VERSION } from '../src/version'
 import {
@@ -293,16 +294,16 @@ describe('test init', () => {
 					},
 					xhr: { ignoreUrls: ['regex/xhr-regex/', 'exact'] },
 				},
-				rumAccessToken: undefined,
-				spaMetrics: {
-					ignoreUrls: ['regex/spa-metrics/', 'exact'],
+				navigationMetrics: {
+					ignoreUrls: ['regex/navigation-metrics/', 'exact'],
 					urlOverrides: [
 						{
-							ignoreUrls: ['regex/spa-metrics-override/', 'exact-override'],
+							ignoreUrls: ['regex/navigation-metrics-override/', 'exact-override'],
 							match: 'regex/checkout/',
 						},
 					],
 				},
+				rumAccessToken: undefined,
 			}
 
 			SplunkRum.init(initOptions)
@@ -323,11 +324,11 @@ describe('test init', () => {
 			expect(initOptions.instrumentations.xhr.ignoreUrls[1]).toBeTypeOf('string')
 			expect(initOptions.instrumentations.fetch.ignoreUrls[0]).toBeInstanceOf(RegExp)
 			expect(initOptions.instrumentations.fetch.ignoreUrls[1]).toBeTypeOf('string')
-			expect(initOptions.spaMetrics.ignoreUrls[0]).toBeInstanceOf(RegExp)
-			expect(initOptions.spaMetrics.ignoreUrls[1]).toBeTypeOf('string')
-			expect(initOptions.spaMetrics.urlOverrides[0].ignoreUrls[0]).toBeInstanceOf(RegExp)
-			expect(initOptions.spaMetrics.urlOverrides[0].ignoreUrls[1]).toBeTypeOf('string')
-			expect(initOptions.spaMetrics.urlOverrides[0].match).toBeInstanceOf(RegExp)
+			expect(initOptions.navigationMetrics.ignoreUrls[0]).toBeInstanceOf(RegExp)
+			expect(initOptions.navigationMetrics.ignoreUrls[1]).toBeTypeOf('string')
+			expect(initOptions.navigationMetrics.urlOverrides[0].ignoreUrls[0]).toBeInstanceOf(RegExp)
+			expect(initOptions.navigationMetrics.urlOverrides[0].ignoreUrls[1]).toBeTypeOf('string')
+			expect(initOptions.navigationMetrics.urlOverrides[0].match).toBeInstanceOf(RegExp)
 
 			const frustrationSignalsConfig = processedOptions?.instrumentations?.frustrationSignals as
 				| FrustrationSignalsConfig
@@ -343,15 +344,15 @@ describe('test init', () => {
 			expect(frustrationSignalsConfig?.errorClick?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
 			expect(frustrationSignalsConfig?.thrashedCursor?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
 
-			const spaMetricsConfig = processedOptions?.spaMetrics as
+			const navigationMetricsConfig = processedOptions?.navigationMetrics as
 				| {
 						ignoreUrls?: Array<string | RegExp>
 						urlOverrides?: Array<{ ignoreUrls?: Array<string | RegExp>; match?: string | RegExp }>
 				  }
 				| undefined
-			expect(spaMetricsConfig?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
-			expect(spaMetricsConfig?.urlOverrides?.[0]?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
-			expect(spaMetricsConfig?.urlOverrides?.[0]?.match).toBeInstanceOf(RegExp)
+			expect(navigationMetricsConfig?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
+			expect(navigationMetricsConfig?.urlOverrides?.[0]?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
+			expect(navigationMetricsConfig?.urlOverrides?.[0]?.match).toBeInstanceOf(RegExp)
 		})
 
 		it('reports malformed regex strings without preventing initialization', () => {
@@ -464,6 +465,57 @@ describe('test init', () => {
 			expectDefined(resourceFetchSpan, 'resourceFetch span presence.')
 		})
 
+		// Temporarily skipped while PCT timeout is disabled.
+		it.skip('sets timeout status on documentLoad span when PCT computation times out', async () => {
+			SplunkRum.init({
+				applicationName: 'my-app',
+				beaconEndpoint: 'https://127.0.0.1:9999/foo',
+				deploymentEnvironment: 'my-env',
+				experimental: true,
+				globalAttributes: { customerType: 'GOLD' },
+				navigationMetrics: {
+					maxPageLoadWaitTime: 3000,
+					quietTime: 1000,
+				},
+				rumAccessToken: undefined,
+				spanProcessors: [capturer],
+			})
+
+			const slowResourceAbortController = new AbortController()
+			const slowResourceUrl = `${HTTP_TEST_SERVER_URL}/some-data?delay=5000`
+			void fetch(slowResourceUrl, {
+				signal: slowResourceAbortController.signal,
+			}).catch(() => {})
+
+			try {
+				await vi.waitFor(
+					() => {
+						const documentLoadSpan = capturer.spans.find((span) => span.name === 'documentLoad')
+						expectDefined(documentLoadSpan, 'documentLoad span presence.')
+						expect(documentLoadSpan).toHaveSpanAttribute(
+							BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE,
+							3000,
+						)
+						expect(documentLoadSpan).toHaveSpanAttribute(
+							BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
+							PAGE_LOAD_METRICS_STATUS_TIMEOUT,
+						)
+						expect(documentLoadSpan).toHaveSpanAttribute(
+							BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE,
+							1,
+						)
+						expect(documentLoadSpan).toHaveSpanAttribute(
+							BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
+							JSON.stringify([slowResourceUrl]),
+						)
+					},
+					{ timeout: 6000 },
+				)
+			} finally {
+				slowResourceAbortController.abort()
+			}
+		})
+
 		it('sets interrupted status on documentLoad span when page hides during PCT computation', async () => {
 			SplunkRum.init({
 				applicationName: 'my-app',
@@ -471,11 +523,11 @@ describe('test init', () => {
 				deploymentEnvironment: 'my-env',
 				experimental: true,
 				globalAttributes: { customerType: 'GOLD' },
-				rumAccessToken: undefined,
-				spaMetrics: {
+				navigationMetrics: {
 					maxPageLoadWaitTime: 3000,
 					quietTime: 1000,
 				},
+				rumAccessToken: undefined,
 				spanProcessors: [capturer],
 			})
 
@@ -1025,14 +1077,14 @@ describe('test route change', () => {
 	})
 })
 
-describe('test route change spa metrics', () => {
+describe('test route change navigation metrics timeout', () => {
 	let capturer: SpanCapturer
 
 	beforeEach(() => {
 		capturer = new SpanCapturer()
 		initWithDefaultConfig(capturer, {
 			experimental: true,
-			spaMetrics: {
+			navigationMetrics: {
 				maxPageLoadWaitTime: 3000,
 				quietTime: 1000,
 			},
@@ -1062,6 +1114,41 @@ describe('test route change spa metrics', () => {
 			},
 			{ timeout: 6000 },
 		)
+	})
+
+	// Temporarily skipped while PCT timeout is disabled.
+	it.skip('sets timeout status on routeChange span when PCT computation times out', async () => {
+		const oldUrl = location.href
+		const slowResourceAbortController = new AbortController()
+		const slowResourceUrl = `${HTTP_TEST_SERVER_URL}/some-data?delay=5000`
+
+		try {
+			history.pushState({}, 'title', '/pctTimeout#WithAHash')
+			void fetch(slowResourceUrl, {
+				signal: slowResourceAbortController.signal,
+			}).catch(() => {})
+
+			await vi.waitFor(
+				() => {
+					const span = capturer.spans.find((s) => s.name === 'routeChange')
+					expectDefined(span, 'Check if routeChange span is present.')
+					expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE, 3000)
+					expect(span).toHaveSpanAttribute(
+						BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
+						PAGE_LOAD_METRICS_STATUS_TIMEOUT,
+					)
+					expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE, 1)
+					expect(span).toHaveSpanAttribute(
+						BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
+						JSON.stringify([slowResourceUrl]),
+					)
+					expect(span).toHaveSpanAttribute('prev.href', oldUrl)
+				},
+				{ timeout: 6000 },
+			)
+		} finally {
+			slowResourceAbortController.abort()
+		}
 	})
 
 	it('sets interrupted status on routeChange span when page hides during PCT computation', async () => {
@@ -1097,6 +1184,29 @@ describe('test route change spa metrics', () => {
 		} finally {
 			slowResourceAbortController.abort()
 		}
+	})
+
+	it('does not set loading resource count on interrupted routeChange span when no resources are loading', async () => {
+		const oldUrl = location.href
+
+		history.pushState({}, 'title', '/pctInterruptedNoResources#WithAHash')
+		window.dispatchEvent(new Event('pagehide'))
+
+		await vi.waitFor(
+			() => {
+				const span = capturer.spans.find((s) => s.name === 'routeChange')
+				expectDefined(span, 'Check if routeChange span is present.')
+				expect(span).toHaveSpanAttribute(
+					BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
+					PAGE_LOAD_METRICS_STATUS_INTERRUPTED,
+				)
+				expect(span).toNotHaveSpanAttribute(BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE)
+				expect(span).toNotHaveSpanAttribute(BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE)
+				expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE)
+				expect(span).toHaveSpanAttribute('prev.href', oldUrl)
+			},
+			{ timeout: 6000 },
+		)
 	})
 
 	it('completes a route change after all public manual handles complete', async () => {
@@ -1184,28 +1294,36 @@ describe('test route change spa metrics', () => {
 			visibilityState.mockRestore()
 		}
 	})
+})
 
-	it('does not set loading resource count on interrupted routeChange span when no resources are loading', async () => {
-		const oldUrl = location.href
+describe('manual page completion without experimental telemetry', () => {
+	let capturer: SpanCapturer
 
-		history.pushState({}, 'title', '/pctInterruptedNoResources#WithAHash')
-		window.dispatchEvent(new Event('pagehide'))
+	beforeEach(() => {
+		capturer = new SpanCapturer()
+		initWithDefaultConfig(capturer, {
+			navigationMetrics: { quietTime: 1 },
+		})
+	})
 
-		await vi.waitFor(
-			() => {
-				const span = capturer.spans.find((s) => s.name === 'routeChange')
-				expectDefined(span, 'Check if routeChange span is present.')
-				expect(span).toHaveSpanAttribute(
-					BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
-					PAGE_LOAD_METRICS_STATUS_INTERRUPTED,
-				)
-				expect(span).toNotHaveSpanAttribute(BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE)
-				expect(span).toNotHaveSpanAttribute(BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE)
-				expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE)
-				expect(span).toHaveSpanAttribute('prev.href', oldUrl)
-			},
-			{ timeout: 6000 },
-		)
+	afterEach(() => {
+		deinit()
+		history.pushState({}, 'title', '/')
+	})
+
+	it('completes a route change through the public manual API', async () => {
+		history.pushState({}, 'title', '/manual-page-completion-without-experimental')
+		const handle = SplunkRum.registerManualPageLoad()
+
+		expect(handle?.markComplete()).toBe(true)
+		await vi.waitFor(() => {
+			const span = capturer.spans.find((candidate) => candidate.name === 'routeChange')
+			expectDefined(span, 'Check if routeChange span is present.')
+			expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_SOURCE_ATTRIBUTE, 'manual')
+			expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_STATUS_ATTRIBUTE, PAGE_LOAD_METRICS_STATUS_COMPLETED)
+			expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE)
+			expect(span).toNotHaveSpanAttribute(BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE)
+		})
 	})
 })
 
@@ -1265,37 +1383,6 @@ describe('event listener shenanigans', () => {
 		document.body.addEventListener('test', listener, null)
 		// @ts-expect-error testing invalid arg
 		document.body.removeEventListener('test', listener, null)
-	})
-})
-
-describe('manual page completion without experimental telemetry', () => {
-	let capturer: SpanCapturer
-
-	beforeEach(() => {
-		capturer = new SpanCapturer()
-		initWithDefaultConfig(capturer, {
-			spaMetrics: { quietTime: 1 },
-		})
-	})
-
-	afterEach(() => {
-		deinit()
-		history.pushState({}, 'title', '/')
-	})
-
-	it('completes a route change through the public manual API', async () => {
-		history.pushState({}, 'title', '/manual-page-completion-without-experimental')
-		const handle = SplunkRum.registerManualPageLoad()
-
-		expect(handle?.markComplete()).toBe(true)
-		await vi.waitFor(() => {
-			const span = capturer.spans.find((candidate) => candidate.name === 'routeChange')
-			expectDefined(span, 'Check if routeChange span is present.')
-			expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_SOURCE_ATTRIBUTE, 'manual')
-			expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_STATUS_ATTRIBUTE, PAGE_LOAD_METRICS_STATUS_COMPLETED)
-			expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE)
-			expect(span).toNotHaveSpanAttribute(BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE)
-		})
 	})
 })
 

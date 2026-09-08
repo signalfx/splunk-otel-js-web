@@ -49,7 +49,7 @@ describe('FetchXhrMonitor', () => {
 			expect(events[0].id).toBe(events[1].id)
 		})
 
-		it('emits URLs matching ignore patterns because SpaMetricsManager applies ignoreUrls', async () => {
+		it('emits URLs matching ignore patterns because NavigationMetricsManager applies ignoreUrls', async () => {
 			await fetch(`${HTTP_TEST_SERVER_URL}/delay?delay=0&resource=ignore-me-test`)
 
 			expect(events.length).toBe(2)
@@ -88,7 +88,7 @@ describe('FetchXhrMonitor', () => {
 			expect(events[0].id).toBe(events[1].id)
 		})
 
-		it('emits URLs matching ignore patterns because SpaMetricsManager applies ignoreUrls', async () => {
+		it('emits URLs matching ignore patterns because NavigationMetricsManager applies ignoreUrls', async () => {
 			await new Promise<void>((resolve) => {
 				const xhr = new XMLHttpRequest()
 				xhr.open('GET', `${HTTP_TEST_SERVER_URL}/delay?delay=0&resource=ignore-me-test`)

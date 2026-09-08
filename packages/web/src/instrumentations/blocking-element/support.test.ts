@@ -31,7 +31,7 @@ afterEach(() => {
 })
 
 describe('isBlockingElementInstrumentationEnabled', () => {
-	it('is disabled when blockingElement is unset and spaMetrics is unset', () => {
+	it('is disabled when blockingElement is unset and navigationMetrics is unset', () => {
 		expect(isBlockingElementInstrumentationEnabled({})).toBe(false)
 	})
 
@@ -44,39 +44,39 @@ describe('isBlockingElementInstrumentationEnabled', () => {
 		).toBe(false)
 	})
 
-	it('is disabled when blockingElement is unset and spaMetrics is false', () => {
-		expect(isBlockingElementInstrumentationEnabled({ spaMetrics: false })).toBe(false)
+	it('is disabled when blockingElement is unset and navigationMetrics is false', () => {
+		expect(isBlockingElementInstrumentationEnabled({ navigationMetrics: false })).toBe(false)
 	})
 
-	it('is disabled when blockingElement is unset and spaMetrics is true', () => {
-		expect(isBlockingElementInstrumentationEnabled({ spaMetrics: true })).toBe(false)
+	it('is disabled when blockingElement is unset and navigationMetrics is true', () => {
+		expect(isBlockingElementInstrumentationEnabled({ navigationMetrics: true })).toBe(false)
 	})
 
-	it('is disabled when blockingElement is unset and spaMetrics has blockingSelectors but no elements monitor', () => {
+	it('is disabled when blockingElement is unset and navigationMetrics has blockingSelectors but no elements monitor', () => {
 		const config: SplunkOtelWebConfig = {
 			experimental: true,
-			spaMetrics: { blockingSelectors: ['.spinner'], monitors: ['network'] },
+			navigationMetrics: { blockingSelectors: ['.spinner'], monitors: ['network'] },
 		}
 		expect(isBlockingElementInstrumentationEnabled(config)).toBe(false)
 	})
 
-	it('is disabled when blockingElement is unset and spaMetrics has elements monitor but no blockingSelectors', () => {
+	it('is disabled when blockingElement is unset and navigationMetrics has elements monitor but no blockingSelectors', () => {
 		const config: SplunkOtelWebConfig = {
 			experimental: true,
-			spaMetrics: { monitors: ['elements'] },
+			navigationMetrics: { monitors: ['elements'] },
 		}
 		expect(isBlockingElementInstrumentationEnabled(config)).toBe(false)
 	})
 
-	it('falls back to enabled when blockingElement is unset and spaMetrics has elements monitor and blockingSelectors', () => {
+	it('falls back to enabled when blockingElement is unset and navigationMetrics has elements monitor and blockingSelectors', () => {
 		const config: SplunkOtelWebConfig = {
 			experimental: true,
-			spaMetrics: { blockingSelectors: ['.spinner'], monitors: ['elements'] },
+			navigationMetrics: { blockingSelectors: ['.spinner'], monitors: ['elements'] },
 		}
 		expect(isBlockingElementInstrumentationEnabled(config)).toBe(true)
 	})
 
-	it('is enabled when blockingElement is true, regardless of spaMetrics', () => {
+	it('is enabled when blockingElement is true, regardless of navigationMetrics', () => {
 		expect(
 			isBlockingElementInstrumentationEnabled({
 				experimental: true,
@@ -85,47 +85,47 @@ describe('isBlockingElementInstrumentationEnabled', () => {
 		).toBe(true)
 	})
 
-	it('is disabled when blockingElement is false, regardless of spaMetrics having elements+selectors', () => {
+	it('is disabled when blockingElement is false, regardless of navigationMetrics having elements+selectors', () => {
 		const config: SplunkOtelWebConfig = {
 			experimental: true,
 			instrumentations: { blockingElement: false },
-			spaMetrics: { blockingSelectors: ['.spinner'], monitors: ['elements'] },
+			navigationMetrics: { blockingSelectors: ['.spinner'], monitors: ['elements'] },
 		}
 		expect(isBlockingElementInstrumentationEnabled(config)).toBe(false)
 	})
 
-	it('is enabled when blockingElement is an object with no enabled field, falling back to spaMetrics', () => {
+	it('is enabled when blockingElement is an object with no enabled field, falling back to navigationMetrics', () => {
 		const config: SplunkOtelWebConfig = {
 			experimental: true,
 			instrumentations: { blockingElement: {} },
-			spaMetrics: { blockingSelectors: ['.spinner'], monitors: ['elements'] },
+			navigationMetrics: { blockingSelectors: ['.spinner'], monitors: ['elements'] },
 		}
 		expect(isBlockingElementInstrumentationEnabled(config)).toBe(true)
 	})
 
-	it('is disabled when blockingElement is an object with enabled: false, overriding spaMetrics', () => {
+	it('is disabled when blockingElement is an object with enabled: false, overriding navigationMetrics', () => {
 		const config: SplunkOtelWebConfig = {
 			experimental: true,
 			instrumentations: { blockingElement: { enabled: false } },
-			spaMetrics: { blockingSelectors: ['.spinner'], monitors: ['elements'] },
+			navigationMetrics: { blockingSelectors: ['.spinner'], monitors: ['elements'] },
 		}
 		expect(isBlockingElementInstrumentationEnabled(config)).toBe(false)
 	})
 
-	it('is enabled when blockingElement is an object with enabled: true, overriding spaMetrics', () => {
+	it('is enabled when blockingElement is an object with enabled: true, overriding navigationMetrics', () => {
 		const config: SplunkOtelWebConfig = {
 			experimental: true,
 			instrumentations: { blockingElement: { enabled: true } },
-			spaMetrics: false,
+			navigationMetrics: false,
 		}
 		expect(isBlockingElementInstrumentationEnabled(config)).toBe(true)
 	})
 
-	it('uses the spaMetrics config for the matching urlOverride, not the base config', () => {
+	it('uses the navigationMetrics config for the matching urlOverride, not the base config', () => {
 		location.hash = '#elements-page'
 		const config: SplunkOtelWebConfig = {
 			experimental: true,
-			spaMetrics: {
+			navigationMetrics: {
 				monitors: ['network'],
 				urlOverrides: [
 					{
@@ -143,7 +143,7 @@ describe('isBlockingElementInstrumentationEnabled', () => {
 		location.hash = '#other-page'
 		const config: SplunkOtelWebConfig = {
 			experimental: true,
-			spaMetrics: {
+			navigationMetrics: {
 				monitors: ['network'],
 				urlOverrides: [
 					{
@@ -161,7 +161,7 @@ describe('isBlockingElementInstrumentationEnabled', () => {
 		location.hash = '#cart-page'
 		const config: SplunkOtelWebConfig = {
 			experimental: true,
-			spaMetrics: {
+			navigationMetrics: {
 				blockingSelectors: ['.loading-spinner'],
 				monitors: ['media', 'network', 'performance', 'elements'],
 				urlOverrides: [
@@ -178,25 +178,25 @@ describe('isBlockingElementInstrumentationEnabled', () => {
 })
 
 describe('resolveBlockingElementSelectors', () => {
-	it('returns no selectors when blockingElement and spaMetrics are both unset', () => {
+	it('returns no selectors when blockingElement and navigationMetrics are both unset', () => {
 		expect(resolveBlockingElementSelectors({})).toEqual([])
 	})
 
-	it('returns no selectors when spaMetrics is false', () => {
-		expect(resolveBlockingElementSelectors({ spaMetrics: false })).toEqual([])
+	it('returns no selectors when navigationMetrics is false', () => {
+		expect(resolveBlockingElementSelectors({ navigationMetrics: false })).toEqual([])
 	})
 
-	it('resolves selectors from spaMetrics.blockingSelectors regardless of the blockingElement config value', () => {
+	it('resolves selectors from navigationMetrics.blockingSelectors regardless of the blockingElement config value', () => {
 		const config: SplunkOtelWebConfig = {
-			spaMetrics: { blockingSelectors: ['.spinner'] },
+			navigationMetrics: { blockingSelectors: ['.spinner'] },
 		}
 		expect(resolveBlockingElementSelectors(config)).toEqual(['.spinner'])
 	})
 
-	it('uses the spaMetrics config for the matching urlOverride, not the base config', () => {
+	it('uses the navigationMetrics config for the matching urlOverride, not the base config', () => {
 		location.hash = '#elements-page'
 		const config: SplunkOtelWebConfig = {
-			spaMetrics: {
+			navigationMetrics: {
 				blockingSelectors: ['.base-spinner'],
 				urlOverrides: [
 					{
@@ -212,7 +212,7 @@ describe('resolveBlockingElementSelectors', () => {
 	it('inherits blockingSelectors from the base config when a matching urlOverride omits it', () => {
 		location.hash = '#cart-page'
 		const config: SplunkOtelWebConfig = {
-			spaMetrics: {
+			navigationMetrics: {
 				blockingSelectors: ['.loading-spinner'],
 				urlOverrides: [
 					{

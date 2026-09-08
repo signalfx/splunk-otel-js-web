@@ -16,20 +16,12 @@
  *
  */
 
-import type { SpaMetricsMonitor } from '../../types'
+import type { NavigationMetricsOptions, SplunkOtelWebConfig } from '../../types'
 
-export function getPctMonitorTypes(initiatorType: string): SpaMetricsMonitor[] {
-	if (initiatorType === 'img') {
-		return ['media', 'performance']
-	}
-
-	if (initiatorType === 'audio' || initiatorType === 'video') {
-		return ['media']
-	}
-
-	if (['css', 'font', 'link', 'other'].includes(initiatorType)) {
-		return ['performance']
-	}
-
-	return []
+// `spaMetrics` is deprecated in favor of `navigationMetrics`; `??` correctly treats an explicit
+// `false`/`{}` on either key as a real value, so precedence (navigationMetrics wins when set) holds.
+export function resolveNavigationMetricsConfig(
+	options: Pick<SplunkOtelWebConfig, 'navigationMetrics' | 'spaMetrics'>,
+): boolean | NavigationMetricsOptions {
+	return options.navigationMetrics ?? options.spaMetrics ?? true
 }

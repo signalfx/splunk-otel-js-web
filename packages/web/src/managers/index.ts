@@ -16,8 +16,8 @@
  *
  */
 
+export * from './navigation-metrics-manager'
 export * from './privacy'
 export * from './session-manager'
-export * from './spa-metrics-manager'
 export * from './storage'
 export * from './user-manager'

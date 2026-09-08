@@ -16,6 +16,20 @@
  *
  */
 
-export * from './constants'
-export type { ManualPageLoadHandle } from './quiet-period-awaiter'
-export * from './spa-metrics-manager'
+import type { NavigationMetricsMonitor } from '../../types'
+
+export function getPctMonitorTypes(initiatorType: string): NavigationMetricsMonitor[] {
+	if (initiatorType === 'img') {
+		return ['media', 'performance']
+	}
+
+	if (initiatorType === 'audio' || initiatorType === 'video') {
+		return ['media']
+	}
+
+	if (['css', 'font', 'link', 'other'].includes(initiatorType)) {
+		return ['performance']
+	}
+
+	return []
+}

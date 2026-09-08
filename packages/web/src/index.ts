@@ -98,12 +98,14 @@ export { type SplunkExporterConfig } from './exporters/common'
 export { SplunkZipkinExporter } from './exporters/zipkin'
 export type { ManualPageLoadHandle } from './managers'
 export * from './session-based-sampler'
+export * from './splunk-web-tracer-provider'
 import {
 	type ManualPageLoadHandle,
+	NavigationMetricsManager,
 	PrivacyManager,
+	resolveNavigationMetricsConfig,
 	SessionManager,
 	SessionState,
-	SpaMetricsManager,
 	StorageManager,
 	UserManager,
 } from './managers'
@@ -129,7 +131,6 @@ interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
 	}
 
 	instrumentations: SplunkOtelWebOptionsInstrumentations
-	spaMetrics: NonNullable<SplunkOtelWebConfig['spaMetrics']>
 
 	spanProcessor: {
 		factory: <T extends BufferConfig>(exporter: SpanExporter, config: T) => SpanProcessor
@@ -159,7 +160,6 @@ const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
 	persistence: 'cookie',
 	rumAccessToken: undefined,
 	sessionMetadata: undefined,
-	spaMetrics: true,
 	spanProcessor: {
 		factory: (exporter, config) => new BatchSpanProcessor(exporter, config),
 	},
@@ -301,7 +301,7 @@ let _deregisterInstrumentations: undefined | (() => void)
 let _deinitSessionTracking: undefined | (() => void)
 let _errorInstrumentation: SplunkErrorInstrumentation | undefined
 let _postDocLoadInstrumentation: SplunkPostDocLoadResourceInstrumentation | undefined
-let _spaMetricsManager: SpaMetricsManager | undefined
+let _navigationMetricsManager: NavigationMetricsManager | undefined
 let _visibilityChangeListener: (() => void) | undefined
 let eventTarget: InternalEventTarget | undefined
 let _sessionStateUnsubscribe: undefined | (() => void)
@@ -344,8 +344,8 @@ export const SplunkRum: SplunkOtelWebType = {
 			_deregisterInstrumentations?.()
 			_deregisterInstrumentations = undefined
 
-			_spaMetricsManager?.stop()
-			_spaMetricsManager = undefined
+			_navigationMetricsManager?.stop()
+			_navigationMetricsManager = undefined
 
 			_deinitSessionTracking?.()
 			_deinitSessionTracking = undefined
@@ -668,20 +668,21 @@ export const SplunkRum: SplunkOtelWebType = {
 			}
 			const basicPlatformInfo = getBasicPlatformInfo(platformInfoOptions)
 
-			// Shared by SpaMetricsManager (LoadingElementMonitor) and SplunkBlockingElementInstrumentation
+			// Shared by NavigationMetricsManager (LoadingElementMonitor) and SplunkBlockingElementInstrumentation
 			// so both watch the DOM through one MutationObserver instead of two independent ones.
 			const elementVisibilityObserver = new ElementVisibilityObserver()
 
-			const spaMetricsManager =
-				processedOptions.spaMetrics === false
+			const navigationMetricsConfig = resolveNavigationMetricsConfig(processedOptions)
+			const navigationMetricsManager =
+				navigationMetricsConfig === false
 					? undefined
-					: new SpaMetricsManager({
+					: new NavigationMetricsManager({
 							beaconEndpoint: processedOptions.beaconEndpoint,
-							...(processedOptions.spaMetrics === true ? {} : processedOptions.spaMetrics),
+							...(navigationMetricsConfig === true ? {} : navigationMetricsConfig),
 							elementVisibilityObserver,
 							emitNavigationAttributes: processedOptions.experimental,
 						})
-			_spaMetricsManager = spaMetricsManager
+			_navigationMetricsManager = navigationMetricsManager
 
 			this.attributesProcessor = new SpanAttributesProcessor(
 				this.sessionManager,
@@ -697,7 +698,7 @@ export const SplunkRum: SplunkOtelWebType = {
 				},
 				processedOptions.discardDataAfterInactivity,
 				processedOptions.adjustSessionStartToTimeOrigin,
-				spaMetricsManager,
+				navigationMetricsManager,
 			)
 
 			this._spanEmitter = new SpanEmitterProcessor()
@@ -741,7 +742,7 @@ export const SplunkRum: SplunkOtelWebType = {
 						pluginConf,
 						processedOptions,
 						this.sessionManager,
-						spaMetricsManager,
+						navigationMetricsManager,
 						elementVisibilityObserver,
 					)
 
@@ -767,8 +768,8 @@ export const SplunkRum: SplunkOtelWebType = {
 				// this condition applies when the page is hidden or when it's closed
 				// see for more details: https://developers.google.com/web/updates/2018/07/page-lifecycle-api#developer-recommendations-for-each-state
 				if (document.visibilityState === 'hidden') {
-					if (_spaMetricsManager) {
-						void _spaMetricsManager.finalizeCurrentNavigation().finally(() => {
+					if (_navigationMetricsManager) {
+						void _navigationMetricsManager.finalizeCurrentNavigation().finally(() => {
 							void this._processor?.forceFlush()
 						})
 					} else {
@@ -794,7 +795,7 @@ export const SplunkRum: SplunkOtelWebType = {
 				instrumentations,
 				tracerProvider: provider,
 			})
-			spaMetricsManager?.start()
+			navigationMetricsManager?.start()
 
 			this._spanEmitter?.enable()
 
@@ -830,12 +831,12 @@ export const SplunkRum: SplunkOtelWebType = {
 			return
 		}
 
-		if (!_spaMetricsManager) {
-			diag.warn('[Splunk]: SplunkRum.registerManualPageLoad() - SPA metrics are disabled.')
+		if (!_navigationMetricsManager) {
+			diag.warn('[Splunk]: SplunkRum.registerManualPageLoad() - navigation metrics are disabled.')
 			return
 		}
 
-		return _spaMetricsManager?.registerManualPageLoad()
+		return _navigationMetricsManager.registerManualPageLoad()
 	},
 
 	removeEventListener(name, callback): void {
@@ -937,5 +938,4 @@ export const SplunkRum: SplunkOtelWebType = {
 
 export default SplunkRum
 
-export * from './splunk-web-tracer-provider'
 export { type SplunkOtelWebConfig, type SplunkOtelWebExporterOptions } from './types'
