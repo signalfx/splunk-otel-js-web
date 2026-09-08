@@ -29,7 +29,7 @@ import { Span } from '@opentelemetry/sdk-trace-base'
 import { addSpanNetworkEvents, PerformanceEntries, PerformanceTimingNames as PTN } from '@opentelemetry/sdk-trace-web'
 import { SemanticAttributes, SEMATTRS_HTTP_URL } from '@opentelemetry/semantic-conventions'
 
-import { NavigationMetricsManager, SessionManager } from '../managers'
+import { ensurePageLoadMetricsAtLeastDocumentLoadTime, NavigationMetricsManager, SessionManager } from '../managers'
 import {
 	BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION,
 	BROWSER_NAVIGATION_OPERATION_ATTRIBUTE,
@@ -55,6 +55,16 @@ function addExtraDocLoadTags(span: api.Span) {
 	if (window.screen) {
 		span.setAttribute('screen.xy', window.screen.width + 'x' + window.screen.height)
 	}
+}
+
+function getFinalDocumentLoadTime(entries: PerformanceEntries): number {
+	const fetchStart = entries[PTN.FETCH_START]
+	const loadEventEnd = entries[PTN.LOAD_EVENT_END]
+	if (typeof fetchStart !== 'number' || typeof loadEventEnd !== 'number') {
+		return 0
+	}
+
+	return loadEventEnd - fetchStart
 }
 
 type PerformanceEntriesWithServerTiming = PerformanceEntries & {
@@ -227,22 +237,29 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 				if (this.documentLoadMetricsPromise) {
 					void this.documentLoadMetricsPromise
 						.then((pageLoadMetrics) => {
-							this.navigationMetricsManager?.setPageLoadMetricAttributes(span, pageLoadMetrics)
-							this.navigationMetricsManager?.completeCurrentNavigationPct(span, pageLoadMetrics.pct)
+							const effectivePageLoadMetrics = ensurePageLoadMetricsAtLeastDocumentLoadTime(
+								pageLoadMetrics,
+								getFinalDocumentLoadTime(entries),
+							)
+							this.navigationMetricsManager?.setPageLoadMetricAttributes(span, effectivePageLoadMetrics)
+							this.navigationMetricsManager?.completeCurrentNavigationPct(
+								span,
+								effectivePageLoadMetrics.pct,
+							)
 							if (this.pageLoadSpan && this.navigationStartTimeMillis !== undefined) {
 								this.navigationMetricsManager?.setPageLoadMetricAttributes(
 									this.pageLoadSpan,
-									pageLoadMetrics,
+									effectivePageLoadMetrics,
 								)
 								const pageLoadSpan = this.pageLoadSpan as Span
 								pageLoadSpan.end(
-									addHrTimes(pageLoadSpan.startTime, millisToHrTime(pageLoadMetrics.pct)),
+									addHrTimes(pageLoadSpan.startTime, millisToHrTime(effectivePageLoadMetrics.pct)),
 								)
 								this.navigationStartTimeMillis = undefined
 								this.pageLoadSpan = undefined
 							}
 
-							api.diag.debug('Sending documentLoad span with PCT result', pageLoadMetrics)
+							api.diag.debug('Sending documentLoad span with PCT result', effectivePageLoadMetrics)
 							_superEndSpan(span, performanceName, entries)
 						})
 						.catch((error) => {

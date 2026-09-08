@@ -71,6 +71,18 @@ export function getDocumentLoadTime(navEntry: DocumentLoadTiming): number {
 	return navEntry.loadEventEnd - navEntry.fetchStart
 }
 
+export function ensurePageLoadMetricsAtLeastDocumentLoadTime(
+	pageLoadMetrics: PageLoadMetricsResult,
+	documentLoadTime: number,
+): PageLoadMetricsResult {
+	// Timeout results must stay capped at maxPageLoadWaitTime, even if document load took longer.
+	if (pageLoadMetrics.status === PAGE_LOAD_METRICS_STATUS_TIMEOUT) {
+		return pageLoadMetrics
+	}
+
+	return { ...pageLoadMetrics, pct: Math.max(pageLoadMetrics.pct, documentLoadTime) }
+}
+
 type NavigationMetricsManagerConfigValues = {
 	blockingSelectors?: string[]
 	clearLoadingResourcesOnNewPage?: boolean
@@ -409,16 +421,11 @@ export class NavigationMetricsManager {
 		// startTime === 0 means this is a documentLoad pct — ensure it's at least the document load time
 		if (startTime === 0) {
 			pageLoadMetricsPromise = pageLoadMetricsPromise.then((result) => {
-				// Timeout results must stay capped at maxPageLoadWaitTime, even if document load took longer.
-				if (result.status === PAGE_LOAD_METRICS_STATUS_TIMEOUT) {
-					return result
-				}
-
 				const navEntry = performance.getEntriesByType('navigation')[0] as
 					| PerformanceNavigationTiming
 					| undefined
 				const documentLoadTime = navEntry ? getDocumentLoadTime(navEntry) : 0
-				return { ...result, pct: Math.max(result.pct, documentLoadTime) }
+				return ensurePageLoadMetricsAtLeastDocumentLoadTime(result, documentLoadTime)
 			})
 		}
 
