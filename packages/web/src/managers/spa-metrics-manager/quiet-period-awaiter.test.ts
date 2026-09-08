@@ -473,7 +473,7 @@ describe('QuietPeriodAwaiter', () => {
 		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_TIMEOUT)
 	})
 
-	it('does not reopen manual completion after its deadline', async () => {
+	it('resolves completed manual load when registration is attempted after deadline but completion was already accepted', async () => {
 		vi.useFakeTimers()
 		const now = vi.spyOn(performance, 'now').mockReturnValue(1000)
 		const onManualRegistrationReopened = vi.fn()
@@ -491,7 +491,10 @@ describe('QuietPeriodAwaiter', () => {
 		expect(awaiter.registerManualPageLoad()).toBeUndefined()
 		expect(onManualRegistrationReopened).not.toHaveBeenCalled()
 
-		expect((await awaiter.promise).status).toBe(PAGE_LOAD_METRICS_STATUS_TIMEOUT)
+		const result = await awaiter.promise
+		expect(result.completionSource).toBe('manual')
+		expect(result.pct).toBe(50)
+		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_COMPLETED)
 	})
 
 	it('measures the manual API timeout from navigation start', async () => {

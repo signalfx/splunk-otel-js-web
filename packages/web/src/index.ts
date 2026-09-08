@@ -826,6 +826,12 @@ export const SplunkRum: SplunkOtelWebType = {
 
 	registerManualPageLoad() {
 		if (!inited) {
+			diag.warn('[Splunk]: SplunkRum.registerManualPageLoad() - RUM agent is not initialized.')
+			return
+		}
+
+		if (!_spaMetricsManager) {
+			diag.warn('[Splunk]: SplunkRum.registerManualPageLoad() - SPA metrics are disabled.')
 			return
 		}
 

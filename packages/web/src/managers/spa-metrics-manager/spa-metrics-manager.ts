@@ -243,9 +243,9 @@ export class SpaMetricsManager {
 
 	async finalizeCurrentNavigation(endTimestamp = performance.now()): Promise<void> {
 		const pageLoadMetricsPromise = this.pageLoadMetricsPromise
-		this.quietPeriodAwaiter?.interrupt(endTimestamp)
 
 		try {
+			this.quietPeriodAwaiter?.interrupt(endTimestamp)
 			await pageLoadMetricsPromise
 		} catch {
 			// Consumers of the page-load promise handle and report their own failures.

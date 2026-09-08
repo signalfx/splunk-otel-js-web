@@ -219,7 +219,7 @@ export class QuietPeriodAwaiter {
 		}
 
 		if (this.hasManualPageLoadTimedOut()) {
-			this.resolveManualPageLoadTimeout()
+			this.resolveManualPageLoadAfterDeadline()
 			return undefined
 		}
 
@@ -343,6 +343,15 @@ export class QuietPeriodAwaiter {
 		})
 	}
 
+	private resolveManualPageLoadAfterDeadline(): void {
+		if (this.manualParticipants.size === 0 && this.lastManualCompletionTimestamp !== undefined) {
+			this.resolveManualCompletion()
+			return
+		}
+
+		this.resolveManualPageLoadTimeout()
+	}
+
 	private resolveManualPageLoadTimeout(): void {
 		const pct = Math.max(this.maxPageLoadTimeoutForManualApi, 0)
 		diag.debug('QuietPeriodAwaiter: Manual page load timeout expired', { pct })
@@ -372,12 +381,7 @@ export class QuietPeriodAwaiter {
 		const elapsedTime = Math.max(performance.now() - this.startTime, 0)
 		this.manualPageLoadTimeoutId = setTimeout(
 			() => {
-				if (this.manualParticipants.size === 0 && this.lastManualCompletionTimestamp !== undefined) {
-					this.resolveManualCompletion()
-					return
-				}
-
-				this.resolveManualPageLoadTimeout()
+				this.resolveManualPageLoadAfterDeadline()
 			},
 			Math.max(timeout - elapsedTime, 0),
 		)
