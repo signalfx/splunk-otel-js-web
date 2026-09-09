@@ -227,13 +227,10 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 				if (this.documentLoadMetricsPromise) {
 					void this.documentLoadMetricsPromise
 						.then((pageLoadMetrics) => {
-							const effectivePageLoadMetrics =
-								pageLoadMetrics.completionSource === 'manual'
-									? pageLoadMetrics
-									: ensurePageLoadMetricsAtLeastDocumentLoadTime(
-											pageLoadMetrics,
-											getFinalDocumentLoadTime(entries),
-										)
+							const effectivePageLoadMetrics = ensurePageLoadMetricsAtLeastDocumentLoadTime(
+								pageLoadMetrics,
+								getFinalDocumentLoadTime(entries),
+							)
 							this.navigationMetricsManager?.setPageLoadMetricAttributes(span, effectivePageLoadMetrics)
 							this.navigationMetricsManager?.completeCurrentNavigationPct(
 								(this.pageLoadSpan as Span | undefined) ?? span,

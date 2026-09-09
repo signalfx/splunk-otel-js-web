@@ -78,12 +78,12 @@ export function ensurePageLoadMetricsAtLeastDocumentLoadTime(
 	pageLoadMetrics: PageLoadMetricsResult,
 	documentLoadTime: number,
 ): PageLoadMetricsResult {
-	// Timeout results must stay capped at maxPageLoadWaitTime, even if document load took longer.
-	if (pageLoadMetrics.status === PAGE_LOAD_METRICS_STATUS_TIMEOUT) {
+	if (pageLoadMetrics.completionSource === 'manual' || pageLoadMetrics.status === PAGE_LOAD_METRICS_STATUS_TIMEOUT) {
 		return pageLoadMetrics
 	}
 
-	return { ...pageLoadMetrics, pct: Math.max(pageLoadMetrics.pct, documentLoadTime) }
+	pageLoadMetrics.pct = Math.max(pageLoadMetrics.pct, documentLoadTime)
+	return pageLoadMetrics
 }
 
 type NavigationMetricsManagerConfigValues = {
@@ -474,17 +474,6 @@ export class NavigationMetricsManager {
 		// startTime === 0 means this is a documentLoad pct — ensure it's at least the document load time
 		if (startTime === 0) {
 			pageLoadMetricsPromise = pageLoadMetricsPromise.then((result) => {
-				// Manual completion is an explicit application timestamp and must not be
-				// moved to the browser load event. The documentLoad span keeps its native duration.
-				if (result.completionSource === 'manual') {
-					return result
-				}
-
-				// Timeout results must stay capped at maxPageLoadWaitTime, even if document load took longer.
-				if (result.status === PAGE_LOAD_METRICS_STATUS_TIMEOUT) {
-					return result
-				}
-
 				const navEntry = performance.getEntriesByType('navigation')[0] as
 					| PerformanceNavigationTiming
 					| undefined
