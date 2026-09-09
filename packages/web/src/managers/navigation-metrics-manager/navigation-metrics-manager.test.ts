@@ -19,6 +19,8 @@
 import { type Attributes, diag, type Span, TraceFlags } from '@opentelemetry/api'
 import { describe, expect, it, vi } from 'vitest'
 
+import type { PageLoadMetricsResult } from './quiet-period-awaiter'
+
 import { HTTP_TEST_SERVER_URL } from '../../../../../tests/servers/http-constants'
 import {
 	BROWSER_NAVIGATION_DETECTED_RESOURCE_COUNT_ATTRIBUTE,
@@ -38,7 +40,11 @@ import {
 	PAGE_LOAD_METRICS_STATUS_TIMEOUT,
 } from './constants'
 import { ResourceState } from './monitors'
-import { getDocumentLoadTime, NavigationMetricsManager } from './navigation-metrics-manager'
+import {
+	ensurePageLoadMetricsAtLeastDocumentLoadTime,
+	getDocumentLoadTime,
+	NavigationMetricsManager,
+} from './navigation-metrics-manager'
 import { setBrowserNavigationPageAttributes } from './navigation-relevance'
 
 const TEST_API_URL = `${HTTP_TEST_SERVER_URL}/some-data`
@@ -67,6 +73,18 @@ function createSpanMock(spanId = 'span-id'): { attributes: Attributes; span: Spa
 	}
 
 	return { attributes, span }
+}
+
+function createPageLoadMetricsResult(result: Pick<PageLoadMetricsResult, 'pct' | 'status'>): PageLoadMetricsResult {
+	return {
+		detectedResourcesCount: 0,
+		lastLoadedResources: [],
+		loadingResourcesCount: 0,
+		loadingResourceUrls: [],
+		longestLoadedResource: undefined,
+		quietTimerResetCount: 0,
+		...result,
+	}
 }
 
 describe('NavigationMetricsManager', () => {
@@ -417,6 +435,31 @@ describe('NavigationMetricsManager', () => {
 		expect(result.loadingResourceUrls).toEqual([])
 
 		manager.stop()
+	})
+
+	it('raises interrupted document-load PCT to the final document load time', () => {
+		const result = ensurePageLoadMetricsAtLeastDocumentLoadTime(
+			createPageLoadMetricsResult({
+				pct: 1000,
+				status: PAGE_LOAD_METRICS_STATUS_INTERRUPTED,
+			}),
+			1500,
+		)
+
+		expect(result.pct).toBe(1500)
+		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_INTERRUPTED)
+	})
+
+	it('does not raise timeout document-load PCT to the final document load time', () => {
+		const result = ensurePageLoadMetricsAtLeastDocumentLoadTime(
+			createPageLoadMetricsResult({
+				pct: 1000,
+				status: PAGE_LOAD_METRICS_STATUS_TIMEOUT,
+			}),
+			1500,
+		)
+
+		expect(result.pct).toBe(1000)
 	})
 
 	// Temporarily skipped while PCT timeout is disabled.
