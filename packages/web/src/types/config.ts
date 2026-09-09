@@ -58,6 +58,12 @@ export interface SplunkBlockingElementInstrumentationConfig extends Instrumentat
 	/**
 	 * Falls back to deriving from navigationMetrics (monitors includes 'elements' and
 	 * blockingSelectors is non-empty) when unset.
+	 *
+	 * Re-resolving selectors/enablement on SPA route changes (including navigationMetrics'
+	 * urlOverrides) depends on `instrumentations.interactions` being enabled — it's the only
+	 * instrumentation that detects SPA navigations (history/hashchange) and triggers re-evaluation.
+	 * If `interactions` is disabled, blockingElement still applies its initial page's config, but
+	 * never re-resolves on later route changes.
 	 */
 	enabled?: boolean
 
@@ -129,6 +135,8 @@ type NavigationMetricsOptionsBase = {
 	clearLoadingResourcesOnNewPage?: boolean
 	/** URLs to exclude from PCT tracking (e.g., analytics, third-party scripts) */
 	ignoreUrls?: Array<string | RegExp>
+	/** Maximum time in milliseconds from navigation start to wait for manual page completion. @default 180000 */
+	maxPageLoadTimeoutForManualApi?: number
 	/** Maximum time in milliseconds to wait for PCT computation before marking it as timed out. @default 180000 */
 	maxPageLoadWaitTime?: number
 	/** Maximum number of concurrent resources to track. @default 100 */
@@ -145,7 +153,12 @@ export type NavigationMetricsUrlOverride = NavigationMetricsOptionsBase & {
 }
 
 export type NavigationMetricsOptions = NavigationMetricsOptionsBase & {
-	/** Ordered per-URL overrides. The first matching override wins. */
+	/**
+	 * Ordered per-URL overrides. The first matching override wins.
+	 *
+	 * For blockingElement: re-resolving on SPA route changes requires `instrumentations.interactions`
+	 * to be enabled (it's what detects the route change and triggers re-evaluation).
+	 */
 	urlOverrides?: NavigationMetricsUrlOverride[]
 }
 
@@ -283,6 +296,7 @@ export interface SplunkOtelWebConfig {
 	 *   blockingSelectors: ['.loading-spinner'],
 	 *   clearLoadingResourcesOnNewPage: true,
 	 *   ignoreUrls: [/analytics\.example\.com/],
+	 *   maxPageLoadTimeoutForManualApi: 180000,
 	 *   maxPageLoadWaitTime: 180000,
 	 *   maxResourcesToWatch: 100,
 	 *   monitors: ['media', 'network', 'performance', 'elements'],

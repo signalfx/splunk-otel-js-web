@@ -96,9 +96,11 @@ import { VERSION } from './version'
 
 export { type SplunkExporterConfig } from './exporters/common'
 export { SplunkZipkinExporter } from './exporters/zipkin'
+export type { ManualPageLoadHandle } from './managers'
 export * from './session-based-sampler'
 export * from './splunk-web-tracer-provider'
 import {
+	type ManualPageLoadHandle,
 	NavigationMetricsManager,
 	PrivacyManager,
 	resolveNavigationMetricsConfig,
@@ -270,6 +272,12 @@ export interface SplunkOtelWebType extends SplunkOtelWebEventTarget {
 
 	provider?: SplunkWebTracerProvider
 
+	/**
+	 * Registers work that must finish before the current page load is complete.
+	 * The returned handle is bound to the current document load or route change.
+	 */
+	registerManualPageLoad: () => ManualPageLoadHandle | undefined
+
 	reportError: (error: string | Event | Error | ErrorEvent, context?: SpanContext) => Promise<void>
 
 	resource?: Resource
@@ -294,10 +302,22 @@ let _deinitSessionTracking: undefined | (() => void)
 let _errorInstrumentation: SplunkErrorInstrumentation | undefined
 let _postDocLoadInstrumentation: SplunkPostDocLoadResourceInstrumentation | undefined
 let _navigationMetricsManager: NavigationMetricsManager | undefined
+let _visibilityChangeListener: (() => void) | undefined
+let _blockingElementInstrumentation: SplunkBlockingElementInstrumentation | undefined
 let eventTarget: InternalEventTarget | undefined
 let _sessionStateUnsubscribe: undefined | (() => void)
 const isLatestTagUsed = isAgentLoadedViaLatestTag()
 const isFullVersionTagUsed = isAgentLoadedViaNextTag() || isAgentLoadedViaLockedVersionTag()
+
+// Registered at module load, before the app-level listener below — wins that race.
+// Guarded so importing this module in a non-browser environment (SSR, build-time) doesn't throw.
+if (typeof window === 'object' && typeof document === 'object') {
+	window.addEventListener('visibilitychange', () => {
+		if (document.visibilityState === 'hidden') {
+			_blockingElementInstrumentation?.interruptForHidden()
+		}
+	})
+}
 
 export const SplunkRum: SplunkOtelWebType = {
 	_internalInit: function (options: SplunkOtelWebConfig | Partial<SplunkOtelWebConfigInternal>) {
@@ -327,6 +347,11 @@ export const SplunkRum: SplunkOtelWebType = {
 		}
 
 		try {
+			if (_visibilityChangeListener) {
+				window.removeEventListener('visibilitychange', _visibilityChangeListener)
+				_visibilityChangeListener = undefined
+			}
+
 			_deregisterInstrumentations?.()
 			_deregisterInstrumentations = undefined
 
@@ -743,6 +768,13 @@ export const SplunkRum: SplunkOtelWebType = {
 						_postDocLoadInstrumentation = instrumentation
 					}
 
+					if (
+						confKey === 'blockingElement' &&
+						instrumentation instanceof SplunkBlockingElementInstrumentation
+					) {
+						_blockingElementInstrumentation = instrumentation
+					}
+
 					return instrumentation
 				}
 
@@ -750,13 +782,20 @@ export const SplunkRum: SplunkOtelWebType = {
 				// eslint-disable-next-line unicorn/prefer-native-coercion-functions
 			}).filter((a): a is Exclude<typeof a, null> => Boolean(a))
 
-			window.addEventListener('visibilitychange', () => {
+			_visibilityChangeListener = () => {
 				// this condition applies when the page is hidden or when it's closed
 				// see for more details: https://developers.google.com/web/updates/2018/07/page-lifecycle-api#developer-recommendations-for-each-state
 				if (document.visibilityState === 'hidden') {
-					void this._processor?.forceFlush()
+					if (_navigationMetricsManager) {
+						void _navigationMetricsManager.finalizeCurrentNavigation().finally(() => {
+							void this._processor?.forceFlush()
+						})
+					} else {
+						void this._processor?.forceFlush()
+					}
 				}
-			})
+			}
+			window.addEventListener('visibilitychange', _visibilityChangeListener)
 
 			provider.register({
 				contextManager: new SplunkContextManager({
@@ -789,6 +828,11 @@ export const SplunkRum: SplunkOtelWebType = {
 				diag.debug('[Splunk]: Enhanced platform attributes updated')
 			})
 		} catch (error) {
+			if (_visibilityChangeListener) {
+				window.removeEventListener('visibilitychange', _visibilityChangeListener)
+				_visibilityChangeListener = undefined
+			}
+
 			diag.warn('[Splunk]: SplunkRum.init() - Failed to initialize due to internal exception.', { error })
 		}
 	},
@@ -798,6 +842,20 @@ export const SplunkRum: SplunkOtelWebType = {
 	},
 
 	ParentBasedSampler,
+
+	registerManualPageLoad() {
+		if (!inited) {
+			diag.warn('[Splunk]: SplunkRum.registerManualPageLoad() - RUM agent is not initialized.')
+			return
+		}
+
+		if (!_navigationMetricsManager) {
+			diag.warn('[Splunk]: SplunkRum.registerManualPageLoad() - navigation metrics are disabled.')
+			return
+		}
+
+		return _navigationMetricsManager.registerManualPageLoad()
+	},
 
 	removeEventListener(name, callback): void {
 		try {

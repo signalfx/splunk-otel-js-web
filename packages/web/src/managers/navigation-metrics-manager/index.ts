@@ -18,4 +18,5 @@
 
 export * from './constants'
 export * from './navigation-metrics-manager'
+export type { ManualPageLoadHandle } from './quiet-period-awaiter'
 export * from './resolve-config'

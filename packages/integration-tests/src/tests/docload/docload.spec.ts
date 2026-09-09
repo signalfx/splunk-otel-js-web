@@ -23,6 +23,54 @@ import { expectDefined, test } from '../../utils/test'
 import { timesMakeSense } from '../../utils/time-make-sense'
 
 test.describe('docload', () => {
+	test('documentLoad uses the manual completion timestamp without changing its load duration', async ({
+		recordPage,
+	}) => {
+		await recordPage.goTo('/docload/docload-manual-completion.ejs')
+		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'documentLoad'))
+
+		const documentLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'documentLoad')
+		const pageLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'pageLoad')
+		expectDefined(documentLoadSpan)
+		expectDefined(pageLoadSpan)
+		expectBrowserNavigationAttributes(documentLoadSpan, {
+			completionSource: 'manual',
+			status: 'completed',
+		})
+		expectBrowserNavigationAttributes(pageLoadSpan, {
+			completionSource: 'manual',
+			status: 'completed',
+		})
+		const browserLoadDuration = await recordPage.evaluate(() => {
+			const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming
+			return navigation.loadEventEnd - navigation.fetchStart
+		})
+		expect(Number(documentLoadSpan.attributes[BROWSER_NAVIGATION_ATTRIBUTES.pageCompletionTime])).toBeGreaterThan(
+			200,
+		)
+		expect(Math.abs(hrTimeToMilliseconds(documentLoadSpan.duration) - browserLoadDuration)).toBeLessThan(5)
+		expect(await recordPage.evaluate(() => (window as any).manualDocumentLoadResult)).toBe(true)
+	})
+
+	test('hidden pages flush interrupted manual document-load spans', async ({ recordPage }) => {
+		await recordPage.goTo('/docload/docload-manual-interruption.ejs')
+		await recordPage.changeVisibilityInTab('hidden', true)
+		await recordPage.changeVisibilityInTab('visible')
+
+		await recordPage.waitForSpans((spans) =>
+			['documentLoad', 'pageLoad'].every((name) => spans.some((span) => span.name === name)),
+		)
+
+		for (const name of ['documentLoad', 'pageLoad']) {
+			const span = recordPage.receivedSpans.find((candidate) => candidate.name === name)
+			expectDefined(span)
+			expectBrowserNavigationAttributes(span, {
+				completionSource: 'manual',
+				status: 'interrupted',
+			})
+		}
+	})
+
 	test('resources before load event are correctly captured', async ({ recordPage }) => {
 		await recordPage.goTo('/docload/docload-all.ejs')
 
@@ -93,7 +141,7 @@ test.describe('docload', () => {
 		expect(docFetchSpans[0].parentSpanId).toBe(docLoadSpans[0].spanId)
 		expect(docLoadSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.operation, 'documentLoad')
 		expect(docFetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.operation, 'documentLoad')
-		expect(docFetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, docLoadSpans[0].spanId)
+		expect(docFetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, pageLoadSpans[0].spanId)
 		expect(docFetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, true)
 		expect(docFetchSpans[0].startTime).toEqual(docLoadSpans[0].startTime)
 		expect(pageLoadSpans[0].startTime).toEqual(docLoadSpans[0].startTime)
@@ -117,7 +165,7 @@ test.describe('docload', () => {
 		expect(scriptFetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.operation, 'documentLoad')
 		expect(scriptFetchSpans[0]).toHaveSpanAttribute(
 			BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId,
-			docLoadSpans[0].spanId,
+			pageLoadSpans[0].spanId,
 		)
 		// Script resources are represented in the document waterfall but are not tracked by a PCT resource monitor.
 		expect(scriptFetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, false)
@@ -132,7 +180,7 @@ test.describe('docload', () => {
 		expect(brokenImageFetchSpans[0].parentSpanId).toBe(docLoadSpans[0].spanId)
 		expect(brokenImageFetchSpans[0]).toHaveSpanAttribute(
 			BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId,
-			docLoadSpans[0].spanId,
+			pageLoadSpans[0].spanId,
 		)
 		// The failed image is retained in the waterfall but is not admitted by a PCT resource monitor.
 		expect(brokenImageFetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, false)
@@ -179,6 +227,39 @@ test.describe('docload', () => {
 		expect(recordPage.receivedErrorSpans).toHaveLength(0)
 	})
 
+	test('fetch started before the load event receives the pageLoad span ID', async ({ recordPage }) => {
+		const fetchUrl = 'http://localhost:3000/some-data?delay=100&resource=early-fetch'
+		await recordPage.goTo('/docload/docload-early-fetch.ejs')
+
+		await recordPage.waitForSpans(
+			(spans) =>
+				spans.some((span) => span.name === 'pageLoad') &&
+				spans.some((span) => span.name === 'documentLoad') &&
+				spans.some((span) => span.attributes.component === 'fetch' && span.attributes['http.url'] === fetchUrl),
+		)
+
+		const readyStateAtFetch = await recordPage.evaluate(
+			() => (window as typeof window & { earlyFetchReadyState?: DocumentReadyState }).earlyFetchReadyState,
+		)
+		const navigationEntryReadsDuringInit = await recordPage.evaluate(
+			() =>
+				(window as typeof window & { navigationEntryReadsDuringInit?: number }).navigationEntryReadsDuringInit,
+		)
+		const pageLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'pageLoad')
+		const documentLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'documentLoad')
+		const fetchSpan = recordPage.receivedSpans.find(
+			(span) => span.attributes.component === 'fetch' && span.attributes['http.url'] === fetchUrl,
+		)
+
+		expect(readyStateAtFetch).toBe('loading')
+		expect(navigationEntryReadsDuringInit).toBeGreaterThan(0)
+		expectDefined(pageLoadSpan)
+		expectDefined(documentLoadSpan)
+		expectDefined(fetchSpan)
+		expect(fetchSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, pageLoadSpan.spanId)
+		expect(fetchSpan).not.toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, documentLoadSpan.spanId)
+	})
+
 	test('ignoring resource URLs', async ({ recordPage }) => {
 		await recordPage.goTo('/docload/docload-ignored.ejs')
 
@@ -195,6 +276,7 @@ test.describe('docload', () => {
 
 		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'documentLoad'))
 		const docLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'documentLoad')
+		const pageLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'pageLoad')
 		const ignoredResourceSpan = recordPage.receivedSpans.find(
 			(span) =>
 				span.name === 'resourceFetch' &&
@@ -202,8 +284,9 @@ test.describe('docload', () => {
 		)
 
 		expectDefined(docLoadSpan)
+		expectDefined(pageLoadSpan)
 		expectDefined(ignoredResourceSpan)
-		expect(ignoredResourceSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, docLoadSpan.spanId)
+		expect(ignoredResourceSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, pageLoadSpan.spanId)
 		expect(ignoredResourceSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, false)
 	})
 
@@ -227,6 +310,7 @@ test.describe('docload', () => {
 		)
 
 		const docLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'documentLoad')
+		const pageLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'pageLoad')
 		const routeChangeSpan = recordPage.receivedSpans.find((span) => span.name === 'routeChange')
 		const resourceSpan = recordPage.receivedSpans.find(
 			(span) =>
@@ -236,9 +320,10 @@ test.describe('docload', () => {
 		)
 
 		expectDefined(docLoadSpan)
+		expectDefined(pageLoadSpan)
 		expectDefined(routeChangeSpan)
 		expectDefined(resourceSpan)
-		expect(resourceSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, docLoadSpan.spanId)
+		expect(resourceSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, pageLoadSpan.spanId)
 		expect(resourceSpan).not.toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, routeChangeSpan.spanId)
 	})
 
@@ -255,13 +340,15 @@ test.describe('docload', () => {
 		)
 
 		const docLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'documentLoad')
+		const pageLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'pageLoad')
 		const docFetchSpan = recordPage.receivedSpans.find((span) => span.name === 'documentFetch')
 		const routeChangeSpan = recordPage.receivedSpans.find((span) => span.name === 'routeChange')
 
 		expectDefined(docLoadSpan)
+		expectDefined(pageLoadSpan)
 		expectDefined(docFetchSpan)
 		expectDefined(routeChangeSpan)
-		expect(docFetchSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, docLoadSpan.spanId)
+		expect(docFetchSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, pageLoadSpan.spanId)
 		expect(docFetchSpan).not.toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, routeChangeSpan.spanId)
 	})
 

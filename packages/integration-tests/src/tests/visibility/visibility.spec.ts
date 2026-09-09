@@ -24,7 +24,7 @@ test.describe('visibility', () => {
 		await recordPage.goTo('/visibility/visibility.ejs')
 		await recordPage.waitForTimeout(1000)
 
-		await recordPage.changeVisibilityInTab('hidden')
+		await recordPage.changeVisibilityInTab('hidden', true)
 		await recordPage.changeVisibilityInTab('visible')
 
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'visibility').length >= 2)
