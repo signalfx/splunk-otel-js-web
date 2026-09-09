@@ -79,21 +79,26 @@ export class ElementVisibilityObserver {
 		this.syncMutationObserver()
 	}
 
-	/** Replaces a consumer's watched selector list entirely: drops what's no longer included, adds what's new. */
+	/**
+	 * Replaces a consumer's watched selector list entirely: adds what's new, then drops what's no
+	 * longer included — additions first so a still-visible element crossing from an old selector to
+	 * its replacement never sees a false "no active selectors" gap in between.
+	 */
 	watch(consumerId: symbol, selectors: string[], onChange: ElementVisibilityCallback): void {
 		this.callbacks.set(consumerId, onChange)
 
 		const nextSelectors = new Set(selectors)
+
+		// No-ops if already watching; otherwise scans fresh, even if another consumer already tracks it.
+		for (const selector of nextSelectors) {
+			this.addConsumerToSelector(consumerId, selector)
+		}
+
 		for (const [selector, consumers] of this.consumersBySelector) {
 			// This consumer was watching selector before, but the new list no longer includes it.
 			if (consumers.has(consumerId) && !nextSelectors.has(selector)) {
 				this.dropConsumerFromSelector(consumerId, selector, onChange)
 			}
-		}
-
-		// No-ops if already watching; otherwise scans fresh, even if another consumer already tracks it.
-		for (const selector of nextSelectors) {
-			this.addConsumerToSelector(consumerId, selector)
 		}
 
 		this.syncMutationObserver()

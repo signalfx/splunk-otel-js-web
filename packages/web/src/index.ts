@@ -303,10 +303,21 @@ let _errorInstrumentation: SplunkErrorInstrumentation | undefined
 let _postDocLoadInstrumentation: SplunkPostDocLoadResourceInstrumentation | undefined
 let _navigationMetricsManager: NavigationMetricsManager | undefined
 let _visibilityChangeListener: (() => void) | undefined
+let _blockingElementInstrumentation: SplunkBlockingElementInstrumentation | undefined
 let eventTarget: InternalEventTarget | undefined
 let _sessionStateUnsubscribe: undefined | (() => void)
 const isLatestTagUsed = isAgentLoadedViaLatestTag()
 const isFullVersionTagUsed = isAgentLoadedViaNextTag() || isAgentLoadedViaLockedVersionTag()
+
+// Registered at module load, before the app-level listener below — wins that race.
+// Guarded so importing this module in a non-browser environment (SSR, build-time) doesn't throw.
+if (typeof window === 'object' && typeof document === 'object') {
+	window.addEventListener('visibilitychange', () => {
+		if (document.visibilityState === 'hidden') {
+			_blockingElementInstrumentation?.interruptForHidden()
+		}
+	})
+}
 
 export const SplunkRum: SplunkOtelWebType = {
 	_internalInit: function (options: SplunkOtelWebConfig | Partial<SplunkOtelWebConfigInternal>) {
@@ -755,6 +766,13 @@ export const SplunkRum: SplunkOtelWebType = {
 
 					if (confKey === 'postload' && instrumentation instanceof SplunkPostDocLoadResourceInstrumentation) {
 						_postDocLoadInstrumentation = instrumentation
+					}
+
+					if (
+						confKey === 'blockingElement' &&
+						instrumentation instanceof SplunkBlockingElementInstrumentation
+					) {
+						_blockingElementInstrumentation = instrumentation
 					}
 
 					return instrumentation

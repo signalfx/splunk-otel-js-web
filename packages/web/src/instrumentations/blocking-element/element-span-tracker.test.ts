@@ -25,6 +25,7 @@ import {
 } from '@opentelemetry/sdk-trace-base'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { BROWSER_ELEMENT_COMPLETION_INTERRUPTED, BROWSER_ELEMENT_COMPLETION_VISIBILITY_HIDDEN } from './constants'
 import { ElementSpanTracker } from './element-span-tracker'
 
 const SELECTOR = '.loading-spinner'
@@ -46,10 +47,8 @@ describe('ElementSpanTracker', () => {
 	const getFinishedSpans = (): ReadableSpan[] => exporter.getFinishedSpans()
 
 	const createTracker = (
-		configuredSelectors: string[] = [SELECTOR, OTHER_SELECTOR],
 		maxElementSpanDuration: number = DEFAULT_TEST_MAX_ELEMENT_SPAN_DURATION,
-	): ElementSpanTracker =>
-		new ElementSpanTracker(provider.getTracer('test'), configuredSelectors, maxElementSpanDuration)
+	): ElementSpanTracker => new ElementSpanTracker(provider.getTracer('test'), maxElementSpanDuration)
 
 	beforeEach(() => {
 		exporter = new InMemorySpanExporter()
@@ -127,7 +126,7 @@ describe('ElementSpanTracker', () => {
 		const element = createElement()
 
 		tracker.startSpan(element, [SELECTOR], performance.now())
-		tracker.interruptSpan(element)
+		tracker.interruptSpan(element, BROWSER_ELEMENT_COMPLETION_INTERRUPTED)
 
 		const [span] = getFinishedSpans()
 		expect(span.attributes['browser.element.completion']).toBe('interrupted')
@@ -142,7 +141,7 @@ describe('ElementSpanTracker', () => {
 		tracker.startSpan(first, [SELECTOR], performance.now())
 		tracker.startSpan(other, [OTHER_SELECTOR], performance.now())
 
-		tracker.interruptAll()
+		tracker.interruptAll(BROWSER_ELEMENT_COMPLETION_INTERRUPTED)
 
 		const finishedSpans = getFinishedSpans()
 		expect(finishedSpans).toHaveLength(2)
@@ -150,6 +149,34 @@ describe('ElementSpanTracker', () => {
 			true,
 		)
 		expect(tracker.openCount).toBe(0)
+	})
+
+	it('interrupts a single span with a caller-provided completion value', () => {
+		const tracker = createTracker()
+		const element = createElement()
+
+		tracker.startSpan(element, [SELECTOR], performance.now())
+		tracker.interruptSpan(element, BROWSER_ELEMENT_COMPLETION_VISIBILITY_HIDDEN)
+
+		const [span] = getFinishedSpans()
+		expect(span.attributes['browser.element.completion']).toBe('visibility_hidden')
+	})
+
+	it('interrupts every open span with a caller-provided completion value', () => {
+		const tracker = createTracker()
+		const first = createElement()
+		const other = createElement()
+
+		tracker.startSpan(first, [SELECTOR], performance.now())
+		tracker.startSpan(other, [OTHER_SELECTOR], performance.now())
+
+		tracker.interruptAll(BROWSER_ELEMENT_COMPLETION_VISIBILITY_HIDDEN)
+
+		const finishedSpans = getFinishedSpans()
+		expect(finishedSpans).toHaveLength(2)
+		expect(
+			finishedSpans.every((span) => span.attributes['browser.element.completion'] === 'visibility_hidden'),
+		).toBe(true)
 	})
 
 	it('returns the currently tracked elements', () => {
@@ -192,8 +219,8 @@ describe('ElementSpanTracker', () => {
 			expect(tracker.openCount).toBe(1)
 		})
 
-		it('joins matched selectors in configured order, not the order they were observed', () => {
-			const tracker = createTracker([SELECTOR, OTHER_SELECTOR])
+		it('joins matched selectors in the order they were first observed, not configured order', () => {
+			const tracker = createTracker()
 			const element = createElement()
 
 			// Observed in reverse of configured order.
@@ -201,7 +228,7 @@ describe('ElementSpanTracker', () => {
 			tracker.completeSpan(element, performance.now())
 
 			const [span] = getFinishedSpans()
-			expect(span.attributes['browser.element.selector']).toBe(`${SELECTOR},${OTHER_SELECTOR}`)
+			expect(span.attributes['browser.element.selector']).toBe(`${OTHER_SELECTOR},${SELECTOR}`)
 		})
 
 		it('accumulates a selector gained mid-span into the final completion attribute', () => {
@@ -272,7 +299,7 @@ describe('ElementSpanTracker', () => {
 
 		it('ends a span with completion="timeout" once maxElementSpanDuration elapses', () => {
 			vi.useFakeTimers()
-			const tracker = createTracker([SELECTOR, OTHER_SELECTOR], 5000)
+			const tracker = createTracker(5000)
 			const element = createElement()
 
 			tracker.startSpan(element, [SELECTOR], performance.now())
@@ -287,12 +314,7 @@ describe('ElementSpanTracker', () => {
 		it('calls onSpanTimeout only when the timer itself ends the span, not on completeSpan/interruptSpan', () => {
 			vi.useFakeTimers()
 			const onSpanTimeout = vi.fn()
-			const tracker = new ElementSpanTracker(
-				provider.getTracer('test'),
-				[SELECTOR, OTHER_SELECTOR],
-				5000,
-				onSpanTimeout,
-			)
+			const tracker = new ElementSpanTracker(provider.getTracer('test'), 5000, onSpanTimeout)
 			const timedOut = createElement()
 			const completed = createElement()
 
@@ -307,7 +329,7 @@ describe('ElementSpanTracker', () => {
 
 		it('does not time out a span that completes before maxElementSpanDuration elapses', () => {
 			vi.useFakeTimers()
-			const tracker = createTracker([SELECTOR, OTHER_SELECTOR], 5000)
+			const tracker = createTracker(5000)
 			const element = createElement()
 
 			tracker.startSpan(element, [SELECTOR], performance.now())
@@ -322,12 +344,12 @@ describe('ElementSpanTracker', () => {
 
 		it('does not time out a span that is interrupted before maxElementSpanDuration elapses', () => {
 			vi.useFakeTimers()
-			const tracker = createTracker([SELECTOR, OTHER_SELECTOR], 5000)
+			const tracker = createTracker(5000)
 			const element = createElement()
 
 			tracker.startSpan(element, [SELECTOR], performance.now())
 			vi.advanceTimersByTime(1000)
-			tracker.interruptSpan(element)
+			tracker.interruptSpan(element, BROWSER_ELEMENT_COMPLETION_INTERRUPTED)
 			vi.advanceTimersByTime(5000)
 
 			const finishedSpans = getFinishedSpans()
