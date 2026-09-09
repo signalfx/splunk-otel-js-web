@@ -62,6 +62,12 @@ describe('Transitive API', () => {
 		})
 	})
 
+	describe('Manual page completion', () => {
+		it('returns undefined when there is no active navigation', () => {
+			expect(SplunkOtelWeb.registerManualPageLoad()).toBeUndefined()
+		})
+	})
+
 	describe('Span', () => {
 		const startTime = new Date(2021, 1, 1, 0, 0, 0, 0)
 		function getTestSpan() {

@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Manual document load interruption</title>
+
+	<%- renderAgent({experimental: true, spaMetrics: {maxPageLoadTimeoutForManualApi: 10000, quietTime: 100}}) %>
+	<script>
+		window.manualDocumentLoad = SplunkRum.registerManualPageLoad();
+	</script>
+</head>
+<body>
+	<p>Manual document load interruption</p>
+</body>
+</html>

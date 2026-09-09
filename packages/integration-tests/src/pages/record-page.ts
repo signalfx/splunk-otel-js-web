@@ -31,13 +31,21 @@ export class RecordPage {
 		private readonly context: BrowserContext,
 	) {}
 
-	changeVisibilityInTab = async (state: 'visible' | 'hidden') => {
-		await this.page.evaluate((stateInner) => {
-			Object.defineProperty(document, 'visibilityState', { value: stateInner, writable: true })
-			Object.defineProperty(document, 'hidden', { value: Boolean(stateInner === 'hidden'), writable: true })
+	changeVisibilityInTab = async (state: 'visible' | 'hidden', restoreBeforeFlush = false) => {
+		await this.page.evaluate(
+			({ restoreBeforeFlush: restoreBeforeFlushInner, state: stateInner }) => {
+				Object.defineProperty(document, 'visibilityState', { value: stateInner, writable: true })
+				Object.defineProperty(document, 'hidden', { value: Boolean(stateInner === 'hidden'), writable: true })
 
-			window.dispatchEvent(new Event('visibilitychange'))
-		}, state)
+				window.dispatchEvent(new Event('visibilitychange'))
+
+				if (restoreBeforeFlushInner) {
+					Object.defineProperty(document, 'visibilityState', { value: 'visible', writable: true })
+					Object.defineProperty(document, 'hidden', { value: false, writable: true })
+				}
+			},
+			{ restoreBeforeFlush, state },
+		)
 	}
 
 	clearReceivedSpans() {

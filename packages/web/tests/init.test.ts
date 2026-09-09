@@ -27,6 +27,7 @@ import SplunkRum from '../src'
 import {
 	BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE,
 	BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
+	BROWSER_NAVIGATION_PAGE_COMPLETION_SOURCE_ATTRIBUTE,
 	BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE,
 	BROWSER_NAVIGATION_PAGE_SPAN_ID_ATTRIBUTE,
 	BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
@@ -1213,6 +1214,123 @@ describe('test route change navigation metrics timeout', () => {
 			},
 			{ timeout: 6000 },
 		)
+	})
+
+	it('completes a route change after all public manual handles complete', async () => {
+		history.pushState({}, 'title', '/manual-page-completion')
+		const shellHandle = SplunkRum.registerManualPageLoad()
+		const featureHandle = SplunkRum.registerManualPageLoad()
+
+		expect(shellHandle).toBeDefined()
+		expect(featureHandle).toBeDefined()
+		expect(shellHandle?.markComplete()).toBe(true)
+		expect(shellHandle?.markComplete()).toBe(false)
+		expect(capturer.spans.some((span) => span.name === 'routeChange')).toBe(false)
+		expect(featureHandle?.markComplete()).toBe(true)
+
+		await vi.waitFor(
+			() => {
+				const span = capturer.spans.find((candidate) => candidate.name === 'routeChange')
+				expectDefined(span, 'Check if routeChange span is present.')
+				expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_SOURCE_ATTRIBUTE, 'manual')
+				expect(span).toHaveSpanAttribute(
+					BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
+					PAGE_LOAD_METRICS_STATUS_COMPLETED,
+				)
+			},
+			{ timeout: 6000 },
+		)
+	})
+
+	it('finalizes a pending manual route change before flushing on page hide', async () => {
+		const visibilityState = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden')
+		const processor = SplunkRum._processor
+		expectDefined(processor)
+		let spanAtFlush: (typeof capturer.spans)[number] | undefined
+		const forceFlush = vi.spyOn(processor, 'forceFlush').mockImplementation(() => {
+			spanAtFlush = capturer.spans.find((candidate) => candidate.name === 'routeChange')
+			return Promise.resolve()
+		})
+
+		try {
+			history.pushState({}, 'title', '/manual-page-hide')
+			const handle = SplunkRum.registerManualPageLoad()
+			expect(handle).toBeDefined()
+
+			window.dispatchEvent(new Event('visibilitychange'))
+
+			await vi.waitFor(() => expect(forceFlush).toHaveBeenCalledOnce())
+			expectDefined(spanAtFlush, 'Route change should end before the exporter is flushed.')
+			expect(spanAtFlush).toHaveSpanAttribute(
+				BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
+				PAGE_LOAD_METRICS_STATUS_INTERRUPTED,
+			)
+			expect(handle?.markComplete()).toBe(false)
+		} finally {
+			forceFlush.mockRestore()
+			visibilityState.mockRestore()
+		}
+	})
+
+	it('finalizes a completed manual route change before flushing on page hide', async () => {
+		const visibilityState = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden')
+		const processor = SplunkRum._processor
+		expectDefined(processor)
+		let spanAtFlush: (typeof capturer.spans)[number] | undefined
+		const forceFlush = vi.spyOn(processor, 'forceFlush').mockImplementation(() => {
+			spanAtFlush = capturer.spans.find((candidate) => candidate.name === 'routeChange')
+			return Promise.resolve()
+		})
+
+		try {
+			history.pushState({}, 'title', '/completed-manual-page-hide')
+			const handle = SplunkRum.registerManualPageLoad()
+			expect(handle?.markComplete()).toBe(true)
+
+			window.dispatchEvent(new Event('visibilitychange'))
+
+			await vi.waitFor(() => expect(forceFlush).toHaveBeenCalledOnce())
+			expectDefined(spanAtFlush, 'Route change should end before the exporter is flushed.')
+			expect(spanAtFlush).toHaveSpanAttribute(
+				BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
+				PAGE_LOAD_METRICS_STATUS_COMPLETED,
+			)
+			expect(spanAtFlush).toHaveSpanAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_SOURCE_ATTRIBUTE, 'manual')
+		} finally {
+			forceFlush.mockRestore()
+			visibilityState.mockRestore()
+		}
+	})
+})
+
+describe('manual page completion without experimental telemetry', () => {
+	let capturer: SpanCapturer
+
+	beforeEach(() => {
+		capturer = new SpanCapturer()
+		initWithDefaultConfig(capturer, {
+			navigationMetrics: { quietTime: 1 },
+		})
+	})
+
+	afterEach(() => {
+		deinit()
+		history.pushState({}, 'title', '/')
+	})
+
+	it('completes a route change through the public manual API', async () => {
+		history.pushState({}, 'title', '/manual-page-completion-without-experimental')
+		const handle = SplunkRum.registerManualPageLoad()
+
+		expect(handle?.markComplete()).toBe(true)
+		await vi.waitFor(() => {
+			const span = capturer.spans.find((candidate) => candidate.name === 'routeChange')
+			expectDefined(span, 'Check if routeChange span is present.')
+			expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_SOURCE_ATTRIBUTE, 'manual')
+			expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_STATUS_ATTRIBUTE, PAGE_LOAD_METRICS_STATUS_COMPLETED)
+			expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE)
+			expect(span).toNotHaveSpanAttribute(BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE)
+		})
 	})
 })
 
