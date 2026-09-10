@@ -974,7 +974,7 @@ describe('test unloaded img', () => {
 		deinit()
 	})
 
-	it('should report a span', async () => {
+	it('should not report a client error span', async () => {
 		capturer.clear()
 
 		const img = document.createElement('img')
@@ -987,10 +987,8 @@ describe('test unloaded img', () => {
 			}, 100)
 		})
 
-		const span = capturer.spans.find((s) => s.attributes.component === 'error')
-		expectDefined(span)
-		expect(span.name).toBe('eventListener.error')
-		expect(span).toHaveSpanAttributeContaining('target_src', 'DoesNotExist.jpg')
+		const span = capturer.spans.find((s) => s.name === 'eventListener.error')
+		expect(span).toBeUndefined()
 	})
 })
 

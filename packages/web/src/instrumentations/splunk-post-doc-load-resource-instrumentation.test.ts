@@ -16,7 +16,7 @@
  *
  */
 
-import { context, ROOT_CONTEXT, type Span } from '@opentelemetry/api'
+import { context, ROOT_CONTEXT, type Span, SpanStatusCode } from '@opentelemetry/api'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { SplunkOtelWebConfig } from '../types'
@@ -127,6 +127,19 @@ describe('post document load resource instrumentation', () => {
 		expect(startSpan).toHaveBeenCalledWith('resourceFetch', expect.objectContaining({ startTime: 10 }), undefined)
 	})
 
+	it('sets error status when resource timing exposes a failing response status', () => {
+		const { instrumentation, setAttribute, setStatus } = createInstrumentation()
+
+		instrumentation._startPerformanceObserver()
+		MockPerformanceObserver.instances[0].emit([
+			createResourceEntry('img', 'https://example.test/missing.png', { responseStatus: 404 }),
+		])
+		vi.runAllTimers()
+
+		expect(setAttribute).toHaveBeenCalledWith('http.status_code', 404)
+		expect(setStatus).toHaveBeenCalledWith({ code: SpanStatusCode.ERROR })
+	})
+
 	it('keeps arbitrary other resources disabled when only font is configured', () => {
 		const { instrumentation, setAttribute, startSpan } = createInstrumentation({
 			allowedInitiatorTypes: ['font'],
@@ -152,16 +165,19 @@ function createInstrumentation(
 ): {
 	instrumentation: TestableInstrumentation
 	setAttribute: ReturnType<typeof vi.fn>
+	setStatus: ReturnType<typeof vi.fn>
 	startSpan: ReturnType<typeof vi.fn>
 } {
 	vi.useFakeTimers()
 	vi.stubGlobal('PerformanceObserver', MockPerformanceObserver)
 
 	const setAttribute = vi.fn().mockReturnThis()
+	const setStatus = vi.fn().mockReturnThis()
 	const span = {
 		addEvent: vi.fn(),
 		end: vi.fn(),
 		setAttribute,
+		setStatus,
 	} as unknown as Span
 	const startSpan = vi.fn(() => span)
 	const instrumentation = new SplunkPostDocLoadResourceInstrumentation(
@@ -170,14 +186,19 @@ function createInstrumentation(
 	) as unknown as TestableInstrumentation
 	instrumentation._tracer = { startSpan }
 
-	return { instrumentation, setAttribute, startSpan }
+	return { instrumentation, setAttribute, setStatus, startSpan }
 }
 
-function createResourceEntry(initiatorType: string, name: string): PerformanceResourceTiming {
+function createResourceEntry(
+	initiatorType: string,
+	name: string,
+	overrides: Partial<PerformanceResourceTiming> = {},
+): PerformanceResourceTiming {
 	return {
 		fetchStart: 10,
 		initiatorType,
 		name,
 		responseEnd: 20,
+		...overrides,
 	} as PerformanceResourceTiming
 }
