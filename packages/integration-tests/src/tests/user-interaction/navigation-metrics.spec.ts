@@ -44,9 +44,9 @@ const expectLoadedResourceAttributes = (
 	expect(longestLoadedResource.duration).toBeGreaterThanOrEqual(0)
 }
 
-test.describe('spa-metrics', () => {
+test.describe('navigation-metrics', () => {
 	test('routeChange span has duration after quiet period', async ({ recordPage }) => {
-		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+		await recordPage.goTo('/user-interaction/navigation-metrics.ejs')
 
 		await recordPage.locator('#btnNavigate').click()
 
@@ -68,8 +68,67 @@ test.describe('spa-metrics', () => {
 		expect(routeChangeSpans[0]).toHaveSpanDuration(0)
 	})
 
+	test('routeChange span waits for every manual completion handle', async ({ recordPage }) => {
+		await recordPage.goTo('/user-interaction/navigation-metrics.ejs')
+
+		await recordPage.locator('#btnNavigateWithManualCompletion').click()
+		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'routeChange').length === 1)
+
+		const routeChangeSpan = recordPage.receivedSpans.find((span) => span.name === 'routeChange')
+		expectDefined(routeChangeSpan)
+		expectBrowserNavigationAttributes(routeChangeSpan, {
+			completionSource: 'manual',
+			status: 'completed',
+		})
+		expect(getPageCompletionTime(routeChangeSpan)).toBeGreaterThanOrEqual(100)
+		expect(await recordPage.evaluate(() => (window as any).manualPageLoadResults)).toEqual([true, false, true])
+	})
+
+	test('interrupted routeChange spans retain their manual completion source', async ({ recordPage }) => {
+		await recordPage.goTo('/user-interaction/navigation-metrics.ejs')
+
+		await recordPage.locator('#btnNavigateWithManualInterruption').click()
+		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'routeChange').length === 2)
+
+		const interruptedSpan = recordPage.receivedSpans.find(
+			(span) =>
+				span.name === 'routeChange' &&
+				String(span.attributes['location.href']).includes('#manual-interruption-a'),
+		)
+		const nextSpan = recordPage.receivedSpans.find(
+			(span) =>
+				span.name === 'routeChange' &&
+				String(span.attributes['location.href']).includes('#manual-interruption-b'),
+		)
+		expectDefined(interruptedSpan)
+		expectDefined(nextSpan)
+		expectBrowserNavigationAttributes(interruptedSpan, {
+			completionSource: 'manual',
+			status: 'interrupted',
+		})
+		expectBrowserNavigationAttributes(nextSpan, {
+			completionSource: 'automatic',
+			status: 'completed',
+		})
+	})
+
+	test('timed-out routeChange spans retain their manual completion source', async ({ recordPage }) => {
+		await recordPage.goTo('/user-interaction/navigation-metrics.ejs')
+
+		await recordPage.locator('#btnNavigateWithManualTimeout').click()
+		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'routeChange').length === 1)
+
+		const timeoutSpan = recordPage.receivedSpans.find((span) => span.name === 'routeChange')
+		expectDefined(timeoutSpan)
+		expectBrowserNavigationAttributes(timeoutSpan, {
+			completionSource: 'manual',
+			pageCompletionTime: 1000,
+			status: 'timeout',
+		})
+	})
+
 	test('errors after a route change have the routeChange operation', async ({ recordPage }) => {
-		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+		await recordPage.goTo('/user-interaction/navigation-metrics.ejs')
 		await recordPage.locator('#btnNavigate').click()
 		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'routeChange'))
 
@@ -92,7 +151,7 @@ test.describe('spa-metrics', () => {
 	})
 
 	test('routeChange span waits for fetch requests to complete', async ({ recordPage }) => {
-		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+		await recordPage.goTo('/user-interaction/navigation-metrics.ejs')
 
 		await recordPage.locator('#btnNavigateWithFetch').click()
 
@@ -130,7 +189,7 @@ test.describe('spa-metrics', () => {
 	})
 
 	test('routeChange span waits for XHR requests to complete', async ({ recordPage }) => {
-		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+		await recordPage.goTo('/user-interaction/navigation-metrics.ejs')
 
 		await recordPage.locator('#btnNavigateWithXhr').click()
 
@@ -165,7 +224,7 @@ test.describe('spa-metrics', () => {
 	})
 
 	test('routeChange span waits for images to load', async ({ recordPage }) => {
-		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+		await recordPage.goTo('/user-interaction/navigation-metrics.ejs')
 
 		await recordPage.locator('#btnNavigateWithImage').click()
 
@@ -197,7 +256,7 @@ test.describe('spa-metrics', () => {
 	})
 
 	test('spans after PCT retain the page span id and are marked not relevant', async ({ recordPage }) => {
-		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+		await recordPage.goTo('/user-interaction/navigation-metrics.ejs')
 
 		await recordPage.locator('#btnNavigate').click()
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'routeChange').length === 1)
@@ -222,7 +281,7 @@ test.describe('spa-metrics', () => {
 	test('network resources rejected by the active PCT monitor config are marked not relevant', async ({
 		recordPage,
 	}) => {
-		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+		await recordPage.goTo('/user-interaction/navigation-metrics.ejs')
 
 		await recordPage.locator('#btnNavigateWithNetworkDisabled').click()
 		await recordPage.waitForSpans(
@@ -259,7 +318,7 @@ test.describe('spa-metrics', () => {
 		test(`${requestType} span retains its original page attribution across overlapping navigations`, async ({
 			recordPage,
 		}) => {
-			await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+			await recordPage.goTo('/user-interaction/navigation-metrics.ejs')
 
 			const button =
 				requestType === 'fetch' ? '#btnNavigateWithOverlappingFetch' : '#btnNavigateWithOverlappingXhr'
@@ -300,6 +359,10 @@ test.describe('spa-metrics', () => {
 			expectDefined(navigationASpan)
 			expectDefined(navigationBSpan)
 			expectDefined(requestSpan)
+			expectBrowserNavigationAttributes(navigationASpan, {
+				completionSource: 'automatic',
+				status: 'interrupted',
+			})
 			expect(navigationASpan.spanId).not.toBe(navigationBSpan.spanId)
 			expect(requestSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, navigationASpan.spanId)
 			expect(requestSpan).not.toHaveSpanAttribute(
@@ -311,7 +374,7 @@ test.describe('spa-metrics', () => {
 	}
 
 	test('multiple route changes each have their own duration', async ({ recordPage }) => {
-		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+		await recordPage.goTo('/user-interaction/navigation-metrics.ejs')
 
 		// First navigation
 		await recordPage.locator('#btnNavigate').click()
@@ -353,7 +416,7 @@ test.describe('spa-metrics', () => {
 
 	// Temporarily skipped while PCT timeout is disabled.
 	test.skip('URL override can disable network monitoring for a matched route', async ({ recordPage }) => {
-		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+		await recordPage.goTo('/user-interaction/navigation-metrics.ejs')
 
 		await recordPage.locator('#btnNavigateWithSlowFetch').click()
 		await recordPage.waitForSpans((spans) => spans.filter((span) => span.name === 'routeChange').length === 1)
@@ -391,7 +454,7 @@ test.describe('spa-metrics', () => {
 	})
 
 	test('routeChange span waits for loading element selectors to disappear', async ({ recordPage }) => {
-		await recordPage.goTo('/user-interaction/spa-metrics.ejs')
+		await recordPage.goTo('/user-interaction/navigation-metrics.ejs')
 		const loadingElementVisibleTimeMs = await recordPage.evaluate(
 			() => (window as unknown as { loadingElementVisibleTimeMs: number }).loadingElementVisibleTimeMs,
 		)

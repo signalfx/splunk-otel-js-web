@@ -25,7 +25,6 @@ import {
 	BROWSER_ELEMENT_CLASS_ATTRIBUTE,
 	BROWSER_ELEMENT_COMPLETION_ATTRIBUTE,
 	BROWSER_ELEMENT_COMPLETION_COMPLETED,
-	BROWSER_ELEMENT_COMPLETION_INTERRUPTED,
 	BROWSER_ELEMENT_COMPLETION_TIMEOUT,
 	BROWSER_ELEMENT_ID_ATTRIBUTE,
 	BROWSER_ELEMENT_SELECTOR_ATTRIBUTE,
@@ -56,11 +55,6 @@ export class ElementSpanTracker {
 	private readonly tracked = new Map<Element, TrackedElement>()
 
 	/**
-	 * The configured selector list, in configuration order. Used only to join
-	 * `accumulatedSelectors` deterministically at completion time — `Set` iteration order reflects
-	 * insertion order, not configuration order, so it cannot be used directly for the exported
-	 * attribute.
-	 *
 	 * maxElementSpanDuration bounds how long any single element span can stay open — without it, an
 	 * element that never disappears (and is never interrupted via disable()/pagehide) would produce
 	 * no telemetry at all, the one case a duration-measuring feature can least afford to miss.
@@ -71,7 +65,6 @@ export class ElementSpanTracker {
 	 */
 	constructor(
 		private readonly tracer: Tracer,
-		private readonly configuredSelectors: string[],
 		private readonly maxElementSpanDuration: number,
 		private readonly onSpanTimeout?: (element: Element) => void,
 	) {}
@@ -84,14 +77,14 @@ export class ElementSpanTracker {
 		return this.tracked.has(element)
 	}
 
-	interruptAll(): void {
+	interruptAll(completion: string): void {
 		for (const element of this.trackedElements()) {
-			this.interruptSpan(element)
+			this.interruptSpan(element, completion)
 		}
 	}
 
-	interruptSpan(element: Element): void {
-		this.endSpan(element, BROWSER_ELEMENT_COMPLETION_INTERRUPTED)
+	interruptSpan(element: Element, completion: string): void {
+		this.endSpan(element, completion)
 	}
 
 	/** Total number of currently open (not yet ended) element spans, one per physical element. */
@@ -100,10 +93,9 @@ export class ElementSpanTracker {
 	}
 
 	/**
-	 * matchedSelectors is every currently-configured selector this element matches right now
-	 * (config order). Merged into the element's accumulated set on every call, including for
-	 * already-tracked elements — a no-op on the Span itself, but keeps the eventual completion
-	 * attribute current.
+	 * matchedSelectors is every currently-configured selector this element matches right now.
+	 * Merged into the element's accumulated set on every call, including for already-tracked
+	 * elements — a no-op on the Span itself, but keeps the eventual completion attribute current.
 	 */
 	startSpan(element: Element, matchedSelectors: string[], startTimeRelative: number): void {
 		const existing = this.tracked.get(element)
@@ -158,9 +150,10 @@ export class ElementSpanTracker {
 		clearTimeout(tracked.timeoutId)
 		this.tracked.delete(element)
 
-		const selectorValue = this.configuredSelectors
-			.filter((selector) => tracked.accumulatedSelectors.has(selector))
-			.join(',')
+		// Set iteration order is insertion order — i.e. the order the element first matched each
+		// selector, not configuration order. Selectors dropped by a later config change (e.g. a
+		// urlOverride) stay in this list; accumulatedSelectors only ever grows for an open span.
+		const selectorValue = [...tracked.accumulatedSelectors].join(',')
 		tracked.span.setAttribute(BROWSER_ELEMENT_SELECTOR_ATTRIBUTE, selectorValue)
 		tracked.span.setAttribute(BROWSER_ELEMENT_COMPLETION_ATTRIBUTE, completion)
 		tracked.span.end(endTimeRelative)

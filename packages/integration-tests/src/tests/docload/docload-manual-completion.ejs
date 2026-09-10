@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Manual document load completion</title>
+
+	<%- renderAgent({experimental: true, spaMetrics: {maxPageLoadTimeoutForManualApi: 1000, quietTime: 100}}) %>
+	<script>
+		const manualDocumentLoad = SplunkRum.registerManualPageLoad();
+		window.manualDocumentLoadResult = undefined;
+		setTimeout(function () {
+			window.manualDocumentLoadResult = manualDocumentLoad.markComplete();
+		}, 200);
+	</script>
+</head>
+<body>
+	<p>Manual document load completion</p>
+</body>
+</html>

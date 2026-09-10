@@ -47,8 +47,12 @@ export function getResourceElementUrl(element: Element): string | undefined {
 }
 
 export function isResourceElementLoadError(event: Event): boolean {
+	const target = event.target
 	return (
-		event.type === 'error' && event.target instanceof Element && getResourceElementUrl(event.target) !== undefined
+		event.type === 'error' &&
+		target instanceof Element &&
+		target.tagName.toUpperCase() !== 'SCRIPT' &&
+		getResourceElementUrl(target) !== undefined
 	)
 }
 

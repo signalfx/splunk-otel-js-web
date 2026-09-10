@@ -23,6 +23,7 @@ import path from 'node:path'
 import dotenv from 'dotenv'
 
 import {
+	appendCdnReleaseNotes,
 	generateCDNLinks,
 	generateScriptSnippet,
 	getAllVersions,
@@ -156,7 +157,7 @@ if (semverRegex.test(targetVersion)) {
 		console.log(`I have found the latest version to be: ${ghRelease.tag_name} named "${ghRelease.name}."`)
 		console.log('Appending CDN instructions to release description.')
 		if (!isDryRun) {
-			await patchGithubReleaseBody(ghRelease, ghRelease.body + cdnLinks.join('\n'))
+			await patchGithubReleaseBody(ghRelease, appendCdnReleaseNotes(ghRelease.body, cdnLinks.join('\n')))
 			console.log(`Please verify that instructions are correct by navigating to: ${ghRelease.html_url}`)
 		}
 	} catch (error) {

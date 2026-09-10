@@ -282,6 +282,21 @@ describe('SplunkErrorInstrumentation', () => {
 		expect(startSpan).not.toHaveBeenCalled()
 	})
 
+	it('continues to report script element error events as client error spans', async () => {
+		const instrumentation = new TestableSplunkErrorInstrumentation({ enabled: false }, {})
+		const startSpan = vi.fn(() => ({ end: vi.fn(), setAttribute: vi.fn() }) as unknown as Span)
+		instrumentation.setStartSpan(startSpan)
+
+		const script = document.createElement('script')
+		script.src = '/broken.js'
+		const event = new Event('error')
+		Object.defineProperty(event, 'target', { value: script })
+
+		await instrumentation.reportTestEvent('eventListener.error', event)
+
+		expect(startSpan).toHaveBeenCalledTimes(1)
+	})
+
 	describe('onError hook', () => {
 		let capturer: SpanCapturer
 		beforeEach(() => {

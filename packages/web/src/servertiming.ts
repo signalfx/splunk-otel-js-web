@@ -17,18 +17,19 @@
  */
 
 import { Span } from '@opentelemetry/api'
+import { parseTraceParent } from '@opentelemetry/core'
 import { PerformanceEntries } from '@opentelemetry/sdk-trace-web'
 
-function addMatchToSpan(match: RegExpMatchArray, span: Span): void {
-	if (match && match[1] && match[2]) {
-		const traceId = match[1]
-		const spanId = match[2]
-		span.setAttribute('link.traceId', traceId)
-		span.setAttribute('link.spanId', spanId)
+function addTraceParentToSpan(traceParent: string, span: Span): void {
+	const spanContext = parseTraceParent(traceParent)
+
+	if (spanContext) {
+		span.setAttribute('link.traceId', spanContext.traceId)
+		span.setAttribute('link.spanId', spanContext.spanId)
 	}
 }
 
-const HeaderRegex = new RegExp('traceparent;desc=[\'"]00-([0-9a-f]{32})-([0-9a-f]{16})-01[\'"]')
+const HeaderRegex = /traceparent;desc=(['"])([^'"]+)\1/
 
 export function captureTraceParent(serverTimingValues: string, span: Span): void {
 	// getResponseHeader returns multiple Server-Timing headers concat with ', ' (note space)
@@ -37,13 +38,11 @@ export function captureTraceParent(serverTimingValues: string, span: Span): void
 	for (let header of serverTimingValues.split(',')) {
 		header = header.trim()
 		const match = header.match(HeaderRegex)
-		if (match) {
-			addMatchToSpan(match, span)
+		if (match?.[2]) {
+			addTraceParentToSpan(match[2], span)
 		}
 	}
 }
-
-const ValueRegex = new RegExp('00-([0-9a-f]{32})-([0-9a-f]{16})-01')
 
 // TODO: fix types for ServerTiming from Performance
 export function captureTraceParentFromPerformanceEntries(entries: PerformanceEntries, span: Span): void {
@@ -53,8 +52,7 @@ export function captureTraceParentFromPerformanceEntries(entries: PerformanceEnt
 
 	for (const st of (entries as any).serverTiming) {
 		if (st.name === 'traceparent' && st.description) {
-			const match = st.description.match(ValueRegex)
-			addMatchToSpan(match, span)
+			addTraceParentToSpan(st.description, span)
 		}
 	}
 }

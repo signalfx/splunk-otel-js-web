@@ -27,7 +27,9 @@ import SplunkRum from '../src'
 import {
 	BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE,
 	BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
+	BROWSER_NAVIGATION_PAGE_COMPLETION_SOURCE_ATTRIBUTE,
 	BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE,
+	BROWSER_NAVIGATION_PAGE_SPAN_ID_ATTRIBUTE,
 	BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
 	PAGE_LOAD_METRICS_STATUS_COMPLETED,
 	PAGE_LOAD_METRICS_STATUS_INTERRUPTED,
@@ -293,16 +295,16 @@ describe('test init', () => {
 					},
 					xhr: { ignoreUrls: ['regex/xhr-regex/', 'exact'] },
 				},
-				rumAccessToken: undefined,
-				spaMetrics: {
-					ignoreUrls: ['regex/spa-metrics/', 'exact'],
+				navigationMetrics: {
+					ignoreUrls: ['regex/navigation-metrics/', 'exact'],
 					urlOverrides: [
 						{
-							ignoreUrls: ['regex/spa-metrics-override/', 'exact-override'],
+							ignoreUrls: ['regex/navigation-metrics-override/', 'exact-override'],
 							match: 'regex/checkout/',
 						},
 					],
 				},
+				rumAccessToken: undefined,
 			}
 
 			SplunkRum.init(initOptions)
@@ -323,11 +325,11 @@ describe('test init', () => {
 			expect(initOptions.instrumentations.xhr.ignoreUrls[1]).toBeTypeOf('string')
 			expect(initOptions.instrumentations.fetch.ignoreUrls[0]).toBeInstanceOf(RegExp)
 			expect(initOptions.instrumentations.fetch.ignoreUrls[1]).toBeTypeOf('string')
-			expect(initOptions.spaMetrics.ignoreUrls[0]).toBeInstanceOf(RegExp)
-			expect(initOptions.spaMetrics.ignoreUrls[1]).toBeTypeOf('string')
-			expect(initOptions.spaMetrics.urlOverrides[0].ignoreUrls[0]).toBeInstanceOf(RegExp)
-			expect(initOptions.spaMetrics.urlOverrides[0].ignoreUrls[1]).toBeTypeOf('string')
-			expect(initOptions.spaMetrics.urlOverrides[0].match).toBeInstanceOf(RegExp)
+			expect(initOptions.navigationMetrics.ignoreUrls[0]).toBeInstanceOf(RegExp)
+			expect(initOptions.navigationMetrics.ignoreUrls[1]).toBeTypeOf('string')
+			expect(initOptions.navigationMetrics.urlOverrides[0].ignoreUrls[0]).toBeInstanceOf(RegExp)
+			expect(initOptions.navigationMetrics.urlOverrides[0].ignoreUrls[1]).toBeTypeOf('string')
+			expect(initOptions.navigationMetrics.urlOverrides[0].match).toBeInstanceOf(RegExp)
 
 			const frustrationSignalsConfig = processedOptions?.instrumentations?.frustrationSignals as
 				| FrustrationSignalsConfig
@@ -343,15 +345,15 @@ describe('test init', () => {
 			expect(frustrationSignalsConfig?.errorClick?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
 			expect(frustrationSignalsConfig?.thrashedCursor?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
 
-			const spaMetricsConfig = processedOptions?.spaMetrics as
+			const navigationMetricsConfig = processedOptions?.navigationMetrics as
 				| {
 						ignoreUrls?: Array<string | RegExp>
 						urlOverrides?: Array<{ ignoreUrls?: Array<string | RegExp>; match?: string | RegExp }>
 				  }
 				| undefined
-			expect(spaMetricsConfig?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
-			expect(spaMetricsConfig?.urlOverrides?.[0]?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
-			expect(spaMetricsConfig?.urlOverrides?.[0]?.match).toBeInstanceOf(RegExp)
+			expect(navigationMetricsConfig?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
+			expect(navigationMetricsConfig?.urlOverrides?.[0]?.ignoreUrls?.[0]).toBeInstanceOf(RegExp)
+			expect(navigationMetricsConfig?.urlOverrides?.[0]?.match).toBeInstanceOf(RegExp)
 		})
 
 		it('reports malformed regex strings without preventing initialization', () => {
@@ -445,6 +447,12 @@ describe('test init', () => {
 			const pageLoadSpan = capturer.spans.find((span) => span.name === 'pageLoad')
 			expectDefined(pageLoadSpan, 'pageLoad span presence.')
 			expect(capturer.spans.indexOf(pageLoadSpan)).toBeLessThan(capturer.spans.indexOf(documentLoadSpan))
+			expect(pageLoadSpan.startTime).toEqual(documentLoadSpan.startTime)
+			expect(documentFetchSpan.startTime).toEqual(documentLoadSpan.startTime)
+			expect(documentFetchSpan).toHaveSpanAttribute(
+				BROWSER_NAVIGATION_PAGE_SPAN_ID_ATTRIBUTE,
+				pageLoadSpan.spanContext().spanId,
+			)
 			expect(hrTimeToMilliseconds(pageLoadSpan.duration)).toBeCloseTo(
 				Number(pageLoadSpan.attributes[BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE]),
 				5,
@@ -472,11 +480,11 @@ describe('test init', () => {
 				deploymentEnvironment: 'my-env',
 				experimental: true,
 				globalAttributes: { customerType: 'GOLD' },
-				rumAccessToken: undefined,
-				spaMetrics: {
+				navigationMetrics: {
 					maxPageLoadWaitTime: 3000,
 					quietTime: 1000,
 				},
+				rumAccessToken: undefined,
 				spanProcessors: [capturer],
 			})
 
@@ -522,11 +530,11 @@ describe('test init', () => {
 				deploymentEnvironment: 'my-env',
 				experimental: true,
 				globalAttributes: { customerType: 'GOLD' },
-				rumAccessToken: undefined,
-				spaMetrics: {
+				navigationMetrics: {
 					maxPageLoadWaitTime: 3000,
 					quietTime: 1000,
 				},
+				rumAccessToken: undefined,
 				spanProcessors: [capturer],
 			})
 
@@ -966,7 +974,7 @@ describe('test unloaded img', () => {
 		deinit()
 	})
 
-	it('should report a span', async () => {
+	it('should not report a client error span', async () => {
 		capturer.clear()
 
 		const img = document.createElement('img')
@@ -979,10 +987,8 @@ describe('test unloaded img', () => {
 			}, 100)
 		})
 
-		const span = capturer.spans.find((s) => s.attributes.component === 'error')
-		expectDefined(span)
-		expect(span.name).toBe('eventListener.error')
-		expect(span).toHaveSpanAttributeContaining('target_src', 'DoesNotExist.jpg')
+		const span = capturer.spans.find((s) => s.name === 'eventListener.error')
+		expect(span).toBeUndefined()
 	})
 })
 
@@ -1076,14 +1082,14 @@ describe('test route change', () => {
 	})
 })
 
-describe('test route change spa metrics timeout', () => {
+describe('test route change navigation metrics timeout', () => {
 	let capturer: SpanCapturer
 
 	beforeEach(() => {
 		capturer = new SpanCapturer()
 		initWithDefaultConfig(capturer, {
 			experimental: true,
-			spaMetrics: {
+			navigationMetrics: {
 				maxPageLoadWaitTime: 3000,
 				quietTime: 1000,
 			},
@@ -1206,6 +1212,123 @@ describe('test route change spa metrics timeout', () => {
 			},
 			{ timeout: 6000 },
 		)
+	})
+
+	it('completes a route change after all public manual handles complete', async () => {
+		history.pushState({}, 'title', '/manual-page-completion')
+		const shellHandle = SplunkRum.registerManualPageLoad()
+		const featureHandle = SplunkRum.registerManualPageLoad()
+
+		expect(shellHandle).toBeDefined()
+		expect(featureHandle).toBeDefined()
+		expect(shellHandle?.markComplete()).toBe(true)
+		expect(shellHandle?.markComplete()).toBe(false)
+		expect(capturer.spans.some((span) => span.name === 'routeChange')).toBe(false)
+		expect(featureHandle?.markComplete()).toBe(true)
+
+		await vi.waitFor(
+			() => {
+				const span = capturer.spans.find((candidate) => candidate.name === 'routeChange')
+				expectDefined(span, 'Check if routeChange span is present.')
+				expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_SOURCE_ATTRIBUTE, 'manual')
+				expect(span).toHaveSpanAttribute(
+					BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
+					PAGE_LOAD_METRICS_STATUS_COMPLETED,
+				)
+			},
+			{ timeout: 6000 },
+		)
+	})
+
+	it('finalizes a pending manual route change before flushing on page hide', async () => {
+		const visibilityState = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden')
+		const processor = SplunkRum._processor
+		expectDefined(processor)
+		let spanAtFlush: (typeof capturer.spans)[number] | undefined
+		const forceFlush = vi.spyOn(processor, 'forceFlush').mockImplementation(() => {
+			spanAtFlush = capturer.spans.find((candidate) => candidate.name === 'routeChange')
+			return Promise.resolve()
+		})
+
+		try {
+			history.pushState({}, 'title', '/manual-page-hide')
+			const handle = SplunkRum.registerManualPageLoad()
+			expect(handle).toBeDefined()
+
+			window.dispatchEvent(new Event('visibilitychange'))
+
+			await vi.waitFor(() => expect(forceFlush).toHaveBeenCalledOnce())
+			expectDefined(spanAtFlush, 'Route change should end before the exporter is flushed.')
+			expect(spanAtFlush).toHaveSpanAttribute(
+				BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
+				PAGE_LOAD_METRICS_STATUS_INTERRUPTED,
+			)
+			expect(handle?.markComplete()).toBe(false)
+		} finally {
+			forceFlush.mockRestore()
+			visibilityState.mockRestore()
+		}
+	})
+
+	it('finalizes a completed manual route change before flushing on page hide', async () => {
+		const visibilityState = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden')
+		const processor = SplunkRum._processor
+		expectDefined(processor)
+		let spanAtFlush: (typeof capturer.spans)[number] | undefined
+		const forceFlush = vi.spyOn(processor, 'forceFlush').mockImplementation(() => {
+			spanAtFlush = capturer.spans.find((candidate) => candidate.name === 'routeChange')
+			return Promise.resolve()
+		})
+
+		try {
+			history.pushState({}, 'title', '/completed-manual-page-hide')
+			const handle = SplunkRum.registerManualPageLoad()
+			expect(handle?.markComplete()).toBe(true)
+
+			window.dispatchEvent(new Event('visibilitychange'))
+
+			await vi.waitFor(() => expect(forceFlush).toHaveBeenCalledOnce())
+			expectDefined(spanAtFlush, 'Route change should end before the exporter is flushed.')
+			expect(spanAtFlush).toHaveSpanAttribute(
+				BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
+				PAGE_LOAD_METRICS_STATUS_COMPLETED,
+			)
+			expect(spanAtFlush).toHaveSpanAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_SOURCE_ATTRIBUTE, 'manual')
+		} finally {
+			forceFlush.mockRestore()
+			visibilityState.mockRestore()
+		}
+	})
+})
+
+describe('manual page completion without experimental telemetry', () => {
+	let capturer: SpanCapturer
+
+	beforeEach(() => {
+		capturer = new SpanCapturer()
+		initWithDefaultConfig(capturer, {
+			navigationMetrics: { quietTime: 1 },
+		})
+	})
+
+	afterEach(() => {
+		deinit()
+		history.pushState({}, 'title', '/')
+	})
+
+	it('completes a route change through the public manual API', async () => {
+		history.pushState({}, 'title', '/manual-page-completion-without-experimental')
+		const handle = SplunkRum.registerManualPageLoad()
+
+		expect(handle?.markComplete()).toBe(true)
+		await vi.waitFor(() => {
+			const span = capturer.spans.find((candidate) => candidate.name === 'routeChange')
+			expectDefined(span, 'Check if routeChange span is present.')
+			expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_SOURCE_ATTRIBUTE, 'manual')
+			expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_STATUS_ATTRIBUTE, PAGE_LOAD_METRICS_STATUS_COMPLETED)
+			expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE)
+			expect(span).toNotHaveSpanAttribute(BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE)
+		})
 	})
 })
 
