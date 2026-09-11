@@ -14,7 +14,7 @@ Delete options that are not relevant.
 - Chore or internal change (changes not visible to the consumers of the package)
 - Documentation update
 
-# How has this been tested?
+## How has this been tested?
 
 Delete options that are not relevant.
 
@@ -22,10 +22,17 @@ Delete options that are not relevant.
 - Added unit tests
 - Added integration tests
 
-<!--
-Checklist:
+## AI usage
 
-- Unit tests have been added/updated
-- Integration tests if it's browser specific quirk
-- Documentation has been updated
--->
+Check one option.
+
+- [ ] AI was used to create the full change
+- [ ] AI was used to create part of the change
+- [ ] AI was used only for review, explanation, or validation
+- [ ] AI was not used
+
+## Checklist
+
+- [ ] The selected test coverage matches the risk and browser impact of the change
+- [ ] Documentation, changelog, or release notes have been updated when customer-facing behavior changes
+- [ ] Backward compatibility, privacy, telemetry volume, and cardinality impact have been considered
