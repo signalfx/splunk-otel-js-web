@@ -22,7 +22,7 @@
 		"@opentelemetry/api": "catalog:",
 		"@opentelemetry/core": "catalog:",
 		"@opentelemetry/sdk-trace-base": "catalog:",
-		"@playwright/test": "^1.60.0",
+		"@playwright/test": "^1.63.0",
 		"@splunk/otel-web": "workspace:*",
 		"@splunk/otel-web-session-recorder": "workspace:*",
 		"@splunk/rum-build-plugins": "workspace:*",
@@ -32,7 +32,7 @@
 		"cors": "^2.8.6",
 		"ejs": "^6.0.1",
 		"nodemon": "^3.1.14",
-		"playwright": "^1.60.0"
+		"playwright": "^1.63.0"
 	},
 	"bugs": {
 		"url": "https://github.com/signalfx/splunk-otel-js-web/issues"
