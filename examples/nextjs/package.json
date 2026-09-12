@@ -10,15 +10,15 @@
 	},
 	"dependencies": {
 		"next": "16.3.3",
-		"react": "19.2.7",
-		"react-dom": "19.2.7"
+		"react": "19.2.8",
+		"react-dom": "19.2.8"
 	},
 	"devDependencies": {
 		"@splunk/otel-web": "workspace:*",
 		"@splunk/otel-web-session-recorder": "workspace:*",
 		"@types/node": "25.9.1",
-		"@types/react": "19.2.16",
-		"@types/react-dom": "19.2.3",
+		"@types/react": "19.2.18",
+		"@types/react-dom": "19.2.7",
 		"typescript": "5.9.3"
 	}
 }
