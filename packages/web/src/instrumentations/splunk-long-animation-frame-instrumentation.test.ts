@@ -132,6 +132,7 @@ describe('long animation frame instrumentation', () => {
 					createScript({ duration: 20, sourceURL: 'blob:https://example.com/id?kept=true#kept' }),
 					createScript({ duration: 30, sourceURL: '<anonymous>' }),
 				],
+				startTime: 150,
 			}),
 		])
 
@@ -140,6 +141,7 @@ describe('long animation frame instrumentation', () => {
 			'loaf.script[0].duration': 161.3,
 			'loaf.script[0].execution_start': 162.46,
 			'loaf.script[0].invoker': 'http://localhost:3030/splunk-otel-web.js?token=secret#hash',
+			'loaf.script[0].offset': 10.11,
 			'loaf.script[0].pause_duration': 1.23,
 			'loaf.script[0].source_char_position': 234,
 			'loaf.script[0].source_url': 'http://localhost:3030/splunk-otel-web.js',

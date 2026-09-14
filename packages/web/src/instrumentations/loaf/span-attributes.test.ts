@@ -66,6 +66,7 @@ describe('LoAF span attributes', () => {
 					createScript({ duration: 20, sourceURL: 'blob:https://example.com/id?kept=true#kept' }),
 					createScript({ duration: 30, sourceURL: '<anonymous>' }),
 				],
+				startTime: 150,
 			}),
 		)
 
@@ -76,6 +77,7 @@ describe('LoAF span attributes', () => {
 			'loaf.script[0].forced_style_and_layout_duration': 0,
 			'loaf.script[0].invoker': 'http://localhost:3030/splunk-otel-web.js?token=secret#hash',
 			'loaf.script[0].invoker_type': 'classic-script',
+			'loaf.script[0].offset': 10.11,
 			'loaf.script[0].pause_duration': 1.23,
 			'loaf.script[0].source_char_position': 234,
 			'loaf.script[0].source_function_name': '',

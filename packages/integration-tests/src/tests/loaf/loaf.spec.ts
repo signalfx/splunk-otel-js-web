@@ -59,6 +59,7 @@ test.describe('long animation frame', () => {
 			expect(loafSpan).toHaveNumericAttribute(`loaf.script[${index}].forced_style_and_layout_duration`)
 			expect(loafSpan).toHaveStringAttribute(`loaf.script[${index}].invoker`)
 			expect(loafSpan).toHaveStringAttribute(`loaf.script[${index}].invoker_type`)
+			expect(loafSpan).toHaveNumericAttribute(`loaf.script[${index}].offset`)
 			expect(loafSpan).toHaveNumericAttribute(`loaf.script[${index}].pause_duration`)
 			expect(loafSpan).toHaveNumericAttribute(`loaf.script[${index}].source_char_position`)
 			expect(loafSpan).toHaveStringAttribute(`loaf.script[${index}].source_url`)

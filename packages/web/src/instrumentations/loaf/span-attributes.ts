@@ -48,6 +48,7 @@ export function setLoafEntryAttributes(span: Span, entry: PerformanceLongAnimati
 		setRoundedNumberAttribute(span, `${prefix}.source_char_position`, script.sourceCharPosition)
 		setStringAttribute(span, `${prefix}.source_url`, script.sourceURL)
 		setStringAttribute(span, `${prefix}.source_function_name`, script.sourceFunctionName)
+		setRoundedNumberAttribute(span, `${prefix}.offset`, script.startTime - entry.startTime)
 		setRoundedNumberAttribute(
 			span,
 			`${prefix}.forced_style_and_layout_duration`,
