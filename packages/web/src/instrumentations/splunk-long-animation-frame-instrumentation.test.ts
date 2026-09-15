@@ -99,6 +99,7 @@ describe('long animation frame instrumentation', () => {
 			'component': 'splunk-loaf',
 			'loaf.blocking_duration': 111.4,
 			'loaf.duration': 161.38,
+			'loaf.entry_start_time': 527.3,
 			'loaf.entry_type': 'long-animation-frame',
 			'loaf.first_ui_event_timestamp': 0,
 			'loaf.name': 'long-animation-frame',
@@ -120,7 +121,7 @@ describe('long animation frame instrumentation', () => {
 				scripts: [
 					createScript({ duration: 5, sourceURL: '/small.js?token=secret#hash' }),
 					createScript({
-						duration: 161.3,
+						duration: 100.3,
 						executionStart: 162.455,
 						invoker: 'http://localhost:3030/splunk-otel-web.js?token=secret#hash',
 						pauseDuration: 1.234,
@@ -137,11 +138,11 @@ describe('long animation frame instrumentation', () => {
 		])
 
 		expect(attributes).toMatchObject({
+			'loaf.entry_start_time': 150,
 			'loaf.script_count': 4,
-			'loaf.script[0].duration': 161.3,
+			'loaf.script[0].duration': 100.3,
 			'loaf.script[0].execution_start': 162.46,
 			'loaf.script[0].invoker': 'http://localhost:3030/splunk-otel-web.js?token=secret#hash',
-			'loaf.script[0].offset': 10.11,
 			'loaf.script[0].pause_duration': 1.23,
 			'loaf.script[0].source_char_position': 234,
 			'loaf.script[0].source_url': 'http://localhost:3030/splunk-otel-web.js',
