@@ -133,6 +133,21 @@ describe('LoAF span attributes', () => {
 		})
 	})
 
+	it('does not emit a negative script offset for malformed timing data', () => {
+		const { attributes, span } = createSpanMock()
+
+		setLoafEntryAttributes(
+			span,
+			createLoafEntry({
+				scripts: [createScript({ startTime: 100 })],
+				startTime: 150,
+			}),
+		)
+
+		expect(attributes['loaf.script[0].offset']).toBe(0)
+		expect(attributes['loaf.script[0].start_time']).toBe(100)
+	})
+
 	it('falls back for malformed runtime entry shapes', () => {
 		const { attributes, span } = createSpanMock()
 

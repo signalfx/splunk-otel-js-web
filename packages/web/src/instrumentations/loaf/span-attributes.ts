@@ -40,6 +40,7 @@ export function setLoafEntryAttributes(span: Span, entry: PerformanceLongAnimati
 
 	getLoafScriptSummaries(scripts).forEach((script, index) => {
 		const prefix = `loaf.script[${index}]`
+		const offset = script.startTime - entry.startTime
 		setRoundedNumberAttribute(span, `${prefix}.duration`, script.duration)
 		setRoundedNumberAttribute(span, `${prefix}.execution_start`, script.executionStart)
 		setStringAttribute(span, `${prefix}.invoker`, script.invoker)
@@ -48,7 +49,7 @@ export function setLoafEntryAttributes(span: Span, entry: PerformanceLongAnimati
 		setRoundedNumberAttribute(span, `${prefix}.source_char_position`, script.sourceCharPosition)
 		setStringAttribute(span, `${prefix}.source_url`, script.sourceURL)
 		setStringAttribute(span, `${prefix}.source_function_name`, script.sourceFunctionName)
-		setRoundedNumberAttribute(span, `${prefix}.offset`, script.startTime - entry.startTime)
+		setRoundedNumberAttribute(span, `${prefix}.offset`, Number.isFinite(offset) ? Math.max(0, offset) : offset)
 		setRoundedNumberAttribute(
 			span,
 			`${prefix}.forced_style_and_layout_duration`,
