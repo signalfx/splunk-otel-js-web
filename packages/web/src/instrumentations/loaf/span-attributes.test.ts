@@ -51,7 +51,7 @@ describe('LoAF span attributes', () => {
 			span,
 			createLoafEntry({
 				scripts: [
-					createScript({ duration: 5, sourceURL: '/small.js?token=secret#hash' }),
+					createScript({ duration: 5, sourceURL: '/small.js?token=secret#hash', startTime: 151 }),
 					createScript({
 						duration: 100.3,
 						executionStart: 162.455,
@@ -64,8 +64,12 @@ describe('LoAF span attributes', () => {
 						startTime: 160.111,
 						windowAttribution: 'self',
 					}),
-					createScript({ duration: 20, sourceURL: 'blob:https://example.com/id?kept=true#kept' }),
-					createScript({ duration: 30, sourceURL: '<anonymous>' }),
+					createScript({
+						duration: 20,
+						sourceURL: 'blob:https://example.com/id?kept=true#kept',
+						startTime: 260,
+					}),
+					createScript({ duration: 30, sourceURL: '<anonymous>', startTime: 220 }),
 				],
 				startTime: 150,
 			}),
@@ -87,8 +91,10 @@ describe('LoAF span attributes', () => {
 			'loaf.script[0].window_attribution': 'self',
 			'loaf.script[1].duration': 30,
 			'loaf.script[1].source_url': '<anonymous>',
+			'loaf.script[1].start_time': 220,
 			'loaf.script[2].duration': 20,
 			'loaf.script[2].source_url': 'blob:https://example.com/id?kept=true#kept',
+			'loaf.script[2].start_time': 260,
 		})
 		expect(attributes['loaf.script[3].duration']).toBeUndefined()
 	})
