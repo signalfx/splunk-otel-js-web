@@ -27,6 +27,7 @@ import { limitLen } from '../utils'
 import { getValidAttributes, isPlainObject, removePropertiesWithAdvancedTypes, SpanContext } from '../utils/attributes'
 import { hashSHA256 } from '../utils/hash'
 import { getElementXPath } from '../utils/index'
+import { isResourceElementLoadError } from '../utils/resource-timing'
 
 // FIXME take timestamps from events?
 
@@ -220,6 +221,10 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 
 	protected async reportEvent(source: string, ev: Event, spanContext: SpanContext): Promise<void> {
 		// FIXME consider other sources of global 'error' DOM callback - what else can be captured here?
+		if (isResourceElementLoadError(ev)) {
+			return
+		}
+
 		if (!ev.target && !useful(ev.type)) {
 			return
 		}
