@@ -45,8 +45,11 @@ test.describe('long animation frame', () => {
 		expect(loafSpan).toHaveNumericAttribute('loaf.render_start')
 		expect(loafSpan).toHaveNumericAttribute('loaf.style_and_layout_start')
 		expect(loafSpan).toHaveNumericAttribute('loaf.first_ui_event_timestamp')
+		expect(loafSpan).toHaveNumericAttribute('loaf.entry_start_time')
 		expect(loafSpan).toHaveNumericAttribute('loaf.script_count')
 
+		const duration = Number.parseFloat(String(attributes['loaf.duration']))
+		const entryStartTime = Number.parseFloat(String(attributes['loaf.entry_start_time']))
 		const scriptCount = Number.parseFloat(String(attributes['loaf.script_count']))
 		expect(scriptCount).toBeGreaterThan(0)
 		const exportedScriptIndexes = getExportedScriptIndexes(attributes, scriptCount)
@@ -64,6 +67,13 @@ test.describe('long animation frame', () => {
 			expect(loafSpan).toHaveStringAttribute(`loaf.script[${index}].source_url`)
 			expect(loafSpan).toHaveStringAttribute(`loaf.script[${index}].source_function_name`)
 			expect(loafSpan).toHaveNumericAttribute(`loaf.script[${index}].start_time`)
+
+			const scriptDuration = Number.parseFloat(String(attributes[`loaf.script[${index}].duration`]))
+			const scriptStartTime = Number.parseFloat(String(attributes[`loaf.script[${index}].start_time`]))
+			const scriptOffset = scriptStartTime - entryStartTime
+			expect(scriptOffset).toBeGreaterThanOrEqual(0)
+			expect(scriptOffset).toBeLessThanOrEqual(duration)
+			expect(scriptOffset + scriptDuration).toBeLessThanOrEqual(duration + 1)
 		}
 
 		expect(attributes[`loaf.script[${MAX_LOAF_SCRIPT_SUMMARIES}].duration`]).toBeUndefined()
