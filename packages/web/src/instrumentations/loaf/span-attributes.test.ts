@@ -32,6 +32,7 @@ describe('LoAF span attributes', () => {
 			'component': 'splunk-loaf',
 			'loaf.blocking_duration': 111.4,
 			'loaf.duration': 161.38,
+			'loaf.entry_start_time': 527.3,
 			'loaf.entry_type': 'long-animation-frame',
 			'loaf.first_ui_event_timestamp': 0,
 			'loaf.name': 'long-animation-frame',
@@ -50,9 +51,9 @@ describe('LoAF span attributes', () => {
 			span,
 			createLoafEntry({
 				scripts: [
-					createScript({ duration: 5, sourceURL: '/small.js?token=secret#hash' }),
+					createScript({ duration: 5, sourceURL: '/small.js?token=secret#hash', startTime: 151 }),
 					createScript({
-						duration: 161.3,
+						duration: 100.3,
 						executionStart: 162.455,
 						invoker: 'http://localhost:3030/splunk-otel-web.js?token=secret#hash',
 						invokerType: 'classic-script',
@@ -63,15 +64,21 @@ describe('LoAF span attributes', () => {
 						startTime: 160.111,
 						windowAttribution: 'self',
 					}),
-					createScript({ duration: 20, sourceURL: 'blob:https://example.com/id?kept=true#kept' }),
-					createScript({ duration: 30, sourceURL: '<anonymous>' }),
+					createScript({
+						duration: 20,
+						sourceURL: 'blob:https://example.com/id?kept=true#kept',
+						startTime: 260,
+					}),
+					createScript({ duration: 30, sourceURL: '<anonymous>', startTime: 220 }),
 				],
+				startTime: 150,
 			}),
 		)
 
 		expect(attributes).toMatchObject({
+			'loaf.entry_start_time': 150,
 			'loaf.script_count': 4,
-			'loaf.script[0].duration': 161.3,
+			'loaf.script[0].duration': 100.3,
 			'loaf.script[0].execution_start': 162.46,
 			'loaf.script[0].forced_style_and_layout_duration': 0,
 			'loaf.script[0].invoker': 'http://localhost:3030/splunk-otel-web.js?token=secret#hash',
@@ -84,8 +91,10 @@ describe('LoAF span attributes', () => {
 			'loaf.script[0].window_attribution': 'self',
 			'loaf.script[1].duration': 30,
 			'loaf.script[1].source_url': '<anonymous>',
+			'loaf.script[1].start_time': 220,
 			'loaf.script[2].duration': 20,
 			'loaf.script[2].source_url': 'blob:https://example.com/id?kept=true#kept',
+			'loaf.script[2].start_time': 260,
 		})
 		expect(attributes['loaf.script[3].duration']).toBeUndefined()
 	})
@@ -117,6 +126,7 @@ describe('LoAF span attributes', () => {
 
 		expect(attributes).toEqual({
 			'component': 'splunk-loaf',
+			'loaf.entry_start_time': 527.3,
 			'loaf.entry_type': 'long-animation-frame',
 			'loaf.first_ui_event_timestamp': 0,
 			'loaf.name': 'long-animation-frame',
@@ -129,6 +139,22 @@ describe('LoAF span attributes', () => {
 			'loaf.script[0].window_attribution': 'self',
 			'loaf.style_and_layout_start': 0,
 		})
+	})
+
+	it('preserves script start time even when it precedes the entry start time', () => {
+		const { attributes, span } = createSpanMock()
+
+		setLoafEntryAttributes(
+			span,
+			createLoafEntry({
+				scripts: [createScript({ startTime: 100 })],
+				startTime: 150,
+			}),
+		)
+
+		expect(attributes['loaf.entry_start_time']).toBe(150)
+		expect(attributes['loaf.script[0].offset']).toBeUndefined()
+		expect(attributes['loaf.script[0].start_time']).toBe(100)
 	})
 
 	it('falls back for malformed runtime entry shapes', () => {
@@ -149,6 +175,7 @@ describe('LoAF span attributes', () => {
 			'component': 'splunk-loaf',
 			'loaf.blocking_duration': 111.4,
 			'loaf.duration': 161.38,
+			'loaf.entry_start_time': 527.3,
 			'loaf.first_ui_event_timestamp': 0,
 			'loaf.paint_time': 0,
 			'loaf.presentation_time': 0,

@@ -34,6 +34,7 @@ export function setLoafEntryAttributes(span: Span, entry: PerformanceLongAnimati
 	setRoundedNumberAttribute(span, 'loaf.render_start', entry.renderStart)
 	setRoundedNumberAttribute(span, 'loaf.style_and_layout_start', entry.styleAndLayoutStart)
 	setRoundedNumberAttribute(span, 'loaf.first_ui_event_timestamp', entry.firstUIEventTimestamp)
+	setRoundedNumberAttribute(span, 'loaf.entry_start_time', entry.startTime)
 
 	const scripts = Array.isArray(entry.scripts) ? entry.scripts : []
 	setRoundedNumberAttribute(span, 'loaf.script_count', scripts.length)
