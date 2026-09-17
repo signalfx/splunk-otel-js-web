@@ -35,13 +35,13 @@ describe('isBlockingElementInstrumentationEnabled', () => {
 		expect(isBlockingElementInstrumentationEnabled({})).toBe(false)
 	})
 
-	it('is disabled when experimental is false, even when blockingElement is enabled', () => {
+	it('is enabled independently of the experimental flag when blockingElement is enabled', () => {
 		expect(
 			isBlockingElementInstrumentationEnabled({
 				experimental: false,
 				instrumentations: { blockingElement: true },
 			}),
-		).toBe(false)
+		).toBe(true)
 	})
 
 	it('is disabled when blockingElement is unset and navigationMetrics is false', () => {

@@ -83,7 +83,7 @@ describe('SplunkBlockingElementInstrumentation', () => {
 		).toThrow('SplunkBlockingElementInstrumentation requires elementVisibilityObserver.')
 	})
 
-	it('does not start any spans when disabled', () => {
+	it('starts spans when configured without experimental features', () => {
 		createVisibleElement()
 		instrumentation = new SplunkBlockingElementInstrumentation(
 			{},
@@ -101,6 +101,8 @@ describe('SplunkBlockingElementInstrumentation', () => {
 		instrumentation.enable()
 
 		expect(getFinishedSpans()).toHaveLength(0)
+		// @ts-expect-error elementSpanTracker is private. We use it for testing.
+		expect(instrumentation.elementSpanTracker.openCount).toBe(1)
 	})
 
 	it('starts spans when instrumentations.blockingElement.enabled overrides navigationMetrics not otherwise enabling it', () => {

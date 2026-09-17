@@ -124,6 +124,7 @@ interface SplunkOtelWebConfigInternal extends SplunkOtelWebConfig {
 	adjustSessionStartToTimeOrigin: boolean
 	bufferSize?: number
 	bufferTimeout?: number
+	disableResourceLoadErrorReporting: boolean
 	discardDataAfterInactivity: boolean
 
 	exporter: SplunkOtelWebExporterOptions & {
@@ -145,6 +146,7 @@ const OPTIONS_DEFAULTS: SplunkOtelWebConfigInternal = {
 	bufferTimeout: 4000, //millis, tradeoff between batching and loss of spans by not sending before page close
 	disableAutomationFrameworks: false,
 	disableBots: false,
+	disableResourceLoadErrorReporting: false,
 	discardDataAfterInactivity: true,
 	experimental: false,
 	exporter: {

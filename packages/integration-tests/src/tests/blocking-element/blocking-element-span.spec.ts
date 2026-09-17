@@ -23,6 +23,19 @@ import { BROWSER_NAVIGATION_ATTRIBUTES, expectBrowserNavigationAttributes } from
 import { test } from '../../utils/test'
 
 test.describe('blocking-element', () => {
+	test('emits blocking spans without enabling experimental features', async ({ recordPage }) => {
+		await recordPage.goTo('/blocking-element/blocking-element-without-experimental.ejs')
+
+		await recordPage.locator('#showSpinner').click()
+
+		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'blockingElement'))
+		const blockingElementSpan = recordPage.receivedSpans.find((span) => span.name === 'blockingElement')
+
+		expect(blockingElementSpan).toHaveSpanAttribute('browser.element.selector', '.stable-spinner')
+		expect(blockingElementSpan).toHaveSpanAttribute('browser.element.id', 'stable-spinner')
+		expect(blockingElementSpan).toHaveSpanAttribute('browser.element.completion', 'completed')
+	})
+
 	test('emits an independent span per element, one completed and one still open', async ({ recordPage }) => {
 		await recordPage.goTo('/blocking-element/blocking-element-span.ejs')
 
