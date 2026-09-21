@@ -221,7 +221,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 
 	protected async reportEvent(source: string, ev: Event, spanContext: SpanContext): Promise<void> {
 		// FIXME consider other sources of global 'error' DOM callback - what else can be captured here?
-		if (isResourceElementLoadError(ev)) {
+		if (this.otelConfig.disableResourceLoadErrorReporting && isResourceElementLoadError(ev)) {
 			return
 		}
 

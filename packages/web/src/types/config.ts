@@ -247,6 +247,13 @@ export interface SplunkOtelWebConfig {
 	disableBots?: boolean
 
 	/**
+	 * If true, suppresses client-error spans for resource-element load failures. Resource timing spans,
+	 * including any available HTTP status, continue to be reported.
+	 * @default false
+	 */
+	disableResourceLoadErrorReporting?: boolean
+
+	/**
 	 * If true, no additional span will be sent after 15 minutes of user inactivity (it will be dropped).
 	 * @default true
 	 */
@@ -256,8 +263,8 @@ export interface SplunkOtelWebConfig {
 	 * Enables features that are still experimental and may change without notice.
 	 *
 	 * Currently this enables experimental page completion and correlation attributes,
-	 * the `pageLoad` span, additional post-load resource types, `blockingElement`
-	 * spans. Route-change spans emit their completion time and status without this flag.
+	 * the `pageLoad` span, and additional post-load resource types. Route-change spans
+	 * emit their completion time and status without this flag.
 	 * @default false
 	 */
 	experimental?: boolean

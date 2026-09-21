@@ -37,6 +37,12 @@ class TestableSplunkErrorInstrumentation extends SplunkErrorInstrumentation {
 	}
 }
 
+function createElementErrorEvent(target: Element): Event {
+	const event = new Event('error')
+	Object.defineProperty(event, 'target', { value: target })
+	return event
+}
+
 export function generateFilePaths(domainCount: number, pathCount: number): string[] {
 	const paths: string[] = []
 	for (let i = 0; i < domainCount; i++) {
@@ -267,32 +273,50 @@ describe('SplunkErrorInstrumentation', () => {
 		expect(urlArr.toSorted()).toStrictEqual(randomPaths.toSorted())
 	})
 
-	it('does not report resource element load failures as client error spans', async () => {
-		const instrumentation = new TestableSplunkErrorInstrumentation({ enabled: false }, {})
+	it.each([
+		['omitted', {}],
+		['false', { disableResourceLoadErrorReporting: false }],
+	] as const)('reports resource element load failures when suppression is %s', async (_setting, otelConfig) => {
+		const instrumentation = new TestableSplunkErrorInstrumentation({ enabled: false }, otelConfig)
 		const startSpan = vi.fn(() => ({ end: vi.fn(), setAttribute: vi.fn() }) as unknown as Span)
 		instrumentation.setStartSpan(startSpan)
 
 		const img = document.createElement('img')
 		img.src = '/missing.png'
-		const event = new Event('error')
-		Object.defineProperty(event, 'target', { value: img })
 
-		await instrumentation.reportTestEvent('eventListener.error', event)
+		await instrumentation.reportTestEvent('eventListener.error', createElementErrorEvent(img))
+
+		expect(startSpan).toHaveBeenCalledTimes(1)
+	})
+
+	it('does not report resource element load failures when suppression is enabled', async () => {
+		const instrumentation = new TestableSplunkErrorInstrumentation(
+			{ enabled: false },
+			{ disableResourceLoadErrorReporting: true },
+		)
+		const startSpan = vi.fn(() => ({ end: vi.fn(), setAttribute: vi.fn() }) as unknown as Span)
+		instrumentation.setStartSpan(startSpan)
+
+		const img = document.createElement('img')
+		img.src = '/missing.png'
+
+		await instrumentation.reportTestEvent('eventListener.error', createElementErrorEvent(img))
 
 		expect(startSpan).not.toHaveBeenCalled()
 	})
 
-	it('continues to report script element error events as client error spans', async () => {
-		const instrumentation = new TestableSplunkErrorInstrumentation({ enabled: false }, {})
+	it('continues to report script element error events when resource suppression is enabled', async () => {
+		const instrumentation = new TestableSplunkErrorInstrumentation(
+			{ enabled: false },
+			{ disableResourceLoadErrorReporting: true },
+		)
 		const startSpan = vi.fn(() => ({ end: vi.fn(), setAttribute: vi.fn() }) as unknown as Span)
 		instrumentation.setStartSpan(startSpan)
 
 		const script = document.createElement('script')
 		script.src = '/broken.js'
-		const event = new Event('error')
-		Object.defineProperty(event, 'target', { value: script })
 
-		await instrumentation.reportTestEvent('eventListener.error', event)
+		await instrumentation.reportTestEvent('eventListener.error', createElementErrorEvent(script))
 
 		expect(startSpan).toHaveBeenCalledTimes(1)
 	})

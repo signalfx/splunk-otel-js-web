@@ -1,5 +1,34 @@
 # Changelog
 
+## Unreleased
+
+### Optional features
+
+**`@splunk/otel-web`**
+
+- Blocking-element instrumentation can now be enabled without setting `experimental: true`. It remains opt-in through
+  explicit configuration or an `elements` navigation monitor with configured blocking selectors.
+
+```js
+SplunkRum.init({
+	instrumentations: {
+		blockingElement: true,
+	},
+	navigationMetrics: {
+		blockingSelectors: ['.loading-spinner'],
+	},
+})
+```
+
+- Added the `disableResourceLoadErrorReporting` option. Set it to `true` to suppress client-error spans for
+  resource-element load failures while retaining resource timing spans and available HTTP status information.
+
+```js
+SplunkRum.init({
+	disableResourceLoadErrorReporting: true,
+})
+```
+
 ## 3.1.0
 
 ### Upgrade impact
