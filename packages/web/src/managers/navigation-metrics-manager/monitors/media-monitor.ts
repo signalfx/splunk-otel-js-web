@@ -68,7 +68,7 @@ export class MediaMonitor extends Monitor {
 		diag.debug('PageLoadingManager.MediaMonitor: Stopped monitoring.')
 	}
 
-	private attachMediaListener(element: HTMLMediaElement): void {
+	private attachMediaListener(element: HTMLMediaElement, discoveredWhileMonitoring = false): void {
 		const existingMediaElement = this.monitoredMediaElements.get(element)
 		const url = this.getMediaUrl(element)
 		if (!url) {
@@ -89,11 +89,19 @@ export class MediaMonitor extends Monitor {
 		const event = Monitor.createDiscoveredEvent(url)
 
 		if (this.isElementAlreadyLoaded(element)) {
+			if (discoveredWhileMonitoring) {
+				this.emitResourceStateChange(event)
+			}
+
 			this.emitResourceStateChange(Monitor.createLoadedEvent(event.id, url, 0))
 			return
 		}
 
 		if (this.isElementAlreadyFailed(element)) {
+			if (discoveredWhileMonitoring) {
+				this.emitResourceStateChange(event)
+			}
+
 			this.emitResourceStateChange(Monitor.createErrorEvent(event.id, url))
 			return
 		}
@@ -126,13 +134,13 @@ export class MediaMonitor extends Monitor {
 		}
 
 		if (isMediaElement(node)) {
-			this.attachMediaListener(node)
+			this.attachMediaListener(node, true)
 			return
 		}
 
 		node.querySelectorAll('img, video, audio').forEach((mediaElement) => {
 			if (isMediaElement(mediaElement)) {
-				this.attachMediaListener(mediaElement)
+				this.attachMediaListener(mediaElement, true)
 			}
 		})
 	}
@@ -199,7 +207,7 @@ export class MediaMonitor extends Monitor {
 		this.observer = new MutationObserver((mutations) => {
 			mutations.forEach((mutation) => {
 				if (mutation.type === 'attributes' && isElement(mutation.target) && isMediaElement(mutation.target)) {
-					this.attachMediaListener(mutation.target)
+					this.attachMediaListener(mutation.target, true)
 					return
 				}
 
