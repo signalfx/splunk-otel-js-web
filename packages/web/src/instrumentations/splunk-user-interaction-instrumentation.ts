@@ -193,12 +193,16 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 			return
 		}
 
-		const now = Date.now()
+		const relativeNavigationStartTime =
+			navigationStartTime >= performance.timeOrigin
+				? navigationStartTime - performance.timeOrigin
+				: navigationStartTime
+		const navigationStartTimestamp = performance.timeOrigin + relativeNavigationStartTime
 		const span = this._routingTracer.startSpan(BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION, {
 			attributes: {
 				[BROWSER_NAVIGATION_OPERATION_ATTRIBUTE]: BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION,
 			},
-			startTime: now,
+			startTime: navigationStartTimestamp,
 		})
 		span.setAttribute('component', this.moduleName)
 		span.setAttribute('location.href', newHref)
@@ -210,13 +214,13 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 			const pageLoadMetrics = await this.navigationMetricsManager.waitForPageLoad({
 				operation: BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION,
 				span,
-				startTime: navigationStartTime,
+				startTime: relativeNavigationStartTime,
 			})
 			diag.debug('Sending routeChange span with PCT result', pageLoadMetrics)
-			span.end(now + pageLoadMetrics.pct)
+			span.end(navigationStartTimestamp + pageLoadMetrics.pct)
 			diag.debug('Route change span ended', { pct: pageLoadMetrics.pct, span })
 		} else {
-			span.end(now)
+			span.end(navigationStartTimestamp)
 		}
 	}
 }
