@@ -30,6 +30,8 @@ type MonitoredMediaElement = {
 export class MediaMonitor extends Monitor {
 	protected readonly monitorType: NavigationMetricsMonitor = 'media'
 
+	private completedMediaElementUrls = new WeakMap<HTMLMediaElement, string>()
+
 	private isMonitoring = false
 
 	private monitoredMediaElementControllers = new Set<AbortController>()
@@ -62,6 +64,7 @@ export class MediaMonitor extends Monitor {
 		this.monitoredMediaElementControllers.forEach((controller) => controller.abort())
 		this.monitoredMediaElementControllers.clear()
 		this.monitoredMediaElements = new WeakMap()
+		this.completedMediaElementUrls = new WeakMap()
 
 		this.isMonitoring = false
 
@@ -82,6 +85,10 @@ export class MediaMonitor extends Monitor {
 
 		this.untrackMediaElement(element)
 
+		if (this.completedMediaElementUrls.get(element) === url) {
+			return
+		}
+
 		if (element instanceof HTMLImageElement && element.loading === 'lazy') {
 			return
 		}
@@ -89,6 +96,8 @@ export class MediaMonitor extends Monitor {
 		const event = Monitor.createDiscoveredEvent(url)
 
 		if (this.isElementAlreadyLoaded(element)) {
+			this.completedMediaElementUrls.set(element, url)
+
 			if (discoveredWhileMonitoring) {
 				this.emitResourceStateChange(event)
 			}
@@ -112,6 +121,7 @@ export class MediaMonitor extends Monitor {
 		const loadedEventName = element instanceof HTMLImageElement ? 'load' : 'loadeddata'
 		const controller = new AbortController()
 		const listener = (loadEvent: Event) => {
+			this.completedMediaElementUrls.set(element, url)
 			this.emitResourceStateChange(Monitor.createLoadedEvent(event.id, url, performance.now() - startTime))
 			this.cleanupMediaElement(loadEvent.currentTarget, controller)
 		}
