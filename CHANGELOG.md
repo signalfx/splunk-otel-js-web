@@ -1,13 +1,47 @@
 # Changelog
 
-## Unreleased
+## 3.2.0
+
+### Upgrade impact
+
+No mandatory code or configuration changes are required. The `spaMetrics` configuration was renamed to
+`navigationMetrics`; existing `spaMetrics` configuration continues to work as a deprecated alias. New configuration
+should use `navigationMetrics`. [#1888](https://github.com/signalfx/splunk-otel-js-web/pull/1888)
+
+### Changes to default behavior
+
+This release has no changes to default behavior that require customer action.
+
+### Automatically enabled improvements
+
+**`@splunk/otel-web`**
+
+#### Report available HTTP failure status on resource spans. [#1917](https://github.com/signalfx/splunk-otel-js-web/pull/1917) [#1923](https://github.com/signalfx/splunk-otel-js-web/pull/1923)
+
+Resource timing spans now include `http.status_code` and an error status when the browser exposes a failed HTTP response
+status. This preserves failure visibility on the resource span independently of resource-load client-error reporting.
 
 ### Optional features
 
 **`@splunk/otel-web`**
 
-- Blocking-element instrumentation can now be enabled without setting `experimental: true`. It remains opt-in through
-  explicit configuration or an `elements` navigation monitor with configured blocking selectors.
+#### Let applications identify when a page is complete. [#1898](https://github.com/signalfx/splunk-otel-js-web/pull/1898)
+
+Applications can call `SplunkRum.registerManualPageLoad()` when an important component starts loading and mark the
+returned handle complete when that component is ready. The agent waits for all registered components and can use the
+last completion time as Page Completion Time (PCT). This is useful when application-specific work, including data
+received through WebSockets, cannot be detected through normal network and resource monitoring.
+
+Manual registrations are associated with the current navigation and are discarded when that navigation is interrupted,
+times out, the page is hidden, or the agent shuts down. The maximum wait is configurable with
+`navigationMetrics.maxPageLoadTimeoutForManualApi` and defaults to 180 seconds.
+
+#### Monitor blocking elements during navigation. [#1897](https://github.com/signalfx/splunk-otel-js-web/pull/1897) [#1923](https://github.com/signalfx/splunk-otel-js-web/pull/1923)
+
+Blocking-element instrumentation reports spans for configured elements that can delay a page or route from appearing
+complete. It is opt-in through explicit instrumentation configuration or an `elements` navigation monitor with blocking
+selectors. Selector configuration is re-evaluated after route changes, and open spans end safely when the page becomes
+hidden.
 
 ```js
 SplunkRum.init({
@@ -20,14 +54,65 @@ SplunkRum.init({
 })
 ```
 
-- Added the `disableResourceLoadErrorReporting` option. Set it to `true` to suppress client-error spans for
-  resource-element load failures while retaining resource timing spans and available HTTP status information.
+#### Suppress resource-load client-error spans. [#1917](https://github.com/signalfx/splunk-otel-js-web/pull/1917) [#1923](https://github.com/signalfx/splunk-otel-js-web/pull/1923)
+
+Set `disableResourceLoadErrorReporting` to `true` to suppress client-error spans for resource-element load failures.
+Resource timing spans and any HTTP status information exposed by the browser are retained. The option defaults to
+`false`, preserving the previous error-reporting behavior.
 
 ```js
 SplunkRum.init({
 	disableResourceLoadErrorReporting: true,
 })
 ```
+
+### Fixes
+
+**`@splunk/otel-web`**
+
+#### Accept valid Server-Timing trace flags. [#1910](https://github.com/signalfx/splunk-otel-js-web/pull/1910)
+
+Server-Timing `traceparent` values now use OpenTelemetry's standard parser. Valid trace flags other than `01`, such as
+`03`, are accepted, while malformed values remain ignored.
+
+#### Keep interrupted page-load time at least as long as document-load time. [#1913](https://github.com/signalfx/splunk-otel-js-web/pull/1913)
+
+When final document timing becomes available after an interrupted page load, the reported Page Completion Time is now
+raised to at least the document-load duration. Timeout measurements remain capped by their configured timeout.
+
+#### Provide a stable LoAF script timing reference. [#1921](https://github.com/signalfx/splunk-otel-js-web/pull/1921)
+
+Long Animation Frame spans now include `loaf.entry_start_time`, allowing script start times to be interpreted relative
+to the owning frame without changing the existing script timing attributes.
+
+### Experimental features
+
+This release adds no new experimental features.
+
+### Maintenance and security updates
+
+**`@splunk/otel-web-dev-root`**
+
+#### Populate GitHub release notes from the changelog. [#1912](https://github.com/signalfx/splunk-otel-js-web/pull/1912)
+
+The release pipeline now extracts the matching version section from this changelog and supplies it when creating a
+GitHub release.
+
+#### Update Next.js and address critical security advisories. [#1914](https://github.com/signalfx/splunk-otel-js-web/pull/1914) [#1916](https://github.com/signalfx/splunk-otel-js-web/pull/1916)
+
+Next.js was updated from 16.2.11 to 16.3.3 in the root development environment and Next.js example. The update addresses
+[CVE-2026-75604](https://github.com/advisories/GHSA-p293-qw3h-jr36), an unauthenticated remote-code-execution issue on
+Windows-hosted servers, and [GHSA-2xp9-vwfh-vxw4](https://github.com/advisories/GHSA-2xp9-vwfh-vxw4), an
+unauthenticated remote-code-execution issue in the Image Optimization API when AVIF files are used.
+
+#### Update browser-test dependencies. [#1900](https://github.com/signalfx/splunk-otel-js-web/pull/1900)
+
+Playwright and `@playwright/test` were updated from 1.60.0 to 1.63.0.
+
+#### Clarify the pull-request contribution checklist. [#1918](https://github.com/signalfx/splunk-otel-js-web/pull/1918)
+
+The pull-request template now records AI usage and focuses its checklist on test risk, customer-facing documentation,
+compatibility, privacy, telemetry volume, and cardinality.
 
 ## 3.1.0
 
