@@ -20,11 +20,10 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { getPackageRoots } from './utils/index.mjs'
+import { isValidSemanticVersion } from './utils/semantic-version.mjs'
 
 const packageJsonRootPath = path.resolve(process.cwd(), 'package.json')
 const requestedVersion = process.argv[2]
-const semanticVersionPattern =
-	/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/
 const packageRoots = getPackageRoots()
 
 if (process.env.npm_lifecycle_event === 'version:bump' && requestedVersion === undefined) {
@@ -32,7 +31,7 @@ if (process.env.npm_lifecycle_event === 'version:bump' && requestedVersion === u
 }
 
 if (requestedVersion !== undefined) {
-	if (!semanticVersionPattern.test(requestedVersion)) {
+	if (!isValidSemanticVersion(requestedVersion)) {
 		throw new Error(`Invalid semantic version: ${requestedVersion}`)
 	}
 
