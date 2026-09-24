@@ -93,6 +93,10 @@ This release adds no new experimental features.
 
 **`@splunk/otel-web-dev-root`**
 
+#### Set the GitHub release title to the version tag.
+
+GitHub releases now use the release tag as their title, such as `v3.2.0`.
+
 #### Populate GitHub release notes from the changelog. [#1912](https://github.com/signalfx/splunk-otel-js-web/pull/1912)
 
 The release pipeline now extracts the matching version section from this changelog and supplies it when creating a
