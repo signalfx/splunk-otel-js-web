@@ -166,3 +166,50 @@ release_cdn:
         # authenticate and release to CDN
         - creds-helper init && eval $(creds-helper aws --eval aws:v1/o11y-infra/role/o11y_gdi_otel_js_web_releaser_role)
         - pnpm exec tsx scripts/release-cdn.mts ${CI_COMMIT_REF_NAME}
+
+recover_github_320:
+    <<: *pnpm-setup
+    stage: release
+    variables:
+        RECOVERY_RELEASE_TAG: "v3.2.0"
+    rules:
+        - if: '$CI_COMMIT_BRANCH == "recover-v3.2.0"'
+          when: manual
+        - when: never
+    needs:
+        - project: $CI_PROJECT_PATH
+          job: release_npm
+          ref: v3.2.0
+          artifacts: true
+    artifacts:
+        paths:
+            - artifacts/
+    script:
+        - sudo mkdir -p -m 755 /etc/apt/keyrings
+        - curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null
+        - sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
+        - echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+        - sudo apt update
+        - sudo apt install gh -y
+        - pnpm install --frozen-lockfile
+        - pnpm exec tsx scripts/extract-github-release-notes.mts "$RECOVERY_RELEASE_TAG" release-notes.md
+        - gh release create "$RECOVERY_RELEASE_TAG" ./artifacts/* --notes-file release-notes.md --repo "$GITHUB_REPOSITORY" --verify-tag
+
+recover_cdn_320:
+    <<: *pnpm-setup
+    stage: release
+    variables:
+        RECOVERY_RELEASE_TAG: "v3.2.0"
+    rules:
+        - if: '$CI_COMMIT_BRANCH == "recover-v3.2.0"'
+        - when: never
+    needs:
+        - job: recover_github_320
+          artifacts: true
+    id_tokens:
+        CI_JOB_JWT:
+            aud: $CICD_VAULT_ADDR
+    script:
+        - pnpm install --frozen-lockfile
+        - creds-helper init && eval $(creds-helper aws --eval aws:v1/o11y-infra/role/o11y_gdi_otel_js_web_releaser_role)
+        - pnpm exec tsx scripts/release-cdn.mts "$RECOVERY_RELEASE_TAG"
