@@ -1045,6 +1045,15 @@ describe('test route change', () => {
 
 	it('should capture location.hash changes', async () => {
 		const oldUrl = location.href
+		let navigationStartTimestamp: number | undefined
+		window.addEventListener(
+			'hashchange',
+			(event) => {
+				navigationStartTimestamp = performance.timeOrigin + event.timeStamp
+			},
+			{ once: true },
+		)
+		const dateNowSpy = vi.spyOn(Date, 'now').mockReturnValue(Date.now() + 60_000)
 		location.hash = '#hashChange'
 
 		await new Promise<void>((resolve) => {
@@ -1052,12 +1061,16 @@ describe('test route change', () => {
 				resolve()
 			}, 0)
 		})
+		dateNowSpy.mockRestore()
 
 		const span = capturer.spans.find((s) => s.attributes.component === 'user-interaction')
 		expectDefined(span, 'Check if user-interaction span is present.')
+		expectDefined(navigationStartTimestamp, 'Check if the logical navigation start time was captured.')
 		expect(span.name).toBe('routeChange')
 		expect(span).toHaveSpanAttributeContaining('location.href', '#hashChange')
 		expect(span).toHaveSpanAttribute('prev.href', oldUrl)
+		expect(hrTimeToMilliseconds(span.startTime)).toBeCloseTo(navigationStartTimestamp, 3)
+		expect(hrTimeToMilliseconds(span.duration)).toBe(0)
 		history.pushState({}, 'title', '/')
 	})
 
@@ -1116,6 +1129,10 @@ describe('test route change navigation metrics timeout', () => {
 				expect(span).toHaveSpanAttribute(
 					BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
 					PAGE_LOAD_METRICS_STATUS_COMPLETED,
+				)
+				expect(hrTimeToMilliseconds(span.duration)).toBeCloseTo(
+					Number(span.attributes[BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE]),
+					5,
 				)
 				expect(span).toHaveSpanAttribute('prev.href', oldUrl)
 			},

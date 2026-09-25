@@ -195,6 +195,39 @@ describe('MediaMonitor', () => {
 			expect('loadTime' in events[0] && events[0].loadTime).toBe(0)
 		})
 
+		it('discovers already loaded images added after monitoring starts', async () => {
+			const img = document.createElement('img')
+			const imageLoaded = waitForImageLoad(img)
+			img.src = getTestImageUrl('cached-dynamic-image')
+			document.body.append(img)
+			await imageLoaded
+			img.remove()
+
+			monitor.start()
+			document.body.append(img)
+
+			await vi.waitFor(() => {
+				expectEventStatesWithMatchingIds(events, [ResourceState.DISCOVERED, ResourceState.LOADED])
+			})
+		})
+
+		it('does not rediscover a cached image when srcset changes in the same observer batch', async () => {
+			const img = document.createElement('img')
+			const imageLoaded = waitForImageLoad(img)
+			img.src = DATA_IMAGE_URL
+			document.body.append(img)
+			await imageLoaded
+			img.remove()
+
+			monitor.start()
+			document.body.append(img)
+			img.srcset = `${DATA_IMAGE_URL} 1x`
+
+			await vi.waitFor(() => {
+				expectEventStatesWithMatchingIds(events, [ResourceState.DISCOVERED, ResourceState.LOADED])
+			})
+		})
+
 		it('skips lazy-loaded images', async () => {
 			monitor.start()
 
