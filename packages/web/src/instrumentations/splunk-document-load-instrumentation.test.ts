@@ -18,6 +18,7 @@
 
 import { hrTimeToMilliseconds, timeInputToHrTime } from '@opentelemetry/core'
 import { BasicTracerProvider, Span } from '@opentelemetry/sdk-trace-base'
+import { PerformanceTimingNames as PTN } from '@opentelemetry/sdk-trace-web'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { NavigationMetricsManager } from '../managers'
@@ -130,6 +131,74 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 
 		expect(setCurrentNavigationSpan).toHaveBeenCalledOnce()
 		expect((setCurrentNavigationSpan.mock.calls[0][0] as Span).name).toBe('documentLoad')
+	})
+
+	it('omits zero or pre-start network timings from documentFetch spans', () => {
+		const { navigationMetricsManager } = createNavigationMetricsManagerMock()
+		const fetchStart = 12.5
+		vi.spyOn(performance, 'getEntriesByType').mockReturnValue([
+			{ entryType: 'navigation', fetchStart } as PerformanceNavigationTiming,
+		])
+		instrumentation = new SplunkDocumentLoadInstrumentation(
+			{},
+			{ experimental: true },
+			undefined,
+			navigationMetricsManager,
+		)
+		instrumentation.setTracerProvider(new BasicTracerProvider())
+
+		const exposedInstrumentation = instrumentation as unknown as {
+			_startSpan(spanName: string, performanceName: string, entries: Record<string, number>): Span
+		}
+		const span = exposedInstrumentation._startSpan('documentFetch', PTN.FETCH_START, { fetchStart })
+
+		span.addEvent(PTN.CONNECT_END, 0)
+		span.addEvent(PTN.CONNECT_START, fetchStart - 0.1)
+		span.addEvent(PTN.REQUEST_START, fetchStart + 0.5)
+
+		expect(span.events.map(({ name }) => name)).toEqual([PTN.REQUEST_START])
+		expect(span.events[0].time).toEqual(timeInputToHrTime(fetchStart + 0.5))
+	})
+
+	it('omits zero or pre-start lifecycle timings from documentLoad spans', () => {
+		const { navigationMetricsManager } = createNavigationMetricsManagerMock()
+		const fetchStart = 12.5
+		vi.spyOn(performance, 'getEntriesByType').mockReturnValue([
+			{ entryType: 'navigation', fetchStart } as PerformanceNavigationTiming,
+		])
+		instrumentation = new SplunkDocumentLoadInstrumentation(
+			{},
+			{ experimental: true },
+			undefined,
+			navigationMetricsManager,
+		)
+		instrumentation.setTracerProvider(new BasicTracerProvider())
+
+		const exposedInstrumentation = instrumentation as unknown as {
+			_startSpan(spanName: string, performanceName: string, entries: Record<string, number>): Span
+		}
+		const span = exposedInstrumentation._startSpan('documentLoad', PTN.FETCH_START, { fetchStart })
+
+		span.addEvent(PTN.DOM_INTERACTIVE, 0)
+		span.addEvent(PTN.DOM_CONTENT_LOADED_EVENT_START, fetchStart - 0.1)
+		span.addEvent(PTN.DOM_CONTENT_LOADED_EVENT_END, fetchStart + 0.5)
+
+		expect(span.events.map(({ name }) => name)).toEqual([PTN.DOM_CONTENT_LOADED_EVENT_END])
+		expect(span.events[0].time).toEqual(timeInputToHrTime(fetchStart + 0.5))
+	})
+
+	it('keeps resource-fetch network timing behavior unchanged', () => {
+		instrumentation = new SplunkDocumentLoadInstrumentation({}, {})
+		instrumentation.setTracerProvider(new BasicTracerProvider())
+
+		const exposedInstrumentation = instrumentation as unknown as {
+			_startSpan(spanName: string, performanceName: string, entries: Record<string, number>): Span
+		}
+		const span = exposedInstrumentation._startSpan('resourceFetch', PTN.FETCH_START, { fetchStart: 12.5 })
+
+		span.addEvent(PTN.CONNECT_END, 0)
+
+		expect(span.events.map(({ name }) => name)).toEqual([PTN.CONNECT_END])
 	})
 
 	it('ends an open pageLoad span when disabled', () => {

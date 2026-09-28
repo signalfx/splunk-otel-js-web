@@ -17,7 +17,14 @@
  */
 
 import * as api from '@opentelemetry/api'
-import { addHrTimes, hrTimeToMilliseconds, isUrlIgnored, millisToHrTime, timeInputToHrTime } from '@opentelemetry/core'
+import {
+	addHrTimes,
+	getTimeOrigin,
+	hrTimeToMilliseconds,
+	isUrlIgnored,
+	millisToHrTime,
+	timeInputToHrTime,
+} from '@opentelemetry/core'
 import { InstrumentationConfig } from '@opentelemetry/instrumentation'
 import {
 	AttributeNames,
@@ -47,6 +54,74 @@ export interface SplunkDocLoadInstrumentationConfig extends InstrumentationConfi
 
 const excludedInitiatorTypes = new Set(['beacon', 'fetch', 'xmlhttprequest'])
 const PAGE_LOAD_SPAN_NAME = 'pageLoad'
+const navigationTimingEventNames = new Set<string>([
+	PTN.FETCH_START,
+	PTN.DOMAIN_LOOKUP_START,
+	PTN.DOMAIN_LOOKUP_END,
+	PTN.CONNECT_START,
+	PTN.SECURE_CONNECTION_START,
+	PTN.CONNECT_END,
+	PTN.REQUEST_START,
+	PTN.RESPONSE_START,
+	PTN.RESPONSE_END,
+	PTN.UNLOAD_EVENT_START,
+	PTN.UNLOAD_EVENT_END,
+	PTN.DOM_INTERACTIVE,
+	PTN.DOM_CONTENT_LOADED_EVENT_START,
+	PTN.DOM_CONTENT_LOADED_EVENT_END,
+	PTN.DOM_COMPLETE,
+	PTN.LOAD_EVENT_START,
+	PTN.LOAD_EVENT_END,
+])
+
+function isTimeInput(value: unknown): value is api.TimeInput {
+	return (
+		typeof value === 'number' ||
+		value instanceof Date ||
+		(Array.isArray(value) && value.length === 2 && typeof value[0] === 'number' && typeof value[1] === 'number')
+	)
+}
+
+function isBefore(left: api.HrTime, right: api.HrTime): boolean {
+	return left[0] < right[0] || (left[0] === right[0] && left[1] < right[1])
+}
+
+function preventInvalidNavigationTimingEvents(
+	span: api.Span,
+	fetchStart: number | undefined,
+	spanUsesTimeOrigin: boolean,
+): void {
+	// If the span start uses performance.timeOrigin, normalize relative event times to that same clock.
+	const addEvent = span.addEvent.bind(span)
+	span.addEvent = (name, attributesOrStartTime, startTime) => {
+		const eventTime = startTime ?? (isTimeInput(attributesOrStartTime) ? attributesOrStartTime : undefined)
+		if (navigationTimingEventNames.has(name) && eventTime !== undefined) {
+			const isUnavailableZero = name !== PTN.FETCH_START && typeof eventTime === 'number' && eventTime === 0
+			const isRelativeTime = typeof eventTime === 'number' && eventTime < getTimeOrigin()
+			const normalizedEventTime = spanUsesTimeOrigin ? normalizeNavigationTiming(eventTime) : eventTime
+			const isBeforeSpanStart =
+				spanUsesTimeOrigin || !isRelativeTime
+					? isBefore(timeInputToHrTime(normalizedEventTime), (span as Span).startTime)
+					: fetchStart !== undefined && eventTime < fetchStart
+			if (isUnavailableZero || isBeforeSpanStart) {
+				return span
+			}
+
+			if (startTime !== undefined) {
+				return addEvent(name, attributesOrStartTime, normalizedEventTime)
+			}
+			if (isTimeInput(attributesOrStartTime)) {
+				return addEvent(name, normalizedEventTime)
+			}
+		}
+
+		return addEvent(name, attributesOrStartTime, startTime)
+	}
+}
+
+function normalizeNavigationTiming(time: api.TimeInput): api.TimeInput {
+	return typeof time === 'number' && time < getTimeOrigin() ? timeInputToHrTime(time) : time
+}
 
 function addExtraDocLoadTags(span: api.Span) {
 	if (document.referrer && document.referrer !== '') {
@@ -127,6 +202,14 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 					? { ...entries, [PTN.FETCH_START]: this.navigationStartTimeMillis }
 					: entries
 			const span = _superStartSpan(spanName, performanceName, startEntries, parentSpan)
+			if (span && (spanName === AttributeNames.DOCUMENT_FETCH || spanName === AttributeNames.DOCUMENT_LOAD)) {
+				const fetchStart = (entries as unknown as Record<string, unknown>)[PTN.FETCH_START]
+				preventInvalidNavigationTimingEvents(
+					span,
+					typeof fetchStart === 'number' ? fetchStart : undefined,
+					this.navigationStartTimeMillis !== undefined,
+				)
+			}
 
 			if (span && spanName === AttributeNames.DOCUMENT_LOAD) {
 				span.setAttribute(BROWSER_NAVIGATION_OPERATION_ATTRIBUTE, BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION)
