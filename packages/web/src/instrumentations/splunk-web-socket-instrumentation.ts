@@ -16,31 +16,47 @@
  *
  */
 
-import { context, Span, SpanKind, trace } from '@opentelemetry/api'
+import { Span, SpanKind, SpanStatusCode } from '@opentelemetry/api'
 import { isUrlIgnored } from '@opentelemetry/core'
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 // FIXME convert into otel-js-contrib Plugin and upstream
 import * as shimmer from 'shimmer'
 
-import { SessionManager } from '../managers'
-import { isError, SplunkOtelWebConfig } from '../types'
+import { isError } from '../types'
 import { getSize, hasSizeLikeProperty } from '../utils/size'
 import { VERSION } from '../version'
 
-interface SplunkWebSocketInstrumentationConfig extends InstrumentationConfig {
+const DEFAULT_MAX_MESSAGE_SPANS_PER_CONNECTION = 100
+
+export interface SplunkWebSocketInstrumentationConfig extends InstrumentationConfig {
 	ignoreUrls?: (string | RegExp)[]
+	/**
+	 * Maximum number of send and receive spans emitted for one WebSocket connection.
+	 * Additional messages are included in the aggregate counters on the close span.
+	 * Set to zero for aggregate-only telemetry.
+	 * @default 100
+	 */
+	maxMessageSpansPerConnection?: number
+}
+
+interface WebSocketState {
+	connectionId: string
+	localCloseRequested: boolean
+	maxBufferedAmount: number
+	messageSequence: number
+	messageSpansDropped: number
+	messageSpansEmitted: number
+	openedAt?: number
+	receivedBytes: number
+	receivedMessages: number
+	sendErrors: number
+	sentBytes: number
+	sentMessages: number
 }
 
 export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWebSocketInstrumentationConfig> {
-	listener2ws2patched = new WeakMap()
-
-	constructor(
-		config: SplunkWebSocketInstrumentationConfig,
-		protected otelConfig: SplunkOtelWebConfig,
-		public sessionManager?: SessionManager,
-	) {
+	constructor(config: SplunkWebSocketInstrumentationConfig) {
 		super('splunk-websocket', VERSION, config)
-		this._config = config
 	}
 
 	disable(): void {
@@ -64,9 +80,8 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 						},
 						kind: SpanKind.CLIENT,
 					})
-					if (url) {
-						connectSpan.setAttribute('http.url', stringUrl)
-					}
+					const connectionId = connectSpan.spanContext().spanId
+					instrumentation.setCommonAttributes(connectSpan, stringUrl, connectionId)
 
 					if (protocols) {
 						if (typeof protocols === 'string') {
@@ -86,26 +101,22 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 						throw error
 					}
 
-					this.addEventListener('open', function () {
-						connectSpan.end()
-					})
-					this.addEventListener('error', function (event: Event) {
-						if (connectSpan.isRecording()) {
-							let message = 'Could not connect.'
-							if ('error' in event && typeof event.error === 'string' && event.error) {
-								message = event.error
-							} else if ('message' in event && typeof event.message === 'string' && event.message) {
-								message = event.message
-							}
-
-							instrumentation.endSpanExceptionally(connectSpan, new Error(message))
-						} else {
-							// error occurred after connect... report that
-							instrumentation.startSpan(this, 'error', SpanKind.CLIENT).end()
-						}
-					})
-					instrumentation.patchSend(this)
-					instrumentation.patchEventListener(this)
+					const state: WebSocketState = {
+						connectionId,
+						localCloseRequested: false,
+						maxBufferedAmount: 0,
+						messageSequence: 0,
+						messageSpansDropped: 0,
+						messageSpansEmitted: 0,
+						receivedBytes: 0,
+						receivedMessages: 0,
+						sendErrors: 0,
+						sentBytes: 0,
+						sentMessages: 0,
+					}
+					instrumentation.registerLifecycleListeners(this, connectSpan, state)
+					instrumentation.patchSend(this, state)
+					instrumentation.patchClose(this, state)
 				}
 			}
 
@@ -116,165 +127,199 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 
 	init(): void {}
 
-	// Returns true iff we should use the patched callback; false if it's already been patched
-	private addPatchedListener(
-		ws: WebSocket,
-		origListener: EventListenerOrEventListenerObject,
-		patched: EventListenerOrEventListenerObject,
-	) {
-		let ws2patched = this.listener2ws2patched.get(origListener)
-		if (!ws2patched) {
-			ws2patched = new Map()
-			this.listener2ws2patched.set(origListener, ws2patched)
-		}
-
-		if (ws2patched.has(ws)) {
-			return false
-		}
-
-		ws2patched.set(ws, patched)
-		return true
-	}
-
 	private endSpanExceptionally(span: Span, err: Error) {
 		span.setAttribute('error', true)
 		span.setAttribute('error.message', err.message)
 		span.setAttribute('error.object', err.name || err.constructor?.name || 'Error')
-		//TODO Should we do span.setStatus( someErrorCode ) ? Currently all failed spans are CanonicalCode.OK
+		span.setStatus({ code: SpanStatusCode.ERROR, message: err.message })
 		span.end()
 	}
 
-	// FIXME need to share logic better with userinteraction instrumentation
-	private patchEventListener(ws: WebSocket) {
-		const instrumentation = this
-		const origAEL: WebSocket['addEventListener'] = ws.addEventListener.bind(ws)
-
-		ws.addEventListener = function instrumentedAddEventListener(
-			type: string,
-			callback: EventListenerOrEventListenerObject,
-			options?: boolean | AddEventListenerOptions,
-		): void {
-			if (type !== 'message') {
-				// only patching message event listeners
-				// TODO: remove any once typing is corrected
-				// currently there's 2 overloaded versions of WebSocket['addEventListener']
-				// this prevents function parameter inference,
-				// and in consequence makes TS unable to match the arguments in the call below, even though they are correct
-				origAEL(type, callback, options)
-				return
-			}
-
-			const once = typeof options === 'boolean' ? undefined : options?.once
-			const patchedCallback = function patchedAddEventListenerCallback(this: WebSocket, ...args: [Event]) {
-				const capturedThis = this
-				const capturedArgs = args
-				if (once) {
-					instrumentation.removePatchedListener(ws, callback)
-				}
-
-				const span = instrumentation.startSpan(ws, 'onmessage', SpanKind.CONSUMER)
-				if (capturedArgs && capturedArgs[0] && 'data' in capturedArgs[0]) {
-					const sizeObject = capturedArgs[0].data
-					if (hasSizeLikeProperty(sizeObject)) {
-						const size = getSize(sizeObject)
-						if (size !== undefined) {
-							span.setAttribute('http.response_content_length', size)
-						}
-					}
-				}
-
-				// FIXME fill out message details, size, etc.
-				context.with(trace.setSpan(context.active(), span), () => {
-					const result =
-						typeof callback === 'function'
-							? callback.apply(capturedThis, capturedArgs)
-							: callback.handleEvent(args[0])
-
-					span.end()
-					return result
-				})
-			}
-			if (instrumentation.addPatchedListener(ws, callback, patchedCallback)) {
-				origAEL.apply(ws, [type, patchedCallback, options])
-			}
+	private getMaxMessageSpansPerConnection() {
+		const configuredLimit = this._config.maxMessageSpansPerConnection
+		if (configuredLimit === undefined || !Number.isFinite(configuredLimit) || configuredLimit < 0) {
+			return DEFAULT_MAX_MESSAGE_SPANS_PER_CONNECTION
 		}
 
-		const origREL = ws.removeEventListener
-		ws.removeEventListener = function (
-			type: string,
-			callback: EventListenerOrEventListenerObject,
-			options?: boolean | EventListenerOptions,
-		): void {
-			if (type !== 'message') {
-				return origREL.call(ws, type, callback, options)
+		return Math.floor(configuredLimit)
+	}
+
+	private getMessageSize(data: unknown) {
+		if (!hasSizeLikeProperty(data)) {
+			return 0
+		}
+
+		const size = Number(getSize(data))
+		return Number.isFinite(size) && size >= 0 ? size : 0
+	}
+
+	private getMessageType(data: unknown) {
+		return typeof data === 'string' ? 'text' : 'binary'
+	}
+
+	private patchClose(ws: WebSocket, state: WebSocketState) {
+		const origClose = ws.close
+		ws.close = function instrumentedClose(...args) {
+			const canInitiateClose = ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN
+			const result = origClose.apply(ws, args)
+			if (canInitiateClose) {
+				state.localCloseRequested = true
 			}
 
-			const patchedCallback = instrumentation.removePatchedListener(ws, callback)
-			return patchedCallback
-				? origREL.call(ws, type, patchedCallback, options)
-				: origREL.call(ws, type, callback, options)
+			return result
 		}
 	}
 
-	private patchSend(ws: WebSocket) {
+	private patchSend(ws: WebSocket, state: WebSocketState) {
 		const instrumentation = this
 		const origSend = ws.send
 		ws.send = function instrumentedSend(...args) {
-			const span = instrumentation.startSpan(ws, 'send', SpanKind.PRODUCER)
-			if (args.length > 0 && hasSizeLikeProperty(args[0])) {
-				const sendSize = getSize(args[0])
-				if (sendSize) {
-					span.setAttribute('http.request_content_length', sendSize)
-				}
-			}
-
-			let retVal
+			const data = args[0]
+			const size = instrumentation.getMessageSize(data)
+			const span = instrumentation.startMessageSpan(ws, state, 'send', SpanKind.PRODUCER, 'send', data, size)
 
 			try {
-				retVal = origSend.apply(ws, args)
+				const result = origSend.apply(ws, args)
+				state.sentMessages += 1
+				state.sentBytes += size
+				state.maxBufferedAmount = Math.max(state.maxBufferedAmount, ws.bufferedAmount)
+				span?.end()
+				return result
 			} catch (error) {
 				if (isError(error)) {
-					instrumentation.endSpanExceptionally(span, error)
+					state.sendErrors += 1
+					if (span) {
+						instrumentation.endSpanExceptionally(span, error)
+					}
 				}
 
 				throw error
 			}
-
-			// @ts-expect-error Gecko 6.0
-			if (retVal === false) {
-				// Gecko 6.0
-				instrumentation.endSpanExceptionally(span, new Error('Failed to send frame.'))
-			}
-
-			span.end()
-			return retVal
 		}
 	}
 
-	// Returns patched listener or undefined
-	private removePatchedListener(ws: WebSocket, origListener: EventListenerOrEventListenerObject) {
-		const ws2patched = this.listener2ws2patched.get(origListener)
-		if (!ws2patched) {
+	private registerLifecycleListeners(ws: WebSocket, connectSpan: Span, state: WebSocketState) {
+		ws.addEventListener('open', () => {
+			state.openedAt = performance.now()
+			connectSpan.setAttribute('protocol', ws.protocol)
+			connectSpan.setAttribute('websocket.subprotocol', ws.protocol)
+			connectSpan.end()
+		})
+		ws.addEventListener('message', (event) => {
+			const size = this.getMessageSize(event.data)
+			state.receivedMessages += 1
+			state.receivedBytes += size
+			this.startMessageSpan(ws, state, 'onmessage', SpanKind.CONSUMER, 'receive', event.data, size)?.end()
+		})
+		ws.addEventListener('error', (event: Event) => {
+			if (connectSpan.isRecording()) {
+				let message = 'Could not connect.'
+				if ('error' in event && typeof event.error === 'string' && event.error) {
+					message = event.error
+				} else if ('message' in event && typeof event.message === 'string' && event.message) {
+					message = event.message
+				}
+
+				this.endSpanExceptionally(connectSpan, new Error(message))
+			} else {
+				this.startSpan(ws, state.connectionId, 'error', SpanKind.CLIENT).end()
+			}
+		})
+		ws.addEventListener('close', (event) => {
+			if (connectSpan.isRecording()) {
+				this.endSpanExceptionally(connectSpan, new Error('Connection closed before opening.'))
+			}
+
+			const closeSpan = this.startSpan(ws, state.connectionId, 'close', SpanKind.CLIENT)
+			closeSpan.setAttribute('websocket.close.code', event.code)
+			closeSpan.setAttribute(
+				'websocket.close.initiator',
+				state.localCloseRequested ? 'client' : 'server_or_network',
+			)
+			closeSpan.setAttribute('websocket.close.was_clean', event.wasClean)
+			closeSpan.setAttribute('websocket.message.received.bytes', state.receivedBytes)
+			closeSpan.setAttribute('websocket.message.received.count', state.receivedMessages)
+			closeSpan.setAttribute('websocket.message.sent.bytes', state.sentBytes)
+			closeSpan.setAttribute('websocket.message.sent.count', state.sentMessages)
+			closeSpan.setAttribute('websocket.message.send.errors', state.sendErrors)
+			closeSpan.setAttribute('websocket.message.spans.dropped', state.messageSpansDropped)
+			closeSpan.setAttribute('websocket.buffered_amount.max', state.maxBufferedAmount)
+			if (state.openedAt !== undefined) {
+				closeSpan.setAttribute('websocket.connection.open_duration_ms', performance.now() - state.openedAt)
+			}
+
+			closeSpan.end()
+		})
+	}
+
+	private sanitizeUrl(url: string) {
+		try {
+			const parsedUrl = new URL(url, window.location.href)
+			parsedUrl.username = ''
+			parsedUrl.password = ''
+			parsedUrl.search = ''
+			parsedUrl.hash = ''
+			return parsedUrl.toString()
+		} catch {
+			return url.split(/[?#]/, 1)[0]
+		}
+	}
+
+	private setCommonAttributes(span: Span, url: string, connectionId: string) {
+		const sanitizedUrl = this.sanitizeUrl(url)
+		span.setAttribute('component', 'websocket')
+		span.setAttribute('http.url', sanitizedUrl)
+		span.setAttribute('network.protocol.name', 'websocket')
+		span.setAttribute('network.transport', 'tcp')
+		span.setAttribute('websocket.connection.id', connectionId)
+
+		try {
+			const parsedUrl = new URL(sanitizedUrl, window.location.href)
+			span.setAttribute('server.address', parsedUrl.hostname)
+			span.setAttribute('url.scheme', parsedUrl.protocol.replace(':', ''))
+			if (parsedUrl.port) {
+				span.setAttribute('server.port', Number(parsedUrl.port))
+			}
+		} catch {
+			// Keep the sanitized URL even when parsing a non-standard implementation-specific URL fails.
+		}
+	}
+
+	private startMessageSpan(
+		ws: WebSocket,
+		state: WebSocketState,
+		name: string,
+		spanKind: SpanKind,
+		direction: 'receive' | 'send',
+		data: unknown,
+		size: number,
+	) {
+		if (state.messageSpansEmitted >= this.getMaxMessageSpansPerConnection()) {
+			state.messageSpansDropped += 1
 			return
 		}
 
-		const patched = ws2patched.get(ws)
-		if (patched) {
-			ws2patched.delete(ws)
-			if (ws2patched.size === 0) {
-				this.listener2ws2patched.delete(ws)
-			}
+		state.messageSpansEmitted += 1
+		state.messageSequence += 1
+		const span = this.startSpan(ws, state.connectionId, name, spanKind)
+		span.setAttribute('websocket.message.direction', direction)
+		span.setAttribute('websocket.message.sequence', state.messageSequence)
+		span.setAttribute('websocket.message.size', size)
+		span.setAttribute('websocket.message.type', this.getMessageType(data))
+		if (direction === 'send') {
+			span.setAttribute('http.request_content_length', size)
+		} else {
+			span.setAttribute('http.response_content_length', size)
 		}
 
-		return patched
+		return span
 	}
 
-	private startSpan(ws: WebSocket, name: string, spanKind: SpanKind) {
+	private startSpan(ws: WebSocket, connectionId: string, name: string, spanKind: SpanKind) {
 		const span = this.tracer.startSpan(name, { kind: spanKind })
-		span.setAttribute('component', 'websocket')
+		this.setCommonAttributes(span, ws.url, connectionId)
 		span.setAttribute('protocol', ws.protocol)
-		span.setAttribute('http.url', ws.url)
-		// FIXME anything else?
+		span.setAttribute('websocket.subprotocol', ws.protocol)
 		return span
 	}
 }
