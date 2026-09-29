@@ -32,6 +32,8 @@ export function getLoafScriptTimingOffsets(
 		!Number.isFinite(script.duration) ||
 		!Number.isFinite(entry.startTime) ||
 		!Number.isFinite(entry.duration) ||
+		script.startTime < 0 ||
+		entry.startTime < 0 ||
 		script.duration <= 0 ||
 		entry.duration <= 0
 	) {

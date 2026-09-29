@@ -165,25 +165,64 @@ describe('LoAF span attributes', () => {
 		expect(attributes['loaf.script[0].start_time']).toBe(100)
 	})
 
-	it('emits bounded integer offsets for scripts touching both frame boundaries', () => {
+	it('emits bounded integer offsets for scripts crossing both frame boundaries', () => {
 		const { attributes, span } = createSpanMock()
+		const frameDurationMicros = 50_000
 
 		setLoafEntryAttributes(
 			span,
 			createLoafEntry({
-				duration: 50.75,
+				duration: 50,
 				scripts: [
-					createScript({ duration: 0.333, startTime: 100.25 }),
-					createScript({ duration: 0.25, startTime: 150.75 }),
+					createScript({ duration: 20, startTime: 90 }),
+					createScript({ duration: 20, startTime: 145 }),
 				],
-				startTime: 100.25,
+				startTime: 100,
 			}),
 		)
 
+		for (let index = 0; index < 2; index += 1) {
+			const startOffset = attributes[`loaf.script[${index}].start_offset_micros`] as number
+			const endOffset = attributes[`loaf.script[${index}].end_offset_micros`] as number
+
+			expect(Number.isInteger(startOffset)).toBe(true)
+			expect(Number.isInteger(endOffset)).toBe(true)
+			expect(startOffset).toBeGreaterThanOrEqual(0)
+			expect(startOffset).toBeLessThan(endOffset)
+			expect(endOffset).toBeLessThanOrEqual(frameDurationMicros)
+		}
+
 		expect(attributes['loaf.script[0].start_offset_micros']).toBe(0)
-		expect(attributes['loaf.script[0].end_offset_micros']).toBe(333)
-		expect(attributes['loaf.script[1].start_offset_micros']).toBe(50_500)
-		expect(attributes['loaf.script[1].end_offset_micros']).toBe(50_750)
+		expect(attributes['loaf.script[0].end_offset_micros']).toBe(10_000)
+		expect(attributes['loaf.script[1].start_offset_micros']).toBe(45_000)
+		expect(attributes['loaf.script[1].end_offset_micros']).toBe(50_000)
+	})
+
+	it('omits offsets for negative script or frame start times', () => {
+		const scriptResult = createSpanMock()
+		const frameResult = createSpanMock()
+
+		setLoafEntryAttributes(
+			scriptResult.span,
+			createLoafEntry({
+				duration: 50,
+				scripts: [createScript({ duration: 20, startTime: -5 })],
+				startTime: 0,
+			}),
+		)
+		setLoafEntryAttributes(
+			frameResult.span,
+			createLoafEntry({
+				duration: 50,
+				scripts: [createScript({ duration: 20, startTime: 0 })],
+				startTime: -5,
+			}),
+		)
+
+		expect(scriptResult.attributes['loaf.script[0].start_offset_micros']).toBeUndefined()
+		expect(scriptResult.attributes['loaf.script[0].end_offset_micros']).toBeUndefined()
+		expect(frameResult.attributes['loaf.script[0].start_offset_micros']).toBeUndefined()
+		expect(frameResult.attributes['loaf.script[0].end_offset_micros']).toBeUndefined()
 	})
 
 	it('omits offsets for malformed or non-overlapping script timing values', () => {
