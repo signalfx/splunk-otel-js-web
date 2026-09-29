@@ -17,7 +17,7 @@
  */
 
 import { diag, Span, trace, Tracer, TracerProvider } from '@opentelemetry/api'
-import { isUrlIgnored } from '@opentelemetry/core'
+import { addHrTimes, isUrlIgnored, millisToHrTime, timeInputToHrTime } from '@opentelemetry/core'
 
 import { NavigationMetricsManager, SessionManager } from '../managers'
 import {
@@ -193,12 +193,12 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 			return
 		}
 
-		const now = Date.now()
+		const spanStartTime = timeInputToHrTime(navigationStartTime)
 		const span = this._routingTracer.startSpan(BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION, {
 			attributes: {
 				[BROWSER_NAVIGATION_OPERATION_ATTRIBUTE]: BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION,
 			},
-			startTime: now,
+			startTime: spanStartTime,
 		})
 		span.setAttribute('component', this.moduleName)
 		span.setAttribute('location.href', newHref)
@@ -213,10 +213,10 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 				startTime: navigationStartTime,
 			})
 			diag.debug('Sending routeChange span with PCT result', pageLoadMetrics)
-			span.end(now + pageLoadMetrics.pct)
+			span.end(addHrTimes(spanStartTime, millisToHrTime(pageLoadMetrics.pct)))
 			diag.debug('Route change span ended', { pct: pageLoadMetrics.pct, span })
 		} else {
-			span.end(now)
+			span.end(spanStartTime)
 		}
 	}
 }
