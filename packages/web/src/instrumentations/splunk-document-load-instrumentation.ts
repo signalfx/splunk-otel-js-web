@@ -17,14 +17,7 @@
  */
 
 import * as api from '@opentelemetry/api'
-import {
-	addHrTimes,
-	getTimeOrigin,
-	hrTimeToMilliseconds,
-	isUrlIgnored,
-	millisToHrTime,
-	timeInputToHrTime,
-} from '@opentelemetry/core'
+import { addHrTimes, hrTimeToMilliseconds, isUrlIgnored, millisToHrTime, timeInputToHrTime } from '@opentelemetry/core'
 import { InstrumentationConfig } from '@opentelemetry/instrumentation'
 import {
 	AttributeNames,
@@ -74,53 +67,33 @@ const navigationTimingEventNames = new Set<string>([
 	PTN.LOAD_EVENT_END,
 ])
 
-function isTimeInput(value: unknown): value is api.TimeInput {
-	return (
-		typeof value === 'number' ||
-		value instanceof Date ||
-		(Array.isArray(value) && value.length === 2 && typeof value[0] === 'number' && typeof value[1] === 'number')
-	)
-}
-
 function isBefore(left: api.HrTime, right: api.HrTime): boolean {
 	return left[0] < right[0] || (left[0] === right[0] && left[1] < right[1])
 }
 
-function preventInvalidNavigationTimingEvents(
-	span: api.Span,
-	fetchStart: number | undefined,
-	spanUsesTimeOrigin: boolean,
-): void {
-	// If the span start uses performance.timeOrigin, normalize relative event times to that same clock.
-	const addEvent = span.addEvent.bind(span)
-	span.addEvent = (name, attributesOrStartTime, startTime) => {
-		const eventTime = startTime ?? (isTimeInput(attributesOrStartTime) ? attributesOrStartTime : undefined)
-		if (navigationTimingEventNames.has(name) && eventTime !== undefined) {
-			const isUnavailableZero = name !== PTN.FETCH_START && typeof eventTime === 'number' && eventTime === 0
-			const isRelativeTime = typeof eventTime === 'number' && eventTime < getTimeOrigin()
-			const normalizedEventTime = spanUsesTimeOrigin ? normalizeNavigationTiming(eventTime) : eventTime
-			const isBeforeSpanStart =
-				spanUsesTimeOrigin || !isRelativeTime
-					? isBefore(timeInputToHrTime(normalizedEventTime), (span as Span).startTime)
-					: fetchStart !== undefined && eventTime < fetchStart
-			if (isUnavailableZero || isBeforeSpanStart) {
-				return span
-			}
+function sanitizeNavigationTimingEvents(span: Span, entries: PerformanceEntries, navigationStartTime?: number): void {
+	const entryValues = entries as unknown as Record<string, unknown>
+	const rawFetchStart = entryValues[PTN.FETCH_START]
+	const spanStartTime = navigationStartTime ?? (typeof rawFetchStart === 'number' ? rawFetchStart : undefined)
 
-			if (startTime !== undefined) {
-				return addEvent(name, attributesOrStartTime, normalizedEventTime)
-			}
-			if (isTimeInput(attributesOrStartTime)) {
-				return addEvent(name, normalizedEventTime)
-			}
+	for (let index = span.events.length - 1; index >= 0; index--) {
+		const event = span.events[index]
+		if (!navigationTimingEventNames.has(event.name)) {
+			continue
 		}
 
-		return addEvent(name, attributesOrStartTime, startTime)
+		const entryTime = entryValues[event.name]
+		const isUnavailableZero = event.name !== PTN.FETCH_START && entryTime === 0
+		const isBeforeSpanStart =
+			typeof entryTime === 'number' && spanStartTime !== undefined
+				? entryTime < spanStartTime
+				: isBefore(event.time, span.startTime)
+		if (isUnavailableZero || isBeforeSpanStart) {
+			span.events.splice(index, 1)
+		} else if (typeof entryTime === 'number' && spanStartTime !== undefined) {
+			event.time = addHrTimes(span.startTime, millisToHrTime(entryTime - spanStartTime))
+		}
 	}
-}
-
-function normalizeNavigationTiming(time: api.TimeInput): api.TimeInput {
-	return typeof time === 'number' && time < getTimeOrigin() ? timeInputToHrTime(time) : time
 }
 
 function addExtraDocLoadTags(span: api.Span) {
@@ -171,6 +144,8 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 
 	private readonly navigationMetricsManager: NavigationMetricsManager | undefined
 
+	private navigationStartTime: number | undefined
+
 	private navigationStartTimeMillis: number | undefined
 
 	private navigationTimingObserver: PerformanceObserver | undefined
@@ -202,14 +177,6 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 					? { ...entries, [PTN.FETCH_START]: this.navigationStartTimeMillis }
 					: entries
 			const span = _superStartSpan(spanName, performanceName, startEntries, parentSpan)
-			if (span && (spanName === AttributeNames.DOCUMENT_FETCH || spanName === AttributeNames.DOCUMENT_LOAD)) {
-				const fetchStart = (entries as unknown as Record<string, unknown>)[PTN.FETCH_START]
-				preventInvalidNavigationTimingEvents(
-					span,
-					typeof fetchStart === 'number' ? fetchStart : undefined,
-					this.navigationStartTimeMillis !== undefined,
-				)
-			}
 
 			if (span && spanName === AttributeNames.DOCUMENT_LOAD) {
 				span.setAttribute(BROWSER_NAVIGATION_OPERATION_ATTRIBUTE, BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION)
@@ -251,6 +218,13 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 		exposedSuper._endSpan = (span, performanceName, entries) => {
 			// TODO: upstream exposed name on api.Span, then fix
 			const exposedSpan = span as any as Span
+			if (
+				span &&
+				(exposedSpan.name === AttributeNames.DOCUMENT_FETCH ||
+					exposedSpan.name === AttributeNames.DOCUMENT_LOAD)
+			) {
+				sanitizeNavigationTimingEvents(exposedSpan, entries, this.navigationStartTime)
+			}
 
 			if (span) {
 				span.setAttribute('component', this.component)
@@ -400,6 +374,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 
 	private endPageLoadSpan(endTime?: api.TimeInput): void {
 		this.pageLoadSpan?.end(endTime)
+		this.navigationStartTime = undefined
 		this.navigationStartTimeMillis = undefined
 		this.pageLoadSpan = undefined
 	}
@@ -408,6 +383,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 		// Convert the relative Performance API timestamp once. The same absolute value
 		// starts pageLoad and overrides the documentLoad and documentFetch entries,
 		// avoiding a slightly different performance-to-epoch offset for each span.
+		this.navigationStartTime ??= fetchStart
 		this.navigationStartTimeMillis ??= hrTimeToMilliseconds(timeInputToHrTime(fetchStart))
 
 		if (this.pageLoadSpan || !this.documentLoadMetricsPromise || !this.otelConfig.experimental) {

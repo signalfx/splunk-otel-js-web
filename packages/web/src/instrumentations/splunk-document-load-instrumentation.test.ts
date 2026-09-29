@@ -16,9 +16,14 @@
  *
  */
 
-import { hrTimeToMilliseconds, timeInputToHrTime } from '@opentelemetry/core'
+import { addHrTimes, hrTimeToMilliseconds, millisToHrTime, timeInputToHrTime } from '@opentelemetry/core'
 import { BasicTracerProvider, Span } from '@opentelemetry/sdk-trace-base'
-import { PerformanceTimingNames as PTN } from '@opentelemetry/sdk-trace-web'
+import {
+	addSpanNetworkEvent,
+	addSpanNetworkEvents,
+	PerformanceEntries,
+	PerformanceTimingNames as PTN,
+} from '@opentelemetry/sdk-trace-web'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { NavigationMetricsManager } from '../managers'
@@ -147,17 +152,32 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 		)
 		instrumentation.setTracerProvider(new BasicTracerProvider())
 
+		const entries = {
+			connectEnd: 0,
+			connectStart: fetchStart - 0.1,
+			fetchStart: 0,
+			requestStart: fetchStart + 0.5,
+			responseEnd: fetchStart + 1,
+		} as PerformanceEntries
 		const exposedInstrumentation = instrumentation as unknown as {
-			_startSpan(spanName: string, performanceName: string, entries: Record<string, number>): Span
+			_endSpan(span: Span, performanceName: string, entries: PerformanceEntries): void
+			_startSpan(spanName: string, performanceName: string, entries: PerformanceEntries): Span
 		}
-		const span = exposedInstrumentation._startSpan('documentFetch', PTN.FETCH_START, { fetchStart })
+		const span = exposedInstrumentation._startSpan('documentFetch', PTN.FETCH_START, entries)
+		addSpanNetworkEvents(span, entries)
 
-		span.addEvent(PTN.CONNECT_END, 0)
-		span.addEvent(PTN.CONNECT_START, fetchStart - 0.1)
-		span.addEvent(PTN.REQUEST_START, fetchStart + 0.5)
+		expect(span.events.map(({ name }) => name)).toEqual([
+			PTN.FETCH_START,
+			PTN.CONNECT_START,
+			PTN.CONNECT_END,
+			PTN.REQUEST_START,
+			PTN.RESPONSE_END,
+		])
 
-		expect(span.events.map(({ name }) => name)).toEqual([PTN.REQUEST_START])
-		expect(span.events[0].time).toEqual(timeInputToHrTime(fetchStart + 0.5))
+		exposedInstrumentation._endSpan(span, PTN.RESPONSE_END, entries)
+
+		expect(span.events.map(({ name }) => name)).toEqual([PTN.REQUEST_START, PTN.RESPONSE_END])
+		expect(span.events[0].time).toEqual(addHrTimes(span.startTime, millisToHrTime(0.5)))
 	})
 
 	it('omits zero or pre-start lifecycle timings from documentLoad spans', () => {
@@ -174,29 +194,49 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 		)
 		instrumentation.setTracerProvider(new BasicTracerProvider())
 
+		const entries = {
+			domComplete: fetchStart + 1,
+			domContentLoadedEventEnd: fetchStart + 0.5,
+			domContentLoadedEventStart: fetchStart - 0.1,
+			domInteractive: 0,
+			fetchStart: 0,
+		} as PerformanceEntries
 		const exposedInstrumentation = instrumentation as unknown as {
-			_startSpan(spanName: string, performanceName: string, entries: Record<string, number>): Span
+			_endSpan(span: Span, performanceName: string, entries: PerformanceEntries): void
+			_startSpan(spanName: string, performanceName: string, entries: PerformanceEntries): Span
 		}
-		const span = exposedInstrumentation._startSpan('documentLoad', PTN.FETCH_START, { fetchStart })
+		const span = exposedInstrumentation._startSpan('documentLoad', PTN.FETCH_START, entries)
+		addSpanNetworkEvent(span, PTN.FETCH_START, entries)
+		addSpanNetworkEvent(span, PTN.DOM_INTERACTIVE, entries)
+		addSpanNetworkEvent(span, PTN.DOM_CONTENT_LOADED_EVENT_START, entries)
+		addSpanNetworkEvent(span, PTN.DOM_CONTENT_LOADED_EVENT_END, entries)
 
-		span.addEvent(PTN.DOM_INTERACTIVE, 0)
-		span.addEvent(PTN.DOM_CONTENT_LOADED_EVENT_START, fetchStart - 0.1)
-		span.addEvent(PTN.DOM_CONTENT_LOADED_EVENT_END, fetchStart + 0.5)
+		expect(span.events.map(({ name }) => name)).toEqual([
+			PTN.FETCH_START,
+			PTN.DOM_INTERACTIVE,
+			PTN.DOM_CONTENT_LOADED_EVENT_START,
+			PTN.DOM_CONTENT_LOADED_EVENT_END,
+		])
+
+		exposedInstrumentation._endSpan(span, PTN.DOM_COMPLETE, entries)
 
 		expect(span.events.map(({ name }) => name)).toEqual([PTN.DOM_CONTENT_LOADED_EVENT_END])
-		expect(span.events[0].time).toEqual(timeInputToHrTime(fetchStart + 0.5))
+		expect(span.events[0].time).toEqual(addHrTimes(span.startTime, millisToHrTime(0.5)))
 	})
 
 	it('keeps resource-fetch network timing behavior unchanged', () => {
 		instrumentation = new SplunkDocumentLoadInstrumentation({}, {})
 		instrumentation.setTracerProvider(new BasicTracerProvider())
 
+		const entries = { fetchStart: 12.5, responseEnd: 13 } as PerformanceEntries
 		const exposedInstrumentation = instrumentation as unknown as {
-			_startSpan(spanName: string, performanceName: string, entries: Record<string, number>): Span
+			_endSpan(span: Span, performanceName: string, entries: PerformanceEntries): void
+			_startSpan(spanName: string, performanceName: string, entries: PerformanceEntries): Span
 		}
-		const span = exposedInstrumentation._startSpan('resourceFetch', PTN.FETCH_START, { fetchStart: 12.5 })
+		const span = exposedInstrumentation._startSpan('resourceFetch', PTN.FETCH_START, entries)
 
 		span.addEvent(PTN.CONNECT_END, 0)
+		exposedInstrumentation._endSpan(span, PTN.RESPONSE_END, entries)
 
 		expect(span.events.map(({ name }) => name)).toEqual([PTN.CONNECT_END])
 	})
