@@ -435,6 +435,7 @@ export class NavigationMetricsManager {
 		} else {
 			this.quietPeriodAwaiter?.interrupt()
 		}
+
 		this.manualCompletionCandidateTimestamp = undefined
 		if (span) {
 			this.setCurrentNavigationSpan(span, startTime, operation)
