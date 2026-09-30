@@ -138,7 +138,7 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 		expect((setCurrentNavigationSpan.mock.calls[0][0] as Span).name).toBe('documentLoad')
 	})
 
-	it('omits zero or pre-start network timings from documentFetch spans', () => {
+	it('omits pre-start network timings from documentFetch spans', () => {
 		const { navigationMetricsManager } = createNavigationMetricsManagerMock()
 		const fetchStart = 12.5
 		vi.spyOn(performance, 'getEntriesByType').mockReturnValue([
@@ -155,7 +155,7 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 		const entries = {
 			connectEnd: 0,
 			connectStart: fetchStart - 0.1,
-			fetchStart: 0,
+			fetchStart,
 			requestStart: fetchStart + 0.5,
 			responseEnd: fetchStart + 1,
 		} as PerformanceEntries
@@ -176,13 +176,18 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 
 		exposedInstrumentation._endSpan(span, PTN.RESPONSE_END, entries)
 
-		expect(span.events.map(({ name }) => name)).toEqual([PTN.REQUEST_START, PTN.RESPONSE_END])
-		expect(span.events[0].time).toEqual(addHrTimes(span.startTime, millisToHrTime(0.5)))
+		expect(span.events.map(({ name }) => name)).toEqual([
+			PTN.FETCH_START,
+			PTN.REQUEST_START,
+			PTN.RESPONSE_END,
+		])
+		expect(span.events[0].time).toEqual(span.startTime)
+		expect(span.events[1].time).toEqual(addHrTimes(span.startTime, millisToHrTime(0.5)))
 	})
 
-	it('omits zero or pre-start lifecycle timings from documentLoad spans', () => {
+	it('keeps zero timings at a zero fetchStart and omits earlier lifecycle timings', () => {
 		const { navigationMetricsManager } = createNavigationMetricsManagerMock()
-		const fetchStart = 12.5
+		const fetchStart = 0
 		vi.spyOn(performance, 'getEntriesByType').mockReturnValue([
 			{ entryType: 'navigation', fetchStart } as PerformanceNavigationTiming,
 		])
@@ -220,8 +225,14 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 
 		exposedInstrumentation._endSpan(span, PTN.DOM_COMPLETE, entries)
 
-		expect(span.events.map(({ name }) => name)).toEqual([PTN.DOM_CONTENT_LOADED_EVENT_END])
-		expect(span.events[0].time).toEqual(addHrTimes(span.startTime, millisToHrTime(0.5)))
+		expect(span.events.map(({ name }) => name)).toEqual([
+			PTN.FETCH_START,
+			PTN.DOM_INTERACTIVE,
+			PTN.DOM_CONTENT_LOADED_EVENT_END,
+		])
+		expect(span.events[0].time).toEqual(span.startTime)
+		expect(span.events[1].time).toEqual(span.startTime)
+		expect(span.events[2].time).toEqual(addHrTimes(span.startTime, millisToHrTime(0.5)))
 	})
 
 	it('ends an open pageLoad span when disabled', () => {

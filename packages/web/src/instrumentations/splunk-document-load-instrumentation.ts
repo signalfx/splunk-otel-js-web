@@ -48,27 +48,18 @@ export interface SplunkDocLoadInstrumentationConfig extends InstrumentationConfi
 const excludedInitiatorTypes = new Set(['beacon', 'fetch', 'xmlhttprequest'])
 const PAGE_LOAD_SPAN_NAME = 'pageLoad'
 
-function isBefore(left: api.HrTime, right: api.HrTime): boolean {
-	return left[0] < right[0] || (left[0] === right[0] && left[1] < right[1])
-}
-
-function sanitizeNavigationTimingEvents(span: Span, entries: PerformanceEntries, navigationStartTime?: number): void {
+function sanitizeNavigationTimingEvents(span: Span, entries: PerformanceEntries): void {
 	const entryValues = entries as unknown as Record<string, unknown>
-	const rawFetchStart = entryValues[PTN.FETCH_START]
-	const spanStartTime = navigationStartTime ?? (typeof rawFetchStart === 'number' ? rawFetchStart : undefined)
+	const fetchStart = entryValues[PTN.FETCH_START]
 
 	for (let index = span.events.length - 1; index >= 0; index--) {
 		const event = span.events[index]
 		const entryTime = entryValues[event.name]
-		const isUnavailableZero = event.name !== PTN.FETCH_START && entryTime === 0
-		const isBeforeSpanStart =
-			typeof entryTime === 'number' && spanStartTime !== undefined
-				? entryTime < spanStartTime
-				: isBefore(event.time, span.startTime)
-		if (isUnavailableZero || isBeforeSpanStart) {
+		const isBeforeFetchStart = typeof entryTime === 'number' && typeof fetchStart === 'number' && entryTime < fetchStart
+		if (isBeforeFetchStart) {
 			span.events.splice(index, 1)
-		} else if (typeof entryTime === 'number' && spanStartTime !== undefined) {
-			event.time = addHrTimes(span.startTime, millisToHrTime(entryTime - spanStartTime))
+		} else if (typeof entryTime === 'number' && typeof fetchStart === 'number') {
+			event.time = addHrTimes(span.startTime, millisToHrTime(entryTime - fetchStart))
 		}
 	}
 }
@@ -120,8 +111,6 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 	private readonly documentLoadMetricsPromise: ReturnType<NavigationMetricsManager['waitForPageLoad']> | undefined
 
 	private readonly navigationMetricsManager: NavigationMetricsManager | undefined
-
-	private navigationStartTime: number | undefined
 
 	private navigationStartTimeMillis: number | undefined
 
@@ -200,7 +189,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 				(exposedSpan.name === AttributeNames.DOCUMENT_FETCH ||
 					exposedSpan.name === AttributeNames.DOCUMENT_LOAD)
 			) {
-				sanitizeNavigationTimingEvents(exposedSpan, entries, this.navigationStartTime)
+				sanitizeNavigationTimingEvents(exposedSpan, entries)
 			}
 
 			if (span) {
@@ -351,7 +340,6 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 
 	private endPageLoadSpan(endTime?: api.TimeInput): void {
 		this.pageLoadSpan?.end(endTime)
-		this.navigationStartTime = undefined
 		this.navigationStartTimeMillis = undefined
 		this.pageLoadSpan = undefined
 	}
@@ -360,7 +348,6 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 		// Convert the relative Performance API timestamp once. The same absolute value
 		// starts pageLoad and overrides the documentLoad and documentFetch entries,
 		// avoiding a slightly different performance-to-epoch offset for each span.
-		this.navigationStartTime ??= fetchStart
 		this.navigationStartTimeMillis ??= hrTimeToMilliseconds(timeInputToHrTime(fetchStart))
 
 		if (this.pageLoadSpan || !this.documentLoadMetricsPromise || !this.otelConfig.experimental) {
