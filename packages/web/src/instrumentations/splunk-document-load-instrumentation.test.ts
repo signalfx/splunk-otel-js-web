@@ -18,12 +18,7 @@
 
 import { addHrTimes, hrTimeToMilliseconds, millisToHrTime, timeInputToHrTime } from '@opentelemetry/core'
 import { BasicTracerProvider, Span } from '@opentelemetry/sdk-trace-base'
-import {
-	addSpanNetworkEvent,
-	addSpanNetworkEvents,
-	PerformanceEntries,
-	PerformanceTimingNames as PTN,
-} from '@opentelemetry/sdk-trace-web'
+import { PerformanceEntries, PerformanceTimingNames as PTN } from '@opentelemetry/sdk-trace-web'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { NavigationMetricsManager } from '../managers'
@@ -164,15 +159,19 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 			_startSpan(spanName: string, performanceName: string, entries: PerformanceEntries): Span
 		}
 		const span = exposedInstrumentation._startSpan('documentFetch', PTN.FETCH_START, entries)
-		addSpanNetworkEvents(span, entries)
-
-		expect(span.events.map(({ name }) => name)).toEqual([
+		const eventNames = [
 			PTN.FETCH_START,
 			PTN.CONNECT_START,
 			PTN.CONNECT_END,
 			PTN.REQUEST_START,
 			PTN.RESPONSE_END,
-		])
+		]
+		const misalignedEventTime = millisToHrTime(hrTimeToMilliseconds(span.startTime) - 0.2)
+		for (const eventName of eventNames) {
+			span.addEvent(eventName, misalignedEventTime)
+		}
+
+		expect(span.events.map(({ name }) => name)).toEqual(eventNames)
 
 		exposedInstrumentation._endSpan(span, PTN.RESPONSE_END, entries)
 
@@ -211,17 +210,18 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 			_startSpan(spanName: string, performanceName: string, entries: PerformanceEntries): Span
 		}
 		const span = exposedInstrumentation._startSpan('documentLoad', PTN.FETCH_START, entries)
-		addSpanNetworkEvent(span, PTN.FETCH_START, entries)
-		addSpanNetworkEvent(span, PTN.DOM_INTERACTIVE, entries)
-		addSpanNetworkEvent(span, PTN.DOM_CONTENT_LOADED_EVENT_START, entries)
-		addSpanNetworkEvent(span, PTN.DOM_CONTENT_LOADED_EVENT_END, entries)
-
-		expect(span.events.map(({ name }) => name)).toEqual([
+		const eventNames = [
 			PTN.FETCH_START,
 			PTN.DOM_INTERACTIVE,
 			PTN.DOM_CONTENT_LOADED_EVENT_START,
 			PTN.DOM_CONTENT_LOADED_EVENT_END,
-		])
+		]
+		const misalignedEventTime = millisToHrTime(hrTimeToMilliseconds(span.startTime) - 0.2)
+		for (const eventName of eventNames) {
+			span.addEvent(eventName, misalignedEventTime)
+		}
+
+		expect(span.events.map(({ name }) => name)).toEqual(eventNames)
 
 		exposedInstrumentation._endSpan(span, PTN.DOM_COMPLETE, entries)
 
