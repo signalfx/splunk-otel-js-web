@@ -159,13 +159,7 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 			_startSpan(spanName: string, performanceName: string, entries: PerformanceEntries): Span
 		}
 		const span = exposedInstrumentation._startSpan('documentFetch', PTN.FETCH_START, entries)
-		const eventNames = [
-			PTN.FETCH_START,
-			PTN.CONNECT_START,
-			PTN.CONNECT_END,
-			PTN.REQUEST_START,
-			PTN.RESPONSE_END,
-		]
+		const eventNames = [PTN.FETCH_START, PTN.CONNECT_START, PTN.CONNECT_END, PTN.REQUEST_START, PTN.RESPONSE_END]
 		const misalignedEventTime = millisToHrTime(hrTimeToMilliseconds(span.startTime) - 0.2)
 		for (const eventName of eventNames) {
 			span.addEvent(eventName, misalignedEventTime)
@@ -175,11 +169,7 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 
 		exposedInstrumentation._endSpan(span, PTN.RESPONSE_END, entries)
 
-		expect(span.events.map(({ name }) => name)).toEqual([
-			PTN.FETCH_START,
-			PTN.REQUEST_START,
-			PTN.RESPONSE_END,
-		])
+		expect(span.events.map(({ name }) => name)).toEqual([PTN.FETCH_START, PTN.REQUEST_START, PTN.RESPONSE_END])
 		expect(span.events[0].time).toEqual(span.startTime)
 		expect(span.events[1].time).toEqual(addHrTimes(span.startTime, millisToHrTime(0.5)))
 	})

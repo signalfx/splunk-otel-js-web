@@ -55,7 +55,8 @@ function sanitizeNavigationTimingEvents(span: Span, entries: PerformanceEntries)
 	for (let index = span.events.length - 1; index >= 0; index--) {
 		const event = span.events[index]
 		const entryTime = entryValues[event.name]
-		const isBeforeFetchStart = typeof entryTime === 'number' && typeof fetchStart === 'number' && entryTime < fetchStart
+		const isBeforeFetchStart =
+			typeof entryTime === 'number' && typeof fetchStart === 'number' && entryTime < fetchStart
 		if (isBeforeFetchStart) {
 			span.events.splice(index, 1)
 		} else if (typeof entryTime === 'number' && typeof fetchStart === 'number') {
