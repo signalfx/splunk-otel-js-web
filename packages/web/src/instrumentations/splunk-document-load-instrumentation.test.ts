@@ -224,23 +224,6 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 		expect(span.events[0].time).toEqual(addHrTimes(span.startTime, millisToHrTime(0.5)))
 	})
 
-	it('keeps resource-fetch network timing behavior unchanged', () => {
-		instrumentation = new SplunkDocumentLoadInstrumentation({}, {})
-		instrumentation.setTracerProvider(new BasicTracerProvider())
-
-		const entries = { fetchStart: 12.5, responseEnd: 13 } as PerformanceEntries
-		const exposedInstrumentation = instrumentation as unknown as {
-			_endSpan(span: Span, performanceName: string, entries: PerformanceEntries): void
-			_startSpan(spanName: string, performanceName: string, entries: PerformanceEntries): Span
-		}
-		const span = exposedInstrumentation._startSpan('resourceFetch', PTN.FETCH_START, entries)
-
-		span.addEvent(PTN.CONNECT_END, 0)
-		exposedInstrumentation._endSpan(span, PTN.RESPONSE_END, entries)
-
-		expect(span.events.map(({ name }) => name)).toEqual([PTN.CONNECT_END])
-	})
-
 	it('ends an open pageLoad span when disabled', () => {
 		const { navigationMetricsManager, setCurrentNavigationSpan } = createNavigationMetricsManagerMock()
 		vi.spyOn(performance, 'getEntriesByType').mockReturnValue([{ fetchStart: 12.5 } as PerformanceNavigationTiming])

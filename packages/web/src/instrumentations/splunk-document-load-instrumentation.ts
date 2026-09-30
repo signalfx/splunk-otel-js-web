@@ -47,25 +47,6 @@ export interface SplunkDocLoadInstrumentationConfig extends InstrumentationConfi
 
 const excludedInitiatorTypes = new Set(['beacon', 'fetch', 'xmlhttprequest'])
 const PAGE_LOAD_SPAN_NAME = 'pageLoad'
-const navigationTimingEventNames = new Set<string>([
-	PTN.FETCH_START,
-	PTN.DOMAIN_LOOKUP_START,
-	PTN.DOMAIN_LOOKUP_END,
-	PTN.CONNECT_START,
-	PTN.SECURE_CONNECTION_START,
-	PTN.CONNECT_END,
-	PTN.REQUEST_START,
-	PTN.RESPONSE_START,
-	PTN.RESPONSE_END,
-	PTN.UNLOAD_EVENT_START,
-	PTN.UNLOAD_EVENT_END,
-	PTN.DOM_INTERACTIVE,
-	PTN.DOM_CONTENT_LOADED_EVENT_START,
-	PTN.DOM_CONTENT_LOADED_EVENT_END,
-	PTN.DOM_COMPLETE,
-	PTN.LOAD_EVENT_START,
-	PTN.LOAD_EVENT_END,
-])
 
 function isBefore(left: api.HrTime, right: api.HrTime): boolean {
 	return left[0] < right[0] || (left[0] === right[0] && left[1] < right[1])
@@ -78,10 +59,6 @@ function sanitizeNavigationTimingEvents(span: Span, entries: PerformanceEntries,
 
 	for (let index = span.events.length - 1; index >= 0; index--) {
 		const event = span.events[index]
-		if (!navigationTimingEventNames.has(event.name)) {
-			continue
-		}
-
 		const entryTime = entryValues[event.name]
 		const isUnavailableZero = event.name !== PTN.FETCH_START && entryTime === 0
 		const isBeforeSpanStart =
