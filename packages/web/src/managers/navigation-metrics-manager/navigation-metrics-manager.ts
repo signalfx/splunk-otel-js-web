@@ -426,7 +426,15 @@ export class NavigationMetricsManager {
 	}
 
 	waitForPageLoad({ operation, span, startTime }: WaitForPageLoadConfig): Promise<PageLoadMetricsResult> {
-		this.quietPeriodAwaiter?.interrupt()
+		const currentNavigation = this.navigationHistory.at(-1)
+		if (
+			operation === BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION &&
+			currentNavigation?.operation === BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION
+		) {
+			this.quietPeriodAwaiter?.interrupt(startTime)
+		} else {
+			this.quietPeriodAwaiter?.interrupt()
+		}
 		this.manualCompletionCandidateTimestamp = undefined
 		if (span) {
 			this.setCurrentNavigationSpan(span, startTime, operation)
