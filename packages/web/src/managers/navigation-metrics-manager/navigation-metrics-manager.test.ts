@@ -25,6 +25,8 @@ import { HTTP_TEST_SERVER_URL } from '../../../../../tests/servers/http-constant
 import {
 	BROWSER_NAVIGATION_DETECTED_RESOURCE_COUNT_ATTRIBUTE,
 	BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION,
+	BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE,
+	BROWSER_NAVIGATION_FIRST_INTERACTION_TYPE_ATTRIBUTE,
 	BROWSER_NAVIGATION_LAST_LOADED_RESOURCES_ATTRIBUTE,
 	BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE,
 	BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
@@ -664,6 +666,73 @@ describe('NavigationMetricsManager', () => {
 
 		expect(manager.getNavigationOperation(150)).toBe(BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION)
 		expect(manager.getNavigationOperation(250)).toBe(BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION)
+	})
+
+	it.each([BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION, BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION])(
+		'records the first interaction on the active %s navigation',
+		(operation) => {
+			const manager = new NavigationMetricsManager()
+			const { attributes, span } = createSpanMock('navigation-span-id')
+
+			manager.setCurrentNavigationSpan(span, 100, operation)
+			manager.recordFirstInteraction('click', 125)
+			manager.recordFirstInteraction('change', 150)
+
+			expect(attributes[BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE]).toBe(25)
+			expect(attributes[BROWSER_NAVIGATION_FIRST_INTERACTION_TYPE_ATTRIBUTE]).toBe('click')
+		},
+	)
+
+	it('ignores interactions outside the active navigation window', () => {
+		const manager = new NavigationMetricsManager()
+		const { attributes, span } = createSpanMock('navigation-span-id')
+
+		manager.setCurrentNavigationSpan(span, 100, BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION)
+		manager.recordFirstInteraction('click', 99)
+		manager.completeCurrentNavigationPct(span, 200)
+		manager.recordFirstInteraction('change', 150)
+
+		expect(attributes[BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE]).toBeUndefined()
+		expect(attributes[BROWSER_NAVIGATION_FIRST_INTERACTION_TYPE_ATTRIBUTE]).toBeUndefined()
+	})
+
+	it('records an interaction only on the latest active navigation', () => {
+		const manager = new NavigationMetricsManager()
+		const { attributes: previousAttributes, span: previousSpan } = createSpanMock('previous-navigation-span-id')
+		const { attributes: currentAttributes, span: currentSpan } = createSpanMock('current-navigation-span-id')
+
+		manager.setCurrentNavigationSpan(previousSpan, 100, BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION)
+		manager.setCurrentNavigationSpan(currentSpan, 200, BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION)
+		manager.recordFirstInteraction('click', 225)
+
+		expect(previousAttributes[BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE]).toBeUndefined()
+		expect(currentAttributes[BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE]).toBe(25)
+		expect(currentAttributes[BROWSER_NAVIGATION_FIRST_INTERACTION_TYPE_ATTRIBUTE]).toBe('click')
+	})
+
+	it('copies an early document-load interaction to the canonical page-load span', () => {
+		const manager = new NavigationMetricsManager()
+		const { attributes: documentLoadAttributes, span: documentLoadSpan } = createSpanMock('document-load-span-id')
+		const { attributes: pageLoadAttributes, span: pageLoadSpan } = createSpanMock('page-load-span-id')
+
+		manager.setCurrentNavigationSpan(documentLoadSpan, 0, BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION)
+		manager.recordFirstInteraction('click', 125)
+		manager.setCurrentNavigationSpan(pageLoadSpan, 0, BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION)
+
+		expect(documentLoadAttributes[BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE]).toBe(125)
+		expect(pageLoadAttributes[BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE]).toBe(125)
+		expect(pageLoadAttributes[BROWSER_NAVIGATION_FIRST_INTERACTION_TYPE_ATTRIBUTE]).toBe('click')
+	})
+
+	it('does not record first interaction attributes when experimental attributes are disabled', () => {
+		const manager = new NavigationMetricsManager({ emitNavigationAttributes: false })
+		const { attributes, span } = createSpanMock('navigation-span-id')
+
+		manager.setCurrentNavigationSpan(span, 100, BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION)
+		manager.recordFirstInteraction('click', 125)
+
+		expect(attributes[BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE]).toBeUndefined()
+		expect(attributes[BROWSER_NAVIGATION_FIRST_INTERACTION_TYPE_ATTRIBUTE]).toBeUndefined()
 	})
 
 	it('defaults the navigation operation to documentLoad before a navigation span is registered', () => {

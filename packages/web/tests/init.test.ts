@@ -25,6 +25,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { HTTP_TEST_SERVER_URL } from '../../../tests/servers/http-constants'
 import SplunkRum from '../src'
 import {
+	BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE,
+	BROWSER_NAVIGATION_FIRST_INTERACTION_TYPE_ATTRIBUTE,
 	BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE,
 	BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
 	BROWSER_NAVIGATION_PAGE_COMPLETION_SOURCE_ATTRIBUTE,
@@ -62,6 +64,8 @@ const doesBeaconUrlEndWith = (suffix: string) => {
 	const beaconUrl = exporterProcessor._exporter.beaconUrl || exporterProcessor._exporter.url
 	expect(beaconUrl.endsWith(suffix), `Checking beaconUrl if (${beaconUrl}) ends with ${suffix}`).toBeTruthy()
 }
+
+const interactionListener = () => {}
 
 function init() {
 	SplunkRum.init({
@@ -1121,6 +1125,26 @@ describe('test route change navigation metrics timeout', () => {
 			},
 			{ timeout: 6000 },
 		)
+	})
+
+	it('records the first instrumented interaction during a route change', async () => {
+		document.body.addEventListener('click', interactionListener)
+
+		try {
+			history.pushState({}, 'title', '/first-interaction-offset')
+			document.body.dispatchEvent(new Event('click'))
+			window.dispatchEvent(new Event('pagehide'))
+
+			await vi.waitFor(() => {
+				const span = capturer.spans.find((candidate) => candidate.name === 'routeChange')
+				expectDefined(span, 'Check if routeChange span is present.')
+				expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_FIRST_INTERACTION_TYPE_ATTRIBUTE, 'click')
+				expect(span.attributes[BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE]).toBeTypeOf('number')
+				expect(span.attributes[BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE]).toBeGreaterThanOrEqual(0)
+			})
+		} finally {
+			document.body.removeEventListener('click', interactionListener)
+		}
 	})
 
 	// Temporarily skipped while PCT timeout is disabled.
