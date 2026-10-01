@@ -23,6 +23,8 @@ import type { NavigationMetricsMonitor } from '../../../types'
 
 import { Monitor } from './monitor'
 
+const SERVER_SENT_EVENTS_CONTENT_TYPE = 'text/event-stream'
+
 declare global {
 	interface XMLHttpRequest {
 		_splunkMonitorResourceId?: string
@@ -81,17 +83,26 @@ export class FetchXhrMonitor extends Monitor {
 
 					self.emitResourceStateChange(event)
 
-					return original(input, init)
-						.then((response) => {
-							self.emitResourceStateChange(
-								Monitor.createLoadedEvent(event.id, url, performance.now() - startTime),
+					return original(input, init).then(
+						(response) => {
+							void self.waitForFetchResponseBody(response).then(
+								() => {
+									self.emitResourceStateChange(
+										Monitor.createLoadedEvent(event.id, url, performance.now() - startTime),
+									)
+								},
+								() => {
+									self.emitResourceStateChange(Monitor.createErrorEvent(event.id, url))
+								},
 							)
+
 							return response
-						})
-						.catch((error) => {
+						},
+						(error) => {
 							self.emitResourceStateChange(Monitor.createErrorEvent(event.id, url))
 							throw error
-						})
+						},
+					)
 				},
 		)
 	}
@@ -164,5 +175,22 @@ export class FetchXhrMonitor extends Monitor {
 	private restoreXhr(): void {
 		shimmer.unwrap(XMLHttpRequest.prototype, 'open')
 		shimmer.unwrap(XMLHttpRequest.prototype, 'send')
+	}
+
+	private async waitForFetchResponseBody(response: Response): Promise<void> {
+		const contentType = response.headers.get('content-type')?.split(';', 1)[0].trim().toLowerCase()
+		if (contentType === SERVER_SENT_EVENTS_CONTENT_TYPE) {
+			return
+		}
+
+		const reader = response.clone().body?.getReader()
+		if (!reader) {
+			return
+		}
+
+		let result = await reader.read()
+		while (!result.done) {
+			result = await reader.read()
+		}
 	}
 }
