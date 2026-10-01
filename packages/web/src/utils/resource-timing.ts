@@ -74,10 +74,7 @@ export function getTimingAllowOriginMissing(resource: PerformanceResourceTiming)
 	}
 
 	// Compare with the context origin; it can differ from location.origin for inherited about:blank documents.
-	if (
-		(resourceUrl.protocol !== 'http:' && resourceUrl.protocol !== 'https:') ||
-		resourceUrl.origin === self.origin
-	) {
+	if ((resourceUrl.protocol !== 'http:' && resourceUrl.protocol !== 'https:') || resourceUrl.origin === self.origin) {
 		return undefined
 	}
 
