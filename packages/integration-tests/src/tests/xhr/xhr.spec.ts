@@ -37,8 +37,77 @@ test.describe('xhr', () => {
 		expect(xhrSpans[0]).toHaveSpanAttribute('http.method', 'GET')
 		expect(xhrSpans[0]).toHaveSpanAttribute('http.url', 'http://localhost:3000/some-data')
 		expect(xhrSpans[0]).toHaveSpanAttribute('http.response_content_length', 49)
+		expect(xhrSpans[0].attributes['browser.resource.cross_origin_timing_restricted']).toBeUndefined()
 		expect(xhrSpans[0]).toHaveSpanAttribute('link.traceId')
 		expect(xhrSpans[0]).toHaveSpanAttribute('link.spanId')
+	})
+
+	test('classifies timing restrictions for cross-origin XHR resources', async ({ recordPage }) => {
+		await recordPage.goTo('/xhr/xhr-basic.ejs')
+
+		const resourceUrls = await recordPage.evaluate(async () => {
+			const cacheKey = Date.now()
+			const urls = ['off', 'on'].map(
+				(tao) => `http://localhost:3001/timing-resource?tao=${tao}&noCache=${cacheKey}`,
+			)
+
+			const request = (url: string) =>
+				new Promise<void>((resolve, reject) => {
+					const xhr = new XMLHttpRequest()
+					xhr.addEventListener('load', () => resolve(), { once: true })
+					xhr.addEventListener('error', () => reject(new Error(`XHR failed: ${url}`)), { once: true })
+					xhr.open('GET', url)
+					xhr.send()
+				})
+
+			await Promise.all(urls.map(request))
+
+			return urls
+		})
+
+		await recordPage.waitForSpans((spans) =>
+			resourceUrls.every((url) => spans.some((span) => span.attributes['http.url'] === url)),
+		)
+		const timingEntries = await recordPage.evaluate(
+			(urls) =>
+				urls.map((url) => {
+					const entry = performance.getEntriesByName(url)[0] as PerformanceResourceTiming | undefined
+					return (
+						entry && {
+							requestStart: entry.requestStart,
+							responseStart: entry.responseStart,
+							transferSize: entry.transferSize,
+							encodedBodySize: entry.encodedBodySize,
+							decodedBodySize: entry.decodedBodySize,
+						}
+					)
+				}),
+			resourceUrls,
+		)
+		const resourceSpans = recordPage.receivedSpans.filter((span) =>
+			resourceUrls.includes(String(span.attributes['http.url'])),
+		)
+		expect(resourceSpans).toHaveLength(2)
+
+		const timingRestrictedSpan = resourceSpans.find((span) => span.attributes['http.url'] === resourceUrls[0])
+		const timingExposedSpan = resourceSpans.find((span) => span.attributes['http.url'] === resourceUrls[1])
+		const [restrictedEntry, exposedEntry] = timingEntries
+		expect(restrictedEntry?.requestStart).toBe(0)
+		expect(restrictedEntry?.responseStart).toBe(0)
+		expect(exposedEntry?.requestStart).toBeGreaterThan(0)
+		expect(exposedEntry?.responseStart).toBeGreaterThan(0)
+
+		const restrictedSizes = [
+			restrictedEntry?.transferSize,
+			restrictedEntry?.encodedBodySize,
+			restrictedEntry?.decodedBodySize,
+		]
+		expect(restrictedSizes.every((size) => typeof size === 'number' && Number.isFinite(size))).toBe(true)
+		const expectedRestrictedValue = restrictedSizes.every((size) => size === 0) ? true : undefined
+		expect(timingRestrictedSpan?.attributes['browser.resource.cross_origin_timing_restricted']).toBe(
+			expectedRestrictedValue,
+		)
+		expect(timingExposedSpan?.attributes['browser.resource.cross_origin_timing_restricted']).toBe(false)
 	})
 
 	test('module can be disabled', async ({ recordPage }) => {

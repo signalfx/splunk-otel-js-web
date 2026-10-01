@@ -21,15 +21,34 @@ import { ROOT_CONTEXT } from '@opentelemetry/api'
 import { isTracingSuppressed, suppressTracing } from '@opentelemetry/core'
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request'
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base'
+import { getResource, parseUrl } from '@opentelemetry/sdk-trace-web'
 
 import { NavigationMetricsManager, SessionManager } from '../managers'
 import { setBrowserNavigationPageAttributes } from '../managers/navigation-metrics-manager/navigation-relevance'
 import { captureTraceParent } from '../servertiming'
 import { SplunkOtelWebConfig, SplunkXhrInstrumentationConfig } from '../types'
+import {
+	BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
+	getCrossOriginTimingRestricted,
+} from '../utils/resource-timing'
+
+type XhrMemory = {
+	createdResources?: {
+		entries: PerformanceResourceTiming[]
+	}
+}
 
 type ExposedSuper = {
 	_addResourceObserver: (xhr: XMLHttpRequest, spanUrl: string) => void
 	_createSpan: (xhr: XMLHttpRequest, url: string, method: string) => api.Span | undefined
+	_findResourceAndAddNetworkEvents: (
+		xhrMem: XhrMemory,
+		span: api.Span,
+		spanUrl: string | undefined,
+		startTime: api.HrTime | undefined,
+		endTime: api.HrTime,
+	) => void
+	_usedResources: WeakSet<PerformanceResourceTiming>
 }
 
 export class SplunkXhrInstrumentation extends XMLHttpRequestInstrumentation {
@@ -48,6 +67,8 @@ export class SplunkXhrInstrumentation extends XMLHttpRequestInstrumentation {
 
 		const _superCreateSpan = (this as unknown as ExposedSuper)._createSpan.bind(this)
 		const _superAddResourceObserver = (this as unknown as ExposedSuper)._addResourceObserver.bind(this)
+		const exposedSuper = this as unknown as ExposedSuper
+		const _superFindResourceAndAddNetworkEvents = exposedSuper._findResourceAndAddNetworkEvents.bind(this)
 
 		;(this as unknown as ExposedSuper)._createSpan = (xhr: XMLHttpRequest, url: string, method: string) => {
 			const startTime = performance.now()
@@ -121,6 +142,34 @@ export class SplunkXhrInstrumentation extends XMLHttpRequestInstrumentation {
 			}
 
 			_superAddResourceObserver(xhr, spanUrl)
+		}
+		// Resolve the matched entry here so we can add the cross-origin timing attribute.
+		// This repeats the upstream lookup once per XHR span; the original method still handles resource marking,
+		// preflight spans, and network events.
+		exposedSuper._findResourceAndAddNetworkEvents = (xhrMem, span, spanUrl, startTime, endTime) => {
+			if (spanUrl && startTime && endTime && xhrMem.createdResources) {
+				let resources = xhrMem.createdResources.entries
+				if (!resources.length) {
+					resources = performance.getEntriesByType('resource') as PerformanceResourceTiming[]
+				}
+
+				const { mainRequest } = getResource(
+					parseUrl(spanUrl).href,
+					startTime,
+					endTime,
+					resources,
+					exposedSuper._usedResources,
+				)
+				const crossOriginTimingRestricted = mainRequest && getCrossOriginTimingRestricted(mainRequest)
+				if (crossOriginTimingRestricted !== undefined) {
+					span.setAttribute(
+						BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
+						crossOriginTimingRestricted,
+					)
+				}
+			}
+
+			_superFindResourceAndAddNetworkEvents(xhrMem, span, spanUrl, startTime, endTime)
 		}
 	}
 }
