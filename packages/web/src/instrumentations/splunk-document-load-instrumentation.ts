@@ -40,8 +40,8 @@ import { captureTraceParentFromPerformanceEntries } from '../servertiming'
 import { SplunkOtelWebConfig } from '../types'
 import { isCacheHit } from '../utils/cache'
 import {
-	BROWSER_RESOURCE_TIMING_ALLOW_ORIGIN_MISSING_ATTRIBUTE,
-	getTimingAllowOriginMissing,
+	BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
+	getCrossOriginTimingRestricted,
 	setResourceTimingStatus,
 } from '../utils/resource-timing'
 
@@ -287,9 +287,9 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 			const span = exposedSuper._startSpan(AttributeNames.RESOURCE_FETCH, PTN.FETCH_START, resource, parentSpan)
 			if (span) {
 				span.setAttribute(SEMATTRS_HTTP_URL, resource.name)
-				const timingAllowOriginMissing = getTimingAllowOriginMissing(resource)
-				if (timingAllowOriginMissing !== undefined) {
-					span.setAttribute(BROWSER_RESOURCE_TIMING_ALLOW_ORIGIN_MISSING_ATTRIBUTE, timingAllowOriginMissing)
+				const crossOriginTimingRestricted = getCrossOriginTimingRestricted(resource)
+				if (crossOriginTimingRestricted !== undefined) {
+					span.setAttribute(BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE, crossOriginTimingRestricted)
 				}
 
 				const cacheHitResult = isCacheHit(resource)

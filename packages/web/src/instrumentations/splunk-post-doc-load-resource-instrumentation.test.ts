@@ -21,7 +21,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { SplunkOtelWebConfig } from '../types'
 
-import { BROWSER_RESOURCE_TIMING_ALLOW_ORIGIN_MISSING_ATTRIBUTE } from '../utils/resource-timing'
+import { BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE } from '../utils/resource-timing'
 import {
 	SplunkPostDocLoadResourceInstrumentation,
 	type SplunkPostDocLoadResourceInstrumentationConfig,
@@ -170,10 +170,10 @@ describe('post document load resource instrumentation', () => {
 		])
 		vi.runAllTimers()
 
-		expect(setAttribute).toHaveBeenCalledWith(BROWSER_RESOURCE_TIMING_ALLOW_ORIGIN_MISSING_ATTRIBUTE, true)
-		expect(setAttribute).toHaveBeenCalledWith(BROWSER_RESOURCE_TIMING_ALLOW_ORIGIN_MISSING_ATTRIBUTE, false)
+		expect(setAttribute).toHaveBeenCalledWith(BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE, true)
+		expect(setAttribute).toHaveBeenCalledWith(BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE, false)
 		expect(
-			setAttribute.mock.calls.filter(([name]) => name === BROWSER_RESOURCE_TIMING_ALLOW_ORIGIN_MISSING_ATTRIBUTE),
+			setAttribute.mock.calls.filter(([name]) => name === BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE),
 		).toHaveLength(2)
 	})
 

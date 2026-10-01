@@ -28,9 +28,9 @@ import { getPctMonitorTypes } from '../managers/navigation-metrics-manager/resou
 import { SplunkOtelWebConfig } from '../types'
 import { isCacheHit } from '../utils/cache'
 import {
-	BROWSER_RESOURCE_TIMING_ALLOW_ORIGIN_MISSING_ATTRIBUTE,
+	BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
 	getResourceElementUrl,
-	getTimingAllowOriginMissing,
+	getCrossOriginTimingRestricted,
 	setResourceTimingStatus,
 } from '../utils/resource-timing'
 import { VERSION } from '../version'
@@ -143,9 +143,9 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 			span.setAttribute('http.cache.hit', cacheHit)
 		}
 
-		const timingAllowOriginMissing = getTimingAllowOriginMissing(entry)
-		if (timingAllowOriginMissing !== undefined) {
-			span.setAttribute(BROWSER_RESOURCE_TIMING_ALLOW_ORIGIN_MISSING_ATTRIBUTE, timingAllowOriginMissing)
+		const crossOriginTimingRestricted = getCrossOriginTimingRestricted(entry)
+		if (crossOriginTimingRestricted !== undefined) {
+			span.setAttribute(BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE, crossOriginTimingRestricted)
 		}
 
 		addSpanNetworkEvents(span, entry)

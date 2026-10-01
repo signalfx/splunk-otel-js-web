@@ -23,7 +23,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { NavigationMetricsManager } from '../managers'
 
 import { BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION } from '../managers/navigation-metrics-manager/constants'
-import { BROWSER_RESOURCE_TIMING_ALLOW_ORIGIN_MISSING_ATTRIBUTE } from '../utils/resource-timing'
+import { BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE } from '../utils/resource-timing'
 import { SplunkDocumentLoadInstrumentation } from './splunk-document-load-instrumentation'
 
 class MockPerformanceObserver {
@@ -165,10 +165,10 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 		]
 		resourceEntries.forEach((resource) => exposedInstrumentation._initResourceSpan(resource))
 
-		expect(setAttribute).toHaveBeenCalledWith(BROWSER_RESOURCE_TIMING_ALLOW_ORIGIN_MISSING_ATTRIBUTE, true)
-		expect(setAttribute).toHaveBeenCalledWith(BROWSER_RESOURCE_TIMING_ALLOW_ORIGIN_MISSING_ATTRIBUTE, false)
+		expect(setAttribute).toHaveBeenCalledWith(BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE, true)
+		expect(setAttribute).toHaveBeenCalledWith(BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE, false)
 		expect(
-			setAttribute.mock.calls.filter(([name]) => name === BROWSER_RESOURCE_TIMING_ALLOW_ORIGIN_MISSING_ATTRIBUTE),
+			setAttribute.mock.calls.filter(([name]) => name === BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE),
 		).toHaveLength(2)
 	})
 

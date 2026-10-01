@@ -18,16 +18,16 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { getTimingAllowOriginMissing } from './resource-timing'
+import { getCrossOriginTimingRestricted } from './resource-timing'
 
-describe('getTimingAllowOriginMissing', () => {
+describe('getCrossOriginTimingRestricted', () => {
 	it('returns true when a cross-origin entry has hidden request and response timing and zero sizes', () => {
-		expect(getTimingAllowOriginMissing(createResourceEntry())).toBe(true)
+		expect(getCrossOriginTimingRestricted(createResourceEntry())).toBe(true)
 	})
 
 	it('returns false when a cross-origin entry exposes request and response timing', () => {
 		expect(
-			getTimingAllowOriginMissing(
+			getCrossOriginTimingRestricted(
 				createResourceEntry({
 					requestStart: 10,
 					responseStart: 12,
@@ -38,7 +38,7 @@ describe('getTimingAllowOriginMissing', () => {
 
 	it('omits the result for same-origin resources', () => {
 		expect(
-			getTimingAllowOriginMissing(
+			getCrossOriginTimingRestricted(
 				createResourceEntry({ name: new URL('/resource.svg', self.origin).toString() }),
 			),
 		).toBeUndefined()
@@ -46,7 +46,7 @@ describe('getTimingAllowOriginMissing', () => {
 
 	it('omits the result when timing and size fields have mixed signals', () => {
 		expect(
-			getTimingAllowOriginMissing(
+			getCrossOriginTimingRestricted(
 				createResourceEntry({
 					requestStart: 0,
 					responseStart: 12,
@@ -57,7 +57,7 @@ describe('getTimingAllowOriginMissing', () => {
 
 	it('omits the result when hidden timing is not corroborated by all zero sizes', () => {
 		expect(
-			getTimingAllowOriginMissing(
+			getCrossOriginTimingRestricted(
 				createResourceEntry({
 					decodedBodySize: 100,
 				}),
@@ -66,11 +66,11 @@ describe('getTimingAllowOriginMissing', () => {
 	})
 
 	it('omits the result when a required timing or size field is unavailable', () => {
-		expect(getTimingAllowOriginMissing(createResourceEntry({ encodedBodySize: undefined }))).toBeUndefined()
+		expect(getCrossOriginTimingRestricted(createResourceEntry({ encodedBodySize: undefined }))).toBeUndefined()
 	})
 
 	it('omits the result for non-HTTP resources', () => {
-		expect(getTimingAllowOriginMissing(createResourceEntry({ name: 'data:text/plain,resource' }))).toBeUndefined()
+		expect(getCrossOriginTimingRestricted(createResourceEntry({ name: 'data:text/plain,resource' }))).toBeUndefined()
 	})
 })
 
