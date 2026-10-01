@@ -27,7 +27,12 @@ import { setBrowserNavigationPageAttributes } from '../managers/navigation-metri
 import { getPctMonitorTypes } from '../managers/navigation-metrics-manager/resource-monitor-types'
 import { SplunkOtelWebConfig } from '../types'
 import { isCacheHit } from '../utils/cache'
-import { getResourceElementUrl, setResourceTimingStatus } from '../utils/resource-timing'
+import {
+	BROWSER_RESOURCE_TIMING_ALLOW_ORIGIN_MISSING_ATTRIBUTE,
+	getResourceElementUrl,
+	getTimingAllowOriginMissing,
+	setResourceTimingStatus,
+} from '../utils/resource-timing'
 import { VERSION } from '../version'
 
 export interface SplunkPostDocLoadResourceInstrumentationConfig extends InstrumentationConfig {
@@ -136,6 +141,11 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 		const cacheHit = isCacheHit(entry)
 		if (cacheHit !== undefined) {
 			span.setAttribute('http.cache.hit', cacheHit)
+		}
+
+		const timingAllowOriginMissing = getTimingAllowOriginMissing(entry)
+		if (timingAllowOriginMissing !== undefined) {
+			span.setAttribute(BROWSER_RESOURCE_TIMING_ALLOW_ORIGIN_MISSING_ATTRIBUTE, timingAllowOriginMissing)
 		}
 
 		addSpanNetworkEvents(span, entry)
