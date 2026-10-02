@@ -23,8 +23,6 @@ import type { NavigationMetricsMonitor } from '../../../types'
 
 import { Monitor } from './monitor'
 
-const SERVER_SENT_EVENTS_CONTENT_TYPE = 'text/event-stream'
-
 declare global {
 	interface XMLHttpRequest {
 		_splunkMonitorResourceId?: string
@@ -185,11 +183,7 @@ export class FetchXhrMonitor extends Monitor {
 	}
 
 	private async waitForFetchResponseBody(response: Response): Promise<void> {
-		const contentType = response.headers.get('content-type')?.split(';', 1)[0].trim().toLowerCase()
-		if (contentType === SERVER_SENT_EVENTS_CONTENT_TYPE) {
-			return
-		}
-
+		// TODO: Add bounded handling for long-lived streaming responses before exempting them from body completion.
 		const reader = response.clone().body?.getReader()
 		if (!reader) {
 			return

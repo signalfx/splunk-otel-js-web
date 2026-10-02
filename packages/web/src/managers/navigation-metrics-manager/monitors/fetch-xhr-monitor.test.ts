@@ -114,20 +114,32 @@ describe('FetchXhrMonitor', () => {
 			}
 		})
 
-		it('completes server-sent event responses without waiting for the body', async () => {
+		it('waits for server-sent event response bodies', async () => {
 			replaceMonitor({ waitForFetchResponseBody: true })
-			const response = new Response(new ReadableStream(), {
-				headers: { 'Content-Type': 'text/event-stream; charset=utf-8' },
-			})
+			let bodyController: ReadableStreamDefaultController<Uint8Array> | undefined
+			const response = new Response(
+				new ReadableStream<Uint8Array>({
+					start(controller) {
+						bodyController = controller
+					},
+				}),
+				{
+					headers: { 'Content-Type': 'text/event-stream; charset=utf-8' },
+				},
+			)
 			const restoreFetch = replaceFetch(() => Promise.resolve(response))
 
 			try {
 				await fetch('/events')
+
+				expect(events).toHaveLength(1)
+				expect(events[0].state).toBe(ResourceState.DISCOVERED)
+
+				bodyController?.close()
 				await vi.waitFor(() => expect(events).toHaveLength(2))
 
 				expect(events[1].state).toBe(ResourceState.LOADED)
 			} finally {
-				await response.body?.cancel()
 				restoreFetch()
 			}
 		})
