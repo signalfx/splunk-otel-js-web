@@ -16,7 +16,7 @@
  *
  */
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { HTTP_TEST_SERVER_URL } from '../../../../../../tests/servers/http-constants'
 import { FetchXhrMonitor } from './fetch-xhr-monitor'
@@ -65,6 +65,124 @@ describe('FetchXhrMonitor', () => {
 			expect(events[0].state).toBe(ResourceState.DISCOVERED)
 			expect(events[1].state).toBe(ResourceState.LOADED)
 			expect(events[0].id).toBe(events[1].id)
+		})
+
+		it('waits for the response body without delaying the original response', async () => {
+			replaceMonitor({ waitForFetchResponseBody: true })
+			let bodyController: ReadableStreamDefaultController<Uint8Array> | undefined
+			const restoreFetch = replaceFetch(() =>
+				Promise.resolve(
+					new Response(
+						new ReadableStream<Uint8Array>({
+							start(controller) {
+								bodyController = controller
+								controller.enqueue(new TextEncoder().encode('hello'))
+							},
+						}),
+					),
+				),
+			)
+
+			try {
+				const response = await fetch('/delayed-body')
+
+				expect(events).toHaveLength(1)
+				expect(events[0].state).toBe(ResourceState.DISCOVERED)
+
+				bodyController?.close()
+				await expect(response.text()).resolves.toBe('hello')
+				await vi.waitFor(() => expect(events).toHaveLength(2))
+
+				expect(events[1].state).toBe(ResourceState.LOADED)
+				expect(events[0].id).toBe(events[1].id)
+			} finally {
+				restoreFetch()
+			}
+		})
+
+		it('completes immediately when the response has no body', async () => {
+			replaceMonitor({ waitForFetchResponseBody: true })
+			const restoreFetch = replaceFetch(() => Promise.resolve(new Response(null, { status: 204 })))
+
+			try {
+				await fetch('/no-body')
+				await vi.waitFor(() => expect(events).toHaveLength(2))
+
+				expect(events[1].state).toBe(ResourceState.LOADED)
+			} finally {
+				restoreFetch()
+			}
+		})
+
+		it('waits for server-sent event response bodies', async () => {
+			replaceMonitor({ waitForFetchResponseBody: true })
+			let bodyController: ReadableStreamDefaultController<Uint8Array> | undefined
+			const response = new Response(
+				new ReadableStream<Uint8Array>({
+					start(controller) {
+						bodyController = controller
+					},
+				}),
+				{
+					headers: { 'Content-Type': 'text/event-stream; charset=utf-8' },
+				},
+			)
+			const restoreFetch = replaceFetch(() => Promise.resolve(response))
+
+			try {
+				await fetch('/events')
+
+				expect(events).toHaveLength(1)
+				expect(events[0].state).toBe(ResourceState.DISCOVERED)
+
+				bodyController?.close()
+				await vi.waitFor(() => expect(events).toHaveLength(2))
+
+				expect(events[1].state).toBe(ResourceState.LOADED)
+			} finally {
+				restoreFetch()
+			}
+		})
+
+		it('releases the resource when reading the cloned body fails', async () => {
+			replaceMonitor({ waitForFetchResponseBody: true })
+			let bodyController: ReadableStreamDefaultController<Uint8Array> | undefined
+			const restoreFetch = replaceFetch(() =>
+				Promise.resolve(
+					new Response(
+						new ReadableStream<Uint8Array>({
+							start(controller) {
+								bodyController = controller
+							},
+						}),
+					),
+				),
+			)
+
+			try {
+				await fetch('/failed-body')
+				bodyController?.error(new Error('body failed'))
+				await vi.waitFor(() => expect(events).toHaveLength(2))
+
+				expect(events[1].state).toBe(ResourceState.ERROR)
+				expect(events[0].id).toBe(events[1].id)
+			} finally {
+				restoreFetch()
+			}
+		})
+
+		it('releases the resource when fetch rejects', async () => {
+			const restoreFetch = replaceFetch(() => Promise.reject(new Error('fetch failed')))
+
+			try {
+				await expect(fetch('/failed-fetch')).rejects.toThrow('fetch failed')
+
+				expect(events).toHaveLength(2)
+				expect(events[1].state).toBe(ResourceState.ERROR)
+				expect(events[0].id).toBe(events[1].id)
+			} finally {
+				restoreFetch()
+			}
 		})
 	})
 
@@ -128,4 +246,26 @@ describe('FetchXhrMonitor', () => {
 			expect(events[0].id).toBe(events[1].id)
 		})
 	})
+
+	function replaceMonitor(config: { waitForFetchResponseBody?: boolean }): void {
+		monitor.stop()
+		monitor = new FetchXhrMonitor({
+			...config,
+			onResourceStateChange: (event) => events.push(event),
+		})
+		monitor.start()
+	}
+
+	function replaceFetch(replacement: typeof window.fetch): () => void {
+		monitor.stop()
+		const originalFetch = window.fetch
+		window.fetch = replacement
+		monitor.start()
+
+		return () => {
+			monitor.stop()
+			window.fetch = originalFetch
+			monitor.start()
+		}
+	}
 })

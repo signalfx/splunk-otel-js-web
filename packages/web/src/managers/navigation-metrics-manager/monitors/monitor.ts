@@ -50,6 +50,9 @@ export interface MonitorConfig {
 	elementVisibilityObserver?: ElementVisibilityObserver
 
 	onResourceStateChange: (event: ResourceStateEvent) => void
+
+	/** Only read by FetchXhrMonitor. */
+	waitForFetchResponseBody?: boolean
 }
 
 export abstract class Monitor {
