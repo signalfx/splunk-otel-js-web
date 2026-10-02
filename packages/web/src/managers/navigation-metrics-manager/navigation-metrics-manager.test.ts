@@ -418,6 +418,33 @@ describe('NavigationMetricsManager', () => {
 		manager.stop()
 	})
 
+	it('interrupts the previous route change at the next route change start time', async () => {
+		const manager = new NavigationMetricsManager({ quietTime: 100 })
+		manager.start()
+		const firstStartTime = 100
+		const nextStartTime = 250
+		const { span: firstRouteChangeSpan } = createSpanMock('first-route-change-span-id')
+		const { span: nextRouteChangeSpan } = createSpanMock('next-route-change-span-id')
+
+		const firstPagePromise = manager.waitForPageLoad({
+			operation: BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION,
+			span: firstRouteChangeSpan,
+			startTime: firstStartTime,
+		})
+		const nextPagePromise = manager.waitForPageLoad({
+			operation: BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION,
+			span: nextRouteChangeSpan,
+			startTime: nextStartTime,
+		})
+		const firstPageResult = await firstPagePromise
+
+		expect(firstPageResult.status).toBe(PAGE_LOAD_METRICS_STATUS_INTERRUPTED)
+		expect(firstPageResult.pct).toBe(nextStartTime - firstStartTime)
+
+		manager.stop()
+		await nextPagePromise
+	})
+
 	it('waitForPageLoad with startTime 0 returns pct at least document load time', async () => {
 		const manager = new NavigationMetricsManager({ quietTime: 100 })
 		manager.start()
