@@ -19,7 +19,8 @@
 import { type Span, SpanStatusCode } from '@opentelemetry/api'
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions'
 
-export const BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE = 'browser.resource.cross_origin_timing_restricted'
+export const BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE =
+	'browser.resource.cross_origin_timing_restricted'
 
 export function getResourceElementUrl(element: Element): string | undefined {
 	const tagName = element.tagName.toUpperCase()

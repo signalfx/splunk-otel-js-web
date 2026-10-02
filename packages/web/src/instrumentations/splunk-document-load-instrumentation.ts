@@ -289,7 +289,10 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 				span.setAttribute(SEMATTRS_HTTP_URL, resource.name)
 				const crossOriginTimingRestricted = getCrossOriginTimingRestricted(resource)
 				if (crossOriginTimingRestricted !== undefined) {
-					span.setAttribute(BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE, crossOriginTimingRestricted)
+					span.setAttribute(
+						BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
+						crossOriginTimingRestricted,
+					)
 				}
 
 				const cacheHitResult = isCacheHit(resource)

@@ -127,8 +127,8 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
 		const _superFindResourceAndAddNetworkEvents = exposedSuper._findResourceAndAddNetworkEvents.bind(this)
 		exposedSuper._findResourceAndAddNetworkEvents = (span, spanData, endTime) => {
 			let resources = spanData.entries
-			if (!resources.length && performance.getEntriesByType) {
-				resources = performance.getEntriesByType('resource') as PerformanceResourceTiming[]
+			if (resources.length === 0 && performance.getEntriesByType) {
+				resources = performance.getEntriesByType('resource')
 			}
 
 			const { mainRequest } = getResource(

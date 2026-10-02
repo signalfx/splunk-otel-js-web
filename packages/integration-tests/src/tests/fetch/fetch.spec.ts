@@ -78,11 +78,11 @@ test.describe('fetch', () => {
 					const entry = performance.getEntriesByName(url)[0] as PerformanceResourceTiming | undefined
 					return (
 						entry && {
+							decodedBodySize: entry.decodedBodySize,
+							encodedBodySize: entry.encodedBodySize,
 							requestStart: entry.requestStart,
 							responseStart: entry.responseStart,
 							transferSize: entry.transferSize,
-							encodedBodySize: entry.encodedBodySize,
-							decodedBodySize: entry.decodedBodySize,
 						}
 					)
 				}),

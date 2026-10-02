@@ -29,8 +29,8 @@ import { SplunkOtelWebConfig } from '../types'
 import { isCacheHit } from '../utils/cache'
 import {
 	BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
-	getResourceElementUrl,
 	getCrossOriginTimingRestricted,
+	getResourceElementUrl,
 	setResourceTimingStatus,
 } from '../utils/resource-timing'
 import { VERSION } from '../version'

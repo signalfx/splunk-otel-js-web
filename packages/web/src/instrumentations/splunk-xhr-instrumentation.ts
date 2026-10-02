@@ -149,8 +149,8 @@ export class SplunkXhrInstrumentation extends XMLHttpRequestInstrumentation {
 		exposedSuper._findResourceAndAddNetworkEvents = (xhrMem, span, spanUrl, startTime, endTime) => {
 			if (spanUrl && startTime && endTime && xhrMem.createdResources) {
 				let resources = xhrMem.createdResources.entries
-				if (!resources.length) {
-					resources = performance.getEntriesByType('resource') as PerformanceResourceTiming[]
+				if (resources.length === 0) {
+					resources = performance.getEntriesByType('resource')
 				}
 
 				const { mainRequest } = getResource(
