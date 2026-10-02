@@ -19,6 +19,9 @@
 import { type Span, SpanStatusCode } from '@opentelemetry/api'
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions'
 
+export const BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE =
+	'browser.resource.cross_origin_timing_restricted'
+
 export function getResourceElementUrl(element: Element): string | undefined {
 	const tagName = element.tagName.toUpperCase()
 	if (tagName === 'LINK') {
@@ -54,6 +57,49 @@ export function isResourceElementLoadError(event: Event): boolean {
 		target.tagName.toUpperCase() !== 'SCRIPT' &&
 		getResourceElementUrl(target) !== undefined
 	)
+}
+
+/**
+ * Infers whether timing restrictions hid a cross-origin resource's timing details.
+ * Returns true when timing is hidden, false when timing is exposed, and undefined when the resource cannot be
+ * classified, including same-origin resources where TAO is not needed.
+ *
+ * Resource Timing does not expose each redirect target, so cross-origin redirects cannot be classified here.
+ */
+export function getCrossOriginTimingRestricted(resource: PerformanceResourceTiming): boolean | undefined {
+	let resourceUrl: URL
+	try {
+		resourceUrl = new URL(resource.name, location.href)
+	} catch {
+		return undefined
+	}
+
+	// Compare with the context origin; it can differ from location.origin for inherited about:blank documents.
+	if ((resourceUrl.protocol !== 'http:' && resourceUrl.protocol !== 'https:') || resourceUrl.origin === self.origin) {
+		return undefined
+	}
+
+	const { decodedBodySize, encodedBodySize, requestStart, responseStart, transferSize } = resource
+	const timingAndSizeValues = [requestStart, responseStart, transferSize, encodedBodySize, decodedBodySize]
+	if (timingAndSizeValues.some((value) => typeof value !== 'number' || !Number.isFinite(value))) {
+		return undefined
+	}
+
+	if (
+		requestStart === 0 &&
+		responseStart === 0 &&
+		transferSize === 0 &&
+		encodedBodySize === 0 &&
+		decodedBodySize === 0
+	) {
+		return true
+	}
+
+	if (requestStart > 0 && responseStart > 0) {
+		return false
+	}
+
+	return undefined
 }
 
 export function setResourceTimingStatus(span: Span, resource: PerformanceResourceTiming): void {

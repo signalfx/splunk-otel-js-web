@@ -23,6 +23,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { NavigationMetricsManager } from '../managers'
 
 import { BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION } from '../managers/navigation-metrics-manager/constants'
+import { BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE } from '../utils/resource-timing'
 import { SplunkDocumentLoadInstrumentation } from './splunk-document-load-instrumentation'
 
 class MockPerformanceObserver {
@@ -132,6 +133,47 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 		expect((setCurrentNavigationSpan.mock.calls[0][0] as Span).name).toBe('documentLoad')
 	})
 
+	it('adds the timing restriction attribute to classifiable resource spans', () => {
+		vi.spyOn(performance, 'getEntriesByType').mockReturnValue([])
+		vi.stubGlobal('PerformanceObserver', null)
+
+		instrumentation = new SplunkDocumentLoadInstrumentation({}, { experimental: true })
+		const setAttribute = vi.fn()
+		const span = { addEvent: vi.fn(), setAttribute } as unknown as Span
+		const exposedInstrumentation = instrumentation as unknown as {
+			_addCustomAttributesOnResourceSpan: (...args: unknown[]) => void
+			_endSpan: (...args: unknown[]) => void
+			_initResourceSpan: (resource: PerformanceResourceTiming, parentSpan?: Span) => void
+			_startSpan: (...args: unknown[]) => Span | undefined
+			getConfig: () => { ignoreNetworkEvents?: boolean }
+		}
+		exposedInstrumentation._startSpan = vi.fn(() => span)
+		exposedInstrumentation._endSpan = vi.fn()
+		exposedInstrumentation._addCustomAttributesOnResourceSpan = vi.fn()
+		exposedInstrumentation.getConfig = vi.fn(() => ({ ignoreNetworkEvents: true }))
+
+		const resourceEntries = [
+			createResourceEntry('https://example.test/tao-missing.svg'),
+			createResourceEntry('https://example.test/tao-present.svg', {
+				decodedBodySize: 90,
+				encodedBodySize: 90,
+				requestStart: 12,
+				responseStart: 15,
+				transferSize: 120,
+			}),
+			createResourceEntry(new URL('/same-origin.svg', self.origin).toString()),
+		]
+		resourceEntries.forEach((resource) => exposedInstrumentation._initResourceSpan(resource))
+
+		expect(setAttribute).toHaveBeenCalledWith(BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE, true)
+		expect(setAttribute).toHaveBeenCalledWith(BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE, false)
+		expect(
+			setAttribute.mock.calls.filter(
+				([name]) => name === BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
+			),
+		).toHaveLength(2)
+	})
+
 	it('ends an open pageLoad span when disabled', () => {
 		const { navigationMetricsManager, setCurrentNavigationSpan } = createNavigationMetricsManagerMock()
 		vi.spyOn(performance, 'getEntriesByType').mockReturnValue([{ fetchStart: 12.5 } as PerformanceNavigationTiming])
@@ -150,3 +192,20 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 		expect(pageLoadSpan.ended).toBe(true)
 	})
 })
+
+function createResourceEntry(
+	name: string,
+	overrides: Partial<PerformanceResourceTiming> = {},
+): PerformanceResourceTiming {
+	return {
+		decodedBodySize: 0,
+		encodedBodySize: 0,
+		fetchStart: 10,
+		name,
+		requestStart: 0,
+		responseEnd: 20,
+		responseStart: 0,
+		transferSize: 0,
+		...overrides,
+	} as PerformanceResourceTiming
+}
