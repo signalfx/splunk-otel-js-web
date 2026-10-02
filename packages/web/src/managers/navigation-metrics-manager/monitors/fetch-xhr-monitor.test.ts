@@ -40,9 +40,7 @@ describe('FetchXhrMonitor', () => {
 
 	describe('fetch', () => {
 		it('tracks fetch requests', async () => {
-			const response = await fetch(`${HTTP_TEST_SERVER_URL}/delay?delay=0&resource=fetch-track`)
-			await response.text()
-			await vi.waitFor(() => expect(events).toHaveLength(2))
+			await fetch(`${HTTP_TEST_SERVER_URL}/delay?delay=0&resource=fetch-track`)
 
 			expect(events.length).toBe(2)
 			expect(events[0].state).toBe(ResourceState.DISCOVERED)
@@ -52,9 +50,7 @@ describe('FetchXhrMonitor', () => {
 		})
 
 		it('emits URLs matching ignore patterns because NavigationMetricsManager applies ignoreUrls', async () => {
-			const response = await fetch(`${HTTP_TEST_SERVER_URL}/delay?delay=0&resource=ignore-me-test`)
-			await response.text()
-			await vi.waitFor(() => expect(events).toHaveLength(2))
+			await fetch(`${HTTP_TEST_SERVER_URL}/delay?delay=0&resource=ignore-me-test`)
 
 			expect(events.length).toBe(2)
 			expect(events[0].state).toBe(ResourceState.DISCOVERED)
@@ -63,9 +59,7 @@ describe('FetchXhrMonitor', () => {
 		})
 
 		it('tracks data URL requests', async () => {
-			const response = await fetch('data:text/plain,hello')
-			await response.text()
-			await vi.waitFor(() => expect(events).toHaveLength(2))
+			await fetch('data:text/plain,hello')
 
 			expect(events.length).toBe(2)
 			expect(events[0].state).toBe(ResourceState.DISCOVERED)
@@ -74,6 +68,7 @@ describe('FetchXhrMonitor', () => {
 		})
 
 		it('waits for the response body without delaying the original response', async () => {
+			replaceMonitor({ waitForFetchResponseBody: true })
 			let bodyController: ReadableStreamDefaultController<Uint8Array> | undefined
 			const restoreFetch = replaceFetch(() =>
 				Promise.resolve(
@@ -106,6 +101,7 @@ describe('FetchXhrMonitor', () => {
 		})
 
 		it('completes immediately when the response has no body', async () => {
+			replaceMonitor({ waitForFetchResponseBody: true })
 			const restoreFetch = replaceFetch(() => Promise.resolve(new Response(null, { status: 204 })))
 
 			try {
@@ -119,6 +115,7 @@ describe('FetchXhrMonitor', () => {
 		})
 
 		it('completes server-sent event responses without waiting for the body', async () => {
+			replaceMonitor({ waitForFetchResponseBody: true })
 			const response = new Response(new ReadableStream(), {
 				headers: { 'Content-Type': 'text/event-stream; charset=utf-8' },
 			})
@@ -136,6 +133,7 @@ describe('FetchXhrMonitor', () => {
 		})
 
 		it('releases the resource when reading the cloned body fails', async () => {
+			replaceMonitor({ waitForFetchResponseBody: true })
 			let bodyController: ReadableStreamDefaultController<Uint8Array> | undefined
 			const restoreFetch = replaceFetch(() =>
 				Promise.resolve(
@@ -228,9 +226,7 @@ describe('FetchXhrMonitor', () => {
 			monitor.stop()
 			monitor.start()
 
-			const response = await fetch(`${HTTP_TEST_SERVER_URL}/delay?delay=0&resource=after-restart`)
-			await response.text()
-			await vi.waitFor(() => expect(events).toHaveLength(2))
+			await fetch(`${HTTP_TEST_SERVER_URL}/delay?delay=0&resource=after-restart`)
 
 			expect(events.length).toBe(2)
 			expect(events[0].state).toBe(ResourceState.DISCOVERED)
@@ -238,6 +234,15 @@ describe('FetchXhrMonitor', () => {
 			expect(events[0].id).toBe(events[1].id)
 		})
 	})
+
+	function replaceMonitor(config: { waitForFetchResponseBody?: boolean }): void {
+		monitor.stop()
+		monitor = new FetchXhrMonitor({
+			...config,
+			onResourceStateChange: (event) => events.push(event),
+		})
+		monitor.start()
+	}
 
 	function replaceFetch(replacement: typeof window.fetch): () => void {
 		monitor.stop()

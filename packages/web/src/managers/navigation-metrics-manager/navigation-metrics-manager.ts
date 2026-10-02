@@ -172,6 +172,7 @@ export interface NavigationMetricsManagerConfig extends NavigationMetricsManager
 	beaconEndpoint?: string
 	elementVisibilityObserver?: ElementVisibilityObserver
 	emitNavigationAttributes?: boolean
+	experimental?: boolean
 	urlOverrides?: NavigationMetricsUrlOverride[]
 }
 
@@ -239,6 +240,7 @@ export class NavigationMetricsManager {
 			consumerId: Symbol('navigation-metrics-manager-elements'),
 			elementVisibilityObserver: config.elementVisibilityObserver ?? new ElementVisibilityObserver(),
 			onResourceStateChange: this.onResourceStateChange,
+			waitForFetchResponseBody: config.experimental,
 		}
 
 		this.monitors = NavigationMetricsManager.createMonitors(monitorConfig)

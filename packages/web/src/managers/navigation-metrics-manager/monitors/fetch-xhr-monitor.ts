@@ -85,6 +85,13 @@ export class FetchXhrMonitor extends Monitor {
 
 					return original(input, init).then(
 						(response) => {
+							if (!self.config.waitForFetchResponseBody) {
+								self.emitResourceStateChange(
+									Monitor.createLoadedEvent(event.id, url, performance.now() - startTime),
+								)
+								return response
+							}
+
 							void self.waitForFetchResponseBody(response).then(
 								() => {
 									self.emitResourceStateChange(
