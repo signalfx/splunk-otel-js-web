@@ -339,7 +339,6 @@ export class NavigationMetricsManager {
 		}
 
 		navigation.firstInteraction = { eventName, startTime }
-		this.setFirstInteractionAttributes(navigation.span, navigation.firstInteraction, navigation.startTime)
 	}
 
 	registerManualPageLoad(): ManualPageLoadHandle | undefined {
@@ -355,10 +354,6 @@ export class NavigationMetricsManager {
 		const firstInteraction = replacesPreviousDocumentNavigation ? previousNavigation.firstInteraction : undefined
 		if (replacesPreviousDocumentNavigation) {
 			previousNavigation.span = undefined
-		}
-
-		if (firstInteraction) {
-			this.setFirstInteractionAttributes(span, firstInteraction, startTime)
 		}
 
 		this.navigationHistory.push({
@@ -401,6 +396,8 @@ export class NavigationMetricsManager {
 		if (!this.emitNavigationAttributes) {
 			return
 		}
+
+		this.setFirstInteractionAttributes(span, pct)
 
 		if (loadingResourcesCount > 0) {
 			span.setAttribute(BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE, loadingResourcesCount)
@@ -811,15 +808,24 @@ export class NavigationMetricsManager {
 		}
 	}
 
-	private setFirstInteractionAttributes(
-		span: Span,
-		firstInteraction: NonNullable<NavigationHistoryEntry['firstInteraction']>,
-		navigationStartTime: number,
-	): void {
-		span.setAttribute(
-			BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE,
-			firstInteraction.startTime - navigationStartTime,
-		)
-		span.setAttribute(BROWSER_NAVIGATION_FIRST_INTERACTION_TYPE_ATTRIBUTE, firstInteraction.eventName)
+	private setFirstInteractionAttributes(span: Span, pct: number): void {
+		const spanId = span.spanContext().spanId
+		for (let index = this.navigationHistory.length - 1; index >= 0; index--) {
+			const navigation = this.navigationHistory[index]
+			if (navigation.spanId !== spanId) {
+				continue
+			}
+
+			const firstInteraction = navigation.firstInteraction
+			if (firstInteraction && firstInteraction.startTime <= navigation.startTime + pct) {
+				span.setAttribute(
+					BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE,
+					firstInteraction.startTime - navigation.startTime,
+				)
+				span.setAttribute(BROWSER_NAVIGATION_FIRST_INTERACTION_TYPE_ATTRIBUTE, firstInteraction.eventName)
+			}
+
+			return
+		}
 	}
 }

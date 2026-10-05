@@ -677,6 +677,10 @@ describe('NavigationMetricsManager', () => {
 			manager.setCurrentNavigationSpan(span, 100, operation)
 			manager.recordFirstInteraction('click', 125)
 			manager.recordFirstInteraction('change', 150)
+			manager.setPageLoadMetricAttributes(
+				span,
+				createPageLoadMetricsResult({ pct: 100, status: PAGE_LOAD_METRICS_STATUS_COMPLETED }),
+			)
 
 			expect(attributes[BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE]).toBe(25)
 			expect(attributes[BROWSER_NAVIGATION_FIRST_INTERACTION_TYPE_ATTRIBUTE]).toBe('click')
@@ -704,6 +708,10 @@ describe('NavigationMetricsManager', () => {
 		manager.setCurrentNavigationSpan(previousSpan, 100, BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION)
 		manager.setCurrentNavigationSpan(currentSpan, 200, BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION)
 		manager.recordFirstInteraction('click', 225)
+		manager.setPageLoadMetricAttributes(
+			currentSpan,
+			createPageLoadMetricsResult({ pct: 100, status: PAGE_LOAD_METRICS_STATUS_COMPLETED }),
+		)
 
 		expect(previousAttributes[BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE]).toBeUndefined()
 		expect(currentAttributes[BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE]).toBe(25)
@@ -718,10 +726,28 @@ describe('NavigationMetricsManager', () => {
 		manager.setCurrentNavigationSpan(documentLoadSpan, 0, BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION)
 		manager.recordFirstInteraction('click', 125)
 		manager.setCurrentNavigationSpan(pageLoadSpan, 0, BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION)
+		const pageLoadMetrics = createPageLoadMetricsResult({ pct: 200, status: PAGE_LOAD_METRICS_STATUS_COMPLETED })
+		manager.setPageLoadMetricAttributes(documentLoadSpan, pageLoadMetrics)
+		manager.setPageLoadMetricAttributes(pageLoadSpan, pageLoadMetrics)
 
 		expect(documentLoadAttributes[BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE]).toBe(125)
 		expect(pageLoadAttributes[BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE]).toBe(125)
 		expect(pageLoadAttributes[BROWSER_NAVIGATION_FIRST_INTERACTION_TYPE_ATTRIBUTE]).toBe('click')
+	})
+
+	it('does not report an interaction after the final PCT window', () => {
+		const manager = new NavigationMetricsManager()
+		const { attributes, span } = createSpanMock('navigation-span-id')
+
+		manager.setCurrentNavigationSpan(span, 100, BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION)
+		manager.recordFirstInteraction('click', 250)
+		manager.setPageLoadMetricAttributes(
+			span,
+			createPageLoadMetricsResult({ pct: 100, status: PAGE_LOAD_METRICS_STATUS_COMPLETED }),
+		)
+
+		expect(attributes[BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE]).toBeUndefined()
+		expect(attributes[BROWSER_NAVIGATION_FIRST_INTERACTION_TYPE_ATTRIBUTE]).toBeUndefined()
 	})
 
 	it('does not record first interaction attributes when experimental attributes are disabled', () => {
