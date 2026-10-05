@@ -20,15 +20,28 @@ import * as api from '@opentelemetry/api'
 import { diag, ROOT_CONTEXT } from '@opentelemetry/api'
 import { isTracingSuppressed, suppressTracing } from '@opentelemetry/core'
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch'
+import { getResource } from '@opentelemetry/sdk-trace-web'
 
 import { NavigationMetricsManager, SessionManager } from '../managers'
 import { setBrowserNavigationPageAttributes } from '../managers/navigation-metrics-manager/navigation-relevance'
 import { captureTraceParent } from '../servertiming'
 import { SplunkFetchInstrumentationConfig, SplunkOtelWebConfig } from '../types'
+import {
+	BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
+	getCrossOriginTimingRestricted,
+} from '../utils/resource-timing'
+
+type FetchSpanData = {
+	entries: PerformanceResourceTiming[]
+	spanUrl: string
+	startTime: api.HrTime
+}
 
 type ExposedSuper = {
 	_addHeaders: (options: Request | RequestInit, spanUrl: string) => void
 	_createSpan: (url: string, options: Partial<Request | RequestInit>) => api.Span | undefined
+	_findResourceAndAddNetworkEvents: (span: api.Span, spanData: FetchSpanData, endTime: api.HrTime) => void
+	_usedResources: WeakSet<PerformanceResourceTiming>
 }
 
 export class SplunkFetchInstrumentation extends FetchInstrumentation {
@@ -105,6 +118,36 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
 			}
 
 			return span
+		}
+
+		// Resolve the matched entry here so we can add the cross-origin timing attribute.
+		// This repeats upstream's lookup once per Fetch span; the original method still handles resource marking,
+		// preflight spans, and network events.
+		const exposedSuper = this as unknown as ExposedSuper
+		const _superFindResourceAndAddNetworkEvents = exposedSuper._findResourceAndAddNetworkEvents.bind(this)
+		exposedSuper._findResourceAndAddNetworkEvents = (span, spanData, endTime) => {
+			let resources = spanData.entries
+			if (resources.length === 0 && performance.getEntriesByType) {
+				resources = performance.getEntriesByType('resource')
+			}
+
+			const { mainRequest } = getResource(
+				spanData.spanUrl,
+				spanData.startTime,
+				endTime,
+				resources,
+				exposedSuper._usedResources,
+				'fetch',
+			)
+			const crossOriginTimingRestricted = mainRequest && getCrossOriginTimingRestricted(mainRequest)
+			if (crossOriginTimingRestricted !== undefined) {
+				span.setAttribute(
+					BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
+					crossOriginTimingRestricted,
+				)
+			}
+
+			_superFindResourceAndAddNetworkEvents(span, spanData, endTime)
 		}
 
 		const _superAddHeaders = (this as unknown as ExposedSuper)._addHeaders.bind(this)
