@@ -1165,6 +1165,8 @@ describe('test route change navigation metrics timeout', () => {
 		Object.defineProperty(nextEvent, 'timeStamp', { value: nextStartTime })
 
 		window.dispatchEvent(firstEvent)
+		const handle = SplunkRum.registerManualPageLoad()
+		expect(handle?.markComplete()).toBe(true)
 		window.dispatchEvent(nextEvent)
 
 		await vi.waitFor(
