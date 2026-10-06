@@ -967,7 +967,9 @@ describe('test unloaded img', () => {
 
 	beforeEach(() => {
 		capturer = new SpanCapturer()
-		initWithDefaultConfig(capturer)
+		initWithDefaultConfig(capturer, {
+			disableResourceLoadErrorReporting: true,
+		})
 	})
 
 	afterEach(() => {

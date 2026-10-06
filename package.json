@@ -1,7 +1,7 @@
 {
 	"name": "@splunk/otel-web-dev-root",
 	"private": true,
-	"version": "3.1.0",
+	"version": "3.2.0",
 	"engines": {
 		"node": ">=22",
 		"pnpm": ">=10"
@@ -24,7 +24,7 @@
 		"test:e2e": "turbo run --env-mode=loose --filter=@splunk/otel-js-web-integration-tests test:e2e",
 		"typecheck:root": "tsc --noEmit",
 		"postversion": "tsx ./scripts/version-update.mts",
-		"version:bump": "pnpm version --workspaces --include-workspace-root",
+		"version:bump": "tsx ./scripts/version-update.mts",
 		"version:check": "tsx ./scripts/version-check.mts",
 		"tag:check": "tsx ./scripts/tag-check.mts",
 		"size-limit": "size-limit"

@@ -23,14 +23,52 @@ import { BROWSER_NAVIGATION_ATTRIBUTES } from '../../utils/browser-navigation'
 import { test } from '../../utils/test'
 
 test.describe('errors', () => {
-	test('DOM resource 4xx is reported as a failed resource span', async ({ browserName, recordPage }) => {
+	test('DOM resource 4xx is reported as an error and a failed resource span by default', async ({
+		browserName,
+		recordPage,
+	}) => {
 		await recordPage.goTo('/errors/views/resource-4xx.ejs')
+		await recordPage.waitForSpans(
+			(spans) =>
+				spans.some((span) => span.name === 'eventListener.error') &&
+				spans.some(
+					(span) =>
+						span.name === 'resourceFetch' &&
+						String(span.attributes['http.url']).endsWith('/nonexistent.png'),
+				),
+		)
+		const errorSpans = recordPage.receivedSpans.filter((span) => span.name === 'eventListener.error')
+		const resourceSpans = recordPage.receivedSpans.filter(
+			(span) => span.name === 'resourceFetch' && String(span.attributes['http.url']).endsWith('/nonexistent.png'),
+		)
+
+		expect(errorSpans).toHaveLength(1)
+		expect(errorSpans[0]).toHaveSpanAttribute('component', 'error')
+		expect(errorSpans[0]).toHaveSpanAttribute('error.type', 'error')
+		expect(errorSpans[0]).toHaveSpanAttribute('target_element', 'IMG')
+		expect(errorSpans[0]).toHaveSpanAttribute('target_xpath', '//html/body/img')
+		expect(errorSpans[0]).toHaveSpanAttributeEndingWith('target_src', '/nonexistent.png')
+		expect(errorSpans[0]).toHaveSpanAttribute('error.message', 'Failed to load <img src="/nonexistent.png" />')
+		expect(resourceSpans.length).toBeGreaterThanOrEqual(1)
+		if (browserName !== 'webkit') {
+			expect(Number.parseInt(String(resourceSpans[0].attributes['http.status_code']))).toBe(404)
+			expect(resourceSpans[0].status.code).toBe(SpanStatusCode.ERROR)
+		}
+	})
+
+	test('DOM resource errors can be suppressed without suppressing the resource span', async ({
+		browserName,
+		recordPage,
+	}) => {
+		await recordPage.goTo('/errors/views/resource-4xx-suppressed.ejs')
 		await recordPage.waitForSpans((spans) =>
 			spans.some(
 				(span) =>
 					span.name === 'resourceFetch' && String(span.attributes['http.url']).endsWith('/nonexistent.png'),
 			),
 		)
+		await recordPage.waitForTimeoutAndFlushData(500)
+
 		const errorSpans = recordPage.receivedSpans.filter((span) => span.name === 'eventListener.error')
 		const resourceSpans = recordPage.receivedSpans.filter(
 			(span) => span.name === 'resourceFetch' && String(span.attributes['http.url']).endsWith('/nonexistent.png'),
