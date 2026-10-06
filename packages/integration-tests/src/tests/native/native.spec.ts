@@ -48,8 +48,8 @@ const waitForSessionChange = async (recordPage: RecordPage, expectedSessionId: s
 	await expect
 		.poll(
 			() =>
-				recordPage.evaluate((sessionId) =>
-					(window as any).__nativeSessionChanges.includes(sessionId),
+				recordPage.evaluate(
+					(sessionId) => (window as any).__nativeSessionChanges.includes(sessionId),
 					expectedSessionId,
 				),
 			{ timeout: 5000 },
