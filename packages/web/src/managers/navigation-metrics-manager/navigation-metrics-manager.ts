@@ -239,6 +239,7 @@ export class NavigationMetricsManager {
 		const monitorConfig: MonitorConfig = {
 			consumerId: Symbol('navigation-metrics-manager-elements'),
 			elementVisibilityObserver: config.elementVisibilityObserver ?? new ElementVisibilityObserver(),
+			isResourceTracked: (resourceId) => this.loadingResources.has(resourceId),
 			onResourceStateChange: this.onResourceStateChange,
 			waitForFetchResponseBody: config.experimental,
 		}

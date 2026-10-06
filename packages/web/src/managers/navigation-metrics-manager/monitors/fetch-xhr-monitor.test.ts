@@ -114,6 +114,22 @@ describe('FetchXhrMonitor', () => {
 			}
 		})
 
+		it('does not read the body of a resource rejected by admission', async () => {
+			replaceMonitor({ isResourceTracked: () => false, waitForFetchResponseBody: true })
+			const response = new Response('ignored')
+			const clone = vi.spyOn(response, 'clone')
+			const restoreFetch = replaceFetch(() => Promise.resolve(response))
+
+			try {
+				await fetch('/ignored')
+
+				expect(clone).not.toHaveBeenCalled()
+				expect(events.map((event) => event.state)).toEqual([ResourceState.DISCOVERED, ResourceState.LOADED])
+			} finally {
+				restoreFetch()
+			}
+		})
+
 		it('waits for server-sent event response bodies', async () => {
 			replaceMonitor({ waitForFetchResponseBody: true })
 			let bodyController: ReadableStreamDefaultController<Uint8Array> | undefined
@@ -247,7 +263,10 @@ describe('FetchXhrMonitor', () => {
 		})
 	})
 
-	function replaceMonitor(config: { waitForFetchResponseBody?: boolean }): void {
+	function replaceMonitor(config: {
+		isResourceTracked?: (resourceId: string) => boolean
+		waitForFetchResponseBody?: boolean
+	}): void {
 		monitor.stop()
 		monitor = new FetchXhrMonitor({
 			...config,

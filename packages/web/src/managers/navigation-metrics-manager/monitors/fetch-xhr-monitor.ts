@@ -80,10 +80,15 @@ export class FetchXhrMonitor extends Monitor {
 					const startTime = performance.now()
 
 					self.emitResourceStateChange(event)
+					const isTracked = self.config.isResourceTracked?.(event.id) ?? true
 
 					return original(input, init).then(
 						(response) => {
-							if (!self.config.waitForFetchResponseBody) {
+							if (
+								!self.config.waitForFetchResponseBody ||
+								!isTracked ||
+								self.config.isResourceTracked?.(event.id) === false
+							) {
 								self.emitResourceStateChange(
 									Monitor.createLoadedEvent(event.id, url, performance.now() - startTime),
 								)

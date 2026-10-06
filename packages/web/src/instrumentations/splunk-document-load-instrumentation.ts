@@ -39,7 +39,11 @@ import { getPctMonitorTypes } from '../managers/navigation-metrics-manager/resou
 import { captureTraceParentFromPerformanceEntries } from '../servertiming'
 import { SplunkOtelWebConfig } from '../types'
 import { isCacheHit } from '../utils/cache'
-import { setResourceTimingStatus } from '../utils/resource-timing'
+import {
+	BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
+	getCrossOriginTimingRestricted,
+	setResourceTimingStatus,
+} from '../utils/resource-timing'
 
 export interface SplunkDocLoadInstrumentationConfig extends InstrumentationConfig {
 	ignoreUrls?: (string | RegExp)[]
@@ -283,6 +287,14 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 			const span = exposedSuper._startSpan(AttributeNames.RESOURCE_FETCH, PTN.FETCH_START, resource, parentSpan)
 			if (span) {
 				span.setAttribute(SEMATTRS_HTTP_URL, resource.name)
+				const crossOriginTimingRestricted = getCrossOriginTimingRestricted(resource)
+				if (crossOriginTimingRestricted !== undefined) {
+					span.setAttribute(
+						BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
+						crossOriginTimingRestricted,
+					)
+				}
+
 				const cacheHitResult = isCacheHit(resource)
 				if (cacheHitResult !== undefined) {
 					span.setAttribute('http.cache.hit', cacheHitResult)
