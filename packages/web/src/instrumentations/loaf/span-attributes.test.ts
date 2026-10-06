@@ -79,6 +79,7 @@ describe('LoAF span attributes', () => {
 			'loaf.entry_start_time': 150,
 			'loaf.script_count': 4,
 			'loaf.script[0].duration': 100.3,
+			'loaf.script[0].end_offset_micros': 110_411,
 			'loaf.script[0].execution_start': 162.46,
 			'loaf.script[0].forced_style_and_layout_duration': 0,
 			'loaf.script[0].invoker': 'http://localhost:3030/splunk-otel-web.js?token=secret#hash',
@@ -87,13 +88,18 @@ describe('LoAF span attributes', () => {
 			'loaf.script[0].source_char_position': 234,
 			'loaf.script[0].source_function_name': '',
 			'loaf.script[0].source_url': 'http://localhost:3030/splunk-otel-web.js',
+			'loaf.script[0].start_offset_micros': 10_111,
 			'loaf.script[0].start_time': 160.11,
 			'loaf.script[0].window_attribution': 'self',
 			'loaf.script[1].duration': 30,
+			'loaf.script[1].end_offset_micros': 100_000,
 			'loaf.script[1].source_url': '<anonymous>',
+			'loaf.script[1].start_offset_micros': 70_000,
 			'loaf.script[1].start_time': 220,
 			'loaf.script[2].duration': 20,
+			'loaf.script[2].end_offset_micros': 130_000,
 			'loaf.script[2].source_url': 'blob:https://example.com/id?kept=true#kept',
+			'loaf.script[2].start_offset_micros': 110_000,
 			'loaf.script[2].start_time': 260,
 		})
 		expect(attributes['loaf.script[3].duration']).toBeUndefined()
@@ -154,7 +160,90 @@ describe('LoAF span attributes', () => {
 
 		expect(attributes['loaf.entry_start_time']).toBe(150)
 		expect(attributes['loaf.script[0].offset']).toBeUndefined()
+		expect(attributes['loaf.script[0].start_offset_micros']).toBeUndefined()
+		expect(attributes['loaf.script[0].end_offset_micros']).toBeUndefined()
 		expect(attributes['loaf.script[0].start_time']).toBe(100)
+	})
+
+	it('emits bounded integer offsets for scripts crossing both frame boundaries', () => {
+		const { attributes, span } = createSpanMock()
+		const frameDurationMicros = 50_000
+
+		setLoafEntryAttributes(
+			span,
+			createLoafEntry({
+				duration: 50,
+				scripts: [
+					createScript({ duration: 20, startTime: 90 }),
+					createScript({ duration: 20, startTime: 145 }),
+				],
+				startTime: 100,
+			}),
+		)
+
+		for (let index = 0; index < 2; index += 1) {
+			const startOffset = attributes[`loaf.script[${index}].start_offset_micros`] as number
+			const endOffset = attributes[`loaf.script[${index}].end_offset_micros`] as number
+
+			expect(Number.isInteger(startOffset)).toBe(true)
+			expect(Number.isInteger(endOffset)).toBe(true)
+			expect(startOffset).toBeGreaterThanOrEqual(0)
+			expect(startOffset).toBeLessThan(endOffset)
+			expect(endOffset).toBeLessThanOrEqual(frameDurationMicros)
+		}
+
+		expect(attributes['loaf.script[0].start_offset_micros']).toBe(0)
+		expect(attributes['loaf.script[0].end_offset_micros']).toBe(10_000)
+		expect(attributes['loaf.script[1].start_offset_micros']).toBe(45_000)
+		expect(attributes['loaf.script[1].end_offset_micros']).toBe(50_000)
+	})
+
+	it('omits offsets for negative script or frame start times', () => {
+		const scriptResult = createSpanMock()
+		const frameResult = createSpanMock()
+
+		setLoafEntryAttributes(
+			scriptResult.span,
+			createLoafEntry({
+				duration: 50,
+				scripts: [createScript({ duration: 20, startTime: -5 })],
+				startTime: 0,
+			}),
+		)
+		setLoafEntryAttributes(
+			frameResult.span,
+			createLoafEntry({
+				duration: 50,
+				scripts: [createScript({ duration: 20, startTime: 0 })],
+				startTime: -5,
+			}),
+		)
+
+		expect(scriptResult.attributes['loaf.script[0].start_offset_micros']).toBeUndefined()
+		expect(scriptResult.attributes['loaf.script[0].end_offset_micros']).toBeUndefined()
+		expect(frameResult.attributes['loaf.script[0].start_offset_micros']).toBeUndefined()
+		expect(frameResult.attributes['loaf.script[0].end_offset_micros']).toBeUndefined()
+	})
+
+	it('omits offsets for malformed or non-overlapping script timing values', () => {
+		const { attributes, span } = createSpanMock()
+
+		setLoafEntryAttributes(
+			span,
+			createLoafEntry({
+				scripts: [
+					createScript({ duration: Number.NaN, startTime: 150 }),
+					createScript({ duration: 10, startTime: Number.POSITIVE_INFINITY }),
+					createScript({ duration: 10, startTime: 900 }),
+				],
+				startTime: 150,
+			}),
+		)
+
+		for (let index = 0; index < 3; index += 1) {
+			expect(attributes[`loaf.script[${index}].start_offset_micros`]).toBeUndefined()
+			expect(attributes[`loaf.script[${index}].end_offset_micros`]).toBeUndefined()
+		}
 	})
 
 	it('falls back for malformed runtime entry shapes', () => {
