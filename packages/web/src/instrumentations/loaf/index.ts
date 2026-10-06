@@ -18,6 +18,7 @@
 
 export { LOAF_MODULE_NAME, LONG_ANIMATION_FRAME_PERFORMANCE_TYPE, MAX_LOAF_SCRIPT_SUMMARIES } from './constants'
 export * from './script-summary'
+export * from './script-timing-offsets'
 export * from './span-attributes'
 export * from './support'
 export * from './types'
