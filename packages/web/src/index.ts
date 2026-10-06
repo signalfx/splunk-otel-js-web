@@ -694,6 +694,7 @@ export const SplunkRum: SplunkOtelWebType = {
 							...(navigationMetricsConfig === true ? {} : navigationMetricsConfig),
 							elementVisibilityObserver,
 							emitNavigationAttributes: processedOptions.experimental,
+							experimental: processedOptions.experimental,
 						})
 			_navigationMetricsManager = navigationMetricsManager
 
