@@ -27,6 +27,8 @@ import { truncateString } from '../../utils/text'
 import {
 	BROWSER_NAVIGATION_DETECTED_RESOURCE_COUNT_ATTRIBUTE,
 	BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION,
+	BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE,
+	BROWSER_NAVIGATION_FIRST_INTERACTION_TYPE_ATTRIBUTE,
 	BROWSER_NAVIGATION_LAST_LOADED_RESOURCES_ATTRIBUTE,
 	BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE,
 	BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
@@ -133,8 +135,13 @@ type WaitForPageLoadConfig =
 	  }
 
 type NavigationHistoryEntry = {
+	firstInteraction?: {
+		eventName: string
+		startTime: number
+	}
 	operation: string
 	pctEndTime?: number
+	span?: Span
 	spanId: string
 	startTime: number
 }
@@ -253,6 +260,7 @@ export class NavigationMetricsManager {
 			const navigation = this.navigationHistory[index]
 			if (navigation.spanId === spanId) {
 				navigation.pctEndTime = endTime
+				navigation.span = undefined
 				return
 			}
 		}
@@ -318,14 +326,44 @@ export class NavigationMetricsManager {
 		}
 	}
 
+	recordFirstInteraction(eventName: string, startTime = performance.now()): void {
+		if (!this.emitNavigationAttributes) {
+			return
+		}
+
+		const navigation = this.navigationHistory.at(-1)
+		if (
+			!navigation?.span ||
+			navigation.firstInteraction ||
+			startTime < navigation.startTime ||
+			(navigation.pctEndTime !== undefined && startTime > navigation.pctEndTime)
+		) {
+			return
+		}
+
+		navigation.firstInteraction = { eventName, startTime }
+	}
+
 	registerManualPageLoad(): ManualPageLoadHandle | undefined {
 		return this.quietPeriodAwaiter?.registerManualPageLoad()
 	}
 
 	setCurrentNavigationSpan(span: Span, startTime: number, operation: string): void {
+		const previousNavigation = this.navigationHistory.at(-1)
+		const replacesPreviousDocumentNavigation =
+			operation === BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION &&
+			previousNavigation?.operation === operation &&
+			previousNavigation.startTime === startTime
+		const firstInteraction = replacesPreviousDocumentNavigation ? previousNavigation.firstInteraction : undefined
+		if (replacesPreviousDocumentNavigation) {
+			previousNavigation.span = undefined
+		}
+
 		this.navigationHistory.push({
+			firstInteraction,
 			operation,
 			pctEndTime: this.manualCompletionCandidateTimestamp,
+			span: this.emitNavigationAttributes ? span : undefined,
 			spanId: span.spanContext().spanId,
 			startTime,
 		})
@@ -361,6 +399,8 @@ export class NavigationMetricsManager {
 		if (!this.emitNavigationAttributes) {
 			return
 		}
+
+		this.setFirstInteractionAttributes(span, pct)
 
 		if (loadingResourcesCount > 0) {
 			span.setAttribute(BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE, loadingResourcesCount)
@@ -777,6 +817,27 @@ export class NavigationMetricsManager {
 			maxResourcesToWatch: config.maxResourcesToWatch ?? defaultConfig.maxResourcesToWatch,
 			monitors: [...(config.monitors ?? defaultConfig.monitors)],
 			quietTime,
+		}
+	}
+
+	private setFirstInteractionAttributes(span: Span, pct: number): void {
+		const spanId = span.spanContext().spanId
+		for (let index = this.navigationHistory.length - 1; index >= 0; index--) {
+			const navigation = this.navigationHistory[index]
+			if (navigation.spanId !== spanId) {
+				continue
+			}
+
+			const firstInteraction = navigation.firstInteraction
+			if (firstInteraction && firstInteraction.startTime <= navigation.startTime + pct) {
+				span.setAttribute(
+					BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE,
+					firstInteraction.startTime - navigation.startTime,
+				)
+				span.setAttribute(BROWSER_NAVIGATION_FIRST_INTERACTION_TYPE_ATTRIBUTE, firstInteraction.eventName)
+			}
+
+			return
 		}
 	}
 }

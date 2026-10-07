@@ -111,7 +111,12 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 				element = document.documentElement
 			}
 
-			return _superCreateSpan(element, eventName, parentSpan)
+			const span = _superCreateSpan(element, eventName, parentSpan)
+			if (span) {
+				this.navigationMetricsManager?.recordFirstInteraction(eventName)
+			}
+
+			return span
 		}
 
 		const _superPatchAddEventListener = (this as unknown as ExposedSuper)._patchAddEventListener.bind(this)
