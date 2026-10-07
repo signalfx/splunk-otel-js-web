@@ -47,7 +47,7 @@
 		"@opentelemetry/core": "^1.25.1",
 		"@opentelemetry/resources": "^1.25.1",
 		"core-js": "3.49.0",
-		"fflate": "^0.8.0",
+		"fflate": "^0.8.3",
 		"nanoid": "^5.1.16",
 		"type-fest": "^5.7.0"
 	},
