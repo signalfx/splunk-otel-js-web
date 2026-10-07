@@ -383,8 +383,7 @@ export class OTLPProtoLogExporter implements LogExporter {
 		}
 
 		if (document.visibilityState === 'hidden') {
-			// TODO: https://github.com/101arrowz/fflate/issues/242
-			const compressedData = gzipSync(uint8ArrayData) as Uint8Array<ArrayBuffer>
+			const compressedData = gzipSync(uint8ArrayData)
 
 			// Use fetch with keepalive option instead of beacon.
 			// Fetch with keepalive option has limit of 64kB.

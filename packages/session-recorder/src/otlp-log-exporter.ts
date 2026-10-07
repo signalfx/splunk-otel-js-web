@@ -146,8 +146,7 @@ export default class OTLPLogExporter {
 		log.debug('OTLPLogExporter: export', logsData)
 
 		const endpoint = this.config.beaconUrl
-		// TODO: https://github.com/101arrowz/fflate/issues/242
-		const uint8ArrayData = strToU8(JSON.stringify(logsData)) as Uint8Array<ArrayBuffer>
+		const uint8ArrayData = strToU8(JSON.stringify(logsData))
 
 		const requestId = nanoid()
 		const queuedLog: QueuedLog | null = this.config.usePersistentExportQueue
@@ -194,8 +193,7 @@ export default class OTLPLogExporter {
 			// Add log to queue and remove after it has been successfully sent
 			addLogToQueue(logItem)
 
-			// TODO: https://github.com/101arrowz/fflate/issues/242
-			const logData = strToU8(JSON.stringify(logItem.data)) as Uint8Array<ArrayBuffer>
+			const logData = strToU8(JSON.stringify(logItem.data))
 			OTLPLogExporter.sendDataToBackend(logItem, logData, logItem.url, logItem.headers)
 		}
 	}
@@ -231,8 +229,7 @@ export default class OTLPLogExporter {
 		}
 
 		if (document.visibilityState === 'hidden') {
-			// TODO: https://github.com/101arrowz/fflate/issues/242
-			const compressedData = gzipSync(uint8ArrayData) as Uint8Array<ArrayBuffer>
+			const compressedData = gzipSync(uint8ArrayData)
 
 			// Use fetch with keepalive option instead of beacon.
 			// Fetch with keepalive option has limit of 64kB.
