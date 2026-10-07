@@ -147,7 +147,7 @@ release_github:
             fi
             release_notes_file="release-notes.md"
             pnpm exec tsx scripts/extract-github-release-notes.mts "$CI_COMMIT_REF_NAME" "$release_notes_file"
-            gh release create v${CI_COMMIT_REF_NAME:1} ./artifacts/* --notes-file "$release_notes_file" --target $CI_COMMIT_SHA --repo $GITHUB_REPOSITORY $prerelease_flag
+            gh release create v${CI_COMMIT_REF_NAME:1} ./artifacts/* --title "$CI_COMMIT_TAG" --notes-file "$release_notes_file" --target $CI_COMMIT_SHA --repo $GITHUB_REPOSITORY $prerelease_flag
 
 release_cdn:
     <<: *pnpm-setup

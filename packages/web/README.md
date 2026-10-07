@@ -80,9 +80,9 @@ Choose a versioning strategy based on your needs:
 **Minor Version Lock**
 
 ```html
-<!-- Locks to v3.1.x - gets latest patch updates only -->
+<!-- Locks to v3.2.x - gets latest patch updates only -->
 <script
-	src="https://cdn.observability.splunkcloud.com/o11y-gdi-rum/v3.1/splunk-otel-web.js"
+	src="https://cdn.observability.splunkcloud.com/o11y-gdi-rum/v3.2/splunk-otel-web.js"
 	crossorigin="anonymous"
 ></script>
 ```
@@ -90,9 +90,9 @@ Choose a versioning strategy based on your needs:
 **Exact Version Lock**
 
 ```html
-<!-- Locks to exact version v3.1.0 - no automatic updates -->
+<!-- Locks to exact version v3.2.0 - no automatic updates -->
 <script
-	src="https://cdn.observability.splunkcloud.com/o11y-gdi-rum/v3.1.0/splunk-otel-web.js"
+	src="https://cdn.observability.splunkcloud.com/o11y-gdi-rum/v3.2.0/splunk-otel-web.js"
 	crossorigin="anonymous"
 	integrity="sha384-<integrity>"
 ></script>
@@ -237,7 +237,7 @@ SplunkRum.init({
 
 When `instrumentations.loaf` is enabled and the browser supports `long-animation-frame`, the default `longtask` instrumentation is suppressed for that page session to avoid double-reporting overlapping main-thread work. In browsers without LoAF support, `longtask` remains the fallback unless it is explicitly disabled.
 
-LoAF spans include frame timing attributes such as `loaf.duration`, `loaf.blocking_duration`, `loaf.entry_start_time`, `loaf.paint_time`, `loaf.presentation_time`, `loaf.render_start`, `loaf.style_and_layout_start`, and `loaf.first_ui_event_timestamp`. They also include bounded script attribution: `loaf.script_count` reports the original number of scripts, while only the top three scripts by duration are exported as `loaf.script[0..2].*` attributes, including script timing fields such as `duration`, `start_time`, `execution_start`, `pause_duration`, `forced_style_and_layout_duration`, and `source_char_position`. `loaf.entry_start_time` and `loaf.script[n].start_time` are both measured in milliseconds from the browser performance time origin. Consumers can calculate the script start relative to the LoAF span start as `loaf.script[n].start_time - loaf.entry_start_time`. To reconstruct an absolute script start from an exported span start, first normalize `loafSpan.start` to milliseconds, then use `loafSpan.start + loaf.script[n].start_time - loaf.entry_start_time`. Script source attribution is reported as provided by the browser; use `exporter.onAttributesSerializing` if your application needs to redact or transform those attributes before export.
+LoAF spans include frame timing attributes such as `loaf.duration`, `loaf.blocking_duration`, `loaf.entry_start_time`, `loaf.paint_time`, `loaf.presentation_time`, `loaf.render_start`, `loaf.style_and_layout_start`, and `loaf.first_ui_event_timestamp`. They also include bounded script attribution: `loaf.script_count` reports the original number of scripts, while only the top three scripts by duration are exported as `loaf.script[0..2].*` attributes, including script timing fields such as `duration`, `start_time`, `execution_start`, `pause_duration`, `forced_style_and_layout_duration`, and `source_char_position`. Each exported script also has `start_offset_micros` and `end_offset_micros`, integer microsecond offsets relative to its LoAF span. These offsets are computed from the browser's unrounded timing values and clipped to the frame boundaries. They provide a bounded interval for reconstructing script timing without subtracting independently rounded millisecond attributes. `loaf.entry_start_time` and `loaf.script[n].start_time` remain measured in milliseconds from the browser performance time origin for compatibility. Script source attribution is reported as provided by the browser; use `exporter.onAttributesSerializing` if your application needs to redact or transform those attributes before export.
 
 To bound payload volume, the SDK emits up to 50 LoAF spans per source in any rolling minute. Additional
 LoAF entries from the same source are dropped silently to reduce repeated noise from particular scripts while
