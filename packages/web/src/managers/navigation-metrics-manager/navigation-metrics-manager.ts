@@ -179,6 +179,7 @@ export interface NavigationMetricsManagerConfig extends NavigationMetricsManager
 	beaconEndpoint?: string
 	elementVisibilityObserver?: ElementVisibilityObserver
 	emitNavigationAttributes?: boolean
+	experimental?: boolean
 	urlOverrides?: NavigationMetricsUrlOverride[]
 }
 
@@ -245,7 +246,9 @@ export class NavigationMetricsManager {
 		const monitorConfig: MonitorConfig = {
 			consumerId: Symbol('navigation-metrics-manager-elements'),
 			elementVisibilityObserver: config.elementVisibilityObserver ?? new ElementVisibilityObserver(),
+			isResourceTracked: (resourceId) => this.loadingResources.has(resourceId),
 			onResourceStateChange: this.onResourceStateChange,
+			waitForFetchResponseBody: config.experimental,
 		}
 
 		this.monitors = NavigationMetricsManager.createMonitors(monitorConfig)
@@ -466,7 +469,16 @@ export class NavigationMetricsManager {
 	}
 
 	waitForPageLoad({ operation, span, startTime }: WaitForPageLoadConfig): Promise<PageLoadMetricsResult> {
-		this.quietPeriodAwaiter?.interrupt()
+		const currentNavigation = this.navigationHistory.at(-1)
+		if (
+			operation === BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION &&
+			currentNavigation?.operation === BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION
+		) {
+			this.quietPeriodAwaiter?.interrupt(startTime)
+		} else {
+			this.quietPeriodAwaiter?.interrupt()
+		}
+
 		this.manualCompletionCandidateTimestamp = undefined
 		if (span) {
 			this.setCurrentNavigationSpan(span, startTime, operation)
