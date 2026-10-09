@@ -15,15 +15,21 @@
  * limitations under the License.
  *
  */
-import { spawnSync } from 'node:child_process'
-import { createRequire } from 'node:module'
+import { existsSync } from 'node:fs'
 
 import nextEnv from '@next/env'
+
+// This helper only checks that the example app's local environment is configured before running the CLI command.
+if (!existsSync('.env')) {
+	console.error("Cannot preview source map upload. Copy this example's .env.example to .env and fill in the values first.")
+	process.exit(1)
+}
 
 nextEnv.loadEnvConfig(process.cwd())
 
 const requiredEnvironmentVariables = [
 	'NEXT_PUBLIC_SPLUNK_REALM',
+	'NEXT_PUBLIC_SPLUNK_RUM_ACCESS_TOKEN',
 	'NEXT_PUBLIC_SPLUNK_RUM_APPLICATION_NAME',
 	'NEXT_PUBLIC_SPLUNK_RUM_APPLICATION_VERSION',
 	'SPLUNK_ACCESS_TOKEN',
@@ -37,33 +43,3 @@ if (missingEnvironmentVariables.length > 0) {
 	)
 	process.exit(1)
 }
-
-const require = createRequire(import.meta.url)
-const cliPath = require.resolve('@splunk/rum-cli')
-const cliArguments = [
-	cliPath,
-	'sourcemaps',
-	'upload',
-	'--realm',
-	process.env.NEXT_PUBLIC_SPLUNK_REALM,
-	'--app-name',
-	process.env.NEXT_PUBLIC_SPLUNK_RUM_APPLICATION_NAME,
-	'--app-version',
-	process.env.NEXT_PUBLIC_SPLUNK_RUM_APPLICATION_VERSION,
-	'--path',
-	'.next/static',
-	'--dry-run',
-]
-
-if (process.argv.includes('--debug')) {
-	cliArguments.push('--debug')
-}
-
-const result = spawnSync(process.execPath, cliArguments, { stdio: 'inherit' })
-
-if (result.error) {
-	console.error(`Could not start splunk-rum: ${result.error.message}`)
-	process.exit(1)
-}
-
-process.exit(result.status ?? 1)

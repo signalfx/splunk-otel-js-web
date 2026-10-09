@@ -8,8 +8,8 @@
 		"start": "next start",
 		"sourcemaps:inject": "splunk-rum sourcemaps inject --path .next/static",
 		"sourcemaps:inject:debug": "splunk-rum sourcemaps inject --path .next/static --debug",
-		"sourcemaps:upload:dry-run": "node ./scripts/upload-source-maps.mjs",
-		"sourcemaps:upload:dry-run:debug": "node ./scripts/upload-source-maps.mjs --debug",
+		"sourcemaps:upload:dry-run": "node ./scripts/validate-env.mjs && set -a && . ./.env && set +a && splunk-rum sourcemaps upload --realm \"$NEXT_PUBLIC_SPLUNK_REALM\" --app-name \"$NEXT_PUBLIC_SPLUNK_RUM_APPLICATION_NAME\" --app-version \"$NEXT_PUBLIC_SPLUNK_RUM_APPLICATION_VERSION\" --path .next/static --dry-run",
+		"sourcemaps:upload:dry-run:debug": "node ./scripts/validate-env.mjs && set -a && . ./.env && set +a && splunk-rum sourcemaps upload --realm \"$NEXT_PUBLIC_SPLUNK_REALM\" --app-name \"$NEXT_PUBLIC_SPLUNK_RUM_APPLICATION_NAME\" --app-version \"$NEXT_PUBLIC_SPLUNK_RUM_APPLICATION_VERSION\" --path .next/static --dry-run --debug",
 		"lint": "next lint",
 		"clean": "rm -rf .next .turbo"
 	},

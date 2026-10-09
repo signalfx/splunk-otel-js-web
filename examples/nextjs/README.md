@@ -116,7 +116,7 @@ This example enables Next.js production browser source maps in [`next.config.ts`
 
 The CLI injects a `sourceMapId` only when it can associate a JavaScript file with a source map. Next.js can also emit JavaScript files that have no source map, such as compatibility polyfills or build manifests. The CLI reports and skips those files; seeing fewer injected bundles than JavaScript files is expected.
 
-The upload command loads the `.env` file automatically. It uses the same `NEXT_PUBLIC_SPLUNK_REALM`, `NEXT_PUBLIC_SPLUNK_RUM_APPLICATION_NAME`, and `NEXT_PUBLIC_SPLUNK_RUM_APPLICATION_VERSION` values as the RUM initialization, so the uploaded maps match the instrumented app. It checks for missing values first and tells you which `.env` entries to fill in. Set these values in `.env`:
+The dry-run upload command reads `.env`, checks that the local example app has been configured, then runs `splunk-rum sourcemaps upload` directly. It uses the same `NEXT_PUBLIC_SPLUNK_REALM`, `NEXT_PUBLIC_SPLUNK_RUM_APPLICATION_NAME`, and `NEXT_PUBLIC_SPLUNK_RUM_APPLICATION_VERSION` values as the RUM initialization, so the uploaded maps match the instrumented app. If values are missing, the helper tells you which `.env` entries to fill in. Set these values in `.env`:
 
 ```env
 NEXT_PUBLIC_SPLUNK_REALM=your-realm
@@ -139,4 +139,4 @@ Review the source maps that would be uploaded without sending them:
 pnpm run sourcemaps:upload:dry-run
 ```
 
-The upload scripts pass the configured realm, application name, and version with the CLI options and read `SPLUNK_ACCESS_TOKEN` from the environment. For a real upload, run the same CLI command without `--dry-run`. Upload the maps before deploying the corresponding injected production bundles.
+The upload command passes the configured realm, application name, and version with the CLI options and reads `SPLUNK_ACCESS_TOKEN` from the environment. For a real upload, run the same `splunk-rum sourcemaps upload` command without `--dry-run`. Upload the maps before deploying the corresponding injected production bundles.
