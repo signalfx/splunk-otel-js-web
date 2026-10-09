@@ -21,14 +21,17 @@ import SplunkSessionRecorder from '@splunk/otel-web-session-recorder'
 SplunkOtelWeb.init({
 	applicationName: process.env.NEXT_PUBLIC_SPLUNK_RUM_APPLICATION_NAME,
 	beaconEndpoint: process.env.NEXT_PUBLIC_SPLUNK_RUM_BEACON_ENDPOINT,
-	deploymentEnvironment: process.env.NEXT_PUBLIC_SPLUNK_RUM_DEPLOYMENT_ENVIROMENT,
+	deploymentEnvironment: process.env.NEXT_PUBLIC_SPLUNK_RUM_DEPLOYMENT_ENVIRONMENT,
 	privacy: {
 		maskAllText: false,
 	},
+	realm: process.env.NEXT_PUBLIC_SPLUNK_REALM,
 	rumAccessToken: process.env.NEXT_PUBLIC_SPLUNK_RUM_ACCESS_TOKEN,
+	version: process.env.NEXT_PUBLIC_SPLUNK_RUM_APPLICATION_VERSION,
 })
 
 SplunkSessionRecorder.init({
 	beaconEndpoint: process.env.NEXT_PUBLIC_SPLUNK_RUM_SESSION_REPLAY_BEACON_ENDPOINT,
+	realm: process.env.NEXT_PUBLIC_SPLUNK_REALM,
 	rumAccessToken: process.env.NEXT_PUBLIC_SPLUNK_RUM_ACCESS_TOKEN,
 })

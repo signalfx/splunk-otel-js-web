@@ -59,11 +59,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 							strategy="beforeInteractive"
 							dangerouslySetInnerHTML={{
 								__html: `
-							  SplunkRum.init({
-								realm: "${process.env.NEXT_PUBLIC_SPLUNK_REALM}",
-								rumAccessToken: "${process.env.NEXT_PUBLIC_SPLUNK_RUM_ACCESS_TOKEN}",
-								applicationName: "${process.env.NEXT_PUBLIC_SPLUNK_RUM_DEPLOYMENT_ENVIROMENT}",
-								deploymentEnvironment: "${process.env.NEXT_PUBLIC_SPLUNK_RUM_DEPLOYMENT_ENVIROMENT}",
+								SplunkRum.init({
+									realm: "${process.env.NEXT_PUBLIC_SPLUNK_REALM}",
+									rumAccessToken: "${process.env.NEXT_PUBLIC_SPLUNK_RUM_ACCESS_TOKEN}",
+									applicationName: "${process.env.NEXT_PUBLIC_SPLUNK_RUM_APPLICATION_NAME}",
+									version: "${process.env.NEXT_PUBLIC_SPLUNK_RUM_APPLICATION_VERSION}",
+									deploymentEnvironment: "${process.env.NEXT_PUBLIC_SPLUNK_RUM_DEPLOYMENT_ENVIRONMENT}",
 							  });
 							`,
 							}}

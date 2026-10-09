@@ -3,8 +3,13 @@
 	"private": true,
 	"scripts": {
 		"dev": "next dev",
-		"build": "next build",
+		"build": "next build && pnpm sourcemaps:inject",
+		"build:debug": "next build && pnpm sourcemaps:inject:debug",
 		"start": "next start",
+		"sourcemaps:inject": "splunk-rum sourcemaps inject --path .next/static",
+		"sourcemaps:inject:debug": "splunk-rum sourcemaps inject --path .next/static --debug",
+		"sourcemaps:upload:dry-run": "node ./scripts/upload-source-maps.mjs",
+		"sourcemaps:upload:dry-run:debug": "node ./scripts/upload-source-maps.mjs --debug",
 		"lint": "next lint",
 		"clean": "rm -rf .next .turbo"
 	},
@@ -14,8 +19,10 @@
 		"react-dom": "19.2.7"
 	},
 	"devDependencies": {
+		"@next/env": "16.3.3",
 		"@splunk/otel-web": "workspace:*",
 		"@splunk/otel-web-session-recorder": "workspace:*",
+		"@splunk/rum-cli": "1.0.1",
 		"@types/node": "25.9.1",
 		"@types/react": "19.2.16",
 		"@types/react-dom": "19.2.3",

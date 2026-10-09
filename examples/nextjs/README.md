@@ -21,7 +21,11 @@ NEXT_PUBLIC_SPLUNK_RUM_BEACON_ENDPOINT=
 NEXT_PUBLIC_SPLUNK_RUM_SESSION_REPLAY_BEACON_ENDPOINT=
 NEXT_PUBLIC_SPLUNK_REALM=
 NEXT_PUBLIC_SPLUNK_CDN_VERSION=
+NEXT_PUBLIC_SPLUNK_RUM_APPLICATION_VERSION=
+SPLUNK_ACCESS_TOKEN=
 ```
+
+For source map uploads, also provide `SPLUNK_ACCESS_TOKEN` as an organization access token with API token scope and the `power` role. This is a CLI credential; do not prefix it with `NEXT_PUBLIC_` or expose it to the browser.
 
 ## Using the Splunk CDN (Recommended)
 
@@ -47,6 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 							realm: "${process.env.NEXT_PUBLIC_SPLUNK_REALM}",
 							rumAccessToken: "${process.env.NEXT_PUBLIC_SPLUNK_RUM_ACCESS_TOKEN}",
 							applicationName: "${process.env.NEXT_PUBLIC_SPLUNK_RUM_APPLICATION_NAME}",
+							version: "${process.env.NEXT_PUBLIC_SPLUNK_RUM_APPLICATION_VERSION}",
 							deploymentEnvironment: "${process.env.NEXT_PUBLIC_SPLUNK_RUM_DEPLOYMENT_ENVIRONMENT}",
 						  });
 						`,
@@ -86,18 +91,52 @@ import SplunkOtelWeb from '@splunk/otel-web'
 import SplunkSessionRecorder from '@splunk/otel-web-session-recorder'
 
 SplunkOtelWeb.init({
-	beaconEndpoint: process.env.NEXT_PUBLIC_SPLUNK_RUM_BEACON_ENDPOINT,
-	rumAccessToken: process.env.NEXT_PUBLIC_SPLUNK_RUM_ACCESS_TOKEN,
 	applicationName: process.env.NEXT_PUBLIC_SPLUNK_RUM_APPLICATION_NAME,
+	beaconEndpoint: process.env.NEXT_PUBLIC_SPLUNK_RUM_BEACON_ENDPOINT,
 	deploymentEnvironment: process.env.NEXT_PUBLIC_SPLUNK_RUM_DEPLOYMENT_ENVIRONMENT,
+	realm: process.env.NEXT_PUBLIC_SPLUNK_REALM,
+	rumAccessToken: process.env.NEXT_PUBLIC_SPLUNK_RUM_ACCESS_TOKEN,
+	version: process.env.NEXT_PUBLIC_SPLUNK_RUM_APPLICATION_VERSION,
 })
 
 SplunkSessionRecorder.init({
-	rumAccessToken: process.env.NEXT_PUBLIC_SPLUNK_RUM_ACCESS_TOKEN,
 	beaconEndpoint: process.env.NEXT_PUBLIC_SPLUNK_RUM_SESSION_REPLAY_BEACON_ENDPOINT,
+	realm: process.env.NEXT_PUBLIC_SPLUNK_REALM,
+	rumAccessToken: process.env.NEXT_PUBLIC_SPLUNK_RUM_ACCESS_TOKEN,
 })
 ```
 
 ## Backend Instrumentation
 
 To instrument the backend of your Next.js application, refer to the [Next.js instrumentation docs](https://nextjs.org/docs/app/building-your-application/optimizing/instrumentation) and the [`@splunk/otel` repository](https://github.com/signalfx/splunk-otel-js#readme).
+
+## Production source maps with `splunk-rum-cli`
+
+This example enables Next.js production browser source maps in [`next.config.ts`](./next.config.ts) and installs `@splunk/rum-cli` version `1.0.1` as a development dependency. Its injection script runs after `next build`, adding a `sourceMapId` to each matching browser JavaScript bundle in `.next/static`. The matching `.map` files are produced by Next.js alongside those bundles.
+
+The CLI injects a `sourceMapId` only when it can associate a JavaScript file with a source map. Next.js can also emit JavaScript files that have no source map, such as compatibility polyfills or build manifests. The CLI reports and skips those files; seeing fewer injected bundles than JavaScript files is expected.
+
+The upload command loads the `.env` file automatically. It uses the same `NEXT_PUBLIC_SPLUNK_REALM`, `NEXT_PUBLIC_SPLUNK_RUM_APPLICATION_NAME`, and `NEXT_PUBLIC_SPLUNK_RUM_APPLICATION_VERSION` values as the RUM initialization, so the uploaded maps match the instrumented app. It checks for missing values first and tells you which `.env` entries to fill in. Set these values in `.env`:
+
+```env
+NEXT_PUBLIC_SPLUNK_REALM=your-realm
+NEXT_PUBLIC_SPLUNK_RUM_APPLICATION_NAME=your-application-name
+NEXT_PUBLIC_SPLUNK_RUM_APPLICATION_VERSION=your-application-version
+SPLUNK_ACCESS_TOKEN=your-organization-access-token
+```
+
+From this example's directory, build the production assets and inject their source map IDs:
+
+```sh
+pnpm build
+```
+
+For CLI debug output during injection, run `pnpm build:debug`. To preview an upload with CLI debug output, run `pnpm run sourcemaps:upload:dry-run:debug`.
+
+Review the source maps that would be uploaded without sending them:
+
+```sh
+pnpm run sourcemaps:upload:dry-run
+```
+
+The upload scripts pass the configured realm, application name, and version with the CLI options and read `SPLUNK_ACCESS_TOKEN` from the environment. For a real upload, run the same CLI command without `--dry-run`. Upload the maps before deploying the corresponding injected production bundles.
