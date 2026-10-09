@@ -21,6 +21,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { SplunkOtelWebConfig } from '../types'
 
+import { BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE } from '../utils/resource-timing'
 import {
 	SplunkPostDocLoadResourceInstrumentation,
 	type SplunkPostDocLoadResourceInstrumentationConfig,
@@ -138,6 +139,44 @@ describe('post document load resource instrumentation', () => {
 
 		expect(setAttribute).toHaveBeenCalledWith('http.status_code', 404)
 		expect(setStatus).toHaveBeenCalledWith({ code: SpanStatusCode.ERROR })
+	})
+
+	it('classifies cross-origin resource timing and omits the attribute when it is ambiguous', () => {
+		const { instrumentation, setAttribute } = createInstrumentation()
+
+		instrumentation._startPerformanceObserver()
+		MockPerformanceObserver.instances[0].emit([
+			createResourceEntry('img', 'https://example.test/tao-missing.svg', {
+				decodedBodySize: 0,
+				encodedBodySize: 0,
+				requestStart: 0,
+				responseStart: 0,
+				transferSize: 0,
+			}),
+			createResourceEntry('img', 'https://example.test/tao-present.svg', {
+				decodedBodySize: 90,
+				encodedBodySize: 90,
+				requestStart: 12,
+				responseStart: 15,
+				transferSize: 120,
+			}),
+			createResourceEntry('img', new URL('/same-origin.svg', self.origin).toString(), {
+				decodedBodySize: 0,
+				encodedBodySize: 0,
+				requestStart: 0,
+				responseStart: 0,
+				transferSize: 0,
+			}),
+		])
+		vi.runAllTimers()
+
+		expect(setAttribute).toHaveBeenCalledWith(BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE, true)
+		expect(setAttribute).toHaveBeenCalledWith(BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE, false)
+		expect(
+			setAttribute.mock.calls.filter(
+				([name]) => name === BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
+			),
+		).toHaveLength(2)
 	})
 
 	it('keeps arbitrary other resources disabled when only font is configured', () => {

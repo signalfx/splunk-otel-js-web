@@ -16,7 +16,7 @@
  *
  */
 
-import { Span, SpanKind, SpanStatusCode } from '@opentelemetry/api'
+import { context, Span, SpanKind, SpanStatusCode, trace } from '@opentelemetry/api'
 import { isUrlIgnored } from '@opentelemetry/core'
 import { InstrumentationBase, InstrumentationConfig } from '@opentelemetry/instrumentation'
 // FIXME convert into otel-js-contrib Plugin and upstream
@@ -41,6 +41,7 @@ export interface SplunkWebSocketInstrumentationConfig extends InstrumentationCon
 
 interface WebSocketState {
 	connectionId: string
+	currentReceiveSpan?: Span
 	localCloseRequested: boolean
 	maxBufferedAmount: number
 	messageSequence: number
@@ -55,6 +56,11 @@ interface WebSocketState {
 }
 
 export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWebSocketInstrumentationConfig> {
+	private readonly listener2ws2patched = new WeakMap<
+		EventListenerOrEventListenerObject,
+		Map<WebSocket, EventListenerOrEventListenerObject>
+	>()
+
 	constructor(config: SplunkWebSocketInstrumentationConfig) {
 		super('splunk-websocket', VERSION, config)
 	}
@@ -115,6 +121,7 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 						sentMessages: 0,
 					}
 					instrumentation.registerLifecycleListeners(this, connectSpan, state)
+					instrumentation.patchEventListener(this, state)
 					instrumentation.patchSend(this, state)
 					instrumentation.patchClose(this, state)
 				}
@@ -126,6 +133,25 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 	}
 
 	init(): void {}
+
+	private addPatchedListener(
+		ws: WebSocket,
+		originalListener: EventListenerOrEventListenerObject,
+		patchedListener: EventListenerOrEventListenerObject,
+	) {
+		let ws2patched = this.listener2ws2patched.get(originalListener)
+		if (!ws2patched) {
+			ws2patched = new Map()
+			this.listener2ws2patched.set(originalListener, ws2patched)
+		}
+
+		if (ws2patched.has(ws)) {
+			return false
+		}
+
+		ws2patched.set(ws, patchedListener)
+		return true
+	}
 
 	private endSpanExceptionally(span: Span, err: Error) {
 		span.setAttribute('error', true)
@@ -170,6 +196,57 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 		}
 	}
 
+	private patchEventListener(ws: WebSocket, state: WebSocketState) {
+		const instrumentation = this
+		const originalAddEventListener: WebSocket['addEventListener'] = ws.addEventListener.bind(ws)
+
+		ws.addEventListener = function instrumentedAddEventListener(
+			type: string,
+			callback: EventListenerOrEventListenerObject,
+			options?: boolean | AddEventListenerOptions,
+		): void {
+			if (type !== 'message') {
+				originalAddEventListener(type, callback, options)
+				return
+			}
+
+			const once = typeof options === 'boolean' ? false : options?.once
+			const patchedCallback = function patchedAddEventListenerCallback(this: WebSocket, event: Event) {
+				if (once) {
+					instrumentation.removePatchedListener(ws, callback)
+				}
+
+				const invokeCallback = () =>
+					typeof callback === 'function' ? callback.call(this, event) : callback.handleEvent(event)
+				const receiveSpan = state.currentReceiveSpan
+				if (!receiveSpan) {
+					return invokeCallback()
+				}
+
+				return context.with(trace.setSpan(context.active(), receiveSpan), invokeCallback)
+			}
+
+			if (instrumentation.addPatchedListener(ws, callback, patchedCallback)) {
+				originalAddEventListener(type, patchedCallback, options)
+			}
+		}
+
+		const originalRemoveEventListener = ws.removeEventListener
+		ws.removeEventListener = function instrumentedRemoveEventListener(
+			type: string,
+			callback: EventListenerOrEventListenerObject,
+			options?: boolean | EventListenerOptions,
+		): void {
+			if (type !== 'message') {
+				originalRemoveEventListener.call(ws, type, callback, options)
+				return
+			}
+
+			const patchedCallback = instrumentation.removePatchedListener(ws, callback)
+			originalRemoveEventListener.call(ws, type, patchedCallback ?? callback, options)
+		}
+	}
+
 	private patchSend(ws: WebSocket, state: WebSocketState) {
 		const instrumentation = this
 		const origSend = ws.send
@@ -209,7 +286,16 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 			const size = this.getMessageSize(event.data)
 			state.receivedMessages += 1
 			state.receivedBytes += size
-			this.startMessageSpan(ws, state, 'onmessage', SpanKind.CONSUMER, 'receive', event.data, size)?.end()
+			const span = this.startMessageSpan(ws, state, 'onmessage', SpanKind.CONSUMER, 'receive', event.data, size)
+			if (span) {
+				state.currentReceiveSpan = span
+				setTimeout(() => {
+					span.end()
+					if (state.currentReceiveSpan === span) {
+						state.currentReceiveSpan = undefined
+					}
+				}, 0)
+			}
 		})
 		ws.addEventListener('error', (event: Event) => {
 			if (connectSpan.isRecording()) {
@@ -250,6 +336,23 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 
 			closeSpan.end()
 		})
+	}
+
+	private removePatchedListener(ws: WebSocket, originalListener: EventListenerOrEventListenerObject) {
+		const ws2patched = this.listener2ws2patched.get(originalListener)
+		if (!ws2patched) {
+			return
+		}
+
+		const patchedListener = ws2patched.get(ws)
+		if (patchedListener) {
+			ws2patched.delete(ws)
+			if (ws2patched.size === 0) {
+				this.listener2ws2patched.delete(originalListener)
+			}
+		}
+
+		return patchedListener
 	}
 
 	private sanitizeUrl(url: string) {

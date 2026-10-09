@@ -19,7 +19,7 @@
 import { SpanKind } from '@opentelemetry/api'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { deinit, initWithDefaultConfig, SpanCapturer } from './utils'
+import { deinit, getTracer, initWithDefaultConfig, SpanCapturer } from './utils'
 
 describe('can produce websocket events', () => {
 	let capturer: SpanCapturer
@@ -127,6 +127,33 @@ describe('can produce websocket events', () => {
 		expect(wsSpans[0]).toHaveSpanAttribute('protocols', '["foo","bar"]')
 		expect(wsSpans[1]).toHaveSpanAttribute('protocol', 'foo')
 		socket.close()
+	})
+
+	it('uses the receive span as the active context in message listeners', async () => {
+		const socket = new WebSocket('ws://127.0.0.1:8979/')
+		socket.addEventListener(
+			'message',
+			() => {
+				getTracer('websocket-test').startSpan('message-handler').end()
+				socket.close()
+			},
+			{ once: true },
+		)
+		socket.addEventListener(
+			'open',
+			() => {
+				socket.send('Hello server')
+			},
+			{ once: true },
+		)
+
+		await new Promise((resolve) => setTimeout(resolve, 1000))
+
+		const receiveSpan = capturer.spans.find((span) => span.name === 'onmessage')
+		const childSpan = capturer.spans.find((span) => span.name === 'message-handler')
+		expect(receiveSpan).toBeDefined()
+		expect(childSpan?.parentSpanId).toBe(receiveSpan?.spanContext().spanId)
+		expect(childSpan?.spanContext().traceId).toBe(receiveSpan?.spanContext().traceId)
 	})
 
 	it('removes query parameters from captured websocket URLs', async () => {

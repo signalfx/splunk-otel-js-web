@@ -30,7 +30,8 @@ jobs:
               if: ${{ !cancelled() }}
               uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
               with:
-                  name: blob-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
+                  name: blob-report-${{ matrix.browser }}
+                  overwrite: true
                   path: packages/integration-tests/blob-report
                   retention-days: 1
 
@@ -57,7 +58,8 @@ jobs:
               if: ${{ !cancelled() }}
               uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
               with:
-                  name: blob-report-webkit-attempt-${{ github.run_attempt }}
+                  name: blob-report-webkit
+                  overwrite: true
                   path: packages/integration-tests/blob-report
                   retention-days: 1
 

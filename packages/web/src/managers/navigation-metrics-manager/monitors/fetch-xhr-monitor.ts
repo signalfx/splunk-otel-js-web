@@ -80,18 +80,39 @@ export class FetchXhrMonitor extends Monitor {
 					const startTime = performance.now()
 
 					self.emitResourceStateChange(event)
+					const isTracked = self.config.isResourceTracked?.(event.id) ?? true
 
-					return original(input, init)
-						.then((response) => {
-							self.emitResourceStateChange(
-								Monitor.createLoadedEvent(event.id, url, performance.now() - startTime),
+					return original(input, init).then(
+						(response) => {
+							if (
+								!self.config.waitForFetchResponseBody ||
+								!isTracked ||
+								self.config.isResourceTracked?.(event.id) === false
+							) {
+								self.emitResourceStateChange(
+									Monitor.createLoadedEvent(event.id, url, performance.now() - startTime),
+								)
+								return response
+							}
+
+							void self.waitForFetchResponseBody(response).then(
+								() => {
+									self.emitResourceStateChange(
+										Monitor.createLoadedEvent(event.id, url, performance.now() - startTime),
+									)
+								},
+								() => {
+									self.emitResourceStateChange(Monitor.createErrorEvent(event.id, url))
+								},
 							)
+
 							return response
-						})
-						.catch((error) => {
+						},
+						(error) => {
 							self.emitResourceStateChange(Monitor.createErrorEvent(event.id, url))
 							throw error
-						})
+						},
+					)
 				},
 		)
 	}
@@ -164,5 +185,18 @@ export class FetchXhrMonitor extends Monitor {
 	private restoreXhr(): void {
 		shimmer.unwrap(XMLHttpRequest.prototype, 'open')
 		shimmer.unwrap(XMLHttpRequest.prototype, 'send')
+	}
+
+	private async waitForFetchResponseBody(response: Response): Promise<void> {
+		// TODO: Add bounded handling for long-lived streaming responses before exempting them from body completion.
+		const reader = response.clone().body?.getReader()
+		if (!reader) {
+			return
+		}
+
+		let result = await reader.read()
+		while (!result.done) {
+			result = await reader.read()
+		}
 	}
 }

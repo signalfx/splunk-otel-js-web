@@ -39,7 +39,11 @@ import { getPctMonitorTypes } from '../managers/navigation-metrics-manager/resou
 import { captureTraceParentFromPerformanceEntries } from '../servertiming'
 import { SplunkOtelWebConfig } from '../types'
 import { isCacheHit } from '../utils/cache'
-import { setResourceTimingStatus } from '../utils/resource-timing'
+import {
+	BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
+	getCrossOriginTimingRestricted,
+	setResourceTimingStatus,
+} from '../utils/resource-timing'
 
 export interface SplunkDocLoadInstrumentationConfig extends InstrumentationConfig {
 	ignoreUrls?: (string | RegExp)[]
@@ -47,6 +51,23 @@ export interface SplunkDocLoadInstrumentationConfig extends InstrumentationConfi
 
 const excludedInitiatorTypes = new Set(['beacon', 'fetch', 'xmlhttprequest'])
 const PAGE_LOAD_SPAN_NAME = 'pageLoad'
+
+function sanitizeNavigationTimingEvents(span: Span, entries: PerformanceEntries): void {
+	const entryValues = entries as unknown as Record<string, unknown>
+	const fetchStart = entryValues[PTN.FETCH_START]
+
+	for (let index = span.events.length - 1; index >= 0; index--) {
+		const event = span.events[index]
+		const entryTime = entryValues[event.name]
+		const isBeforeFetchStart =
+			typeof entryTime === 'number' && typeof fetchStart === 'number' && entryTime < fetchStart
+		if (isBeforeFetchStart) {
+			span.events.splice(index, 1)
+		} else if (typeof entryTime === 'number' && typeof fetchStart === 'number') {
+			event.time = addHrTimes(span.startTime, millisToHrTime(entryTime - fetchStart))
+		}
+	}
+}
 
 function addExtraDocLoadTags(span: api.Span) {
 	if (document.referrer && document.referrer !== '') {
@@ -168,6 +189,13 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 		exposedSuper._endSpan = (span, performanceName, entries) => {
 			// TODO: upstream exposed name on api.Span, then fix
 			const exposedSpan = span as any as Span
+			if (
+				span &&
+				(exposedSpan.name === AttributeNames.DOCUMENT_FETCH ||
+					exposedSpan.name === AttributeNames.DOCUMENT_LOAD)
+			) {
+				sanitizeNavigationTimingEvents(exposedSpan, entries)
+			}
 
 			if (span) {
 				span.setAttribute('component', this.component)
@@ -283,6 +311,14 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 			const span = exposedSuper._startSpan(AttributeNames.RESOURCE_FETCH, PTN.FETCH_START, resource, parentSpan)
 			if (span) {
 				span.setAttribute(SEMATTRS_HTTP_URL, resource.name)
+				const crossOriginTimingRestricted = getCrossOriginTimingRestricted(resource)
+				if (crossOriginTimingRestricted !== undefined) {
+					span.setAttribute(
+						BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
+						crossOriginTimingRestricted,
+					)
+				}
+
 				const cacheHitResult = isCacheHit(resource)
 				if (cacheHitResult !== undefined) {
 					span.setAttribute('http.cache.hit', cacheHitResult)

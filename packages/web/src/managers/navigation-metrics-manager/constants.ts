@@ -17,6 +17,8 @@
  */
 
 export const BROWSER_NAVIGATION_DETECTED_RESOURCE_COUNT_ATTRIBUTE = 'browser.navigation.detected_resource_count'
+export const BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE = 'browser.navigation.first_interaction_offset'
+export const BROWSER_NAVIGATION_FIRST_INTERACTION_TYPE_ATTRIBUTE = 'browser.navigation.first_interaction_type'
 export const BROWSER_NAVIGATION_LAST_LOADED_RESOURCES_ATTRIBUTE = 'browser.navigation.last_loaded_resources'
 export const BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE = 'browser.navigation.loading_resource_count'
 export const BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE = 'browser.navigation.loading_resource_urls'
