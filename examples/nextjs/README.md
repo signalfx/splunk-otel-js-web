@@ -116,6 +116,8 @@ This example enables Next.js production browser source maps in [`next.config.ts`
 
 The CLI injects a `sourceMapId` only when it can associate a JavaScript file with a source map. Next.js can also emit JavaScript files that have no source map, such as compatibility polyfills or build manifests. The CLI reports and skips those files; seeing fewer injected bundles than JavaScript files is expected.
 
+During upload, the CLI tries to find the JavaScript bundle related to each source map so it can check that the bundle already contains its `sourceMapId`. Turbopack source maps omit the `file` field that the CLI uses for this lookup when it cannot find a bundle by the standard filename convention, so upload can emit a warning that it could not verify the related bundle. This warning does not skip or block the source map: the map is still uploaded.
+
 The dry-run upload command reads `.env`, checks that the local example app has been configured, then runs `splunk-rum sourcemaps upload` directly. It uses the same `NEXT_PUBLIC_SPLUNK_REALM`, `NEXT_PUBLIC_SPLUNK_RUM_APPLICATION_NAME`, and `NEXT_PUBLIC_SPLUNK_RUM_APPLICATION_VERSION` values as the RUM initialization, so the uploaded maps match the instrumented app. If values are missing, the helper tells you which `.env` entries to fill in. Set these values in `.env`:
 
 ```env
