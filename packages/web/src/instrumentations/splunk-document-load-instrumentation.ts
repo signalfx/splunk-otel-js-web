@@ -42,6 +42,7 @@ import { isCacheHit } from '../utils/cache'
 import {
 	BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
 	getCrossOriginTimingRestricted,
+	setResourceTimingRenderBlocking,
 	setResourceTimingStatus,
 } from '../utils/resource-timing'
 
@@ -323,6 +324,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 				if (cacheHitResult !== undefined) {
 					span.setAttribute('http.cache.hit', cacheHitResult)
 				}
+				setResourceTimingRenderBlocking(span, resource)
 
 				if (!exposedSuper.getConfig().ignoreNetworkEvents) {
 					addSpanNetworkEvents(span, resource)

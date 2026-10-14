@@ -113,3 +113,15 @@ export function setResourceTimingStatus(span: Span, resource: PerformanceResourc
 		span.setStatus({ code: SpanStatusCode.ERROR })
 	}
 }
+
+export function setResourceTimingRenderBlocking(span: Span, resource: PerformanceResourceTiming): void {
+	const renderBlockingStatus = (
+		resource as PerformanceResourceTiming & { readonly renderBlockingStatus?: string }
+	).renderBlockingStatus
+
+	if (renderBlockingStatus === 'blocking') {
+		span.setAttribute('renderBlockingResource', true)
+	} else if (renderBlockingStatus === 'non-blocking') {
+		span.setAttribute('renderBlockingResource', false)
+	}
+}
