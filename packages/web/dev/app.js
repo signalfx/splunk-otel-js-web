@@ -28,6 +28,15 @@ import { $, doRecorderResume, doRecorderStop, init, log } from './sandbox-core.j
 
 // ── Interaction handlers ──────────────────────────────────────────────────
 
+function doRenderBlockingResource() {
+	const script = document.createElement('script')
+	script.setAttribute('blocking', 'render')
+	script.src = `/render-blocking-resource.js?fixture=${crypto.randomUUID()}`
+	script.addEventListener('load', () => log('Render-blocking resource loaded ✓', 'info'), { once: true })
+	script.addEventListener('error', () => log('Render-blocking resource failed to load', 'error'), { once: true })
+	document.head.append(script)
+}
+
 async function doFetch() {
 	log('fetch /api/data …')
 	try {
@@ -144,6 +153,7 @@ const actions = {
 	'btn-custom-span': doCustomSpan,
 	'btn-error': doError,
 	'btn-fetch': doFetch,
+	'btn-render-blocking-resource': doRenderBlockingResource,
 	'btn-loaf': doLoaf,
 	'btn-loaf-named-handler': doLoafNamedHandler,
 	'btn-long-task': doLongTask,
@@ -157,6 +167,9 @@ const actions = {
 
 window.addEventListener('DOMContentLoaded', () => {
 	init()
+	if (new URLSearchParams(location.search).has('renderBlockingResource')) {
+		window.addEventListener('load', () => setTimeout(doRenderBlockingResource, 100), { once: true })
+	}
 
 	for (const [id, handler] of Object.entries(actions)) {
 		$(`#${id}`)?.addEventListener('click', handler)

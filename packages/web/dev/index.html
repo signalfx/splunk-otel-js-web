@@ -6,6 +6,15 @@
 		<title>Splunk RUM — Dev Sandbox</title>
 		<link rel="stylesheet" href="sandbox-core.css" />
 		<link rel="stylesheet" href="styles.css" />
+		<!-- Head-loaded fixture resource for verifying render-blocking span metadata. -->
+		<script src="render-blocking-resource.js"></script>
+		<script>
+			if (new URLSearchParams(location.search).has('newSession')) {
+				document.cookie = '_splunk_rum_sid=; Max-Age=0; path=/'
+				document.cookie = '_splunk_rum_sid=; Max-Age=0; path=/; domain=localhost'
+				window.__splunkRumIntegrationTestSessionId = crypto.randomUUID().replaceAll('-', '')
+			}
+		</script>
 	</head>
 	<body>
 		<header>
@@ -87,6 +96,7 @@
 			<div class="panel">
 				<h2>Interactions</h2>
 				<div class="btn-group">
+					<button id="btn-render-blocking-resource">Load render-blocking resource</button>
 					<button id="btn-fetch">Fetch /api/data (tracked XHR)</button>
 					<button id="btn-xhr">XMLHttpRequest /api/items</button>
 					<button id="btn-navigation">Update history (navigation span)</button>
