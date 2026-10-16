@@ -8,13 +8,6 @@
 		<link rel="stylesheet" href="styles.css" />
 		<!-- Head-loaded fixture resource for verifying render-blocking span metadata. -->
 		<script src="render-blocking-resource.js"></script>
-		<script>
-			if (new URLSearchParams(location.search).has('newSession')) {
-				document.cookie = '_splunk_rum_sid=; Max-Age=0; path=/'
-				document.cookie = '_splunk_rum_sid=; Max-Age=0; path=/; domain=localhost'
-				window.__splunkRumIntegrationTestSessionId = crypto.randomUUID().replaceAll('-', '')
-			}
-		</script>
 	</head>
 	<body>
 		<header>
