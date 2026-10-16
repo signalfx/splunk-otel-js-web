@@ -167,9 +167,6 @@ const actions = {
 
 window.addEventListener('DOMContentLoaded', () => {
 	init()
-	if (new URLSearchParams(location.search).has('renderBlockingResource')) {
-		window.addEventListener('load', () => setTimeout(doRenderBlockingResource, 100), { once: true })
-	}
 
 	for (const [id, handler] of Object.entries(actions)) {
 		$(`#${id}`)?.addEventListener('click', handler)

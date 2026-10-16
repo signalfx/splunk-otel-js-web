@@ -163,7 +163,7 @@ The sandbox has three pages, switchable from the header nav:
 
 All sandbox pages share a Settings modal (gear icon) for realm, access token, app name, environment, beacon endpoints, instrumentation options, and recorder options. Values (including the RUM access token) persist in `localStorage` per origin between reloads.
 
-To inspect the render-blocking resource attribute, use the **Load render-blocking resource** button on the RUM page. Append `?newSession=1&renderBlockingResource=1` to the sandbox URL to start a fresh session and load the fixture automatically.
+The RUM page loads a classic script in `<head>` to produce a render-blocking resource on every session. Use the **Load render-blocking resource** button to add another render-blocking script dynamically. Append `?newSession=1` to the sandbox URL to start a fresh session.
 
 To manually test Long Animation Frames (LoAF), open the RUM page, enable **LoAF instrumentation** in Settings, apply the config, then click **Produce LoAF frame**. Supported Chromium browsers should emit `long-animation-frame` spans with `component: splunk-loaf`.
 
