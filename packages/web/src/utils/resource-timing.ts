@@ -120,8 +120,8 @@ export function setResourceTimingRenderBlocking(span: Span, resource: Performanc
 	).renderBlockingStatus
 
 	if (renderBlockingStatus === 'blocking') {
-		span.setAttribute('renderBlockingResource', true)
+		span.setAttribute('resource.render_blocking', 'blocking')
 	} else if (renderBlockingStatus === 'non-blocking') {
-		span.setAttribute('renderBlockingResource', false)
+		span.setAttribute('resource.render_blocking', 'non-blocking')
 	}
 }
