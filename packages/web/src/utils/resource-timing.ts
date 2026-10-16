@@ -115,9 +115,8 @@ export function setResourceTimingStatus(span: Span, resource: PerformanceResourc
 }
 
 export function setResourceTimingRenderBlocking(span: Span, resource: PerformanceResourceTiming): void {
-	const renderBlockingStatus = (
-		resource as PerformanceResourceTiming & { readonly renderBlockingStatus?: string }
-	).renderBlockingStatus
+	const renderBlockingStatus = (resource as PerformanceResourceTiming & { readonly renderBlockingStatus?: string })
+		.renderBlockingStatus
 
 	if (renderBlockingStatus === 'blocking') {
 		span.setAttribute('resource.render_blocking', 'blocking')

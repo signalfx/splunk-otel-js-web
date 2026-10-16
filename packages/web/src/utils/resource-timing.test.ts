@@ -72,9 +72,7 @@ describe('getCrossOriginTimingRestricted', () => {
 
 	it('omits the result for non-HTTP resources', () => {
 		expect(
-			getCrossOriginTimingRestricted(
-				createResourceEntry({ name: 'data:text/plain,resource' }),
-			),
+			getCrossOriginTimingRestricted(createResourceEntry({ name: 'data:text/plain,resource' })),
 		).toBeUndefined()
 	})
 })

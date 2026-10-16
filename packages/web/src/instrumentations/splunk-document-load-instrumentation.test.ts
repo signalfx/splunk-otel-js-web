@@ -267,6 +267,35 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 		).toHaveLength(2)
 	})
 
+	it('adds render-blocking status attributes to resource spans', () => {
+		vi.spyOn(performance, 'getEntriesByType').mockReturnValue([])
+		vi.stubGlobal('PerformanceObserver', null)
+
+		instrumentation = new SplunkDocumentLoadInstrumentation({}, { experimental: true })
+		const setAttribute = vi.fn()
+		const span = { addEvent: vi.fn(), setAttribute } as unknown as Span
+		const exposedInstrumentation = instrumentation as unknown as {
+			_addCustomAttributesOnResourceSpan: (...args: unknown[]) => void
+			_endSpan: (...args: unknown[]) => void
+			_initResourceSpan: (resource: PerformanceResourceTiming, parentSpan?: Span) => void
+			_startSpan: (...args: unknown[]) => Span | undefined
+			getConfig: () => { ignoreNetworkEvents?: boolean }
+		}
+		exposedInstrumentation._startSpan = vi.fn(() => span)
+		exposedInstrumentation._endSpan = vi.fn()
+		exposedInstrumentation._addCustomAttributesOnResourceSpan = vi.fn()
+		exposedInstrumentation.getConfig = vi.fn(() => ({ ignoreNetworkEvents: true }))
+
+		const resourceEntries = [
+			createResourceEntry('https://example.test/blocking.js', { renderBlockingStatus: 'blocking' }),
+			createResourceEntry('https://example.test/non-blocking.js', { renderBlockingStatus: 'non-blocking' }),
+		]
+		resourceEntries.forEach((resource) => exposedInstrumentation._initResourceSpan(resource))
+
+		expect(setAttribute).toHaveBeenCalledWith('resource.render_blocking', 'blocking')
+		expect(setAttribute).toHaveBeenCalledWith('resource.render_blocking', 'non-blocking')
+	})
+
 	it('ends an open pageLoad span when disabled', () => {
 		const { navigationMetricsManager, setCurrentNavigationSpan } = createNavigationMetricsManagerMock()
 		vi.spyOn(performance, 'getEntriesByType').mockReturnValue([{ fetchStart: 12.5 } as PerformanceNavigationTiming])
@@ -286,10 +315,11 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 	})
 })
 
-function createResourceEntry(
-	name: string,
-	overrides: Partial<PerformanceResourceTiming> = {},
-): PerformanceResourceTiming {
+type ResourceTimingTestOverrides = Partial<PerformanceResourceTiming> & {
+	readonly renderBlockingStatus?: string
+}
+
+function createResourceEntry(name: string, overrides: ResourceTimingTestOverrides = {}): PerformanceResourceTiming {
 	return {
 		decodedBodySize: 0,
 		encodedBodySize: 0,
