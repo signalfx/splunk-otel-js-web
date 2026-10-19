@@ -31,6 +31,7 @@ import {
 	BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
 	getCrossOriginTimingRestricted,
 	getResourceElementUrl,
+	setResourceTimingRenderBlocking,
 	setResourceTimingStatus,
 } from '../utils/resource-timing'
 import { VERSION } from '../version'
@@ -148,6 +149,7 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 			span.setAttribute(BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE, crossOriginTimingRestricted)
 		}
 
+		setResourceTimingRenderBlocking(span, entry)
 		addSpanNetworkEvents(span, entry)
 		setResourceTimingStatus(span, entry)
 		//TODO look for server-timings? captureTraceParentFromPerformanceEntries(entry)
