@@ -324,6 +324,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 				if (cacheHitResult !== undefined) {
 					span.setAttribute('http.cache.hit', cacheHitResult)
 				}
+
 				setResourceTimingRenderBlocking(span, resource)
 
 				if (!exposedSuper.getConfig().ignoreNetworkEvents) {
