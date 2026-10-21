@@ -58,7 +58,10 @@ test.describe('docload', () => {
 		await recordPage.changeVisibilityInTab('visible')
 
 		await recordPage.waitForSpans((spans) =>
-			['documentLoad', 'pageLoad'].every((name) => spans.some((span) => span.name === name)),
+			['documentFetch', 'documentLoad', 'pageLoad'].every((name) => spans.some((span) => span.name === name)) &&
+			spans.some(
+				(span) => span.name === 'resourceFetch' && span.attributes.component === 'document-load',
+			),
 		)
 
 		for (const name of ['documentLoad', 'pageLoad']) {
@@ -68,6 +71,24 @@ test.describe('docload', () => {
 				completionSource: 'manual',
 				status: 'interrupted',
 			})
+		}
+
+		const pageLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'pageLoad')
+		const documentFetchSpan = recordPage.receivedSpans.find((span) => span.name === 'documentFetch')
+		const resourceFetchSpan = recordPage.receivedSpans.find(
+			(span) =>
+				span.name === 'resourceFetch' &&
+				span.attributes.component === 'document-load' &&
+				typeof span.attributes['http.url'] === 'string' &&
+				String(span.attributes['http.url']).endsWith('splunk-black.png?delay=300'),
+		)
+
+		expectDefined(pageLoadSpan)
+		expectDefined(documentFetchSpan)
+		expectDefined(resourceFetchSpan)
+		for (const span of [documentFetchSpan, resourceFetchSpan]) {
+			expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, pageLoadSpan.spanId)
+			expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, true)
 		}
 	})
 
@@ -167,8 +188,8 @@ test.describe('docload', () => {
 			BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId,
 			pageLoadSpans[0].spanId,
 		)
-		// Script resources are represented in the document waterfall but are not tracked by a PCT resource monitor.
-		expect(scriptFetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, false)
+		// All fetch spans emitted by document-load instrumentation belong to its page-load PCT batch.
+		expect(scriptFetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, true)
 		if (browserName !== 'webkit') {
 			// Webkit does not support https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/responseStatus
 			expect(Number.parseInt(String(scriptFetchSpans[0].attributes['http.status_code']))).toBe(200)
@@ -182,8 +203,7 @@ test.describe('docload', () => {
 			BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId,
 			pageLoadSpans[0].spanId,
 		)
-		// The failed image is retained in the waterfall but is not admitted by a PCT resource monitor.
-		expect(brokenImageFetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, false)
+		expect(brokenImageFetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, true)
 		if (browserName !== 'webkit') {
 			// Webkit does not support https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/responseStatus
 			expect(Number.parseInt(String(brokenImageFetchSpans[0].attributes['http.status_code']))).toBe(404)
@@ -271,7 +291,7 @@ test.describe('docload', () => {
 		expect(ignoredResourceFetchSpans).toHaveLength(0)
 	})
 
-	test('PCT-ignored resources retain their page span ID but are not PCT relevant', async ({ recordPage }) => {
+	test('PCT-ignored document-load resources retain their page span ID and relevance', async ({ recordPage }) => {
 		await recordPage.goTo('/docload/docload-pct-ignored.ejs')
 
 		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'documentLoad'))
@@ -287,7 +307,7 @@ test.describe('docload', () => {
 		expectDefined(pageLoadSpan)
 		expectDefined(ignoredResourceSpan)
 		expect(ignoredResourceSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, pageLoadSpan.spanId)
-		expect(ignoredResourceSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, false)
+		expect(ignoredResourceSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, true)
 	})
 
 	test('document resources retain their starting navigation across overlapping navigations', async ({
