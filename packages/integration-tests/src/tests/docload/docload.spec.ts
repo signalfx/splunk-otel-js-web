@@ -57,11 +57,12 @@ test.describe('docload', () => {
 		await recordPage.changeVisibilityInTab('hidden', true)
 		await recordPage.changeVisibilityInTab('visible')
 
-		await recordPage.waitForSpans((spans) =>
-			['documentFetch', 'documentLoad', 'pageLoad'].every((name) => spans.some((span) => span.name === name)) &&
-			spans.some(
-				(span) => span.name === 'resourceFetch' && span.attributes.component === 'document-load',
-			),
+		await recordPage.waitForSpans(
+			(spans) =>
+				['documentFetch', 'documentLoad', 'pageLoad'].every((name) =>
+					spans.some((span) => span.name === name),
+				) &&
+				spans.some((span) => span.name === 'resourceFetch' && span.attributes.component === 'document-load'),
 		)
 
 		for (const name of ['documentLoad', 'pageLoad']) {
