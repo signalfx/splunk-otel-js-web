@@ -39,6 +39,24 @@ function defaultShouldPreventSpanCreation() {
 	return false
 }
 
+const SUPPORTS_UNREGISTERED_SYMBOL_WEAK_MAP_KEYS = (() => {
+	try {
+		const key = Symbol()
+		new WeakMap().set(key, true)
+		return true
+	} catch {
+		return false
+	}
+})()
+
+function isWeakMapKey(value: unknown): boolean {
+	return (
+		(typeof value === 'object' && value !== null) ||
+		typeof value === 'function' ||
+		(typeof value === 'symbol' && Symbol.keyFor(value) === undefined && SUPPORTS_UNREGISTERED_SYMBOL_WEAK_MAP_KEYS)
+	)
+}
+
 /**
  * This class represents a UserInteraction plugin for auto instrumentation.
  * If zone.js is available then it patches the zone otherwise it patches
@@ -63,9 +81,12 @@ export class UserInteractionInstrumentation<
 	private _warnedInvalidInteractiveElementSelectors = new Set<string>()
 
 	// for addEventListener/removeEventListener state
+	// The event target is held weakly: a listener shared by many elements (a prototype method,
+	// for instance) is never garbage collected, so a strong map would retain every element it
+	// was ever attached to, plus the DOM around it, until removeEventListener was called.
 	private _wrappedListeners = new WeakMap<
 		EventListenerOrEventListenerObject,
-		Map<string, Map<Element, EventListenerOrEventListenerObject>>
+		Map<string, WeakMap<Element, EventListenerOrEventListenerObject>>
 	>()
 
 	private _zonePatched?: boolean
@@ -355,8 +376,10 @@ export class UserInteractionInstrumentation<
 				listener: EventListenerOrEventListenerObject | null,
 				useCapture?: boolean | AddEventListenerOptions,
 			) {
-				// Forward calls with listener = null
-				if (!listener) {
+				// Forward calls with listener = null, or with a receiver that cannot key a WeakMap:
+				// the method reaches us with an undefined receiver when a caller detaches it from
+				// its element, and the browser's own rejection of that call has to be what surfaces.
+				if (!listener || !isWeakMapKey(this)) {
 					return original.call(this, type, listener, useCapture)
 				}
 
@@ -451,7 +474,7 @@ export class UserInteractionInstrumentation<
 
 		let element2patched = listener2Type.get(type)
 		if (!element2patched) {
-			element2patched = new Map()
+			element2patched = new WeakMap()
 			listener2Type.set(type, element2patched)
 		}
 
@@ -484,12 +507,6 @@ export class UserInteractionInstrumentation<
 		const patched = element2patched.get(on)
 		if (patched) {
 			element2patched.delete(on)
-			if (element2patched.size === 0) {
-				listener2Type.delete(type)
-				if (listener2Type.size === 0) {
-					this._wrappedListeners.delete(listener)
-				}
-			}
 		}
 
 		return patched
