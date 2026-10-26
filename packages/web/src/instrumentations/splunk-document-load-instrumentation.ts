@@ -33,6 +33,7 @@ import { ensurePageLoadMetricsAtLeastDocumentLoadTime, NavigationMetricsManager,
 import {
 	BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION,
 	BROWSER_NAVIGATION_OPERATION_ATTRIBUTE,
+	BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE,
 } from '../managers/navigation-metrics-manager/constants'
 import { setBrowserNavigationPageAttributes } from '../managers/navigation-metrics-manager/navigation-relevance'
 import { getPctMonitorTypes } from '../managers/navigation-metrics-manager/resource-monitor-types'
@@ -226,6 +227,10 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 								}
 							: { type: 'document' },
 					)
+					// Document-load fetch spans are emitted together as part of this navigation's PCT batch.
+					// Their page span ID provides the association, so do not re-gate them by current navigation
+					// or resource-monitor admission.
+					span.setAttribute(BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE, true)
 				}
 
 				// only apply links to document/resource fetch
