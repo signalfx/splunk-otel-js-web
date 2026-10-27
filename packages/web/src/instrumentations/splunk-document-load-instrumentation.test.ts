@@ -112,6 +112,58 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 		expect(MockPerformanceObserver.instances[0].disconnect).toHaveBeenCalledOnce()
 	})
 
+	it('uses pageLoad URL for documentLoad when the route changes before documentLoad ends', () => {
+		const { navigationMetricsManager } = createNavigationMetricsManagerMock()
+		vi.spyOn(performance, 'getEntriesByType').mockReturnValue([])
+		vi.stubGlobal('PerformanceObserver', null)
+
+		instrumentation = new SplunkDocumentLoadInstrumentation(
+			{},
+			{ experimental: true },
+			undefined,
+			navigationMetricsManager,
+		)
+		instrumentation.setTracerProvider(new BasicTracerProvider())
+
+		const initialUrl = location.href
+		const changedUrl = new URL('/signin', initialUrl).href
+		const exposedInstrumentation = instrumentation as unknown as {
+			_endSpan(span: Span, performanceName: string, entries: PerformanceEntries): void
+			_startSpan(spanName: string, performanceName: string, entries: PerformanceEntries): Span
+			startPageLoadSpan(fetchStart: number): void
+		}
+		exposedInstrumentation.startPageLoadSpan(12.5)
+		history.pushState({}, '', changedUrl)
+
+		const entries = { fetchStart: 12.5, loadEventEnd: 20 } as PerformanceEntries
+		const span = exposedInstrumentation._startSpan('documentLoad', PTN.FETCH_START, entries)
+		// The upstream instrumentation sets this after _startSpan returns.
+		span.setAttribute('http.url', location.href)
+		exposedInstrumentation._endSpan(span, PTN.LOAD_EVENT_END, entries)
+
+		expect(span.attributes['http.url']).toBe(initialUrl)
+		history.replaceState({}, '', initialUrl)
+	})
+
+	it('preserves documentLoad URL when pageLoad is unavailable', () => {
+		vi.spyOn(performance, 'getEntriesByType').mockReturnValue([])
+		vi.stubGlobal('PerformanceObserver', null)
+
+		instrumentation = new SplunkDocumentLoadInstrumentation({}, { experimental: false })
+		instrumentation.setTracerProvider(new BasicTracerProvider())
+
+		const entries = { fetchStart: 12.5, loadEventEnd: 20 } as PerformanceEntries
+		const exposedInstrumentation = instrumentation as unknown as {
+			_endSpan(span: Span, performanceName: string, entries: PerformanceEntries): void
+			_startSpan(spanName: string, performanceName: string, entries: PerformanceEntries): Span
+		}
+		const span = exposedInstrumentation._startSpan('documentLoad', PTN.FETCH_START, entries)
+		span.setAttribute('http.url', location.href)
+		exposedInstrumentation._endSpan(span, PTN.LOAD_EVENT_END, entries)
+
+		expect(span.attributes['http.url']).toBe(location.href)
+	})
+
 	it('does not create pageLoad late when document-load timing becomes available', () => {
 		const { navigationMetricsManager, setCurrentNavigationSpan } = createNavigationMetricsManagerMock()
 		vi.spyOn(performance, 'getEntriesByType').mockReturnValue([])
