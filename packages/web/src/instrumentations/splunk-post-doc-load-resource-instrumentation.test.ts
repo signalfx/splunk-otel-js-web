@@ -141,6 +141,22 @@ describe('post document load resource instrumentation', () => {
 		expect(setStatus).toHaveBeenCalledWith({ code: SpanStatusCode.ERROR })
 	})
 
+	it('adds render-blocking status attributes to post-document-load resource spans', () => {
+		const { instrumentation, setAttribute } = createInstrumentation()
+
+		instrumentation._startPerformanceObserver()
+		MockPerformanceObserver.instances[0].emit([
+			createResourceEntry('script', 'https://example.test/blocking.js', { renderBlockingStatus: 'blocking' }),
+			createResourceEntry('script', 'https://example.test/non-blocking.js', {
+				renderBlockingStatus: 'non-blocking',
+			}),
+		])
+		vi.runAllTimers()
+
+		expect(setAttribute).toHaveBeenCalledWith('resource.render_blocking', 'blocking')
+		expect(setAttribute).toHaveBeenCalledWith('resource.render_blocking', 'non-blocking')
+	})
+
 	it('classifies cross-origin resource timing and omits the attribute when it is ambiguous', () => {
 		const { instrumentation, setAttribute } = createInstrumentation()
 
@@ -228,10 +244,14 @@ function createInstrumentation(
 	return { instrumentation, setAttribute, setStatus, startSpan }
 }
 
+type ResourceTimingTestOverrides = Partial<PerformanceResourceTiming> & {
+	readonly renderBlockingStatus?: string
+}
+
 function createResourceEntry(
 	initiatorType: string,
 	name: string,
-	overrides: Partial<PerformanceResourceTiming> = {},
+	overrides: ResourceTimingTestOverrides = {},
 ): PerformanceResourceTiming {
 	return {
 		fetchStart: 10,

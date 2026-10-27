@@ -16,9 +16,10 @@
  *
  */
 
-import { describe, expect, it } from 'vitest'
+import { type Span } from '@opentelemetry/api'
+import { describe, expect, it, vi } from 'vitest'
 
-import { getCrossOriginTimingRestricted } from './resource-timing'
+import { getCrossOriginTimingRestricted, setResourceTimingRenderBlocking } from './resource-timing'
 
 describe('getCrossOriginTimingRestricted', () => {
 	it('returns true when a cross-origin entry has hidden request and response timing and zero sizes', () => {
@@ -73,6 +74,32 @@ describe('getCrossOriginTimingRestricted', () => {
 		expect(
 			getCrossOriginTimingRestricted(createResourceEntry({ name: 'data:text/plain,resource' })),
 		).toBeUndefined()
+	})
+})
+
+describe('setResourceTimingRenderBlocking', () => {
+	it.each(['blocking', 'non-blocking'] as const)('sets the resource.render_blocking attribute to %s', (status) => {
+		const setAttribute = vi.fn()
+		const span = { setAttribute } as unknown as Span
+		const resource = { renderBlockingStatus: status } as unknown as PerformanceResourceTiming & {
+			readonly renderBlockingStatus?: string
+		}
+
+		setResourceTimingRenderBlocking(span, resource)
+
+		expect(setAttribute).toHaveBeenCalledExactlyOnceWith('resource.render_blocking', status)
+	})
+
+	it.each([undefined, 'ineligible', 'unknown'] as const)('does not set an attribute for %s status', (status) => {
+		const setAttribute = vi.fn()
+		const span = { setAttribute } as unknown as Span
+		const resource = { renderBlockingStatus: status } as unknown as PerformanceResourceTiming & {
+			readonly renderBlockingStatus?: string
+		}
+
+		setResourceTimingRenderBlocking(span, resource)
+
+		expect(setAttribute).not.toHaveBeenCalled()
 	})
 })
 
