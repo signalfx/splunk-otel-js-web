@@ -205,10 +205,12 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 				span.setAttribute('component', this.component)
 			}
 
-			// The upstream instrumentation assigns documentLoad's URL after _startSpan
-			// returns. Apply pageLoad's captured URL at end so a route change between
-			// those points cannot make the initial document load look like a new route.
-			if (span && exposedSpan.name === AttributeNames.DOCUMENT_LOAD && this.pageLoadUrl !== undefined) {
+			// The upstream instrumentation assigns the document URLs after _startSpan
+			// returns. Apply pageLoad's captured URL at end so a route change before
+			// collection cannot make either initial-navigation span look like a new route.
+			const isInitialNavigationSpan =
+				exposedSpan.name === AttributeNames.DOCUMENT_LOAD || exposedSpan.name === AttributeNames.DOCUMENT_FETCH
+			if (span && isInitialNavigationSpan && this.pageLoadUrl !== undefined) {
 				span.setAttribute(SEMATTRS_HTTP_URL, this.pageLoadUrl)
 			}
 
@@ -404,12 +406,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 	}
 
 	private startPageLoadSpanWhenNavigationTimingIsAvailable(): void {
-		if (
-			!this.documentLoadMetricsPromise ||
-			!this.otelConfig.experimental ||
-			this.pageLoadSpan ||
-			this.navigationTimingObserver
-		) {
+		if (this.navigationStartTimeMillis !== undefined || this.navigationTimingObserver) {
 			return
 		}
 
