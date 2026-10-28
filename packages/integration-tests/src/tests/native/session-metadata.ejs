@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Native session metadata</title>
+	<script>
+		const params = new URLSearchParams(window.location.search)
+		const createSessionMetadata = (sessionId) => {
+			const now = Date.now()
+			return {
+				anonymousUserId: 'external-anonymous-user-id',
+				sessionId,
+				sessionLastActivity: now,
+				sessionStart: now - 1000,
+			}
+		}
+		window.__nativeSessionMetadataForTest = params.has('sessionId')
+			? createSessionMetadata(params.get('sessionId'))
+			: null
+		window.__setNativeSessionMetadataForTest = (sessionId) => {
+			window.__nativeSessionMetadataForTest =
+				sessionId === '__null__' ? null : createSessionMetadata(sessionId)
+		}
+		window.SplunkRumExternal = {
+			getSessionMetadata: () => window.__nativeSessionMetadataForTest,
+		}
+	</script>
+	<%- renderAgent({debug: true}) %>
+</head>
+<body>
+	<h1>Native session metadata</h1>
+</body>
+</html>
