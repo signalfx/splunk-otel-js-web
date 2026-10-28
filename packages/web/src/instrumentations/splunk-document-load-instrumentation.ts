@@ -392,12 +392,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 	}
 
 	private startPageLoadSpanWhenNavigationTimingIsAvailable(): void {
-		if (
-			!this.documentLoadMetricsPromise ||
-			!this.otelConfig.experimental ||
-			this.pageLoadSpan ||
-			this.navigationTimingObserver
-		) {
+		if (this.navigationStartTimeMillis !== undefined || this.navigationTimingObserver) {
 			return
 		}
 
