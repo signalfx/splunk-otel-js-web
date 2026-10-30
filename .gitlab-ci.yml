@@ -1,5 +1,5 @@
 default:
-    image: 'cimg/node:24.11.0-browsers'
+    image: 'cimg/node:24.22.2-browsers'
 
 variables:
     # Build artifacts call `git describe --tags --always --long` for `splunk.rumVersionFull*` attributes.

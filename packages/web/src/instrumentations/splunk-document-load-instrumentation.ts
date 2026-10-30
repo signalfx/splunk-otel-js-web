@@ -33,6 +33,7 @@ import { ensurePageLoadMetricsAtLeastDocumentLoadTime, NavigationMetricsManager,
 import {
 	BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION,
 	BROWSER_NAVIGATION_OPERATION_ATTRIBUTE,
+	BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE,
 } from '../managers/navigation-metrics-manager/constants'
 import { setBrowserNavigationPageAttributes } from '../managers/navigation-metrics-manager/navigation-relevance'
 import { getPctMonitorTypes } from '../managers/navigation-metrics-manager/resource-monitor-types'
@@ -124,6 +125,8 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 
 	private pageLoadSpan: api.Span | undefined
 
+	private pageLoadUrl: string | undefined
+
 	constructor(
 		config: SplunkDocLoadInstrumentationConfig = {},
 		protected otelConfig: SplunkOtelWebConfig,
@@ -202,6 +205,15 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 				span.setAttribute('component', this.component)
 			}
 
+			// The upstream instrumentation assigns the document URLs after _startSpan
+			// returns. Apply pageLoad's captured URL at end so a route change before
+			// collection cannot make either initial-navigation span look like a new route.
+			const isInitialNavigationSpan =
+				exposedSpan.name === AttributeNames.DOCUMENT_LOAD || exposedSpan.name === AttributeNames.DOCUMENT_FETCH
+			if (span && isInitialNavigationSpan && this.pageLoadUrl !== undefined) {
+				span.setAttribute(SEMATTRS_HTTP_URL, this.pageLoadUrl)
+			}
+
 			if (span && exposedSpan.name !== AttributeNames.DOCUMENT_LOAD) {
 				const isResourceFetch = exposedSpan.name === AttributeNames.RESOURCE_FETCH
 				const fetchStart = (entries as unknown as Record<string, unknown>)[PTN.FETCH_START]
@@ -226,6 +238,10 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 								}
 							: { type: 'document' },
 					)
+					// Document-load fetch spans are emitted together as part of this navigation's PCT batch.
+					// Their page span ID provides the association, so do not re-gate them by current navigation
+					// or resource-monitor admission.
+					span.setAttribute(BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE, true)
 				}
 
 				// only apply links to document/resource fetch
@@ -358,6 +374,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 		this.pageLoadSpan?.end(endTime)
 		this.navigationStartTimeMillis = undefined
 		this.pageLoadSpan = undefined
+		this.pageLoadUrl = undefined
 	}
 
 	private startPageLoadSpan(fetchStart: number): void {
@@ -373,11 +390,13 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 		this.navigationTimingObserver?.disconnect()
 		this.navigationTimingObserver = undefined
 
+		const pageLoadUrl = location.href
 		this.pageLoadSpan = this.tracer.startSpan(PAGE_LOAD_SPAN_NAME, {
 			startTime: this.navigationStartTimeMillis,
 		})
+		this.pageLoadUrl = pageLoadUrl
 		this.pageLoadSpan.setAttribute('component', this.component)
-		this.pageLoadSpan.setAttribute(SEMATTRS_HTTP_URL, location.href)
+		this.pageLoadSpan.setAttribute(SEMATTRS_HTTP_URL, pageLoadUrl)
 		this.pageLoadSpan.setAttribute(SemanticAttributes.HTTP_USER_AGENT, navigator.userAgent)
 		this.navigationMetricsManager?.setCurrentNavigationSpan(
 			this.pageLoadSpan,
@@ -387,12 +406,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 	}
 
 	private startPageLoadSpanWhenNavigationTimingIsAvailable(): void {
-		if (
-			!this.documentLoadMetricsPromise ||
-			!this.otelConfig.experimental ||
-			this.pageLoadSpan ||
-			this.navigationTimingObserver
-		) {
+		if (this.navigationStartTimeMillis !== undefined || this.navigationTimingObserver) {
 			return
 		}
 
