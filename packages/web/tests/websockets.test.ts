@@ -156,6 +156,57 @@ describe('can produce websocket events', () => {
 		expect(childSpan?.spanContext().traceId).toBe(receiveSpan?.spanContext().traceId)
 	})
 
+	it('uses the receive span as the active context in onmessage listeners', async () => {
+		const socket = new WebSocket('ws://127.0.0.1:8979/')
+		const onmessage = () => {
+			getTracer('websocket-test').startSpan('onmessage-handler').end()
+			socket.close()
+		}
+		// eslint-disable-next-line unicorn/prefer-add-event-listener
+		socket.onmessage = onmessage
+		expect(socket.onmessage).toBe(onmessage)
+		socket.addEventListener(
+			'open',
+			() => {
+				socket.send('Hello server')
+			},
+			{ once: true },
+		)
+
+		await new Promise((resolve) => setTimeout(resolve, 1000))
+
+		const receiveSpan = capturer.spans.find((span) => span.name === 'onmessage')
+		const childSpan = capturer.spans.find((span) => span.name === 'onmessage-handler')
+		expect(receiveSpan).toBeDefined()
+		expect(childSpan?.parentSpanId).toBe(receiveSpan?.spanContext().spanId)
+		expect(childSpan?.spanContext().traceId).toBe(receiveSpan?.spanContext().traceId)
+	})
+
+	it('measures text message sizes in UTF-8 bytes', async () => {
+		const socket = new WebSocket('ws://127.0.0.1:8979/')
+		const opened = new Promise<void>((resolve) => socket.addEventListener('open', () => resolve(), { once: true }))
+		const received = new Promise<void>((resolve) =>
+			socket.addEventListener('message', () => resolve(), { once: true }),
+		)
+		const closed = new Promise<void>((resolve) => socket.addEventListener('close', () => resolve(), { once: true }))
+
+		await opened
+		socket.send('é')
+		await received
+		socket.close()
+		await closed
+
+		const sendSpan = capturer.spans.find((span) => span.name === 'send')
+		const receiveSpan = capturer.spans.find((span) => span.name === 'onmessage')
+		const closeSpan = capturer.spans.find((span) => span.name === 'close')
+		expect(sendSpan).toHaveSpanAttribute('websocket.message.size', 2)
+		expect(sendSpan).toHaveSpanAttribute('http.request_content_length', 2)
+		expect(receiveSpan).toHaveSpanAttribute('websocket.message.size', 2)
+		expect(receiveSpan).toHaveSpanAttribute('http.response_content_length', 2)
+		expect(closeSpan).toHaveSpanAttribute('websocket.message.sent.bytes', 2)
+		expect(closeSpan).toHaveSpanAttribute('websocket.message.received.bytes', 2)
+	})
+
 	it('removes query parameters from captured websocket URLs', async () => {
 		const socket = new WebSocket('ws://127.0.0.1:8979/?access_token=secret')
 

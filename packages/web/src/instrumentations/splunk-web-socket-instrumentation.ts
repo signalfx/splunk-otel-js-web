@@ -55,6 +55,8 @@ interface WebSocketState {
 	sentMessages: number
 }
 
+type WebSocketMessageListener = NonNullable<WebSocket['onmessage']>
+
 export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWebSocketInstrumentationConfig> {
 	private readonly listener2ws2patched = new WeakMap<
 		EventListenerOrEventListenerObject,
@@ -171,6 +173,10 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 	}
 
 	private getMessageSize(data: unknown) {
+		if (typeof data === 'string') {
+			return new TextEncoder().encode(data).byteLength
+		}
+
 		if (!hasSizeLikeProperty(data)) {
 			return 0
 		}
@@ -218,12 +224,7 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 
 				const invokeCallback = () =>
 					typeof callback === 'function' ? callback.call(this, event) : callback.handleEvent(event)
-				const receiveSpan = state.currentReceiveSpan
-				if (!receiveSpan) {
-					return invokeCallback()
-				}
-
-				return context.with(trace.setSpan(context.active(), receiveSpan), invokeCallback)
+				return instrumentation.withReceiveSpan(state, invokeCallback)
 			}
 
 			if (instrumentation.addPatchedListener(ws, callback, patchedCallback)) {
@@ -245,6 +246,49 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 			const patchedCallback = instrumentation.removePatchedListener(ws, callback)
 			originalRemoveEventListener.call(ws, type, patchedCallback ?? callback, options)
 		}
+
+		this.patchOnMessage(ws, state)
+	}
+
+	private patchOnMessage(ws: WebSocket, state: WebSocketState) {
+		let prototype = Object.getPrototypeOf(ws)
+		let descriptor: PropertyDescriptor | undefined
+		while (prototype && !descriptor) {
+			descriptor = Object.getOwnPropertyDescriptor(prototype, 'onmessage')
+			prototype = Object.getPrototypeOf(prototype)
+		}
+
+		if (!descriptor?.get || !descriptor.set) {
+			return
+		}
+
+		const instrumentation = this
+		const originalGet = descriptor.get
+		const originalSet = descriptor.set
+		const originalListeners = new WeakMap<WebSocketMessageListener, WebSocketMessageListener>()
+		Object.defineProperty(ws, 'onmessage', {
+			configurable: true,
+			enumerable: descriptor.enumerable,
+			get() {
+				const listener = originalGet.call(this) as WebSocketMessageListener | null
+				return listener ? (originalListeners.get(listener) ?? listener) : listener
+			},
+			set(listener: WebSocket['onmessage']) {
+				if (typeof listener !== 'function') {
+					originalSet.call(this, listener)
+					return
+				}
+
+				const patchedListener: WebSocketMessageListener = function patchedOnMessage(
+					this: WebSocket,
+					event: MessageEvent,
+				) {
+					return instrumentation.withReceiveSpan(state, () => listener.call(this, event))
+				}
+				originalListeners.set(patchedListener, listener)
+				originalSet.call(this, patchedListener)
+			},
+		})
 	}
 
 	private patchSend(ws: WebSocket, state: WebSocketState) {
@@ -424,5 +468,14 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 		span.setAttribute('protocol', ws.protocol)
 		span.setAttribute('websocket.subprotocol', ws.protocol)
 		return span
+	}
+
+	private withReceiveSpan<T>(state: WebSocketState, callback: () => T) {
+		const receiveSpan = state.currentReceiveSpan
+		if (!receiveSpan) {
+			return callback()
+		}
+
+		return context.with(trace.setSpan(context.active(), receiveSpan), callback)
 	}
 }
