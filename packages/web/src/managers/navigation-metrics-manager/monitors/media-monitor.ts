@@ -219,7 +219,14 @@ export class MediaMonitor extends Monitor {
 			document.addEventListener(
 				'DOMContentLoaded',
 				() => {
-					this.observer?.observe(document.body, {
+					// A redirect from inside <head> aborts parsing, so <body> may never be created
+					// even though Safari and Firefox still fire DOMContentLoaded.
+					const mutationTarget = document.body ?? document.documentElement
+					if (!mutationTarget) {
+						return
+					}
+
+					this.observer?.observe(mutationTarget, {
 						attributeFilter: ['src', 'srcset'],
 						attributes: true,
 						childList: true,
