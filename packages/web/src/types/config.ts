@@ -30,6 +30,7 @@ import {
 	SplunkFrustrationSignalsInstrumentationConfig,
 	SplunkPostDocLoadResourceInstrumentationConfig,
 	SplunkUserInteractionInstrumentationConfig,
+	SplunkWebSocketInstrumentationConfig,
 	SplunkWebVitalsInstrumentationConfig,
 } from '../instrumentations'
 import { ExternalSessionMetadata } from './external-session-metadata'
@@ -93,7 +94,7 @@ export interface SplunkOtelWebOptionsInstrumentations {
 	postload?: boolean | SplunkPostDocLoadResourceInstrumentationConfig
 	socketio?: boolean | SocketIoClientInstrumentationConfig
 	visibility?: boolean | InstrumentationConfig
-	websocket?: boolean | InstrumentationConfig
+	websocket?: boolean | SplunkWebSocketInstrumentationConfig
 	webvitals?: boolean | SplunkWebVitalsInstrumentationConfig
 	xhr?: boolean | SplunkXhrInstrumentationConfig
 }

@@ -10,6 +10,7 @@
 	<h1>Websocket</h1>
 	<button id="connectWs" type="button">Connect to a websockets server</button>
 	<button id="sendWs" type="button">Send</button>
+	<button id="closeWs" type="button">Close</button>
 	<script>
 			let socket;
 			connectWs.addEventListener('click', function () {
@@ -31,6 +32,10 @@
 			sendWs.addEventListener('click', function() {
 				socket.send('hello world!');
 
+			});
+
+			closeWs.addEventListener('click', function () {
+				socket.close();
 			});
 	</script>
 </body>

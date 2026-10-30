@@ -187,8 +187,28 @@ Choose a versioning strategy based on your needs:
 | `instrumentations.socketio`           | `boolean\|Config`                                     | ❌       | `false`                                                                                                   | Socket.IO client monitoring                                                                                                                                                                                                                                                                                                                                               |
 | `instrumentations.visibility`         | `boolean\|Config`                                     | ❌       | `false`                                                                                                   | Page visibility changes                                                                                                                                                                                                                                                                                                                                                   |
 | `instrumentations.webvitals`          | `boolean\|Config`                                     | ❌       | `true`                                                                                                    | Web Vitals collection                                                                                                                                                                                                                                                                                                                                                     |
-| `instrumentations.websocket`          | `boolean\|Config`                                     | ❌       | `false`                                                                                                   | WebSocket monitoring                                                                                                                                                                                                                                                                                                                                                      |
+| `instrumentations.websocket`          | `boolean\|Config`                                     | ❌       | `false`                                                                                                   | WebSocket lifecycle and message monitoring; configure the per-connection message span limit below                                                                                                                                                                                                                                                                         |
 | `instrumentations.xhr`                | `boolean\|Config`                                     | ❌       | `true`                                                                                                    | XMLHttpRequest monitoring                                                                                                                                                                                                                                                                                                                                                 |
+
+### WebSocket instrumentation
+
+WebSocket instrumentation is disabled by default. When enabled, it records connection lifecycle details, send and receive
+message metadata, and aggregate message counts and bytes when a connection closes. Message payloads are not captured.
+The agent emits at most 100 send and receive message spans per connection by default; additional messages still contribute
+to the close span's aggregate counters.
+
+Set `maxMessageSpansPerConnection` to change the per-connection limit. Set it to `0` to keep aggregate connection data
+without emitting individual message spans.
+
+```js
+SplunkRum.init({
+	instrumentations: {
+		websocket: {
+			maxMessageSpansPerConnection: 50,
+		},
+	},
+})
+```
 
 ### Navigation Metrics
 
