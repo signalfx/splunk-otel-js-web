@@ -282,4 +282,64 @@ describe('MediaMonitor', () => {
 			expect(events.length).toBe(0)
 		})
 	})
+
+	// Regression: a redirect issued from inside <head> aborts parsing, so <body> is never created, but
+	// Safari and Firefox still fire DOMContentLoaded. The deferred observer setup must not
+	// hand a null target to MutationObserver.observe().
+	describe('deferred observer setup when document.body is absent', () => {
+		let bodyDescriptor: PropertyDescriptor | undefined
+
+		const hideDocumentBody = () => {
+			bodyDescriptor = Object.getOwnPropertyDescriptor(document, 'body')
+			Object.defineProperty(document, 'body', { configurable: true, get: () => null })
+		}
+
+		const restoreDocumentBody = () => {
+			if (bodyDescriptor) {
+				Object.defineProperty(document, 'body', bodyDescriptor)
+			} else {
+				Reflect.deleteProperty(document, 'body')
+			}
+		}
+
+		it('never calls observe() with a null target', () => {
+			const observeSpy = vi.spyOn(MutationObserver.prototype, 'observe').mockImplementation(() => {})
+			hideDocumentBody()
+
+			try {
+				monitor.start()
+				expect(observeSpy).not.toHaveBeenCalled()
+
+				document.dispatchEvent(new Event('DOMContentLoaded'))
+
+				for (const call of observeSpy.mock.calls) {
+					expect(call[0]).not.toBeNull()
+				}
+			} finally {
+				restoreDocumentBody()
+				observeSpy.mockRestore()
+			}
+		})
+
+		it('does not raise an uncaught TypeError on DOMContentLoaded', async () => {
+			const errors: string[] = []
+			const onError = (event: ErrorEvent) => {
+				errors.push(event.message)
+				event.preventDefault()
+			}
+
+			window.addEventListener('error', onError)
+			hideDocumentBody()
+
+			try {
+				monitor.start()
+				document.dispatchEvent(new Event('DOMContentLoaded'))
+				await new Promise((resolve) => setTimeout(resolve, 0))
+				expect(errors).toEqual([])
+			} finally {
+				restoreDocumentBody()
+				window.removeEventListener('error', onError)
+			}
+		})
+	})
 })
