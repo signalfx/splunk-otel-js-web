@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Optional features
+
+**`@splunk/otel-web`**
+
+#### Enhance WebSocket instrumentation
+
+When enabled, WebSocket instrumentation reports sanitized endpoint attributes, connection lifecycle data, send and receive
+message metadata, and aggregate message counts and bytes on close. `instrumentations.websocket.maxMessageSpansPerConnection`
+controls individual message span volume and defaults to 100 per connection; set it to `0` to keep aggregate connection
+data without individual message spans.
+
 ## 3.2.0
 
 ### Upgrade impact
