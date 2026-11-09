@@ -33,6 +33,7 @@ type ResourceStateEventWithoutMonitorType =
 	| {
 			id: string
 			loadTime: number
+			completionReason?: 'body_timeout'
 			state: ResourceState.LOADED
 			timestamp: number
 			url: string
@@ -52,10 +53,14 @@ export interface MonitorConfig {
 	/** Only read by FetchXhrMonitor. */
 	isResourceTracked?: (resourceId: string) => boolean
 
+	/** Only read by FetchXhrMonitor. */
+	onResourceUntracked?: (resourceId: string) => void
+
 	onResourceStateChange: (event: ResourceStateEvent) => void
 
 	/** Only read by FetchXhrMonitor. */
 	waitForFetchResponseBody?: boolean
+	maxFetchResponseBodyWaitTime?: number
 }
 
 export abstract class Monitor {
@@ -86,8 +91,16 @@ export abstract class Monitor {
 		url: string,
 		loadTime: number,
 		timestamp = performance.now(),
+		completionReason?: 'body_timeout',
 	): ResourceStateEventWithoutMonitorType & { state: ResourceState.LOADED } {
-		return { id, loadTime, state: ResourceState.LOADED, timestamp, url }
+		return {
+			id,
+			loadTime,
+			state: ResourceState.LOADED,
+			timestamp,
+			url,
+			...(completionReason && { completionReason }),
+		}
 	}
 
 	protected emitResourceStateChange(event: ResourceStateEventWithoutMonitorType): void {
