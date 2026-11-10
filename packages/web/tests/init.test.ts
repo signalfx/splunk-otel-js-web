@@ -23,7 +23,7 @@ import { expectDefined } from '@test-utils/assertions'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { HTTP_TEST_SERVER_URL } from '../../../tests/servers/http-constants'
-import SplunkRum from '../src'
+import SplunkRum, { INSTRUMENTATIONS_ALL_DISABLED } from '../src'
 import {
 	BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE,
 	BROWSER_NAVIGATION_FIRST_INTERACTION_TYPE_ATTRIBUTE,
@@ -1725,6 +1725,7 @@ describe('external session handling', () => {
 	})
 
 	it('should not create session.start span for external sessions', async () => {
+		capturer.captureSessionStart = true
 		const now = Date.now()
 		const sessionStart = now - performance.now()
 
@@ -1740,11 +1741,13 @@ describe('external session handling', () => {
 		SplunkRum.init({
 			applicationName: 'test-app',
 			beaconEndpoint: 'https://127.0.0.1:9999/test',
+			instrumentations: INSTRUMENTATIONS_ALL_DISABLED,
 			rumAccessToken: undefined,
 			spanProcessors: [capturer],
 		})
 
 		expect(SplunkRum.inited).toBeTruthy()
+		getTracer('test').startSpan('application.telemetry').end()
 
 		await new Promise((resolve) => setTimeout(resolve, 500))
 
@@ -1758,26 +1761,39 @@ describe('external session handling', () => {
 		expect(sessionState?.id).toBe('external-session-id-123')
 	})
 
-	it('should create session.start span for web sessions', async () => {
+	it('should emit one session.start after the first web application span ends', async () => {
+		capturer.captureSessionStart = true
 		window.SplunkRumExternal = undefined
 
 		SplunkRum.init({
 			applicationName: 'test-app',
 			beaconEndpoint: 'https://127.0.0.1:9999/test',
+			instrumentations: INSTRUMENTATIONS_ALL_DISABLED,
 			rumAccessToken: undefined,
 			spanProcessors: [capturer],
 		})
 
 		expect(SplunkRum.inited).toBeTruthy()
+		expect(capturer.spans.some((span) => span.name === 'session.start')).toBe(false)
+
+		const sessionState = SplunkRum.getSessionState()
+		expectDefined(sessionState)
+
+		const applicationSpan = getTracer('test').startSpan('application.telemetry')
+		expect(capturer.spans.some((span) => span.name === 'session.start')).toBe(false)
+		applicationSpan.end()
 
 		await new Promise((resolve) => setTimeout(resolve, 500))
 
-		// Verify session.start span was created
-		const sessionStartSpan = capturer.spans.find((span) => span.name === 'session.start')
-		expectDefined(sessionStartSpan)
+		const sessionStartSpans = capturer.spans.filter((span) => span.name === 'session.start')
+		expect(sessionStartSpans).toHaveLength(1)
+		expect(hrTimeToMilliseconds(sessionStartSpans[0].startTime)).toBe(sessionState.startTime)
+		expect(sessionStartSpans[0].duration).toEqual([0, 0])
+
+		getTracer('test').startSpan('second.application.telemetry').end()
+		expect(capturer.spans.filter((span) => span.name === 'session.start')).toHaveLength(1)
 
 		// Verify session state has web source
-		const sessionState = SplunkRum.getSessionState()
-		expect(sessionState?.source).toBe('web')
+		expect(sessionState.source).toBe('web')
 	})
 })

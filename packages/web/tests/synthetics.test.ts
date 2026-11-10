@@ -30,7 +30,7 @@ describe('synthetics integration', () => {
 		getTracer('test-tracer').startSpan('test-span').end()
 		await forceFlush()
 
-		const spans = getFinishedSpans()
+		const spans = getFinishedSpans().filter((span) => span.name !== 'session.start')
 		expect(spans.length).toBe(1)
 		expect(spans[0]).toHaveSpanAttribute(SYNTHETICS_RUN_ID_ATTRIBUTE, '1234abcd'.repeat(4))
 		expect(spans[0]).toHaveSpanAttribute(SYNTHETICS_TEST_ID_ATTRIBUTE, '6789abcd'.repeat(4))
@@ -46,7 +46,7 @@ describe('synthetics integration', () => {
 		getTracer('test-tracer').startSpan('test-span').end()
 		await forceFlush()
 
-		const spans = getFinishedSpans()
+		const spans = getFinishedSpans().filter((span) => span.name !== 'session.start')
 
 		expect(spans.length).toBe(1)
 		expect(spans[0]).toNotHaveSpanAttribute(SYNTHETICS_RUN_ID_ATTRIBUTE)
