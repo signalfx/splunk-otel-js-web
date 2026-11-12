@@ -60,6 +60,7 @@ const NAVIGATION_METRICS_MANAGER_CONFIG_DEFAULTS = {
 	blockingSelectors: [] as string[],
 	clearLoadingResourcesOnNewPage: true,
 	ignoreUrls: [] as (string | RegExp)[],
+	maxFetchResponseBodyWaitTime: 180_000,
 	maxPageLoadTimeoutForManualApi: 180_000,
 	maxPageLoadWaitTime: 180_000,
 	maxResourcesToWatch: 100,
@@ -92,6 +93,7 @@ type NavigationMetricsManagerConfigValues = {
 	blockingSelectors?: string[]
 	clearLoadingResourcesOnNewPage?: boolean
 	ignoreUrls?: (string | RegExp)[]
+	maxFetchResponseBodyWaitTime?: number
 	maxPageLoadTimeoutForManualApi?: number
 	maxPageLoadWaitTime?: number
 	maxResourcesToWatch?: number
@@ -247,7 +249,9 @@ export class NavigationMetricsManager {
 			consumerId: Symbol('navigation-metrics-manager-elements'),
 			elementVisibilityObserver: config.elementVisibilityObserver ?? new ElementVisibilityObserver(),
 			isResourceTracked: (resourceId) => this.loadingResources.has(resourceId),
+			maxFetchResponseBodyWaitTime: this.config.maxFetchResponseBodyWaitTime,
 			onResourceStateChange: this.onResourceStateChange,
+			onResourceUntracked: (resourceId) => this.monitors?.network.cancelFetchBodyReader(resourceId),
 			waitForFetchResponseBody: config.experimental,
 		}
 
@@ -581,6 +585,7 @@ export class NavigationMetricsManager {
 				this.isIgnoredUrl(resource.url, activeConfig.ignoreUrls)
 			) {
 				this.loadingResources.delete(resourceId)
+				this.monitors.network.cancelFetchBodyReader(resourceId)
 				if (resource.monitorType === 'elements') {
 					droppedResources.elementResourceUrls.push(resource.url)
 				}
@@ -738,8 +743,9 @@ export class NavigationMetricsManager {
 		} else {
 			const resource = this.loadingResources.get(event.id)
 			if (resource && this.loadingResources.delete(event.id)) {
+				this.monitors.network.cancelFetchBodyReader(event.id)
 				if (event.state === ResourceState.LOADED) {
-					this.recordLoadedResource(resource, event.loadTime)
+					this.recordLoadedResource(resource, event.loadTime, event.completionReason)
 				}
 
 				if (this.loadingResourcesCount === 0) {
@@ -771,12 +777,13 @@ export class NavigationMetricsManager {
 		}
 	}
 
-	private recordLoadedResource(resource: LoadingResource, duration: number): void {
+	private recordLoadedResource(resource: LoadingResource, duration: number, completionReason?: 'body_timeout'): void {
 		if (!this.pageLoadResourceTracker) {
 			return
 		}
 
 		const loadedResource = {
+			...(completionReason && { completionReason }),
 			duration,
 			monitorType: resource.monitorType,
 			url: truncateString(resource.url, MAX_LOADING_RESOURCE_URL_LENGTH),
@@ -811,6 +818,8 @@ export class NavigationMetricsManager {
 				config.ignoreUrls ?? defaultConfig.ignoreUrls,
 				beaconEndpointIgnoreUrls,
 			),
+			maxFetchResponseBodyWaitTime:
+				config.maxFetchResponseBodyWaitTime ?? defaultConfig.maxFetchResponseBodyWaitTime,
 			maxPageLoadTimeoutForManualApi:
 				config.maxPageLoadTimeoutForManualApi ?? defaultConfig.maxPageLoadTimeoutForManualApi,
 			maxPageLoadWaitTime: normalizeMaxPageLoadWaitTime({ maxPageLoadWaitTime, quietTime }),

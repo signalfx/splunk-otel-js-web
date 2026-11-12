@@ -160,6 +160,41 @@ describe('FetchXhrMonitor', () => {
 			}
 		})
 
+		it('bounds an open response body and labels the PCT resource summary', async () => {
+			replaceMonitor({ maxFetchResponseBodyWaitTime: 1, waitForFetchResponseBody: true })
+			const restoreFetch = replaceFetch(() =>
+				Promise.resolve(new Response(new ReadableStream<Uint8Array>({ start() {} }))),
+			)
+
+			try {
+				await fetch('/open-stream')
+				await vi.waitFor(() => expect(events).toHaveLength(2))
+
+				expect(events[1]).toMatchObject({ completionReason: 'body_timeout', state: ResourceState.LOADED })
+			} finally {
+				restoreFetch()
+			}
+		})
+
+		it('cancels cloned readers when monitoring stops', async () => {
+			replaceMonitor({ waitForFetchResponseBody: true })
+			const cancel = vi.spyOn(ReadableStreamDefaultReader.prototype, 'cancel')
+			const restoreFetch = replaceFetch(() =>
+				Promise.resolve(new Response(new ReadableStream<Uint8Array>({ start() {} }))),
+			)
+
+			try {
+				await fetch('/open-stream')
+				monitor.stop()
+
+				await vi.waitFor(() => expect(cancel).toHaveBeenCalled())
+				expect(events).toHaveLength(1)
+			} finally {
+				restoreFetch()
+				cancel.mockRestore()
+			}
+		})
+
 		it('releases the resource when reading the cloned body fails', async () => {
 			replaceMonitor({ waitForFetchResponseBody: true })
 			let bodyController: ReadableStreamDefaultController<Uint8Array> | undefined
@@ -265,6 +300,7 @@ describe('FetchXhrMonitor', () => {
 
 	function replaceMonitor(config: {
 		isResourceTracked?: (resourceId: string) => boolean
+		maxFetchResponseBodyWaitTime?: number
 		waitForFetchResponseBody?: boolean
 	}): void {
 		monitor.stop()

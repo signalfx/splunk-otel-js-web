@@ -98,6 +98,7 @@ describe('NavigationMetricsManager', () => {
 
 		expect(config.quietTime).toBe(1000)
 		expect(config.maxPageLoadWaitTime).toBe(180_000)
+		expect(config.maxFetchResponseBodyWaitTime).toBe(180_000)
 		expect(config.maxResourcesToWatch).toBe(100)
 		expect(config.ignoreUrls).toEqual([])
 		expect(config.blockingSelectors).toEqual([])
@@ -110,6 +111,7 @@ describe('NavigationMetricsManager', () => {
 			blockingSelectors: ['.loading-spinner'],
 			clearLoadingResourcesOnNewPage: false,
 			ignoreUrls: [/test/],
+			maxFetchResponseBodyWaitTime: 5000,
 			maxPageLoadWaitTime: 5000,
 			monitors: ['network', 'elements'],
 			quietTime: 2000,
@@ -119,6 +121,7 @@ describe('NavigationMetricsManager', () => {
 		const config = manager.config
 
 		expect(config.quietTime).toBe(2000)
+		expect(config.maxFetchResponseBodyWaitTime).toBe(5000)
 		expect(config.maxPageLoadWaitTime).toBe(5000)
 		expect(config.maxResourcesToWatch).toBe(100)
 		expect(config.ignoreUrls).toHaveLength(1)
@@ -956,6 +959,7 @@ describe('NavigationMetricsManager', () => {
 		const manager = new NavigationMetricsManager({ quietTime: 1 })
 		const { attributes, span } = createSpanMock()
 		const loadedResource = {
+			completionReason: 'body_timeout' as const,
 			duration: 42,
 			monitorType: 'performance' as const,
 			url: `${TEST_API_URL}?resource=completed`,
@@ -977,6 +981,7 @@ describe('NavigationMetricsManager', () => {
 			})
 			// @ts-expect-error onResourceStateChange is private. We use it for testing.
 			manager.onResourceStateChange({
+				completionReason: loadedResource.completionReason,
 				id: 'completed-resource',
 				loadTime: loadedResource.duration,
 				monitorType: loadedResource.monitorType,
