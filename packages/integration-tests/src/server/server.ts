@@ -97,6 +97,19 @@ fastify.get('/some-data', (request, reply) => {
 	})
 })
 
+fastify.get<{
+	Querystring: {
+		noCache?: string
+		tao?: string
+	}
+}>('/timing-resource', (request, reply) => {
+	if (request.query.tao === 'on') {
+		reply.header('Timing-Allow-Origin', '*')
+	}
+
+	reply.send({ resource: 'timing-test' })
+})
+
 // Endpoint that echoes the traceparent header for testing trace propagation
 fastify.get('/echo-traceparent', (request, reply) => {
 	const traceparent = request.headers['traceparent'] as string | undefined

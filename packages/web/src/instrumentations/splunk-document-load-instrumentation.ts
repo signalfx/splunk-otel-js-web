@@ -33,13 +33,19 @@ import { ensurePageLoadMetricsAtLeastDocumentLoadTime, NavigationMetricsManager,
 import {
 	BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION,
 	BROWSER_NAVIGATION_OPERATION_ATTRIBUTE,
+	BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE,
 } from '../managers/navigation-metrics-manager/constants'
 import { setBrowserNavigationPageAttributes } from '../managers/navigation-metrics-manager/navigation-relevance'
 import { getPctMonitorTypes } from '../managers/navigation-metrics-manager/resource-monitor-types'
 import { captureTraceParentFromPerformanceEntries } from '../servertiming'
 import { SplunkOtelWebConfig } from '../types'
 import { isCacheHit } from '../utils/cache'
-import { setResourceTimingStatus } from '../utils/resource-timing'
+import {
+	BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
+	getCrossOriginTimingRestricted,
+	setResourceTimingRenderBlocking,
+	setResourceTimingStatus,
+} from '../utils/resource-timing'
 
 export interface SplunkDocLoadInstrumentationConfig extends InstrumentationConfig {
 	ignoreUrls?: (string | RegExp)[]
@@ -47,6 +53,23 @@ export interface SplunkDocLoadInstrumentationConfig extends InstrumentationConfi
 
 const excludedInitiatorTypes = new Set(['beacon', 'fetch', 'xmlhttprequest'])
 const PAGE_LOAD_SPAN_NAME = 'pageLoad'
+
+function sanitizeNavigationTimingEvents(span: Span, entries: PerformanceEntries): void {
+	const entryValues = entries as unknown as Record<string, unknown>
+	const fetchStart = entryValues[PTN.FETCH_START]
+
+	for (let index = span.events.length - 1; index >= 0; index--) {
+		const event = span.events[index]
+		const entryTime = entryValues[event.name]
+		const isBeforeFetchStart =
+			typeof entryTime === 'number' && typeof fetchStart === 'number' && entryTime < fetchStart
+		if (isBeforeFetchStart) {
+			span.events.splice(index, 1)
+		} else if (typeof entryTime === 'number' && typeof fetchStart === 'number') {
+			event.time = addHrTimes(span.startTime, millisToHrTime(entryTime - fetchStart))
+		}
+	}
+}
 
 function addExtraDocLoadTags(span: api.Span) {
 	if (document.referrer && document.referrer !== '') {
@@ -101,6 +124,8 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 	private navigationTimingObserver: PerformanceObserver | undefined
 
 	private pageLoadSpan: api.Span | undefined
+
+	private pageLoadUrl: string | undefined
 
 	constructor(
 		config: SplunkDocLoadInstrumentationConfig = {},
@@ -168,9 +193,25 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 		exposedSuper._endSpan = (span, performanceName, entries) => {
 			// TODO: upstream exposed name on api.Span, then fix
 			const exposedSpan = span as any as Span
+			if (
+				span &&
+				(exposedSpan.name === AttributeNames.DOCUMENT_FETCH ||
+					exposedSpan.name === AttributeNames.DOCUMENT_LOAD)
+			) {
+				sanitizeNavigationTimingEvents(exposedSpan, entries)
+			}
 
 			if (span) {
 				span.setAttribute('component', this.component)
+			}
+
+			// The upstream instrumentation assigns the document URLs after _startSpan
+			// returns. Apply pageLoad's captured URL at end so a route change before
+			// collection cannot make either initial-navigation span look like a new route.
+			const isInitialNavigationSpan =
+				exposedSpan.name === AttributeNames.DOCUMENT_LOAD || exposedSpan.name === AttributeNames.DOCUMENT_FETCH
+			if (span && isInitialNavigationSpan && this.pageLoadUrl !== undefined) {
+				span.setAttribute(SEMATTRS_HTTP_URL, this.pageLoadUrl)
 			}
 
 			if (span && exposedSpan.name !== AttributeNames.DOCUMENT_LOAD) {
@@ -197,6 +238,10 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 								}
 							: { type: 'document' },
 					)
+					// Document-load fetch spans are emitted together as part of this navigation's PCT batch.
+					// Their page span ID provides the association, so do not re-gate them by current navigation
+					// or resource-monitor admission.
+					span.setAttribute(BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE, true)
 				}
 
 				// only apply links to document/resource fetch
@@ -283,10 +328,20 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 			const span = exposedSuper._startSpan(AttributeNames.RESOURCE_FETCH, PTN.FETCH_START, resource, parentSpan)
 			if (span) {
 				span.setAttribute(SEMATTRS_HTTP_URL, resource.name)
+				const crossOriginTimingRestricted = getCrossOriginTimingRestricted(resource)
+				if (crossOriginTimingRestricted !== undefined) {
+					span.setAttribute(
+						BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
+						crossOriginTimingRestricted,
+					)
+				}
+
 				const cacheHitResult = isCacheHit(resource)
 				if (cacheHitResult !== undefined) {
 					span.setAttribute('http.cache.hit', cacheHitResult)
 				}
+
+				setResourceTimingRenderBlocking(span, resource)
 
 				if (!exposedSuper.getConfig().ignoreNetworkEvents) {
 					addSpanNetworkEvents(span, resource)
@@ -319,6 +374,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 		this.pageLoadSpan?.end(endTime)
 		this.navigationStartTimeMillis = undefined
 		this.pageLoadSpan = undefined
+		this.pageLoadUrl = undefined
 	}
 
 	private startPageLoadSpan(fetchStart: number): void {
@@ -334,11 +390,13 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 		this.navigationTimingObserver?.disconnect()
 		this.navigationTimingObserver = undefined
 
+		const pageLoadUrl = location.href
 		this.pageLoadSpan = this.tracer.startSpan(PAGE_LOAD_SPAN_NAME, {
 			startTime: this.navigationStartTimeMillis,
 		})
+		this.pageLoadUrl = pageLoadUrl
 		this.pageLoadSpan.setAttribute('component', this.component)
-		this.pageLoadSpan.setAttribute(SEMATTRS_HTTP_URL, location.href)
+		this.pageLoadSpan.setAttribute(SEMATTRS_HTTP_URL, pageLoadUrl)
 		this.pageLoadSpan.setAttribute(SemanticAttributes.HTTP_USER_AGENT, navigator.userAgent)
 		this.navigationMetricsManager?.setCurrentNavigationSpan(
 			this.pageLoadSpan,
@@ -348,12 +406,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 	}
 
 	private startPageLoadSpanWhenNavigationTimingIsAvailable(): void {
-		if (
-			!this.documentLoadMetricsPromise ||
-			!this.otelConfig.experimental ||
-			this.pageLoadSpan ||
-			this.navigationTimingObserver
-		) {
+		if (this.navigationStartTimeMillis !== undefined || this.navigationTimingObserver) {
 			return
 		}
 

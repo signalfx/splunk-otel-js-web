@@ -49,7 +49,13 @@ export interface MonitorConfig {
 	/** Only read by LoadingElementMonitor, to watch selectors without its own MutationObserver. */
 	elementVisibilityObserver?: ElementVisibilityObserver
 
+	/** Only read by FetchXhrMonitor. */
+	isResourceTracked?: (resourceId: string) => boolean
+
 	onResourceStateChange: (event: ResourceStateEvent) => void
+
+	/** Only read by FetchXhrMonitor. */
+	waitForFetchResponseBody?: boolean
 }
 
 export abstract class Monitor {

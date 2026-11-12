@@ -17,7 +17,7 @@
  */
 
 import { diag, Span, trace, Tracer, TracerProvider } from '@opentelemetry/api'
-import { isUrlIgnored } from '@opentelemetry/core'
+import { addHrTimes, isUrlIgnored, millisToHrTime, timeInputToHrTime } from '@opentelemetry/core'
 
 import { NavigationMetricsManager, SessionManager } from '../managers'
 import {
@@ -111,7 +111,12 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 				element = document.documentElement
 			}
 
-			return _superCreateSpan(element, eventName, parentSpan)
+			const span = _superCreateSpan(element, eventName, parentSpan)
+			if (span) {
+				this.navigationMetricsManager?.recordFirstInteraction(eventName)
+			}
+
+			return span
 		}
 
 		const _superPatchAddEventListener = (this as unknown as ExposedSuper)._patchAddEventListener.bind(this)
@@ -197,12 +202,12 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 			navigationStartTime >= performance.timeOrigin
 				? navigationStartTime - performance.timeOrigin
 				: navigationStartTime
-		const navigationStartTimestamp = performance.timeOrigin + relativeNavigationStartTime
+		const spanStartTime = timeInputToHrTime(navigationStartTime)
 		const span = this._routingTracer.startSpan(BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION, {
 			attributes: {
 				[BROWSER_NAVIGATION_OPERATION_ATTRIBUTE]: BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION,
 			},
-			startTime: navigationStartTimestamp,
+			startTime: spanStartTime,
 		})
 		span.setAttribute('component', this.moduleName)
 		span.setAttribute('location.href', newHref)
@@ -217,10 +222,10 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 				startTime: relativeNavigationStartTime,
 			})
 			diag.debug('Sending routeChange span with PCT result', pageLoadMetrics)
-			span.end(navigationStartTimestamp + pageLoadMetrics.pct)
+			span.end(addHrTimes(spanStartTime, millisToHrTime(pageLoadMetrics.pct)))
 			diag.debug('Route change span ended', { pct: pageLoadMetrics.pct, span })
 		} else {
-			span.end(navigationStartTimestamp)
+			span.end(spanStartTime)
 		}
 	}
 }

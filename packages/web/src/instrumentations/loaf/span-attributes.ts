@@ -18,9 +18,10 @@
 
 import { Span } from '@opentelemetry/api'
 
-import { setRoundedNumberAttribute, setStringAttribute } from '../../utils/span-attributes'
+import { setNumberAttribute, setRoundedNumberAttribute, setStringAttribute } from '../../utils/span-attributes'
 import { LOAF_MODULE_NAME } from './constants'
 import { getLoafScriptSummaries } from './script-summary'
+import { getLoafScriptTimingOffsets } from './script-timing-offsets'
 import { type PerformanceLongAnimationFrameTiming } from './types'
 
 export function setLoafEntryAttributes(span: Span, entry: PerformanceLongAnimationFrameTiming): void {
@@ -41,6 +42,9 @@ export function setLoafEntryAttributes(span: Span, entry: PerformanceLongAnimati
 
 	getLoafScriptSummaries(scripts).forEach((script, index) => {
 		const prefix = `loaf.script[${index}]`
+		const offsets = getLoafScriptTimingOffsets(script, entry)
+		setNumberAttribute(span, `${prefix}.end_offset_micros`, offsets?.endOffsetMicros)
+		setNumberAttribute(span, `${prefix}.start_offset_micros`, offsets?.startOffsetMicros)
 		setRoundedNumberAttribute(span, `${prefix}.duration`, script.duration)
 		setRoundedNumberAttribute(span, `${prefix}.execution_start`, script.executionStart)
 		setStringAttribute(span, `${prefix}.invoker`, script.invoker)

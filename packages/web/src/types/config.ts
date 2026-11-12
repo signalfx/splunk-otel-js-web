@@ -263,8 +263,9 @@ export interface SplunkOtelWebConfig {
 	 * Enables features that are still experimental and may change without notice.
 	 *
 	 * Currently this enables experimental page completion and correlation attributes,
-	 * the `pageLoad` span, and additional post-load resource types. Route-change spans
-	 * emit their completion time and status without this flag.
+	 * the `pageLoad` span, waiting for fetch response bodies during page completion,
+	 * and additional post-load resource types. Route-change spans emit their completion
+	 * time and status without this flag.
 	 * @default false
 	 */
 	experimental?: boolean

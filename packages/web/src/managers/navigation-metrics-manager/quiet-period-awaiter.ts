@@ -202,7 +202,12 @@ export class QuietPeriodAwaiter {
 			return
 		}
 
-		if (this.manualMode && this.manualParticipants.size === 0 && this.lastManualCompletionTimestamp !== undefined) {
+		if (
+			this.manualMode &&
+			this.manualParticipants.size === 0 &&
+			this.lastManualCompletionTimestamp !== undefined &&
+			this.lastManualCompletionTimestamp <= endTimestamp
+		) {
 			this.resolveManualCompletion()
 			return
 		}

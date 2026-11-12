@@ -355,6 +355,21 @@ describe('QuietPeriodAwaiter', () => {
 		expect(result.completionSource).toBe('manual')
 	})
 
+	it('interrupts at an earlier boundary after manual completion', async () => {
+		const now = vi.spyOn(performance, 'now').mockReturnValue(100)
+		const awaiter = createQuietPeriodAwaiter({ quietTime: 100, startTime: 100 })
+		const handle = awaiter.registerManualPageLoad()
+		now.mockReturnValue(200)
+		handle?.markComplete()
+
+		awaiter.interrupt(150)
+
+		const result = await awaiter.promise
+		expect(result.pct).toBe(50)
+		expect(result.status).toBe(PAGE_LOAD_METRICS_STATUS_INTERRUPTED)
+		expect(result.completionSource).toBe('manual')
+	})
+
 	it('interrupts when a manual participant remains pending and rejects its stale handle', async () => {
 		const awaiter = createQuietPeriodAwaiter({ quietTime: 100, startTime: performance.now() })
 		const handle = awaiter.registerManualPageLoad()

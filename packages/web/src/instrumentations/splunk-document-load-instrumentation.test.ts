@@ -16,13 +16,15 @@
  *
  */
 
-import { hrTimeToMilliseconds, timeInputToHrTime } from '@opentelemetry/core'
-import { BasicTracerProvider, Span } from '@opentelemetry/sdk-trace-base'
+import { addHrTimes, hrTimeToMilliseconds, millisToHrTime, timeInputToHrTime } from '@opentelemetry/core'
+import { BasicTracerProvider, InMemorySpanExporter, SimpleSpanProcessor, Span } from '@opentelemetry/sdk-trace-base'
+import { PerformanceEntries, PerformanceTimingNames as PTN } from '@opentelemetry/sdk-trace-web'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { NavigationMetricsManager } from '../managers'
 
 import { BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION } from '../managers/navigation-metrics-manager/constants'
+import { BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE } from '../utils/resource-timing'
 import { SplunkDocumentLoadInstrumentation } from './splunk-document-load-instrumentation'
 
 class MockPerformanceObserver {
@@ -110,6 +112,98 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 		expect(MockPerformanceObserver.instances[0].disconnect).toHaveBeenCalledOnce()
 	})
 
+	it('uses the pageLoad URL for both document spans when the route changes before collection', () => {
+		const { navigationMetricsManager, setCurrentNavigationSpan } = createNavigationMetricsManagerMock()
+		vi.spyOn(performance, 'getEntriesByType').mockReturnValue([])
+		vi.stubGlobal('PerformanceObserver', null)
+
+		instrumentation = new SplunkDocumentLoadInstrumentation(
+			{},
+			{ experimental: true },
+			undefined,
+			navigationMetricsManager,
+		)
+		instrumentation.setTracerProvider(new BasicTracerProvider())
+
+		const initialUrl = location.href
+		const changedUrl = new URL('/signin', initialUrl).href
+		const exposedInstrumentation = instrumentation as unknown as {
+			_endSpan(span: Span, performanceName: string, entries: PerformanceEntries): void
+			_startSpan(spanName: string, performanceName: string, entries: PerformanceEntries): Span
+			startPageLoadSpan(fetchStart: number): void
+		}
+		exposedInstrumentation.startPageLoadSpan(12.5)
+		history.pushState({}, '', changedUrl)
+
+		const entries = { fetchStart: 12.5, loadEventEnd: 20, responseEnd: 18 } as PerformanceEntries
+		const documentFetchSpan = exposedInstrumentation._startSpan('documentFetch', PTN.FETCH_START, entries)
+		documentFetchSpan.setAttribute('http.url', location.href)
+		exposedInstrumentation._endSpan(documentFetchSpan, PTN.RESPONSE_END, entries)
+
+		const documentLoadSpan = exposedInstrumentation._startSpan('documentLoad', PTN.FETCH_START, entries)
+		documentLoadSpan.setAttribute('http.url', location.href)
+		exposedInstrumentation._endSpan(documentLoadSpan, PTN.LOAD_EVENT_END, entries)
+
+		const pageLoadSpan = setCurrentNavigationSpan.mock.calls[0][0] as Span
+		expect(pageLoadSpan.attributes['http.url']).toBe(initialUrl)
+		expect(documentFetchSpan.attributes['http.url']).toBe(initialUrl)
+		expect(documentLoadSpan.attributes['http.url']).toBe(initialUrl)
+		history.replaceState({}, '', initialUrl)
+	})
+
+	it('preserves the URLs assigned by document instrumentation when pageLoad is unavailable', () => {
+		vi.spyOn(performance, 'getEntriesByType').mockReturnValue([])
+		vi.stubGlobal('PerformanceObserver', null)
+
+		instrumentation = new SplunkDocumentLoadInstrumentation({}, { experimental: false })
+		instrumentation.setTracerProvider(new BasicTracerProvider())
+
+		const entries = { fetchStart: 12.5, loadEventEnd: 20, responseEnd: 18 } as PerformanceEntries
+		const exposedInstrumentation = instrumentation as unknown as {
+			_endSpan(span: Span, performanceName: string, entries: PerformanceEntries): void
+			_startSpan(spanName: string, performanceName: string, entries: PerformanceEntries): Span
+		}
+		const documentFetchSpan = exposedInstrumentation._startSpan('documentFetch', PTN.FETCH_START, entries)
+		documentFetchSpan.setAttribute('http.url', location.href)
+		exposedInstrumentation._endSpan(documentFetchSpan, PTN.RESPONSE_END, entries)
+
+		const documentLoadSpan = exposedInstrumentation._startSpan('documentLoad', PTN.FETCH_START, entries)
+		documentLoadSpan.setAttribute('http.url', location.href)
+		exposedInstrumentation._endSpan(documentLoadSpan, PTN.LOAD_EVENT_END, entries)
+
+		expect(documentFetchSpan.attributes['http.url']).toBe(location.href)
+		expect(documentLoadSpan.attributes['http.url']).toBe(location.href)
+	})
+
+	it('aligns document spans to navigation start without experimental pageLoad telemetry', () => {
+		const exporter = new InMemorySpanExporter()
+		const provider = new BasicTracerProvider({ spanProcessors: [new SimpleSpanProcessor(exporter)] })
+		const navigationStart = 12.5
+		vi.spyOn(performance, 'getEntriesByType').mockReturnValue([
+			{ entryType: 'navigation', fetchStart: navigationStart } as PerformanceNavigationTiming,
+		])
+
+		instrumentation = new SplunkDocumentLoadInstrumentation({}, { experimental: false })
+		instrumentation.setTracerProvider(provider)
+
+		const exposedInstrumentation = instrumentation as unknown as {
+			_startSpan(spanName: string, performanceName: string, entries: Record<string, number>): Span
+		}
+		const documentLoadSpan = exposedInstrumentation._startSpan('documentLoad', PTN.FETCH_START, { fetchStart: 20 })
+		const documentFetchSpan = exposedInstrumentation._startSpan('documentFetch', PTN.FETCH_START, {
+			fetchStart: 21,
+		})
+
+		expect(documentLoadSpan.startTime).toEqual(timeInputToHrTime(navigationStart))
+		expect(documentFetchSpan.startTime).toEqual(documentLoadSpan.startTime)
+
+		documentLoadSpan.end()
+		documentFetchSpan.end()
+		instrumentation.disable()
+
+		expect(exporter.getFinishedSpans().map(({ name }) => name)).toEqual(['documentLoad', 'documentFetch'])
+	})
+
 	it('does not create pageLoad late when document-load timing becomes available', () => {
 		const { navigationMetricsManager, setCurrentNavigationSpan } = createNavigationMetricsManagerMock()
 		vi.spyOn(performance, 'getEntriesByType').mockReturnValue([])
@@ -132,6 +226,168 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 		expect((setCurrentNavigationSpan.mock.calls[0][0] as Span).name).toBe('documentLoad')
 	})
 
+	it('omits pre-start network timings from documentFetch spans', () => {
+		const { navigationMetricsManager } = createNavigationMetricsManagerMock()
+		const fetchStart = 12.5
+		vi.spyOn(performance, 'getEntriesByType').mockReturnValue([
+			{ entryType: 'navigation', fetchStart } as PerformanceNavigationTiming,
+		])
+		instrumentation = new SplunkDocumentLoadInstrumentation(
+			{},
+			{ experimental: true },
+			undefined,
+			navigationMetricsManager,
+		)
+		instrumentation.setTracerProvider(new BasicTracerProvider())
+
+		const entries = {
+			connectEnd: 0,
+			connectStart: fetchStart - 0.1,
+			fetchStart,
+			requestStart: fetchStart + 0.5,
+			responseEnd: fetchStart + 1,
+		} as PerformanceEntries
+		const exposedInstrumentation = instrumentation as unknown as {
+			_endSpan(span: Span, performanceName: string, entries: PerformanceEntries): void
+			_startSpan(spanName: string, performanceName: string, entries: PerformanceEntries): Span
+		}
+		const span = exposedInstrumentation._startSpan('documentFetch', PTN.FETCH_START, entries)
+		const eventNames = [PTN.FETCH_START, PTN.CONNECT_START, PTN.CONNECT_END, PTN.REQUEST_START, PTN.RESPONSE_END]
+		const misalignedEventTime = millisToHrTime(hrTimeToMilliseconds(span.startTime) - 0.2)
+		for (const eventName of eventNames) {
+			span.addEvent(eventName, misalignedEventTime)
+		}
+
+		expect(span.events.map(({ name }) => name)).toEqual(eventNames)
+
+		exposedInstrumentation._endSpan(span, PTN.RESPONSE_END, entries)
+
+		expect(span.events.map(({ name }) => name)).toEqual([PTN.FETCH_START, PTN.REQUEST_START, PTN.RESPONSE_END])
+		expect(span.events[0].time).toEqual(span.startTime)
+		expect(span.events[1].time).toEqual(addHrTimes(span.startTime, millisToHrTime(0.5)))
+	})
+
+	it('keeps zero timings at a zero fetchStart and omits earlier lifecycle timings', () => {
+		const { navigationMetricsManager } = createNavigationMetricsManagerMock()
+		const fetchStart = 0
+		vi.spyOn(performance, 'getEntriesByType').mockReturnValue([
+			{ entryType: 'navigation', fetchStart } as PerformanceNavigationTiming,
+		])
+		instrumentation = new SplunkDocumentLoadInstrumentation(
+			{},
+			{ experimental: true },
+			undefined,
+			navigationMetricsManager,
+		)
+		instrumentation.setTracerProvider(new BasicTracerProvider())
+
+		const entries = {
+			domComplete: fetchStart + 1,
+			domContentLoadedEventEnd: fetchStart + 0.5,
+			domContentLoadedEventStart: fetchStart - 0.1,
+			domInteractive: 0,
+			fetchStart: 0,
+		} as PerformanceEntries
+		const exposedInstrumentation = instrumentation as unknown as {
+			_endSpan(span: Span, performanceName: string, entries: PerformanceEntries): void
+			_startSpan(spanName: string, performanceName: string, entries: PerformanceEntries): Span
+		}
+		const span = exposedInstrumentation._startSpan('documentLoad', PTN.FETCH_START, entries)
+		const eventNames = [
+			PTN.FETCH_START,
+			PTN.DOM_INTERACTIVE,
+			PTN.DOM_CONTENT_LOADED_EVENT_START,
+			PTN.DOM_CONTENT_LOADED_EVENT_END,
+		]
+		const misalignedEventTime = millisToHrTime(hrTimeToMilliseconds(span.startTime) - 0.2)
+		for (const eventName of eventNames) {
+			span.addEvent(eventName, misalignedEventTime)
+		}
+
+		expect(span.events.map(({ name }) => name)).toEqual(eventNames)
+
+		exposedInstrumentation._endSpan(span, PTN.DOM_COMPLETE, entries)
+
+		expect(span.events.map(({ name }) => name)).toEqual([
+			PTN.FETCH_START,
+			PTN.DOM_INTERACTIVE,
+			PTN.DOM_CONTENT_LOADED_EVENT_END,
+		])
+		expect(span.events[0].time).toEqual(span.startTime)
+		expect(span.events[1].time).toEqual(span.startTime)
+		expect(span.events[2].time).toEqual(addHrTimes(span.startTime, millisToHrTime(0.5)))
+	})
+
+	it('adds the timing restriction attribute to classifiable resource spans', () => {
+		vi.spyOn(performance, 'getEntriesByType').mockReturnValue([])
+		vi.stubGlobal('PerformanceObserver', null)
+
+		instrumentation = new SplunkDocumentLoadInstrumentation({}, { experimental: true })
+		const setAttribute = vi.fn()
+		const span = { addEvent: vi.fn(), setAttribute } as unknown as Span
+		const exposedInstrumentation = instrumentation as unknown as {
+			_addCustomAttributesOnResourceSpan: (...args: unknown[]) => void
+			_endSpan: (...args: unknown[]) => void
+			_initResourceSpan: (resource: PerformanceResourceTiming, parentSpan?: Span) => void
+			_startSpan: (...args: unknown[]) => Span | undefined
+			getConfig: () => { ignoreNetworkEvents?: boolean }
+		}
+		exposedInstrumentation._startSpan = vi.fn(() => span)
+		exposedInstrumentation._endSpan = vi.fn()
+		exposedInstrumentation._addCustomAttributesOnResourceSpan = vi.fn()
+		exposedInstrumentation.getConfig = vi.fn(() => ({ ignoreNetworkEvents: true }))
+
+		const resourceEntries = [
+			createResourceEntry('https://example.test/tao-missing.svg'),
+			createResourceEntry('https://example.test/tao-present.svg', {
+				decodedBodySize: 90,
+				encodedBodySize: 90,
+				requestStart: 12,
+				responseStart: 15,
+				transferSize: 120,
+			}),
+			createResourceEntry(new URL('/same-origin.svg', self.origin).toString()),
+		]
+		resourceEntries.forEach((resource) => exposedInstrumentation._initResourceSpan(resource))
+
+		expect(setAttribute).toHaveBeenCalledWith(BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE, true)
+		expect(setAttribute).toHaveBeenCalledWith(BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE, false)
+		expect(
+			setAttribute.mock.calls.filter(
+				([name]) => name === BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
+			),
+		).toHaveLength(2)
+	})
+
+	it('adds render-blocking status attributes to resource spans', () => {
+		vi.spyOn(performance, 'getEntriesByType').mockReturnValue([])
+		vi.stubGlobal('PerformanceObserver', null)
+
+		instrumentation = new SplunkDocumentLoadInstrumentation({}, { experimental: true })
+		const setAttribute = vi.fn()
+		const span = { addEvent: vi.fn(), setAttribute } as unknown as Span
+		const exposedInstrumentation = instrumentation as unknown as {
+			_addCustomAttributesOnResourceSpan: (...args: unknown[]) => void
+			_endSpan: (...args: unknown[]) => void
+			_initResourceSpan: (resource: PerformanceResourceTiming, parentSpan?: Span) => void
+			_startSpan: (...args: unknown[]) => Span | undefined
+			getConfig: () => { ignoreNetworkEvents?: boolean }
+		}
+		exposedInstrumentation._startSpan = vi.fn(() => span)
+		exposedInstrumentation._endSpan = vi.fn()
+		exposedInstrumentation._addCustomAttributesOnResourceSpan = vi.fn()
+		exposedInstrumentation.getConfig = vi.fn(() => ({ ignoreNetworkEvents: true }))
+
+		const resourceEntries = [
+			createResourceEntry('https://example.test/blocking.js', { renderBlockingStatus: 'blocking' }),
+			createResourceEntry('https://example.test/non-blocking.js', { renderBlockingStatus: 'non-blocking' }),
+		]
+		resourceEntries.forEach((resource) => exposedInstrumentation._initResourceSpan(resource))
+
+		expect(setAttribute).toHaveBeenCalledWith('resource.render_blocking', 'blocking')
+		expect(setAttribute).toHaveBeenCalledWith('resource.render_blocking', 'non-blocking')
+	})
+
 	it('ends an open pageLoad span when disabled', () => {
 		const { navigationMetricsManager, setCurrentNavigationSpan } = createNavigationMetricsManagerMock()
 		vi.spyOn(performance, 'getEntriesByType').mockReturnValue([{ fetchStart: 12.5 } as PerformanceNavigationTiming])
@@ -150,3 +406,21 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 		expect(pageLoadSpan.ended).toBe(true)
 	})
 })
+
+type ResourceTimingTestOverrides = Partial<PerformanceResourceTiming> & {
+	readonly renderBlockingStatus?: string
+}
+
+function createResourceEntry(name: string, overrides: ResourceTimingTestOverrides = {}): PerformanceResourceTiming {
+	return {
+		decodedBodySize: 0,
+		encodedBodySize: 0,
+		fetchStart: 10,
+		name,
+		requestStart: 0,
+		responseEnd: 20,
+		responseStart: 0,
+		transferSize: 0,
+		...overrides,
+	} as PerformanceResourceTiming
+}

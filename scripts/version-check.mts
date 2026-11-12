@@ -21,12 +21,20 @@ import path from 'node:path'
 
 import { getPackageRoots } from './utils/index.mjs'
 
+const rootPackageJsonPath = path.resolve(process.cwd(), 'package.json')
+const { version: rootVersion } = JSON.parse(readFileSync(rootPackageJsonPath, 'utf8'))
+
 getPackageRoots().forEach((packagePath) => {
 	const packageJsonPath = path.resolve(packagePath, 'package.json')
 	const { name, version } = JSON.parse(readFileSync(packageJsonPath, 'utf8'))
 
 	const versionFilePath = path.resolve(packagePath, 'src', 'version.ts')
 	const versionFileContent = readFileSync(versionFilePath, 'utf8')
+
+	if (version !== rootVersion) {
+		console.error(`The ${name} package version does not match the root package version.`)
+		process.exitCode = 1
+	}
 
 	const hasMatchingInternalVersion = versionFileContent.includes(`export const VERSION = '${version}'`)
 	if (!hasMatchingInternalVersion) {
