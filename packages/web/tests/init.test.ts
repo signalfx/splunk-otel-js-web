@@ -1724,6 +1724,31 @@ describe('external session handling', () => {
 		window.SplunkRumExternal = undefined
 	})
 
+	it.each(['init', 'window'])('reuses external session without anonymousUserId via %s', (source) => {
+		const metadata = {
+			sessionId: 'external-session-without-anonymous-id',
+			sessionLastActivity: Date.now(),
+			sessionStart: Date.now() - 1000,
+		}
+
+		if (source === 'window') {
+			window.SplunkRumExternal = {
+				getSessionMetadata: () => metadata,
+			}
+		}
+
+		SplunkRum.init({
+			applicationName: 'test-app',
+			beaconEndpoint: 'https://127.0.0.1:9999/test',
+			rumAccessToken: undefined,
+			sessionMetadata: source === 'init' ? metadata : undefined,
+			spanProcessors: [capturer],
+		})
+
+		expect(SplunkRum.getSessionState()?.source).toBe('external')
+		expect(SplunkRum.getSessionId()).toBe(metadata.sessionId)
+	})
+
 	it('should not create session.start span for external sessions', async () => {
 		capturer.captureSessionStart = true
 		const now = Date.now()
