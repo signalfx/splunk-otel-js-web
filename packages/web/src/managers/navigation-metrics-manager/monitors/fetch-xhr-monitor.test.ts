@@ -180,9 +180,7 @@ describe('FetchXhrMonitor', () => {
 			replaceMonitor({ waitForFetchResponseBody: true })
 			const cancel = vi.spyOn(ReadableStreamDefaultReader.prototype, 'cancel')
 			const restoreFetch = replaceFetch(() =>
-				Promise.resolve(
-					new Response(new ReadableStream<Uint8Array>({ start() {} })),
-				),
+				Promise.resolve(new Response(new ReadableStream<Uint8Array>({ start() {} }))),
 			)
 
 			try {

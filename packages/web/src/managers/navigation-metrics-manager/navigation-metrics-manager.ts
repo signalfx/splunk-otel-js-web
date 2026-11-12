@@ -60,9 +60,9 @@ const NAVIGATION_METRICS_MANAGER_CONFIG_DEFAULTS = {
 	blockingSelectors: [] as string[],
 	clearLoadingResourcesOnNewPage: true,
 	ignoreUrls: [] as (string | RegExp)[],
+	maxFetchResponseBodyWaitTime: 180_000,
 	maxPageLoadTimeoutForManualApi: 180_000,
 	maxPageLoadWaitTime: 180_000,
-	maxFetchResponseBodyWaitTime: 180_000,
 	maxResourcesToWatch: 100,
 	monitors: ['media', 'network', 'performance'] as NavigationMetricsMonitor[],
 	quietTime: 1000,
@@ -93,9 +93,9 @@ type NavigationMetricsManagerConfigValues = {
 	blockingSelectors?: string[]
 	clearLoadingResourcesOnNewPage?: boolean
 	ignoreUrls?: (string | RegExp)[]
+	maxFetchResponseBodyWaitTime?: number
 	maxPageLoadTimeoutForManualApi?: number
 	maxPageLoadWaitTime?: number
-	maxFetchResponseBodyWaitTime?: number
 	maxResourcesToWatch?: number
 	monitors?: NavigationMetricsMonitor[]
 	quietTime?: number
@@ -249,10 +249,10 @@ export class NavigationMetricsManager {
 			consumerId: Symbol('navigation-metrics-manager-elements'),
 			elementVisibilityObserver: config.elementVisibilityObserver ?? new ElementVisibilityObserver(),
 			isResourceTracked: (resourceId) => this.loadingResources.has(resourceId),
-			onResourceUntracked: (resourceId) => this.monitors?.network.cancelFetchBodyReader(resourceId),
-			onResourceStateChange: this.onResourceStateChange,
-			waitForFetchResponseBody: config.experimental,
 			maxFetchResponseBodyWaitTime: this.config.maxFetchResponseBodyWaitTime,
+			onResourceStateChange: this.onResourceStateChange,
+			onResourceUntracked: (resourceId) => this.monitors?.network.cancelFetchBodyReader(resourceId),
+			waitForFetchResponseBody: config.experimental,
 		}
 
 		this.monitors = NavigationMetricsManager.createMonitors(monitorConfig)
@@ -777,11 +777,7 @@ export class NavigationMetricsManager {
 		}
 	}
 
-	private recordLoadedResource(
-		resource: LoadingResource,
-		duration: number,
-		completionReason?: 'body_timeout',
-	): void {
+	private recordLoadedResource(resource: LoadingResource, duration: number, completionReason?: 'body_timeout'): void {
 		if (!this.pageLoadResourceTracker) {
 			return
 		}
@@ -822,11 +818,11 @@ export class NavigationMetricsManager {
 				config.ignoreUrls ?? defaultConfig.ignoreUrls,
 				beaconEndpointIgnoreUrls,
 			),
+			maxFetchResponseBodyWaitTime:
+				config.maxFetchResponseBodyWaitTime ?? defaultConfig.maxFetchResponseBodyWaitTime,
 			maxPageLoadTimeoutForManualApi:
 				config.maxPageLoadTimeoutForManualApi ?? defaultConfig.maxPageLoadTimeoutForManualApi,
 			maxPageLoadWaitTime: normalizeMaxPageLoadWaitTime({ maxPageLoadWaitTime, quietTime }),
-			maxFetchResponseBodyWaitTime:
-				config.maxFetchResponseBodyWaitTime ?? defaultConfig.maxFetchResponseBodyWaitTime,
 			maxResourcesToWatch: config.maxResourcesToWatch ?? defaultConfig.maxResourcesToWatch,
 			monitors: [...(config.monitors ?? defaultConfig.monitors)],
 			quietTime,

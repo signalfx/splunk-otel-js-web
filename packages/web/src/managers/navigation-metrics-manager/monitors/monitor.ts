@@ -31,9 +31,9 @@ type ResourceStateEventWithoutMonitorType =
 	| { id: string; state: ResourceState.DISCOVERED; timestamp?: number; url: string }
 	| { id: string; state: ResourceState.ERROR; timestamp: number; url: string }
 	| {
+			completionReason?: 'body_timeout'
 			id: string
 			loadTime: number
-			completionReason?: 'body_timeout'
 			state: ResourceState.LOADED
 			timestamp: number
 			url: string
@@ -54,13 +54,15 @@ export interface MonitorConfig {
 	isResourceTracked?: (resourceId: string) => boolean
 
 	/** Only read by FetchXhrMonitor. */
-	onResourceUntracked?: (resourceId: string) => void
+	maxFetchResponseBodyWaitTime?: number
 
 	onResourceStateChange: (event: ResourceStateEvent) => void
 
 	/** Only read by FetchXhrMonitor. */
+	onResourceUntracked?: (resourceId: string) => void
+
+	/** Only read by FetchXhrMonitor. */
 	waitForFetchResponseBody?: boolean
-	maxFetchResponseBodyWaitTime?: number
 }
 
 export abstract class Monitor {

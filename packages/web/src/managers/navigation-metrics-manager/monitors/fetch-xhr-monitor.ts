@@ -33,9 +33,25 @@ declare global {
 export class FetchXhrMonitor extends Monitor {
 	protected readonly monitorType: NavigationMetricsMonitor = 'network'
 
+	private readonly activeFetchBodyReaders = new Map<string, ReadableStreamDefaultReader<Uint8Array>>()
+
 	private isMonitoring = false
 
-	private readonly activeFetchBodyReaders = new Map<string, ReadableStreamDefaultReader<Uint8Array>>()
+	cancelFetchBodyReader(resourceId: string): void {
+		const reader = this.activeFetchBodyReaders.get(resourceId)
+		if (!reader) {
+			return
+		}
+
+		this.activeFetchBodyReaders.delete(resourceId)
+		void reader.cancel().catch(() => {})
+	}
+
+	cancelPendingFetchBodyReaders(): void {
+		for (const resourceId of this.activeFetchBodyReaders.keys()) {
+			this.cancelFetchBodyReader(resourceId)
+		}
+	}
 
 	start(): void {
 		if (this.isMonitoring) {
@@ -223,11 +239,12 @@ export class FetchXhrMonitor extends Monitor {
 				while (!result.done) {
 					if (this.config.isResourceTracked?.(resourceId) === false) {
 						this.config.onResourceUntracked?.(resourceId)
-						return undefined
+						return
 					}
+
 					result = await reader.read()
 				}
-				return undefined
+				return
 			})()
 			const timeout = new Promise<'body_timeout'>((resolve) => {
 				timeoutId = setTimeout(
@@ -238,28 +255,16 @@ export class FetchXhrMonitor extends Monitor {
 			const completionReason = await Promise.race([bodyRead, timeout])
 			if (completionReason === 'body_timeout') {
 				void reader.cancel().catch(() => {})
+				return completionReason
 			}
-			return completionReason
+
+			return
 		} finally {
 			if (timeoutId !== undefined) {
 				clearTimeout(timeoutId)
 			}
+
 			reader.releaseLock()
-		}
-	}
-
-	cancelFetchBodyReader(resourceId: string): void {
-		const reader = this.activeFetchBodyReaders.get(resourceId)
-		if (!reader) {
-			return
-		}
-		this.activeFetchBodyReaders.delete(resourceId)
-		void reader.cancel().catch(() => {})
-	}
-
-	cancelPendingFetchBodyReaders(): void {
-		for (const resourceId of this.activeFetchBodyReaders.keys()) {
-			this.cancelFetchBodyReader(resourceId)
 		}
 	}
 }
