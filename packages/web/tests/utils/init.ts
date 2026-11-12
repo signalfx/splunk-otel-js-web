@@ -42,9 +42,6 @@ export const initWithDefaultConfig = (capturer: SpanCapturer, additionalOptions 
 	if (!SplunkRum.inited) {
 		throw new Error('SplunkRum not initialized')
 	}
-
-	// Clear the session.start span that was emitted during init
-	capturer.clear()
 }
 
 export function initWithSyncPipeline(additionalOptions = {}): {
@@ -68,7 +65,6 @@ export function initWithSyncPipeline(additionalOptions = {}): {
 		...additionalOptions,
 	})
 
-	// Clear the session.start span that was emitted during init
 	clearSpans()
 
 	return {

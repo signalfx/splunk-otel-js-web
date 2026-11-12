@@ -20,6 +20,8 @@ import { Attributes, diag } from '@opentelemetry/api'
 import { hrTimeToMilliseconds } from '@opentelemetry/core'
 import { Span, SpanProcessor } from '@opentelemetry/sdk-trace-base'
 
+import type { SessionState } from '../managers/session-manager/session-state'
+
 import { NavigationMetricsManager, SESSION_DURATION_MS, SessionManager, UserManager } from '../managers'
 import { BROWSER_NAVIGATION_OPERATION_ATTRIBUTE } from '../managers/navigation-metrics-manager/constants'
 
@@ -37,6 +39,7 @@ export class SpanAttributesProcessor implements SpanProcessor {
 		private readonly discardDataAfterInactivity: boolean = true,
 		private readonly adjustSessionStartToTimeOrigin: boolean = true,
 		private readonly navigationMetricsManager?: NavigationMetricsManager,
+		private readonly onApplicationSpanEnd?: (sessionState: SessionState) => void,
 	) {
 		this._globalAttributes = globalAttributes ?? {}
 	}
@@ -62,6 +65,10 @@ export class SpanAttributesProcessor implements SpanProcessor {
 				span.endTime[1] = 0
 				span.duration[0] = sessionMaxDurationTimeInSeconds - span.startTime[0]
 				span.duration[1] = 0
+			}
+
+			if (span.name !== 'session.start' && span.name !== 'session.end') {
+				this.onApplicationSpanEnd?.(sessionState)
 			}
 		}
 	}
