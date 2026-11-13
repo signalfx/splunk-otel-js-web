@@ -30,6 +30,8 @@ type MonitoredMediaElement = {
 export class MediaMonitor extends Monitor {
 	protected readonly monitorType: NavigationMetricsMonitor = 'media'
 
+	private completedMediaElementUrls = new WeakMap<HTMLMediaElement, string>()
+
 	private isMonitoring = false
 
 	private monitoredMediaElementControllers = new Set<AbortController>()
@@ -62,13 +64,14 @@ export class MediaMonitor extends Monitor {
 		this.monitoredMediaElementControllers.forEach((controller) => controller.abort())
 		this.monitoredMediaElementControllers.clear()
 		this.monitoredMediaElements = new WeakMap()
+		this.completedMediaElementUrls = new WeakMap()
 
 		this.isMonitoring = false
 
 		diag.debug('PageLoadingManager.MediaMonitor: Stopped monitoring.')
 	}
 
-	private attachMediaListener(element: HTMLMediaElement): void {
+	private attachMediaListener(element: HTMLMediaElement, discoveredWhileMonitoring = false): void {
 		const existingMediaElement = this.monitoredMediaElements.get(element)
 		const url = this.getMediaUrl(element)
 		if (!url) {
@@ -82,6 +85,10 @@ export class MediaMonitor extends Monitor {
 
 		this.untrackMediaElement(element)
 
+		if (this.completedMediaElementUrls.get(element) === url) {
+			return
+		}
+
 		if (element instanceof HTMLImageElement && element.loading === 'lazy') {
 			return
 		}
@@ -89,11 +96,26 @@ export class MediaMonitor extends Monitor {
 		const event = Monitor.createDiscoveredEvent(url)
 
 		if (this.isElementAlreadyLoaded(element)) {
+			this.completedMediaElementUrls.set(element, url)
+
+			if (discoveredWhileMonitoring) {
+				this.emitResourceStateChange({
+					...event,
+					timestamp: this.getResourceFetchStart(url) ?? event.timestamp,
+				})
+			}
+
 			this.emitResourceStateChange(Monitor.createLoadedEvent(event.id, url, 0))
 			return
 		}
 
 		if (this.isElementAlreadyFailed(element)) {
+			this.completedMediaElementUrls.set(element, url)
+
+			if (discoveredWhileMonitoring) {
+				this.emitResourceStateChange(event)
+			}
+
 			this.emitResourceStateChange(Monitor.createErrorEvent(event.id, url))
 			return
 		}
@@ -104,11 +126,13 @@ export class MediaMonitor extends Monitor {
 		const loadedEventName = element instanceof HTMLImageElement ? 'load' : 'loadeddata'
 		const controller = new AbortController()
 		const listener = (loadEvent: Event) => {
+			this.completedMediaElementUrls.set(element, url)
 			this.emitResourceStateChange(Monitor.createLoadedEvent(event.id, url, performance.now() - startTime))
 			this.cleanupMediaElement(loadEvent.currentTarget, controller)
 		}
 
 		const errorListener = (errorEvent: Event) => {
+			this.completedMediaElementUrls.set(element, url)
 			this.emitResourceStateChange(Monitor.createErrorEvent(event.id, url))
 			this.cleanupMediaElement(errorEvent.currentTarget, controller)
 		}
@@ -126,13 +150,13 @@ export class MediaMonitor extends Monitor {
 		}
 
 		if (isMediaElement(node)) {
-			this.attachMediaListener(node)
+			this.attachMediaListener(node, true)
 			return
 		}
 
 		node.querySelectorAll('img, video, audio').forEach((mediaElement) => {
 			if (isMediaElement(mediaElement)) {
-				this.attachMediaListener(mediaElement)
+				this.attachMediaListener(mediaElement, true)
 			}
 		})
 	}
@@ -163,6 +187,11 @@ export class MediaMonitor extends Monitor {
 		}
 
 		return
+	}
+
+	private getResourceFetchStart(url: string): number | undefined {
+		const entries = performance.getEntriesByName(url, 'resource') as PerformanceResourceTiming[]
+		return entries.at(-1)?.fetchStart
 	}
 
 	private isElementAlreadyFailed(element: HTMLMediaElement): boolean {
@@ -199,7 +228,7 @@ export class MediaMonitor extends Monitor {
 		this.observer = new MutationObserver((mutations) => {
 			mutations.forEach((mutation) => {
 				if (mutation.type === 'attributes' && isElement(mutation.target) && isMediaElement(mutation.target)) {
-					this.attachMediaListener(mutation.target)
+					this.attachMediaListener(mutation.target, true)
 					return
 				}
 

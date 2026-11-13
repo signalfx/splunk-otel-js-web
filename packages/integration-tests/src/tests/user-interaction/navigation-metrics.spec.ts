@@ -171,6 +171,11 @@ test.describe('navigation-metrics', () => {
 		expect(fetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.operation, 'routeChange')
 		expect(fetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, routeChangeSpans[0].spanId)
 		expect(fetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, true)
+		const routeChangeStartTime = hrTimeToMicroseconds(routeChangeSpans[0].startTime)
+		const routeChangeEndTime = routeChangeStartTime + hrTimeToMicroseconds(routeChangeSpans[0].duration)
+		const fetchStartTime = hrTimeToMicroseconds(fetchSpans[0].startTime)
+		expect(fetchStartTime).toBeGreaterThanOrEqual(routeChangeStartTime)
+		expect(fetchStartTime).toBeLessThanOrEqual(routeChangeEndTime)
 		expectBrowserNavigationAttributes(routeChangeSpans[0], {
 			detectedResourceCount: 1,
 			quietTimerResetCount: 1,

@@ -77,6 +77,47 @@ describe('MediaMonitor', () => {
 			})
 		})
 
+		it('does not rediscover an already-failed image when srcset changes', async () => {
+			const img = document.createElement('img')
+			const failedUrl = getFailedImageUrl('already-failed-image')
+			const imageFailed = new Promise<void>((resolve) => {
+				img.addEventListener('error', () => resolve(), { once: true })
+			})
+			img.src = failedUrl
+			await imageFailed
+			img.remove()
+
+			monitor.start()
+			document.body.append(img)
+
+			await vi.waitFor(() => {
+				expectEventStatesWithMatchingIds(events, [ResourceState.DISCOVERED, ResourceState.ERROR])
+			})
+
+			img.srcset = `${failedUrl} 1x`
+			await waitForMutationObserver()
+
+			expectEventStatesWithMatchingIds(events, [ResourceState.DISCOVERED, ResourceState.ERROR])
+		})
+
+		it('remembers an image that fails after monitoring starts', async () => {
+			monitor.start()
+
+			const img = document.createElement('img')
+			const failedUrl = getFailedImageUrl('async-failed-image')
+			img.src = failedUrl
+			document.body.append(img)
+
+			await vi.waitFor(() => {
+				expectEventStatesWithMatchingIds(events, [ResourceState.DISCOVERED, ResourceState.ERROR])
+			})
+
+			img.srcset = `${failedUrl} 1x`
+			await waitForMutationObserver()
+
+			expectEventStatesWithMatchingIds(events, [ResourceState.DISCOVERED, ResourceState.ERROR])
+		})
+
 		it('marks removed loading images as errored', async () => {
 			monitor.start()
 
@@ -193,6 +234,60 @@ describe('MediaMonitor', () => {
 			expect(events.length).toBe(1)
 			expect(events[0].state).toBe(ResourceState.LOADED)
 			expect('loadTime' in events[0] && events[0].loadTime).toBe(0)
+		})
+
+		it('discovers already loaded images added after monitoring starts', async () => {
+			const img = document.createElement('img')
+			const imageLoaded = waitForImageLoad(img)
+			img.src = getTestImageUrl('cached-dynamic-image')
+			document.body.append(img)
+			await imageLoaded
+			img.remove()
+
+			monitor.start()
+			document.body.append(img)
+
+			await vi.waitFor(() => {
+				expectEventStatesWithMatchingIds(events, [ResourceState.DISCOVERED, ResourceState.LOADED])
+			})
+		})
+
+		it('uses the resource timing start when a cached image is discovered after monitoring starts', async () => {
+			const img = document.createElement('img')
+			img.src = DATA_IMAGE_URL
+			await img.decode()
+			img.remove()
+
+			const fetchStart = 10
+			vi.spyOn(performance, 'getEntriesByName').mockReturnValue([
+				{ fetchStart, name: DATA_IMAGE_URL } as PerformanceResourceTiming,
+			])
+			vi.spyOn(performance, 'now').mockReturnValue(fetchStart + 250)
+			monitor.start()
+			document.body.append(img)
+
+			await vi.waitFor(() => {
+				expectEventStatesWithMatchingIds(events, [ResourceState.DISCOVERED, ResourceState.LOADED])
+			})
+
+			expect(events[0].timestamp).toBe(fetchStart)
+		})
+
+		it('does not rediscover a cached image when srcset changes in the same observer batch', async () => {
+			const img = document.createElement('img')
+			const imageLoaded = waitForImageLoad(img)
+			img.src = DATA_IMAGE_URL
+			document.body.append(img)
+			await imageLoaded
+			img.remove()
+
+			monitor.start()
+			document.body.append(img)
+			img.srcset = `${DATA_IMAGE_URL} 1x`
+
+			await vi.waitFor(() => {
+				expectEventStatesWithMatchingIds(events, [ResourceState.DISCOVERED, ResourceState.LOADED])
+			})
 		})
 
 		it('skips lazy-loaded images', async () => {
