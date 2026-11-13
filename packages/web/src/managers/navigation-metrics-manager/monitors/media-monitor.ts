@@ -99,7 +99,10 @@ export class MediaMonitor extends Monitor {
 			this.completedMediaElementUrls.set(element, url)
 
 			if (discoveredWhileMonitoring) {
-				this.emitResourceStateChange(event)
+				this.emitResourceStateChange({
+					...event,
+					timestamp: this.getResourceFetchStart(url) ?? event.timestamp,
+				})
 			}
 
 			this.emitResourceStateChange(Monitor.createLoadedEvent(event.id, url, 0))
@@ -107,6 +110,8 @@ export class MediaMonitor extends Monitor {
 		}
 
 		if (this.isElementAlreadyFailed(element)) {
+			this.completedMediaElementUrls.set(element, url)
+
 			if (discoveredWhileMonitoring) {
 				this.emitResourceStateChange(event)
 			}
@@ -127,6 +132,7 @@ export class MediaMonitor extends Monitor {
 		}
 
 		const errorListener = (errorEvent: Event) => {
+			this.completedMediaElementUrls.set(element, url)
 			this.emitResourceStateChange(Monitor.createErrorEvent(event.id, url))
 			this.cleanupMediaElement(errorEvent.currentTarget, controller)
 		}
@@ -181,6 +187,11 @@ export class MediaMonitor extends Monitor {
 		}
 
 		return
+	}
+
+	private getResourceFetchStart(url: string): number | undefined {
+		const entries = performance.getEntriesByName(url, 'resource') as PerformanceResourceTiming[]
+		return entries.at(-1)?.fetchStart
 	}
 
 	private isElementAlreadyFailed(element: HTMLMediaElement): boolean {
