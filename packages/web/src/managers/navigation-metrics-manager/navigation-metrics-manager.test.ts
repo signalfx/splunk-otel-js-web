@@ -1467,6 +1467,37 @@ describe('NavigationMetricsManager', () => {
 		expect(manager.loadingResources.size).toBe(0)
 	})
 
+	it('uses the matching URL override for a resource response body wait timeout', () => {
+		const originalHash = location.hash
+		const manager = new NavigationMetricsManager({
+			maxFetchResponseBodyWaitTime: 1000,
+			urlOverrides: [
+				{
+					match: '#long-response',
+					maxFetchResponseBodyWaitTime: 5000,
+				},
+			],
+		})
+
+		try {
+			location.hash = '#long-response'
+
+			// @ts-expect-error onResourceStateChange is private. We use it for testing.
+			manager.onResourceStateChange({
+				id: 'r_timeout',
+				monitorType: 'network',
+				state: ResourceState.DISCOVERED,
+				url: TEST_API_URL,
+			})
+
+			// @ts-expect-error loadingResources is private. We use it for testing.
+			expect(manager.loadingResources.get('r_timeout')?.maxFetchResponseBodyWaitTime).toBe(5000)
+		} finally {
+			location.hash = originalHash
+			manager.stop()
+		}
+	})
+
 	it('uses the current URL when a resource is discovered before the next waitForPageLoad starts', () => {
 		const manager = new NavigationMetricsManager({
 			monitors: ['network'],

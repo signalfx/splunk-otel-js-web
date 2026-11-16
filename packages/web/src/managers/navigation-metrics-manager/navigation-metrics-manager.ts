@@ -109,6 +109,7 @@ type ResolvedNavigationMetricsUrlOverride = {
 }
 
 type LoadingResource = {
+	maxFetchResponseBodyWaitTime: number
 	monitorType: NavigationMetricsMonitor
 	pageUrl: string
 	url: string
@@ -248,10 +249,10 @@ export class NavigationMetricsManager {
 		const monitorConfig: MonitorConfig = {
 			consumerId: Symbol('navigation-metrics-manager-elements'),
 			elementVisibilityObserver: config.elementVisibilityObserver ?? new ElementVisibilityObserver(),
+			getMaxFetchResponseBodyWaitTime: (resourceId) =>
+				this.loadingResources.get(resourceId)?.maxFetchResponseBodyWaitTime,
 			isResourceTracked: (resourceId) => this.loadingResources.has(resourceId),
-			maxFetchResponseBodyWaitTime: this.config.maxFetchResponseBodyWaitTime,
 			onResourceStateChange: this.onResourceStateChange,
-			onResourceUntracked: (resourceId) => this.monitors?.network.cancelFetchBodyReader(resourceId),
 			waitForFetchResponseBody: config.experimental,
 		}
 
@@ -730,6 +731,7 @@ export class NavigationMetricsManager {
 			}
 
 			this.loadingResources.set(event.id, {
+				maxFetchResponseBodyWaitTime: activeConfig.maxFetchResponseBodyWaitTime,
 				monitorType: event.monitorType,
 				pageUrl: location.href,
 				url: event.url,

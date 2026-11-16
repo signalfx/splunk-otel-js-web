@@ -35,6 +35,8 @@ export class FetchXhrMonitor extends Monitor {
 
 	private readonly activeFetchBodyReaders = new Map<string, ReadableStreamDefaultReader<Uint8Array>>()
 
+	private readonly cancelledFetchBodyReaders = new Set<string>()
+
 	private isMonitoring = false
 
 	cancelFetchBodyReader(resourceId: string): void {
@@ -43,6 +45,7 @@ export class FetchXhrMonitor extends Monitor {
 			return
 		}
 
+		this.cancelledFetchBodyReaders.add(resourceId)
 		this.activeFetchBodyReaders.delete(resourceId)
 		void reader.cancel().catch(() => {})
 	}
@@ -117,10 +120,12 @@ export class FetchXhrMonitor extends Monitor {
 
 							void self.waitForFetchResponseBody(event.id, response).then(
 								(completionReason) => {
+									if (self.cancelledFetchBodyReaders.delete(event.id)) {
+										return
+									}
+
 									if (self.activeFetchBodyReaders.has(event.id)) {
 										self.activeFetchBodyReaders.delete(event.id)
-									} else if (response.body) {
-										return
 									}
 
 									self.emitResourceStateChange(
@@ -134,10 +139,15 @@ export class FetchXhrMonitor extends Monitor {
 									)
 								},
 								() => {
+									if (self.cancelledFetchBodyReaders.delete(event.id)) {
+										return
+									}
+
 									if (self.activeFetchBodyReaders.has(event.id)) {
 										self.activeFetchBodyReaders.delete(event.id)
-										self.emitResourceStateChange(Monitor.createErrorEvent(event.id, url))
 									}
+
+									self.emitResourceStateChange(Monitor.createErrorEvent(event.id, url))
 								},
 							)
 
@@ -226,19 +236,20 @@ export class FetchXhrMonitor extends Monitor {
 		resourceId: string,
 		response: Response,
 	): Promise<'body_timeout' | undefined> {
-		const reader = response.clone().body?.getReader()
-		if (!reader) {
-			return undefined
-		}
-
-		this.activeFetchBodyReaders.set(resourceId, reader)
+		let reader: ReadableStreamDefaultReader<Uint8Array> | undefined
 		let timeoutId: ReturnType<typeof setTimeout> | undefined
 		try {
+			reader = response.clone().body?.getReader()
+			if (!reader) {
+				return undefined
+			}
+
+			this.activeFetchBodyReaders.set(resourceId, reader)
 			const bodyRead = (async () => {
 				let result = await reader.read()
 				while (!result.done) {
 					if (this.config.isResourceTracked?.(resourceId) === false) {
-						this.config.onResourceUntracked?.(resourceId)
+						this.cancelFetchBodyReader(resourceId)
 						return
 					}
 
@@ -249,7 +260,9 @@ export class FetchXhrMonitor extends Monitor {
 			const timeout = new Promise<'body_timeout'>((resolve) => {
 				timeoutId = setTimeout(
 					() => resolve('body_timeout'),
-					this.config.maxFetchResponseBodyWaitTime ?? 180_000,
+					this.config.getMaxFetchResponseBodyWaitTime?.(resourceId) ??
+						this.config.maxFetchResponseBodyWaitTime ??
+						180_000,
 				)
 			})
 			const completionReason = await Promise.race([bodyRead, timeout])
@@ -264,7 +277,7 @@ export class FetchXhrMonitor extends Monitor {
 				clearTimeout(timeoutId)
 			}
 
-			reader.releaseLock()
+			reader?.releaseLock()
 		}
 	}
 }

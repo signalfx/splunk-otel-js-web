@@ -51,16 +51,15 @@ export interface MonitorConfig {
 	elementVisibilityObserver?: ElementVisibilityObserver
 
 	/** Only read by FetchXhrMonitor. */
+	getMaxFetchResponseBodyWaitTime?: (resourceId: string) => number | undefined
+
+	/** Only read by FetchXhrMonitor. */
 	isResourceTracked?: (resourceId: string) => boolean
 
 	/** Only read by FetchXhrMonitor. */
 	maxFetchResponseBodyWaitTime?: number
 
 	onResourceStateChange: (event: ResourceStateEvent) => void
-
-	/** Only read by FetchXhrMonitor. */
-	onResourceUntracked?: (resourceId: string) => void
-
 	/** Only read by FetchXhrMonitor. */
 	waitForFetchResponseBody?: boolean
 }
