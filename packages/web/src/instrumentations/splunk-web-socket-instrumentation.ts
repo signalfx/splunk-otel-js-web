@@ -41,13 +41,13 @@ export interface SplunkWebSocketInstrumentationConfig extends InstrumentationCon
 
 interface WebSocketState {
 	connectionId: string
-	currentReceiveSpan?: Span
 	localCloseRequested: boolean
 	maxBufferedAmount: number
 	messageSequence: number
 	messageSpansDropped: number
 	messageSpansEmitted: number
 	openedAt?: number
+	receiveSpansByEvent: WeakMap<Event, Span | undefined>
 	receivedBytes: number
 	receivedMessages: number
 	sendErrors: number
@@ -118,6 +118,7 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 						messageSpansEmitted: 0,
 						receivedBytes: 0,
 						receivedMessages: 0,
+						receiveSpansByEvent: new WeakMap(),
 						sendErrors: 0,
 						sentBytes: 0,
 						sentMessages: 0,
@@ -159,7 +160,7 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 		span.setAttribute('error', true)
 		span.setAttribute('error.message', err.message)
 		span.setAttribute('error.object', err.name || err.constructor?.name || 'Error')
-		span.setStatus({ code: SpanStatusCode.ERROR, message: err.message })
+		span.setStatus({ code: SpanStatusCode.ERROR })
 		span.end()
 	}
 
@@ -224,7 +225,7 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 
 				const invokeCallback = () =>
 					typeof callback === 'function' ? callback.call(this, event) : callback.handleEvent(event)
-				return instrumentation.withReceiveSpan(state, invokeCallback)
+				return instrumentation.withReceiveSpan(state, event, invokeCallback)
 			}
 
 			if (instrumentation.addPatchedListener(ws, callback, patchedCallback)) {
@@ -283,7 +284,7 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 					this: WebSocket,
 					event: MessageEvent,
 				) {
-					return instrumentation.withReceiveSpan(state, () => listener.call(this, event))
+					return instrumentation.withReceiveSpan(state, event, () => listener.call(this, event))
 				}
 				originalListeners.set(patchedListener, listener)
 				originalSet.call(this, patchedListener)
@@ -297,13 +298,20 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 		ws.send = function instrumentedSend(...args) {
 			const data = args[0]
 			const size = instrumentation.getMessageSize(data)
-			const span = instrumentation.startMessageSpan(ws, state, 'send', SpanKind.PRODUCER, 'send', data, size)
+			const readyState = ws.readyState
+			const isDiscardedWhileClosing = readyState === WebSocket.CLOSING
+			const span = isDiscardedWhileClosing
+				? undefined
+				: instrumentation.startMessageSpan(ws, state, 'send', SpanKind.PRODUCER, 'send', data, size)
 
 			try {
 				const result = origSend.apply(ws, args)
-				state.sentMessages += 1
-				state.sentBytes += size
-				state.maxBufferedAmount = Math.max(state.maxBufferedAmount, ws.bufferedAmount)
+				if (readyState === WebSocket.OPEN) {
+					state.sentMessages += 1
+					state.sentBytes += size
+					state.maxBufferedAmount = Math.max(state.maxBufferedAmount, ws.bufferedAmount)
+				}
+
 				span?.end()
 				return result
 			} catch (error) {
@@ -326,21 +334,31 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 			connectSpan.setAttribute('websocket.subprotocol', ws.protocol)
 			connectSpan.end()
 		})
-		ws.addEventListener('message', (event) => {
-			const size = this.getMessageSize(event.data)
-			state.receivedMessages += 1
-			state.receivedBytes += size
-			const span = this.startMessageSpan(ws, state, 'onmessage', SpanKind.CONSUMER, 'receive', event.data, size)
-			if (span) {
-				state.currentReceiveSpan = span
-				setTimeout(() => {
-					span.end()
-					if (state.currentReceiveSpan === span) {
-						state.currentReceiveSpan = undefined
-					}
-				}, 0)
-			}
-		})
+		ws.addEventListener(
+			'message',
+			(event: MessageEvent) => {
+				state.receiveSpansByEvent.set(event, undefined)
+				const size = this.getMessageSize(event.data)
+				state.receivedMessages += 1
+				state.receivedBytes += size
+				const span = this.startMessageSpan(
+					ws,
+					state,
+					'onmessage',
+					SpanKind.CONSUMER,
+					'receive',
+					event.data,
+					size,
+				)
+				if (span) {
+					state.receiveSpansByEvent.set(event, span)
+					setTimeout(() => {
+						span.end()
+					}, 0)
+				}
+			},
+			true,
+		)
 		ws.addEventListener('error', (event: Event) => {
 			if (connectSpan.isRecording()) {
 				let message = 'Could not connect.'
@@ -470,8 +488,8 @@ export class SplunkWebSocketInstrumentation extends InstrumentationBase<SplunkWe
 		return span
 	}
 
-	private withReceiveSpan<T>(state: WebSocketState, callback: () => T) {
-		const receiveSpan = state.currentReceiveSpan
+	private withReceiveSpan<T>(state: WebSocketState, event: Event, callback: () => T) {
+		const receiveSpan = state.receiveSpansByEvent.get(event)
 		if (!receiveSpan) {
 			return callback()
 		}

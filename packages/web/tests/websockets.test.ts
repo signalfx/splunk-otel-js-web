@@ -19,6 +19,8 @@
 import { SpanKind } from '@opentelemetry/api'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
+import { SplunkOTLPTraceExporter } from '../src/exporters/otlp'
+import { SplunkZipkinExporter } from '../src/exporters/zipkin'
 import { deinit, getTracer, initWithDefaultConfig, SpanCapturer } from './utils'
 
 describe('can produce websocket events', () => {
@@ -182,6 +184,31 @@ describe('can produce websocket events', () => {
 		expect(childSpan?.spanContext().traceId).toBe(receiveSpan?.spanContext().traceId)
 	})
 
+	it('tracks receives before capture listeners that stop propagation', async () => {
+		const socket = new WebSocket('ws://127.0.0.1:8979/')
+		const closed = new Promise<void>((resolve) => socket.addEventListener('close', () => resolve(), { once: true }))
+		socket.addEventListener(
+			'message',
+			(event) => {
+				getTracer('websocket-test').startSpan('capture-handler').end()
+				event.stopImmediatePropagation()
+				socket.close()
+			},
+			{ capture: true, once: true },
+		)
+		socket.addEventListener('open', () => socket.send('Hello server'), { once: true })
+
+		await closed
+
+		const receiveSpan = capturer.spans.find((span) => span.name === 'onmessage')
+		const childSpan = capturer.spans.find((span) => span.name === 'capture-handler')
+		const closeSpan = capturer.spans.find((span) => span.name === 'close')
+		expect(receiveSpan).toBeDefined()
+		expect(childSpan?.parentSpanId).toBe(receiveSpan?.spanContext().spanId)
+		expect(closeSpan).toHaveSpanAttribute('websocket.message.received.count', 1)
+		expect(closeSpan).toHaveSpanAttribute('websocket.message.received.bytes', 8)
+	})
+
 	it('measures text message sizes in UTF-8 bytes', async () => {
 		const socket = new WebSocket('ws://127.0.0.1:8979/')
 		const opened = new Promise<void>((resolve) => socket.addEventListener('open', () => resolve(), { once: true }))
@@ -217,6 +244,53 @@ describe('can produce websocket events', () => {
 		expect(connectSpan?.attributes['http.url']).not.toContain('secret')
 
 		socket.close()
+	})
+
+	it('keeps constructor secrets out of both exporters after attribute redaction', async () => {
+		const sensitiveUrl = 'ws://[bad]/?access_token=secret'
+		expect(() => new WebSocket(sensitiveUrl)).toThrow()
+
+		const connectSpan = capturer.spans.find((span) => span.name === 'connect')
+		if (!connectSpan) {
+			throw new Error('Expected the failed WebSocket constructor to emit a connect span')
+		}
+
+		expect(connectSpan.attributes['error.message']).toBeTruthy()
+		expect(connectSpan.status.message).toBeUndefined()
+		// Some browsers omit the supplied URL from constructor errors; cover the same redaction path consistently.
+		connectSpan.attributes['error.message'] = `Invalid WebSocket URL: ${sensitiveUrl}`
+
+		const redactErrorMessage = (attributes: typeof connectSpan.attributes) => {
+			const redactedAttributes = { ...attributes }
+			delete redactedAttributes['error.message']
+			return redactedAttributes
+		}
+		let otlpPayload = ''
+		let zipkinPayload = ''
+		const otlpExporter = new SplunkOTLPTraceExporter({
+			onAttributesSerializing: redactErrorMessage,
+			url: 'https://example.com/v1/trace',
+			xhrSender: (_url, body) => {
+				otlpPayload = typeof body === 'string' ? body : new TextDecoder().decode(body)
+			},
+		})
+		const zipkinExporter = new SplunkZipkinExporter({
+			onAttributesSerializing: redactErrorMessage,
+			url: 'https://example.com/v1/trace',
+			xhrSender: (_url, body) => {
+				zipkinPayload = typeof body === 'string' ? body : new TextDecoder().decode(body)
+			},
+		})
+
+		otlpExporter.export([connectSpan], () => {})
+		zipkinExporter.export([connectSpan], () => {})
+
+		expect(otlpPayload).not.toBe('')
+		expect(zipkinPayload).not.toBe('')
+		expect(otlpPayload).not.toContain('secret')
+		expect(zipkinPayload).not.toContain('secret')
+		await otlpExporter.shutdown()
+		await zipkinExporter.shutdown()
 	})
 
 	// FIXME find a way to make send throw..
@@ -285,6 +359,64 @@ describe('can produce websocket events', () => {
 		expect(closeSpan).toHaveSpanAttribute('websocket.message.sent.count', 2)
 		expect(closeSpan).toHaveSpanAttribute('websocket.message.received.count', 2)
 		expect(closeSpan).toHaveSpanAttribute('websocket.message.spans.dropped', 2)
+	})
+
+	it('does not reuse a capped receive span for later messages in a burst', async () => {
+		deinit()
+		capturer = new SpanCapturer()
+		initWithDefaultConfig(capturer, {
+			instrumentations: {
+				websocket: {
+					maxMessageSpansPerConnection: 2,
+				},
+			},
+		})
+
+		const socket = new WebSocket('ws://127.0.0.1:8979/')
+		const closed = new Promise<void>((resolve) => socket.addEventListener('close', () => resolve(), { once: true }))
+		let receivedMessages = 0
+		socket.addEventListener('message', () => {
+			getTracer('websocket-test')
+				.startSpan(`burst-handler-${receivedMessages + 1}`)
+				.end()
+			receivedMessages += 1
+			if (receivedMessages === 6) {
+				socket.close()
+			}
+		})
+		socket.addEventListener('open', () => socket.send('burst'), { once: true })
+		const closeTimeout = setTimeout(() => socket.close(), 1000)
+		await closed
+		clearTimeout(closeTimeout)
+
+		const receiveSpan = capturer.spans.find((span) => span.name === 'onmessage')
+		const handlerSpans = capturer.spans.filter((span) => span.name.startsWith('burst-handler-'))
+		const closeSpan = capturer.spans.find((span) => span.name === 'close')
+		expect(receiveSpan).toBeDefined()
+		expect(handlerSpans).toHaveLength(6)
+		expect(handlerSpans[0].parentSpanId).toBe(receiveSpan?.spanContext().spanId)
+		expect(handlerSpans.slice(1).every((span) => span.parentSpanId !== receiveSpan?.spanContext().spanId)).toBe(
+			true,
+		)
+		expect(closeSpan).toHaveSpanAttribute('websocket.message.received.count', 6)
+		expect(closeSpan).toHaveSpanAttribute('websocket.message.spans.dropped', 5)
+	})
+
+	it('does not count a send discarded while closing', async () => {
+		const socket = new WebSocket('ws://127.0.0.1:8979/')
+		const opened = new Promise<void>((resolve) => socket.addEventListener('open', () => resolve(), { once: true }))
+		const closed = new Promise<void>((resolve) => socket.addEventListener('close', () => resolve(), { once: true }))
+
+		await opened
+		socket.close()
+		expect(socket.readyState).toBe(WebSocket.CLOSING)
+		socket.send('discarded')
+		await closed
+
+		const closeSpan = capturer.spans.find((span) => span.name === 'close')
+		expect(capturer.spans.filter((span) => span.name === 'send')).toHaveLength(0)
+		expect(closeSpan).toHaveSpanAttribute('websocket.message.sent.count', 0)
+		expect(closeSpan).toHaveSpanAttribute('websocket.message.sent.bytes', 0)
 	})
 
 	it('keeps send errors within the configured message span limit', async () => {
