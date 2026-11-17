@@ -112,9 +112,13 @@ export type SplunkErrorInstrumentationConfig = InstrumentationConfig & {
 const DEFAULT_ON_ERROR: ErrorTransformer = (e, c) => ({ context: c, error: e })
 
 export class SplunkErrorInstrumentation extends InstrumentationBase {
+	// Document-load instrumentation creates its span asynchronously. While this is true,
+	// errors without page context can wait briefly for that span instead of being exported unassociated.
 	private acceptingPendingPreLoadSpans = false
 
 	private clearingIntervalId?: ReturnType<typeof setInterval>
+
+	private documentLoadFallbackTimeoutId?: ReturnType<typeof setTimeout>
 
 	private pendingPreLoadSpans = new Map<Span, { endTime: number; startTime: number }>()
 
@@ -132,26 +136,35 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 	}
 
 	disable(): void {
-		this.acceptingPendingPreLoadSpans = false
+		this.stopAcceptingPendingPreLoadSpans()
 		shimmer.unwrap(console, 'error')
 		window.removeEventListener('unhandledrejection', this.unhandledRejectionListener)
 		window.removeEventListener('error', this.errorListener)
 		window.removeEventListener('pagehide', this.pageHideListener)
 		document.documentElement.removeEventListener('error', this.documentErrorListener, { capture: true })
 		this.otelConfig.spanEmitter?.removeEventListener('document-load:start', this.documentLoadStartListener)
-		this.flushPendingPreLoadSpans()
 		clearInterval(this.clearingIntervalId)
 		this.throttleMap.clear()
 	}
 
 	enable(): void {
-		this.acceptingPendingPreLoadSpans = document.readyState !== 'complete'
+		this.acceptingPendingPreLoadSpans = true
 		shimmer.wrap(console, 'error', this.consoleErrorHandler)
 		window.addEventListener('unhandledrejection', this.unhandledRejectionListener)
 		window.addEventListener('error', this.errorListener)
 		window.addEventListener('pagehide', this.pageHideListener)
 		document.documentElement.addEventListener('error', this.documentErrorListener, { capture: true })
 		this.otelConfig.spanEmitter?.addEventListener('document-load:start', this.documentLoadStartListener)
+
+		// Document-load collection runs in a zero-delay task, even when initialization happens after load.
+		// Schedule our fallback from the same lifecycle point so document-load:start gets the first chance
+		// to associate queued errors. If no document-load span is created, the fallback releases them.
+		if (document.readyState === 'complete') {
+			this.scheduleDocumentLoadFallback()
+		} else {
+			window.addEventListener('load', this.scheduleDocumentLoadFallback, { once: true })
+		}
+
 		this.attachClearingInterval()
 	}
 
@@ -391,7 +404,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 
 	private documentLoadStartListener = (span: { name: string }) => {
 		if (span.name === 'documentLoad') {
-			this.flushPendingPreLoadSpans()
+			this.stopAcceptingPendingPreLoadSpans()
 		}
 	}
 
@@ -418,6 +431,8 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 					this.acceptingPendingPreLoadSpans &&
 					this.pendingPreLoadSpans.size < MAX_THOTTLE_MAP_SIZE
 				) {
+					// Throttling has already happened using the error's creation time. Defer only span ending
+					// so document-load instrumentation can supply the missing page context.
 					this.pendingPreLoadSpans.set(span, { endTime, startTime: preLoadSpanStartTime })
 					return
 				}
@@ -437,6 +452,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 
 	private flushPendingPreLoadSpans = () => {
 		for (const [span, { endTime, startTime }] of this.pendingPreLoadSpans) {
+			// Retry after the initial navigation has a chance to register its pageLoad span.
 			setBrowserNavigationPageAttributes(span, this.navigationMetricsManager, startTime)
 			this.pendingPreLoadSpans.delete(span)
 			span.end(endTime)
@@ -444,8 +460,13 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 	}
 
 	private pageHideListener = () => {
-		this.acceptingPendingPreLoadSpans = false
-		this.flushPendingPreLoadSpans()
+		this.stopAcceptingPendingPreLoadSpans()
+	}
+
+	private scheduleDocumentLoadFallback = () => {
+		clearTimeout(this.documentLoadFallbackTimeoutId)
+		// Bound the wait to the next task so a missing/disabled document-load span cannot strand errors.
+		this.documentLoadFallbackTimeoutId = setTimeout(this.stopAcceptingPendingPreLoadSpans)
 	}
 
 	private startErrorSpan(source: string): { now: number; span: Span } {
@@ -465,6 +486,15 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		}
 
 		return { now, span }
+	}
+
+	private stopAcceptingPendingPreLoadSpans = () => {
+		// All terminal paths (document-load:start, fallback, pagehide, and disable) converge here so
+		// pending errors are ended exactly once and lifecycle listeners cannot remain armed.
+		this.acceptingPendingPreLoadSpans = false
+		clearTimeout(this.documentLoadFallbackTimeoutId)
+		window.removeEventListener('load', this.scheduleDocumentLoadFallback)
+		this.flushPendingPreLoadSpans()
 	}
 
 	private unhandledRejectionListener = async (event: PromiseRejectionEvent) => {

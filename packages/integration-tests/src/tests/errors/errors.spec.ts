@@ -210,6 +210,36 @@ test.describe('errors', () => {
 		expect(errorSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, false)
 	})
 
+	test('errors reported immediately after delayed initialization reference the pageLoad span', async ({
+		recordPage,
+	}) => {
+		await recordPage.goTo('/errors/views/delayed-init-reporterror.ejs')
+		await recordPage.waitForSpans(
+			(spans) =>
+				spans.some((span) => span.name === 'pageLoad') &&
+				spans.some(
+					(span) =>
+						span.name === 'SplunkRum.reportError' &&
+						span.attributes['error.message'] === 'delayed init page span test',
+				),
+		)
+
+		const readyStateAtInit = await recordPage.evaluate(() => (window as any).readyStateAtInit)
+		const pageLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'pageLoad')
+		const errorSpan = recordPage.receivedSpans.find(
+			(span) =>
+				span.name === 'SplunkRum.reportError' &&
+				span.attributes['error.message'] === 'delayed init page span test',
+		)
+
+		expect(readyStateAtInit).toBe('complete')
+		expectDefined(pageLoadSpan)
+		expectDefined(errorSpan)
+		expect(errorSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.operation, 'documentLoad')
+		expect(errorSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, pageLoadSpan.spanId)
+		expect(errorSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, false)
+	})
+
 	test('error spans reference the active pageLoad span', async ({ recordPage }) => {
 		await recordPage.goTo('/errors/views/splunkrum-reporterror.ejs')
 		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'pageLoad'))
