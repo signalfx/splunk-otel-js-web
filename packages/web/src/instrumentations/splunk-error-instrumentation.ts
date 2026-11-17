@@ -452,6 +452,7 @@ export class SplunkErrorInstrumentation extends InstrumentationBase {
 		const errorStartTime = performance.now()
 		const now = performance.timeOrigin + errorStartTime
 		const span = this.tracer.startSpan(source, { startTime: now })
+		// Use the early pageLoad span for parser-time errors when navigation timing is available.
 		const hasNavigation = setBrowserNavigationPageAttributes(span, this.navigationMetricsManager, errorStartTime)
 		if (
 			this.acceptingPendingPreLoadSpans &&

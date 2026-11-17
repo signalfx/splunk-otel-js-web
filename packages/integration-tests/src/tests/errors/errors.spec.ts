@@ -192,27 +192,27 @@ test.describe('errors', () => {
 		expect(errorSpans[0]).toHaveSpanAttribute('error.stack', errorStackMap[browserName])
 	})
 
-	test('pre-load errors reference the documentLoad span', async ({ recordPage }) => {
+	test('pre-load errors reference the pageLoad span', async ({ recordPage }) => {
 		await recordPage.goTo('/errors/views/splunkrum-reporterror.ejs')
 		await recordPage.waitForSpans(
 			(spans) =>
 				spans.some((span) => span.name === 'SplunkRum.reportError') &&
-				spans.some((span) => span.name === 'documentLoad'),
+				spans.some((span) => span.name === 'pageLoad'),
 		)
 
-		const documentLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'documentLoad')
+		const pageLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'pageLoad')
 		const errorSpan = recordPage.receivedSpans.find((span) => span.name === 'SplunkRum.reportError')
 
-		expectDefined(documentLoadSpan)
+		expectDefined(pageLoadSpan)
 		expectDefined(errorSpan)
 		expect(errorSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.operation, 'documentLoad')
-		expect(errorSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, documentLoadSpan.spanId)
+		expect(errorSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, pageLoadSpan.spanId)
 		expect(errorSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, false)
 	})
 
-	test('error spans reference the active documentLoad span', async ({ recordPage }) => {
+	test('error spans reference the active pageLoad span', async ({ recordPage }) => {
 		await recordPage.goTo('/errors/views/splunkrum-reporterror.ejs')
-		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'documentLoad'))
+		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'pageLoad'))
 
 		await recordPage.evaluate(async () => {
 			await (window as any).SplunkRum.reportError(new Error('document load page span test'))
@@ -225,16 +225,16 @@ test.describe('errors', () => {
 			),
 		)
 
-		const documentLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'documentLoad')
+		const pageLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'pageLoad')
 		const errorSpan = recordPage.receivedSpans.find(
 			(span) =>
 				span.name === 'SplunkRum.reportError' &&
 				span.attributes['error.message'] === 'document load page span test',
 		)
 
-		expectDefined(documentLoadSpan)
+		expectDefined(pageLoadSpan)
 		expectDefined(errorSpan)
-		expect(errorSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, documentLoadSpan.spanId)
+		expect(errorSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, pageLoadSpan.spanId)
 		expect(errorSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, false)
 	})
 
