@@ -1,0 +1,140 @@
+/**
+ *
+ * Copyright 2020-2026 Splunk Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+import type { Span, TimeInput } from '@opentelemetry/api'
+import { hrTimeToMilliseconds, timeInputToHrTime } from '@opentelemetry/core'
+
+type VisibilityTransition = {
+	hidden: boolean
+	time: number
+}
+
+type VisibilityCapture = {
+	events: VisibilityTransition[]
+	key: object | symbol | string
+	spans: Set<Span>
+}
+
+const HIDDEN_RANGES_ATTRIBUTE = 'browser.navigation.hidden_ranges'
+export const INITIAL_NAVIGATION_VISIBILITY_CAPTURE_KEY = 'initial-document-navigation'
+
+type HiddenRange = {
+	end_ms: number
+	start_ms: number
+}
+
+export class NavigationVisibilityRecorder {
+	private readonly captureGroups = new Map<VisibilityCapture['key'], VisibilityCapture>()
+
+	private readonly captures = new Map<Span, { capture: VisibilityCapture; startTime: number }>()
+
+	clear(): void {
+		this.captures.clear()
+		this.captureGroups.clear()
+	}
+
+	endCapture(span: Span, endTime?: TimeInput): void {
+		const captureForSpan = this.captures.get(span)
+		if (!captureForSpan) {
+			return
+		}
+
+		const { capture, startTime: spanStartTime } = captureForSpan
+		const spanEndTime = endTime === undefined ? performance.now() : hrTimeToMilliseconds(timeInputToHrTime(endTime))
+		const hiddenRanges = this.getHiddenRanges(capture, spanStartTime, spanEndTime)
+		if (hiddenRanges.length > 0) {
+			span.setAttribute(HIDDEN_RANGES_ATTRIBUTE, JSON.stringify(hiddenRanges))
+		}
+
+		capture.spans.delete(span)
+		this.captures.delete(span)
+		if (capture.spans.size === 0) {
+			this.captureGroups.delete(capture.key)
+		}
+	}
+
+	recordVisibilityChange(time: number, hidden: boolean): void {
+		for (const capture of this.captureGroups.values()) {
+			const lastEvent = capture.events.at(-1)
+			if (lastEvent?.hidden !== hidden) {
+				capture.events.push({ hidden, time: Math.max(time, lastEvent?.time ?? time) })
+			}
+		}
+	}
+
+	startCapture(span: Span, key: VisibilityCapture['key'], startTime: number, initiallyHidden: boolean): void {
+		let capture = this.captureGroups.get(key)
+		if (!capture) {
+			capture = {
+				events: [{ hidden: initiallyHidden, time: startTime }],
+				key,
+				spans: new Set(),
+			}
+			this.captureGroups.set(key, capture)
+		}
+
+		capture.spans.add(span)
+		this.captures.set(span, { capture, startTime })
+	}
+
+	private addHiddenRange(
+		hiddenRanges: HiddenRange[],
+		spanStartTime: number,
+		startTime: number,
+		endTime: number,
+	): void {
+		if (endTime <= startTime) {
+			return
+		}
+
+		hiddenRanges.push({
+			end_ms: endTime - spanStartTime,
+			start_ms: startTime - spanStartTime,
+		})
+	}
+
+	private getHiddenRanges(capture: VisibilityCapture, spanStartTime: number, spanEndTime: number): HiddenRange[] {
+		const hiddenRanges: HiddenRange[] = []
+		let hiddenStart: number | undefined
+		for (const event of capture.events) {
+			if (event.time < spanStartTime) {
+				hiddenStart = event.hidden ? spanStartTime : undefined
+				continue
+			}
+
+			if (event.time > spanEndTime) {
+				break
+			}
+
+			if (event.hidden) {
+				hiddenStart ??= event.time
+			} else if (hiddenStart !== undefined) {
+				this.addHiddenRange(hiddenRanges, spanStartTime, hiddenStart, event.time)
+				hiddenStart = undefined
+			}
+		}
+
+		if (hiddenStart !== undefined) {
+			this.addHiddenRange(hiddenRanges, spanStartTime, hiddenStart, spanEndTime)
+		}
+
+		return hiddenRanges
+	}
+}
+
+export const navigationVisibilityRecorder = new NavigationVisibilityRecorder()

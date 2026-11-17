@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Automatically enabled improvements
+
+**`@splunk/otel-web`**
+
+#### Report hidden page intervals on navigation spans. [DEMRUM-7325](https://splunk.atlassian.net/browse/DEMRUM-7325)
+
+Page Load, Doc Load, and Route Change spans now include a `browser.navigation.hidden_ranges` attribute containing a
+JSON array of hidden interval start and end offsets in milliseconds relative to the navigation span.
+
 ## 3.2.0
 
 ### Upgrade impact
