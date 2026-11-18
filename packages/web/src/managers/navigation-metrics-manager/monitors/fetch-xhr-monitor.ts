@@ -33,7 +33,28 @@ declare global {
 export class FetchXhrMonitor extends Monitor {
 	protected readonly monitorType: NavigationMetricsMonitor = 'network'
 
+	private readonly activeFetchBodyReaders = new Map<string, ReadableStreamDefaultReader<Uint8Array>>()
+
+	private readonly cancelledFetchBodyReaders = new Set<string>()
+
 	private isMonitoring = false
+
+	cancelFetchBodyReader(resourceId: string): void {
+		const reader = this.activeFetchBodyReaders.get(resourceId)
+		if (!reader) {
+			return
+		}
+
+		this.cancelledFetchBodyReaders.add(resourceId)
+		this.activeFetchBodyReaders.delete(resourceId)
+		void reader.cancel().catch(() => {})
+	}
+
+	cancelPendingFetchBodyReaders(): void {
+		for (const resourceId of this.activeFetchBodyReaders.keys()) {
+			this.cancelFetchBodyReader(resourceId)
+		}
+	}
 
 	start(): void {
 		if (this.isMonitoring) {
@@ -50,6 +71,7 @@ export class FetchXhrMonitor extends Monitor {
 	}
 
 	stop(): void {
+		this.cancelPendingFetchBodyReaders()
 		if (!this.isMonitoring) {
 			return
 		}
@@ -86,6 +108,7 @@ export class FetchXhrMonitor extends Monitor {
 						(response) => {
 							if (
 								!self.config.waitForFetchResponseBody ||
+								!response.body ||
 								!isTracked ||
 								self.config.isResourceTracked?.(event.id) === false
 							) {
@@ -95,13 +118,35 @@ export class FetchXhrMonitor extends Monitor {
 								return response
 							}
 
-							void self.waitForFetchResponseBody(response).then(
-								() => {
+							void self.waitForFetchResponseBody(event.id, response).then(
+								(completionReason) => {
+									if (self.cancelledFetchBodyReaders.delete(event.id)) {
+										return
+									}
+
+									if (self.activeFetchBodyReaders.has(event.id)) {
+										self.activeFetchBodyReaders.delete(event.id)
+									}
+
 									self.emitResourceStateChange(
-										Monitor.createLoadedEvent(event.id, url, performance.now() - startTime),
+										Monitor.createLoadedEvent(
+											event.id,
+											url,
+											performance.now() - startTime,
+											performance.now(),
+											completionReason,
+										),
 									)
 								},
 								() => {
+									if (self.cancelledFetchBodyReaders.delete(event.id)) {
+										return
+									}
+
+									if (self.activeFetchBodyReaders.has(event.id)) {
+										self.activeFetchBodyReaders.delete(event.id)
+									}
+
 									self.emitResourceStateChange(Monitor.createErrorEvent(event.id, url))
 								},
 							)
@@ -187,16 +232,52 @@ export class FetchXhrMonitor extends Monitor {
 		shimmer.unwrap(XMLHttpRequest.prototype, 'send')
 	}
 
-	private async waitForFetchResponseBody(response: Response): Promise<void> {
-		// TODO: Add bounded handling for long-lived streaming responses before exempting them from body completion.
-		const reader = response.clone().body?.getReader()
-		if (!reader) {
-			return
-		}
+	private async waitForFetchResponseBody(
+		resourceId: string,
+		response: Response,
+	): Promise<'body_timeout' | undefined> {
+		let reader: ReadableStreamDefaultReader<Uint8Array> | undefined
+		let timeoutId: ReturnType<typeof setTimeout> | undefined
+		try {
+			reader = response.clone().body?.getReader()
+			if (!reader) {
+				return undefined
+			}
 
-		let result = await reader.read()
-		while (!result.done) {
-			result = await reader.read()
+			this.activeFetchBodyReaders.set(resourceId, reader)
+			const bodyRead = (async () => {
+				let result = await reader.read()
+				while (!result.done) {
+					if (this.config.isResourceTracked?.(resourceId) === false) {
+						this.cancelFetchBodyReader(resourceId)
+						return
+					}
+
+					result = await reader.read()
+				}
+				return
+			})()
+			const timeout = new Promise<'body_timeout'>((resolve) => {
+				timeoutId = setTimeout(
+					() => resolve('body_timeout'),
+					this.config.getMaxFetchResponseBodyWaitTime?.(resourceId) ??
+						this.config.maxFetchResponseBodyWaitTime ??
+						180_000,
+				)
+			})
+			const completionReason = await Promise.race([bodyRead, timeout])
+			if (completionReason === 'body_timeout') {
+				void reader.cancel().catch(() => {})
+				return completionReason
+			}
+
+			return
+		} finally {
+			if (timeoutId !== undefined) {
+				clearTimeout(timeoutId)
+			}
+
+			reader?.releaseLock()
 		}
 	}
 }
