@@ -129,6 +129,7 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 		const changedUrl = new URL('/signin', initialUrl).href
 		const exposedInstrumentation = instrumentation as unknown as {
 			_endSpan(span: Span, performanceName: string, entries: PerformanceEntries): void
+			_initResourceSpan(resource: PerformanceResourceTiming, parentSpan: Span): void
 			_startSpan(spanName: string, performanceName: string, entries: PerformanceEntries): Span
 			startPageLoadSpan(fetchStart: number): void
 		}
@@ -136,6 +137,18 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 		history.pushState({}, '', changedUrl)
 
 		const entries = { fetchStart: 12.5, loadEventEnd: 20, responseEnd: 18 } as PerformanceEntries
+		// These internal calls bypass upstream URL assignment and the span-attribute processor;
+		// seed the route URL they would have added before _endSpan applies the captured page URL.
+		const resourceFetchSpans: Span[] = []
+		const originalEndSpan = exposedInstrumentation._endSpan.bind(instrumentation)
+		exposedInstrumentation._endSpan = (span, performanceName, spanEntries) => {
+			if (span?.name === 'resourceFetch') {
+				resourceFetchSpans.push(span)
+			}
+
+			originalEndSpan(span, performanceName, spanEntries)
+		}
+
 		const documentFetchSpan = exposedInstrumentation._startSpan('documentFetch', PTN.FETCH_START, entries)
 		documentFetchSpan.setAttribute('http.url', location.href)
 		documentFetchSpan.setAttribute('location.href', location.href)
@@ -145,6 +158,24 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 		documentLoadSpan.setAttribute('http.url', location.href)
 		documentLoadSpan.setAttribute('location.href', location.href)
 		exposedInstrumentation._endSpan(documentLoadSpan, PTN.LOAD_EVENT_END, entries)
+		exposedInstrumentation._initResourceSpan(
+			{
+				connectEnd: 13,
+				connectStart: 13,
+				decodedBodySize: 10,
+				domainLookupEnd: 13,
+				domainLookupStart: 13,
+				encodedBodySize: 10,
+				fetchStart: 13,
+				initiatorType: 'link',
+				name: 'https://example.com/app.css',
+				requestStart: 13,
+				responseEnd: 15,
+				responseStart: 14,
+				transferSize: 100,
+			} as PerformanceResourceTiming,
+			documentLoadSpan,
+		)
 
 		const pageLoadSpan = setCurrentNavigationSpan.mock.calls[0][0] as Span
 		expect(pageLoadSpan.attributes['http.url']).toBe(initialUrl)
@@ -152,6 +183,9 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 		expect(documentLoadSpan.attributes['http.url']).toBe(initialUrl)
 		expect(documentFetchSpan.attributes['location.href']).toBe(initialUrl)
 		expect(documentLoadSpan.attributes['location.href']).toBe(initialUrl)
+		expect(resourceFetchSpans).toHaveLength(1)
+		expect(resourceFetchSpans[0].attributes['http.url']).toBe('https://example.com/app.css')
+		expect(resourceFetchSpans[0].attributes['location.href']).toBe(initialUrl)
 		history.replaceState({}, '', initialUrl)
 	})
 

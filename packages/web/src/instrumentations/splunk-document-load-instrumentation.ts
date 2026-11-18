@@ -329,6 +329,10 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 			const span = exposedSuper._startSpan(AttributeNames.RESOURCE_FETCH, PTN.FETCH_START, resource, parentSpan)
 			if (span) {
 				span.setAttribute(SEMATTRS_HTTP_URL, resource.name)
+				if (this.pageLoadUrl !== undefined) {
+					span.setAttribute('location.href', this.pageLoadUrl)
+				}
+
 				const crossOriginTimingRestricted = getCrossOriginTimingRestricted(resource)
 				if (crossOriginTimingRestricted !== undefined) {
 					span.setAttribute(
