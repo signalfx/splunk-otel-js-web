@@ -39,7 +39,7 @@ export function isValidExternalSessionMetadata(value: unknown): value is NonNull
 		typeof metadata.sessionLastActivity === 'number' &&
 		Number.isFinite(metadata.sessionLastActivity) &&
 		metadata.sessionLastActivity > 0 &&
-		typeof metadata.anonymousUserId === 'string' &&
-		metadata.anonymousUserId.length > 0
+		(metadata.anonymousUserId === undefined ||
+			(typeof metadata.anonymousUserId === 'string' && metadata.anonymousUserId.length > 0))
 	)
 }
