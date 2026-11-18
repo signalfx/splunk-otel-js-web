@@ -212,6 +212,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 				exposedSpan.name === AttributeNames.DOCUMENT_LOAD || exposedSpan.name === AttributeNames.DOCUMENT_FETCH
 			if (span && isInitialNavigationSpan && this.pageLoadUrl !== undefined) {
 				span.setAttribute(SEMATTRS_HTTP_URL, this.pageLoadUrl)
+				span.setAttribute('location.href', this.pageLoadUrl)
 			}
 
 			if (span && exposedSpan.name !== AttributeNames.DOCUMENT_LOAD) {

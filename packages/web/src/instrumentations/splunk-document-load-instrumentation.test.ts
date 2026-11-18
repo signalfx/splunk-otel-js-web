@@ -138,16 +138,20 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 		const entries = { fetchStart: 12.5, loadEventEnd: 20, responseEnd: 18 } as PerformanceEntries
 		const documentFetchSpan = exposedInstrumentation._startSpan('documentFetch', PTN.FETCH_START, entries)
 		documentFetchSpan.setAttribute('http.url', location.href)
+		documentFetchSpan.setAttribute('location.href', location.href)
 		exposedInstrumentation._endSpan(documentFetchSpan, PTN.RESPONSE_END, entries)
 
 		const documentLoadSpan = exposedInstrumentation._startSpan('documentLoad', PTN.FETCH_START, entries)
 		documentLoadSpan.setAttribute('http.url', location.href)
+		documentLoadSpan.setAttribute('location.href', location.href)
 		exposedInstrumentation._endSpan(documentLoadSpan, PTN.LOAD_EVENT_END, entries)
 
 		const pageLoadSpan = setCurrentNavigationSpan.mock.calls[0][0] as Span
 		expect(pageLoadSpan.attributes['http.url']).toBe(initialUrl)
 		expect(documentFetchSpan.attributes['http.url']).toBe(initialUrl)
 		expect(documentLoadSpan.attributes['http.url']).toBe(initialUrl)
+		expect(documentFetchSpan.attributes['location.href']).toBe(initialUrl)
+		expect(documentLoadSpan.attributes['location.href']).toBe(initialUrl)
 		history.replaceState({}, '', initialUrl)
 	})
 
