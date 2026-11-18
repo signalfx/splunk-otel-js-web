@@ -24,6 +24,18 @@ export const initWebSocketServer = () => {
 
 	wsServer.on('connection', (cx: WebSocket) => {
 		cx.on('message', (msg: WebSocket.Data) => {
+			if (msg.toString() === 'burst') {
+				for (let i = 0; i < 6; i += 1) {
+					cx.send(`Response ${i + 1}`)
+				}
+				return
+			}
+
+			if (msg.toString() === 'é') {
+				cx.send('é')
+				return
+			}
+
 			// allow client to terminate the connection from the server to expand unit testing possibilities
 			if (msg === 'close') {
 				console.log('closing ws connection')
