@@ -44,6 +44,7 @@ export interface ManualPageLoadHandle {
 }
 
 export type LoadedResourceDetails = {
+	completionReason?: 'body_timeout'
 	duration: number
 	monitorType: NavigationMetricsMonitor
 	url: string
@@ -202,7 +203,12 @@ export class QuietPeriodAwaiter {
 			return
 		}
 
-		if (this.manualMode && this.manualParticipants.size === 0 && this.lastManualCompletionTimestamp !== undefined) {
+		if (
+			this.manualMode &&
+			this.manualParticipants.size === 0 &&
+			this.lastManualCompletionTimestamp !== undefined &&
+			this.lastManualCompletionTimestamp <= endTimestamp
+		) {
 			this.resolveManualCompletion()
 			return
 		}

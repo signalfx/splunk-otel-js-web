@@ -25,6 +25,8 @@ import { HTTP_TEST_SERVER_URL } from '../../../../../tests/servers/http-constant
 import {
 	BROWSER_NAVIGATION_DETECTED_RESOURCE_COUNT_ATTRIBUTE,
 	BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION,
+	BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE,
+	BROWSER_NAVIGATION_FIRST_INTERACTION_TYPE_ATTRIBUTE,
 	BROWSER_NAVIGATION_LAST_LOADED_RESOURCES_ATTRIBUTE,
 	BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE,
 	BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
@@ -96,6 +98,7 @@ describe('NavigationMetricsManager', () => {
 
 		expect(config.quietTime).toBe(1000)
 		expect(config.maxPageLoadWaitTime).toBe(180_000)
+		expect(config.maxFetchResponseBodyWaitTime).toBe(180_000)
 		expect(config.maxResourcesToWatch).toBe(100)
 		expect(config.ignoreUrls).toEqual([])
 		expect(config.blockingSelectors).toEqual([])
@@ -108,6 +111,7 @@ describe('NavigationMetricsManager', () => {
 			blockingSelectors: ['.loading-spinner'],
 			clearLoadingResourcesOnNewPage: false,
 			ignoreUrls: [/test/],
+			maxFetchResponseBodyWaitTime: 5000,
 			maxPageLoadWaitTime: 5000,
 			monitors: ['network', 'elements'],
 			quietTime: 2000,
@@ -117,6 +121,7 @@ describe('NavigationMetricsManager', () => {
 		const config = manager.config
 
 		expect(config.quietTime).toBe(2000)
+		expect(config.maxFetchResponseBodyWaitTime).toBe(5000)
 		expect(config.maxPageLoadWaitTime).toBe(5000)
 		expect(config.maxResourcesToWatch).toBe(100)
 		expect(config.ignoreUrls).toHaveLength(1)
@@ -418,6 +423,33 @@ describe('NavigationMetricsManager', () => {
 		manager.stop()
 	})
 
+	it('interrupts the previous route change at the next route change start time', async () => {
+		const manager = new NavigationMetricsManager({ quietTime: 100 })
+		manager.start()
+		const firstStartTime = 100
+		const nextStartTime = 250
+		const { span: firstRouteChangeSpan } = createSpanMock('first-route-change-span-id')
+		const { span: nextRouteChangeSpan } = createSpanMock('next-route-change-span-id')
+
+		const firstPagePromise = manager.waitForPageLoad({
+			operation: BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION,
+			span: firstRouteChangeSpan,
+			startTime: firstStartTime,
+		})
+		const nextPagePromise = manager.waitForPageLoad({
+			operation: BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION,
+			span: nextRouteChangeSpan,
+			startTime: nextStartTime,
+		})
+		const firstPageResult = await firstPagePromise
+
+		expect(firstPageResult.status).toBe(PAGE_LOAD_METRICS_STATUS_INTERRUPTED)
+		expect(firstPageResult.pct).toBe(nextStartTime - firstStartTime)
+
+		manager.stop()
+		await nextPagePromise
+	})
+
 	it('waitForPageLoad with startTime 0 returns pct at least document load time', async () => {
 		const manager = new NavigationMetricsManager({ quietTime: 100 })
 		manager.start()
@@ -666,6 +698,99 @@ describe('NavigationMetricsManager', () => {
 		expect(manager.getNavigationOperation(250)).toBe(BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION)
 	})
 
+	it.each([BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION, BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION])(
+		'records the first interaction on the active %s navigation',
+		(operation) => {
+			const manager = new NavigationMetricsManager()
+			const { attributes, span } = createSpanMock('navigation-span-id')
+
+			manager.setCurrentNavigationSpan(span, 100, operation)
+			manager.recordFirstInteraction('click', 125)
+			manager.recordFirstInteraction('change', 150)
+			manager.setPageLoadMetricAttributes(
+				span,
+				createPageLoadMetricsResult({ pct: 100, status: PAGE_LOAD_METRICS_STATUS_COMPLETED }),
+			)
+
+			expect(attributes[BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE]).toBe(25)
+			expect(attributes[BROWSER_NAVIGATION_FIRST_INTERACTION_TYPE_ATTRIBUTE]).toBe('click')
+		},
+	)
+
+	it('ignores interactions outside the active navigation window', () => {
+		const manager = new NavigationMetricsManager()
+		const { attributes, span } = createSpanMock('navigation-span-id')
+
+		manager.setCurrentNavigationSpan(span, 100, BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION)
+		manager.recordFirstInteraction('click', 99)
+		manager.completeCurrentNavigationPct(span, 200)
+		manager.recordFirstInteraction('change', 150)
+
+		expect(attributes[BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE]).toBeUndefined()
+		expect(attributes[BROWSER_NAVIGATION_FIRST_INTERACTION_TYPE_ATTRIBUTE]).toBeUndefined()
+	})
+
+	it('records an interaction only on the latest active navigation', () => {
+		const manager = new NavigationMetricsManager()
+		const { attributes: previousAttributes, span: previousSpan } = createSpanMock('previous-navigation-span-id')
+		const { attributes: currentAttributes, span: currentSpan } = createSpanMock('current-navigation-span-id')
+
+		manager.setCurrentNavigationSpan(previousSpan, 100, BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION)
+		manager.setCurrentNavigationSpan(currentSpan, 200, BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION)
+		manager.recordFirstInteraction('click', 225)
+		manager.setPageLoadMetricAttributes(
+			currentSpan,
+			createPageLoadMetricsResult({ pct: 100, status: PAGE_LOAD_METRICS_STATUS_COMPLETED }),
+		)
+
+		expect(previousAttributes[BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE]).toBeUndefined()
+		expect(currentAttributes[BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE]).toBe(25)
+		expect(currentAttributes[BROWSER_NAVIGATION_FIRST_INTERACTION_TYPE_ATTRIBUTE]).toBe('click')
+	})
+
+	it('copies an early document-load interaction to the canonical page-load span', () => {
+		const manager = new NavigationMetricsManager()
+		const { attributes: documentLoadAttributes, span: documentLoadSpan } = createSpanMock('document-load-span-id')
+		const { attributes: pageLoadAttributes, span: pageLoadSpan } = createSpanMock('page-load-span-id')
+
+		manager.setCurrentNavigationSpan(documentLoadSpan, 0, BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION)
+		manager.recordFirstInteraction('click', 125)
+		manager.setCurrentNavigationSpan(pageLoadSpan, 0, BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION)
+		const pageLoadMetrics = createPageLoadMetricsResult({ pct: 200, status: PAGE_LOAD_METRICS_STATUS_COMPLETED })
+		manager.setPageLoadMetricAttributes(documentLoadSpan, pageLoadMetrics)
+		manager.setPageLoadMetricAttributes(pageLoadSpan, pageLoadMetrics)
+
+		expect(documentLoadAttributes[BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE]).toBe(125)
+		expect(pageLoadAttributes[BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE]).toBe(125)
+		expect(pageLoadAttributes[BROWSER_NAVIGATION_FIRST_INTERACTION_TYPE_ATTRIBUTE]).toBe('click')
+	})
+
+	it('does not report an interaction after the final PCT window', () => {
+		const manager = new NavigationMetricsManager()
+		const { attributes, span } = createSpanMock('navigation-span-id')
+
+		manager.setCurrentNavigationSpan(span, 100, BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION)
+		manager.recordFirstInteraction('click', 250)
+		manager.setPageLoadMetricAttributes(
+			span,
+			createPageLoadMetricsResult({ pct: 100, status: PAGE_LOAD_METRICS_STATUS_COMPLETED }),
+		)
+
+		expect(attributes[BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE]).toBeUndefined()
+		expect(attributes[BROWSER_NAVIGATION_FIRST_INTERACTION_TYPE_ATTRIBUTE]).toBeUndefined()
+	})
+
+	it('does not record first interaction attributes when experimental attributes are disabled', () => {
+		const manager = new NavigationMetricsManager({ emitNavigationAttributes: false })
+		const { attributes, span } = createSpanMock('navigation-span-id')
+
+		manager.setCurrentNavigationSpan(span, 100, BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION)
+		manager.recordFirstInteraction('click', 125)
+
+		expect(attributes[BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE]).toBeUndefined()
+		expect(attributes[BROWSER_NAVIGATION_FIRST_INTERACTION_TYPE_ATTRIBUTE]).toBeUndefined()
+	})
+
 	it('defaults the navigation operation to documentLoad before a navigation span is registered', () => {
 		const manager = new NavigationMetricsManager()
 
@@ -834,6 +959,7 @@ describe('NavigationMetricsManager', () => {
 		const manager = new NavigationMetricsManager({ quietTime: 1 })
 		const { attributes, span } = createSpanMock()
 		const loadedResource = {
+			completionReason: 'body_timeout' as const,
 			duration: 42,
 			monitorType: 'performance' as const,
 			url: `${TEST_API_URL}?resource=completed`,
@@ -855,6 +981,7 @@ describe('NavigationMetricsManager', () => {
 			})
 			// @ts-expect-error onResourceStateChange is private. We use it for testing.
 			manager.onResourceStateChange({
+				completionReason: loadedResource.completionReason,
 				id: 'completed-resource',
 				loadTime: loadedResource.duration,
 				monitorType: loadedResource.monitorType,
@@ -1338,6 +1465,37 @@ describe('NavigationMetricsManager', () => {
 
 		// @ts-expect-error loadingResources is private. We use it for testing.
 		expect(manager.loadingResources.size).toBe(0)
+	})
+
+	it('uses the matching URL override for a resource response body wait timeout', () => {
+		const originalHash = location.hash
+		const manager = new NavigationMetricsManager({
+			maxFetchResponseBodyWaitTime: 1000,
+			urlOverrides: [
+				{
+					match: '#long-response',
+					maxFetchResponseBodyWaitTime: 5000,
+				},
+			],
+		})
+
+		try {
+			location.hash = '#long-response'
+
+			// @ts-expect-error onResourceStateChange is private. We use it for testing.
+			manager.onResourceStateChange({
+				id: 'r_timeout',
+				monitorType: 'network',
+				state: ResourceState.DISCOVERED,
+				url: TEST_API_URL,
+			})
+
+			// @ts-expect-error loadingResources is private. We use it for testing.
+			expect(manager.loadingResources.get('r_timeout')?.maxFetchResponseBodyWaitTime).toBe(5000)
+		} finally {
+			location.hash = originalHash
+			manager.stop()
+		}
 	})
 
 	it('uses the current URL when a resource is discovered before the next waitForPageLoad starts', () => {

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Stable Blocking Element test</title>
+	<%- renderAgent({
+		navigationMetrics: {
+			blockingSelectors: ['.stable-spinner'],
+			monitors: ['elements'],
+		},
+	}) %>
+</head>
+<body>
+	<h1>Stable Blocking Element test</h1>
+	<button type="button" id="showSpinner">Show spinner</button>
+	<div id="content"></div>
+
+	<script>
+		document.querySelector('#showSpinner').addEventListener('click', function () {
+			const spinner = document.createElement('div');
+			spinner.className = 'stable-spinner';
+			spinner.id = 'stable-spinner';
+			spinner.style.height = '10px';
+			spinner.style.width = '10px';
+			document.getElementById('content').append(spinner);
+			setTimeout(function () {
+				spinner.remove();
+			}, 100);
+		});
+	</script>
+</body>
+</html>

@@ -135,6 +135,8 @@ type NavigationMetricsOptionsBase = {
 	clearLoadingResourcesOnNewPage?: boolean
 	/** URLs to exclude from PCT tracking (e.g., analytics, third-party scripts) */
 	ignoreUrls?: Array<string | RegExp>
+	/** Maximum time in milliseconds to wait for a fetch response body to reach EOF. @default 180000 */
+	maxFetchResponseBodyWaitTime?: number
 	/** Maximum time in milliseconds from navigation start to wait for manual page completion. @default 180000 */
 	maxPageLoadTimeoutForManualApi?: number
 	/** Maximum time in milliseconds to wait for PCT computation before marking it as timed out. @default 180000 */
@@ -247,6 +249,13 @@ export interface SplunkOtelWebConfig {
 	disableBots?: boolean
 
 	/**
+	 * If true, suppresses client-error spans for resource-element load failures. Resource timing spans,
+	 * including any available HTTP status, continue to be reported.
+	 * @default false
+	 */
+	disableResourceLoadErrorReporting?: boolean
+
+	/**
 	 * If true, no additional span will be sent after 15 minutes of user inactivity (it will be dropped).
 	 * @default true
 	 */
@@ -256,8 +265,9 @@ export interface SplunkOtelWebConfig {
 	 * Enables features that are still experimental and may change without notice.
 	 *
 	 * Currently this enables experimental page completion and correlation attributes,
-	 * the `pageLoad` span, additional post-load resource types, `blockingElement`
-	 * spans. Route-change spans emit their completion time and status without this flag.
+	 * the `pageLoad` span, waiting for fetch response bodies during page completion,
+	 * and additional post-load resource types. Route-change spans emit their completion
+	 * time and status without this flag.
 	 * @default false
 	 */
 	experimental?: boolean

@@ -17,14 +17,16 @@
  */
 
 import { context, diag, propagation, ROOT_CONTEXT, trace } from '@opentelemetry/api'
-import { hrTimeToMilliseconds } from '@opentelemetry/core'
+import { addHrTimes, hrTimeToMilliseconds, millisToHrTime, timeInputToHrTime } from '@opentelemetry/core'
 import * as tracing from '@opentelemetry/sdk-trace-base'
 import { expectDefined } from '@test-utils/assertions'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { HTTP_TEST_SERVER_URL } from '../../../tests/servers/http-constants'
-import SplunkRum from '../src'
+import SplunkRum, { INSTRUMENTATIONS_ALL_DISABLED } from '../src'
 import {
+	BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE,
+	BROWSER_NAVIGATION_FIRST_INTERACTION_TYPE_ATTRIBUTE,
 	BROWSER_NAVIGATION_LOADING_RESOURCE_COUNT_ATTRIBUTE,
 	BROWSER_NAVIGATION_LOADING_RESOURCE_URLS_ATTRIBUTE,
 	BROWSER_NAVIGATION_PAGE_COMPLETION_SOURCE_ATTRIBUTE,
@@ -62,6 +64,8 @@ const doesBeaconUrlEndWith = (suffix: string) => {
 	const beaconUrl = exporterProcessor._exporter.beaconUrl || exporterProcessor._exporter.url
 	expect(beaconUrl.endsWith(suffix), `Checking beaconUrl if (${beaconUrl}) ends with ${suffix}`).toBeTruthy()
 }
+
+const interactionListener = () => {}
 
 function init() {
 	SplunkRum.init({
@@ -967,7 +971,9 @@ describe('test unloaded img', () => {
 
 	beforeEach(() => {
 		capturer = new SpanCapturer()
-		initWithDefaultConfig(capturer)
+		initWithDefaultConfig(capturer, {
+			disableResourceLoadErrorReporting: true,
+		})
 	})
 
 	afterEach(() => {
@@ -1116,6 +1122,92 @@ describe('test route change navigation metrics timeout', () => {
 					PAGE_LOAD_METRICS_STATUS_COMPLETED,
 				)
 				expect(span).toHaveSpanAttribute('prev.href', oldUrl)
+			},
+			{ timeout: 6000 },
+		)
+	})
+
+	it('records the first instrumented interaction during a route change', async () => {
+		document.body.addEventListener('click', interactionListener)
+
+		try {
+			history.pushState({}, 'title', '/first-interaction-offset')
+			document.body.dispatchEvent(new Event('click'))
+			window.dispatchEvent(new Event('pagehide'))
+
+			await vi.waitFor(() => {
+				const span = capturer.spans.find((candidate) => candidate.name === 'routeChange')
+				expectDefined(span, 'Check if routeChange span is present.')
+				expect(span).toHaveSpanAttribute(BROWSER_NAVIGATION_FIRST_INTERACTION_TYPE_ATTRIBUTE, 'click')
+				expect(span.attributes[BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE]).toBeTypeOf('number')
+				expect(span.attributes[BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE]).toBeGreaterThanOrEqual(0)
+			})
+		} finally {
+			document.body.removeEventListener('click', interactionListener)
+		}
+	})
+
+	it('aligns a delayed hashchange span with the navigation event timestamp', async () => {
+		const navigationStartTime = performance.now() - 50
+		const event = new HashChangeEvent('hashchange', {
+			newURL: `${location.href}#delayedHashChange`,
+			oldURL: location.href,
+		})
+		Object.defineProperty(event, 'timeStamp', { value: navigationStartTime })
+
+		window.dispatchEvent(event)
+
+		await vi.waitFor(
+			() => {
+				const span = capturer.spans.find((candidate) => candidate.name === 'routeChange')
+				expectDefined(span, 'Check if routeChange span is present.')
+				const pct = Number(span.attributes[BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE])
+				const expectedStartTime = timeInputToHrTime(navigationStartTime)
+
+				expect(span.startTime).toEqual(expectedStartTime)
+				expect(span.endTime).toEqual(addHrTimes(expectedStartTime, millisToHrTime(pct)))
+			},
+			{ timeout: 6000 },
+		)
+	})
+
+	it('ends an interrupted route change no later than the next route change starts', async () => {
+		const oldUrl = location.href
+		const firstUrl = `${oldUrl}#firstDelayedHashChange`
+		const nextUrl = `${oldUrl}#nextDelayedHashChange`
+		const firstStartTime = performance.now() - 100
+		const nextStartTime = firstStartTime + 50
+		const firstEvent = new HashChangeEvent('hashchange', {
+			newURL: firstUrl,
+			oldURL: oldUrl,
+		})
+		const nextEvent = new HashChangeEvent('hashchange', {
+			newURL: nextUrl,
+			oldURL: firstUrl,
+		})
+		Object.defineProperty(firstEvent, 'timeStamp', { value: firstStartTime })
+		Object.defineProperty(nextEvent, 'timeStamp', { value: nextStartTime })
+
+		window.dispatchEvent(firstEvent)
+		const handle = SplunkRum.registerManualPageLoad()
+		expect(handle?.markComplete()).toBe(true)
+		window.dispatchEvent(nextEvent)
+
+		await vi.waitFor(
+			() => {
+				const firstSpan = capturer.spans.find((span) => span.attributes['location.href'] === firstUrl)
+				const nextSpan = capturer.spans.find((span) => span.attributes['location.href'] === nextUrl)
+				expectDefined(firstSpan, 'Check if the interrupted routeChange span is present.')
+				expectDefined(nextSpan, 'Check if the next routeChange span is present.')
+
+				expect(firstSpan).toHaveSpanAttribute(
+					BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
+					PAGE_LOAD_METRICS_STATUS_INTERRUPTED,
+				)
+				expect(hrTimeToMilliseconds(firstSpan.endTime)).toBeLessThanOrEqual(
+					hrTimeToMilliseconds(nextSpan.startTime),
+				)
+				expect(firstSpan.endTime).toEqual(nextSpan.startTime)
 			},
 			{ timeout: 6000 },
 		)
@@ -1632,7 +1724,33 @@ describe('external session handling', () => {
 		window.SplunkRumExternal = undefined
 	})
 
+	it.each(['init', 'window'])('reuses external session without anonymousUserId via %s', (source) => {
+		const metadata = {
+			sessionId: 'external-session-without-anonymous-id',
+			sessionLastActivity: Date.now(),
+			sessionStart: Date.now() - 1000,
+		}
+
+		if (source === 'window') {
+			window.SplunkRumExternal = {
+				getSessionMetadata: () => metadata,
+			}
+		}
+
+		SplunkRum.init({
+			applicationName: 'test-app',
+			beaconEndpoint: 'https://127.0.0.1:9999/test',
+			rumAccessToken: undefined,
+			sessionMetadata: source === 'init' ? metadata : undefined,
+			spanProcessors: [capturer],
+		})
+
+		expect(SplunkRum.getSessionState()?.source).toBe('external')
+		expect(SplunkRum.getSessionId()).toBe(metadata.sessionId)
+	})
+
 	it('should not create session.start span for external sessions', async () => {
+		capturer.captureSessionStart = true
 		const now = Date.now()
 		const sessionStart = now - performance.now()
 
@@ -1648,11 +1766,13 @@ describe('external session handling', () => {
 		SplunkRum.init({
 			applicationName: 'test-app',
 			beaconEndpoint: 'https://127.0.0.1:9999/test',
+			instrumentations: INSTRUMENTATIONS_ALL_DISABLED,
 			rumAccessToken: undefined,
 			spanProcessors: [capturer],
 		})
 
 		expect(SplunkRum.inited).toBeTruthy()
+		getTracer('test').startSpan('application.telemetry').end()
 
 		await new Promise((resolve) => setTimeout(resolve, 500))
 
@@ -1666,26 +1786,39 @@ describe('external session handling', () => {
 		expect(sessionState?.id).toBe('external-session-id-123')
 	})
 
-	it('should create session.start span for web sessions', async () => {
+	it('should emit one session.start after the first web application span ends', async () => {
+		capturer.captureSessionStart = true
 		window.SplunkRumExternal = undefined
 
 		SplunkRum.init({
 			applicationName: 'test-app',
 			beaconEndpoint: 'https://127.0.0.1:9999/test',
+			instrumentations: INSTRUMENTATIONS_ALL_DISABLED,
 			rumAccessToken: undefined,
 			spanProcessors: [capturer],
 		})
 
 		expect(SplunkRum.inited).toBeTruthy()
+		expect(capturer.spans.some((span) => span.name === 'session.start')).toBe(false)
+
+		const sessionState = SplunkRum.getSessionState()
+		expectDefined(sessionState)
+
+		const applicationSpan = getTracer('test').startSpan('application.telemetry')
+		expect(capturer.spans.some((span) => span.name === 'session.start')).toBe(false)
+		applicationSpan.end()
 
 		await new Promise((resolve) => setTimeout(resolve, 500))
 
-		// Verify session.start span was created
-		const sessionStartSpan = capturer.spans.find((span) => span.name === 'session.start')
-		expectDefined(sessionStartSpan)
+		const sessionStartSpans = capturer.spans.filter((span) => span.name === 'session.start')
+		expect(sessionStartSpans).toHaveLength(1)
+		expect(hrTimeToMilliseconds(sessionStartSpans[0].startTime)).toBe(sessionState.startTime)
+		expect(sessionStartSpans[0].duration).toEqual([0, 0])
+
+		getTracer('test').startSpan('second.application.telemetry').end()
+		expect(capturer.spans.filter((span) => span.name === 'session.start')).toHaveLength(1)
 
 		// Verify session state has web source
-		const sessionState = SplunkRum.getSessionState()
-		expect(sessionState?.source).toBe('web')
+		expect(sessionState.source).toBe('web')
 	})
 })

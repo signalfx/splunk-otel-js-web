@@ -85,8 +85,7 @@ const compressGzipAsync = async (data: Uint8Array): Promise<Uint8Array<ArrayBuff
 				return
 			}
 
-			// TODO: https://github.com/101arrowz/fflate/issues/242
-			resolve(compressedData as Uint8Array<ArrayBuffer>)
+			resolve(compressedData)
 		})
 	})
 
