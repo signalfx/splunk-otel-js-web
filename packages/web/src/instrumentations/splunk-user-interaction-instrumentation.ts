@@ -24,6 +24,7 @@ import {
 	BROWSER_NAVIGATION_OPERATION_ATTRIBUTE,
 	BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION,
 } from '../managers/navigation-metrics-manager/constants'
+import { navigationVisibilityRecorder } from '../managers/navigation-metrics-manager/navigation-visibility-recorder'
 import { SplunkOtelWebConfig } from '../types'
 import { UserInteractionInstrumentation } from '../upstream/user-interaction/instrumentation'
 import { UserInteractionInstrumentationConfig } from '../upstream/user-interaction/types'
@@ -208,6 +209,12 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 		span.setAttribute('component', this.moduleName)
 		span.setAttribute('location.href', newHref)
 		span.setAttribute('prev.href', oldHref)
+		navigationVisibilityRecorder.startCapture(
+			span,
+			span,
+			navigationStartTime,
+			document.visibilityState === 'hidden',
+		)
 
 		if (this.navigationMetricsManager) {
 			// Wait for all in-flight resources monitored by navigation metrics to finish loading,
@@ -218,9 +225,12 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 				startTime: navigationStartTime,
 			})
 			diag.debug('Sending routeChange span with PCT result', pageLoadMetrics)
-			span.end(addHrTimes(spanStartTime, millisToHrTime(pageLoadMetrics.pct)))
+			const endTime = addHrTimes(spanStartTime, millisToHrTime(pageLoadMetrics.pct))
+			navigationVisibilityRecorder.endCapture(span, endTime)
+			span.end(endTime)
 			diag.debug('Route change span ended', { pct: pageLoadMetrics.pct, span })
 		} else {
+			navigationVisibilityRecorder.endCapture(span, spanStartTime)
 			span.end(spanStartTime)
 		}
 	}

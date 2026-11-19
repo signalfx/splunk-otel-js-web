@@ -1047,6 +1047,51 @@ describe('test route change', () => {
 		history.pushState({}, 'title', '/')
 	})
 
+	it('reports hidden ranges on routeChange spans', async () => {
+		const visibilityState = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden')
+		const oldUrl = location.href
+		deinit()
+		initWithDefaultConfig(capturer, {
+			navigationMetrics: { monitors: [], quietTime: 50 },
+		})
+
+		try {
+			history.pushState({}, 'title', '/hiddenRouteChange')
+			visibilityState.mockReturnValue('visible')
+			window.dispatchEvent(new Event('visibilitychange'))
+
+			let routeChangeSpan: (typeof capturer.spans)[number] | undefined
+			await vi.waitFor(() => {
+				routeChangeSpan = capturer.spans.find((candidate) => candidate.name === 'routeChange')
+				expectDefined(routeChangeSpan, 'routeChange span is present')
+			})
+
+			if (!routeChangeSpan) {
+				throw new Error('routeChange span is present')
+			}
+
+			const hiddenRanges = routeChangeSpan.attributes['browser.navigation.hidden_ranges']
+			expectDefined(hiddenRanges, 'routeChange hidden ranges are present')
+			if (typeof hiddenRanges !== 'string') {
+				throw new TypeError('routeChange hidden range is present')
+			}
+
+			const { longest_ranges } = JSON.parse(hiddenRanges) as {
+				longest_ranges: Array<{ end_ms: number; start_ms: number }>
+			}
+			const [hiddenRange] = longest_ranges
+			if (!hiddenRange) {
+				throw new Error('routeChange hidden range is present')
+			}
+
+			expect(hiddenRange.start_ms).toBe(0)
+			expect(hiddenRange.end_ms).toBeGreaterThan(0)
+		} finally {
+			visibilityState.mockRestore()
+			history.replaceState({}, 'title', oldUrl)
+		}
+	})
+
 	it('should capture location.hash changes', async () => {
 		const oldUrl = location.href
 		location.hash = '#hashChange'

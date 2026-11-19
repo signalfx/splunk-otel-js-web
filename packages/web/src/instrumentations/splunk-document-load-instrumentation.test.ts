@@ -24,6 +24,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { NavigationMetricsManager } from '../managers'
 
 import { BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION } from '../managers/navigation-metrics-manager/constants'
+import { navigationVisibilityRecorder } from '../managers/navigation-metrics-manager/navigation-visibility-recorder'
 import { BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE } from '../utils/resource-timing'
 import { SplunkDocumentLoadInstrumentation } from './splunk-document-load-instrumentation'
 
@@ -71,6 +72,7 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 	afterEach(() => {
 		instrumentation?.disable()
 		vi.restoreAllMocks()
+		navigationVisibilityRecorder.clear()
 		vi.unstubAllGlobals()
 	})
 
@@ -224,6 +226,38 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 
 		expect(setCurrentNavigationSpan).toHaveBeenCalledOnce()
 		expect((setCurrentNavigationSpan.mock.calls[0][0] as Span).name).toBe('documentLoad')
+	})
+
+	it('captures visibility ranges for documentLoad when pageLoad telemetry is disabled', () => {
+		const { navigationMetricsManager } = createNavigationMetricsManagerMock()
+		const startCapture = vi.spyOn(navigationVisibilityRecorder, 'startCapture')
+		const endCapture = vi.spyOn(navigationVisibilityRecorder, 'endCapture')
+		vi.spyOn(performance, 'getEntriesByType').mockReturnValue([])
+		vi.stubGlobal('PerformanceObserver', null)
+
+		instrumentation = new SplunkDocumentLoadInstrumentation(
+			{},
+			{ experimental: false },
+			undefined,
+			navigationMetricsManager,
+		)
+		instrumentation.setTracerProvider(new BasicTracerProvider())
+
+		const entries = { fetchStart: 12.5, loadEventEnd: 20 } as PerformanceEntries
+		const exposedInstrumentation = instrumentation as unknown as {
+			_endSpan(span: Span, performanceName: string, entries: PerformanceEntries): void
+			_startSpan(spanName: string, performanceName: string, entries: PerformanceEntries): Span
+		}
+		const documentLoadSpan = exposedInstrumentation._startSpan('documentLoad', PTN.FETCH_START, entries)
+		exposedInstrumentation._endSpan(documentLoadSpan, PTN.LOAD_EVENT_END, entries)
+
+		expect(startCapture).toHaveBeenCalledWith(
+			documentLoadSpan,
+			'initial-document-navigation',
+			12.5,
+			expect.any(Boolean),
+		)
+		expect(endCapture).toHaveBeenCalledWith(documentLoadSpan, millisToHrTime(20))
 	})
 
 	it('omits pre-start network timings from documentFetch spans', () => {
