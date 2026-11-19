@@ -64,6 +64,12 @@ fastify.register(fastifyStatic, {
 
 fastify.register(fastifyStatic, {
 	decorateReply: false,
+	prefix: '/session-recorder-artifacts/',
+	root: path.join(__dirname, '../../../session-recorder/dist/artifacts'),
+})
+
+fastify.register(fastifyStatic, {
+	decorateReply: false,
 	prefix: '/build-plugins-test-project-artifacts/',
 	root: path.join(__dirname, '../../../build-plugins/tests/project/dist/'),
 })
