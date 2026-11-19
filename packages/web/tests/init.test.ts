@@ -1076,7 +1076,10 @@ describe('test route change', () => {
 				throw new TypeError('routeChange hidden range is present')
 			}
 
-			const [hiddenRange] = JSON.parse(hiddenRanges) as Array<{ end_ms: number; start_ms: number }>
+			const { longest_ranges } = JSON.parse(hiddenRanges) as {
+				longest_ranges: Array<{ end_ms: number; start_ms: number }>
+			}
+			const [hiddenRange] = longest_ranges
 			if (!hiddenRange) {
 				throw new Error('routeChange hidden range is present')
 			}

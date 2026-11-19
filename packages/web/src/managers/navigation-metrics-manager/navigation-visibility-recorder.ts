@@ -31,6 +31,7 @@ type VisibilityCapture = {
 }
 
 const HIDDEN_RANGES_ATTRIBUTE = 'browser.navigation.hidden_ranges'
+const MAX_REPORTED_HIDDEN_RANGES = 3
 export const INITIAL_NAVIGATION_VISIBILITY_CAPTURE_KEY = 'initial-document-navigation'
 
 type HiddenRange = {
@@ -58,7 +59,16 @@ export class NavigationVisibilityRecorder {
 		const spanEndTime = endTime === undefined ? performance.now() : hrTimeToMilliseconds(timeInputToHrTime(endTime))
 		const hiddenRanges = this.getHiddenRanges(capture, spanStartTime, spanEndTime)
 		if (hiddenRanges.length > 0) {
-			span.setAttribute(HIDDEN_RANGES_ATTRIBUTE, JSON.stringify(hiddenRanges))
+			const reportedRanges = this.getLargestHiddenRanges(hiddenRanges)
+			const totalHiddenDuration = hiddenRanges.reduce((total, range) => total + range.end_ms - range.start_ms, 0)
+			span.setAttribute(
+				HIDDEN_RANGES_ATTRIBUTE,
+				JSON.stringify({
+					count: hiddenRanges.length,
+					duration: totalHiddenDuration,
+					longest_ranges: reportedRanges,
+				}),
+			)
 		}
 
 		capture.spans.delete(span)
@@ -134,6 +144,16 @@ export class NavigationVisibilityRecorder {
 		}
 
 		return hiddenRanges
+	}
+
+	private getLargestHiddenRanges(hiddenRanges: HiddenRange[]): HiddenRange[] {
+		return [...hiddenRanges]
+			.toSorted((a, b) => {
+				const durationDifference = b.end_ms - b.start_ms - (a.end_ms - a.start_ms)
+				return durationDifference || a.start_ms - b.start_ms
+			})
+			.slice(0, MAX_REPORTED_HIDDEN_RANGES)
+			.toSorted((a, b) => a.start_ms - b.start_ms)
 	}
 }
 
