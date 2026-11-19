@@ -109,6 +109,7 @@ import {
 	StorageManager,
 	UserManager,
 } from './managers'
+import { navigationVisibilityRecorder } from './managers/navigation-metrics-manager/navigation-visibility-recorder'
 import { ExternalSessionMetadata, isValidExternalSessionMetadata } from './types/external-session-metadata'
 import {
 	getElementDataAttributes,
@@ -356,6 +357,7 @@ export const SplunkRum: SplunkOtelWebType = {
 
 			_deregisterInstrumentations?.()
 			_deregisterInstrumentations = undefined
+			navigationVisibilityRecorder.clear()
 
 			_navigationMetricsManager?.stop()
 			_navigationMetricsManager = undefined
@@ -800,6 +802,10 @@ export const SplunkRum: SplunkOtelWebType = {
 			}).filter((a): a is Exclude<typeof a, null> => Boolean(a))
 
 			_visibilityChangeListener = () => {
+				navigationVisibilityRecorder.recordVisibilityChange(
+					performance.now(),
+					document.visibilityState === 'hidden',
+				)
 				// this condition applies when the page is hidden or when it's closed
 				// see for more details: https://developers.google.com/web/updates/2018/07/page-lifecycle-api#developer-recommendations-for-each-state
 				if (document.visibilityState === 'hidden') {
@@ -849,6 +855,8 @@ export const SplunkRum: SplunkOtelWebType = {
 				window.removeEventListener('visibilitychange', _visibilityChangeListener)
 				_visibilityChangeListener = undefined
 			}
+
+			navigationVisibilityRecorder.clear()
 
 			diag.warn('[Splunk]: SplunkRum.init() - Failed to initialize due to internal exception.', { error })
 		}
