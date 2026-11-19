@@ -125,6 +125,8 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 
 	private readonly navigationMetricsManager: NavigationMetricsManager | undefined
 
+	private navigationStartPerformanceTime: number | undefined
+
 	private navigationStartTimeMillis: number | undefined
 
 	private navigationTimingObserver: PerformanceObserver | undefined
@@ -159,7 +161,9 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 			const span = _superStartSpan(spanName, performanceName, startEntries, parentSpan)
 
 			if (span && spanName === AttributeNames.DOCUMENT_LOAD) {
-				const startTime = (startEntries as unknown as Record<string, unknown>)[PTN.FETCH_START]
+				const startTime =
+					this.navigationStartPerformanceTime ??
+					(entries as unknown as Record<string, unknown>)[PTN.FETCH_START]
 				if (typeof startTime === 'number') {
 					navigationVisibilityRecorder.startCapture(
 						span,
@@ -286,10 +290,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 
 			if (span && exposedSpan.name === AttributeNames.DOCUMENT_LOAD) {
 				const endTime = (entries as unknown as Record<string, unknown>)[performanceName]
-				navigationVisibilityRecorder.endCapture(
-					span,
-					typeof endTime === 'number' ? millisToHrTime(endTime) : undefined,
-				)
+				navigationVisibilityRecorder.endCapture(span, typeof endTime === 'number' ? endTime : undefined)
 				addExtraDocLoadTags(span)
 
 				if (this.documentLoadMetricsPromise) {
@@ -311,7 +312,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 									effectivePageLoadMetrics,
 								)
 								this.endPageLoadSpan(
-									addHrTimes(pageLoadSpan.startTime, millisToHrTime(effectivePageLoadMetrics.pct)),
+									(this.navigationStartPerformanceTime ?? 0) + effectivePageLoadMetrics.pct,
 								)
 							}
 
@@ -394,12 +395,19 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 		this.startPageLoadSpanWhenNavigationTimingIsAvailable()
 	}
 
-	private endPageLoadSpan(endTime?: api.TimeInput): void {
+	private endPageLoadSpan(endTime = performance.now()): void {
 		if (this.pageLoadSpan) {
 			navigationVisibilityRecorder.endCapture(this.pageLoadSpan, endTime)
 		}
 
-		this.pageLoadSpan?.end(endTime)
+		if (this.pageLoadSpan && this.navigationStartPerformanceTime !== undefined) {
+			const span = this.pageLoadSpan as Span
+			span.end(
+				addHrTimes(span.startTime, millisToHrTime(Math.max(0, endTime - this.navigationStartPerformanceTime))),
+			)
+		}
+
+		this.navigationStartPerformanceTime = undefined
 		this.navigationStartTimeMillis = undefined
 		this.pageLoadSpan = undefined
 	}
@@ -408,6 +416,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 		// Convert the relative Performance API timestamp once. The same absolute value
 		// starts pageLoad and overrides the documentLoad and documentFetch entries,
 		// avoiding a slightly different performance-to-epoch offset for each span.
+		this.navigationStartPerformanceTime ??= fetchStart
 		this.navigationStartTimeMillis ??= hrTimeToMilliseconds(timeInputToHrTime(fetchStart))
 
 		if (this.pageLoadSpan || !this.documentLoadMetricsPromise || !this.otelConfig.experimental) {
@@ -424,7 +433,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 		this.pageLoadSpan.setAttribute(SEMATTRS_HTTP_URL, this.initialDocumentUrl)
 		this.pageLoadSpan.setAttribute('location.href', this.initialDocumentUrl)
 		this.pageLoadSpan.setAttribute(SemanticAttributes.HTTP_USER_AGENT, navigator.userAgent)
-		const startTime = this.navigationStartTimeMillis
+		const startTime = this.navigationStartPerformanceTime
 		if (startTime !== undefined) {
 			navigationVisibilityRecorder.startCapture(
 				this.pageLoadSpan,

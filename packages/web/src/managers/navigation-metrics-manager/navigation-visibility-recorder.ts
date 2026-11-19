@@ -16,8 +16,7 @@
  *
  */
 
-import type { Span, TimeInput } from '@opentelemetry/api'
-import { hrTimeToMilliseconds, timeInputToHrTime } from '@opentelemetry/core'
+import type { Span } from '@opentelemetry/api'
 
 type VisibilityTransition = {
 	hidden: boolean
@@ -49,14 +48,15 @@ export class NavigationVisibilityRecorder {
 		this.captureGroups.clear()
 	}
 
-	endCapture(span: Span, endTime?: TimeInput): void {
+	// All capture timestamps use the performance.now() clock, never epoch time.
+	endCapture(span: Span, endTime = performance.now()): void {
 		const captureForSpan = this.captures.get(span)
 		if (!captureForSpan) {
 			return
 		}
 
 		const { capture, startTime: spanStartTime } = captureForSpan
-		const spanEndTime = endTime === undefined ? performance.now() : hrTimeToMilliseconds(timeInputToHrTime(endTime))
+		const spanEndTime = Math.max(spanStartTime, endTime)
 		const hiddenRanges = this.getHiddenRanges(capture, spanStartTime, spanEndTime)
 		if (hiddenRanges.length > 0) {
 			const reportedRanges = this.getLargestHiddenRanges(hiddenRanges)
@@ -134,13 +134,18 @@ export class NavigationVisibilityRecorder {
 			if (event.hidden) {
 				hiddenStart ??= event.time
 			} else if (hiddenStart !== undefined) {
-				this.addHiddenRange(hiddenRanges, spanStartTime, hiddenStart, event.time)
+				this.addHiddenRange(
+					hiddenRanges,
+					spanStartTime,
+					Math.max(spanStartTime, hiddenStart),
+					Math.min(event.time, spanEndTime),
+				)
 				hiddenStart = undefined
 			}
 		}
 
 		if (hiddenStart !== undefined) {
-			this.addHiddenRange(hiddenRanges, spanStartTime, hiddenStart, spanEndTime)
+			this.addHiddenRange(hiddenRanges, spanStartTime, Math.max(spanStartTime, hiddenStart), spanEndTime)
 		}
 
 		return hiddenRanges

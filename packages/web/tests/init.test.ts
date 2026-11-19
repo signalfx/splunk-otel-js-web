@@ -1057,6 +1057,10 @@ describe('test route change', () => {
 
 		try {
 			history.pushState({}, 'title', '/hiddenRouteChange')
+			const handle = SplunkRum.registerManualPageLoad()
+			expectDefined(handle, 'manual navigation handle is present')
+			await new Promise((resolve) => setTimeout(resolve, 20))
+			handle.markComplete()
 			visibilityState.mockReturnValue('visible')
 			window.dispatchEvent(new Event('visibilitychange'))
 
@@ -1086,6 +1090,7 @@ describe('test route change', () => {
 
 			expect(hiddenRange.start_ms).toBe(0)
 			expect(hiddenRange.end_ms).toBeGreaterThan(0)
+			expect(hiddenRange.end_ms).toBeLessThanOrEqual(hrTimeToMilliseconds(routeChangeSpan.duration) + 0.001)
 		} finally {
 			visibilityState.mockRestore()
 			history.replaceState({}, 'title', oldUrl)

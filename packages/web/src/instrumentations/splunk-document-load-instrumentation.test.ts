@@ -114,6 +114,48 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 		expect(MockPerformanceObserver.instances[0].disconnect).toHaveBeenCalledOnce()
 	})
 
+	it('keeps visibility timestamps relative while span timestamps use epoch time', () => {
+		const { navigationMetricsManager, setCurrentNavigationSpan } = createNavigationMetricsManagerMock()
+		vi.spyOn(performance, 'getEntriesByType').mockReturnValue([])
+		vi.stubGlobal('PerformanceObserver', MockPerformanceObserver)
+		vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible')
+
+		instrumentation = new SplunkDocumentLoadInstrumentation(
+			{},
+			{ experimental: true },
+			undefined,
+			navigationMetricsManager,
+		)
+		instrumentation.setTracerProvider(new BasicTracerProvider())
+		MockPerformanceObserver.instances[0].emit([
+			{ entryType: 'navigation', fetchStart: 12.5, name: location.href } as PerformanceNavigationTiming,
+		])
+		const span = setCurrentNavigationSpan.mock.calls[0][0] as Span
+		expect(hrTimeToMilliseconds(span.startTime)).toBeGreaterThan(1_000_000_000_000)
+		navigationVisibilityRecorder.recordVisibilityChange(20, true)
+		navigationVisibilityRecorder.recordVisibilityChange(80, false)
+		const entries = { fetchStart: 12.5, loadEventEnd: 45 } as PerformanceEntries
+		const exposed = instrumentation as unknown as {
+			_endSpan(span: Span, performanceName: string, entries: PerformanceEntries): void
+			_startSpan(spanName: string, performanceName: string, entries: PerformanceEntries): Span
+			endPageLoadSpan(time: number): void
+		}
+		const documentSpan = exposed._startSpan('documentLoad', PTN.FETCH_START, entries)
+		exposed._endSpan(documentSpan, PTN.LOAD_EVENT_END, entries)
+		expect(JSON.parse(documentSpan.attributes['browser.navigation.hidden_ranges'] as string)).toEqual({
+			count: 1,
+			duration: 25,
+			longest_ranges: [{ end_ms: 32.5, start_ms: 7.5 }],
+		})
+		exposed.endPageLoadSpan(50)
+		expect(JSON.parse(span.attributes['browser.navigation.hidden_ranges'] as string)).toEqual({
+			count: 1,
+			duration: 30,
+			longest_ranges: [{ end_ms: 37.5, start_ms: 7.5 }],
+		})
+		expect(hrTimeToMilliseconds(span.duration)).toBe(37.5)
+	})
+
 	it('uses the pageLoad URL for both document spans when the route changes before collection', () => {
 		const { navigationMetricsManager, setCurrentNavigationSpan } = createNavigationMetricsManagerMock()
 		vi.spyOn(performance, 'getEntriesByType').mockReturnValue([])
@@ -362,7 +404,7 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 			12.5,
 			expect.any(Boolean),
 		)
-		expect(endCapture).toHaveBeenCalledWith(documentLoadSpan, millisToHrTime(20))
+		expect(endCapture).toHaveBeenCalledWith(documentLoadSpan, 20)
 	})
 
 	it('omits pre-start network timings from documentFetch spans', () => {

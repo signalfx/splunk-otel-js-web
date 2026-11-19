@@ -105,4 +105,48 @@ describe('NavigationVisibilityRecorder', () => {
 			longest_ranges: [{ end_ms: 3, start_ms: 0 }],
 		})
 	})
+
+	it('clips closed and open intervals to navigation end when collection is delayed', () => {
+		const recorder = new NavigationVisibilityRecorder()
+		const { attributes, span } = createSpan()
+		recorder.startCapture(span, span, 1000, false)
+		recorder.recordVisibilityChange(1100, true)
+		recorder.recordVisibilityChange(1500, false)
+		recorder.recordVisibilityChange(1600, true)
+		recorder.endCapture(span, 1400)
+
+		expect(getHiddenRanges(attributes)).toEqual({
+			count: 1,
+			duration: 300,
+			longest_ranges: [{ end_ms: 400, start_ms: 100 }],
+		})
+	})
+
+	it('ends an open interval at navigation end rather than collection time', () => {
+		const recorder = new NavigationVisibilityRecorder()
+		const { attributes, span } = createSpan()
+		vi.spyOn(performance, 'now').mockReturnValue(9000)
+		try {
+			recorder.startCapture(span, span, 1000, true)
+			recorder.endCapture(span, 1400)
+			expect(getHiddenRanges(attributes)).toEqual({
+				count: 1,
+				duration: 400,
+				longest_ranges: [{ end_ms: 400, start_ms: 0 }],
+			})
+		} finally {
+			vi.restoreAllMocks()
+		}
+	})
+
+	it('omits a hidden interval that starts exactly at the interrupted navigation end', () => {
+		const recorder = new NavigationVisibilityRecorder()
+		const { attributes, span } = createSpan()
+		const navigationStart = 10_000
+		const pct = 3604.399_999_976_158
+		recorder.startCapture(span, span, navigationStart, false)
+		recorder.recordVisibilityChange(navigationStart + pct, true)
+		recorder.endCapture(span, navigationStart + pct)
+		expect(attributes[HIDDEN_RANGES_ATTRIBUTE]).toBeUndefined()
+	})
 })
