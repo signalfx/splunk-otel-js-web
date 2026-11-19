@@ -17,6 +17,7 @@
  */
 
 import type { Span } from '@opentelemetry/api'
+import { millisToHrTime, timeInputToHrTime } from '@opentelemetry/core'
 import { describe, expect, it, vi } from 'vitest'
 
 import { NavigationVisibilityRecorder } from './navigation-visibility-recorder'
@@ -103,6 +104,67 @@ describe('NavigationVisibilityRecorder', () => {
 			count: 1,
 			duration: 3,
 			longest_ranges: [{ end_ms: 3, start_ms: 0 }],
+		})
+	})
+
+	it('clips closed and open intervals to navigation end when collection is delayed', () => {
+		const recorder = new NavigationVisibilityRecorder()
+		const { attributes, span } = createSpan()
+		recorder.startCapture(span, span, 1000, false)
+		recorder.recordVisibilityChange(1100, true)
+		recorder.recordVisibilityChange(1500, false)
+		recorder.recordVisibilityChange(1600, true)
+		recorder.endCapture(span, 1400)
+
+		expect(getHiddenRanges(attributes)).toEqual({
+			count: 1,
+			duration: 300,
+			longest_ranges: [{ end_ms: 400, start_ms: 100 }],
+		})
+	})
+
+	it('ends an open interval at navigation end rather than collection time', () => {
+		const recorder = new NavigationVisibilityRecorder()
+		const { attributes, span } = createSpan()
+		vi.spyOn(performance, 'now').mockReturnValue(9000)
+		try {
+			recorder.startCapture(span, span, 1000, true)
+			recorder.endCapture(span, 1400)
+			expect(getHiddenRanges(attributes)).toEqual({
+				count: 1,
+				duration: 400,
+				longest_ranges: [{ end_ms: 400, start_ms: 0 }],
+			})
+		} finally {
+			vi.restoreAllMocks()
+		}
+	})
+
+	it('omits a hidden interval that starts exactly at the interrupted navigation end', () => {
+		const recorder = new NavigationVisibilityRecorder()
+		const { attributes, span } = createSpan()
+		const navigationStart = 10_000
+		const pct = 3604.399_999_976_158
+		recorder.startCapture(span, span, navigationStart, false)
+		recorder.recordVisibilityChange(navigationStart + pct, true)
+		recorder.endCapture(span, navigationStart + pct)
+		expect(attributes[HIDDEN_RANGES_ATTRIBUTE]).toBeUndefined()
+	})
+
+	it.each(['pageLoad', 'documentLoad', 'routeChange'])('normalizes %s boundary times inside the recorder', (name) => {
+		const recorder = new NavigationVisibilityRecorder()
+		const { attributes, span } = createSpan()
+		const start = name === 'routeChange' ? 1000 : performance.timeOrigin + 1000
+		recorder.startCapture(span, span, start, false)
+		recorder.recordVisibilityChange(1100, true)
+		recorder.recordVisibilityChange(1500, false)
+		// documentLoad passes relative milliseconds wrapped as HrTime; the others pass epoch HrTime.
+		const end = name === 'documentLoad' ? millisToHrTime(1400) : timeInputToHrTime(1400)
+		recorder.endCapture(span, end)
+		expect(getHiddenRanges(attributes)).toEqual({
+			count: 1,
+			duration: 300,
+			longest_ranges: [{ end_ms: 400, start_ms: 100 }],
 		})
 	})
 })
