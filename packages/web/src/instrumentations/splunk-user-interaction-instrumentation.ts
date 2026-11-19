@@ -226,11 +226,11 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 			})
 			diag.debug('Sending routeChange span with PCT result', pageLoadMetrics)
 			const endTime = addHrTimes(spanStartTime, millisToHrTime(pageLoadMetrics.pct))
-			navigationVisibilityRecorder.endCapture(span, navigationStartTime + pageLoadMetrics.pct)
+			navigationVisibilityRecorder.endCapture(span, endTime)
 			span.end(endTime)
 			diag.debug('Route change span ended', { pct: pageLoadMetrics.pct, span })
 		} else {
-			navigationVisibilityRecorder.endCapture(span, navigationStartTime)
+			navigationVisibilityRecorder.endCapture(span, spanStartTime)
 			span.end(spanStartTime)
 		}
 	}

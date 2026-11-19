@@ -17,6 +17,7 @@
  */
 
 import type { Span } from '@opentelemetry/api'
+import { millisToHrTime, timeInputToHrTime } from '@opentelemetry/core'
 import { describe, expect, it, vi } from 'vitest'
 
 import { NavigationVisibilityRecorder } from './navigation-visibility-recorder'
@@ -148,5 +149,22 @@ describe('NavigationVisibilityRecorder', () => {
 		recorder.recordVisibilityChange(navigationStart + pct, true)
 		recorder.endCapture(span, navigationStart + pct)
 		expect(attributes[HIDDEN_RANGES_ATTRIBUTE]).toBeUndefined()
+	})
+
+	it.each(['pageLoad', 'documentLoad', 'routeChange'])('normalizes %s boundary times inside the recorder', (name) => {
+		const recorder = new NavigationVisibilityRecorder()
+		const { attributes, span } = createSpan()
+		const start = name === 'routeChange' ? 1000 : performance.timeOrigin + 1000
+		recorder.startCapture(span, span, start, false)
+		recorder.recordVisibilityChange(1100, true)
+		recorder.recordVisibilityChange(1500, false)
+		// documentLoad passes relative milliseconds wrapped as HrTime; the others pass epoch HrTime.
+		const end = name === 'documentLoad' ? millisToHrTime(1400) : timeInputToHrTime(1400)
+		recorder.endCapture(span, end)
+		expect(getHiddenRanges(attributes)).toEqual({
+			count: 1,
+			duration: 300,
+			longest_ranges: [{ end_ms: 400, start_ms: 100 }],
+		})
 	})
 })

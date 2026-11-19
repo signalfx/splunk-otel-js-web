@@ -16,7 +16,14 @@
  *
  */
 
-import type { Span } from '@opentelemetry/api'
+import type { Span, TimeInput } from '@opentelemetry/api'
+import {
+	getTimeOrigin,
+	hrTimeDuration,
+	hrTimeToMilliseconds,
+	millisToHrTime,
+	timeInputToHrTime,
+} from '@opentelemetry/core'
 
 type VisibilityTransition = {
 	hidden: boolean
@@ -38,6 +45,18 @@ type HiddenRange = {
 	start_ms: number
 }
 
+// Instrumentation supplies epoch span times as well as relative Navigation Timing values.
+// Normalize only recorder inputs; keep interval calculations on the performance.now() clock.
+function toPerformanceTime(time: TimeInput): number {
+	const milliseconds = typeof time === 'number' ? time : hrTimeToMilliseconds(timeInputToHrTime(time))
+	const origin = getTimeOrigin()
+	if (milliseconds < origin) {
+		return milliseconds
+	}
+
+	return hrTimeToMilliseconds(hrTimeDuration(millisToHrTime(origin), timeInputToHrTime(time)))
+}
+
 export class NavigationVisibilityRecorder {
 	private readonly captureGroups = new Map<VisibilityCapture['key'], VisibilityCapture>()
 
@@ -48,15 +67,14 @@ export class NavigationVisibilityRecorder {
 		this.captureGroups.clear()
 	}
 
-	// All capture timestamps use the performance.now() clock, never epoch time.
-	endCapture(span: Span, endTime = performance.now()): void {
+	endCapture(span: Span, endTime: TimeInput = performance.now()): void {
 		const captureForSpan = this.captures.get(span)
 		if (!captureForSpan) {
 			return
 		}
 
 		const { capture, startTime: spanStartTime } = captureForSpan
-		const spanEndTime = Math.max(spanStartTime, endTime)
+		const spanEndTime = Math.max(spanStartTime, toPerformanceTime(endTime))
 		const hiddenRanges = this.getHiddenRanges(capture, spanStartTime, spanEndTime)
 		if (hiddenRanges.length > 0) {
 			const reportedRanges = this.getLargestHiddenRanges(hiddenRanges)
@@ -88,6 +106,7 @@ export class NavigationVisibilityRecorder {
 	}
 
 	startCapture(span: Span, key: VisibilityCapture['key'], startTime: number, initiallyHidden: boolean): void {
+		startTime = toPerformanceTime(startTime)
 		let capture = this.captureGroups.get(key)
 		if (!capture) {
 			capture = {

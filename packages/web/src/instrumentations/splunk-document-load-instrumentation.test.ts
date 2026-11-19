@@ -138,7 +138,7 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 		const exposed = instrumentation as unknown as {
 			_endSpan(span: Span, performanceName: string, entries: PerformanceEntries): void
 			_startSpan(spanName: string, performanceName: string, entries: PerformanceEntries): Span
-			endPageLoadSpan(time: ReturnType<typeof timeInputToHrTime>, visibilityEndTime: number): void
+			endPageLoadSpan(time: ReturnType<typeof timeInputToHrTime>): void
 		}
 		const documentSpan = exposed._startSpan('documentLoad', PTN.FETCH_START, entries)
 		exposed._endSpan(documentSpan, PTN.LOAD_EVENT_END, entries)
@@ -148,7 +148,7 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 			longest_ranges: [{ end_ms: 32.5, start_ms: 7.5 }],
 		})
 		const expectedEndTime = timeInputToHrTime(50)
-		exposed.endPageLoadSpan(expectedEndTime, 50)
+		exposed.endPageLoadSpan(expectedEndTime)
 		expect(span.endTime).toEqual(expectedEndTime)
 		expect(JSON.parse(span.attributes['browser.navigation.hidden_ranges'] as string)).toEqual({
 			count: 1,
@@ -406,7 +406,7 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 			12.5,
 			expect.any(Boolean),
 		)
-		expect(endCapture).toHaveBeenCalledWith(documentLoadSpan, 20)
+		expect(endCapture).toHaveBeenCalledWith(documentLoadSpan, millisToHrTime(20))
 	})
 
 	it('omits pre-start network timings from documentFetch spans', () => {
