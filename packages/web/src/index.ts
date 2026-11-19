@@ -653,6 +653,7 @@ export const SplunkRum: SplunkOtelWebType = {
 				sessionMetadataFromOptions = processedOptions.sessionMetadata
 			}
 
+			let pendingSessionStartId: string | undefined
 			this.sessionManager = new SessionManager(
 				storageManager,
 				sessionMetadataFromOptions,
@@ -665,10 +666,9 @@ export const SplunkRum: SplunkOtelWebType = {
 			)
 			_sessionStateUnsubscribe = this.sessionManager.subscribe(({ currentState, previousState }) => {
 				if (currentState.isNew && currentState.source !== 'external') {
-					provider
-						.getTracer('splunk-sessions')
-						.startSpan('session.start', { startTime: currentState.startTime })
-						.end(currentState.startTime)
+					pendingSessionStartId = currentState.id
+				} else if (pendingSessionStartId && currentState.id !== pendingSessionStartId) {
+					pendingSessionStartId = undefined
 				}
 
 				if (!previousState) {
@@ -699,6 +699,7 @@ export const SplunkRum: SplunkOtelWebType = {
 							experimental: processedOptions.experimental,
 						})
 			_navigationMetricsManager = navigationMetricsManager
+			const sessionTracerProvider: { current?: SplunkWebTracerProvider } = {}
 
 			this.attributesProcessor = new SpanAttributesProcessor(
 				this.sessionManager,
@@ -715,6 +716,18 @@ export const SplunkRum: SplunkOtelWebType = {
 				processedOptions.discardDataAfterInactivity,
 				processedOptions.adjustSessionStartToTimeOrigin,
 				navigationMetricsManager,
+				(sessionState) => {
+					if (pendingSessionStartId !== sessionState.id) {
+						return
+					}
+
+					// Clear before starting the span because its own onEnd callback re-enters this processor.
+					pendingSessionStartId = undefined
+					sessionTracerProvider.current
+						?.getTracer('splunk-sessions')
+						.startSpan('session.start', { startTime: sessionState.startTime })
+						.end(sessionState.startTime)
+				},
 			)
 
 			this._spanEmitter = new SpanEmitterProcessor()
@@ -747,6 +760,7 @@ export const SplunkRum: SplunkOtelWebType = {
 				}),
 				spanProcessors,
 			})
+			sessionTracerProvider.current = provider
 
 			this.sessionManager.start()
 

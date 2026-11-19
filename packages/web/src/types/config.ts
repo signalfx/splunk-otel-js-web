@@ -135,6 +135,8 @@ type NavigationMetricsOptionsBase = {
 	clearLoadingResourcesOnNewPage?: boolean
 	/** URLs to exclude from PCT tracking (e.g., analytics, third-party scripts) */
 	ignoreUrls?: Array<string | RegExp>
+	/** Maximum time in milliseconds to wait for a fetch response body to reach EOF. @default 180000 */
+	maxFetchResponseBodyWaitTime?: number
 	/** Maximum time in milliseconds from navigation start to wait for manual page completion. @default 180000 */
 	maxPageLoadTimeoutForManualApi?: number
 	/** Maximum time in milliseconds to wait for PCT computation before marking it as timed out. @default 180000 */
