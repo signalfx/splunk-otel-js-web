@@ -312,6 +312,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 									effectivePageLoadMetrics,
 								)
 								this.endPageLoadSpan(
+									addHrTimes(pageLoadSpan.startTime, millisToHrTime(effectivePageLoadMetrics.pct)),
 									(this.navigationStartPerformanceTime ?? 0) + effectivePageLoadMetrics.pct,
 								)
 							}
@@ -328,7 +329,10 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 							})
 							if (this.pageLoadSpan) {
 								const pageLoadEndTime = (entries as unknown as Record<string, unknown>)[performanceName]
-								this.endPageLoadSpan(typeof pageLoadEndTime === 'number' ? pageLoadEndTime : undefined)
+								this.endPageLoadSpan(
+									typeof pageLoadEndTime === 'number' ? pageLoadEndTime : undefined,
+									typeof pageLoadEndTime === 'number' ? pageLoadEndTime : undefined,
+								)
 							}
 
 							_superEndSpan(span, performanceName, entries)
@@ -395,18 +399,12 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 		this.startPageLoadSpanWhenNavigationTimingIsAvailable()
 	}
 
-	private endPageLoadSpan(endTime = performance.now()): void {
+	private endPageLoadSpan(endTime?: api.TimeInput, visibilityEndTime = performance.now()): void {
 		if (this.pageLoadSpan) {
-			navigationVisibilityRecorder.endCapture(this.pageLoadSpan, endTime)
+			navigationVisibilityRecorder.endCapture(this.pageLoadSpan, visibilityEndTime)
 		}
 
-		if (this.pageLoadSpan && this.navigationStartPerformanceTime !== undefined) {
-			const span = this.pageLoadSpan as Span
-			span.end(
-				addHrTimes(span.startTime, millisToHrTime(Math.max(0, endTime - this.navigationStartPerformanceTime))),
-			)
-		}
-
+		this.pageLoadSpan?.end(endTime)
 		this.navigationStartPerformanceTime = undefined
 		this.navigationStartTimeMillis = undefined
 		this.pageLoadSpan = undefined
