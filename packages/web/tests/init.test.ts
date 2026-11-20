@@ -23,7 +23,7 @@ import { expectDefined } from '@test-utils/assertions'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { HTTP_TEST_SERVER_URL } from '../../../tests/servers/http-constants'
-import SplunkRum from '../src'
+import SplunkRum, { INSTRUMENTATIONS_ALL_DISABLED } from '../src'
 import {
 	BROWSER_NAVIGATION_FIRST_INTERACTION_OFFSET_ATTRIBUTE,
 	BROWSER_NAVIGATION_FIRST_INTERACTION_TYPE_ATTRIBUTE,
@@ -1047,6 +1047,56 @@ describe('test route change', () => {
 		history.pushState({}, 'title', '/')
 	})
 
+	it('reports hidden ranges on routeChange spans', async () => {
+		const visibilityState = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden')
+		const oldUrl = location.href
+		deinit()
+		initWithDefaultConfig(capturer, {
+			navigationMetrics: { monitors: [], quietTime: 50 },
+		})
+
+		try {
+			history.pushState({}, 'title', '/hiddenRouteChange')
+			const handle = SplunkRum.registerManualPageLoad()
+			expectDefined(handle, 'manual navigation handle is present')
+			await new Promise((resolve) => setTimeout(resolve, 20))
+			handle.markComplete()
+			visibilityState.mockReturnValue('visible')
+			window.dispatchEvent(new Event('visibilitychange'))
+
+			let routeChangeSpan: (typeof capturer.spans)[number] | undefined
+			await vi.waitFor(() => {
+				routeChangeSpan = capturer.spans.find((candidate) => candidate.name === 'routeChange')
+				expectDefined(routeChangeSpan, 'routeChange span is present')
+			})
+
+			if (!routeChangeSpan) {
+				throw new Error('routeChange span is present')
+			}
+
+			const hiddenRanges = routeChangeSpan.attributes['browser.navigation.hidden_ranges']
+			expectDefined(hiddenRanges, 'routeChange hidden ranges are present')
+			if (typeof hiddenRanges !== 'string') {
+				throw new TypeError('routeChange hidden range is present')
+			}
+
+			const { longest_ranges } = JSON.parse(hiddenRanges) as {
+				longest_ranges: Array<{ end_ms: number; start_ms: number }>
+			}
+			const [hiddenRange] = longest_ranges
+			if (!hiddenRange) {
+				throw new Error('routeChange hidden range is present')
+			}
+
+			expect(hiddenRange.start_ms).toBe(0)
+			expect(hiddenRange.end_ms).toBeGreaterThan(0)
+			expect(hiddenRange.end_ms).toBeLessThanOrEqual(hrTimeToMilliseconds(routeChangeSpan.duration) + 0.001)
+		} finally {
+			visibilityState.mockRestore()
+			history.replaceState({}, 'title', oldUrl)
+		}
+	})
+
 	it('should capture location.hash changes', async () => {
 		const oldUrl = location.href
 		let navigationStartTimestamp: number | undefined
@@ -1767,6 +1817,7 @@ describe('external session handling', () => {
 	})
 
 	it('should not create session.start span for external sessions', async () => {
+		capturer.captureSessionStart = true
 		const now = Date.now()
 		const sessionStart = now - performance.now()
 
@@ -1782,11 +1833,13 @@ describe('external session handling', () => {
 		SplunkRum.init({
 			applicationName: 'test-app',
 			beaconEndpoint: 'https://127.0.0.1:9999/test',
+			instrumentations: INSTRUMENTATIONS_ALL_DISABLED,
 			rumAccessToken: undefined,
 			spanProcessors: [capturer],
 		})
 
 		expect(SplunkRum.inited).toBeTruthy()
+		getTracer('test').startSpan('application.telemetry').end()
 
 		await new Promise((resolve) => setTimeout(resolve, 500))
 
@@ -1800,26 +1853,39 @@ describe('external session handling', () => {
 		expect(sessionState?.id).toBe('external-session-id-123')
 	})
 
-	it('should create session.start span for web sessions', async () => {
+	it('should emit one session.start after the first web application span ends', async () => {
+		capturer.captureSessionStart = true
 		window.SplunkRumExternal = undefined
 
 		SplunkRum.init({
 			applicationName: 'test-app',
 			beaconEndpoint: 'https://127.0.0.1:9999/test',
+			instrumentations: INSTRUMENTATIONS_ALL_DISABLED,
 			rumAccessToken: undefined,
 			spanProcessors: [capturer],
 		})
 
 		expect(SplunkRum.inited).toBeTruthy()
+		expect(capturer.spans.some((span) => span.name === 'session.start')).toBe(false)
+
+		const sessionState = SplunkRum.getSessionState()
+		expectDefined(sessionState)
+
+		const applicationSpan = getTracer('test').startSpan('application.telemetry')
+		expect(capturer.spans.some((span) => span.name === 'session.start')).toBe(false)
+		applicationSpan.end()
 
 		await new Promise((resolve) => setTimeout(resolve, 500))
 
-		// Verify session.start span was created
-		const sessionStartSpan = capturer.spans.find((span) => span.name === 'session.start')
-		expectDefined(sessionStartSpan)
+		const sessionStartSpans = capturer.spans.filter((span) => span.name === 'session.start')
+		expect(sessionStartSpans).toHaveLength(1)
+		expect(hrTimeToMilliseconds(sessionStartSpans[0].startTime)).toBe(sessionState.startTime)
+		expect(sessionStartSpans[0].duration).toEqual([0, 0])
+
+		getTracer('test').startSpan('second.application.telemetry').end()
+		expect(capturer.spans.filter((span) => span.name === 'session.start')).toHaveLength(1)
 
 		// Verify session state has web source
-		const sessionState = SplunkRum.getSessionState()
-		expect(sessionState?.source).toBe('web')
+		expect(sessionState.source).toBe('web')
 	})
 })

@@ -36,6 +36,10 @@ import {
 	BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE,
 } from '../managers/navigation-metrics-manager/constants'
 import { setBrowserNavigationPageAttributes } from '../managers/navigation-metrics-manager/navigation-relevance'
+import {
+	INITIAL_NAVIGATION_VISIBILITY_CAPTURE_KEY,
+	navigationVisibilityRecorder,
+} from '../managers/navigation-metrics-manager/navigation-visibility-recorder'
 import { getPctMonitorTypes } from '../managers/navigation-metrics-manager/resource-monitor-types'
 import { captureTraceParentFromPerformanceEntries } from '../servertiming'
 import { SplunkOtelWebConfig } from '../types'
@@ -117,6 +121,8 @@ type ExposedSuper = {
 export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentation {
 	private readonly documentLoadMetricsPromise: ReturnType<NavigationMetricsManager['waitForPageLoad']> | undefined
 
+	private readonly initialDocumentUrl: string
+
 	private readonly navigationMetricsManager: NavigationMetricsManager | undefined
 
 	private navigationStartTimeMillis: number | undefined
@@ -125,8 +131,6 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 
 	private pageLoadSpan: api.Span | undefined
 
-	private pageLoadUrl: string | undefined
-
 	constructor(
 		config: SplunkDocLoadInstrumentationConfig = {},
 		protected otelConfig: SplunkOtelWebConfig,
@@ -134,6 +138,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 		navigationMetricsManager?: NavigationMetricsManager,
 	) {
 		super(config)
+		this.initialDocumentUrl = location.href
 		this.navigationMetricsManager = navigationMetricsManager
 		this.documentLoadMetricsPromise = this.navigationMetricsManager?.waitForPageLoad({
 			startTime: 0,
@@ -154,6 +159,16 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 			const span = _superStartSpan(spanName, performanceName, startEntries, parentSpan)
 
 			if (span && spanName === AttributeNames.DOCUMENT_LOAD) {
+				const startTime = (startEntries as unknown as Record<string, unknown>)[PTN.FETCH_START]
+				if (typeof startTime === 'number') {
+					navigationVisibilityRecorder.startCapture(
+						span,
+						INITIAL_NAVIGATION_VISIBILITY_CAPTURE_KEY,
+						startTime,
+						document.visibilityState === 'hidden',
+					)
+				}
+
 				span.setAttribute(BROWSER_NAVIGATION_OPERATION_ATTRIBUTE, BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION)
 				span.setAttribute('component', this.component)
 				addExtraDocLoadTags(span)
@@ -206,12 +221,14 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 			}
 
 			// The upstream instrumentation assigns the document URLs after _startSpan
-			// returns. Apply pageLoad's captured URL at end so a route change before
-			// collection cannot make either initial-navigation span look like a new route.
+			// returns. Restore the URL captured when this instrumentation initialized so
+			// a route change before collection cannot make initial-navigation spans look
+			// like a new route. This is independent of experimental pageLoad telemetry.
 			const isInitialNavigationSpan =
 				exposedSpan.name === AttributeNames.DOCUMENT_LOAD || exposedSpan.name === AttributeNames.DOCUMENT_FETCH
-			if (span && isInitialNavigationSpan && this.pageLoadUrl !== undefined) {
-				span.setAttribute(SEMATTRS_HTTP_URL, this.pageLoadUrl)
+			if (span && isInitialNavigationSpan) {
+				span.setAttribute(SEMATTRS_HTTP_URL, this.initialDocumentUrl)
+				span.setAttribute('location.href', this.initialDocumentUrl)
 			}
 
 			if (span && exposedSpan.name !== AttributeNames.DOCUMENT_LOAD) {
@@ -268,6 +285,11 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 			}
 
 			if (span && exposedSpan.name === AttributeNames.DOCUMENT_LOAD) {
+				const endTime = (entries as unknown as Record<string, unknown>)[performanceName]
+				navigationVisibilityRecorder.endCapture(
+					span,
+					typeof endTime === 'number' ? millisToHrTime(endTime) : undefined,
+				)
 				addExtraDocLoadTags(span)
 
 				if (this.documentLoadMetricsPromise) {
@@ -304,8 +326,8 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 								error,
 							})
 							if (this.pageLoadSpan) {
-								const endTime = (entries as unknown as Record<string, unknown>)[performanceName]
-								this.endPageLoadSpan(typeof endTime === 'number' ? endTime : undefined)
+								const pageLoadEndTime = (entries as unknown as Record<string, unknown>)[performanceName]
+								this.endPageLoadSpan(typeof pageLoadEndTime === 'number' ? pageLoadEndTime : undefined)
 							}
 
 							_superEndSpan(span, performanceName, entries)
@@ -328,6 +350,8 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 			const span = exposedSuper._startSpan(AttributeNames.RESOURCE_FETCH, PTN.FETCH_START, resource, parentSpan)
 			if (span) {
 				span.setAttribute(SEMATTRS_HTTP_URL, resource.name)
+				span.setAttribute('location.href', this.initialDocumentUrl)
+
 				const crossOriginTimingRestricted = getCrossOriginTimingRestricted(resource)
 				if (crossOriginTimingRestricted !== undefined) {
 					span.setAttribute(
@@ -371,10 +395,13 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 	}
 
 	private endPageLoadSpan(endTime?: api.TimeInput): void {
+		if (this.pageLoadSpan) {
+			navigationVisibilityRecorder.endCapture(this.pageLoadSpan, endTime)
+		}
+
 		this.pageLoadSpan?.end(endTime)
 		this.navigationStartTimeMillis = undefined
 		this.pageLoadSpan = undefined
-		this.pageLoadUrl = undefined
 	}
 
 	private startPageLoadSpan(fetchStart: number): void {
@@ -390,14 +417,23 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 		this.navigationTimingObserver?.disconnect()
 		this.navigationTimingObserver = undefined
 
-		const pageLoadUrl = location.href
 		this.pageLoadSpan = this.tracer.startSpan(PAGE_LOAD_SPAN_NAME, {
 			startTime: this.navigationStartTimeMillis,
 		})
-		this.pageLoadUrl = pageLoadUrl
 		this.pageLoadSpan.setAttribute('component', this.component)
-		this.pageLoadSpan.setAttribute(SEMATTRS_HTTP_URL, pageLoadUrl)
+		this.pageLoadSpan.setAttribute(SEMATTRS_HTTP_URL, this.initialDocumentUrl)
+		this.pageLoadSpan.setAttribute('location.href', this.initialDocumentUrl)
 		this.pageLoadSpan.setAttribute(SemanticAttributes.HTTP_USER_AGENT, navigator.userAgent)
+		const startTime = this.navigationStartTimeMillis
+		if (startTime !== undefined) {
+			navigationVisibilityRecorder.startCapture(
+				this.pageLoadSpan,
+				INITIAL_NAVIGATION_VISIBILITY_CAPTURE_KEY,
+				startTime,
+				document.visibilityState === 'hidden',
+			)
+		}
+
 		this.navigationMetricsManager?.setCurrentNavigationSpan(
 			this.pageLoadSpan,
 			0,

@@ -44,6 +44,7 @@ export interface ManualPageLoadHandle {
 }
 
 export type LoadedResourceDetails = {
+	completionReason?: 'body_timeout'
 	duration: number
 	monitorType: NavigationMetricsMonitor
 	url: string
