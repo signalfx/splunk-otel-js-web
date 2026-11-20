@@ -199,6 +199,10 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 			return
 		}
 
+		const relativeNavigationStartTime =
+			navigationStartTime >= performance.timeOrigin
+				? navigationStartTime - performance.timeOrigin
+				: navigationStartTime
 		const spanStartTime = timeInputToHrTime(navigationStartTime)
 		const span = this._routingTracer.startSpan(BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION, {
 			attributes: {
@@ -222,7 +226,7 @@ export class SplunkUserInteractionInstrumentation extends UserInteractionInstrum
 			const pageLoadMetrics = await this.navigationMetricsManager.waitForPageLoad({
 				operation: BROWSER_NAVIGATION_ROUTE_CHANGE_OPERATION,
 				span,
-				startTime: navigationStartTime,
+				startTime: relativeNavigationStartTime,
 			})
 			diag.debug('Sending routeChange span with PCT result', pageLoadMetrics)
 			const endTime = addHrTimes(spanStartTime, millisToHrTime(pageLoadMetrics.pct))
