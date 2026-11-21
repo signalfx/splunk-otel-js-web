@@ -17,6 +17,9 @@
  */
 
 /// <reference types="./cdn-module-types.d.ts" preserve="true"  />
+// Must stay above the session replay module below: it has to run before that module evaluates.
+import './install-idle-callback-polyfill'
+
 export {
 	type ConfigFeatures,
 	type PackAssetsConfig,
