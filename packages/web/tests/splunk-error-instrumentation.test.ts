@@ -62,6 +62,10 @@ export function generateRandomStackTrace(paths: string[], stackCount: number): s
 	return stack
 }
 
+async function waitForDocumentLoad(): Promise<void> {
+	await new Promise((resolve) => setTimeout(resolve))
+}
+
 const chromeStackTraceEval = `Error: Something went wrong
     at eval (eval at <anonymous> (http://example.com/scripts/main.js:10:20), <anonymous>:1:1)
     at Object.functionName (http://example.com/scripts/utils.js:15:25)
@@ -361,6 +365,8 @@ describe('SplunkErrorInstrumentation', () => {
 
 				return { context: c, error: e }
 			})
+			await waitForDocumentLoad()
+			capturer.clear()
 
 			const e1 = new Error('test error 1')
 			await SplunkRum.reportError(e1)
@@ -393,6 +399,8 @@ describe('SplunkErrorInstrumentation', () => {
 
 				return { context: c, error: e }
 			})
+			await waitForDocumentLoad()
+			capturer.clear()
 
 			const e1 = new Error('test error 1')
 			await SplunkRum.reportError(e1)
@@ -415,11 +423,24 @@ describe('SplunkErrorInstrumentation', () => {
 			initWithHook(() => {
 				throw new Error('bad implementation')
 			})
+			await waitForDocumentLoad()
+			capturer.clear()
 
 			const e1 = new Error('test error')
 			await SplunkRum.reportError(e1)
 			const errorSpan = capturer.spans.find((span) => span.name === 'SplunkRum.reportError')
 			expect(errorSpan).toHaveSpanAttribute('error.message', 'test error')
+		})
+
+		it('releases errors if delayed document load instrumentation creates no span', async () => {
+			initWithHook((error, context) => ({ context, error }))
+
+			const reportPromise = SplunkRum.reportError(new Error('immediate error'))
+			await waitForDocumentLoad()
+			await reportPromise
+
+			const errorSpan = capturer.spans.find((span) => span.name === 'SplunkRum.reportError')
+			expect(errorSpan).toHaveSpanAttribute('error.message', 'immediate error')
 		})
 	})
 })

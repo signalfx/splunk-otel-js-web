@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Delayed initialization error test</title>
+	<%- renderAgent({experimental: true}, true) %>
+</head>
+<body>
+	<h1>Delayed initialization error test</h1>
+	<script>
+		window.addEventListener('load', function () {
+			window.readyStateAtInit = document.readyState;
+			SplunkRum.init(SplunkRumOptions);
+			SplunkRum.reportError(new Error('delayed init page span test'));
+		});
+	</script>
+</body>
+</html>
