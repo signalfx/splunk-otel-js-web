@@ -58,11 +58,11 @@ export default defineConfig({
 			{
 				extends: true,
 				test: {
+					api: {
+						host: '127.0.0.1',
+						port: 1234,
+					},
 					browser: {
-						api: {
-							host: '127.0.0.1',
-							port: 1234,
-						},
 						enabled: true,
 						headless: true,
 						instances: [

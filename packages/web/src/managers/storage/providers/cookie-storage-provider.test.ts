@@ -16,8 +16,8 @@
  *
  */
 
-import { server } from '@vitest/browser/context'
 import { afterEach, beforeEach, describe, expect, it, Mock, vi } from 'vitest'
+import { server } from 'vitest/browser'
 
 import { SESSION_EXPIRATION_COOKIE_SEC } from '../constants'
 import { CookieStorageProvider } from './cookie-storage-provider'

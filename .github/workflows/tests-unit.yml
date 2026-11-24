@@ -30,7 +30,7 @@ jobs:
               run: pnpm run test:unit --browser.name=${{ matrix.browser }}
 
             - name: Upload test:unit report
-              uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+              uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
               if: ${{ !cancelled() }}
               with:
                   name: vitest-report-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
@@ -38,7 +38,7 @@ jobs:
                   retention-days: 14
 
             - name: Upload coverage report
-              uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+              uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
               if: ${{ !cancelled() && matrix.browser == 'chromium' }}
               with:
                   name: vitest-coverage-${{ matrix.browser }}-attempt-${{ github.run_attempt }}
@@ -63,7 +63,7 @@ jobs:
               run: pnpm run test:unit --browser.name=webkit
 
             - name: Upload test:unit report
-              uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+              uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
               if: ${{ !cancelled() }}
               with:
                   name: vitest-report-webkit-attempt-${{ github.run_attempt }}

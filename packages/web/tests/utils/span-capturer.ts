@@ -19,6 +19,8 @@
 import { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-base'
 
 export class SpanCapturer implements SpanProcessor {
+	public captureSessionStart = false
+
 	public readonly spans: ReadableSpan[] = []
 
 	clear(): void {
@@ -30,7 +32,9 @@ export class SpanCapturer implements SpanProcessor {
 	}
 
 	onEnd(span: ReadableSpan): void {
-		this.spans.push(span)
+		if (this.captureSessionStart || span.name !== 'session.start') {
+			this.spans.push(span)
+		}
 	}
 
 	onStart(): void {}
