@@ -150,9 +150,9 @@ export class SplunkXhrInstrumentation extends XMLHttpRequestInstrumentation {
 		// This repeats the upstream lookup once per XHR span; the original method still handles resource marking,
 		// preflight spans, and network events.
 		exposedSuper._findResourceAndAddNetworkEvents = (xhrMem, span, spanUrl, startTime, endTime) => {
-			if (spanUrl && startTime && endTime && xhrMem.createdResources) {
-				let resources = xhrMem.createdResources.entries
-				if (resources.length === 0) {
+			if (spanUrl && startTime && endTime) {
+				let resources = xhrMem.createdResources?.entries ?? []
+				if (resources.length === 0 && typeof performance.getEntriesByType === 'function') {
 					resources = performance.getEntriesByType('resource')
 				}
 

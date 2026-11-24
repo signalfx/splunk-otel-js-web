@@ -107,9 +107,17 @@ test.describe('xhr', () => {
 		expect(timingRestrictedSpan?.attributes['browser.resource.cross_origin_timing_restricted']).toBe(
 			expectedRestrictedValue,
 		)
-		expect(timingRestrictedSpan?.attributes['browser.resource.timing_unavailable_reason']).toBe(
-			expectedRestrictedValue ? 'cross_origin_timing_restricted' : undefined,
-		)
+		const timingUnavailableReason = timingRestrictedSpan?.attributes['browser.resource.timing_unavailable_reason']
+		if (expectedRestrictedValue) {
+			expect(timingUnavailableReason).toBe('cross_origin_timing_restricted')
+		} else {
+			expect([
+				'resource_timing_buffer_full',
+				'resource_timing_entry_missing',
+				'timing_details_missing',
+			]).toContain(timingUnavailableReason)
+		}
+
 		expect(timingExposedSpan?.attributes['browser.resource.cross_origin_timing_restricted']).toBe(false)
 	})
 
