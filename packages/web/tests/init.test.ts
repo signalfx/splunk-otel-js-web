@@ -1047,8 +1047,67 @@ describe('test route change', () => {
 		history.pushState({}, 'title', '/')
 	})
 
+	it('reports hidden ranges on routeChange spans', async () => {
+		const visibilityState = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden')
+		const oldUrl = location.href
+		deinit()
+		initWithDefaultConfig(capturer, {
+			navigationMetrics: { monitors: [], quietTime: 50 },
+		})
+
+		try {
+			history.pushState({}, 'title', '/hiddenRouteChange')
+			const handle = SplunkRum.registerManualPageLoad()
+			expectDefined(handle, 'manual navigation handle is present')
+			await new Promise((resolve) => setTimeout(resolve, 20))
+			handle.markComplete()
+			visibilityState.mockReturnValue('visible')
+			window.dispatchEvent(new Event('visibilitychange'))
+
+			let routeChangeSpan: (typeof capturer.spans)[number] | undefined
+			await vi.waitFor(() => {
+				routeChangeSpan = capturer.spans.find((candidate) => candidate.name === 'routeChange')
+				expectDefined(routeChangeSpan, 'routeChange span is present')
+			})
+
+			if (!routeChangeSpan) {
+				throw new Error('routeChange span is present')
+			}
+
+			const hiddenRanges = routeChangeSpan.attributes['browser.navigation.hidden_ranges']
+			expectDefined(hiddenRanges, 'routeChange hidden ranges are present')
+			if (typeof hiddenRanges !== 'string') {
+				throw new TypeError('routeChange hidden range is present')
+			}
+
+			const { longest_ranges } = JSON.parse(hiddenRanges) as {
+				longest_ranges: Array<{ end_ms: number; start_ms: number }>
+			}
+			const [hiddenRange] = longest_ranges
+			if (!hiddenRange) {
+				throw new Error('routeChange hidden range is present')
+			}
+
+			expect(hiddenRange.start_ms).toBe(0)
+			expect(hiddenRange.end_ms).toBeGreaterThan(0)
+			expect(hiddenRange.end_ms).toBeLessThanOrEqual(hrTimeToMilliseconds(routeChangeSpan.duration) + 0.001)
+		} finally {
+			visibilityState.mockRestore()
+			history.replaceState({}, 'title', oldUrl)
+		}
+	})
+
 	it('should capture location.hash changes', async () => {
 		const oldUrl = location.href
+		let navigationStartTimestamp: number | undefined
+		window.addEventListener(
+			'hashchange',
+			(event) => {
+				navigationStartTimestamp = performance.timeOrigin + event.timeStamp
+			},
+			{ once: true },
+		)
+		const dateNowSpy = vi.spyOn(Date, 'now').mockReturnValue(Date.now() + 60_000)
 		location.hash = '#hashChange'
 
 		await new Promise<void>((resolve) => {
@@ -1056,12 +1115,16 @@ describe('test route change', () => {
 				resolve()
 			}, 0)
 		})
+		dateNowSpy.mockRestore()
 
 		const span = capturer.spans.find((s) => s.attributes.component === 'user-interaction')
 		expectDefined(span, 'Check if user-interaction span is present.')
+		expectDefined(navigationStartTimestamp, 'Check if the logical navigation start time was captured.')
 		expect(span.name).toBe('routeChange')
 		expect(span).toHaveSpanAttributeContaining('location.href', '#hashChange')
 		expect(span).toHaveSpanAttribute('prev.href', oldUrl)
+		expect(hrTimeToMilliseconds(span.startTime)).toBeCloseTo(navigationStartTimestamp, 3)
+		expect(hrTimeToMilliseconds(span.duration)).toBe(0)
 		history.pushState({}, 'title', '/')
 	})
 
@@ -1120,6 +1183,10 @@ describe('test route change navigation metrics timeout', () => {
 				expect(span).toHaveSpanAttribute(
 					BROWSER_NAVIGATION_STATUS_ATTRIBUTE,
 					PAGE_LOAD_METRICS_STATUS_COMPLETED,
+				)
+				expect(hrTimeToMilliseconds(span.duration)).toBeCloseTo(
+					Number(span.attributes[BROWSER_NAVIGATION_PAGE_COMPLETION_TIME_ATTRIBUTE]),
+					5,
 				)
 				expect(span).toHaveSpanAttribute('prev.href', oldUrl)
 			},

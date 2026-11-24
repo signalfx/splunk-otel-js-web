@@ -90,6 +90,46 @@ function createPageLoadMetricsResult(result: Pick<PageLoadMetricsResult, 'pct' |
 }
 
 describe('NavigationMetricsManager', () => {
+	it('marks a delayed cached-media resource span PCT relevant using its Resource Timing start', async () => {
+		const imageUrl = `${HTTP_TEST_SERVER_URL}/test-image.png?delay=0&resource=cached-pct-relevance`
+		const image = new Image()
+		image.src = imageUrl
+		await image.decode()
+		image.remove()
+
+		const resourceStart = 10
+		vi.spyOn(performance, 'getEntriesByName').mockReturnValue([
+			{ fetchStart: resourceStart, name: imageUrl } as PerformanceResourceTiming,
+		])
+		vi.spyOn(performance, 'now').mockReturnValue(resourceStart + 250)
+
+		const manager = new NavigationMetricsManager({ monitors: ['media'], quietTime: 10_000 })
+		const { span: pageLoadSpan } = createSpanMock('page-load-span')
+		manager.start()
+		void manager.waitForPageLoad({
+			operation: BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION,
+			span: pageLoadSpan,
+			startTime: 0,
+		})
+
+		try {
+			document.body.append(image)
+
+			await vi.waitFor(() => {
+				const { attributes, span } = createSpanMock('cached-image-span')
+				setBrowserNavigationPageAttributes(span, manager, resourceStart, {
+					monitorTypes: ['media', 'performance'],
+					type: 'resource',
+					url: imageUrl,
+				})
+				expect(attributes[BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE]).toBe(true)
+			})
+		} finally {
+			manager.stop()
+			image.remove()
+		}
+	})
+
 	it('uses default config values', () => {
 		const manager = new NavigationMetricsManager()
 
