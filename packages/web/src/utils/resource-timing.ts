@@ -21,6 +21,98 @@ import { SemanticAttributes } from '@opentelemetry/semantic-conventions'
 
 export const BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE =
 	'browser.resource.cross_origin_timing_restricted'
+export const BROWSER_RESOURCE_TIMING_UNAVAILABLE_REASON_ATTRIBUTE = 'browser.resource.timing_unavailable_reason'
+export const BROWSER_RESOURCE_SERVICE_WORKER_USED_ATTRIBUTE = 'browser.resource.service_worker_used'
+
+export type ResourceTimingUnavailableReason =
+	| 'cross_origin_timing_restricted'
+	| 'opaque_response'
+	| 'service_worker'
+	| 'cache'
+	| 'resource_timing_buffer_full'
+	| 'resource_timing_entry_missing'
+	| 'timing_details_missing'
+
+let resourceTimingBufferFullObservedAt = Number.NEGATIVE_INFINITY
+let resourceTimingBufferFullListenerInstalled = false
+const BUFFER_FULL_RECENCY_WINDOW_MS = 5000
+
+/**
+ * Records the buffer-full signal for the current document. The event has appeared on Performance in current
+ * browsers and on Document in older implementations, so listen on both and install only once.
+ */
+export function observeResourceTimingBufferFull(): void {
+	if (resourceTimingBufferFullListenerInstalled || typeof window === 'undefined') {
+		return
+	}
+
+	resourceTimingBufferFullListenerInstalled = true
+	const onBufferFull = () => {
+		resourceTimingBufferFullObservedAt = window.performance?.now() ?? Date.now()
+	}
+	window.performance?.addEventListener?.('resourcetimingbufferfull', onBufferFull)
+	window.document?.addEventListener?.('resourcetimingbufferfull', onBufferFull)
+}
+
+export function getResourceTimingUnavailableReason(
+	resource: PerformanceResourceTiming | undefined = undefined,
+	options: { cacheHit?: boolean; opaqueResponse?: boolean } = {},
+): ResourceTimingUnavailableReason | undefined {
+	const now = typeof performance === 'undefined' ? Date.now() : performance.now()
+	const bufferFullRecentlyObserved = now - resourceTimingBufferFullObservedAt <= BUFFER_FULL_RECENCY_WINDOW_MS
+	if (options.opaqueResponse) {
+		return 'opaque_response'
+	}
+
+	if (!resource) {
+		return bufferFullRecentlyObserved ? 'resource_timing_buffer_full' : 'resource_timing_entry_missing'
+	}
+
+	if (getCrossOriginTimingRestricted(resource) === true) {
+		return 'cross_origin_timing_restricted'
+	}
+
+	const { requestStart, responseStart, workerStart } = resource
+	if (typeof requestStart !== 'number' || typeof responseStart !== 'number') {
+		return 'timing_details_missing'
+	}
+
+	if (requestStart > 0 && responseStart > 0) {
+		return undefined
+	}
+
+	if (workerStart > 0) {
+		return 'service_worker'
+	}
+
+	if (
+		(resource as PerformanceResourceTiming & { deliveryType?: string }).deliveryType === 'cache' ||
+		options.cacheHit
+	) {
+		return 'cache'
+	}
+
+	if (bufferFullRecentlyObserved) {
+		return 'resource_timing_buffer_full'
+	}
+
+	return 'timing_details_missing'
+}
+
+export function setResourceTimingDiagnostics(
+	span: Span,
+	resource: PerformanceResourceTiming | undefined,
+	options: { cacheHit?: boolean; opaqueResponse?: boolean } = {},
+): void {
+	if (resource && typeof resource.workerStart === 'number' && resource.workerStart > 0) {
+		span.setAttribute(BROWSER_RESOURCE_SERVICE_WORKER_USED_ATTRIBUTE, true)
+	}
+
+	const reason = getResourceTimingUnavailableReason(resource, options)
+	if (reason) {
+		span.setAttribute(BROWSER_RESOURCE_TIMING_UNAVAILABLE_REASON_ATTRIBUTE, reason)
+	}
+}
 
 export function getResourceElementUrl(element: Element): string | undefined {
 	const tagName = element.tagName.toUpperCase()

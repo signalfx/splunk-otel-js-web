@@ -111,7 +111,25 @@ test.describe('fetch', () => {
 		expect(timingRestrictedSpan?.attributes['browser.resource.cross_origin_timing_restricted']).toBe(
 			expectedRestrictedValue,
 		)
+		expect(timingRestrictedSpan?.attributes['browser.resource.timing_unavailable_reason']).toBe(
+			expectedRestrictedValue ? 'cross_origin_timing_restricted' : undefined,
+		)
 		expect(timingExposedSpan?.attributes['browser.resource.cross_origin_timing_restricted']).toBe(false)
+	})
+
+	test('identifies opaque no-cors responses as unavailable timing evidence', async ({ recordPage }) => {
+		await recordPage.goTo('/fetch/fetch.ejs')
+
+		const { opaqueUrl, responseType } = await recordPage.evaluate(async () => {
+			const url = `http://localhost:3001/timing-resource?noCache=${Date.now()}`
+			const response = await fetch(url, { mode: 'no-cors' })
+			return { opaqueUrl: url, responseType: response.type }
+		})
+		expect(responseType).toBe('opaque')
+
+		await recordPage.waitForSpans((spans) => spans.some((span) => span.attributes['http.url'] === opaqueUrl))
+		const opaqueSpan = recordPage.receivedSpans.find((span) => span.attributes['http.url'] === opaqueUrl)
+		expect(opaqueSpan?.attributes['browser.resource.timing_unavailable_reason']).toBe('opaque_response')
 	})
 
 	test('fetch request can be ignored', async ({ recordPage }) => {

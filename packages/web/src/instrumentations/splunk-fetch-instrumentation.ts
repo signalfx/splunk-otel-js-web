@@ -29,6 +29,8 @@ import { SplunkFetchInstrumentationConfig, SplunkOtelWebConfig } from '../types'
 import {
 	BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
 	getCrossOriginTimingRestricted,
+	observeResourceTimingBufferFull,
+	setResourceTimingDiagnostics,
 } from '../utils/resource-timing'
 
 type FetchSpanData = {
@@ -57,6 +59,8 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
 
 		const origCustomAttrs = config.applyCustomAttributesOnSpan
 		const navigationActivities = new WeakMap<api.Span, { startTime: number; url: string }>()
+		const opaqueFetchSpans = new WeakSet<api.Span>()
+		observeResourceTimingBufferFull()
 
 		config.applyCustomAttributesOnSpan = function (span, request, result) {
 			// Temporary return to old span name until cleared by backend
@@ -73,6 +77,11 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
 			}
 
 			if (span && result instanceof Response && result.headers) {
+				if (result.type === 'opaque') {
+					opaqueFetchSpans.add(span)
+					setResourceTimingDiagnostics(span, undefined, { opaqueResponse: true })
+				}
+
 				const st = result.headers.get('Server-Timing')
 				if (st) {
 					captureTraceParent(st, span)
@@ -139,6 +148,10 @@ export class SplunkFetchInstrumentation extends FetchInstrumentation {
 				exposedSuper._usedResources,
 				'fetch',
 			)
+			if (!opaqueFetchSpans.has(span)) {
+				setResourceTimingDiagnostics(span, mainRequest)
+			}
+
 			const crossOriginTimingRestricted = mainRequest && getCrossOriginTimingRestricted(mainRequest)
 			if (crossOriginTimingRestricted !== undefined) {
 				span.setAttribute(

@@ -31,6 +31,8 @@ import {
 	BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
 	getCrossOriginTimingRestricted,
 	getResourceElementUrl,
+	observeResourceTimingBufferFull,
+	setResourceTimingDiagnostics,
 	setResourceTimingRenderBlocking,
 	setResourceTimingStatus,
 } from '../utils/resource-timing'
@@ -77,6 +79,7 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 		super(MODULE_NAME, VERSION, processedConfig)
 		this.config = processedConfig
 		this.urlToContextMap = {}
+		observeResourceTimingBufferFull()
 	}
 
 	disable(): void {
@@ -143,6 +146,8 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 		if (cacheHit !== undefined) {
 			span.setAttribute('http.cache.hit', cacheHit)
 		}
+
+		setResourceTimingDiagnostics(span, entry, { cacheHit })
 
 		const crossOriginTimingRestricted = getCrossOriginTimingRestricted(entry)
 		if (crossOriginTimingRestricted !== undefined) {

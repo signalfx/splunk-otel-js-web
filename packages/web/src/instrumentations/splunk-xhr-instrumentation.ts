@@ -30,6 +30,8 @@ import { SplunkOtelWebConfig, SplunkXhrInstrumentationConfig } from '../types'
 import {
 	BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
 	getCrossOriginTimingRestricted,
+	observeResourceTimingBufferFull,
+	setResourceTimingDiagnostics,
 } from '../utils/resource-timing'
 
 type XhrMemory = {
@@ -61,6 +63,7 @@ export class SplunkXhrInstrumentation extends XMLHttpRequestInstrumentation {
 		public navigationMetricsManager?: NavigationMetricsManager,
 	) {
 		super(config)
+		observeResourceTimingBufferFull()
 		this.otelConfig = otelConfig
 
 		const separateTraces = config.separateTraces ?? otelConfig.separateTraces ?? false
@@ -160,6 +163,7 @@ export class SplunkXhrInstrumentation extends XMLHttpRequestInstrumentation {
 					resources,
 					exposedSuper._usedResources,
 				)
+				setResourceTimingDiagnostics(span, mainRequest)
 				const crossOriginTimingRestricted = mainRequest && getCrossOriginTimingRestricted(mainRequest)
 				if (crossOriginTimingRestricted !== undefined) {
 					span.setAttribute(
