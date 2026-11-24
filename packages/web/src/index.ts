@@ -109,6 +109,7 @@ import {
 	StorageManager,
 	UserManager,
 } from './managers'
+import { navigationVisibilityRecorder } from './managers/navigation-metrics-manager/navigation-visibility-recorder'
 import { ExternalSessionMetadata, isValidExternalSessionMetadata } from './types/external-session-metadata'
 import {
 	getElementDataAttributes,
@@ -356,6 +357,7 @@ export const SplunkRum: SplunkOtelWebType = {
 
 			_deregisterInstrumentations?.()
 			_deregisterInstrumentations = undefined
+			navigationVisibilityRecorder.clear()
 
 			_navigationMetricsManager?.stop()
 			_navigationMetricsManager = undefined
@@ -651,6 +653,7 @@ export const SplunkRum: SplunkOtelWebType = {
 				sessionMetadataFromOptions = processedOptions.sessionMetadata
 			}
 
+			let pendingSessionStartId: string | undefined
 			this.sessionManager = new SessionManager(
 				storageManager,
 				sessionMetadataFromOptions,
@@ -663,10 +666,9 @@ export const SplunkRum: SplunkOtelWebType = {
 			)
 			_sessionStateUnsubscribe = this.sessionManager.subscribe(({ currentState, previousState }) => {
 				if (currentState.isNew && currentState.source !== 'external') {
-					provider
-						.getTracer('splunk-sessions')
-						.startSpan('session.start', { startTime: currentState.startTime })
-						.end(currentState.startTime)
+					pendingSessionStartId = currentState.id
+				} else if (pendingSessionStartId && currentState.id !== pendingSessionStartId) {
+					pendingSessionStartId = undefined
 				}
 
 				if (!previousState) {
@@ -697,6 +699,7 @@ export const SplunkRum: SplunkOtelWebType = {
 							experimental: processedOptions.experimental,
 						})
 			_navigationMetricsManager = navigationMetricsManager
+			const sessionTracerProvider: { current?: SplunkWebTracerProvider } = {}
 
 			this.attributesProcessor = new SpanAttributesProcessor(
 				this.sessionManager,
@@ -713,6 +716,18 @@ export const SplunkRum: SplunkOtelWebType = {
 				processedOptions.discardDataAfterInactivity,
 				processedOptions.adjustSessionStartToTimeOrigin,
 				navigationMetricsManager,
+				(sessionState) => {
+					if (pendingSessionStartId !== sessionState.id) {
+						return
+					}
+
+					// Clear before starting the span because its own onEnd callback re-enters this processor.
+					pendingSessionStartId = undefined
+					sessionTracerProvider.current
+						?.getTracer('splunk-sessions')
+						.startSpan('session.start', { startTime: sessionState.startTime })
+						.end(sessionState.startTime)
+				},
 			)
 
 			this._spanEmitter = new SpanEmitterProcessor()
@@ -745,6 +760,7 @@ export const SplunkRum: SplunkOtelWebType = {
 				}),
 				spanProcessors,
 			})
+			sessionTracerProvider.current = provider
 
 			this.sessionManager.start()
 
@@ -786,6 +802,10 @@ export const SplunkRum: SplunkOtelWebType = {
 			}).filter((a): a is Exclude<typeof a, null> => Boolean(a))
 
 			_visibilityChangeListener = () => {
+				navigationVisibilityRecorder.recordVisibilityChange(
+					performance.now(),
+					document.visibilityState === 'hidden',
+				)
 				// this condition applies when the page is hidden or when it's closed
 				// see for more details: https://developers.google.com/web/updates/2018/07/page-lifecycle-api#developer-recommendations-for-each-state
 				if (document.visibilityState === 'hidden') {
@@ -835,6 +855,8 @@ export const SplunkRum: SplunkOtelWebType = {
 				window.removeEventListener('visibilitychange', _visibilityChangeListener)
 				_visibilityChangeListener = undefined
 			}
+
+			navigationVisibilityRecorder.clear()
 
 			diag.warn('[Splunk]: SplunkRum.init() - Failed to initialize due to internal exception.', { error })
 		}

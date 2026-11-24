@@ -184,6 +184,7 @@ test.describe('docload', () => {
 		expect(scriptFetchSpans[0].traceId).toBe(docLoadSpans[0].traceId)
 		expect(scriptFetchSpans[0].parentSpanId).toBe(docLoadSpans[0].spanId)
 		expect(scriptFetchSpans[0]).toHaveSpanAttribute('component', 'document-load')
+		expect(scriptFetchSpans[0]).toHaveSpanAttribute('location.href', 'http://localhost:3000/docload/docload.ejs')
 		expect(scriptFetchSpans[0]).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.operation, 'documentLoad')
 		expect(scriptFetchSpans[0]).toHaveSpanAttribute(
 			BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId,
@@ -201,6 +202,10 @@ test.describe('docload', () => {
 		expect(brokenImageFetchSpans[0].traceId).toBe(docLoadSpans[0].traceId)
 		expect(brokenImageFetchSpans[0].parentSpanId).toBe(docLoadSpans[0].spanId)
 		expect(brokenImageFetchSpans[0]).toHaveSpanAttribute(
+			'location.href',
+			'http://localhost:3000/docload/docload.ejs',
+		)
+		expect(brokenImageFetchSpans[0]).toHaveSpanAttribute(
 			BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId,
 			pageLoadSpans[0].spanId,
 		)
@@ -211,6 +216,9 @@ test.describe('docload', () => {
 		}
 
 		expect(docFetchSpans[0]).toHaveSpanAttribute('component', 'document-load')
+		expect(docFetchSpans[0]).toHaveSpanAttribute('http.url', 'http://localhost:3000/docload/docload.ejs')
+		expect(docFetchSpans[0]).toHaveSpanAttribute('location.href', 'http://localhost:3000/docload/docload.ejs')
+		expect(docLoadSpans[0]).toHaveSpanAttribute('http.url', 'http://localhost:3000/docload/docload.ejs')
 		expect(docLoadSpans[0]).toHaveSpanAttribute('location.href', 'http://localhost:3000/docload/docload.ejs')
 
 		timesMakeSense(docFetchSpans[0].events, 'domainLookupStart', 'domainLookupEnd')

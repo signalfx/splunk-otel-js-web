@@ -90,6 +90,46 @@ function createPageLoadMetricsResult(result: Pick<PageLoadMetricsResult, 'pct' |
 }
 
 describe('NavigationMetricsManager', () => {
+	it('marks a delayed cached-media resource span PCT relevant using its Resource Timing start', async () => {
+		const imageUrl = `${HTTP_TEST_SERVER_URL}/test-image.png?delay=0&resource=cached-pct-relevance`
+		const image = new Image()
+		image.src = imageUrl
+		await image.decode()
+		image.remove()
+
+		const resourceStart = 10
+		vi.spyOn(performance, 'getEntriesByName').mockReturnValue([
+			{ fetchStart: resourceStart, name: imageUrl } as PerformanceResourceTiming,
+		])
+		vi.spyOn(performance, 'now').mockReturnValue(resourceStart + 250)
+
+		const manager = new NavigationMetricsManager({ monitors: ['media'], quietTime: 10_000 })
+		const { span: pageLoadSpan } = createSpanMock('page-load-span')
+		manager.start()
+		void manager.waitForPageLoad({
+			operation: BROWSER_NAVIGATION_DOCUMENT_LOAD_OPERATION,
+			span: pageLoadSpan,
+			startTime: 0,
+		})
+
+		try {
+			document.body.append(image)
+
+			await vi.waitFor(() => {
+				const { attributes, span } = createSpanMock('cached-image-span')
+				setBrowserNavigationPageAttributes(span, manager, resourceStart, {
+					monitorTypes: ['media', 'performance'],
+					type: 'resource',
+					url: imageUrl,
+				})
+				expect(attributes[BROWSER_NAVIGATION_PCT_RELEVANT_ATTRIBUTE]).toBe(true)
+			})
+		} finally {
+			manager.stop()
+			image.remove()
+		}
+	})
+
 	it('uses default config values', () => {
 		const manager = new NavigationMetricsManager()
 
@@ -98,6 +138,7 @@ describe('NavigationMetricsManager', () => {
 
 		expect(config.quietTime).toBe(1000)
 		expect(config.maxPageLoadWaitTime).toBe(180_000)
+		expect(config.maxFetchResponseBodyWaitTime).toBe(180_000)
 		expect(config.maxResourcesToWatch).toBe(100)
 		expect(config.ignoreUrls).toEqual([])
 		expect(config.blockingSelectors).toEqual([])
@@ -110,6 +151,7 @@ describe('NavigationMetricsManager', () => {
 			blockingSelectors: ['.loading-spinner'],
 			clearLoadingResourcesOnNewPage: false,
 			ignoreUrls: [/test/],
+			maxFetchResponseBodyWaitTime: 5000,
 			maxPageLoadWaitTime: 5000,
 			monitors: ['network', 'elements'],
 			quietTime: 2000,
@@ -119,6 +161,7 @@ describe('NavigationMetricsManager', () => {
 		const config = manager.config
 
 		expect(config.quietTime).toBe(2000)
+		expect(config.maxFetchResponseBodyWaitTime).toBe(5000)
 		expect(config.maxPageLoadWaitTime).toBe(5000)
 		expect(config.maxResourcesToWatch).toBe(100)
 		expect(config.ignoreUrls).toHaveLength(1)
@@ -956,6 +999,7 @@ describe('NavigationMetricsManager', () => {
 		const manager = new NavigationMetricsManager({ quietTime: 1 })
 		const { attributes, span } = createSpanMock()
 		const loadedResource = {
+			completionReason: 'body_timeout' as const,
 			duration: 42,
 			monitorType: 'performance' as const,
 			url: `${TEST_API_URL}?resource=completed`,
@@ -977,6 +1021,7 @@ describe('NavigationMetricsManager', () => {
 			})
 			// @ts-expect-error onResourceStateChange is private. We use it for testing.
 			manager.onResourceStateChange({
+				completionReason: loadedResource.completionReason,
 				id: 'completed-resource',
 				loadTime: loadedResource.duration,
 				monitorType: loadedResource.monitorType,
@@ -1460,6 +1505,37 @@ describe('NavigationMetricsManager', () => {
 
 		// @ts-expect-error loadingResources is private. We use it for testing.
 		expect(manager.loadingResources.size).toBe(0)
+	})
+
+	it('uses the matching URL override for a resource response body wait timeout', () => {
+		const originalHash = location.hash
+		const manager = new NavigationMetricsManager({
+			maxFetchResponseBodyWaitTime: 1000,
+			urlOverrides: [
+				{
+					match: '#long-response',
+					maxFetchResponseBodyWaitTime: 5000,
+				},
+			],
+		})
+
+		try {
+			location.hash = '#long-response'
+
+			// @ts-expect-error onResourceStateChange is private. We use it for testing.
+			manager.onResourceStateChange({
+				id: 'r_timeout',
+				monitorType: 'network',
+				state: ResourceState.DISCOVERED,
+				url: TEST_API_URL,
+			})
+
+			// @ts-expect-error loadingResources is private. We use it for testing.
+			expect(manager.loadingResources.get('r_timeout')?.maxFetchResponseBodyWaitTime).toBe(5000)
+		} finally {
+			location.hash = originalHash
+			manager.stop()
+		}
 	})
 
 	it('uses the current URL when a resource is discovered before the next waitForPageLoad starts', () => {
