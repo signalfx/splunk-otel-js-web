@@ -45,8 +45,8 @@ import { captureTraceParentFromPerformanceEntries } from '../servertiming'
 import { SplunkOtelWebConfig } from '../types'
 import { isCacheHit } from '../utils/cache'
 import {
-	BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
-	getCrossOriginTimingRestricted,
+	observeResourceTimingBufferFull,
+	setResourceTimingDiagnostics,
 	setResourceTimingRenderBlocking,
 	setResourceTimingStatus,
 } from '../utils/resource-timing'
@@ -138,6 +138,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 		navigationMetricsManager?: NavigationMetricsManager,
 	) {
 		super(config)
+		observeResourceTimingBufferFull()
 		this.initialDocumentUrl = location.href
 		this.navigationMetricsManager = navigationMetricsManager
 		this.documentLoadMetricsPromise = this.navigationMetricsManager?.waitForPageLoad({
@@ -267,6 +268,8 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 				// initial document load (but leaves the entries undisturbed for resource loads).
 				if (exposedSpan.name === AttributeNames.DOCUMENT_FETCH && performance.getEntriesByType) {
 					const navEntries = performance.getEntriesByType('navigation')
+					const navigationEntry = navEntries[0] as PerformanceResourceTiming | undefined
+					setResourceTimingDiagnostics(span, navigationEntry)
 					if (!(entries as PerformanceEntriesWithServerTiming).serverTiming && navEntries[0]?.serverTiming) {
 						;(entries as PerformanceEntriesWithServerTiming).serverTiming = navEntries[0].serverTiming
 					}
@@ -352,18 +355,12 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 				span.setAttribute(SEMATTRS_HTTP_URL, resource.name)
 				span.setAttribute('location.href', this.initialDocumentUrl)
 
-				const crossOriginTimingRestricted = getCrossOriginTimingRestricted(resource)
-				if (crossOriginTimingRestricted !== undefined) {
-					span.setAttribute(
-						BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
-						crossOriginTimingRestricted,
-					)
-				}
-
 				const cacheHitResult = isCacheHit(resource)
 				if (cacheHitResult !== undefined) {
 					span.setAttribute('http.cache.hit', cacheHitResult)
 				}
+
+				setResourceTimingDiagnostics(span, resource)
 
 				setResourceTimingRenderBlocking(span, resource)
 

@@ -19,7 +19,15 @@
 import { type Span } from '@opentelemetry/api'
 import { describe, expect, it, vi } from 'vitest'
 
-import { getCrossOriginTimingRestricted, setResourceTimingRenderBlocking } from './resource-timing'
+import {
+	BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
+	BROWSER_RESOURCE_TIMING_UNAVAILABLE_REASON_ATTRIBUTE,
+	getCrossOriginTimingRestricted,
+	getResourceTimingUnavailableReason,
+	observeResourceTimingBufferFull,
+	setResourceTimingDiagnostics,
+	setResourceTimingRenderBlocking,
+} from './resource-timing'
 
 describe('getCrossOriginTimingRestricted', () => {
 	it('returns true when a cross-origin entry has hidden request and response timing and zero sizes', () => {
@@ -100,6 +108,95 @@ describe('setResourceTimingRenderBlocking', () => {
 		setResourceTimingRenderBlocking(span, resource)
 
 		expect(setAttribute).not.toHaveBeenCalled()
+	})
+})
+
+describe('resource timing diagnostics', () => {
+	it('identifies TAO-restricted timing without guessing about its cause', () => {
+		const resource = createResourceEntry()
+		const setAttribute = vi.fn()
+
+		expect(getResourceTimingUnavailableReason(resource)).toBe('cross_origin_timing_restricted')
+		setResourceTimingDiagnostics({ setAttribute } as unknown as Span, resource)
+		expect(setAttribute).toHaveBeenCalledWith(BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE, true)
+		expect(setAttribute).toHaveBeenCalledWith(
+			BROWSER_RESOURCE_TIMING_UNAVAILABLE_REASON_ATTRIBUTE,
+			'cross_origin_timing_restricted',
+		)
+	})
+
+	it('identifies an opaque fetch response directly', () => {
+		expect(getResourceTimingUnavailableReason(undefined, { opaqueResponse: true })).toBe('opaque_response')
+	})
+
+	it('uses Service Worker participation as the unavailable reason when workerStart is visible', () => {
+		const resource = createResourceEntry({
+			name: new URL('/resource.svg', self.origin).toString(),
+			workerStart: 4,
+		})
+		Object.defineProperties(resource, {
+			requestStart: { value: undefined },
+			responseStart: { value: undefined },
+		})
+		const setAttribute = vi.fn()
+
+		expect(getResourceTimingUnavailableReason(resource)).toBe('service_worker')
+		setResourceTimingDiagnostics({ setAttribute } as unknown as Span, resource)
+		expect(setAttribute).toHaveBeenCalledWith(
+			BROWSER_RESOURCE_TIMING_UNAVAILABLE_REASON_ATTRIBUTE,
+			'service_worker',
+		)
+		expect(setAttribute).toHaveBeenCalledTimes(1)
+	})
+
+	it('does not add timing diagnostics when resource timings are available, even if a Service Worker was used', () => {
+		const resource = createResourceEntry({
+			decodedBodySize: 20,
+			encodedBodySize: 20,
+			name: 'https://cdn.example.test/resource.svg',
+			requestStart: 4,
+			responseStart: 8,
+			transferSize: 40,
+			workerStart: 2,
+		})
+		const setAttribute = vi.fn()
+
+		expect(getResourceTimingUnavailableReason(resource)).toBeUndefined()
+		setResourceTimingDiagnostics({ setAttribute } as unknown as Span, resource)
+		expect(setAttribute).not.toHaveBeenCalled()
+	})
+
+	it('does not use cache status as a reason for missing timing details', () => {
+		const resource = createResourceEntry({
+			name: new URL('/resource.svg', self.origin).toString(),
+			requestStart: 0,
+			responseStart: 0,
+		})
+		Object.defineProperty(resource, 'deliveryType', { value: 'cache' })
+
+		expect(getResourceTimingUnavailableReason(resource)).toBe('timing_details_missing')
+	})
+
+	it('uses generic reasons when the entry is missing or has no timing phases', () => {
+		expect(getResourceTimingUnavailableReason()).toBe('timing_details_missing')
+		expect(
+			getResourceTimingUnavailableReason(
+				createResourceEntry({
+					name: new URL('/resource.svg', self.origin).toString(),
+				}),
+			),
+		).toBe('timing_details_missing')
+	})
+
+	it('prioritizes recent buffer exhaustion over Service Worker involvement', () => {
+		observeResourceTimingBufferFull()
+		window.performance.dispatchEvent(new Event('resourcetimingbufferfull'))
+		const resource = createResourceEntry({
+			name: new URL('/resource.svg', self.origin).toString(),
+			workerStart: 4,
+		})
+		expect(getResourceTimingUnavailableReason(resource)).toBe('resource_timing_buffer_full')
+		expect(getResourceTimingUnavailableReason()).toBe('resource_timing_buffer_full')
 	})
 })
 

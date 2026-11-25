@@ -27,10 +27,7 @@ import { NavigationMetricsManager, SessionManager } from '../managers'
 import { setBrowserNavigationPageAttributes } from '../managers/navigation-metrics-manager/navigation-relevance'
 import { captureTraceParent } from '../servertiming'
 import { SplunkOtelWebConfig, SplunkXhrInstrumentationConfig } from '../types'
-import {
-	BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
-	getCrossOriginTimingRestricted,
-} from '../utils/resource-timing'
+import { observeResourceTimingBufferFull, setResourceTimingDiagnostics } from '../utils/resource-timing'
 
 type XhrMemory = {
 	createdResources?: {
@@ -61,6 +58,7 @@ export class SplunkXhrInstrumentation extends XMLHttpRequestInstrumentation {
 		public navigationMetricsManager?: NavigationMetricsManager,
 	) {
 		super(config)
+		observeResourceTimingBufferFull()
 		this.otelConfig = otelConfig
 
 		const separateTraces = config.separateTraces ?? otelConfig.separateTraces ?? false
@@ -147,9 +145,9 @@ export class SplunkXhrInstrumentation extends XMLHttpRequestInstrumentation {
 		// This repeats the upstream lookup once per XHR span; the original method still handles resource marking,
 		// preflight spans, and network events.
 		exposedSuper._findResourceAndAddNetworkEvents = (xhrMem, span, spanUrl, startTime, endTime) => {
-			if (spanUrl && startTime && endTime && xhrMem.createdResources) {
-				let resources = xhrMem.createdResources.entries
-				if (resources.length === 0) {
+			if (spanUrl && startTime && endTime) {
+				let resources = xhrMem.createdResources?.entries ?? []
+				if (resources.length === 0 && typeof performance.getEntriesByType === 'function') {
 					resources = performance.getEntriesByType('resource')
 				}
 
@@ -160,13 +158,7 @@ export class SplunkXhrInstrumentation extends XMLHttpRequestInstrumentation {
 					resources,
 					exposedSuper._usedResources,
 				)
-				const crossOriginTimingRestricted = mainRequest && getCrossOriginTimingRestricted(mainRequest)
-				if (crossOriginTimingRestricted !== undefined) {
-					span.setAttribute(
-						BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
-						crossOriginTimingRestricted,
-					)
-				}
+				setResourceTimingDiagnostics(span, mainRequest)
 			}
 
 			_superFindResourceAndAddNetworkEvents(xhrMem, span, spanUrl, startTime, endTime)
