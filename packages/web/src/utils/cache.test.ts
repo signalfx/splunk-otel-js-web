@@ -22,7 +22,9 @@ import { isCacheHit } from './cache'
 
 const TEST_IMAGE_URL = `${HTTP_TEST_SERVER_URL}/test-image.png`
 
-function makeEntry(overrides: Partial<PerformanceResourceTiming> = {}): PerformanceResourceTiming {
+function makeEntry(
+	overrides: Partial<PerformanceResourceTiming & { deliveryType?: string }> = {},
+): PerformanceResourceTiming {
 	return {
 		connectEnd: 0,
 		connectStart: 0,
