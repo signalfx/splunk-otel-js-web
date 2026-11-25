@@ -20,6 +20,7 @@ import { type Span } from '@opentelemetry/api'
 import { describe, expect, it, vi } from 'vitest'
 
 import {
+	BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
 	BROWSER_RESOURCE_SERVICE_WORKER_USED_ATTRIBUTE,
 	BROWSER_RESOURCE_TIMING_UNAVAILABLE_REASON_ATTRIBUTE,
 	getCrossOriginTimingRestricted,
@@ -113,7 +114,16 @@ describe('setResourceTimingRenderBlocking', () => {
 
 describe('resource timing diagnostics', () => {
 	it('identifies TAO-restricted timing without guessing about its cause', () => {
-		expect(getResourceTimingUnavailableReason(createResourceEntry())).toBe('cross_origin_timing_restricted')
+		const resource = createResourceEntry()
+		const setAttribute = vi.fn()
+
+		expect(getResourceTimingUnavailableReason(resource)).toBe('cross_origin_timing_restricted')
+		setResourceTimingDiagnostics({ setAttribute } as unknown as Span, resource)
+		expect(setAttribute).toHaveBeenCalledWith(BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE, true)
+		expect(setAttribute).toHaveBeenCalledWith(
+			BROWSER_RESOURCE_TIMING_UNAVAILABLE_REASON_ATTRIBUTE,
+			'cross_origin_timing_restricted',
+		)
 	})
 
 	it('identifies an opaque fetch response directly', () => {
@@ -136,6 +146,23 @@ describe('resource timing diagnostics', () => {
 			BROWSER_RESOURCE_TIMING_UNAVAILABLE_REASON_ATTRIBUTE,
 			'service_worker',
 		)
+	})
+
+	it('does not add timing diagnostics when resource timings are available, even if a Service Worker was used', () => {
+		const resource = createResourceEntry({
+			decodedBodySize: 20,
+			encodedBodySize: 20,
+			name: 'https://cdn.example.test/resource.svg',
+			requestStart: 4,
+			responseStart: 8,
+			transferSize: 40,
+			workerStart: 2,
+		})
+		const setAttribute = vi.fn()
+
+		expect(getResourceTimingUnavailableReason(resource)).toBeUndefined()
+		setResourceTimingDiagnostics({ setAttribute } as unknown as Span, resource)
+		expect(setAttribute).not.toHaveBeenCalled()
 	})
 
 	it('identifies a cache hit only when timing phases are unavailable', () => {

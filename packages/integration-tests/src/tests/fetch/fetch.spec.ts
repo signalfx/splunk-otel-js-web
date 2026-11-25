@@ -122,7 +122,7 @@ test.describe('fetch', () => {
 			]).toContain(timingUnavailableReason)
 		}
 
-		expect(timingExposedSpan?.attributes['browser.resource.cross_origin_timing_restricted']).toBe(false)
+		expect(timingExposedSpan?.attributes['browser.resource.cross_origin_timing_restricted']).toBeUndefined()
 	})
 
 	test('identifies opaque no-cors responses as unavailable timing evidence', async ({ recordPage }) => {

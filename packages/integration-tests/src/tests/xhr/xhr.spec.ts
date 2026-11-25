@@ -118,7 +118,7 @@ test.describe('xhr', () => {
 			]).toContain(timingUnavailableReason)
 		}
 
-		expect(timingExposedSpan?.attributes['browser.resource.cross_origin_timing_restricted']).toBe(false)
+		expect(timingExposedSpan?.attributes['browser.resource.cross_origin_timing_restricted']).toBeUndefined()
 	})
 
 	test('module can be disabled', async ({ recordPage }) => {

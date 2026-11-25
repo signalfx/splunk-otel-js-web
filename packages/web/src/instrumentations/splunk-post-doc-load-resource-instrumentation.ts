@@ -28,8 +28,6 @@ import { getPctMonitorTypes } from '../managers/navigation-metrics-manager/resou
 import { SplunkOtelWebConfig } from '../types'
 import { isCacheHit } from '../utils/cache'
 import {
-	BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
-	getCrossOriginTimingRestricted,
 	getResourceElementUrl,
 	observeResourceTimingBufferFull,
 	setResourceTimingDiagnostics,
@@ -148,11 +146,6 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 		}
 
 		setResourceTimingDiagnostics(span, entry, { cacheHit })
-
-		const crossOriginTimingRestricted = getCrossOriginTimingRestricted(entry)
-		if (crossOriginTimingRestricted !== undefined) {
-			span.setAttribute(BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE, crossOriginTimingRestricted)
-		}
 
 		setResourceTimingRenderBlocking(span, entry)
 		addSpanNetworkEvents(span, entry)

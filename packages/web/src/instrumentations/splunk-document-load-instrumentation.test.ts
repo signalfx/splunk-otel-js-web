@@ -534,12 +534,11 @@ describe('SplunkDocumentLoadInstrumentation', () => {
 		resourceEntries.forEach((resource) => exposedInstrumentation._initResourceSpan(resource))
 
 		expect(setAttribute).toHaveBeenCalledWith(BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE, true)
-		expect(setAttribute).toHaveBeenCalledWith(BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE, false)
 		expect(
 			setAttribute.mock.calls.filter(
 				([name]) => name === BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
 			),
-		).toHaveLength(2)
+		).toHaveLength(1)
 	})
 
 	it('adds render-blocking status attributes to resource spans', () => {

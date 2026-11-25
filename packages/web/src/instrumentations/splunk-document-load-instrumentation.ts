@@ -45,8 +45,6 @@ import { captureTraceParentFromPerformanceEntries } from '../servertiming'
 import { SplunkOtelWebConfig } from '../types'
 import { isCacheHit } from '../utils/cache'
 import {
-	BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
-	getCrossOriginTimingRestricted,
 	observeResourceTimingBufferFull,
 	setResourceTimingDiagnostics,
 	setResourceTimingRenderBlocking,
@@ -356,14 +354,6 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 			if (span) {
 				span.setAttribute(SEMATTRS_HTTP_URL, resource.name)
 				span.setAttribute('location.href', this.initialDocumentUrl)
-
-				const crossOriginTimingRestricted = getCrossOriginTimingRestricted(resource)
-				if (crossOriginTimingRestricted !== undefined) {
-					span.setAttribute(
-						BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
-						crossOriginTimingRestricted,
-					)
-				}
 
 				const cacheHitResult = isCacheHit(resource)
 				if (cacheHitResult !== undefined) {

@@ -104,14 +104,20 @@ export function setResourceTimingDiagnostics(
 	resource: PerformanceResourceTiming | undefined,
 	options: { cacheHit?: boolean; opaqueResponse?: boolean } = {},
 ): void {
+	const reason = getResourceTimingUnavailableReason(resource, options)
+	if (!reason) {
+		return
+	}
+
+	if (reason === 'cross_origin_timing_restricted') {
+		span.setAttribute(BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE, true)
+	}
+
 	if (resource && typeof resource.workerStart === 'number' && resource.workerStart > 0) {
 		span.setAttribute(BROWSER_RESOURCE_SERVICE_WORKER_USED_ATTRIBUTE, true)
 	}
 
-	const reason = getResourceTimingUnavailableReason(resource, options)
-	if (reason) {
-		span.setAttribute(BROWSER_RESOURCE_TIMING_UNAVAILABLE_REASON_ATTRIBUTE, reason)
-	}
+	span.setAttribute(BROWSER_RESOURCE_TIMING_UNAVAILABLE_REASON_ATTRIBUTE, reason)
 }
 
 export function getResourceElementUrl(element: Element): string | undefined {

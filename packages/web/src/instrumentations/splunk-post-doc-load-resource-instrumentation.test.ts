@@ -187,12 +187,11 @@ describe('post document load resource instrumentation', () => {
 		vi.runAllTimers()
 
 		expect(setAttribute).toHaveBeenCalledWith(BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE, true)
-		expect(setAttribute).toHaveBeenCalledWith(BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE, false)
 		expect(
 			setAttribute.mock.calls.filter(
 				([name]) => name === BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
 			),
-		).toHaveLength(2)
+		).toHaveLength(1)
 	})
 
 	it('keeps arbitrary other resources disabled when only font is configured', () => {
