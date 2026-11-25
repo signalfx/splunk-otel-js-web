@@ -145,7 +145,7 @@ export class SplunkPostDocLoadResourceInstrumentation extends InstrumentationBas
 			span.setAttribute('http.cache.hit', cacheHit)
 		}
 
-		setResourceTimingDiagnostics(span, entry, { cacheHit })
+		setResourceTimingDiagnostics(span, entry)
 
 		setResourceTimingRenderBlocking(span, entry)
 		addSpanNetworkEvents(span, entry)

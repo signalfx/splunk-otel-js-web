@@ -132,9 +132,11 @@ describe('resource timing diagnostics', () => {
 	it('uses Service Worker participation as the unavailable reason when workerStart is visible', () => {
 		const resource = createResourceEntry({
 			name: new URL('/resource.svg', self.origin).toString(),
-			requestStart: 0,
-			responseStart: 0,
 			workerStart: 4,
+		})
+		Object.defineProperties(resource, {
+			requestStart: { value: undefined },
+			responseStart: { value: undefined },
 		})
 		const setAttribute = vi.fn()
 
@@ -164,27 +166,19 @@ describe('resource timing diagnostics', () => {
 		expect(setAttribute).not.toHaveBeenCalled()
 	})
 
-	it('identifies a cache hit only when timing phases are unavailable', () => {
+	it('does not use cache status as a reason for missing timing details', () => {
 		const resource = createResourceEntry({
 			name: new URL('/resource.svg', self.origin).toString(),
 			requestStart: 0,
 			responseStart: 0,
 		})
-		expect(getResourceTimingUnavailableReason(resource, { cacheHit: true })).toBe('cache')
-		expect(
-			getResourceTimingUnavailableReason(
-				{
-					...resource,
-					requestStart: 10,
-					responseStart: 12,
-				},
-				{ cacheHit: true },
-			),
-		).toBeUndefined()
+		Object.defineProperty(resource, 'deliveryType', { value: 'cache' })
+
+		expect(getResourceTimingUnavailableReason(resource)).toBe('timing_details_missing')
 	})
 
 	it('uses generic reasons when the entry is missing or has no timing phases', () => {
-		expect(getResourceTimingUnavailableReason()).toBe('resource_timing_entry_missing')
+		expect(getResourceTimingUnavailableReason()).toBe('timing_details_missing')
 		expect(
 			getResourceTimingUnavailableReason(
 				createResourceEntry({
@@ -194,9 +188,14 @@ describe('resource timing diagnostics', () => {
 		).toBe('timing_details_missing')
 	})
 
-	it('reports recent Resource Timing buffer exhaustion for an uncorrelated request', () => {
+	it('prioritizes recent buffer exhaustion over Service Worker involvement', () => {
 		observeResourceTimingBufferFull()
 		window.performance.dispatchEvent(new Event('resourcetimingbufferfull'))
+		const resource = createResourceEntry({
+			name: new URL('/resource.svg', self.origin).toString(),
+			workerStart: 4,
+		})
+		expect(getResourceTimingUnavailableReason(resource)).toBe('resource_timing_buffer_full')
 		expect(getResourceTimingUnavailableReason()).toBe('resource_timing_buffer_full')
 	})
 })

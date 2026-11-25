@@ -360,7 +360,7 @@ export class SplunkDocumentLoadInstrumentation extends DocumentLoadInstrumentati
 					span.setAttribute('http.cache.hit', cacheHitResult)
 				}
 
-				setResourceTimingDiagnostics(span, resource, { cacheHit: cacheHitResult })
+				setResourceTimingDiagnostics(span, resource)
 
 				setResourceTimingRenderBlocking(span, resource)
 

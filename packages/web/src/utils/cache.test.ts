@@ -23,14 +23,13 @@ import { isCacheHit } from './cache'
 const TEST_IMAGE_URL = `${HTTP_TEST_SERVER_URL}/test-image.png`
 
 function makeEntry(
-	overrides: Partial<PerformanceResourceTiming & { deliveryType?: string }> = {},
+	overrides: Partial<PerformanceResourceTiming> = {},
 ): PerformanceResourceTiming {
 	return {
 		connectEnd: 0,
 		connectStart: 0,
 		contentType: '',
 		decodedBodySize: 1000,
-		deliveryType: '',
 		domainLookupEnd: 0,
 		domainLookupStart: 0,
 		duration: 0,
@@ -59,11 +58,6 @@ function makeEntry(
 }
 
 describe('isCacheHit', () => {
-	it('returns true when deliveryType reports a cache response', () => {
-		const entry = makeEntry({ deliveryType: 'cache', transferSize: 5000 })
-		expect(isCacheHit(entry)).toBe(true)
-	})
-
 	it('returns true for 304 responseStatus', () => {
 		const entry = makeEntry({ responseStatus: 304, transferSize: 5000 })
 		expect(isCacheHit(entry)).toBe(true)

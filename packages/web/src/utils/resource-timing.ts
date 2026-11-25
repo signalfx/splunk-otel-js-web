@@ -27,9 +27,7 @@ export type ResourceTimingUnavailableReason =
 	| 'cross_origin_timing_restricted'
 	| 'opaque_response'
 	| 'service_worker'
-	| 'cache'
 	| 'resource_timing_buffer_full'
-	| 'resource_timing_entry_missing'
 	| 'timing_details_missing'
 
 let resourceTimingBufferFullObservedAt = Number.NEGATIVE_INFINITY
@@ -55,7 +53,7 @@ export function observeResourceTimingBufferFull(): void {
 
 export function getResourceTimingUnavailableReason(
 	resource: PerformanceResourceTiming | undefined = undefined,
-	options: { cacheHit?: boolean; opaqueResponse?: boolean } = {},
+	options: { opaqueResponse?: boolean } = {},
 ): ResourceTimingUnavailableReason | undefined {
 	const now = typeof performance === 'undefined' ? Date.now() : performance.now()
 	const bufferFullRecentlyObserved = now - resourceTimingBufferFullObservedAt <= BUFFER_FULL_RECENCY_WINDOW_MS
@@ -64,7 +62,7 @@ export function getResourceTimingUnavailableReason(
 	}
 
 	if (!resource) {
-		return bufferFullRecentlyObserved ? 'resource_timing_buffer_full' : 'resource_timing_entry_missing'
+		return bufferFullRecentlyObserved ? 'resource_timing_buffer_full' : 'timing_details_missing'
 	}
 
 	if (getCrossOriginTimingRestricted(resource) === true) {
@@ -72,27 +70,21 @@ export function getResourceTimingUnavailableReason(
 	}
 
 	const { requestStart, responseStart, workerStart } = resource
-	if (typeof requestStart !== 'number' || typeof responseStart !== 'number') {
-		return 'timing_details_missing'
-	}
-
-	if (requestStart > 0 && responseStart > 0) {
-		return undefined
-	}
-
-	if (workerStart > 0) {
-		return 'service_worker'
-	}
-
 	if (
-		(resource as PerformanceResourceTiming & { deliveryType?: string }).deliveryType === 'cache' ||
-		options.cacheHit
+		typeof requestStart === 'number' &&
+		typeof responseStart === 'number' &&
+		requestStart > 0 &&
+		responseStart > 0
 	) {
-		return 'cache'
+		return undefined
 	}
 
 	if (bufferFullRecentlyObserved) {
 		return 'resource_timing_buffer_full'
+	}
+
+	if (workerStart > 0) {
+		return 'service_worker'
 	}
 
 	return 'timing_details_missing'
@@ -101,7 +93,7 @@ export function getResourceTimingUnavailableReason(
 export function setResourceTimingDiagnostics(
 	span: Span,
 	resource: PerformanceResourceTiming | undefined,
-	options: { cacheHit?: boolean; opaqueResponse?: boolean } = {},
+	options: { opaqueResponse?: boolean } = {},
 ): void {
 	const reason = getResourceTimingUnavailableReason(resource, options)
 	if (!reason) {
