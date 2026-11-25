@@ -57,6 +57,11 @@ function makeEntry(overrides: Partial<PerformanceResourceTiming> = {}): Performa
 }
 
 describe('isCacheHit', () => {
+	it('returns true when deliveryType reports a cache response', () => {
+		const entry = makeEntry({ deliveryType: 'cache', transferSize: 5000 })
+		expect(isCacheHit(entry)).toBe(true)
+	})
+
 	it('returns true for 304 responseStatus', () => {
 		const entry = makeEntry({ responseStatus: 304, transferSize: 5000 })
 		expect(isCacheHit(entry)).toBe(true)

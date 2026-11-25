@@ -19,17 +19,22 @@
 /**
  * Detects whether a resource was loaded from cache using PerformanceResourceTiming.
  *
- * Uses two complementary heuristics from the Resource Timing API:
+ * Uses three complementary signals from the Resource Timing API:
  * 1. responseStatus === 304 indicates a server-validated cache hit
  *    https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/responseStatus#checking_if_a_cache_was_hit
  * 2. transferSize === 0 && decodedBodySize > 0 indicates a local/disk cache hit
  *    (transferSize 0 alone could mean cross-origin with no Timing-Allow-Origin)
  *    https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/transferSize#checking_if_a_cache_was_hit
+ * 3. deliveryType === 'cache' directly reports cache delivery when the browser exposes it
  *
  * Returns undefined when cache status cannot be determined (e.g. cross-origin
  * without Timing-Allow-Origin, or when the required fields are unavailable).
  */
 export function isCacheHit(entry: PerformanceResourceTiming): boolean | undefined {
+	if ((entry as PerformanceResourceTiming & { deliveryType?: string }).deliveryType === 'cache') {
+		return true
+	}
+
 	if (typeof entry.responseStatus === 'number' && entry.responseStatus === 304) {
 		return true
 	}

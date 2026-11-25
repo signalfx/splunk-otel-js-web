@@ -21,7 +21,6 @@ import { describe, expect, it, vi } from 'vitest'
 
 import {
 	BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE,
-	BROWSER_RESOURCE_SERVICE_WORKER_USED_ATTRIBUTE,
 	BROWSER_RESOURCE_TIMING_UNAVAILABLE_REASON_ATTRIBUTE,
 	getCrossOriginTimingRestricted,
 	getResourceTimingUnavailableReason,
@@ -130,7 +129,7 @@ describe('resource timing diagnostics', () => {
 		expect(getResourceTimingUnavailableReason(undefined, { opaqueResponse: true })).toBe('opaque_response')
 	})
 
-	it('identifies Service Worker participation when workerStart is visible', () => {
+	it('uses Service Worker participation as the unavailable reason when workerStart is visible', () => {
 		const resource = createResourceEntry({
 			name: new URL('/resource.svg', self.origin).toString(),
 			requestStart: 0,
@@ -141,11 +140,11 @@ describe('resource timing diagnostics', () => {
 
 		expect(getResourceTimingUnavailableReason(resource)).toBe('service_worker')
 		setResourceTimingDiagnostics({ setAttribute } as unknown as Span, resource)
-		expect(setAttribute).toHaveBeenCalledWith(BROWSER_RESOURCE_SERVICE_WORKER_USED_ATTRIBUTE, true)
 		expect(setAttribute).toHaveBeenCalledWith(
 			BROWSER_RESOURCE_TIMING_UNAVAILABLE_REASON_ATTRIBUTE,
 			'service_worker',
 		)
+		expect(setAttribute).toHaveBeenCalledTimes(1)
 	})
 
 	it('does not add timing diagnostics when resource timings are available, even if a Service Worker was used', () => {

@@ -22,7 +22,6 @@ import { SemanticAttributes } from '@opentelemetry/semantic-conventions'
 export const BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE =
 	'browser.resource.cross_origin_timing_restricted'
 export const BROWSER_RESOURCE_TIMING_UNAVAILABLE_REASON_ATTRIBUTE = 'browser.resource.timing_unavailable_reason'
-export const BROWSER_RESOURCE_SERVICE_WORKER_USED_ATTRIBUTE = 'browser.resource.service_worker_used'
 
 export type ResourceTimingUnavailableReason =
 	| 'cross_origin_timing_restricted'
@@ -111,10 +110,6 @@ export function setResourceTimingDiagnostics(
 
 	if (reason === 'cross_origin_timing_restricted') {
 		span.setAttribute(BROWSER_RESOURCE_CROSS_ORIGIN_TIMING_RESTRICTED_ATTRIBUTE, true)
-	}
-
-	if (resource && typeof resource.workerStart === 'number' && resource.workerStart > 0) {
-		span.setAttribute(BROWSER_RESOURCE_SERVICE_WORKER_USED_ATTRIBUTE, true)
 	}
 
 	span.setAttribute(BROWSER_RESOURCE_TIMING_UNAVAILABLE_REASON_ATTRIBUTE, reason)
