@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Session recorder - idle callbacks</title>
+	<script>
+		// Chromium and Firefox have a native requestIdleCallback; Safari does not.
+		// ?withoutNativeIdleCallback removes it so every browser can run the Safari case.
+		if (location.search.indexOf('withoutNativeIdleCallback') !== -1) {
+			delete window.requestIdleCallback;
+			delete window.cancelIdleCallback;
+			window.requestIdleCallback = undefined;
+			window.cancelIdleCallback = undefined;
+		}
+	</script>
+
+	<%- renderAgent({}) %>
+
+	<script src="/session-recorder-artifacts/splunk-otel-web-session-recorder.js" crossorigin="anonymous"></script>
+	<script>
+		SplunkSessionRecorder.init({
+			beaconEndpoint: location.origin + '/api/v1/rumreplay',
+			debug: true,
+			persistFailedReplayData: false,
+			rumAccessToken: 'test-token',
+		});
+
+		function blockMainThread(ms) {
+			var end = performance.now() + ms;
+			while (performance.now() < end) {
+				// busy-wait
+			}
+		}
+
+		// Simulates a slow page that defers work with requestIdleCallback and no timeout: every 50 ms
+		// task registers a batch of idle callbacks and then keeps the main thread busy for 45 ms.
+		// Resolves with how many callbacks ran (gives up after 10 s).
+		window.runIdleCallbacksOnBusyPage = function (count) {
+			var batchSize = 25;
+			return new Promise(function (resolve) {
+				var registered = 0;
+				var ran = 0;
+				var startedAt = performance.now();
+
+				function onIdle() {
+					ran++;
+					if (ran === count) {
+						finish();
+					}
+				}
+
+				var busyInterval = setInterval(function () {
+					for (var i = 0; i < batchSize && registered < count; i++, registered++) {
+						requestIdleCallback(onIdle);
+					}
+
+					var item = document.createElement('div');
+					item.textContent = 'registered ' + registered + ', ran ' + ran;
+					document.body.appendChild(item);
+					blockMainThread(45);
+				}, 50);
+
+				var giveUp = setTimeout(finish, 10000);
+				function finish() {
+					clearInterval(busyInterval);
+					clearTimeout(giveUp);
+					resolve({ elapsedMs: performance.now() - startedAt, ran: ran });
+				}
+			});
+		};
+	</script>
+</head>
+<body>
+	<h1>Session recorder - idle callbacks</h1>
+	<button id="btn" type="button">Click me</button>
+</body>
+</html>
