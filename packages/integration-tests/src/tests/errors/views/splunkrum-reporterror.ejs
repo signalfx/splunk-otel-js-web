@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<title>Errors test</title>
-  <%- renderAgent({}) %>
+  <%- renderAgent({experimental: true}) %>
   <script id="scenario">
     let someNull = null;
     try {
@@ -14,6 +14,14 @@
 			errorValueNumber: 321,
 		};
 
+		SplunkRum.reportError(e, {
+			splunkContext: {
+				test: 'the whole object should be removed'
+			},
+			errorValueString: 'errorValue',
+			errorValueNumber: 123,
+			additionalInvalidAttributes: ['a', 'b', 'c']
+		});
 		SplunkRum.reportError(e, {
 			splunkContext: {
 				test: 'the whole object should be removed'

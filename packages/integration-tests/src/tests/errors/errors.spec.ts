@@ -20,7 +20,7 @@ import { expect } from '@playwright/test'
 import type { ExportedTestSpan } from '@test-utils/test-span.js'
 
 import { BROWSER_NAVIGATION_ATTRIBUTES } from '../../utils/browser-navigation'
-import { test } from '../../utils/test'
+import { expectDefined, test } from '../../utils/test'
 
 test.describe('errors', () => {
 	test('DOM resource 4xx is reported as an error and a failed resource span by default', async ({
@@ -190,6 +190,82 @@ test.describe('errors', () => {
 		}
 
 		expect(errorSpans[0]).toHaveSpanAttribute('error.stack', errorStackMap[browserName])
+	})
+
+	test('pre-load errors reference the pageLoad span', async ({ recordPage }) => {
+		await recordPage.goTo('/errors/views/splunkrum-reporterror.ejs')
+		await recordPage.waitForSpans(
+			(spans) =>
+				spans.some((span) => span.name === 'SplunkRum.reportError') &&
+				spans.some((span) => span.name === 'pageLoad'),
+		)
+
+		const pageLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'pageLoad')
+		const errorSpan = recordPage.receivedSpans.find((span) => span.name === 'SplunkRum.reportError')
+
+		expectDefined(pageLoadSpan)
+		expectDefined(errorSpan)
+		expect(errorSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.operation, 'documentLoad')
+		expect(errorSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, pageLoadSpan.spanId)
+		expect(errorSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, false)
+	})
+
+	test('errors reported immediately after delayed initialization reference the pageLoad span', async ({
+		recordPage,
+	}) => {
+		await recordPage.goTo('/errors/views/delayed-init-reporterror.ejs')
+		await recordPage.waitForSpans(
+			(spans) =>
+				spans.some((span) => span.name === 'pageLoad') &&
+				spans.some(
+					(span) =>
+						span.name === 'SplunkRum.reportError' &&
+						span.attributes['error.message'] === 'delayed init page span test',
+				),
+		)
+
+		const readyStateAtInit = await recordPage.evaluate(() => (window as any).readyStateAtInit)
+		const pageLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'pageLoad')
+		const errorSpan = recordPage.receivedSpans.find(
+			(span) =>
+				span.name === 'SplunkRum.reportError' &&
+				span.attributes['error.message'] === 'delayed init page span test',
+		)
+
+		expect(readyStateAtInit).toBe('complete')
+		expectDefined(pageLoadSpan)
+		expectDefined(errorSpan)
+		expect(errorSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.operation, 'documentLoad')
+		expect(errorSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, pageLoadSpan.spanId)
+		expect(errorSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, false)
+	})
+
+	test('error spans reference the active pageLoad span', async ({ recordPage }) => {
+		await recordPage.goTo('/errors/views/splunkrum-reporterror.ejs')
+		await recordPage.waitForSpans((spans) => spans.some((span) => span.name === 'pageLoad'))
+
+		await recordPage.evaluate(async () => {
+			await (window as any).SplunkRum.reportError(new Error('document load page span test'))
+		})
+		await recordPage.waitForSpans((spans) =>
+			spans.some(
+				(span) =>
+					span.name === 'SplunkRum.reportError' &&
+					span.attributes['error.message'] === 'document load page span test',
+			),
+		)
+
+		const pageLoadSpan = recordPage.receivedSpans.find((span) => span.name === 'pageLoad')
+		const errorSpan = recordPage.receivedSpans.find(
+			(span) =>
+				span.name === 'SplunkRum.reportError' &&
+				span.attributes['error.message'] === 'document load page span test',
+		)
+
+		expectDefined(pageLoadSpan)
+		expectDefined(errorSpan)
+		expect(errorSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pageSpanId, pageLoadSpan.spanId)
+		expect(errorSpan).toHaveSpanAttribute(BROWSER_NAVIGATION_ATTRIBUTES.pctRelevant, false)
 	})
 
 	test('module can be disabled', async ({ recordPage }) => {
