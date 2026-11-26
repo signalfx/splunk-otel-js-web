@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Native session bridge</title>
+	<script>
+		const params = new URLSearchParams(window.location.search)
+		window.__nativeSessionIdForTest = params.has('sessionId') ? params.get('sessionId') : undefined
+		window.__setNativeSessionIdForTest = (sessionId) => {
+			window.__nativeSessionIdForTest = sessionId === '__undefined__' ? undefined : sessionId
+		}
+		window.SplunkRumNative = {
+			getNativeSessionId: () => window.__nativeSessionIdForTest,
+		}
+	</script>
+	<%- renderAgent({debug: true}) %>
+</head>
+<body>
+	<h1>Native session bridge</h1>
+</body>
+</html>
